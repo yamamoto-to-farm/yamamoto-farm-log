@@ -53,5 +53,5 @@ jobs:
           git config user.name "farm-bot"
           git config user.email "actions@github.com"
           git add logs/*
-          git commit -m "save ${TYPE} log for ${{ steps.extract.outputs.date }}"
+          git commit -m "save ${{ steps.extract.outputs.type }} log for ${{ steps.extract.outputs.date }}"
           git push
