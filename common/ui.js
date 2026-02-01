@@ -1,27 +1,93 @@
 // ===============================
-// 圃場セレクタ
+// import（必ずファイル先頭）
 // ===============================
-export async function createFieldSelector(autoId, manualId) {
- 
+import { getCurrentPosition, getNearestField } from "./app.js";
+
+
+// ===============================
+// 圃場セレクタ（エリア → 圃場名）
+// ===============================
+export async function createFieldSelector(autoId, areaId, manualId) {
+
+    // ▼ fields.json 読み込み
     const res = await fetch("../data/fields.json");
     const fields = await res.json();
 
-    // 自動判定欄
+    // ▼ 自動判定欄
     const auto = document.getElementById(autoId);
     auto.readOnly = true;
 
-    // 手動セレクト
-    const sel = document.getElementById(manualId);
-    sel.innerHTML = '<option value="">自動判定を優先</option>';
+    // ▼ エリアセレクト
+    const areaSel = document.getElementById(areaId);
+    const areas = [...new Set(fields.map(f => f.area))];
 
-    fields.forEach(f => {
+    areas.forEach(area => {
         const opt = document.createElement("option");
-        opt.value = f.id;
-        opt.textContent = `${f.name}（${f.area}）`;
-        sel.appendChild(opt);
+        opt.value = area;
+        opt.textContent = area;
+        areaSel.appendChild(opt);
+    });
+
+    // ▼ 圃場セレクト
+    const fieldSel = document.getElementById(manualId);
+    fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
+
+    // ▼ エリア選択時に圃場を絞る
+    areaSel.addEventListener("change", () => {
+        const selectedArea = areaSel.value;
+
+        fieldSel.innerHTML = "";
+
+        if (!selectedArea) {
+            fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
+            return;
+        }
+
+        const filtered = fields.filter(f => f.area === selectedArea);
+
+        filtered.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f.id;          // 保存用ID
+            opt.textContent = f.name;  // 表示名
+            fieldSel.appendChild(opt);
+        });
     });
 
     return fields;
+}
+
+
+// ===============================
+// GPS → エリア → 圃場 自動連動
+// ===============================
+export async function autoDetectField(autoId, areaId, manualId) {
+
+    const auto = document.getElementById(autoId);
+    const areaSel = document.getElementById(areaId);
+    const fieldSel = document.getElementById(manualId);
+
+    try {
+        // ① GPS取得
+        const pos = await getCurrentPosition();
+        const { lat, lng } = pos;
+
+        // ② 最寄り圃場を判定
+        const nearest = await getNearestField(lat, lng);
+
+        // ③ 自動判定欄に表示
+        auto.value = nearest.name;
+
+        // ④ エリアを自動選択
+        areaSel.value = nearest.area;
+        areaSel.dispatchEvent(new Event("change")); // 圃場一覧を更新
+
+        // ⑤ 圃場を自動選択
+        fieldSel.value = nearest.id;
+
+    } catch (err) {
+        auto.value = "自動判定できませんでした";
+        console.error(err);
+    }
 }
 
 
@@ -52,11 +118,9 @@ export async function createWorkerCheckboxes(containerId) {
 // 作業者の取得（固定＋単発バイト）
 // ===============================
 export function getSelectedWorkers(boxId, tempId) {
-    // 固定メンバー
     const fixed = [...document.querySelectorAll(`#${boxId} input[name='workers']:checked`)]
         .map(x => x.value);
 
-    // 単発バイト（カンマ区切り）
     const temp = document.getElementById(tempId).value
         .split(",")
         .map(x => x.trim())
@@ -85,5 +149,5 @@ export function createDateInput(targetId, labelText = "") {
     container.appendChild(label);
     container.appendChild(input);
 
-    return input; // 後で値を取得しやすいように返す
+    return input;
 }
