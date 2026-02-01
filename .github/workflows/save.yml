@@ -1,8 +1,12 @@
 name: Save harvest log
 
 on:
-  issues:
-    types: [opened]
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: "UI から送られてくる JSON データ"
+        required: true
+        type: string
 
 jobs:
   save:
@@ -15,12 +19,39 @@ jobs:
           repository: yamamoto-to-farm/yamamoto-farm-data
           token: ${{ secrets.FARM_DATA_TOKEN }}
 
-      - name: Save file
+      - name: Parse payload
+        id: parse
         run: |
-          mkdir -p logs
-          echo '${{ github.event.issue.body }}' > logs/issue-${{ github.event.issue.number }}.json
+          echo '${{ inputs.payload }}' > payload.json
+          cat payload.json
+
+      - name: Extract fields
+        id: extract
+        run: |
+          TYPE=$(jq -r '.type' payload.json)
+          DATE=$(jq -r '.dateStr' payload.json)
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+      - name: Save JSON
+        run: |
+          mkdir -p logs/${{ steps.extract.outputs.type }}
+          cp payload.json logs/${{ steps.extract.outputs.type }}/${{ steps.extract.outputs.date }}.json
+
+      - name: Save CSV
+        run: |
+          TYPE=${{ steps.extract.outputs.type }}
+          CSV_LINE=$(jq -r '.csv' payload.json)
+
+          mkdir -p logs/$TYPE
+          CSV_FILE="logs/$TYPE/all.csv"
+
+          echo "$CSV_LINE" >> "$CSV_FILE"
+
+      - name: Commit & Push
+        run: |
           git config user.name "farm-bot"
           git config user.email "actions@github.com"
           git add logs/*
-          git commit -m "save from issue #${{ github.event.issue.number }}"
+          git commit -m "save ${TYPE} log for ${{ steps.extract.outputs.date }}"
           git push
