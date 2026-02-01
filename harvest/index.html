@@ -1,123 +1,153 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>収穫ログ</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        h2 { margin-top: 30px; }
-        .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; }
-        label { display: block; margin-top: 10px; }
-        select, input, textarea {
-            width: 100%;
-            padding: 8px;
-            font-size: 16px;
-            margin-top: 5px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>収穫ログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 16px; }
+    h2 { margin-top: 24px; }
+    .field { margin-bottom: 12px; }
+    .field label { display:block; margin-bottom:4px; }
+    .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; background:#fff; }
+    input, select, textarea {
+      width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px;
+    }
+    button {
+      width: 100%; padding: 12px; font-size: 16px;
+      background: #2f855a; color: #fff; border: none; border-radius: 4px;
+      margin-top: 20px;
+    }
+    button:active { opacity: 0.8; }
+  </style>
 </head>
 
 <body>
-    <h1>収穫ログ</h1>
+  <h1>収穫ログ</h1>
 
-    <!-- 日付 -->
-    <h2>日付</h2>
-    <div class="box">
-        <label>収穫日</label>
-        <input type="date" id="harvest_date">
+  <!-- 日付 -->
+  <div class="field">
+    <label for="harvestDate">収穫日</label>
+    <input type="date" id="harvestDate">
+  </div>
 
-        <label>出荷日</label>
-        <input type="date" id="shipping_date">
+  <div class="field">
+    <label for="shippingDate">出荷申請日</label>
+    <input type="date" id="shippingDate">
+  </div>
+
+  <!-- 作業者 -->
+  <h2>作業者</h2>
+  <div class="box" id="workers_box"></div>
+
+  <div class="box">
+    <label for="temp_workers">単発バイト（カンマ区切り）</label>
+    <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+  </div>
+
+  <!-- 圃場（自動判定＋2段階選択） -->
+  <h2>圃場</h2>
+  <div class="box">
+    <label>自動判定</label>
+    <input id="field_auto" readonly style="background:#eee;">
+
+    <label>エリア選択</label>
+    <select id="field_area">
+      <option value="">エリアを選択</option>
+    </select>
+
+    <label>圃場選択</label>
+    <select id="field_manual">
+      <option value="">エリアを選んでください</option>
+    </select>
+  </div>
+
+  <!-- 収穫量・特記事項 -->
+  <h2>収穫量・特記事項</h2>
+  <div class="box">
+    <div class="field">
+      <label for="amount">収穫量（基）</label>
+      <input type="number" id="amount" inputmode="numeric">
     </div>
-
-    <!-- 作業者 -->
-    <h2>作業者</h2>
-    <div class="box" id="workers_box"></div>
-
-    <!-- 単発バイト -->
-    <h2>単発バイト</h2>
-    <div class="box">
-        <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+    <div class="field">
+      <label for="issue">特記事項</label>
+      <textarea id="issue" rows="3" placeholder="病害虫・欠株・その他メモなど"></textarea>
     </div>
+  </div>
 
-    <!-- 圃場（自動判定＋2段階選択） -->
-    <h2>圃場</h2>
-    <div class="box">
-        <label>自動判定</label>
-        <input id="field_auto" readonly style="background:#eee;">
+  <!-- 保存ボタン -->
+  <button type="button" onclick="saveHarvest()">GitHub に保存する</button>
 
-        <label>エリア選択</label>
-        <select id="field_area">
-            <option value="">エリアを選択</option>
-        </select>
+  <!-- UI 初期化 & 保存処理 -->
+  <script type="module">
+    import {
+      createWorkerCheckboxes,
+      createFieldSelector,
+      autoDetectField,
+      getSelectedWorkers
+    } from "../common/ui.js";
 
-        <label>圃場選択</label>
-        <select id="field_manual">
-            <option value="">エリアを選んでください</option>
-        </select>
-    </div>
+    import { saveLog } from "../common/save/index.js";
 
-    <!-- 収穫量 -->
-    <h2>収穫量</h2>
-    <div class="box">
-        <input type="number" id="amount" placeholder="kg">
-    </div>
+    // ============================
+    // UI 初期化
+    // ============================
+    createWorkerCheckboxes("workers_box");
 
-    <!-- 備考 -->
-    <h2>備考</h2>
-    <div class="box">
-        <textarea id="memo" rows="3"></textarea>
-    </div>
+    // ★ 新仕様：auto, area, manual の3つを渡す
+    createFieldSelector("field_auto", "field_area", "field_manual")
+      .then(() => {
+        autoDetectField("field_auto", "field_area", "field_manual");
+      });
 
-    <!-- 保存 -->
-    <button id="save_btn" style="margin-top:20px; padding:10px 20px; font-size:18px;">
-        保存
-    </button>
+    // ============================
+    // 入力データ収集（そのまま）
+    // ============================
+    function collectHarvestData() {
+      return {
+        harvestDate: document.getElementById("harvestDate").value,
+        shippingDate: document.getElementById("shippingDate").value,
+        worker: getSelectedWorkers("workers_box", "temp_workers"),
+        field: document.getElementById("field_manual").value || document.getElementById("field_auto").value,
+        amount: document.getElementById("amount").value,
+        issue: document.getElementById("issue").value
+      };
+    }
 
-    <p id="result" style="margin-top:20px; font-weight:bold;"></p>
+    // ============================
+    // 保存処理（そのまま）
+    // ============================
+    async function saveHarvestInner() {
+      const data = collectHarvestData();
 
-    <script type="module">
-        import {
-            createWorkerCheckboxes,
-            createFieldSelector,
-            autoDetectField,
-            getSelectedWorkers
-        } from "../common/ui.js";
+      if (!data.harvestDate) {
+        alert("収穫日を入力してください");
+        return;
+      }
 
-        import { getTimestamp, createCsvRow, downloadCsv } from "../common/app.js";
+      const dateStr = data.harvestDate.replace(/-/g, "");
 
-        // 作業者チェックボックス生成
-        createWorkerCheckboxes("workers_box");
+      const csvLine = [
+        data.harvestDate,
+        data.shippingDate,
+        data.worker,
+        data.field,
+        data.amount,
+        data.issue.replace(/[\r\n,]/g, " ")
+      ].join(",");
 
-        // 圃場セレクタ生成 → 完了後に自動判定
-        createFieldSelector("field_auto", "field_area", "field_manual")
-            .then(() => {
-                autoDetectField("field_auto", "field_area", "field_manual");
-            });
+      await saveLog("harvest", dateStr, data, csvLine);
 
-        // 保存処理
-        document.getElementById("save_btn").addEventListener("click", () => {
+      alert("GitHubに保存しました");
+    }
 
-            const data = {
-                timestamp: getTimestamp(),
-                category: "harvest",
-                field_id: document.getElementById("field_manual").value || "AUTO",
-                field_name: document.getElementById("field_auto").value,
-                area: document.getElementById("field_area").value,
-                lat: "",   // 必要なら後で追加
-                lng: "",
-                accuracy: "",
-                worker: getSelectedWorkers("workers_box", "temp_workers"),
-                memo: document.getElementById("memo").value
-            };
+    window.saveHarvest = saveHarvestInner;
 
-            const csv = createCsvRow(data);
-            downloadCsv(`harvest_${data.timestamp}.csv`, csv);
-
-            document.getElementById("result").textContent = "保存しました";
-        });
-    </script>
-
+    // 日付初期値
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("harvestDate").value = today;
+    document.getElementById("shippingDate").value = today;
+  </script>
 </body>
 </html>
