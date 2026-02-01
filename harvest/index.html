@@ -2,149 +2,25 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>収穫ログ - 山本農園</title>
+  <title>作業者テスト</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 16px; }
-    h2 { margin-top: 30px; }
-    .field { margin-bottom: 12px; }
-    .field label { display:block; margin-bottom:4px; }
-    .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; background:#fff; }
-    input, select, textarea {
-      width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px;
-    }
-    button {
-      width: 100%; padding: 12px; font-size: 16px;
-      background: #2f855a; color: #fff; border: none; border-radius: 4px;
-      margin-top: 20px;
-    }
-    button:active { opacity: 0.8; }
+    body { font-family: sans-serif; padding: 20px; }
+    .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; }
   </style>
 </head>
 
 <body>
-  <h1>収穫ログ</h1>
+  <h1>作業者テスト（workers.json 読み込み確認）</h1>
 
-  <!-- 日付 -->
-  <div class="field">
-    <label for="harvestDate">収穫日</label>
-    <input type="date" id="harvestDate">
-  </div>
-
-  <div class="field">
-    <label for="shippingDate">出荷申請日</label>
-    <input type="date" id="shippingDate">
-  </div>
-
-  <!-- 作業者 -->
   <h2>作業者（複数選択）</h2>
   <div class="box" id="workers_box"></div>
 
-  <h2>単発バイト（自由入力）</h2>
-  <div class="box">
-        <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
-  </div>
-
-  <!-- 圃場 -->
-   <!--
-
-    <h2>圃場（自動判定＋手動選択）</h2>
-    <div class="box">
-        <label>自動判定</label>
-        <input id="field_auto" readonly style="background:#eee;">
-
-        <label>手動選択</label>
-        <select id="field_manual">
-            <option value="">自動判定を優先</option>
-        </select>
-    </div>
-  -->
-  <!-- 収穫量・特記事項 -->
-   <!--
-  <h2>収穫量・特記事項</h2>
-  <div class="box">
-    <div class="field">
-      <label for="amount">収穫量（基）</label>
-      <input type="number" id="amount" inputmode="numeric">
-    </div>
-    <div class="field">
-      <label for="issue">特記事項</label>
-      <textarea id="issue" rows="3" placeholder="病害虫・欠株・その他メモなど"></textarea>
-    </div>
-  </div>
--->
-  <!-- 保存ボタン -->
-   <!--
-  <button type="button" onclick="saveHarvest()">GitHub に保存する</button>
--->
-  <!-- 保存モジュール -->
-  <script type="module" src="../common/save/github.js"></script>
-  <script type="module" src="../common/save/index.js"></script>
-
-  <!-- UI 初期化 & 保存処理 -->
   <script type="module">
-    import { saveLog } from "../common/save/index.js";
-    import {
-      createWorkerCheckboxes,
-      createFieldSelector,
-      getSelectedWorkers
-    } from "../common/ui.js";
+    import { createWorkerCheckboxes } from "../common/ui.js";
 
-    // ============================
-    // UI 初期化
-    // ============================
+    // workers.json → チェックボックス生成
     createWorkerCheckboxes("workers_box");
-    createFieldSelector("field_auto", "field_manual");
-
-    // ============================
-    // 入力データ収集
-    // ============================
-    function collectHarvestData() {
-      return {
-        harvestDate: document.getElementById("harvestDate").value,
-        shippingDate: document.getElementById("shippingDate").value,
-        worker: getSelectedWorkers("workers_box", "temp_workers"),
-        field: document.getElementById("field_manual").value || document.getElementById("field_auto").value,
-        amount: document.getElementById("amount").value,
-        issue: document.getElementById("issue").value
-      };
-    }
-
-    // ============================
-    // 保存処理
-    // ============================
-    async function saveHarvestInner() {
-      const data = collectHarvestData();
-
-      if (!data.harvestDate) {
-        alert("収穫日を入力してください");
-        return;
-      }
-
-      const dateStr = data.harvestDate.replace(/-/g, "");
-
-      const csvLine = [
-        data.harvestDate,
-        data.shippingDate,
-        data.worker,
-        data.field,
-        data.amount,
-        data.issue.replace(/[\r\n,]/g, " ")
-      ].join(",");
-
-      await saveLog("harvest", dateStr, data, csvLine);
-
-      alert("GitHubに保存しました");
-    }
-
-    // ボタンから呼べるように
-    window.saveHarvest = saveHarvestInner;
-
-    // 日付初期値
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("harvestDate").value = today;
-    document.getElementById("shippingDate").value = today;
   </script>
 </body>
 </html>
