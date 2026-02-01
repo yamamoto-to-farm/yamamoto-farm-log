@@ -5,9 +5,6 @@ const OWNER = "yamamoto-to-farm";
 const REPO = "yamamoto-farm-data";
 const BRANCH = "main";
 
-// Netlify の環境変数から注入される
-const TOKEN = GITHUB_TOKEN;
-
 // Base64
 export function toBase64(str) {
   return btoa(unescape(encodeURIComponent(str)));
