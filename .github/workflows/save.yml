@@ -1,0 +1,26 @@
+name: Save harvest log
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout data repo
+        uses: actions/checkout@v4
+        with:
+          repository: yamamoto-to-farm/yamamoto-farm-data
+          token: ${{ secrets.FARM_DATA_TOKEN }}
+
+      - name: Save file
+        run: |
+          mkdir -p logs
+          echo '${{ github.event.issue.body }}' > logs/issue-${{ github.event.issue.number }}.json
+          git config user.name "farm-bot"
+          git config user.email "actions@github.com"
+          git add logs/*
+          git commit -m "save from issue #${{ github.event.issue.number }}"
+          git push
