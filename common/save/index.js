@@ -1,36 +1,33 @@
 // /common/save/index.js
-// 認証不要で Issue を作る（GitHub Web UI のフォーム投稿を利用）
+// UI → GitHub Actions (workflow_dispatch) に JSON を送るだけ
 
 export async function saveLog(type, dateStr, jsonData, csvLine) {
-  const issueTitle = `[${type}] ${dateStr}`;
-  const issueBody = JSON.stringify(
-    {
-      type,
-      dateStr,
-      json: jsonData,
-      csv: csvLine
-    },
-    null,
-    2
-  );
-
-  const form = new URLSearchParams();
-  form.append("title", issueTitle);
-  form.append("body", issueBody);
+  const payload = {
+    type,
+    dateStr,
+    json: jsonData,
+    csv: csvLine
+  };
 
   const res = await fetch(
-    "https://github.com/yamamoto-to-farm/yamamoto-farm-log/issues/new",
+    "https://api.github.com/repos/yamamoto-to-farm/yamamoto-farm-log/actions/workflows/save.yml/dispatches",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/json",
+        // 認証不要 → GitHub Pages からの CORS も許可されている
       },
-      body: form.toString()
+      body: JSON.stringify({
+        ref: "main",
+        inputs: {
+          payload: JSON.stringify(payload)
+        }
+      })
     }
   );
 
   if (!res.ok) {
     const msg = await res.text();
-    throw new Error("Issue 作成に失敗: " + msg);
+    throw new Error("workflow_dispatch に失敗: " + msg);
   }
 }
