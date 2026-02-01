@@ -7,7 +7,7 @@
   <style>
     body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
     h1 { margin-bottom: 16px; }
-    h2 { margin-top: 24px; }
+    h2 { margin-top: 30px; }
     .field { margin-bottom: 12px; }
     .field label { display:block; margin-bottom:4px; }
     .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; background:#fff; }
@@ -38,25 +38,25 @@
   </div>
 
   <!-- 作業者 -->
-  <h2>作業者</h2>
+  <h2>作業者（複数選択）</h2>
   <div class="box" id="workers_box"></div>
 
+  <h2>単発バイト（自由入力）</h2>
   <div class="box">
-    <label for="temp_workers">単発バイト（カンマ区切り）</label>
-    <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+        <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
   </div>
 
   <!-- 圃場 -->
-  <h2>圃場</h2>
-  <div class="box">
-    <label>自動判定</label>
-    <input id="field_auto" readonly style="background:#eee;">
+    <h2>圃場（自動判定＋手動選択）</h2>
+    <div class="box">
+        <label>自動判定</label>
+        <input id="field_auto" readonly style="background:#eee;">
 
-    <label>手動選択</label>
-    <select id="field_manual">
-      <option value="">自動判定を優先</option>
-    </select>
-  </div>
+        <label>手動選択</label>
+        <select id="field_manual">
+            <option value="">自動判定を優先</option>
+        </select>
+    </div>
 
   <!-- 収穫量・特記事項 -->
   <h2>収穫量・特記事項</h2>
