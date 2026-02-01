@@ -74,18 +74,10 @@
   <!-- 保存ボタン -->
   <button type="button" onclick="saveHarvest()">GitHub に保存する</button>
 
-  <!-- 保存モジュール -->
-  <script type="module" src="../common/save/github.js"></script>
-  <script type="module" src="../common/save/index.js"></script>
-
   <!-- UI 初期化 & 保存処理 -->
   <script type="module">
+    import { createWorkerCheckboxes, createFieldSelector, getSelectedWorkers } from "../common/ui.js";
     import { saveLog } from "../common/save/index.js";
-    import {
-      createWorkerCheckboxes,
-      createFieldSelector,
-      getSelectedWorkers
-    } from "../common/ui.js";
 
     // ============================
     // UI 初期化
