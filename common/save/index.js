@@ -1,5 +1,5 @@
 // /common/save/index.js
-// GitHub Actions 保存方式：UI は issue を作るだけ
+// 認証不要で Issue を作る（GitHub Web UI のフォーム投稿を利用）
 
 export async function saveLog(type, dateStr, jsonData, csvLine) {
   const issueTitle = `[${type}] ${dateStr}`;
@@ -14,17 +14,18 @@ export async function saveLog(type, dateStr, jsonData, csvLine) {
     2
   );
 
+  const form = new URLSearchParams();
+  form.append("title", issueTitle);
+  form.append("body", issueBody);
+
   const res = await fetch(
-    "https://api.github.com/repos/yamamoto-to-farm/yamamoto-farm-log/issues",
+    "https://github.com/yamamoto-to-farm/yamamoto-farm-log/issues/new",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: JSON.stringify({
-        title: issueTitle,
-        body: issueBody
-      })
+      body: form.toString()
     }
   );
 
