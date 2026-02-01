@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>収穫ログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f5f5f5;
+    }
+    h1 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .field {
+      margin-bottom: 12px;
+    }
+    .field label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background: #2f855a;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+    }
+    button:active {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>収穫ログ</h1>
+
+  <div class="field">
+    <label for="harvestDate">収穫日</label>
+    <input type="date" id="harvestDate">
+  </div>
+
+  <div class="field">
+    <label for="shippingDate">出荷申請日</label>
+    <input type="date" id="shippingDate">
+  </div>
+
+  <div class="field">
+    <label for="worker">作業者</label>
+    <input type="text" id="worker" placeholder="例：山本太郎">
+    <!-- 本当は workers.json から select にする想定 -->
+  </div>
+
+  <div class="field">
+    <label for="field">圃場</label>
+    <input type="text" id="field" placeholder="例：A-1">
+    <!-- 本当は fields.json から select にする想定 -->
+  </div>
+
+  <div class="field">
+    <label for="amount">収穫量（基）</label>
+    <input type="number" id="amount" inputmode="numeric">
+  </div>
+
+  <div class="field">
+    <label for="issue">特記事項</label>
+    <textarea id="issue" rows="3" placeholder="病害虫・欠株・その他メモなど"></textarea>
+  </div>
+
+  <button type="button" onclick="saveHarvest()">保存する</button>
+
+  <!-- 共通保存モジュール -->
+  <script type="module" src="../common/save/github.js"></script>
+  <script type="module" src="../common/save/index.js"></script>
+
+  <!-- 収穫ページ用ロジック -->
+  <script type="module">
+    import { saveLog } from "../common/save/index.js";
+
+    function collectHarvestData() {
+      return {
+        harvestDate: document.getElementById("harvestDate").value,
+        shippingDate: document.getElementById("shippingDate").value,
+        worker: document.getElementById("worker").value,
+        field: document.getElementById("field").value,
+        amount: document.getElementById("amount").value,
+        issue: document.getElementById("issue").value
+      };
+    }
+
+    async function saveHarvestInner() {
+      const data = collectHarvestData();
+
+      if (!data.harvestDate) {
+        alert("収穫日を入力してください");
+        return;
+      }
+
+      const dateStr = data.harvestDate.replace(/-/g, "");
+
+      const csvLine = [
+        data.harvestDate,
+        data.shippingDate,
+        data.worker,
+        data.field,
+        data.amount,
+        data.issue.replace(/[\r\n,]/g, " ")
+      ].join(",");
+
+      await saveLog("harvest", dateStr, data, csvLine);
+
+      alert("GitHubに保存しました");
+    }
+
+    // グローバルに公開（ボタンの onclick から呼ぶ）
+    window.saveHarvest = saveHarvestInner;
+
+    // 初期値として今日の日付を入れておく
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("harvestDate").value = today;
+    document.getElementById("shippingDate").value = today;
+  </script>
+</body>
+</html>

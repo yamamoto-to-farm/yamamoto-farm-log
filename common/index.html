@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>共通UIパーツ一覧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h2 { margin-top: 30px; }
+        .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; }
+    </style>
+</head>
+
+<body>
+    <h1>共通UIパーツ一覧（開発用）</h1>
+
+    <h2>作業者（複数選択）</h2>
+    <div class="box" id="workers_box"></div>
+
+    <h2>単発バイト（自由入力）</h2>
+    <div class="box">
+        <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+    </div>
+
+    <h2>圃場（自動判定＋手動選択）</h2>
+    <div class="box">
+        <label>自動判定</label>
+        <input id="field_auto" readonly style="background:#eee;">
+
+        <label>手動選択</label>
+        <select id="field_manual">
+            <option value="">自動判定を優先</option>
+        </select>
+    </div>
+
+    <h2>異常（選択式）</h2>
+    <div class="box">
+        <select id="issue">
+            <option value="">なし</option>
+            <option value="チップ">チップ</option>
+            <option value="病害">病害</option>
+            <option value="虫害">虫害</option>
+            <option value="鳥害">鳥害</option>
+            <option value="腐れ">腐れ</option>
+            <option value="その他">その他</option>
+        </select>
+    </div>
+
+    <script type="module">
+        import { createWorkerCheckboxes, createFieldSelector } from "./ui.js";
+
+        createWorkerCheckboxes("workers_box");
+        createFieldSelector("field_auto", "field_manual");
+    </script>
+</body>
+</html>
