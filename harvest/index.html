@@ -61,13 +61,11 @@
   <div class="field">
     <label for="worker">作業者</label>
     <input type="text" id="worker" placeholder="例：山本太郎">
-    <!-- 本当は workers.json から select にする想定 -->
   </div>
 
   <div class="field">
     <label for="field">圃場</label>
     <input type="text" id="field" placeholder="例：A-1">
-    <!-- 本当は fields.json から select にする想定 -->
   </div>
 
   <div class="field">
@@ -82,11 +80,11 @@
 
   <button type="button" onclick="saveHarvest()">保存する</button>
 
-  <!-- 共通保存モジュール -->
+  <!-- 保存モジュール -->
   <script type="module" src="../common/save/github.js"></script>
   <script type="module" src="../common/save/index.js"></script>
 
-  <!-- 収穫ページ用ロジック -->
+  <!-- harvest.js を inline で書いている部分 -->
   <script type="module">
     import { saveLog } from "../common/save/index.js";
 
@@ -125,10 +123,8 @@
       alert("GitHubに保存しました");
     }
 
-    // グローバルに公開（ボタンの onclick から呼ぶ）
     window.saveHarvest = saveHarvestInner;
 
-    // 初期値として今日の日付を入れておく
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById("harvestDate").value = today;
     document.getElementById("shippingDate").value = today;

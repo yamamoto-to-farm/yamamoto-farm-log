@@ -2,8 +2,8 @@
 // 圃場セレクタ
 // ===============================
 export async function createFieldSelector(autoId, manualId) {
-    // Netlify で確実に動く絶対パス
-    const res = await fetch("/common/fields.json");
+ 
+    const res = await fetch("../data/fields.json");
     const fields = await res.json();
 
     // 自動判定欄
@@ -29,8 +29,8 @@ export async function createFieldSelector(autoId, manualId) {
 // 作業者チェックボックス
 // ===============================
 export async function createWorkerCheckboxes(containerId) {
-    // Netlify で確実に動く絶対パス
-    const res = await fetch("/common/workers.json");
+    
+    const res = await fetch("../data/workers.json");
     const workers = await res.json();
 
     const box = document.getElementById(containerId);

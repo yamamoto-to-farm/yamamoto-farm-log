@@ -1,4 +1,5 @@
 // /common/save/github.js
+import { TOKEN } from "https://raw.githubusercontent.com/yamamoto-to-farm/farm-secret-config/main/token.js";
 
 const OWNER = "yamamoto-to-farm";
 const REPO = "yamamoto-farm-data";
