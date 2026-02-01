@@ -57,17 +57,16 @@
         </select>
     </div>
 
-    <script type="module">
-        import { createWorkerCheckboxes, createFieldSelector, autoDetectField } from "./ui.js";
+<script type="module">
+    import { createWorkerCheckboxes, createFieldSelector, autoDetectField } from "./ui.js";
 
-        // 作業者チェックボックス生成
-        createWorkerCheckboxes("workers_box");
+    createWorkerCheckboxes("workers_box");
 
-        // 圃場セレクタ生成 → 完了後に自動判定
-        createFieldSelector("field_auto", "field_area", "field_manual")
-            .then(() => {
-                autoDetectField("field_auto", "field_area", "field_manual");
-            });
-    </script>
+    // 正しい順番：auto → area → manual
+    createFieldSelector("field_auto", "field_area", "field_manual")
+        .then(() => {
+            autoDetectField("field_auto", "field_area", "field_manual");
+        });
+</script>
 </body>
 </html>
