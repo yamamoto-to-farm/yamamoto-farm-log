@@ -38,7 +38,7 @@ let fieldsData = [];
 export async function loadFields() {
     if (fieldsData.length > 0) return fieldsData;
 
-    const res = await fetch("../data/fields.json");
+    const res = await fetch("/data/fields.json");
     fieldsData = await res.json();
     return fieldsData;
 }
