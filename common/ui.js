@@ -7,7 +7,7 @@ import { getCurrentPosition, getNearestField } from "./app.js";
 // ===============================
 // デバッグモード（true で有効）
 // ===============================
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 // ===============================
 // デバッグ表示用UI（自動生成）
