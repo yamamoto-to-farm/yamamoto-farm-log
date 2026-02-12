@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>定植記録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../common/style.css">
+</head>
+<body>
+
+  <h1>定植記録</h1>
+
+  <!-- 圃場選択（自動判定＋手動） -->
+  <section id="field-section"></section>
+
+  <!-- 品種選択 -->
+  <section>
+    <label>品種</label>
+    <select id="variety"></select>
+  </section>
+
+  <!-- 株数 or 枚数 -->
+  <section>
+    <label>入力方法</label><br>
+    <label><input type="radio" name="mode" value="stock" checked> 株数で入力</label>
+    <label><input type="radio" name="mode" value="tray"> セルトレイ枚数で入力</label>
+  </section>
+
+  <section id="stock-input">
+    <label>株数</label>
+    <input type="number" id="stockCount" min="0">
+  </section>
+
+  <section id="tray-input" style="display:none;">
+    <label>枚数</label>
+    <input type="number" id="trayCount" min="0">
+
+    <label>穴数</label><br>
+    <label><input type="radio" name="trayType" value="128" checked>128穴</label>
+    <label><input type="radio" name="trayType" value="200">200穴</label>
+
+    <p>自動計算：<span id="calcStock">0</span> 株</p>
+  </section>
+
+  <!-- 株間・畝間 -->
+  <section>
+    <label>株間（cm）</label>
+    <input type="number" id="spacingRow" value="34">
+
+    <label>畝間（cm）</label>
+    <input type="number" id="spacingBed" value="60">
+  </section>
+
+  <!-- 作業者 -->
+  <section id="worker-section"></section>
+
+  <!-- 備考 -->
+  <section>
+    <label>備考</label>
+    <textarea id="notes"></textarea>
+  </section>
+
+  <button id="saveBtn">保存</button>
+
+  <script type="module" src="../common/app.js"></script>
+  <script type="module" src="../common/ui.js"></script>
+  <script type="module" src="./planting.js"></script>
+</body>
+</html>
