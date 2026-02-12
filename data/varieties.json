@@ -2,511 +2,386 @@
   {
     "id": "ct_mikasa",
     "name": "CTみかさ",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "nk_018",
-    "name": "NK-018",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "nk_50",
-    "name": "NK-50",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
+
   },
   {
     "id": "n_831",
     "name": "N-831",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "ts_c2010",
     "name": "TS-C2010",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "yr_886",
     "name": "YR886",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "yr_888",
     "name": "YR888",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "nk_889",
     "name": "NK889",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "yr_ginzirou",
     "name": "YR銀次郎",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "yr_shibuki",
     "name": "YRしぶき",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "yr_shibuki2",
     "name": "YRしぶき２号",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "yr_shiwasu",
     "name": "YRしわす",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "yr_mutsuki",
     "name": "YRむつき(NK502)",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "okawari",
     "name": "おかわり",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 11
   },
   {
     "id": "yr_takamine",
     "name": "YRたかみね",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "yr_bandai",
     "name": "YR万代",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "ycr_kiyomasa",
     "name": "YCRきよまさ(C-135)",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "ycr_fuyuiro",
     "name": "YCRふゆいろ",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "ranpouhikari",
     "name": "藍宝ひかり",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "akiyoshi2",
     "name": "秋よし２号",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "kaguya",
     "name": "かぐや",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "_roido",
     "name": "ロイド(C-147 )",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "enraku",
-    "name": "円楽",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "kanna",
-    "name": "かんな",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "kyouryokumadoka",
-    "name": "強力まどか",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "shiokaze",
-    "name": "汐風",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "shuuka",
-    "name": "しゅうか",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "shuuto",
-    "name": "しゅうと",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "seiryuu345",
     "name": "青龍３４５",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 4
   },
   {
     "id": "sorato",
     "name": "そらと",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "yr_aniki",
     "name": "YRあにき",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "kazeasuka",
     "name": "風あすか",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "taito",
     "name": "たいと",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "terukaze",
-    "name": "輝風",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "naito",
     "name": "ないと",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "nagomi",
     "name": "なごみ",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "suiryoku",
     "name": "翠緑",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "namikaze",
-    "name": "なみかぜ",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "wasehikari",
-    "name": "早生光",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "miyuki",
-    "name": "深雪",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "fukuto",
-    "name": "ふくと",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "fuyuka",
-    "name": "ふゆか",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "fuyuki",
-    "name": "ふゆき",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 12
   },
   {
     "id": "huyuginga",
     "name": "冬銀河",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "huyukozuchi",
     "name": "冬こづち",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "huyuoyakata",
     "name": "冬親方",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "huyugorou",
     "name": "冬五郎",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "huyusyouri",
     "name": "冬勝利",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "huyudaimyou",
     "name": "冬大名",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "huyunobori",
-    "name": "冬のぼり",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "huyumadoka",
-    "name": "冬まどか",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "toukon",
-    "name": "冬魂",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "huyubusyou",
     "name": "冬武将",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "huyumusya",
     "name": "冬武者",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "touran",
     "name": "冬藍",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "huyuharuka",
     "name": "冬はるか(NC-393)",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "miyuki",
-    "name": "みゆき",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "natsugoromo",
     "name": "夏ごろも",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 11
   },
   {
     "id": "hayatoyo",
     "name": "はやとよ",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 11
   },
   {
     "id": "ranten",
     "name": "藍天",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 11
   },
   {
     "id": "ryuukei",
     "name": "龍渓",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 3
   },
   {
     "id": "bantyuukanta",
     "name": "晩抽かんた(NK-018)",
-    "type": "寒玉キャベツ"
-  },
-  {
-    "id": "bantyuuhuyu982",
-    "name": "晩抽冬982",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 4
   },
   {
     "id": "rikuto",
     "name": "りくと",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "rikuyou",
     "name": "りくよう",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 4
   },
   {
     "id": "enyou",
     "name": "えんよう",
-    "type": "寒玉キャベツ"
+    "type": "寒玉キャベツ",
+    "harvestMonth": 4
   },
   {
     "id": "kairyou_aiki",
     "name": "改良愛輝(THY104)",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 6
   },
   {
     "id": "yr_tenkuu",
     "name": "YR天空",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "aiki",
-    "name": "愛輝",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "irokaze",
-    "name": "彩風",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "okina",
-    "name": "おきな",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "kiyoharu",
-    "name": "きよはる",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "satsukikko",
-    "name": "五月っ子",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 5
   },
   {
     "id": "syoka9009",
     "name": "初夏9009",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 5
   },
   {
     "id": "terukaze_syoka",
     "name": "輝風",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 6
   },
   {
     "id": "tokimeki",
     "name": "ときめき",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 5
   },
   {
     "id": "nagano_se",
     "name": "長野SE",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "natsuoko",
-    "name": "なつおこ",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "kasyuu_kanran",
-    "name": "夏秀甘藍",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "natsumeki",
-    "name": "なつめき",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 6
   },
   {
     "id": "hatsukoi",
     "name": "初恋",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "suiren",
-    "name": "翠恋",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "hatsunatsu",
-    "name": "はつ夏",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "wakaokami",
-    "name": "若女将",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "wakatsuma",
-    "name": "若妻",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 6
   },
   {
     "id": "kotomi",
     "name": "ことみ",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 5
   },
   {
     "id": "renbu",
     "name": "恋舞",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "natsuoko",
-    "name": "なつおこ",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "satsukiiro",
-    "name": "さつきいろ",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "yr889_syoka",
-    "name": "YR889(夏コン)",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 6
   },
   {
     "id": "yr_tenma",
     "name": "YR天馬",
-    "type": "初夏キャベツ"
-  },
-  {
-    "id": "syokagoromo",
-    "name": "初夏ごろも",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 5
   },
   {
     "id": "okinasp",
     "name": "おきなSP",
-    "type": "初夏キャベツ"
+    "type": "初夏キャベツ",
+    "harvestMonth": 6
   },
   {
     "id": "redburaito",
     "name": "レッドブライト（SRC-001)",
-    "type": "レッドキャベツ"
-  },
-  {
-    "id": "neorubi",
-    "name": "ネオルビー",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "pawarubi",
     "name": "パワールビーレッド",
-    "type": "レッドキャベツ"
-  },
-  {
-    "id": "redruki",
-    "name": "レッドルーキー",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "rodolight",
     "name": "ロードライト",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "redkometto",
     "name": "レッドコメット(MKS-C901)",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 2
   },
   {
     "id": "puremiared",
     "name": "プレミアレッド",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "redmarket",
     "name": "レッドマーケット",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 1
   },
   {
     "id": "neorubi_sp",
     "name": "ネオルビーSP",
-    "type": "レッドキャベツ"
+    "type": "レッドキャベツ",
+    "harvestMonth": 2
   }
 ]

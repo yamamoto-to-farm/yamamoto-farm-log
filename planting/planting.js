@@ -7,6 +7,8 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 
+let VARIETY_LIST = []; // ★ 品種データを保持する
+
 // ============================
 // 初期化
 // ============================
@@ -18,7 +20,7 @@ window.addEventListener("DOMContentLoaded", () => {
       autoDetectField("field_auto", "field_area", "field_manual");
     });
 
-  setupVarietySelector();   // ← ここが新しくなる
+  setupVarietySelector();
   setupInputModeSwitch();
   setupTrayAutoCalc();
 });
@@ -28,13 +30,12 @@ window.addEventListener("DOMContentLoaded", () => {
 // ============================
 async function setupVarietySelector() {
   const res = await fetch("../data/varieties.json");
-  const list = await res.json();
+  VARIETY_LIST = await res.json();   // ★ 保存しておく
 
   const typeSel = document.getElementById("varietyType");
   const nameSel = document.getElementById("variety");
 
-  // --- 種別一覧を生成 ---
-  const types = [...new Set(list.map(v => v.type))];
+  const types = [...new Set(VARIETY_LIST.map(v => v.type))];
   types.forEach(t => {
     const opt = document.createElement("option");
     opt.value = t;
@@ -42,16 +43,13 @@ async function setupVarietySelector() {
     typeSel.appendChild(opt);
   });
 
-  // --- 種別が選ばれたら品名を絞り込み ---
   typeSel.addEventListener("change", () => {
     const selectedType = typeSel.value;
-
-    // 初期化
     nameSel.innerHTML = "<option value=''>品名を選択</option>";
 
     if (!selectedType) return;
 
-    const filtered = list.filter(v => v.type === selectedType);
+    const filtered = VARIETY_LIST.filter(v => v.type === selectedType);
 
     filtered.forEach(v => {
       const opt = document.createElement("option");
@@ -104,6 +102,21 @@ function getFinalField() {
 }
 
 // ============================
+// 収穫予定年月の自動計算
+// ============================
+function calcHarvestPlanYM(plantDate, harvestMonth) {
+  const d = new Date(plantDate);
+  let year = d.getFullYear();
+
+  // 収穫月が定植月より前なら翌年
+  if (harvestMonth <= d.getMonth() + 1) {
+    year += 1;
+  }
+
+  return `${year}-${String(harvestMonth).padStart(2, "0")}`;
+}
+
+// ============================
 // 入力データ収集
 // ============================
 function collectPlantingData() {
@@ -121,13 +134,19 @@ function collectPlantingData() {
     quantity = trayCount * trayType;
   }
 
+  const varietyId = document.getElementById("variety").value;
+  const variety = VARIETY_LIST.find(v => v.id === varietyId);
+
+  // ★ 自動計算（variety.harvestMonth を使用）
+  const harvestPlanYM = variety
+    ? calcHarvestPlanYM(document.getElementById("plantDate").value, variety.harvestMonth)
+    : "";
+
   return {
     plantDate: document.getElementById("plantDate").value,
     worker: getSelectedWorkers("workers_box", "temp_workers"),
     field: getFinalField(),
-
-    // ★ ここが重要：選ばれた品種の id を保存
-    variety: document.getElementById("variety").value,
+    variety: varietyId,
 
     quantity,
     inputMode: mode,
@@ -136,6 +155,8 @@ function collectPlantingData() {
 
     spacingRow: Number(document.getElementById("spacingRow").value),
     spacingBed: Number(document.getElementById("spacingBed").value),
+
+    harvestPlanYM,   // ★ 追加
 
     notes: document.getElementById("notes").value
   };
@@ -158,10 +179,11 @@ async function savePlantingInner() {
     data.plantDate,
     data.worker,
     data.field,
-    data.variety,   // ← id が入る
+    data.variety,
     data.quantity,
     data.spacingRow,
     data.spacingBed,
+    data.harvestPlanYM,  // ★ CSV にも追加
     data.notes.replace(/[\r\n,]/g, " ")
   ].join(",");
 

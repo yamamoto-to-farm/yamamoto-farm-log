@@ -21,7 +21,6 @@
     }
     button:active { opacity: 0.8; }
 
-    /* 自動判定（推定）を目立たせる */
     #field_auto {
       background: #fff3b0;
       font-weight: bold;
@@ -52,7 +51,7 @@
     <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
   </div>
 
-  <!-- 圃場（自動判定＋確定チェック＋2段階選択） -->
+  <!-- 圃場 -->
   <h2>圃場</h2>
   <div class="box">
 
@@ -74,6 +73,15 @@
     <label>圃場選択</label>
     <select id="field_manual">
       <option value="">エリアを選んでください</option>
+    </select>
+  </div>
+
+  <!-- 紐づける定植記録 -->
+  <h2>紐づける定植記録</h2>
+  <div class="box">
+    <label for="plantingRef">定植記録（収穫予定 ±1ヶ月）</label>
+    <select id="plantingRef">
+      <option value="">該当する定植記録を選択</option>
     </select>
   </div>
 
@@ -122,10 +130,84 @@
       const manual = document.getElementById("field_manual").value;
       const confirmed = document.getElementById("field_confirm").checked;
 
-      if (confirmed) return auto;   // 自動判定を確定
-      if (manual) return manual;    // 手動選択を優先
-      return auto;                  // 手動が空なら自動判定
+      if (confirmed) return auto;
+      if (manual) return manual;
+      return auto;
     }
+
+    // ============================
+    // 定植CSV読み込み
+    // ============================
+    async function loadPlantingCSV() {
+      const res = await fetch("../logs/planting/all.csv");
+      const text = await res.text();
+
+      const lines = text.trim().split("\n");
+      const rows = lines.slice(1);
+
+      return rows.map(line => {
+        const cols = line.split(",");
+        return {
+          plantDate: cols[0],
+          worker: cols[1],
+          field: cols[2],
+          variety: cols[3],
+          quantity: cols[4],
+          spacingRow: cols[5],
+          spacingBed: cols[6],
+          harvestPlanYM: cols[7],
+          notes: cols[8]
+        };
+      });
+    }
+
+    // ============================
+    // 収穫年月 ±1ヶ月
+    // ============================
+    function getHarvestYMRange(harvestDate) {
+      const d = new Date(harvestDate);
+      const list = [];
+
+      for (let offset = -1; offset <= 1; offset++) {
+        const tmp = new Date(d);
+        tmp.setMonth(tmp.getMonth() + offset);
+        const ym = `${tmp.getFullYear()}-${String(tmp.getMonth() + 1).padStart(2, "0")}`;
+        list.push(ym);
+      }
+
+      return list;
+    }
+
+    // ============================
+    // 定植記録候補を更新
+    // ============================
+    async function updatePlantingRefOptions() {
+      const field = getFinalField();
+      const harvestDate = document.getElementById("harvestDate").value;
+
+      if (!field || !harvestDate) return;
+
+      const plantingList = await loadPlantingCSV();
+      const ymRange = getHarvestYMRange(harvestDate);
+
+      const select = document.getElementById("plantingRef");
+      select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
+
+      plantingList
+        .filter(p => p.field === field && ymRange.includes(p.harvestPlanYM))
+        .forEach(p => {
+          const id = p.plantDate.replace(/-/g, "");
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
+          select.appendChild(opt);
+        });
+    }
+
+    // 圃場 or 収穫日が変わったら更新
+    document.getElementById("field_manual").addEventListener("change", updatePlantingRefOptions);
+    document.getElementById("field_auto").addEventListener("change", updatePlantingRefOptions);
+    document.getElementById("harvestDate").addEventListener("change", updatePlantingRefOptions);
 
     // ============================
     // 入力データ収集
@@ -137,7 +219,8 @@
         worker: getSelectedWorkers("workers_box", "temp_workers"),
         field: getFinalField(),
         amount: document.getElementById("amount").value,
-        issue: document.getElementById("issue").value
+        issue: document.getElementById("issue").value,
+        plantingRef: document.getElementById("plantingRef").value
       };
     }
 
@@ -160,7 +243,8 @@
         data.worker,
         data.field,
         data.amount,
-        data.issue.replace(/[\r\n,]/g, " ")
+        data.issue.replace(/[\r\n,]/g, " "),
+        data.plantingRef
       ].join(",");
 
       await saveLog("harvest", dateStr, data, csvLine);
