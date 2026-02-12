@@ -120,6 +120,13 @@
     createFieldSelector("field_auto", "field_area", "field_manual")
       .then(() => {
         autoDetectField("field_auto", "field_area", "field_manual");
+
+        // ★ createFieldSelector が DOM を作り終わった後にイベントを付ける
+        document.getElementById("field_manual").addEventListener("change", updatePlantingRefOptions);
+        document.getElementById("field_auto").addEventListener("change", updatePlantingRefOptions);
+        document.getElementById("harvestDate").addEventListener("change", updatePlantingRefOptions);
+
+        console.log("🔥 イベント登録完了");
       });
 
     // ============================
@@ -145,7 +152,7 @@
       const lines = text.trim().split("\n");
       const rows = lines.slice(1);
 
-      return rows.map(line => {
+      const list = rows.map(line => {
         const cols = line.split(",");
         return {
           plantDate: cols[0],
@@ -159,6 +166,9 @@
           notes: cols[8]
         };
       });
+
+      console.log("🌱 loadPlantingCSV:", list);
+      return list;
     }
 
     // ============================
@@ -182,32 +192,37 @@
     // 定植記録候補を更新
     // ============================
     async function updatePlantingRefOptions() {
+      console.log("🔥 updatePlantingRefOptions 発火");
+
       const field = getFinalField();
       const harvestDate = document.getElementById("harvestDate").value;
+
+      console.log("🧪 field:", field, "harvestDate:", harvestDate);
 
       if (!field || !harvestDate) return;
 
       const plantingList = await loadPlantingCSV();
       const ymRange = getHarvestYMRange(harvestDate);
 
+      console.log("🧪 ymRange:", ymRange);
+
       const select = document.getElementById("plantingRef");
       select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
 
-      plantingList
-        .filter(p => p.field === field && ymRange.includes(p.harvestPlanYM))
-        .forEach(p => {
-          const id = p.plantDate.replace(/-/g, "");
-          const opt = document.createElement("option");
-          opt.value = id;
-          opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
-          select.appendChild(opt);
-        });
-    }
+      const filtered = plantingList.filter(
+        p => p.field === field && ymRange.includes(p.harvestPlanYM)
+      );
 
-    // 圃場 or 収穫日が変わったら更新
-    document.getElementById("field_manual").addEventListener("change", updatePlantingRefOptions);
-    document.getElementById("field_auto").addEventListener("change", updatePlantingRefOptions);
-    document.getElementById("harvestDate").addEventListener("change", updatePlantingRefOptions);
+      console.log("🧪 filtered:", filtered);
+
+      filtered.forEach(p => {
+        const id = p.plantDate.replace(/-/g, "");
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
+        select.appendChild(opt);
+      });
+    }
 
     // ============================
     // 入力データ収集
