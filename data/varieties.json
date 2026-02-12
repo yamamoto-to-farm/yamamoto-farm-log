@@ -1,5 +1,512 @@
 [
-  { "id": "fuyugin", "name": "冬銀河" },
-  { "id": "akamaru", "name": "赤丸" },
-  { "id": "shinshu", "name": "信州" }
+  {
+    "id": "ct_mikasa",
+    "name": "CTみかさ",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "nk_018",
+    "name": "NK-018",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "nk_50",
+    "name": "NK-50",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "n_831",
+    "name": "N-831",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "ts_c2010",
+    "name": "TS-C2010",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_886",
+    "name": "YR886",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_888",
+    "name": "YR888",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "nk_889",
+    "name": "NK889",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_ginzirou",
+    "name": "YR銀次郎",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_shibuki",
+    "name": "YRしぶき",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_shibuki2",
+    "name": "YRしぶき２号",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_shiwasu",
+    "name": "YRしわす",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_mutsuki",
+    "name": "YRむつき(NK502)",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "okawari",
+    "name": "おかわり",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_takamine",
+    "name": "YRたかみね",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_bandai",
+    "name": "YR万代",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "ycr_kiyomasa",
+    "name": "YCRきよまさ(C-135)",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "ycr_fuyuiro",
+    "name": "YCRふゆいろ",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "ranpouhikari",
+    "name": "藍宝ひかり",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "akiyoshi2",
+    "name": "秋よし２号",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "kaguya",
+    "name": "かぐや",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "_roido",
+    "name": "ロイド(C-147 )",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "enraku",
+    "name": "円楽",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "kanna",
+    "name": "かんな",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "kyouryokumadoka",
+    "name": "強力まどか",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "shiokaze",
+    "name": "汐風",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "shuuka",
+    "name": "しゅうか",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "shuuto",
+    "name": "しゅうと",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "seiryuu345",
+    "name": "青龍３４５",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "sorato",
+    "name": "そらと",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "yr_aniki",
+    "name": "YRあにき",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "kazeasuka",
+    "name": "風あすか",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "taito",
+    "name": "たいと",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "terukaze",
+    "name": "輝風",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "naito",
+    "name": "ないと",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "nagomi",
+    "name": "なごみ",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "suiryoku",
+    "name": "翠緑",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "namikaze",
+    "name": "なみかぜ",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "wasehikari",
+    "name": "早生光",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "miyuki",
+    "name": "深雪",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "fukuto",
+    "name": "ふくと",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "fuyuka",
+    "name": "ふゆか",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "fuyuki",
+    "name": "ふゆき",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyuginga",
+    "name": "冬銀河",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyukozuchi",
+    "name": "冬こづち",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyuoyakata",
+    "name": "冬親方",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyugorou",
+    "name": "冬五郎",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyusyouri",
+    "name": "冬勝利",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyudaimyou",
+    "name": "冬大名",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyunobori",
+    "name": "冬のぼり",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyumadoka",
+    "name": "冬まどか",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "toukon",
+    "name": "冬魂",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyubusyou",
+    "name": "冬武将",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyumusya",
+    "name": "冬武者",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "touran",
+    "name": "冬藍",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "huyuharuka",
+    "name": "冬はるか(NC-393)",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "miyuki",
+    "name": "みゆき",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "natsugoromo",
+    "name": "夏ごろも",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "hayatoyo",
+    "name": "はやとよ",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "ranten",
+    "name": "藍天",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "ryuukei",
+    "name": "龍渓",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "bantyuukanta",
+    "name": "晩抽かんた(NK-018)",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "bantyuuhuyu982",
+    "name": "晩抽冬982",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "rikuto",
+    "name": "りくと",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "rikuyou",
+    "name": "りくよう",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "enyou",
+    "name": "えんよう",
+    "type": "寒玉キャベツ"
+  },
+  {
+    "id": "kairyou_aiki",
+    "name": "改良愛輝(THY104)",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "yr_tenkuu",
+    "name": "YR天空",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "aiki",
+    "name": "愛輝",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "irokaze",
+    "name": "彩風",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "okina",
+    "name": "おきな",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "kiyoharu",
+    "name": "きよはる",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "satsukikko",
+    "name": "五月っ子",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "syoka9009",
+    "name": "初夏9009",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "terukaze_syoka",
+    "name": "輝風",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "tokimeki",
+    "name": "ときめき",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "nagano_se",
+    "name": "長野SE",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "natsuoko",
+    "name": "なつおこ",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "kasyuu_kanran",
+    "name": "夏秀甘藍",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "natsumeki",
+    "name": "なつめき",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "hatsukoi",
+    "name": "初恋",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "suiren",
+    "name": "翠恋",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "hatsunatsu",
+    "name": "はつ夏",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "wakaokami",
+    "name": "若女将",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "wakatsuma",
+    "name": "若妻",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "kotomi",
+    "name": "ことみ",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "renbu",
+    "name": "恋舞",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "natsuoko",
+    "name": "なつおこ",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "satsukiiro",
+    "name": "さつきいろ",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "yr889_syoka",
+    "name": "YR889(夏コン)",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "yr_tenma",
+    "name": "YR天馬",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "syokagoromo",
+    "name": "初夏ごろも",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "okinasp",
+    "name": "おきなSP",
+    "type": "初夏キャベツ"
+  },
+  {
+    "id": "redburaito",
+    "name": "レッドブライト（SRC-001)",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "neorubi",
+    "name": "ネオルビー",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "pawarubi",
+    "name": "パワールビーレッド",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "redruki",
+    "name": "レッドルーキー",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "rodolight",
+    "name": "ロードライト",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "redkometto",
+    "name": "レッドコメット(MKS-C901)",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "puremiared",
+    "name": "プレミアレッド",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "redmarket",
+    "name": "レッドマーケット",
+    "type": "レッドキャベツ"
+  },
+  {
+    "id": "neorubi_sp",
+    "name": "ネオルビーSP",
+    "type": "レッドキャベツ"
+  }
 ]
