@@ -41,15 +41,12 @@ function debugLog(msg) {
 // ===============================
 export async function createFieldSelector(autoId, areaId, manualId) {
 
-    // ▼ fields.json 読み込み（絶対パス）
     const res = await fetch("/data/fields.json");
     const fields = await res.json();
 
-    // ▼ 自動判定欄
     const auto = document.getElementById(autoId);
     auto.readOnly = true;
 
-    // ▼ エリアセレクト
     const areaSel = document.getElementById(areaId);
     const areas = [...new Set(fields.map(f => f.area))];
 
@@ -60,11 +57,9 @@ export async function createFieldSelector(autoId, areaId, manualId) {
         areaSel.appendChild(opt);
     });
 
-    // ▼ 圃場セレクト
     const fieldSel = document.getElementById(manualId);
     fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
 
-    // ▼ エリア選択時に圃場を絞る
     areaSel.addEventListener("change", () => {
         const selectedArea = areaSel.value;
 
@@ -98,12 +93,10 @@ export async function autoDetectField(autoId, areaId, manualId) {
     const areaSel = document.getElementById(areaId);
     const fieldSel = document.getElementById(manualId);
 
-    // ▼ ① GPS取得中の表示
     auto.value = "GPS取得中…";
     debugLog("GPS取得中…");
 
     try {
-        // ▼ ② GPS取得（15秒に延長）
         const pos = await getCurrentPosition(15000);
         const { lat, lng, accuracy } = pos;
 
@@ -114,8 +107,13 @@ lng: ${lng}
 accuracy: ±${accuracy}m`
         );
 
-        // ▼ ③ 最寄り圃場を判定
         const nearest = await getNearestField(lat, lng);
+
+        // ★ distance が undefined の場合に備える
+        const distText =
+            nearest.distance != null
+                ? `\n距離: ${nearest.distance.toFixed(1)}m`
+                : "";
 
         debugLog(
             `GPS取得成功
@@ -123,22 +121,17 @@ lat: ${lat}
 lng: ${lng}
 accuracy: ±${accuracy}m
 
-最寄り圃場: ${nearest.name}
-距離: ${nearest.distance.toFixed(1)}m`
+最寄り圃場: ${nearest.name}${distText}`
         );
 
-        // ▼ ④ UI反映（推定）
         auto.value = `${nearest.name}（推定）`;
 
-        // ▼ ⑤ エリアを自動選択
         areaSel.value = nearest.area;
         areaSel.dispatchEvent(new Event("change"));
 
-        // ▼ ⑥ 圃場を自動選択
         fieldSel.value = nearest.id;
 
     } catch (err) {
-        // ▼ ⑦ GPSが本当に失敗したときだけ表示
         auto.value = "自動判定できませんでした（GPSエラー）";
         debugLog(`GPSエラー: ${err}`);
         console.error("GPSエラー:", err);
