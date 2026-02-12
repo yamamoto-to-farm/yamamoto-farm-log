@@ -1,43 +1,54 @@
+// ===============================
+// import（必ずファイル先頭）
+// ===============================
+import { 
+  createWorkerCheckboxes,
+  createFieldSelector,
+  autoDetectField,
+  getSelectedWorkers,
+  getFinalField
+} from "../common/ui.js";
+
 import { saveLog } from "../common/save/index.js";
 
-async function saveHarvest() {
-  const data = collectHarvestData(); // UIから取得
-  const dateStr = data.harvestDate.replace(/-/g, "");
 
-  const csvLine = [
-    data.harvestDate,
-    data.shippingDate,
-    data.worker,
-    data.field,
-    data.amount,
-    data.issue,
-    data.plantingRef
-  ].join(",");
+// ===============================
+// 初期化処理
+// ===============================
+window.addEventListener("DOMContentLoaded", async () => {
 
-  await saveLog("harvest", dateStr, data, csvLine);
+  // 作業者チェックボックス
+  createWorkerCheckboxes("workers_box");
 
-  alert("保存しました！");
-}
-function collectHarvestData() {
-  return {
-    harvestDate: document.getElementById("harvestDate").value,
-    shippingDate: document.getElementById("shippingDate").value,
+  // 圃場セレクタ
+  await createFieldSelector("field_auto", "field_area", "field_manual");
 
-    worker: document.getElementById("worker").value,
+  // 自動判定
+  autoDetectField("field_auto", "field_area", "field_manual");
 
-    // 圃場は「手動優先 → 自動」
-    field:
-      document.getElementById("field_manual").value ||
-      document.getElementById("field_auto").value,
+  // イベント登録
+  document.getElementById("field_manual")
+    .addEventListener("change", updatePlantingRefOptions);
 
-    amount: Number(document.getElementById("amount").value),
+  document.getElementById("field_auto")
+    .addEventListener("change", updatePlantingRefOptions);
 
-    issue: document.getElementById("issue").value,
+  document.getElementById("field_confirm")
+    .addEventListener("change", updatePlantingRefOptions);
 
-    // ★ 追加：紐づける定植記録（dateStr）
-    plantingRef: document.getElementById("plantingRef").value
-  };
-}
+  document.getElementById("harvestDate")
+    .addEventListener("change", updatePlantingRefOptions);
+
+  // 日付初期値
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("harvestDate").value = today;
+  document.getElementById("shippingDate").value = today;
+});
+
+
+// ===============================
+// 定植CSV読み込み（デバッグ付き）
+// ===============================
 async function loadPlantingCSV() {
   const url = "../logs/planting/all.csv?ts=" + Date.now();
   console.log("📘 FETCH URL:", url);
@@ -88,6 +99,11 @@ async function loadPlantingCSV() {
 
   return list;
 }
+
+
+// ===============================
+// 収穫年月 ±1ヶ月
+// ===============================
 function getHarvestYMRange(harvestDate) {
   const d = new Date(harvestDate);
   const list = [];
@@ -101,27 +117,87 @@ function getHarvestYMRange(harvestDate) {
 
   return list;
 }
-async function updatePlantingRefOptions() {
-  console.log("🔥 updatePlantingRefOptions が呼ばれた");
 
-  const field = getFinalField();
+
+// ===============================
+// 定植記録候補を更新
+// ===============================
+async function updatePlantingRefOptions() {
+  console.log("🔥 updatePlantingRefOptions 発火");
+
+  const field = getFinalField(); // ← common/ui.js の共通ロジック
   const harvestDate = document.getElementById("harvestDate").value;
+
+  console.log("🧪 field:", field, "harvestDate:", harvestDate);
 
   if (!field || !harvestDate) return;
 
   const plantingList = await loadPlantingCSV();
   const ymRange = getHarvestYMRange(harvestDate);
 
+  console.log("🧪 ymRange:", ymRange);
+
   const select = document.getElementById("plantingRef");
   select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
 
-  plantingList
-    .filter(p => p.field === field && ymRange.includes(p.harvestPlanYM))
-    .forEach(p => {
-      const id = p.plantDate.replace(/-/g, ""); // ← planting のファイル名と一致
-      const opt = document.createElement("option");
-      opt.value = id;
-      opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
-      select.appendChild(opt);
-    });
+  const filtered = plantingList.filter(
+    p => p.field === field && ymRange.includes(p.harvestPlanYM)
+  );
+
+  console.log("🧪 filtered:", filtered);
+
+  filtered.forEach(p => {
+    const id = p.plantDate.replace(/-/g, "");
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
+    select.appendChild(opt);
+  });
 }
+
+
+// ===============================
+// 入力データ収集
+// ===============================
+function collectHarvestData() {
+  return {
+    harvestDate: document.getElementById("harvestDate").value,
+    shippingDate: document.getElementById("shippingDate").value,
+    worker: getSelectedWorkers("workers_box", "temp_workers"),
+    field: getFinalField(),
+    amount: document.getElementById("amount").value,
+    issue: document.getElementById("issue").value,
+    plantingRef: document.getElementById("plantingRef").value
+  };
+}
+
+
+// ===============================
+// 保存処理
+// ===============================
+async function saveHarvestInner() {
+  const data = collectHarvestData();
+
+  if (!data.harvestDate) {
+    alert("収穫日を入力してください");
+    return;
+  }
+
+  const dateStr = data.harvestDate.replace(/-/g, "");
+
+  const csvLine = [
+    data.harvestDate,
+    data.shippingDate,
+    data.worker,
+    data.field,
+    data.amount,
+    data.issue.replace(/[\r\n,]/g, " "),
+    data.plantingRef
+  ].join(",");
+
+  await saveLog("harvest", dateStr, data, csvLine);
+
+  alert("GitHubに保存しました");
+}
+
+window.saveHarvest = saveHarvestInner;

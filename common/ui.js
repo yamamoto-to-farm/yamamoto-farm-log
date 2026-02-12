@@ -199,3 +199,16 @@ export function createDateInput(targetId, labelText = "") {
 
     return input;
 }
+
+// ===============================
+// 圃場の最終決定ロジック（共通化）
+// ===============================
+export function getFinalField(autoId = "field_auto", manualId = "field_manual", confirmId = "field_confirm") {
+    const auto = document.getElementById(autoId)?.value || "";
+    const manual = document.getElementById(manualId)?.value || "";
+    const confirmed = document.getElementById(confirmId)?.checked;
+
+    if (confirmed) return auto;
+    if (manual) return manual;
+    return auto;
+}
