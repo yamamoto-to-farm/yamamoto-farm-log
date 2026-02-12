@@ -27,7 +27,7 @@ window.addEventListener("DOMContentLoaded", () => {
 // 品種プルダウン
 // ============================
 async function setupVarietySelector() {
-  const res = await fetch("../common/varieties.json");
+  const res = await fetch("../data/varieties.json");
   const list = await res.json();
   const sel = document.getElementById("variety");
 
