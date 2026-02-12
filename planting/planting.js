@@ -1,17 +1,31 @@
-import { getNearestField, saveJsonToGitHub } from "../common/app.js";
-import { setupFieldSelector, setupWorkerSelector } from "../common/ui.js";
+import {
+  createWorkerCheckboxes,
+  createFieldSelector,
+  autoDetectField,
+  getSelectedWorkers
+} from "../common/ui.js";
 
+import { saveLog } from "../common/save/index.js";
+
+// ============================
+// 初期化
+// ============================
 window.addEventListener("DOMContentLoaded", () => {
-  setupFieldSelector("field-section");
-  setupWorkerSelector("worker-section");
+  createWorkerCheckboxes("workers_box");
+
+  createFieldSelector("field_auto", "field_area", "field_manual")
+    .then(() => {
+      autoDetectField("field_auto", "field_area", "field_manual");
+    });
 
   setupVarietySelector();
   setupInputModeSwitch();
   setupTrayAutoCalc();
-
-  document.getElementById("saveBtn").addEventListener("click", savePlanting);
 });
 
+// ============================
+// 品種プルダウン
+// ============================
 async function setupVarietySelector() {
   const res = await fetch("../common/varieties.json");
   const list = await res.json();
@@ -25,6 +39,9 @@ async function setupVarietySelector() {
   });
 }
 
+// ============================
+// 株数 / 枚数 切り替え
+// ============================
 function setupInputModeSwitch() {
   const radios = document.querySelectorAll("input[name='mode']");
   radios.forEach(r => {
@@ -36,6 +53,9 @@ function setupInputModeSwitch() {
   });
 }
 
+// ============================
+// 枚数 → 株数 自動計算
+// ============================
 function setupTrayAutoCalc() {
   const update = () => {
     const count = Number(document.getElementById("trayCount").value || 0);
@@ -47,7 +67,23 @@ function setupTrayAutoCalc() {
   document.querySelectorAll("input[name='trayType']").forEach(r => r.addEventListener("change", update));
 }
 
-async function savePlanting() {
+// ============================
+// 圃場の最終決定ロジック（harvest と同じ）
+// ============================
+function getFinalField() {
+  const auto = document.getElementById("field_auto").value;
+  const manual = document.getElementById("field_manual").value;
+  const confirmed = document.getElementById("field_confirm").checked;
+
+  if (confirmed) return auto;
+  if (manual) return manual;
+  return auto;
+}
+
+// ============================
+// 入力データ収集
+// ============================
+function collectPlantingData() {
   const mode = document.querySelector("input[name='mode']:checked").value;
 
   let quantity = 0;
@@ -62,36 +98,51 @@ async function savePlanting() {
     quantity = trayCount * trayType;
   }
 
-  const data = {
-    type: "planting",
-    dateStr: new Date().toISOString().slice(0,10).replace(/-/g,""),
-    json: {
-      plantDate: new Date().toISOString().slice(0,10),
-      worker: window.getSelectedWorkers(),
-      field: window.getSelectedField(),
-      variety: document.getElementById("variety").value,
-      quantity,
-      inputMode: mode,
-      trayCount,
-      trayType,
-      spacingRow: Number(document.getElementById("spacingRow").value),
-      spacingBed: Number(document.getElementById("spacingBed").value),
-      notes: document.getElementById("notes").value
-    },
-    loggedAt: new Date().toISOString()
-  };
+  return {
+    plantDate: document.getElementById("plantDate").value,
+    worker: getSelectedWorkers("workers_box", "temp_workers"),
+    field: getFinalField(),
+    variety: document.getElementById("variety").value,
 
-  data.csv = [
-    data.json.plantDate,
-    data.json.worker,
-    data.json.field,
-    data.json.variety,
-    data.json.quantity,
-    data.json.spacingRow,
-    data.json.spacingBed,
-    data.json.notes
+    quantity,
+    inputMode: mode,
+    trayCount,
+    trayType,
+
+    spacingRow: Number(document.getElementById("spacingRow").value),
+    spacingBed: Number(document.getElementById("spacingBed").value),
+
+    notes: document.getElementById("notes").value
+  };
+}
+
+// ============================
+// 保存処理
+// ============================
+async function savePlantingInner() {
+  const data = collectPlantingData();
+
+  if (!data.plantDate) {
+    alert("定植日を入力してください");
+    return;
+  }
+
+  const dateStr = data.plantDate.replace(/-/g, "");
+
+  const csvLine = [
+    data.plantDate,
+    data.worker,
+    data.field,
+    data.variety,
+    data.quantity,
+    data.spacingRow,
+    data.spacingBed,
+    data.notes.replace(/[\r\n,]/g, " ")
   ].join(",");
 
-  await saveJsonToGitHub(`planting/${data.dateStr}.json`, data);
-  alert("保存しました");
+  await saveLog("planting", dateStr, data, csvLine);
+
+  alert("GitHubに保存しました");
 }
+
+window.savePlanting = savePlantingInner;
