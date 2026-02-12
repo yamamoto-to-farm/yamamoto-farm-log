@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>山本農園ログ - 目次</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 20px; }
+    .section-title { margin-top: 30px; font-size: 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card a {
+      font-size: 16px;
+      font-weight: bold;
+      color: #2b6cb0;
+      text-decoration: none;
+    }
+
+    .date {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>山本農園ログ - 目次</h1>
+
+  <div class="section-title">ページ</div>
+  <div id="pageGrid" class="grid"></div>
+
+  <div class="section-title">データ（/data）</div>
+  <div id="dataGrid" class="grid"></div>
+
+  <script>
+    const OWNER = "yamamoto-to-farm";
+    const REPO = "yamamoto-farm-log";
+
+    async function fetchLatestCommitDate(path) {
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/commits?path=${path}&page=1&per_page=1`;
+      const res = await fetch(url);
+      const commits = await res.json();
+      if (!commits.length) return "不明";
+      return commits[0].commit.author.date.replace("T", " ").replace("Z", "");
+    }
+
+    async function loadPages() {
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+      const res = await fetch(url);
+      const list = await res.json();
+
+      const grid = document.getElementById("pageGrid");
+      grid.innerHTML = "";
+
+      for (const item of list) {
+        if (item.name === "index.html") continue;
+
+        let link = null;
+
+        if (item.type === "dir") {
+          link = `${item.name}/index.html`;
+        } else if (item.name.endsWith(".html")) {
+          link = item.name;
+        } else {
+          continue;
+        }
+
+        const date = await fetchLatestCommitDate(item.path);
+
+        grid.innerHTML += `
+          <div class="card">
+            <a href="./${link}">${item.name}</a>
+            <div class="date">更新: ${date}</div>
+          </div>
+        `;
+      }
+    }
+
+    async function loadDataFiles() {
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`;
+      const res = await fetch(url);
+      const list = await res.json();
+
+      const grid = document.getElementById("dataGrid");
+      grid.innerHTML = "";
+
+      for (const item of list) {
+        if (!item.name.endsWith(".json")) continue;
+
+        const date = await fetchLatestCommitDate(item.path);
+
+        grid.innerHTML += `
+          <div class="card">
+            <a href="./data/${item.name}">${item.name}</a>
+            <div class="date">更新: ${date}</div>
+          </div>
+        `;
+      }
+    }
+
+    loadPages();
+    loadDataFiles();
+  </script>
+</body>
+</html>
