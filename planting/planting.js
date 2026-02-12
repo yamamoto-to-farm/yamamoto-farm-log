@@ -177,7 +177,7 @@ async function savePlantingInner() {
 
   const csvLine = [
     data.plantDate,
-    data.worker,
+    data.worker.replace(/,/g, "／"),
     data.field,
     data.variety,
     data.quantity,
