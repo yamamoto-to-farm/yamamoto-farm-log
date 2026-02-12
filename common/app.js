@@ -63,9 +63,9 @@ function calcDistance(lat1, lng1, lat2, lng2) {
 }
 
 // -------------------------------
-// 4. 圃場判定（最も近い圃場を返す）
+// 4. 圃場判定（閾値なし → 最も近い圃場を必ず返す）
 // -------------------------------
-export async function getNearestField(lat, lng, threshold = 20) {
+export async function getNearestField(lat, lng) {
     const fields = await loadFields();
 
     let nearest = null;
@@ -79,16 +79,8 @@ export async function getNearestField(lat, lng, threshold = 20) {
         }
     }
 
-    if (nearest && nearest.distance <= threshold) {
-        return nearest;
-    } else {
-        return {
-            id: "UNKNOWN",
-            name: "圃場不明",
-            area: "",
-            distance: minDist
-        };
-    }
+    // ★ 閾値なし → UNKNOWN を返さない
+    return nearest;
 }
 
 // -------------------------------

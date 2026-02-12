@@ -20,6 +20,12 @@
       margin-top: 20px;
     }
     button:active { opacity: 0.8; }
+
+    /* 自動判定（推定）を目立たせる */
+    #field_auto {
+      background: #fff3b0;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -46,11 +52,19 @@
     <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
   </div>
 
-  <!-- 圃場（自動判定＋2段階選択） -->
+  <!-- 圃場（自動判定＋確定チェック＋2段階選択） -->
   <h2>圃場</h2>
   <div class="box">
-    <label>自動判定</label>
-    <input id="field_auto" readonly style="background:#eee;">
+
+    <label>自動判定（推定）</label>
+    <input id="field_auto" readonly>
+
+    <label style="margin-top:10px;">
+      <input type="checkbox" id="field_confirm">
+      この圃場で確定する
+    </label>
+
+    <hr style="margin: 15px 0;">
 
     <label>エリア選択</label>
     <select id="field_area">
@@ -95,28 +109,40 @@
     // ============================
     createWorkerCheckboxes("workers_box");
 
-    // ★ 新仕様：auto, area, manual の3つを渡す
     createFieldSelector("field_auto", "field_area", "field_manual")
       .then(() => {
         autoDetectField("field_auto", "field_area", "field_manual");
       });
 
     // ============================
-    // 入力データ収集（そのまま）
+    // 圃場の最終決定ロジック
+    // ============================
+    function getFinalField() {
+      const auto = document.getElementById("field_auto").value;
+      const manual = document.getElementById("field_manual").value;
+      const confirmed = document.getElementById("field_confirm").checked;
+
+      if (confirmed) return auto;   // 自動判定を確定
+      if (manual) return manual;    // 手動選択を優先
+      return auto;                  // 手動が空なら自動判定
+    }
+
+    // ============================
+    // 入力データ収集
     // ============================
     function collectHarvestData() {
       return {
         harvestDate: document.getElementById("harvestDate").value,
         shippingDate: document.getElementById("shippingDate").value,
         worker: getSelectedWorkers("workers_box", "temp_workers"),
-        field: document.getElementById("field_manual").value || document.getElementById("field_auto").value,
+        field: getFinalField(),
         amount: document.getElementById("amount").value,
         issue: document.getElementById("issue").value
       };
     }
 
     // ============================
-    // 保存処理（そのまま）
+    // 保存処理
     // ============================
     async function saveHarvestInner() {
       const data = collectHarvestData();
