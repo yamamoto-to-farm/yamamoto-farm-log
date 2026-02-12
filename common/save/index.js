@@ -19,6 +19,11 @@ export async function saveRawFile(path, content) {
     return;
   }
 
+  // ★ これが必要（あなたの環境に合わせて固定）
+  const OWNER = "yamamoto-to-farm";
+  const REPO = "yamamoto-farm-log";
+
+
   const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`;
 
   // 既存ファイルの SHA を取得
