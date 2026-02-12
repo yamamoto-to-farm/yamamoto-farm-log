@@ -78,6 +78,8 @@ function getHarvestYMRange(harvestDate) {
   return list;
 }
 async function updatePlantingRefOptions() {
+  console.log("🔥 updatePlantingRefOptions が呼ばれた");
+
   const field = getFinalField();
   const harvestDate = document.getElementById("harvestDate").value;
 
