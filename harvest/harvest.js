@@ -39,11 +39,17 @@ function collectHarvestData() {
   };
 }
 async function loadPlantingCSV() {
-  const res = await fetch("../logs/planting/all.csv");
+  const res = await fetch("../logs/planting/all.csv?ts=" + Date.now());
   const text = await res.text();
 
+  console.log("📄 CSV raw text:", text);
+
   const lines = text.trim().split("\n");
-  const rows = lines.slice(1);
+  console.log("📄 lines:", lines);
+
+  // ★ ヘッダーが無いので slice(1) をやめる
+  const rows = lines;
+  console.log("📄 rows:", rows);
 
   const list = rows.map(line => {
     const cols = line.split(",");
@@ -60,8 +66,7 @@ async function loadPlantingCSV() {
     };
   });
 
-  console.log("🌱 planting CSV 読み込み結果:", list); // ← 追加
-
+  console.log("🌱 loadPlantingCSV parsed:", list);
   return list;
 }
 function getHarvestYMRange(harvestDate) {
