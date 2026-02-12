@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>収穫ログ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h2 { margin-top: 30px; }
+        .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; }
+        label { display: block; margin-top: 10px; }
+        select, input, textarea {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>収穫ログ</h1>
+
+    <!-- 日付 -->
+    <h2>日付</h2>
+    <div class="box">
+        <label>収穫日</label>
+        <input type="date" id="harvest_date">
+
+        <label>出荷日</label>
+        <input type="date" id="shipping_date">
+    </div>
+
+    <!-- 作業者 -->
+    <h2>作業者</h2>
+    <div class="box" id="workers_box"></div>
+
+    <!-- 単発バイト -->
+    <h2>単発バイト</h2>
+    <div class="box">
+        <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+    </div>
+
+    <!-- 圃場（自動判定＋2段階選択） -->
+    <h2>圃場</h2>
+    <div class="box">
+        <label>自動判定</label>
+        <input id="field_auto" readonly style="background:#eee;">
+
+        <label>エリア選択</label>
+        <select id="field_area">
+            <option value="">エリアを選択</option>
+        </select>
+
+        <label>圃場選択</label>
+        <select id="field_manual">
+            <option value="">エリアを選んでください</option>
+        </select>
+    </div>
+
+    <!-- 収穫量 -->
+    <h2>収穫量</h2>
+    <div class="box">
+        <input type="number" id="amount" placeholder="kg">
+    </div>
+
+    <!-- 備考 -->
+    <h2>備考</h2>
+    <div class="box">
+        <textarea id="memo" rows="3"></textarea>
+    </div>
+
+    <!-- 保存 -->
+    <button id="save_btn" style="margin-top:20px; padding:10px 20px; font-size:18px;">
+        保存
+    </button>
+
+    <p id="result" style="margin-top:20px; font-weight:bold;"></p>
+
+    <script type="module">
+        import {
+            createWorkerCheckboxes,
+            createFieldSelector,
+            autoDetectField,
+            getSelectedWorkers
+        } from "../common/ui.js";
+
+        import { getTimestamp, createCsvRow, downloadCsv } from "../common/app.js";
+
+        // 作業者チェックボックス生成
+        createWorkerCheckboxes("workers_box");
+
+        // 圃場セレクタ生成 → 完了後に自動判定
+        createFieldSelector("field_auto", "field_area", "field_manual")
+            .then(() => {
+                autoDetectField("field_auto", "field_area", "field_manual");
+            });
+
+        // 保存処理
+        document.getElementById("save_btn").addEventListener("click", () => {
+
+            const data = {
+                timestamp: getTimestamp(),
+                category: "harvest",
+                field_id: document.getElementById("field_manual").value || "AUTO",
+                field_name: document.getElementById("field_auto").value,
+                area: document.getElementById("field_area").value,
+                lat: "",   // 必要なら後で追加
+                lng: "",
+                accuracy: "",
+                worker: getSelectedWorkers("workers_box", "temp_workers"),
+                memo: document.getElementById("memo").value
+            };
+
+            const csv = createCsvRow(data);
+            downloadCsv(`harvest_${data.timestamp}.csv`, csv);
+
+            document.getElementById("result").textContent = "保存しました";
+        });
+    </script>
+
+</body>
+</html>
