@@ -85,3 +85,34 @@ document.getElementById("saveBtn").addEventListener("click", saveData);
 
 // 初期化
 loadFileList();
+
+// ============================
+// CSV ドラッグ＆ドロップ対応
+// ============================
+const dropArea = document.getElementById("csvInput");
+
+dropArea.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropArea.style.background = "#eef";
+});
+
+dropArea.addEventListener("dragleave", () => {
+  dropArea.style.background = "white";
+});
+
+dropArea.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropArea.style.background = "white";
+
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith(".csv")) {
+    alert("CSV ファイルをドロップしてください");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    dropArea.value = reader.result;
+  };
+  reader.readAsText(file, "UTF-8");
+});
