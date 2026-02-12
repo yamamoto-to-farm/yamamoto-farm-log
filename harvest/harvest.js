@@ -39,20 +39,37 @@ function collectHarvestData() {
   };
 }
 async function loadPlantingCSV() {
-  const res = await fetch("../logs/planting/all.csv?ts=" + Date.now());
-  const text = await res.text();
+  const url = "../logs/planting/all.csv?ts=" + Date.now();
+  console.log("📘 FETCH URL:", url);
 
-  console.log("📄 CSV raw text:", text);
+  let res;
+  try {
+    res = await fetch(url);
+  } catch (e) {
+    console.log("❌ fetch 失敗:", e);
+    return [];
+  }
+
+  console.log("📘 fetch status:", res.status);
+
+  const text = await res.text();
+  console.log("📄 CSV raw text:", JSON.stringify(text));
+
+  if (!text.trim()) {
+    console.log("❌ CSV が空です");
+    return [];
+  }
 
   const lines = text.trim().split("\n");
-  console.log("📄 lines:", lines);
+  console.log("📘 lines:", lines);
 
-  // ★ ヘッダーが無いので slice(1) をやめる
-  const rows = lines;
-  console.log("📄 rows:", rows);
+  const rows = lines; // ★ ヘッダーなし
+  console.log("📘 rows:", rows);
 
-  const list = rows.map(line => {
+  const list = rows.map((line, i) => {
     const cols = line.split(",");
+    console.log(`🔍 row ${i} cols:`, cols);
+
     return {
       plantDate: cols[0],
       worker: cols[1],
@@ -67,6 +84,8 @@ async function loadPlantingCSV() {
   });
 
   console.log("🌱 loadPlantingCSV parsed:", list);
+  console.log("🌱 parsed length:", list.length);
+
   return list;
 }
 function getHarvestYMRange(harvestDate) {
