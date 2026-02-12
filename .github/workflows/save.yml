@@ -16,7 +16,7 @@ jobs:
       - name: Checkout data repo
         uses: actions/checkout@v4
         with:
-          repository: yamamoto-to-farm/yamamoto-farm-data
+          repository: yamamoto-to-farm/yamamoto-farm-log   # ★ 修正
           token: ${{ secrets.FARM_DATA_TOKEN }}
 
       - name: Parse payload
