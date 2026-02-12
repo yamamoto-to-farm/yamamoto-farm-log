@@ -139,7 +139,7 @@
     // 定植CSV読み込み
     // ============================
     async function loadPlantingCSV() {
-      const res = await fetch("https://naoki-yamamoto.github.io/yamamoto-farm-data/logs/planting/all.csv");
+      const res = await fetch("../logs/planting/all.csv");
       const text = await res.text();
 
       const lines = text.trim().split("\n");
