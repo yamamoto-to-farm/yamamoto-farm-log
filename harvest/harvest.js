@@ -43,9 +43,9 @@ async function loadPlantingCSV() {
   const text = await res.text();
 
   const lines = text.trim().split("\n");
-  const rows = lines.slice(1); // ヘッダー除外
+  const rows = lines.slice(1);
 
-  return rows.map(line => {
+  const list = rows.map(line => {
     const cols = line.split(",");
     return {
       plantDate: cols[0],
@@ -55,10 +55,14 @@ async function loadPlantingCSV() {
       quantity: cols[4],
       spacingRow: cols[5],
       spacingBed: cols[6],
-      harvestPlanYM: cols[7],   // ← planting.js で追加したやつ
+      harvestPlanYM: cols[7],
       notes: cols[8]
     };
   });
+
+  console.log("🌱 planting CSV 読み込み結果:", list); // ← 追加
+
+  return list;
 }
 function getHarvestYMRange(harvestDate) {
   const d = new Date(harvestDate);
