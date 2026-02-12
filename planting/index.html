@@ -2,68 +2,133 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>定植記録</title>
+  <title>定植ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="../common/style.css">
+  <style>
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 16px; }
+    h2 { margin-top: 24px; }
+    .field { margin-bottom: 12px; }
+    .field label { display:block; margin-bottom:4px; }
+    .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; background:#fff; }
+    input, select, textarea {
+      width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px;
+    }
+    button {
+      width: 100%; padding: 12px; font-size: 16px;
+      background: #2b6cb0; color: #fff; border: none; border-radius: 4px;
+      margin-top: 20px;
+    }
+    button:active { opacity: 0.8; }
+
+    #field_auto {
+      background: #fff3b0;
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
+  <h1>定植ログ</h1>
 
-  <h1>定植記録</h1>
+  <!-- 日付 -->
+  <div class="field">
+    <label for="plantDate">定植日</label>
+    <input type="date" id="plantDate">
+  </div>
 
-  <!-- 圃場選択（自動判定＋手動） -->
-  <section id="field-section"></section>
+  <!-- 作業者 -->
+  <h2>作業者</h2>
+  <div class="box" id="workers_box"></div>
 
-  <!-- 品種選択 -->
-  <section>
-    <label>品種</label>
+  <div class="box">
+    <label for="temp_workers">単発バイト（カンマ区切り）</label>
+    <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+  </div>
+
+  <!-- 圃場 -->
+  <h2>圃場</h2>
+  <div class="box">
+    <label>自動判定（推定）</label>
+    <input id="field_auto" readonly>
+
+    <label style="margin-top:10px;">
+      <input type="checkbox" id="field_confirm">
+      この圃場で確定する
+    </label>
+
+    <hr style="margin: 15px 0;">
+
+    <label>エリア選択</label>
+    <select id="field_area">
+      <option value="">エリアを選択</option>
+    </select>
+
+    <label>圃場選択</label>
+    <select id="field_manual">
+      <option value="">エリアを選んでください</option>
+    </select>
+  </div>
+
+  <!-- 品種 -->
+  <h2>品種</h2>
+  <div class="box">
     <select id="variety"></select>
-  </section>
+  </div>
 
   <!-- 株数 or 枚数 -->
-  <section>
-    <label>入力方法</label><br>
+  <h2>植え付け量</h2>
+  <div class="box">
+    <label>入力方法</label>
     <label><input type="radio" name="mode" value="stock" checked> 株数で入力</label>
     <label><input type="radio" name="mode" value="tray"> セルトレイ枚数で入力</label>
-  </section>
 
-  <section id="stock-input">
-    <label>株数</label>
-    <input type="number" id="stockCount" min="0">
-  </section>
+    <div id="stock-input" class="field">
+      <label>株数</label>
+      <input type="number" id="stockCount" inputmode="numeric">
+    </div>
 
-  <section id="tray-input" style="display:none;">
-    <label>枚数</label>
-    <input type="number" id="trayCount" min="0">
+    <div id="tray-input" class="field" style="display:none;">
+      <label>枚数</label>
+      <input type="number" id="trayCount" inputmode="numeric">
 
-    <label>穴数</label><br>
-    <label><input type="radio" name="trayType" value="128" checked>128穴</label>
-    <label><input type="radio" name="trayType" value="200">200穴</label>
+      <label>穴数</label>
+      <label><input type="radio" name="trayType" value="128" checked>128穴</label>
+      <label><input type="radio" name="trayType" value="200">200穴</label>
 
-    <p>自動計算：<span id="calcStock">0</span> 株</p>
-  </section>
+      <p>自動計算：<span id="calcStock">0</span> 株</p>
+    </div>
+  </div>
 
   <!-- 株間・畝間 -->
-  <section>
+  <h2>株間・畝間</h2>
+  <div class="box">
     <label>株間（cm）</label>
     <input type="number" id="spacingRow" value="34">
 
     <label>畝間（cm）</label>
     <input type="number" id="spacingBed" value="60">
-  </section>
-
-  <!-- 作業者 -->
-  <section id="worker-section"></section>
+  </div>
 
   <!-- 備考 -->
-  <section>
-    <label>備考</label>
-    <textarea id="notes"></textarea>
-  </section>
+  <h2>備考</h2>
+  <div class="box">
+    <textarea id="notes" rows="3" placeholder="欠株・病害虫など"></textarea>
+  </div>
 
-  <button id="saveBtn">保存</button>
+  <!-- 保存 -->
+  <button type="button" onclick="savePlanting()">GitHub に保存する</button>
 
-  <script type="module" src="../common/app.js"></script>
+  <!-- JS -->
   <script type="module" src="../common/ui.js"></script>
+  <script type="module" src="../common/save/index.js"></script>
   <script type="module" src="./planting.js"></script>
+
+  <script>
+    // 日付初期値
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("plantDate").value = today;
+  </script>
+
 </body>
 </html>
