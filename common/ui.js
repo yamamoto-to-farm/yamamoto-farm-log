@@ -9,8 +9,8 @@ import { getCurrentPosition, getNearestField } from "./app.js";
 // ===============================
 export async function createFieldSelector(autoId, areaId, manualId) {
 
-    // ▼ fields.json 読み込み
-    const res = await fetch("../data/fields.json");
+    // ▼ fields.json 読み込み（絶対パスに変更）
+    const res = await fetch("/data/fields.json");
     const fields = await res.json();
 
     // ▼ 自動判定欄
@@ -58,7 +58,7 @@ export async function createFieldSelector(autoId, areaId, manualId) {
 
 
 // ===============================
-// GPS → エリア → 圃場 自動連動
+// GPS → エリア → 圃場 自動連動（最新版）
 // ===============================
 export async function autoDetectField(autoId, areaId, manualId) {
 
@@ -66,16 +66,18 @@ export async function autoDetectField(autoId, areaId, manualId) {
     const areaSel = document.getElementById(areaId);
     const fieldSel = document.getElementById(manualId);
 
+    auto.value = "判定中…";
+
     try {
         // ① GPS取得
         const pos = await getCurrentPosition();
         const { lat, lng } = pos;
 
-        // ② 最寄り圃場を判定
+        // ② 最寄り圃場を判定（閾値なし）
         const nearest = await getNearestField(lat, lng);
 
-        // ③ 自動判定欄に表示
-        auto.value = nearest.name;
+        // ③ 自動判定欄に表示（推定）
+        auto.value = `${nearest.name}（推定）`;
 
         // ④ エリアを自動選択
         areaSel.value = nearest.area;
@@ -85,7 +87,8 @@ export async function autoDetectField(autoId, areaId, manualId) {
         fieldSel.value = nearest.id;
 
     } catch (err) {
-        auto.value = "自動判定できませんでした";
+        // ★ 本当に GPS が取れなかったときだけ表示
+        auto.value = "自動判定できませんでした（GPSエラー）";
         console.error(err);
     }
 }
@@ -96,7 +99,7 @@ export async function autoDetectField(autoId, areaId, manualId) {
 // ===============================
 export async function createWorkerCheckboxes(containerId) {
     
-    const res = await fetch("../data/workers.json");
+    const res = await fetch("/data/workers.json"); // 絶対パスに変更
     const workers = await res.json();
 
     const box = document.getElementById(containerId);
