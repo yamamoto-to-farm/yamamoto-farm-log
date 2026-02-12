@@ -41,7 +41,8 @@ function debugLog(msg) {
 // ===============================
 export async function createFieldSelector(autoId, areaId, manualId) {
 
-    const res = await fetch("/data/fields.json");
+    // ▼ fields.json 読み込み（正しいパス）
+    const res = await fetch("/yamamoto-farm-log/data/fields.json");
     const fields = await res.json();
 
     const auto = document.getElementById(autoId);
@@ -109,7 +110,6 @@ accuracy: ±${accuracy}m`
 
         const nearest = await getNearestField(lat, lng);
 
-        // ★ distance が undefined の場合に備える
         const distText =
             nearest.distance != null
                 ? `\n距離: ${nearest.distance.toFixed(1)}m`
@@ -144,7 +144,7 @@ accuracy: ±${accuracy}m
 // ===============================
 export async function createWorkerCheckboxes(containerId) {
     
-    const res = await fetch("/data/workers.json");
+    const res = await fetch("/yamamoto-farm-log/data/workers.json");
     const workers = await res.json();
 
     const box = document.getElementById(containerId);
