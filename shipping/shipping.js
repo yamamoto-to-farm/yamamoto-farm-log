@@ -38,7 +38,7 @@ async function saveLog(type, dateStr, jsonData, csvLine) {
 // 未計量の収穫ログを読み込む
 // ===============================
 async function loadUnweighedHarvests() {
-  const res = await fetch("./../logs/harvest/all.csv");
+  const res = await fetch("../logs/harvest/all.csv");
   const text = await res.text();
 
   const lines = text.trim().split("\n");
