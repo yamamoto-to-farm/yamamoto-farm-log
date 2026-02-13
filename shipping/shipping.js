@@ -1,3 +1,11 @@
+window.showDebug = async function() {
+  const res = await fetch("../logs/harvest/all.csv");
+  const text = await res.text();
+
+  const debugArea = document.getElementById("debugArea");
+  debugArea.textContent = "=== harvest/all.csv ===\n" + text;
+};
+
 // ===============================
 // GitHub Actions へログを送る共通関数
 // ===============================
@@ -41,13 +49,19 @@ async function loadUnweighedHarvests() {
   const res = await fetch("../logs/harvest/all.csv");
   const text = await res.text();
 
+  // ★ デバッグ表示：生の CSV を画面に出す
+  const debugArea = document.getElementById("debugArea");
+  if (debugArea) {
+    debugArea.textContent = "=== harvest/all.csv ===\n" + text;
+  }
+
   const lines = text.trim().split("\n");
   const rows = lines.slice(1).map(line => {
     const cols = line.split(",");
 
     return {
       harvestDate: cols[0],
-      shippingDate: cols[1], // 使わないが保持
+      shippingDate: cols[1],
       workers: cols[2],
       field: cols[3],
       amount: cols[4],
@@ -62,17 +76,21 @@ async function loadUnweighedHarvests() {
   try {
     const wres = await fetch("../logs/weight/all.csv");
     const wtext = await wres.text();
-    const wlines = wtext.trim().split("\n").slice(1);
 
+    // ★ デバッグ表示：weight/all.csv も出す
+    if (debugArea) {
+      debugArea.textContent += "\n\n=== weight/all.csv ===\n" + wtext;
+    }
+
+    const wlines = wtext.trim().split("\n").slice(1);
     wlines.forEach(line => {
       const cols = line.split(",");
-      weighedRefs.add(cols[1]); // harvestRef
+      weighedRefs.add(cols[1]);
     });
   } catch (e) {
     // 初回は weight/all.csv が無いので無視
   }
 
-  // shippingDate は無視し、weight に存在しない行だけを未計量とする
   return rows.filter(r => !weighedRefs.has(r.harvestRef));
 }
 
