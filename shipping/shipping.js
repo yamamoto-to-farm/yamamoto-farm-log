@@ -21,8 +21,7 @@ async function saveLog(type, dateStr, jsonData, csvLine) {
     {
       method: "POST",
       headers: {
-        "Accept": "application/vnd.github+json",
-        "Authorization": `Bearer ${GITHUB_ACTION_TOKEN}`, // ← harvest と同じ仕組みで入れる
+        "Accept": "application/vnd.github+json"
       },
       body: JSON.stringify(body)
     }
@@ -38,40 +37,42 @@ async function saveLog(type, dateStr, jsonData, csvLine) {
 // 未計量の収穫ログを読み込む
 // ===============================
 async function loadUnweighedHarvests() {
+  // harvest/all.csv を読む
   const res = await fetch("../logs/harvest/all.csv");
   const text = await res.text();
 
   const lines = text.trim().split("\n");
-  const headers = lines[0].split(",");
-
   const rows = lines.slice(1).map(line => {
     const cols = line.split(",");
+
     return {
       harvestDate: cols[0],
-      shippingDate: cols[1],
-      worker: cols[2],
+      shippingDate: cols[1], // 使わないが保持
+      workers: cols[2],
       field: cols[3],
       amount: cols[4],
-      issue: cols[5],
+      issue: cols[5] || "",
       plantingRef: cols[6],
-      harvestRef: cols[0].replace(/-/g, "") + "-" + cols[6] // harvestRef を生成
+      harvestRef: cols[0].replace(/-/g, "") + "-" + cols[6]
     };
   });
 
-  // weight/all.csv を読み込み、すでに計量済みの harvestRef を除外
+  // weight/all.csv を読む（存在しない場合は空扱い）
   let weighedRefs = new Set();
   try {
-    const wres = await fetch("./../logs/weight/all.csv");
+    const wres = await fetch("../logs/weight/all.csv");
     const wtext = await wres.text();
     const wlines = wtext.trim().split("\n").slice(1);
+
     wlines.forEach(line => {
       const cols = line.split(",");
       weighedRefs.add(cols[1]); // harvestRef
     });
   } catch (e) {
-    // weight/all.csv が無い場合は全件未計量扱い
+    // 初回は weight/all.csv が無いので無視
   }
 
+  // shippingDate は無視し、weight に存在しない行だけを未計量とする
   return rows.filter(r => !weighedRefs.has(r.harvestRef));
 }
 
@@ -91,6 +92,7 @@ async function renderTable() {
     <table>
       <tr>
         <th>収穫日</th>
+        <th>作業者</th>
         <th>圃場</th>
         <th>収穫量</th>
         <th>Bins</th>
@@ -103,6 +105,7 @@ async function renderTable() {
     html += `
       <tr data-index="${i}">
         <td>${r.harvestDate}</td>
+        <td>${r.workers}</td>
         <td>${r.field}</td>
         <td>${r.amount}</td>
         <td><input type="number" class="bins"></td>
@@ -115,7 +118,7 @@ async function renderTable() {
   html += "</table>";
   area.innerHTML = html;
 
-  window._shippingRows = rows; // 保存用
+  window._shippingRows = rows;
 }
 
 // ===============================
@@ -135,7 +138,7 @@ function collectWeightData() {
     const weight = tr.querySelector(".weight").value;
     const notes = tr.querySelector(".notes").value || "";
 
-    if (!bins && !weight) return; // 未入力行はスキップ
+    if (!bins && !weight) return;
 
     list.push({
       shippingDate,
