@@ -1,3 +1,4 @@
+// debug test
 window.showDebug = async function() {
   const res = await fetch("../logs/harvest/all.csv");
   const text = await res.text();
