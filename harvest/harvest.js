@@ -188,7 +188,7 @@ async function saveHarvestInner() {
   const csvLine = [
     data.harvestDate,
     data.shippingDate,
-    data.worker,
+    data.worker.replace(/,/g, "／"),
     data.field,
     data.amount,
     data.issue.replace(/[\r\n,]/g, " "),
