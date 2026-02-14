@@ -260,3 +260,30 @@ export function getFinalField(
     if (manual) return manual;
     return auto;
 }
+
+// ============================
+// 家族用 PIN 認証 UI
+// ============================
+export function showPinGate(containerId, onSuccess) {
+  const FAMILY_PIN = "0000"; // ★ 家族共通 PIN（後で変更可）
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = `
+    <div id="pin-gate" style="padding:20px; text-align:center;">
+      <h2>アクセスキーを入力してください</h2>
+      <input id="pin-input" type="password" style="font-size:20px; padding:8px; width:200px;">
+      <br><br>
+      <button id="pin-ok" style="font-size:18px; padding:8px 20px;">OK</button>
+    </div>
+  `;
+
+  document.getElementById("pin-ok").addEventListener("click", () => {
+    const input = document.getElementById("pin-input").value.trim();
+    if (input === FAMILY_PIN) {
+      container.innerHTML = ""; // PIN UI を消す
+      onSuccess();              // フォーム表示など
+    } else {
+      alert("アクセスキーが違います");
+    }
+  });
+}
