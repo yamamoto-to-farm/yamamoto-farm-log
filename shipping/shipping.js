@@ -3,6 +3,39 @@
 // ===============================
 import { saveLog } from "../common/save/index.js";
 
+
+// ===============================
+// 軽量 CSV パーサー（カンマ入りフィールド対応）
+// ===============================
+function parseCSVLine(line) {
+  const result = [];
+  let current = "";
+  let insideQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+
+    if (c === '"') {
+      // "" → エスケープされた "
+      if (insideQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (c === "," && !insideQuotes) {
+      result.push(current);
+      current = "";
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+
+  return result;
+}
+
+
 // ===============================
 // harvest/all.csv と weight/all.csv を読み込む
 // ===============================
@@ -18,10 +51,10 @@ async function loadUnweighedHarvests() {
   console.log("CSV lines:", lines);
 
   const rows = lines.slice(1).map((line, idx) => {
-    const cols = line.split(",");
+    const cols = parseCSVLine(line);
     console.log(`Row ${idx}:`, cols);
 
-    const harvestRef = cols[0].replace(/-/g, "") + "-" + cols[6];
+    const harvestRef = cols[0].replace(/-/g, "") + "-" + (cols[6] || "");
     const shippingDate = cols[1];
 
     return {
@@ -31,7 +64,7 @@ async function loadUnweighedHarvests() {
       field: cols[3],
       amount: cols[4],
       issue: cols[5] || "",
-      plantingRef: cols[6],
+      plantingRef: cols[6] || "",
       harvestRef
     };
   });
@@ -45,8 +78,8 @@ async function loadUnweighedHarvests() {
 
     const wlines = wtext.trim().split("\n").slice(1);
     wlines.forEach((line, idx) => {
-      const cols = line.split(",");
-      weighedRefs.add(cols[1]);
+      const cols = parseCSVLine(line);
+      weighedRefs.add(cols[1]); // harvestRef
     });
   } catch (e) {
     console.log("weight/all.csv not found (初回は正常)");
@@ -59,6 +92,7 @@ async function loadUnweighedHarvests() {
 
   return filtered;
 }
+
 
 // ===============================
 // UI に未計量の収穫ログを表示
@@ -109,6 +143,7 @@ async function renderTable() {
   window._shippingRows = rows;
 }
 
+
 // ===============================
 // 入力値を集める
 // ===============================
@@ -140,6 +175,7 @@ function collectWeightData() {
   return list;
 }
 
+
 // ===============================
 // 保存処理（Workers 経由）
 // ===============================
@@ -167,7 +203,6 @@ async function saveWeightInner() {
       item.notes.replace(/[\r\n,]/g, " ")
     ].join(",");
 
-    // harvest と同じ saveLog を使用
     await saveLog("weight", dateStr, item, csvLine);
   }
 
