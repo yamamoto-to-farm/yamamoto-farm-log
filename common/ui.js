@@ -41,26 +41,30 @@ function debugLog(msg) {
 // ===============================
 export async function createFieldSelector(autoId, areaId, manualId) {
 
-    // ▼ fields.json 読み込み（正しいパス）
+    // ▼ fields.json 読み込み
     const res = await fetch("/yamamoto-farm-log/data/fields.json");
     const fields = await res.json();
 
+    // 自動判定欄（読み取り専用）
     const auto = document.getElementById(autoId);
     auto.readOnly = true;
 
+    // ▼ エリア一覧を抽出
     const areaSel = document.getElementById(areaId);
     const areas = [...new Set(fields.map(f => f.area))];
 
     areas.forEach(area => {
         const opt = document.createElement("option");
-        opt.value = area;
+        opt.value = area;          // ← area 名
         opt.textContent = area;
         areaSel.appendChild(opt);
     });
 
+    // ▼ 圃場セレクタ（手動）
     const fieldSel = document.getElementById(manualId);
     fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
 
+    // ▼ エリア選択時に圃場を絞り込み
     areaSel.addEventListener("change", () => {
         const selectedArea = areaSel.value;
 
@@ -75,7 +79,7 @@ export async function createFieldSelector(autoId, areaId, manualId) {
 
         filtered.forEach(f => {
             const opt = document.createElement("option");
-            opt.value = f.id;
+            opt.value = f.name;     // ★ ここを id → name に変更
             opt.textContent = f.name;
             fieldSel.appendChild(opt);
         });
@@ -86,7 +90,7 @@ export async function createFieldSelector(autoId, areaId, manualId) {
 
 
 // ===============================
-// GPS → エリア → 圃場 自動連動（デバッグ対応）
+// GPS → エリア → 圃場 自動連動（nameベース版）
 // ===============================
 export async function autoDetectField(autoId, areaId, manualId) {
 
@@ -124,12 +128,15 @@ accuracy: ±${accuracy}m
 最寄り圃場: ${nearest.name}${distText}`
         );
 
+        // ▼ 自動判定欄に name を表示
         auto.value = `${nearest.name}（推定）`;
 
+        // ▼ エリアをセット
         areaSel.value = nearest.area;
         areaSel.dispatchEvent(new Event("change"));
 
-        fieldSel.value = nearest.id;
+        // ▼ 圃場セレクタも name をセット（id → name に変更）
+        fieldSel.value = nearest.name;
 
     } catch (err) {
         auto.value = "自動判定できませんでした（GPSエラー）";
@@ -137,7 +144,6 @@ accuracy: ±${accuracy}m
         console.error("GPSエラー:", err);
     }
 }
-
 
 // ===============================
 // 作業者チェックボックス
@@ -201,14 +207,22 @@ export function createDateInput(targetId, labelText = "") {
 }
 
 // ===============================
-// 圃場の最終決定ロジック（共通化）
+// 圃場の最終決定ロジック（nameベース版）
 // ===============================
-export function getFinalField(autoId = "field_auto", manualId = "field_manual", confirmId = "field_confirm") {
-    const auto = document.getElementById(autoId)?.value || "";
+export function getFinalField(
+  autoId = "field_auto",
+  manualId = "field_manual",
+  confirmId = "field_confirm"
+) {
+    const rawAuto = document.getElementById(autoId)?.value || "";
     const manual = document.getElementById(manualId)?.value || "";
     const confirmed = document.getElementById(confirmId)?.checked;
 
-    if (confirmed) return auto;
+    // ▼ auto の「（推定）」を除去して name だけにする
+    const auto = rawAuto.replace(/（推定）/g, "").trim();
+
+    // ▼ 優先順位：確認チェック → 手動 → 自動
+    if (confirmed && auto) return auto;
     if (manual) return manual;
     return auto;
 }
