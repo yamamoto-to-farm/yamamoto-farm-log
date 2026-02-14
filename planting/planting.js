@@ -7,6 +7,14 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 
+import { showPinGate } from "../common/ui.js";
+
+window.addEventListener("DOMContentLoaded", () => {
+  showPinGate("pin-area", () => {
+    document.getElementById("form-area").style.display = "block";
+  });
+});
+
 let VARIETY_LIST = []; // ★ 品種データを保持する
 
 // ============================
