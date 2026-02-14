@@ -35,6 +35,7 @@ async function setupVarietySelector() {
   const typeSel = document.getElementById("varietyType");
   const nameSel = document.getElementById("variety");
 
+  // ▼ タイプ一覧（寒玉 / 初夏 / レッド）
   const types = [...new Set(VARIETY_LIST.map(v => v.type))];
   types.forEach(t => {
     const opt = document.createElement("option");
@@ -43,6 +44,7 @@ async function setupVarietySelector() {
     typeSel.appendChild(opt);
   });
 
+  // ▼ タイプ選択で品種を絞り込み
   typeSel.addEventListener("change", () => {
     const selectedType = typeSel.value;
     nameSel.innerHTML = "<option value=''>品名を選択</option>";
@@ -53,7 +55,7 @@ async function setupVarietySelector() {
 
     filtered.forEach(v => {
       const opt = document.createElement("option");
-      opt.value = v.id;      // 保存するのは id
+      opt.value = v.name;      // ★ id → name に統一
       opt.textContent = v.name;
       nameSel.appendChild(opt);
     });
@@ -117,7 +119,7 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
 }
 
 // ============================
-// 入力データ収集
+// 入力データ収集（name ベース版）
 // ============================
 function collectPlantingData() {
   const mode = document.querySelector("input[name='mode']:checked").value;
@@ -134,19 +136,27 @@ function collectPlantingData() {
     quantity = trayCount * trayType;
   }
 
-  const varietyId = document.getElementById("variety").value;
-  const variety = VARIETY_LIST.find(v => v.id === varietyId);
+  // ▼ id → name に変更
+  const varietyName = document.getElementById("variety").value;
 
-  // ★ 自動計算（variety.harvestMonth を使用）
+  // ▼ name で検索
+  const variety = VARIETY_LIST.find(v => v.name === varietyName);
+
+  // ▼ 自動計算（harvestMonth を使用）
   const harvestPlanYM = variety
-    ? calcHarvestPlanYM(document.getElementById("plantDate").value, variety.harvestMonth)
+    ? calcHarvestPlanYM(
+        document.getElementById("plantDate").value,
+        variety.harvestMonth
+      )
     : "";
 
   return {
     plantDate: document.getElementById("plantDate").value,
     worker: getSelectedWorkers("workers_box", "temp_workers"),
     field: getFinalField(),
-    variety: varietyId,
+
+    // ▼ 保存するのも name
+    variety: varietyName,
 
     quantity,
     inputMode: mode,
@@ -156,7 +166,7 @@ function collectPlantingData() {
     spacingRow: Number(document.getElementById("spacingRow").value),
     spacingBed: Number(document.getElementById("spacingBed").value),
 
-    harvestPlanYM,   // ★ 追加
+    harvestPlanYM,
 
     notes: document.getElementById("notes").value
   };
@@ -179,11 +189,11 @@ async function savePlantingInner() {
     data.plantDate,
     data.worker.replace(/,/g, "／"),
     data.field,
-    data.variety,
+    data.variety,     // ← name が入る
     data.quantity,
     data.spacingRow,
     data.spacingBed,
-    data.harvestPlanYM,  // ★ CSV にも追加
+    data.harvestPlanYM,
     data.notes.replace(/[\r\n,]/g, " ")
   ].join(",");
 

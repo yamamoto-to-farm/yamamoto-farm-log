@@ -88,6 +88,40 @@ export async function createFieldSelector(autoId, areaId, manualId) {
     return fields;
 }
 
+// ===============================
+// 品種セレクタ
+// ===============================
+async function setupVarietySelector() {
+  const res = await fetch("../data/varieties.json");
+  VARIETY_LIST = await res.json();
+
+  const typeSel = document.getElementById("varietyType");
+  const nameSel = document.getElementById("variety");
+
+  const types = [...new Set(VARIETY_LIST.map(v => v.type))];
+  types.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    typeSel.appendChild(opt);
+  });
+
+  typeSel.addEventListener("change", () => {
+    const selectedType = typeSel.value;
+    nameSel.innerHTML = "<option value=''>品名を選択</option>";
+
+    if (!selectedType) return;
+
+    const filtered = VARIETY_LIST.filter(v => v.type === selectedType);
+
+    filtered.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v.name;      // ← name ベース
+      opt.textContent = v.name;
+      nameSel.appendChild(opt);
+    });
+  });
+}
 
 // ===============================
 // GPS → エリア → 圃場 自動連動（nameベース版）
