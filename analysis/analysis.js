@@ -1,16 +1,28 @@
 // analysis.js
 
+// CSV を読み込んで配列に変換する関数（ファイルが無くても空配列を返す）
 async function loadCSV(url) {
-  const text = await fetch(url).then(r => r.text());
-  const lines = text.trim().split("\n");
-  const headers = lines[0].split(",");
+  try {
+    const res = await fetch(url);
 
-  return lines.slice(1).map(line => {
-    const cols = line.split(",");
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = cols[i]);
-    return obj;
-  });
+    // ファイルが存在しない場合 → 空配列
+    if (!res.ok) return [];
+
+    const text = await res.text();
+    const lines = text.trim().split("\n");
+    const headers = lines[0].split(",");
+
+    return lines.slice(1).map(line => {
+      const cols = line.split(",");
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = cols[i]);
+      return obj;
+    });
+
+  } catch (e) {
+    // ネットワークエラーなど → 空配列
+    return [];
+  }
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -23,7 +35,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     document.body.innerHTML = `
       <h1>圃場を選択</h1>
-      <ul id="field-list"></ul>
+      <ul id="field-list" style="padding-left:0;"></ul>
     `;
 
     const ul = document.getElementById("field-list");
@@ -37,6 +49,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       `;
       li.style.fontSize = "20px";
       li.style.margin = "12px 0";
+      li.style.listStyle = "none";
       ul.appendChild(li);
     });
 
@@ -46,11 +59,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ★ ここから通常の analysis ページ処理
   document.getElementById("field-name").textContent = fieldName;
 
+  // CSV 読み込み（無くても空配列で返る）
   const planting = await loadCSV("../logs/planting/all.csv");
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const shipping = await loadCSV("../logs/shipping/all.csv");
 
-  // 最新作付け
+  // ★ 最新作付け
   const latestPlanting = planting
     .filter(r => r.field === fieldName)
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -62,9 +76,11 @@ window.addEventListener("DOMContentLoaded", async () => {
       <div class="info-line">定植日：${latestPlanting.date}</div>
       <div class="info-line">面積：${latestPlanting.area}㎡</div>
     `;
+  } else {
+    document.getElementById("latest-planting").textContent = "データなし";
   }
 
-  // 最新収穫
+  // ★ 最新収穫
   const latestHarvest = harvest
     .filter(r => r.field === fieldName)
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -74,9 +90,11 @@ window.addEventListener("DOMContentLoaded", async () => {
       <div class="info-line">収穫日：${latestHarvest.date}</div>
       <div class="info-line">収穫基数：${latestHarvest.count}</div>
     `;
+  } else {
+    document.getElementById("latest-harvest").textContent = "データなし";
   }
 
-  // 最新出荷
+  // ★ 最新出荷
   const latestShipping = shipping
     .filter(r => r.field === fieldName)
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -86,5 +104,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       <div class="info-line">出荷日：${latestShipping.date}</div>
       <div class="info-line">重量：${latestShipping.weight}kg</div>
     `;
+  } else {
+    document.getElementById("latest-shipping").textContent = "データなし";
   }
 });
