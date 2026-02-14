@@ -16,29 +16,27 @@ function initMap() {
   }).addTo(map);
 
   // ★ 圃場アイコン（キャベツ画像＋圃場名ラベル）
-  function createFieldIcon(field) {
-    return L.divIcon({
-      html: `
-        <div style="text-align:center; transform: translateY(-10px);">
-          <div style="
-            background: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            border: 1px solid #ccc;
-            display: inline-block;
-            margin-bottom: 2px;
-          ">
-            ${field.name}
-          </div>
-          <img src="../img/cabbage.png" style="width:40px; height:40px;">
+function createFieldIcon(field) {
+  return L.divIcon({
+    html: `
+      <div style="text-align:center; transform: translateY(-10px);">
+        <div style="
+          font-size: 14px;
+          font-weight: bold;
+          color: black;
+          white-space: nowrap;
+          text-shadow: 0 0 3px white, 0 0 3px white;
+        ">
+          ${field.name}
         </div>
-      `,
-      className: "",
-      iconSize: [40, 40],
-      iconAnchor: [20, 40] // 画像の下端が座標に合うように
-    });
-  }
+        <img src="../img/cabbage.png" style="width:40px; height:40px;">
+      </div>
+    `,
+    className: "",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40]
+  });
+}
 
   fetch("../data/fields.json")
     .then(res => res.json())
