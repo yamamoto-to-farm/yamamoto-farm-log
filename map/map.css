@@ -1,0 +1,15 @@
+/* スマホでも大きく見えるポップアップ */
+.leaflet-popup-content {
+  width: 220px !important;     /* デフォルトより広く */
+  max-width: 260px !important; /* スマホでちょうど良い */
+  font-size: 16px;             /* 読みやすい文字サイズ */
+  line-height: 1.4;
+}
+
+/* ボタンをスマホ向けに大きく */
+.leaflet-popup-content button {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 16px;
+  margin: 6px 0;
+}
