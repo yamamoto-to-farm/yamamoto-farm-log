@@ -42,13 +42,14 @@ function parseCSVLine(line) {
 async function loadUnweighedHarvests() {
   console.log("=== loadUnweighedHarvests START ===");
 
-  // harvest/all.csv
-  const res = await fetch("../logs/harvest/all.csv?ts=" + Date.now());
-  const text = await res.text();
-  console.log("CSV raw text:", text);
+// harvest/all.csv
+const res = await fetch("../logs/harvest/all.csv?ts=" + Date.now());
+const text = await res.text();
+console.log("CSV raw text:", text);
 
-  const lines = text.trim().split("\n");
-  console.log("CSV lines:", lines);
+// ★ 改行コードをすべて正しく扱う
+const lines = text.trim().split(/\r?\n/);
+console.log("CSV lines:", lines);
 
   const rows = lines.slice(1).map((line, idx) => {
     const cols = parseCSVLine(line);
@@ -76,7 +77,7 @@ async function loadUnweighedHarvests() {
     const wtext = await wres.text();
     console.log("weight/all.csv raw:", wtext);
 
-    const wlines = wtext.trim().split("\n").slice(1);
+    const wlines = wtext.trim().split(/\r?\n/).slice(1);
     wlines.forEach((line, idx) => {
       const cols = parseCSVLine(line);
       weighedRefs.add(cols[1]); // harvestRef
