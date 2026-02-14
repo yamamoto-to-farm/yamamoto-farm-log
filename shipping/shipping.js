@@ -43,7 +43,7 @@ async function loadUnweighedHarvests() {
   console.log("=== loadUnweighedHarvests START ===");
 
 // harvest/all.csv
-const res = await fetch("../logs/harvest/all.csv?ts=" + Date.now());
+const res = await fetch("../logs/harvest/all.csv?nocache=" + Date.now());
 const text = await res.text();
 console.log("CSV raw text:", text);
 
@@ -73,7 +73,7 @@ console.log("CSV lines:", lines);
   // weight/all.csv
   let weighedRefs = new Set();
   try {
-    const wres = await fetch("../logs/weight/all.csv?ts=" + Date.now());
+    const wres = await fetch("../logs/weight/all.csv?nocache=" + Date.now());
     const wtext = await wres.text();
     console.log("weight/all.csv raw:", wtext);
 
