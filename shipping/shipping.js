@@ -1,57 +1,18 @@
-// debug test
-console.log("shipping.js loaded");
+// ===============================
+// import（必ずファイル先頭）
+// ===============================
+import { saveLog } from "../common/save/index.js";
 
 // ===============================
-// GitHub Actions へログを送る共通関数
-// ===============================
-async function saveLog(type, dateStr, jsonData, csvLine) {
-  const payload = {
-    type,
-    dateStr,
-    csv: csvLine,
-    ...jsonData
-  };
-
-  const body = {
-    ref: "main",
-    inputs: {
-      payload: JSON.stringify(payload)
-    }
-  };
-
-  const res = await fetch(
-    "https://api.github.com/repos/yamamoto-to-farm/yamamoto-farm-log/actions/workflows/save.yml/dispatches",
-    {
-      method: "POST",
-      headers: {
-        "Accept": "application/vnd.github+json"
-      },
-      body: JSON.stringify(body)
-    }
-  );
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error("GitHub Actions への送信に失敗: " + t);
-  }
-}
-
-// ===============================
-// 未計量の収穫ログを読み込む
+// harvest/all.csv と weight/all.csv を読み込む
 // ===============================
 async function loadUnweighedHarvests() {
   console.log("=== loadUnweighedHarvests START ===");
 
-  // harvest/all.csv を読む
-  const res = await fetch("../logs/harvest/all.csv");
+  // harvest/all.csv
+  const res = await fetch("../logs/harvest/all.csv?ts=" + Date.now());
   const text = await res.text();
-
   console.log("CSV raw text:", text);
-
-  const debugArea = document.getElementById("debugArea");
-  if (debugArea) {
-    debugArea.textContent = "=== harvest/all.csv ===\n" + text;
-  }
 
   const lines = text.trim().split("\n");
   console.log("CSV lines:", lines);
@@ -62,9 +23,6 @@ async function loadUnweighedHarvests() {
 
     const harvestRef = cols[0].replace(/-/g, "") + "-" + cols[6];
     const shippingDate = cols[1];
-
-    console.log("  harvestRef:", harvestRef);
-    console.log("  shippingDate:", shippingDate);
 
     return {
       harvestDate: cols[0],
@@ -78,22 +36,16 @@ async function loadUnweighedHarvests() {
     };
   });
 
-  // weight/all.csv を読む（存在しない場合は空扱い）
+  // weight/all.csv
   let weighedRefs = new Set();
   try {
-    const wres = await fetch("../logs/weight/all.csv");
+    const wres = await fetch("../logs/weight/all.csv?ts=" + Date.now());
     const wtext = await wres.text();
-
     console.log("weight/all.csv raw:", wtext);
-
-    if (debugArea) {
-      debugArea.textContent += "\n\n=== weight/all.csv ===\n" + wtext;
-    }
 
     const wlines = wtext.trim().split("\n").slice(1);
     wlines.forEach((line, idx) => {
       const cols = line.split(",");
-      console.log(`Weight Row ${idx}:`, cols);
       weighedRefs.add(cols[1]);
     });
   } catch (e) {
@@ -102,14 +54,7 @@ async function loadUnweighedHarvests() {
 
   console.log("weighedRefs:", weighedRefs);
 
-  const filtered = rows.filter(r => {
-    const isWeighed = weighedRefs.has(r.harvestRef);
-    console.log(
-      `判定 harvestRef=${r.harvestRef} → weighed=${isWeighed}`
-    );
-    return !isWeighed;
-  });
-
+  const filtered = rows.filter(r => !weighedRefs.has(r.harvestRef));
   console.log("未計量 rows:", filtered);
 
   return filtered;
@@ -196,7 +141,7 @@ function collectWeightData() {
 }
 
 // ===============================
-// 保存処理（weight）
+// 保存処理（Workers 経由）
 // ===============================
 async function saveWeightInner() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -222,6 +167,7 @@ async function saveWeightInner() {
       item.notes.replace(/[\r\n,]/g, " ")
     ].join(",");
 
+    // harvest と同じ saveLog を使用
     await saveLog("weight", dateStr, item, csvLine);
   }
 
