@@ -1,5 +1,11 @@
 import { saveLog } from "../common/save/index.js";
 
+window.addEventListener("DOMContentLoaded", () => {
+  showPinGate("pin-area", () => {
+    document.getElementById("form-area").style.display = "block";
+  });
+});
+
 // ===============================
 // CSV 行パーサー
 // ===============================

@@ -11,6 +11,12 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 
+window.addEventListener("DOMContentLoaded", () => {
+  showPinGate("pin-area", () => {
+    document.getElementById("form-area").style.display = "block";
+  });
+});
+
 
 // ===============================
 // 初期化処理

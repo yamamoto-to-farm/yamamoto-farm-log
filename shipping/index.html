@@ -51,21 +51,46 @@
 </head>
 
 <body>
-  <h1>出荷（計量入力）</h1>
 
-  <div class="field">
-    <label for="shippingDate">出荷日</label>
-    <input type="date" id="shippingDate">
-  </div>
+  <!-- ▼ PIN 認証エリア -->
+  <div id="pin-area"></div>
 
-  <button onclick="loadShipping()">未計量の収穫ログを読み込む</button>
+  <!-- ▼ PIN 認証後に表示されるフォーム -->
+  <div id="form-area" style="display:none;">
 
-  <pre id="debugArea"></pre>
+    <h1>出荷（計量入力）</h1>
 
-  <div id="resultArea"></div>
+    <div class="field">
+      <label for="shippingDate">出荷日</label>
+      <input type="date" id="shippingDate">
+    </div>
 
-  <button onclick="saveWeight()">GitHub に保存</button>
+    <button onclick="loadShipping()">未計量の収穫ログを読み込む</button>
+
+    <pre id="debugArea"></pre>
+
+    <div id="resultArea"></div>
+
+    <button onclick="saveWeight()">GitHub に保存</button>
+
+  </div><!-- /form-area -->
+
+  <!-- JS -->
+  <script type="module">
+    import { showPinGate } from "../common/ui.js";
+
+    window.addEventListener("DOMContentLoaded", () => {
+      showPinGate("pin-area", () => {
+        document.getElementById("form-area").style.display = "block";
+
+        // 日付初期値
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById("shippingDate").value = today;
+      });
+    });
+  </script>
 
   <script type="module" src="./shipping.js"></script>
+
 </body>
 </html>

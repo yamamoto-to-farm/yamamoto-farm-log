@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>収穫ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
     h1 { margin-bottom: 16px; }
@@ -29,79 +30,103 @@
 </head>
 
 <body>
-  <h1>収穫ログ</h1>
 
-  <!-- 日付 -->
-  <div class="field">
-    <label for="harvestDate">収穫日</label>
-    <input type="date" id="harvestDate">
-  </div>
+  <!-- ▼ PIN 認証エリア -->
+  <div id="pin-area"></div>
 
-  <div class="field">
-    <label for="shippingDate">出荷申請日</label>
-    <input type="date" id="shippingDate">
-  </div>
+  <!-- ▼ PIN 認証後に表示されるフォーム -->
+  <div id="form-area" style="display:none;">
 
-  <!-- 作業者 -->
-  <h2>作業者</h2>
-  <div class="box" id="workers_box"></div>
+    <h1>収穫ログ</h1>
 
-  <div class="box">
-    <label for="temp_workers">単発バイト（カンマ区切り）</label>
-    <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
-  </div>
-
-  <!-- 圃場 -->
-  <h2>圃場</h2>
-  <div class="box">
-
-    <label>自動判定（推定）</label>
-    <input id="field_auto" readonly>
-
-    <label style="margin-top:10px;">
-      <input type="checkbox" id="field_confirm">
-      この圃場で確定する
-    </label>
-
-    <hr style="margin: 15px 0;">
-
-    <label>エリア選択</label>
-    <select id="field_area">
-      <option value="">エリアを選択</option>
-    </select>
-
-    <label>圃場選択</label>
-    <select id="field_manual">
-      <option value="">エリアを選んでください</option>
-    </select>
-  </div>
-
-  <!-- 紐づける定植記録 -->
-  <h2>紐づける定植記録</h2>
-  <div class="box">
-    <label for="plantingRef">定植記録（収穫予定 ±1ヶ月）</label>
-    <select id="plantingRef">
-      <option value="">該当する定植記録を選択</option>
-    </select>
-  </div>
-
-  <!-- 収穫量・特記事項 -->
-  <h2>収穫量・特記事項</h2>
-  <div class="box">
+    <!-- 日付 -->
     <div class="field">
-      <label for="amount">収穫量（基）</label>
-      <input type="number" id="amount" inputmode="numeric">
+      <label for="harvestDate">収穫日</label>
+      <input type="date" id="harvestDate">
     </div>
+
     <div class="field">
-      <label for="issue">特記事項</label>
-      <textarea id="issue" rows="3" placeholder="病害虫・欠株・その他メモなど"></textarea>
+      <label for="shippingDate">出荷申請日</label>
+      <input type="date" id="shippingDate">
     </div>
-  </div>
 
-  <!-- 保存ボタン -->
-  <button type="button" onclick="saveHarvest()">GitHub に保存する</button>
+    <!-- 作業者 -->
+    <h2>作業者</h2>
+    <div class="box" id="workers_box"></div>
 
-  <!-- harvest.js を読み込む（ロジックはすべてこちら） -->
+    <div class="box">
+      <label for="temp_workers">単発バイト（カンマ区切り）</label>
+      <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+    </div>
+
+    <!-- 圃場 -->
+    <h2>圃場</h2>
+    <div class="box">
+
+      <label>自動判定（推定）</label>
+      <input id="field_auto" readonly>
+
+      <label style="margin-top:10px;">
+        <input type="checkbox" id="field_confirm">
+        この圃場で確定する
+      </label>
+
+      <hr style="margin: 15px 0;">
+
+      <label>エリア選択</label>
+      <select id="field_area">
+        <option value="">エリアを選択</option>
+      </select>
+
+      <label>圃場選択</label>
+      <select id="field_manual">
+        <option value="">エリアを選んでください</option>
+      </select>
+    </div>
+
+    <!-- 紐づける定植記録 -->
+    <h2>紐づける定植記録</h2>
+    <div class="box">
+      <label for="plantingRef">定植記録（収穫予定 ±1ヶ月）</label>
+      <select id="plantingRef">
+        <option value="">該当する定植記録を選択</option>
+      </select>
+    </div>
+
+    <!-- 収穫量・特記事項 -->
+    <h2>収穫量・特記事項</h2>
+    <div class="box">
+      <div class="field">
+        <label for="amount">収穫量（基）</label>
+        <input type="number" id="amount" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="issue">特記事項</label>
+        <textarea id="issue" rows="3" placeholder="病害虫・欠株・その他メモなど"></textarea>
+      </div>
+    </div>
+
+    <!-- 保存ボタン -->
+    <button type="button" onclick="saveHarvest()">GitHub に保存する</button>
+
+  </div><!-- /form-area -->
+
+  <!-- JS -->
+  <script type="module">
+    import { showPinGate } from "../common/ui.js";
+
+    window.addEventListener("DOMContentLoaded", () => {
+      showPinGate("pin-area", () => {
+        document.getElementById("form-area").style.display = "block";
+
+        // 日付初期値
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById("harvestDate").value = today;
+        document.getElementById("shippingDate").value = today;
+      });
+    });
+  </script>
+
   <script type="module" src="./harvest.js"></script>
 
 </body>
