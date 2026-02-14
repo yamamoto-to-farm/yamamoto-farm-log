@@ -80,31 +80,36 @@ async function loadUnweighedHarvests() {
     const cols = parseCSVLine(line);
     console.log(`HARVEST row ${idx}:`, cols);
 
-    const harvestRef =
-      cols[0].replace(/-/g, "") + "-" + (cols[6] || "") + "-" + idx;
+    const harvestDate = cols[0];
+    const field = cols[3];
+    const bins = cols[4]; // ★ Bins を harvestID に使う
+
+    // ★ harvestID = YYYYMMDD-field-bins-index
+    const harvestID =
+      harvestDate.replace(/-/g, "") + "-" + field + "-" + bins + "-" + idx;
 
     return {
-      harvestDate: cols[0],
+      harvestID,
+      harvestDate,
       shippingDate: cols[1],
       workers: cols[2],
-      field: cols[3],
-      amount: cols[4],
+      field,
+      amount: bins,
       issue: cols[5] || "",
-      plantingRef: cols[6] || "",
-      harvestRef
+      plantingRef: cols[6] || ""
     };
   });
 
   console.log("=== HARVEST PARSED ROWS ===");
   rows.forEach(r =>
-    console.log("harvestRow:", r.harvestDate, r.field, r.amount, r.harvestRef)
+    console.log("harvestRow:", r.harvestID, r.harvestDate, r.field, r.amount)
   );
 
   // weight/all.csv
-  let weighedRefs = new Set();
+  let weighedIDs = new Set();
   try {
     const wres = await fetch("../logs/weight/all.csv?nocache=" + Date.now());
-    const wtext = await res.text();
+    const wtext = await wres.text();
     console.log("=== WEIGHT RAW TEXT ===\n", wtext);
 
     const wlines = splitCSVLines(wtext).slice(1);
@@ -113,21 +118,19 @@ async function loadUnweighedHarvests() {
     wlines.forEach((line, idx) => {
       const cols = parseCSVLine(line);
       console.log(`WEIGHT row ${idx}:`, cols);
-      weighedRefs.add(cols[1]);
+      weighedIDs.add(cols[1]); // harvestID
     });
   } catch (e) {
     console.log("weight/all.csv not found (初回は正常)");
   }
 
-  console.log("=== WEIGHT REFS ===");
-  weighedRefs.forEach(ref => console.log("weighedRef:", ref));
+  console.log("=== WEIGHED IDs ===");
+  weighedIDs.forEach(id => console.log("weighedID:", id));
 
-  // 未計量判定
+  // 未計量判定（harvestID ベース）
   const filtered = rows.filter(r => {
-    const isWeighed = weighedRefs.has(r.harvestRef);
-    console.log(
-      `CHECK harvestRef=${r.harvestRef} → weighed=${isWeighed}`
-    );
+    const isWeighed = weighedIDs.has(r.harvestID);
+    console.log(`CHECK harvestID=${r.harvestID} → weighed=${isWeighed}`);
     return !isWeighed;
   });
 
@@ -160,7 +163,7 @@ async function renderTable() {
         <th>作業者</th>
         <th>圃場</th>
         <th>収穫量</th>
-        <th>Bins</th>
+        <th>基数</th>   <!-- ★ Bins → 基数 -->
         <th>重量(kg)</th>
         <th>メモ</th>
       </tr>
@@ -208,7 +211,8 @@ function collectWeightData() {
 
     list.push({
       shippingDate,
-      harvestRef: base.harvestRef,
+      harvestID: base.harvestID,
+      field: base.field,
       bins,
       weight,
       notes
@@ -240,7 +244,8 @@ async function saveWeightInner() {
 
     const csvLine = [
       item.shippingDate,
-      item.harvestRef,
+      item.harvestID,
+      item.field,
       item.bins,
       item.weight,
       item.notes.replace(/[\r\n,]/g, " ")
