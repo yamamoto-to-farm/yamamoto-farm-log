@@ -170,7 +170,6 @@ function collectHarvestData() {
     plantingRef: document.getElementById("plantingRef").value
   };
 }
-
 //更新2026/02/14
 // ===============================
 // 保存処理
