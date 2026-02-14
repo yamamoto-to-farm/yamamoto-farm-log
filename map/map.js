@@ -15,33 +15,50 @@ function initMap() {
     maxZoom: 19
   }).addTo(map);
 
-  // ★ キャベツアイコン
-  const cabbageIcon = L.icon({
-    iconUrl: '../img/cabbage.png',   // ← 画像を置く場所
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
-  });
+  // ★ 圃場アイコン（キャベツ画像＋圃場名ラベル）
+  function createFieldIcon(field) {
+    return L.divIcon({
+      html: `
+        <div style="text-align:center; transform: translateY(-10px);">
+          <div style="
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            margin-bottom: 2px;
+          ">
+            ${field.name}
+          </div>
+          <img src="../img/cabbage.png" style="width:40px; height:40px;">
+        </div>
+      `,
+      className: "",
+      iconSize: [40, 40],
+      iconAnchor: [20, 40] // 画像の下端が座標に合うように
+    });
+  }
 
   fetch("../data/fields.json")
     .then(res => res.json())
     .then(fields => {
       fields.forEach(field => {
-        let layer;
 
-        // polygon がある場合
+        // ★ polygon（圃場の形）がある場合は描画
         if (field.coords) {
-          layer = L.polygon(field.coords, {
+          L.polygon(field.coords, {
             color: field.color || "#3388ff",
             weight: 2
           }).addTo(map);
-        } else {
-          // ★ lat/lng の場合はキャベツアイコン
-          layer = L.marker([field.lat, field.lng], {
-            icon: cabbageIcon
-          }).addTo(map);
         }
 
-        // ★ ポップアップ（ナビ + 分析ページ）
+        // ★ メインのマーカー（キャベツ＋圃場名）
+        const marker = L.marker([field.lat, field.lng], {
+          icon: createFieldIcon(field)
+        }).addTo(map);
+
+        // ★ ポップアップ（ナビ＋分析ページ）
         const popupHtml = `
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
@@ -58,10 +75,12 @@ function initMap() {
           </div>
         `;
 
-        layer.bindPopup(popupHtml);
+        marker.bindPopup(popupHtml);
 
-        layer.on("popupopen", () => {
-          // ナビ
+        // ★ ポップアップが開いたときにイベントを付ける
+        marker.on("popupopen", () => {
+
+          // Google Maps ナビ
           const navBtn = document.getElementById(`nav-${field.name}`);
           if (navBtn) {
             navBtn.addEventListener("click", () => {
@@ -70,7 +89,7 @@ function initMap() {
             });
           }
 
-          // 分析ページ
+          // 圃場分析ページへ
           const analysisBtn = document.getElementById(`analysis-${field.name}`);
           if (analysisBtn) {
             analysisBtn.addEventListener("click", () => {
