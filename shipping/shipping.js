@@ -5,7 +5,34 @@ import { saveLog } from "../common/save/index.js";
 
 
 // ===============================
-// 軽量 CSV パーサー（カンマ入りフィールド対応）
+// CSV 行パーサー（改行入りフィールドにも対応）
+// ===============================
+function splitCSVLines(text) {
+  const lines = [];
+  let current = "";
+  let insideQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+
+    if (c === '"') {
+      insideQuotes = !insideQuotes;
+      current += c;
+    } else if ((c === "\n" || c === "\r") && !insideQuotes) {
+      if (current.trim() !== "") lines.push(current);
+      current = "";
+    } else {
+      current += c;
+    }
+  }
+  if (current.trim() !== "") lines.push(current);
+
+  return lines;
+}
+
+
+// ===============================
+// CSV 列パーサー（カンマ入りフィールド対応）
 // ===============================
 function parseCSVLine(line) {
   const result = [];
@@ -16,7 +43,6 @@ function parseCSVLine(line) {
     const c = line[i];
 
     if (c === '"') {
-      // "" → エスケープされた "
       if (insideQuotes && line[i + 1] === '"') {
         current += '"';
         i++;
@@ -42,25 +68,24 @@ function parseCSVLine(line) {
 async function loadUnweighedHarvests() {
   console.log("=== loadUnweighedHarvests START ===");
 
-// harvest/all.csv
-const res = await fetch("../logs/harvest/all.csv?nocache=" + Date.now());
-const text = await res.text();
-console.log("CSV raw text:", text);
+  // harvest/all.csv
+  const res = await fetch("../logs/harvest/all.csv?nocache=" + Date.now());
+  const text = await res.text();
+  console.log("=== HARVEST RAW TEXT ===\n", text);
 
-// ★ 改行コードをすべて正しく扱う
-const lines = text.trim().split(/\r?\n/);
-console.log("CSV lines:", lines);
+  const lines = splitCSVLines(text);
+  console.log("=== HARVEST SPLIT LINES ===", lines);
 
   const rows = lines.slice(1).map((line, idx) => {
     const cols = parseCSVLine(line);
-    console.log(`Row ${idx}:`, cols);
+    console.log(`HARVEST row ${idx}:`, cols);
 
-    const harvestRef = cols[0].replace(/-/g, "") + "-" + (cols[6] || "");
-    const shippingDate = cols[1];
+    const harvestRef =
+      cols[0].replace(/-/g, "") + "-" + (cols[6] || "") + "-" + idx;
 
     return {
       harvestDate: cols[0],
-      shippingDate,
+      shippingDate: cols[1],
       workers: cols[2],
       field: cols[3],
       amount: cols[4],
@@ -70,26 +95,43 @@ console.log("CSV lines:", lines);
     };
   });
 
+  console.log("=== HARVEST PARSED ROWS ===");
+  rows.forEach(r =>
+    console.log("harvestRow:", r.harvestDate, r.field, r.amount, r.harvestRef)
+  );
+
   // weight/all.csv
   let weighedRefs = new Set();
   try {
     const wres = await fetch("../logs/weight/all.csv?nocache=" + Date.now());
-    const wtext = await wres.text();
-    console.log("weight/all.csv raw:", wtext);
+    const wtext = await res.text();
+    console.log("=== WEIGHT RAW TEXT ===\n", wtext);
 
-    const wlines = wtext.trim().split(/\r?\n/).slice(1);
+    const wlines = splitCSVLines(wtext).slice(1);
+    console.log("=== WEIGHT SPLIT LINES ===", wlines);
+
     wlines.forEach((line, idx) => {
       const cols = parseCSVLine(line);
-      weighedRefs.add(cols[1]); // harvestRef
+      console.log(`WEIGHT row ${idx}:`, cols);
+      weighedRefs.add(cols[1]);
     });
   } catch (e) {
     console.log("weight/all.csv not found (初回は正常)");
   }
 
-  console.log("weighedRefs:", weighedRefs);
+  console.log("=== WEIGHT REFS ===");
+  weighedRefs.forEach(ref => console.log("weighedRef:", ref));
 
-  const filtered = rows.filter(r => !weighedRefs.has(r.harvestRef));
-  console.log("未計量 rows:", filtered);
+  // 未計量判定
+  const filtered = rows.filter(r => {
+    const isWeighed = weighedRefs.has(r.harvestRef);
+    console.log(
+      `CHECK harvestRef=${r.harvestRef} → weighed=${isWeighed}`
+    );
+    return !isWeighed;
+  });
+
+  console.log("=== UNWEIGHED ROWS ===", filtered);
 
   return filtered;
 }
