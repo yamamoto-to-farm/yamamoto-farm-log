@@ -21,13 +21,16 @@
       border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
+      vertical-align: top;
     }
     th {
       background: #f0f0f0;
     }
 
-    input[type="number"] {
-      width: 80px;
+    textarea {
+      width: 100%;
+      height: 80px;
+      font-size: 14px;
     }
 
     button {
@@ -36,6 +39,14 @@
       margin-top: 20px;
     }
     button:active { opacity: 0.8; }
+
+    #debugArea {
+      white-space: pre-wrap;
+      background:#eee;
+      padding:10px;
+      margin-bottom:20px;
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -49,7 +60,7 @@
 
   <button onclick="loadShipping()">未計量の収穫ログを読み込む</button>
 
-  <pre id="debugArea" style="white-space: pre-wrap; background:#eee; padding:10px; margin-bottom:20px;"></pre>
+  <pre id="debugArea"></pre>
 
   <div id="resultArea"></div>
 

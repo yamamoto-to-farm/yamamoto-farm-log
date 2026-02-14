@@ -1,11 +1,7 @@
-// ===============================
-// import（必ずファイル先頭）
-// ===============================
 import { saveLog } from "../common/save/index.js";
 
-
 // ===============================
-// CSV 行パーサー（改行入りフィールドにも対応）
+// CSV 行パーサー
 // ===============================
 function splitCSVLines(text) {
   const lines = [];
@@ -30,9 +26,8 @@ function splitCSVLines(text) {
   return lines;
 }
 
-
 // ===============================
-// CSV 列パーサー（カンマ入りフィールド対応）
+// CSV 列パーサー
 // ===============================
 function parseCSVLine(line) {
   const result = [];
@@ -61,94 +56,74 @@ function parseCSVLine(line) {
   return result;
 }
 
-
 // ===============================
 // harvest/all.csv と weight/all.csv を読み込む
 // ===============================
 async function loadUnweighedHarvests() {
-  console.log("=== loadUnweighedHarvests START ===");
+  const debug = [];
+  debug.push("=== loadUnweighedHarvests START ===");
 
   // harvest/all.csv
   const res = await fetch("../logs/harvest/all.csv?nocache=" + Date.now());
   const text = await res.text();
-  console.log("=== HARVEST RAW TEXT ===\n", text);
+  debug.push("=== HARVEST RAW TEXT ===\n" + text);
 
   const lines = splitCSVLines(text);
-  console.log("=== HARVEST SPLIT LINES ===", lines);
+  debug.push("=== HARVEST SPLIT LINES === " + lines.length);
 
   const rows = lines.slice(1).map((line, idx) => {
     const cols = parseCSVLine(line);
-    console.log(`HARVEST row ${idx}:`, cols);
 
     const harvestDate = cols[0];
+    const shippingDate = cols[1];
+    const workers = cols[2];
     const field = cols[3];
-    const bins = cols[4]; // ★ Bins を harvestID に使う
+    const bins = parseFloat(cols[4] || "0");
 
-    // ★ harvestID = YYYYMMDD-field-bins-index
+    // ★ harvestID = 出荷申込日 + 圃場 + 行番号
     const harvestID =
-      harvestDate.replace(/-/g, "") + "-" + field + "-" + bins + "-" + idx;
+      shippingDate.replace(/-/g, "") + "-" + field + "-" + idx;
 
     return {
       harvestID,
       harvestDate,
-      shippingDate: cols[1],
-      workers: cols[2],
+      shippingDate,
+      workers,
       field,
-      amount: bins,
+      bins,
       issue: cols[5] || "",
       plantingRef: cols[6] || ""
     };
   });
-
-  console.log("=== HARVEST PARSED ROWS ===");
-  rows.forEach(r =>
-    console.log("harvestRow:", r.harvestID, r.harvestDate, r.field, r.amount)
-  );
 
   // weight/all.csv
   let weighedIDs = new Set();
   try {
     const wres = await fetch("../logs/weight/all.csv?nocache=" + Date.now());
     const wtext = await wres.text();
-    console.log("=== WEIGHT RAW TEXT ===\n", wtext);
+    debug.push("=== WEIGHT RAW TEXT ===\n" + wtext);
 
     const wlines = splitCSVLines(wtext).slice(1);
-    console.log("=== WEIGHT SPLIT LINES ===", wlines);
-
-    wlines.forEach((line, idx) => {
+    wlines.forEach(line => {
       const cols = parseCSVLine(line);
-      console.log(`WEIGHT row ${idx}:`, cols);
       weighedIDs.add(cols[1]); // harvestID
     });
   } catch (e) {
-    console.log("weight/all.csv not found (初回は正常)");
+    debug.push("weight/all.csv not found (初回は正常)");
   }
 
-  console.log("=== WEIGHED IDs ===");
-  weighedIDs.forEach(id => console.log("weighedID:", id));
+  // 未計量判定
+  const filtered = rows.filter(r => !weighedIDs.has(r.harvestID));
 
-  // 未計量判定（harvestID ベース）
-  const filtered = rows.filter(r => {
-    const isWeighed = weighedIDs.has(r.harvestID);
-    console.log(`CHECK harvestID=${r.harvestID} → weighed=${isWeighed}`);
-    return !isWeighed;
-  });
-
-  console.log("=== UNWEIGHED ROWS ===", filtered);
-
+  document.getElementById("debugArea").textContent = debug.join("\n");
   return filtered;
 }
-
 
 // ===============================
 // UI に未計量の収穫ログを表示
 // ===============================
 async function renderTable() {
-  console.log("=== renderTable START ===");
-
   const rows = await loadUnweighedHarvests();
-  console.log("renderTable rows:", rows);
-
   const area = document.getElementById("resultArea");
 
   if (rows.length === 0) {
@@ -160,11 +135,10 @@ async function renderTable() {
     <table>
       <tr>
         <th>収穫日</th>
-        <th>作業者</th>
+        <th>出荷申込日</th>
         <th>圃場</th>
-        <th>収穫量</th>
-        <th>基数</th>   <!-- ★ Bins → 基数 -->
-        <th>重量(kg)</th>
+        <th>収穫基数</th>
+        <th>重量入力（複数行）</th>
         <th>メモ</th>
       </tr>
   `;
@@ -173,11 +147,10 @@ async function renderTable() {
     html += `
       <tr data-index="${i}">
         <td>${r.harvestDate}</td>
-        <td>${r.workers}</td>
+        <td>${r.shippingDate}</td>
         <td>${r.field}</td>
-        <td>${r.amount}</td>
-        <td><input type="number" class="bins"></td>
-        <td><input type="number" class="weight"></td>
+        <td>${r.bins} 基</td>
+        <td><textarea class="weights" placeholder="1行に1つずつ入力"></textarea></td>
         <td><input type="text" class="notes"></td>
       </tr>
     `;
@@ -188,7 +161,6 @@ async function renderTable() {
 
   window._shippingRows = rows;
 }
-
 
 // ===============================
 // 入力値を集める
@@ -203,18 +175,36 @@ function collectWeightData() {
     const idx = tr.dataset.index;
     const base = window._shippingRows[idx];
 
-    const bins = tr.querySelector(".bins").value;
-    const weight = tr.querySelector(".weight").value;
+    const weightsText = tr.querySelector(".weights").value.trim();
     const notes = tr.querySelector(".notes").value || "";
 
-    if (!bins && !weight) return;
+    if (!weightsText) return;
+
+    // 改行で split → 数値化
+    const weightList = weightsText
+      .split(/\r?\n/)
+      .map(v => parseFloat(v.trim()))
+      .filter(v => !isNaN(v));
+
+    // 合計重量
+    const totalWeight = weightList.reduce((a, b) => a + b, 0);
+
+    // 収穫基数と個数チェック
+    if (weightList.length !== Math.round(base.bins)) {
+      alert(
+        `圃場「${base.field}」の重量入力数が収穫基数と一致しません。\n` +
+        `収穫基数: ${base.bins} 基\n` +
+        `重量入力数: ${weightList.length} 個`
+      );
+      throw new Error("重量数不一致");
+    }
 
     list.push({
       shippingDate,
       harvestID: base.harvestID,
       field: base.field,
-      bins,
-      weight,
+      bins: base.bins,
+      totalWeight,
       notes
     });
   });
@@ -222,11 +212,10 @@ function collectWeightData() {
   return list;
 }
 
-
 // ===============================
-// 保存処理（Workers 経由）
+// 保存処理
 // ===============================
-async function saveWeightInner() {
+async function saveWeight() {
   const shippingDate = document.getElementById("shippingDate").value;
   if (!shippingDate) {
     alert("出荷日を入力してください");
@@ -247,7 +236,7 @@ async function saveWeightInner() {
       item.harvestID,
       item.field,
       item.bins,
-      item.weight,
+      item.totalWeight,
       item.notes.replace(/[\r\n,]/g, " ")
     ].join(",");
 
@@ -258,4 +247,4 @@ async function saveWeightInner() {
 }
 
 window.loadShipping = renderTable;
-window.saveWeight = saveWeightInner;
+window.saveWeight = saveWeight;
