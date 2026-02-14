@@ -163,7 +163,7 @@ async function renderTable() {
 }
 
 // ===============================
-// 入力値を集める
+// 入力値を集める（按分ロジック含む）
 // ===============================
 function collectWeightData() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -186,18 +186,22 @@ function collectWeightData() {
       .map(v => parseFloat(v.trim()))
       .filter(v => !isNaN(v));
 
-    // 合計重量
-    const totalWeight = weightList.reduce((a, b) => a + b, 0);
+    // ★ 必要重量数（2基単位）
+    const requiredCount = Math.ceil(base.bins / 2);
 
-    // 収穫基数と個数チェック
-    if (weightList.length !== Math.round(base.bins)) {
+    if (weightList.length !== requiredCount) {
       alert(
         `圃場「${base.field}」の重量入力数が収穫基数と一致しません。\n` +
         `収穫基数: ${base.bins} 基\n` +
+        `必要重量数（2基ごと）: ${requiredCount} 個\n` +
         `重量入力数: ${weightList.length} 個`
       );
       throw new Error("重量数不一致");
     }
+
+    // ★ 按分計算（2基単位 → bins 基分に変換）
+    const totalRaw = weightList.reduce((a, b) => a + b, 0);
+    const totalWeight = totalRaw * (base.bins / (2 * weightList.length));
 
     list.push({
       shippingDate,
