@@ -46,9 +46,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ★ ここから通常の analysis ページ処理
   document.getElementById("field-name").textContent = fieldName;
 
-  const planting = await loadCSV("../data/planting.csv");
-  const harvest = await loadCSV("../data/harvest.csv");
-  const shipping = await loadCSV("../data/shipping.csv");
+  const planting = await loadCSV("../logs/planting/all.csv");
+  const harvest = await loadCSV("../logs/harvest/all.csv");
+  const shipping = await loadCSV("../logs/shipping/all.csv");
 
   // 最新作付け
   const latestPlanting = planting
