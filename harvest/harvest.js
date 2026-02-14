@@ -13,8 +13,7 @@ import { saveLog } from "../common/save/index.js";
 
 import { getMachineParam } from "../common/utils.js";   // ← 追加
 // ui.js の PIN_MAP によって決まる作業者は window.currentHuman に入る
-
-
+import { showPinGate } from "../common/ui.js";
 window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {
     document.getElementById("form-area").style.display = "block";
