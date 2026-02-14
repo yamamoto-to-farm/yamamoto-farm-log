@@ -15,6 +15,13 @@ function initMap() {
     maxZoom: 19
   }).addTo(map);
 
+  // ★ キャベツアイコン
+  const cabbageIcon = L.icon({
+    iconUrl: '../img/cabbage.png',   // ← 画像を置く場所
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+
   fetch("../data/fields.json")
     .then(res => res.json())
     .then(fields => {
@@ -28,20 +35,49 @@ function initMap() {
             weight: 2
           }).addTo(map);
         } else {
-          // lat/lng だけの場合は circle
-          layer = L.circle([field.lat, field.lng], {
-            radius: 30,
-            color: field.color || "#3388ff"
+          // ★ lat/lng の場合はキャベツアイコン
+          layer = L.marker([field.lat, field.lng], {
+            icon: cabbageIcon
           }).addTo(map);
         }
 
-        // ポップアップ
-        layer.bindPopup(field.name);
+        // ★ ポップアップ（ナビ + 分析ページ）
+        const popupHtml = `
+          <div style="text-align:center;">
+            <strong>${field.name}</strong><br><br>
 
-        // ★ 圃場クリック → Google Maps ナビ
-        layer.on("click", () => {
-          const url = `https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`;
-          window.open(url, "_blank");
+            <button id="nav-${field.name}" 
+              style="margin:4px; padding:4px 10px;">
+              Google Maps（ナビ）
+            </button>
+
+            <button id="analysis-${field.name}" 
+              style="margin:4px; padding:4px 10px;">
+              圃場分析ページへ
+            </button>
+          </div>
+        `;
+
+        layer.bindPopup(popupHtml);
+
+        layer.on("popupopen", () => {
+          // ナビ
+          const navBtn = document.getElementById(`nav-${field.name}`);
+          if (navBtn) {
+            navBtn.addEventListener("click", () => {
+              const url = `https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`;
+              window.open(url, "_blank");
+            });
+          }
+
+          // 分析ページ
+          const analysisBtn = document.getElementById(`analysis-${field.name}`);
+          if (analysisBtn) {
+            analysisBtn.addEventListener("click", () => {
+              const fieldName = encodeURIComponent(field.name);
+              location.href = `../analysis/index.html?field=${fieldName}`;
+            });
+          }
         });
       });
     });
