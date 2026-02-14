@@ -6,6 +6,9 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+import { getMachineParam } from "../common/utils.js";   // ← 追加
+// human は PIN_MAP により ui.js で window.currentHuman に入る
+
 // ===============================
 // CSV 行パーサー
 // ===============================
@@ -238,6 +241,11 @@ async function saveWeight() {
     return;
   }
 
+  // QR → machine
+  const machine = getMachineParam();        // ← 追加
+  // PIN → human
+  const human = window.currentHuman || "";  // ← 追加
+
   for (const item of list) {
     const dateStr = item.shippingDate.replace(/-/g, "");
 
@@ -247,7 +255,9 @@ async function saveWeight() {
       item.field,
       item.bins,
       item.totalWeight,
-      item.notes.replace(/[\r\n,]/g, " ")
+      item.notes.replace(/[\r\n,]/g, " "),
+      machine,   // ← ★ 追加
+      human      // ← ★ 追加
     ].join(",");
 
     await saveLog("weight", dateStr, item, csvLine);

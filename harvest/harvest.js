@@ -11,6 +11,10 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 
+import { getMachineParam } from "../common/utils.js";   // ← 追加
+// ui.js の PIN_MAP によって決まる作業者は window.currentHuman に入る
+
+
 window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {
     document.getElementById("form-area").style.display = "block";
@@ -176,7 +180,7 @@ function collectHarvestData() {
     plantingRef: document.getElementById("plantingRef").value
   };
 }
-//更新2026/02/14
+
 // ===============================
 // 保存処理
 // ===============================
@@ -188,6 +192,11 @@ async function saveHarvestInner() {
     return;
   }
 
+  // QR → machine
+  const machine = getMachineParam();        // ← 追加
+  // PIN → human
+  const human = window.currentHuman || "";  // ← 追加
+
   const dateStr = data.harvestDate.replace(/-/g, "");
 
   const csvLine = [
@@ -197,12 +206,15 @@ async function saveHarvestInner() {
     data.field,
     data.amount,
     data.issue.replace(/[\r\n,]/g, " "),
-    data.plantingRef
+    data.plantingRef,
+    machine,   // ← ★ 追加
+    human      // ← ★ 追加
   ].join(",");
 
   await saveLog("harvest", dateStr, data, csvLine);
 
   alert("GitHubに保存しました");
 }
+
 
 window.saveHarvest = saveHarvestInner;

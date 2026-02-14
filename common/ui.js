@@ -262,14 +262,25 @@ export function getFinalField(
 }
 
 // ============================
-// 家族用 PIN 認証 UI
+// PIN 認証 UI
 // ============================
-export function showPinGate(containerId, onSuccess) {
-  const FAMILY_PIN = "0000"; // ★ 家族共通 PIN（後で変更可）
+// ui.js
 
+// PIN → human の対応表（あとから増やせる）
+export const PIN_MAP = {
+  "000": "naoki",
+  "001": "sakiko",
+  "002": "masahiko",
+  "Y005": "wakatsuki",
+  "Y006": "ishihara"
+};
+
+// PIN ゲート
+export function showPinGate(containerId, onSuccess) {
   const container = document.getElementById(containerId);
+
   container.innerHTML = `
-    <div id="pin-gate" style="padding:20px; text-align:center;">
+    <div style="padding:20px; text-align:center;">
       <h2>アクセスキーを入力してください</h2>
       <input id="pin-input" type="password" style="font-size:20px; padding:8px; width:200px;">
       <br><br>
@@ -278,12 +289,18 @@ export function showPinGate(containerId, onSuccess) {
   `;
 
   document.getElementById("pin-ok").addEventListener("click", () => {
-    const input = document.getElementById("pin-input").value.trim();
-    if (input === FAMILY_PIN) {
-      container.innerHTML = ""; // PIN UI を消す
-      onSuccess();              // フォーム表示など
-    } else {
+    const pin = document.getElementById("pin-input").value.trim();
+    const human = PIN_MAP[pin];
+
+    if (!human) {
       alert("アクセスキーが違います");
+      return;
     }
+
+    // PIN で判定された作業者を保持
+    window.currentHuman = human;
+
+    container.innerHTML = "";
+    onSuccess();
   });
 }

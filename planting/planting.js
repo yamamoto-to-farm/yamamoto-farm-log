@@ -9,6 +9,8 @@ import { saveLog } from "../common/save/index.js";
 
 import { showPinGate } from "../common/ui.js";
 
+import { getMachineParam } from "../common/utils.js";
+
 window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {
     document.getElementById("form-area").style.display = "block";
@@ -191,18 +193,25 @@ async function savePlantingInner() {
     return;
   }
 
+  // QR → machine
+  const machine = getMachineParam();        // utils.js
+  // PIN → human
+  const human = window.currentHuman || "";  // ui.js の PIN_MAP で決まる
+
   const dateStr = data.plantDate.replace(/-/g, "");
 
   const csvLine = [
     data.plantDate,
     data.worker.replace(/,/g, "／"),
     data.field,
-    data.variety,     // ← name が入る
+    data.variety,        // ← name が入る
     data.quantity,
     data.spacingRow,
     data.spacingBed,
     data.harvestPlanYM,
-    data.notes.replace(/[\r\n,]/g, " ")
+    data.notes.replace(/[\r\n,]/g, " "),
+    machine,             // ← ★ 追加
+    human                // ← ★ 追加
   ].join(",");
 
   await saveLog("planting", dateStr, data, csvLine);
