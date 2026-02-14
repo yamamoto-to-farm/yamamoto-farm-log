@@ -1,1 +1,1 @@
-{"type":"weight","dateStr":"20260215","json":{"shippingDate":"2026-02-15","harvestRef":"20260214-","bins":"10","weight":"3000","notes":""},"csv":"2026-02-15,20260214-,10,3000,","loggedAt":"2026-02-14T09:13:14.573Z"}
+{"type":"weight","dateStr":"20260215","json":{"shippingDate":"2026-02-15","harvestID":"20260215-大清水(小)（推定）-0","field":"大清水(小)（推定）","bins":14,"totalWeight":4200,"notes":""},"csv":"2026-02-15,20260215-大清水(小)（推定）-0,大清水(小)（推定）,14,4200,","loggedAt":"2026-02-14T13:12:03.619Z"}
