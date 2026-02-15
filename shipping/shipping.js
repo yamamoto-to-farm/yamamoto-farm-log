@@ -7,7 +7,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 import { getMachineParam } from "../common/utils.js";   // ← 追加
-// human は PIN_MAP により ui.js で window.currentHuman に入る
+
 import { showPinGate } from "../common/ui.js";
 window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {

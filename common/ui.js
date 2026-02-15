@@ -284,31 +284,27 @@ export async function loadAccessMap() {
 }
 
 // PIN ゲート
-export function showPinGate(containerId, onSuccess) {
+export async function showPinGate(containerId, onSuccess) {
+  const accessList = await loadAccessMap();
+
   const container = document.getElementById(containerId);
+  container.style.display = "block";
 
-  container.innerHTML = `
-    <div style="padding:20px; text-align:center;">
-      <h2>アクセスキーを入力してください</h2>
-      <input id="pin-input" type="password" style="font-size:20px; padding:8px; width:200px;">
-      <br><br>
-      <button id="pin-ok" style="font-size:18px; padding:8px 20px;">OK</button>
-    </div>
-  `;
+  document.getElementById("pin-submit").onclick = () => {
+    const pin = document.getElementById("pin-input").value;
 
-  document.getElementById("pin-ok").addEventListener("click", () => {
-    const pin = document.getElementById("pin-input").value.trim();
-    const human = PIN_MAP[pin];
+    const user = accessList.find(u => u.pin === pin);
 
-    if (!human) {
+    if (!user) {
       alert("アクセスキーが違います");
       return;
     }
 
-    // PIN で判定された作業者を保持
-    window.currentHuman = human;
+    // ★ ログイン情報をセット
+    window.currentHuman = user.name;
+    window.currentRole = user.role;
 
-    container.innerHTML = "";
+    container.style.display = "none";
     onSuccess();
-  });
+  };
 }
