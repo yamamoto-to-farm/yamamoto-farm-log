@@ -1,11 +1,12 @@
 // map.js
-import { showPinGate } from "../common/ui.js";
+
+// ★ showPinGate は使わない
+// import { showPinGate } from "../common/ui.js";
 
 window.addEventListener("DOMContentLoaded", () => {
-  showPinGate("pin-container", () => {
-    document.getElementById("map-container").style.display = "block";
-    initMap();
-  });
+  // map/index.html 側で認証チェック済みなので、
+  // ここでは地図を初期化するだけでOK
+  initMap();
 });
 
 function initMap() {
@@ -16,27 +17,27 @@ function initMap() {
   }).addTo(map);
 
   // ★ 圃場アイコン（キャベツ画像＋圃場名ラベル）
-function createFieldIcon(field) {
-  return L.divIcon({
-    html: `
-      <div style="text-align:center; transform: translateY(-10px);">
-        <div style="
-          font-size: 14px;
-          font-weight: bold;
-          color: black;
-          white-space: nowrap;
-          text-shadow: 0 0 3px white, 0 0 3px white;
-        ">
-          ${field.name}
+  function createFieldIcon(field) {
+    return L.divIcon({
+      html: `
+        <div style="text-align:center; transform: translateY(-10px);">
+          <div style="
+            font-size: 14px;
+            font-weight: bold;
+            color: black;
+            white-space: nowrap;
+            text-shadow: 0 0 3px white, 0 0 3px white;
+          ">
+            ${field.name}
+          </div>
+          <img src="../img/cabbage.png" style="width:40px; height:40px;">
         </div>
-        <img src="../img/cabbage.png" style="width:40px; height:40px;">
-      </div>
-    `,
+      `,
     className: "",
     iconSize: [40, 40],
     iconAnchor: [20, 40]
-  });
-}
+    });
+  }
 
   fetch("../data/fields.json")
     .then(res => res.json())
@@ -61,12 +62,12 @@ function createFieldIcon(field) {
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
 
-            <button id="nav-${field.name}" 
+            <button id="nav-${field.name}"
               style="margin:4px; padding:4px 10px;">
               Google Maps（ナビ）
             </button>
 
-            <button id="analysis-${field.name}" 
+            <button id="analysis-${field.name}"
               style="margin:4px; padding:4px 10px;">
               圃場分析ページへ
             </button>

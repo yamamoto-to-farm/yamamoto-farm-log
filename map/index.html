@@ -22,7 +22,10 @@
 
   <script type="module">
     // ★ localStorage → window.currentRole を復元
-    import "/yamamoto-farm-log/common/ui.js";
+    import "/yamamoto-farm-log/common/ui.js?v=20250215";
+
+    // ★ map.js の initMap を読み込む
+    import { initMap } from "./map.js?v=20250215";
 
     window.addEventListener("DOMContentLoaded", () => {
 
@@ -33,13 +36,13 @@
         return;
       }
 
-      // 認証済み → 地図を表示
+      // ★ 認証済み → 地図を表示
       document.getElementById("map-container").style.display = "block";
+
+      // ★ Leaflet 初期化（display:block の後で実行）
+      initMap();
     });
   </script>
-
-  <!-- 地図ロジック -->
-  <script type="module" src="./map.js"></script>
 
 </body>
 </html>
