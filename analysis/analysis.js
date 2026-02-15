@@ -189,15 +189,24 @@ window.addEventListener("DOMContentLoaded", async () => {
     `;
 
     // ===============================
-    // ★ サマリー保存ボタン（ここに置く）
+    // ★ サマリー保存ボタン
     // ===============================
     document.getElementById("save-summary").onclick = async () => {
+      console.log("=== save-summary clicked ===");
 
-        console.log("=== save-summary clicked ===");
-    
-        
-      const plantingRef = sorted[0].plantingRef;
-    console.log("plantingRef:", sorted[0]?.plantingRef);
+      // ① plantingRef を収穫データから取得
+      const plantingRef = sorted[0]?.plantingRef;
+      console.log("plantingRef:", plantingRef);
+
+      if (!plantingRef) {
+        alert("plantingRef が取得できませんでした（harvest の plantingRef が空）");
+        return;
+      }
+
+      // ② planting 側から対応する行を取り直す（念のためここで確定させる）
+      const plantingRow = planting.find(p => p.plantingRef === plantingRef) || null;
+
+      // ③ CSV 1 行分を組み立て
       const csvLine = [
         plantingRef,
         fieldName,
@@ -214,6 +223,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       console.log("csvLine:", csvLine);
 
+      // ④ summary/all.csv に 1 行追記
       await saveLog("summary", plantingRef, {}, csvLine);
 
       alert("サマリーを保存しました");
