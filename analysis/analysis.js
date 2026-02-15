@@ -194,13 +194,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("save-summary").onclick = async () => {
 
         console.log("=== save-summary clicked ===");
-
-        console.log("sorted:", sorted);
-        console.log("plantingRef:", sorted[0]?.plantingRef);
-        console.log("csvLine:", csvLine);
-
+    
+        
       const plantingRef = sorted[0].plantingRef;
-
+    console.log("plantingRef:", sorted[0]?.plantingRef);
       const csvLine = [
         plantingRef,
         fieldName,
@@ -214,6 +211,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         latestTotalAreaM2,
         yieldPer10a
       ].join(",");
+
+      console.log("csvLine:", csvLine);
 
       await saveLog("summary", plantingRef, {}, csvLine);
 
