@@ -155,15 +155,13 @@ async function updatePlantingRefOptions() {
 
   console.log("🧪 filtered:", filtered);
 
-  filtered.forEach(p => {
-    const id = p.plantDate.replace(/-/g, "");
-    const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
-    select.appendChild(opt);
-  });
-}
-
+filtered.forEach(p => {
+  const id = `${p.plantDate.replace(/-/g, "")}-${p.field}-${p.variety}`;  // ★ 複合キー
+  const opt = document.createElement("option");
+  opt.value = id;
+  opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
+  select.appendChild(opt);
+});
 
 // ===============================
 // 入力データ収集

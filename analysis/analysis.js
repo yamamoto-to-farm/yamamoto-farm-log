@@ -117,12 +117,19 @@ if (latestPlantings.length > 0) {
     `;
   }).join("");
 
-  // ★ 合計面積を最後に追加
-  document.getElementById("latest-planting").innerHTML =
-    html +
-    `<div class="info-line" style="font-weight:bold;">
-       合計作付け面積：${totalArea.toFixed(1)} ㎡
-     </div>`;
+ // ★ 合計面積（㎡ → a → 反）
+const m2  = totalArea;
+const a   = m2 / 100;      // 1a = 100㎡
+const tan = m2 / 1000;     // 1反 = 1000㎡（実務基準）
+
+document.getElementById("latest-planting").innerHTML =
+  html +
+  `
+    <div class="info-line" style="font-weight:bold; margin-top:10px;">
+      合計作付け面積：${m2.toFixed(1)} ㎡
+      （${tan.toFixed(2)} 反 / ${a.toFixed(2)} a）
+    </div>
+  `;
 
 } else {
   document.getElementById("latest-planting").textContent = "データなし";

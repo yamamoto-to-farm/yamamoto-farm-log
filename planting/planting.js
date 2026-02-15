@@ -205,20 +205,24 @@ async function savePlantingInner() {
 
   const dateStr = data.plantDate.replace(/-/g, "");
 
-  const csvLine = [
-    data.plantDate,
-    data.worker.replace(/,/g, "／"),
-    data.field,
-    data.variety,
-    data.quantity,
-    data.spacingRow,
-    data.spacingBed,
-    data.harvestPlanYM,
-    data.notes.replace(/[\r\n,]/g, " "),
-    machine,
-    human
-  ].join(",");
+// plantingRef を生成
+const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
 
+// CSV 行に追加
+const csvLine = [
+  data.plantDate,
+  data.worker.replace(/,/g, "／"),
+  data.field,
+  data.variety,
+  data.quantity,
+  data.spacingRow,
+  data.spacingBed,
+  data.harvestPlanYM,
+  data.notes.replace(/[\r\n,]/g, " "),
+  machine,
+  human,
+  plantingRef   // ★ 追加
+].join(",");
   await saveLog("planting", dateStr, data, csvLine);
 
   alert("GitHubに保存しました");
