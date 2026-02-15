@@ -138,121 +138,122 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("latest-planting").textContent = "データなし";
   }
 
-  // ===============================
-  // 収穫サマリー（複数 plantingRef 対応）
-  // ===============================
-  const harvestRows = harvest.filter(r => r.field === fieldName);
+// ===============================
+// 収穫サマリー（複数 plantingRef 対応）
+// ===============================
+const harvestRows = harvest.filter(r => r.field === fieldName);
 
-  if (harvestRows.length === 0) {
-    document.getElementById("latest-harvest").textContent = "データなし";
-  } else {
+if (harvestRows.length === 0) {
+  document.getElementById("latest-harvest").textContent = "データなし";
+} else {
 
-    // ★ plantingRef ごとにグループ化
-    const groups = {};
-    harvestRows.forEach(r => {
-      if (!groups[r.plantingRef]) groups[r.plantingRef] = [];
-      groups[r.plantingRef].push(r);
-    });
+  // ★ plantingRef ごとにグループ化
+  const groups = {};
+  harvestRows.forEach(r => {
+    if (!groups[r.plantingRef]) groups[r.plantingRef] = [];
+    groups[r.plantingRef].push(r);
+  });
 
-    let html = "";
+  let html = "";
 
-    // ★ 各 plantingRef ごとにサマリーを作成
-    for (const plantingRef of Object.keys(groups)) {
+  // ★ 各 plantingRef ごとにサマリーを作成
+  for (const plantingRef of Object.keys(groups)) {
 
-      const rows = groups[plantingRef].sort(
-        (a, b) => new Date(a.harvestDate) - new Date(b.harvestDate)
+    const rows = groups[plantingRef].sort(
+      (a, b) => new Date(a.harvestDate) - new Date(b.harvestDate)
+    );
+
+    const startDate = rows[0].harvestDate;
+    const endDate   = rows[rows.length - 1].harvestDate;
+    const count = rows.length;
+
+    const totalBins = rows.reduce((sum, r) => sum + Number(r.bins), 0);
+
+    const totalWeight = shipping
+      .filter(s => s.field === fieldName && s.plantingRef === plantingRef)
+      .reduce((sum, s) => sum + Number(s.totalWeight || 0), 0);
+
+    const plantingRow = planting.find(p => p.plantingRef === plantingRef);
+    const plantDate = plantingRow?.plantDate || "";
+
+    let days = "";
+    if (plantDate) {
+      days = Math.floor(
+        (new Date(startDate) - new Date(plantDate)) / (1000 * 60 * 60 * 24)
       );
-
-      const startDate = rows[0].harvestDate;
-      const endDate   = rows[rows.length - 1].harvestDate;
-      const count = rows.length;
-
-      const totalBins = rows.reduce((sum, r) => sum + Number(r.bins), 0);
-
-      const totalWeight = shipping
-        .filter(s => s.field === fieldName && s.plantingRef === plantingRef)
-        .reduce((sum, s) => sum + Number(s.totalWeight || 0), 0);
-
-      const plantingRow = planting.find(p => p.plantingRef === plantingRef);
-      const plantDate = plantingRow?.plantDate || "";
-
-      let days = "";
-      if (plantDate) {
-        days = Math.floor(
-          (new Date(startDate) - new Date(plantDate)) / (1000 * 60 * 60 * 24)
-        );
-      }
-
-      let yieldPer10a = "";
-      if (latestTotalAreaM2 > 0) {
-        yieldPer10a = (totalWeight / (latestTotalAreaM2 / 1000)).toFixed(1);
-      }
-
-      const safeKey = plantingRef.replace(/[^a-zA-Z0-9_-]/g, "_");
-
-      const summaryJson = {
-        plantingRef,
-        field: fieldName,
-        variety: plantingRow?.variety || "",
-        plantDate,
-        harvestStart: startDate,
-        harvestEnd: endDate,
-        days,
-        totalBins,
-        totalWeight,
-        areaM2: latestTotalAreaM2,
-        yieldPer10a
-      };
-
-      const csvLine = [
-        plantingRef,
-        fieldName,
-        plantingRow?.variety || "",
-        plantDate,
-        startDate,
-        endDate,
-        days,
-        totalBins,
-        totalWeight,
-        latestTotalAreaM2,
-        yieldPer10a
-      ].join(",");
-
-      html += `
-        <div class="summary-card">
-          <div class="info-line">品種：${plantingRow?.variety || ""}</div>
-          <div class="info-line">定植日：${plantDate}</div>
-          <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
-          <div class="info-line">収穫回数：${count} 回</div>
-          <div class="info-line">定植 → 初回収穫：${days} 日</div>
-          <div class="info-line">合計収量：${totalBins} 基</div>
-          <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
-          <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
-
-          <button class="save-btn" data-key="${safeKey}"
-                  data-json='${JSON.stringify(summaryJson)}'
-                  data-csv="${csvLine}">
-            このサマリーを保存
-          </button>
-          <hr>
-        </div>
-      `;
     }
 
-    document.getElementById("latest-harvest").innerHTML = html;
+    let yieldPer10a = "";
+    if (latestTotalAreaM2 > 0) {
+      yieldPer10a = (totalWeight / (latestTotalAreaM2 / 1000)).toFixed(1);
+    }
 
-    // ===============================
-    // ★ 各サマリーの保存ボタン
-    // ===============================
-    document.querySelectorAll(".save-btn").forEach(btn => {
-      btn.onclick = async () => {
-        const safeKey = btn.dataset.key;
-        const json = JSON.parse(btn.dataset.json);
-        const csv = btn.dataset.csv;
+    const safeKey = plantingRef.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-        await saveLog("summary", safeKey, json, csv);
-        alert(`サマリー（${json.variety}）を保存しました`);
-      };
-    });
+    const summaryJson = {
+      plantingRef,
+      field: fieldName,
+      variety: plantingRow?.variety || "",
+      plantDate,
+      harvestStart: startDate,
+      harvestEnd: endDate,
+      days,
+      totalBins,
+      totalWeight,
+      areaM2: latestTotalAreaM2,
+      yieldPer10a
+    };
+
+    const csvLine = [
+      plantingRef,
+      fieldName,
+      plantingRow?.variety || "",
+      plantDate,
+      startDate,
+      endDate,
+      days,
+      totalBins,
+      totalWeight,
+      latestTotalAreaM2,
+      yieldPer10a
+    ].join(",");
+
+    // ★ <hr> を外に出し、ボタンは 1 個だけ
+    html += `
+      <div class="summary-card">
+        <div class="info-line">品種：${plantingRow?.variety || ""}</div>
+        <div class="info-line">定植日：${plantDate}</div>
+        <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
+        <div class="info-line">収穫回数：${count} 回</div>
+        <div class="info-line">定植 → 初回収穫：${days} 日</div>
+        <div class="info-line">合計収量：${totalBins} 基</div>
+        <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
+        <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
+
+        <button class="save-btn" data-key="${safeKey}"
+                data-json='${JSON.stringify(summaryJson)}'
+                data-csv="${csvLine}">
+          このサマリーを保存
+        </button>
+      </div>
+      <hr>
+    `;
   }
+
+  document.getElementById("latest-harvest").innerHTML = html;
+
+  // ===============================
+  // ★ 各サマリーの保存ボタン
+  // ===============================
+  document.querySelectorAll(".save-btn").forEach(btn => {
+    btn.onclick = async () => {
+      const safeKey = btn.dataset.key;
+      const json = JSON.parse(btn.dataset.json);
+      const csv = btn.dataset.csv;
+
+      await saveLog("summary", safeKey, json, csv);
+      alert(`サマリー（${json.variety}）を保存しました`);
+    };
+  });
+}
 });
