@@ -32,7 +32,6 @@
       text-decoration: none;
     }
 
-    /* PIN ゲート */
     #pin-area {
       background: #fff;
       padding: 20px;
@@ -47,10 +46,13 @@
 
     window.addEventListener("DOMContentLoaded", () => {
 
+      // ★ PIN 認証 UI を表示
       showPinGate("pin-area", () => {
+
+        // 認証成功 → メニュー表示
         document.getElementById("menu-area").style.display = "block";
 
-        // ★ デバッグ表示（ログイン情報）
+        // ★ ロールデバッグ表示（任意）
         document.body.insertAdjacentHTML(
           "afterbegin",
           `<div style="padding:10px; background:#eef; border:1px solid #99f; margin-bottom:10px;">

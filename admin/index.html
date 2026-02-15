@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理ページ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 20px; }
+    .card {
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      margin-bottom: 16px;
+    }
+    a {
+      color: #2b6cb0;
+      font-weight: bold;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 認証後に表示される管理メニュー -->
+  <div id="admin-area" style="display:none;">
+
+    <h1>管理ページ</h1>
+
+    <div class="card">
+      <a href="./edit-csv.html">CSV 編集ツール</a>
+    </div>
+
+    <div class="card">
+      <a href="./varieties.html">品種データ管理</a>
+    </div>
+
+    <div class="card">
+      <a href="./fields.html">圃場データ管理</a>
+    </div>
+
+    <div class="card">
+      <a href="./access.html">アクセス権限（PIN）管理</a>
+    </div>
+
+  </div>
+
+  <script type="module">
+    // ★ localStorage → window.currentRole を復元
+    import "/yamamoto-farm-log/common/ui.js";
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      // ★ 未認証端末 → トップページへ
+      if (!window.currentRole) {
+        alert("アクセス権限がありません（PIN を入力してください）");
+        location.href = "../index.html";
+        return;
+      }
+
+      // ★ worker → admin ページ禁止
+      if (window.currentRole === "worker") {
+        alert("このページは管理者のみアクセスできます");
+        location.href = "../index.html";
+        return;
+      }
+
+      // ★ family / admin → 通過
+      document.getElementById("admin-area").style.display = "block";
+    });
+  </script>
+
+</body>
+</html>

@@ -31,10 +31,7 @@
 
 <body>
 
-  <!-- ▼ PIN 認証エリア -->
-  <div id="pin-area"></div>
-
-  <!-- ▼ PIN 認証後に表示されるフォーム -->
+  <!-- ▼ PIN UI は不要。未認証端末は index に戻す -->
   <div id="form-area" style="display:none;">
 
     <h1>定植ログ</h1>
@@ -139,17 +136,24 @@
 
   <!-- JS -->
   <script type="module">
-    import { showPinGate } from "../common/ui.js";
+    // ★ localStorage → window.currentRole を復元
+    import "/yamamoto-farm-log/common/ui.js";
 
-    // PIN 認証 → フォーム解放
     window.addEventListener("DOMContentLoaded", () => {
-      showPinGate("pin-area", () => {
-        document.getElementById("form-area").style.display = "block";
 
-        // 日付初期値
-        const today = new Date().toISOString().slice(0, 10);
-        document.getElementById("plantDate").value = today;
-      });
+      // ★ 未認証端末は index に戻す
+      if (!window.currentRole) {
+        alert("アクセス権限がありません（PIN を入力してください）");
+        location.href = "../index.html";
+        return;
+      }
+
+      // 認証済み → フォーム表示
+      document.getElementById("form-area").style.display = "block";
+
+      // 日付初期値
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("plantDate").value = today;
     });
   </script>
 

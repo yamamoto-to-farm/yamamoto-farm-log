@@ -15,14 +15,31 @@
 </head>
 <body>
 
-  <!-- PIN ゲート -->
-  <div id="pin-container"></div>
-
   <!-- 認証後に表示される地図 -->
   <div id="map-container" style="display:none;">
     <div id="map"></div>
   </div>
 
+  <script type="module">
+    // ★ localStorage → window.currentRole を復元
+    import "/yamamoto-farm-log/common/ui.js";
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      // ★ 未認証端末はトップページへ戻す
+      if (!window.currentRole) {
+        alert("アクセス権限がありません（PIN を入力してください）");
+        location.href = "../index.html";
+        return;
+      }
+
+      // 認証済み → 地図を表示
+      document.getElementById("map-container").style.display = "block";
+    });
+  </script>
+
+  <!-- 地図ロジック -->
   <script type="module" src="./map.js"></script>
+
 </body>
 </html>

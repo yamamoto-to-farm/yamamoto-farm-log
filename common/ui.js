@@ -261,50 +261,82 @@ export function getFinalField(
     return auto;
 }
 
-// ============================
-// PIN 認証 UI
-// ============================
-// ui.js
-
-export async function loadAccessMap() {
-  const text = await fetch("/yamamoto-farm-log/data/access.csv").then(r => r.text());
-  const lines = text.trim().split("\n");
-  const headers = lines[0].split(",");
-
-  const list = lines.slice(1).map(line => {
-    const cols = line.split(",");
-    return {
-      pin: cols[0],
-      name: cols[1],
-      role: cols[2]
-    };
-  });
-
-  return list;
-}
-
-// PIN ゲート
-export async function showPinGate(containerId, onSuccess) {
-  const accessList = await loadAccessMap();
-
+// ===============================
+// PIN 認証 UI を表示し、認証後に callback を実行
+// ===============================
+export function showPinGate(containerId, onSuccess) {
   const container = document.getElementById(containerId);
-  container.style.display = "block";
+  if (!container) return;
 
-  document.getElementById("pin-submit").onclick = () => {
-    const pin = document.getElementById("pin-input").value;
+  const input = document.getElementById("pin-input");
+  const button = document.getElementById("pin-submit");
 
-    const user = accessList.find(u => u.pin === pin);
+  if (!input || !button) {
+    console.error("PIN UI が見つかりません");
+    return;
+  }
 
-    if (!user) {
-      alert("アクセスキーが違います");
-      return;
+  // PIN 認証処理
+  async function authenticate() {
+    const pin = input.value.trim();
+    if (!pin) return;
+
+    try {
+      const res = await fetch("/yamamoto-farm-log/data/access.csv");
+      const text = await res.text();
+      const lines = text.trim().split("\n");
+      const headers = lines[0].split(",");
+
+      const users = lines.slice(1).map(line => {
+        const cols = line.split(",");
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = cols[i]);
+        return obj;
+      });
+
+      const user = users.find(u => u.pin === pin);
+
+      if (!user) {
+        alert("PIN が違います");
+        return;
+      }
+
+      // ★ 認証成功 → グローバル変数に保存
+      window.currentHuman = user.name;
+      window.currentRole = user.role;
+
+      // ★ localStorage にも保存（QR 直アクセス対応）
+      localStorage.setItem("human", user.name);
+      localStorage.setItem("role", user.role);
+
+      // PIN UI を非表示
+      container.style.display = "none";
+
+      // 認証後の処理
+      if (onSuccess) onSuccess();
+
+    } catch (e) {
+      alert("認証データの読み込みに失敗しました");
     }
+  }
 
-    // ★ ログイン情報をセット
-    window.currentHuman = user.name;
-    window.currentRole = user.role;
+  // ボタン押下
+  button.onclick = authenticate;
 
-    container.style.display = "none";
-    onSuccess();
-  };
+  // Enter キー対応
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") authenticate();
+  });
 }
+
+// ===============================
+// ページ読み込み時に localStorage から認証情報を復元
+// （index 以外のページで利用）
+// ===============================
+window.addEventListener("DOMContentLoaded", () => {
+  const savedRole = localStorage.getItem("role");
+  const savedHuman = localStorage.getItem("human");
+
+  if (savedRole) window.currentRole = savedRole;
+  if (savedHuman) window.currentHuman = savedHuman;
+});
