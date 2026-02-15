@@ -87,17 +87,17 @@ async function loadUnweighedHarvests() {
   debug.push("=== HARVEST SPLIT LINES === " + lines.length);
 
   const rows = lines.slice(1).map((line, idx) => {
-    const cols = parseCSVLine(line);
+  const cols = parseCSVLine(line);
 
-    const harvestDate = cols[0];
-    const shippingDate = cols[1];
-    const workers = cols[2];
-    const field = cols[3];
-    const bins = parseFloat(cols[4] || "0");
+  const harvestDate = (cols[0] || "").trim();
+  const shippingDate = (cols[1] || "").trim();
+  const workers = (cols[2] || "").trim();
+  const field = (cols[3] || "").trim();
+  const bins = parseFloat((cols[4] || "0").trim());
 
-    // ★ harvestID = 出荷申込日 + 圃場 + 行番号
-    const harvestID =
-      shippingDate.replace(/-/g, "") + "-" + field + "-" + idx;
+  // ★ harvestID = 出荷申込日 + 圃場 + 行番号
+  const harvestID =
+    shippingDate.replace(/-/g, "") + "-" + field + "-" + idx;
 
     return {
       harvestID,
@@ -106,8 +106,8 @@ async function loadUnweighedHarvests() {
       workers,
       field,
       bins,
-      issue: cols[5] || "",
-      plantingRef: cols[6] || ""
+      issue: (cols[5] || "").trim(),        // ★ 必須
+      plantingRef: (cols[6] || "").trim()   // ★ 必須
     };
   });
 
