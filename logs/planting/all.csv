@@ -1,5 +1,5 @@
-plantDate,worker,field,variety,quantity,spacingRow,spacingBed,harvestPlanYM,notes,machine,human
-2025-08-09,山本 雅彦／山本 咲子／山本 直輝,三角畑(下),夏ごろも,4096,34,60,2025-11,,machine1,naoki
-2025-08-09,山本 雅彦／山本 咲子／山本 直輝,三角畑(下),藍天,3840,34,60,2025-11,,machine1,naoki
-2025-08-14,山本 雅彦／山本 咲子／山本 直輝,しあわせ地蔵,藍天,12096,33,60,2025-11,,machine1,naoki
-2026-02-15,山本 雅彦／山本 咲子／山本 直輝／石原 孝晋,ぎょうざ東３,初恋,7500,35,60,2026-06,,machine1,naoki
+plantDate,worker,field,variety,quantity,spacingRow,spacingBed,harvestPlanYM,notes,machine,human,plantingRef
+2025-08-09,山本 雅彦／山本 咲子／山本 直輝,三角畑(下),夏ごろも,4096,34,60,2025-11,,machine1,naoki,20250809-三角畑(下)-夏ごろも
+2025-08-09,山本 雅彦／山本 咲子／山本 直輝,三角畑(下),藍天,3840,34,60,2025-11,,machine1,naoki,20250809-三角畑(下)-藍天
+2025-08-14,山本 雅彦／山本 咲子／山本 直輝,しあわせ地蔵,藍天,12096,33,60,2025-11,,machine1,naoki,20250814-しあわせ地蔵-藍天
+2026-02-15,山本 雅彦／山本 咲子／山本 直輝／石原 孝晋,ぎょうざ東３,初恋,7500,35,60,2026-06,,machine1,naoki,20260215-ぎょうざ東３-初恋
