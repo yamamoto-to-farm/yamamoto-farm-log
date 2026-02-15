@@ -47,22 +47,30 @@
 
     window.addEventListener("DOMContentLoaded", () => {
 
-      // PIN 認証
       showPinGate("pin-area", () => {
         document.getElementById("menu-area").style.display = "block";
 
-        // ロールに応じてメニューを切り替え
+        // ★ デバッグ表示（ログイン情報）
+        document.body.insertAdjacentHTML(
+          "afterbegin",
+          `<div style="padding:10px; background:#eef; border:1px solid #99f; margin-bottom:10px;">
+             ログイン中: ${window.currentHuman}（role: ${window.currentRole}）
+           </div>`
+        );
+
         const role = window.currentRole;
 
         // worker → 分析・管理メニューを非表示
         if (role === "worker") {
           document.getElementById("menu-analysis").style.display = "none";
           document.getElementById("menu-admin").style.display = "none";
+          document.getElementById("menu-admin-title").style.display = "none";
         }
 
         // family → 管理メニューだけ非表示
         if (role === "family") {
           document.getElementById("menu-admin").style.display = "none";
+          document.getElementById("menu-admin-title").style.display = "none";
         }
 
         // admin → 全部表示（何もしない）
@@ -109,7 +117,7 @@
     </div>
 
     <!-- admin 専用メニュー -->
-    <div class="section-title" id="menu-admin">
+    <div class="section-title" id="menu-admin-title">
       管理メニュー
     </div>
     <div class="grid" id="menu-admin">
