@@ -1,47 +1,22 @@
 // ===============================
 // import
 // ===============================
-import {
-  createWorkerCheckboxes,
-  createFieldSelector,
-  autoDetectField,
-  getSelectedWorkers,
-  getFinalField
-} from "../common/ui.js";
-
+import { showPinGate } from "../common/ui.js";
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
-import { showPinGate } from "../common/ui.js";
 
+
+// ===============================
+// PIN 認証
+// ===============================
 window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {
     document.getElementById("form-area").style.display = "block";
+
+    // 日付初期値
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("shippingDate").value = today;
   });
-});
-
-
-// ===============================
-// 初期化
-// ===============================
-window.addEventListener("DOMContentLoaded", async () => {
-
-  createWorkerCheckboxes("workers_box");
-
-  await createFieldSelector("field_auto", "field_area", "field_manual");
-
-  autoDetectField("field_auto", "field_area", "field_manual");
-
-  document.getElementById("field_manual")
-    .addEventListener("change", updateHarvestOptions);
-
-  document.getElementById("field_auto")
-    .addEventListener("change", updateHarvestOptions);
-
-  document.getElementById("field_confirm")
-    .addEventListener("change", updateHarvestOptions);
-
-  const today = new Date().toISOString().slice(0, 10);
-  document.getElementById("shippingDate").value = today;
 });
 
 
@@ -73,7 +48,7 @@ async function loadHarvestCSV() {
       field: cols[3],
       bins: cols[4],
       issue: cols[5],
-      plantingRef: cols[6],   // ★ harvest の plantingRef をそのまま使う
+      plantingRef: cols[6],
       machine: cols[7],
       human: cols[8]
     };
@@ -82,26 +57,39 @@ async function loadHarvestCSV() {
 
 
 // ===============================
-// 圃場の収穫一覧を更新
+// 未計量の収穫ログを読み込む
 // ===============================
-async function updateHarvestOptions() {
-  const field = getFinalField();
-  if (!field) return;
-
+window.loadShipping = async function () {
   const harvestList = await loadHarvestCSV();
 
-  const select = document.getElementById("harvestRef");
-  select.innerHTML = "<option value=''>収穫記録を選択</option>";
+  // shippingDate が空 → 未計量
+  const unshipped = harvestList.filter(h => !h.shippingDate);
 
-  const filtered = harvestList.filter(h => h.field === field);
+  const area = document.getElementById("resultArea");
+  area.innerHTML = "";
 
-  filtered.forEach(h => {
-    const opt = document.createElement("option");
-    opt.value = h.plantingRef;   // ★ shipping にも plantingRef を渡す
-    opt.textContent = `${h.harvestDate} / ${h.bins}基`;
-    select.appendChild(opt);
+  if (unshipped.length === 0) {
+    area.textContent = "未計量の収穫ログはありません。";
+    return;
+  }
+
+  unshipped.forEach(h => {
+    const div = document.createElement("div");
+    div.style.padding = "8px";
+    div.style.marginBottom = "8px";
+    div.style.background = "#fff";
+    div.style.border = "1px solid #ccc";
+
+    div.innerHTML = `
+      <div>収穫日：${h.harvestDate}</div>
+      <div>圃場：${h.field}</div>
+      <div>収穫基数：${h.bins}</div>
+      <div>plantingRef：${h.plantingRef}</div>
+    `;
+
+    area.appendChild(div);
   });
-}
+};
 
 
 // ===============================
@@ -110,11 +98,8 @@ async function updateHarvestOptions() {
 function collectShippingData() {
   return {
     shippingDate: document.getElementById("shippingDate").value,
-    worker: getSelectedWorkers("workers_box", "temp_workers"),
-    field: getFinalField(),
     weight: document.getElementById("weight").value,
-    notes: document.getElementById("notes").value,
-    plantingRef: document.getElementById("harvestRef").value   // ★ harvest の plantingRef を継承
+    notes: document.getElementById("notes").value
   };
 }
 
@@ -135,12 +120,13 @@ async function saveShippingInner() {
 
   const dateStr = data.shippingDate.replace(/-/g, "");
 
+  // shipping は plantingRef を持たない（harvest 側が持っている）
   const csvLine = [
     data.shippingDate,
-    data.field,
+    "",          // field（shipping では不要）
     data.weight,
     data.notes.replace(/[\r\n,]/g, " "),
-    data.plantingRef,   // ★ ここが重要
+    "",          // plantingRef（shipping では不要）
     machine,
     human
   ].join(",");
