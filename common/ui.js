@@ -267,7 +267,7 @@ export function getFinalField(
 // ui.js
 
 export async function loadAccessMap() {
-  const text = await fetch("../data/access.csv").then(r => r.text());
+  const text = await fetch("/yamamoto-farm-log/data/access.csv").then(r => r.text());
   const lines = text.trim().split("\n");
   const headers = lines[0].split(",");
 
