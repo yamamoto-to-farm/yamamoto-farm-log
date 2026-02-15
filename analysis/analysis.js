@@ -187,4 +187,38 @@ window.addEventListener("DOMContentLoaded", async () => {
       <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
     `;
   }
+
+// ===============================
+// サマリー保存ボタン
+// ===============================
+document.getElementById("save-summary").addEventListener("click", async () => {
+
+  // 収穫データが無い場合
+  if (!sorted || sorted.length === 0) {
+    alert("保存できるサマリーがありません");
+    return;
+  }
+
+  const plantingRef = sorted[0].plantingRef;
+
+  // CSV 1行分
+  const csvLine = [
+    plantingRef,
+    fieldName,
+    plantingRow?.variety || "",
+    plantingRow?.plantDate || "",
+    startDate,
+    endDate,
+    days,
+    totalBins,
+    totalWeight,
+    latestTotalAreaM2,
+    yieldPer10a
+  ].join(",");
+
+  // GitHub 保存
+  await saveLog("summary", plantingRef, {}, csvLine);
+
+  alert("サマリーを保存しました");
+});
 });

@@ -1,40 +1,135 @@
+/* ===============================
+   全体レイアウト
+=============================== */
 body {
-  font-family: sans-serif;
-  padding: 16px;
-  background: #fafafa;
-}
-
-h1 {
-  text-align: center;
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-section {
-  background: #f9f9f9;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-h2 {
-  font-size: 18px;
-  margin-bottom: 8px;
+  font-family: "Helvetica", "Yu Gothic", "Hiragino Sans", sans-serif;
+  background: #f5f5f5;
+  margin: 0;
+  padding: 20px;
   color: #333;
 }
 
-.info {
+h1 {
+  font-size: 28px;
+  margin-bottom: 25px;
+  color: #222;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ===============================
+   カードデザイン
+=============================== */
+.card {
+  background: #fff;
+  padding: 22px 24px;
+  margin-bottom: 28px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.card h2 {
+  font-size: 22px;
+  margin-bottom: 18px;
+  color: #444;
+  border-left: 6px solid #4CAF50;
+  padding-left: 12px;
+  font-weight: 600;
+}
+
+/* ===============================
+   情報行
+=============================== */
+.info-line {
   font-size: 16px;
-  line-height: 1.5;
+  margin: 6px 0;
+  line-height: 1.6;
+}
+
+.info hr {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 14px 0;
+}
+
+/* ===============================
+   数値強調
+=============================== */
+.summary-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #2c7;
+}
+
+.summary-unit {
+  font-size: 14px;
+  color: #666;
+  margin-left: 4px;
+}
+
+/* ===============================
+   ボタン
+=============================== */
+.save-btn,
+.back-btn {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin: 20px auto 0;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.save-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #43a047;
 }
 
 .back-btn {
-  width: 100%;
-  padding: 14px 0;
-  font-size: 18px;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  background: #ddd;
+  color: #333;
+}
+
+.back-btn:hover {
+  background: #ccc;
+}
+
+/* ===============================
+   スマホ最適化
+=============================== */
+@media (max-width: 600px) {
+  body {
+    padding: 14px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .card h2 {
+    font-size: 20px;
+  }
+
+  .info-line {
+    font-size: 15px;
+  }
+
+  .save-btn,
+  .back-btn {
+    font-size: 15px;
+    padding: 10px 0;
+  }
 }

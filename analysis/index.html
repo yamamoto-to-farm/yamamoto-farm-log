@@ -4,33 +4,42 @@
   <meta charset="UTF-8">
   <title>圃場分析</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- デザイン用CSS（analysis.css） -->
   <link rel="stylesheet" href="analysis.css">
 </head>
+
 <body>
 
+  <!-- 圃場名 -->
   <h1 id="field-name"></h1>
 
-  <section>
+  <!-- 最新作付けカード -->
+  <div class="card">
     <h2>最新作付け</h2>
     <div id="latest-planting" class="info"></div>
-  </section>
+  </div>
 
-  <section>
+  <!-- 収穫サマリーカード -->
+  <div class="card">
     <h2>収穫サマリー</h2>
     <div id="latest-harvest" class="info"></div>
-  </section>
 
+    <!-- ★ サマリー保存ボタン -->
+    <button id="save-summary" class="save-btn">
+      このサマリーを保存
+    </button>
+  </div>
+
+  <!-- 戻るボタン -->
   <button class="back-btn" onclick="location.href='../map/index.html'">
     地図に戻る
   </button>
 
-  <!-- ★ showPinGate は呼ばない。localStorage → window.currentRole を復元するだけ -->
+  <!-- 認証情報復元 & メイン処理 -->
   <script type="module">
-    // 認証情報復元（ui.js が localStorage → window.currentRole をセット）
-    import "/yamamoto-farm-log/common/ui.js";
-
-    // このページのメイン処理
-    import "./analysis.js";
+    import "/yamamoto-farm-log/common/ui.js";  // localStorage → window.currentRole
+    import "./analysis.js";                    // このページのメイン処理
   </script>
 
 </body>
