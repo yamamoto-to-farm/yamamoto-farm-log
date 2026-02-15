@@ -219,25 +219,27 @@ if (harvestRows.length === 0) {
     ].join(",");
 
     // ★ <hr> を外に出し、ボタンは 1 個だけ
-    html += `
-      <div class="summary-card">
-        <div class="info-line">品種：${plantingRow?.variety || ""}</div>
-        <div class="info-line">定植日：${plantDate}</div>
-        <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
-        <div class="info-line">収穫回数：${count} 回</div>
-        <div class="info-line">定植 → 初回収穫：${days} 日</div>
-        <div class="info-line">合計収量：${totalBins} 基</div>
-        <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
-        <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
+html += `
+  <div class="summary-card">
+    <div class="info-line">品種：${plantingRow?.variety || ""}</div>
+    <div class="info-line">定植日：${plantDate}</div>
+    <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
+    <div class="info-line">収穫回数：${count} 回</div>
+    <div class="info-line">定植 → 初回収穫：${days} 日</div>
+    <div class="info-line">合計収量：${totalBins} 基</div>
+    <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
+    <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
 
-        <button class="save-btn" data-key="${safeKey}"
-                data-json='${JSON.stringify(summaryJson)}'
-                data-csv="${csvLine}">
-          このサマリーを保存
-        </button>
-      </div>
-      <hr>
-    `;
+    <button class="save-btn"
+            data-key="${safeKey}"
+            data-json='${JSON.stringify(summaryJson)}'
+            data-csv="${csvLine}">
+      このサマリーを保存
+    </button>
+  </div>
+  <hr>
+`;
+
   }
 
   document.getElementById("latest-harvest").innerHTML = html;
