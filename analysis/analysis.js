@@ -82,7 +82,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const shipping = await loadCSV("../logs/weight/all.csv");
 
 // ===============================
-// 最新作付け（複数対応）
+// 最新作付け（複数対応 + 面積計算 + 合計面積）
 // ===============================
 const plantingRows = planting.filter(r => r.field === fieldName);
 
@@ -94,47 +94,100 @@ const latestDate = plantingRows
 const latestPlantings = plantingRows.filter(r => r.plantDate === latestDate);
 
 if (latestPlantings.length > 0) {
-  document.getElementById("latest-planting").innerHTML =
-    latestPlantings.map(p => `
+
+  // ★ 合計面積を計算
+  let totalArea = 0;
+
+  const html = latestPlantings.map(p => {
+    const area =
+      Number(p.quantity) *
+      (Number(p.spacingRow) / 100) *
+      (Number(p.spacingBed) / 100);
+
+    totalArea += area;
+
+    return `
       <div class="info-line">品種：${p.variety}</div>
       <div class="info-line">定植日：${p.plantDate}</div>
       <div class="info-line">株数：${p.quantity}</div>
+      <div class="info-line">条間：${p.spacingRow}cm / 株間：${p.spacingBed}cm</div>
+      <div class="info-line">作付け面積：約 ${area.toFixed(1)} ㎡</div>
       <div class="info-line">予定収穫：${p.harvestPlanYM}</div>
       <hr>
-    `).join("");
+    `;
+  }).join("");
+
+  // ★ 合計面積を最後に追加
+  document.getElementById("latest-planting").innerHTML =
+    html +
+    `<div class="info-line" style="font-weight:bold;">
+       合計作付け面積：${totalArea.toFixed(1)} ㎡
+     </div>`;
+
 } else {
   document.getElementById("latest-planting").textContent = "データなし";
 }
 
-  // ===============================
-  // 最新収穫
-  // ===============================
-  const latestHarvest = harvest
-    .filter(r => r.field === fieldName)
-    .sort((a, b) => new Date(b.harvestDate) - new Date(a.harvestDate))[0];
+// ===============================
+// 収穫サマリー（期間・回数・収量・単収）
+// ===============================
+const harvestRows = harvest.filter(r => r.field === fieldName);
 
-  if (latestHarvest) {
-    document.getElementById("latest-harvest").innerHTML = `
-      <div class="info-line">収穫日：${latestHarvest.harvestDate}</div>
-      <div class="info-line">収穫基数：${latestHarvest.bins}</div>
-    `;
-  } else {
-    document.getElementById("latest-harvest").textContent = "データなし";
+// データが無い場合
+if (harvestRows.length === 0) {
+  document.getElementById("latest-harvest").textContent = "データなし";
+} else {
+
+  // 日付順に並べる
+  const sorted = harvestRows.sort(
+    (a, b) => new Date(a.harvestDate) - new Date(b.harvestDate)
+  );
+
+  // 期間
+  const startDate = sorted[0].harvestDate;
+  const endDate   = sorted[sorted.length - 1].harvestDate;
+
+  // 回数
+  const count = sorted.length;
+
+  // 合計収量（基数）
+  const totalBins = sorted.reduce((sum, r) => sum + Number(r.bins), 0);
+
+  // 合計重量（kg） → shipping と紐づける
+  const totalWeight = shipping
+    .filter(s => s.field === fieldName)
+    .reduce((sum, s) => sum + Number(s.totalWeight || 0), 0);
+
+  // 定植日（plantingRef → planting CSV から取得）
+  const plantingRow = planting.find(p => p.plantingRef === sorted[0].plantingRef);
+  const plantDate = plantingRow ? plantingRow.plantDate : null;
+
+  // 定植〜収穫までの日数
+  let days = "";
+  if (plantDate) {
+    days = Math.floor(
+      (new Date(startDate) - new Date(plantDate)) / (1000 * 60 * 60 * 24)
+    );
   }
 
-  // ===============================
-  // 最新出荷（計量）
-  // ===============================
-  const latestShipping = shipping
-    .filter(r => r.field === fieldName)
-    .sort((a, b) => new Date(b.shippingDate) - new Date(a.shippingDate))[0];
+  // 単収（kg/10a） → 圃場面積が必要（fields.json）
+  const fields = await fetch("../data/fields.json").then(r => r.json());
+  const fieldInfo = fields.find(f => f.name === fieldName);
+  const fieldArea = fieldInfo ? Number(fieldInfo.area) : null; // ㎡
 
-  if (latestShipping) {
-    document.getElementById("latest-shipping").innerHTML = `
-      <div class="info-line">出荷日：${latestShipping.shippingDate}</div>
-      <div class="info-line">重量：${latestShipping.totalWeight}kg</div>
-    `;
-  } else {
-    document.getElementById("latest-shipping").textContent = "データなし";
+  let yieldPer10a = "";
+  if (fieldArea) {
+    yieldPer10a = (totalWeight / (fieldArea / 1000)).toFixed(1); // 10a = 1000㎡
   }
+
+  // 表示
+  document.getElementById("latest-harvest").innerHTML = `
+    <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
+    <div class="info-line">収穫回数：${count} 回</div>
+    <div class="info-line">定植 → 初回収穫：${days} 日</div>
+    <div class="info-line">合計収量：${totalBins} 基</div>
+    <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
+    <div class="info-line">単収：${yieldPer10a} kg/10a</div>
+  `;
+}
 });
