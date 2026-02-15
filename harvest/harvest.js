@@ -11,9 +11,10 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 
-import { getMachineParam } from "../common/utils.js";   // ← 追加
+import { getMachineParam } from "../common/utils.js";
 
 import { showPinGate } from "../common/ui.js";
+
 window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {
     document.getElementById("form-area").style.display = "block";
@@ -56,39 +57,25 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 
 // ===============================
-// 定植CSV読み込み（デバッグ付き）
+// 定植CSV読み込み（ヘッダーなし）
 // ===============================
 async function loadPlantingCSV() {
   const url = "../logs/planting/all.csv?ts=" + Date.now();
-  console.log("📘 FETCH URL:", url);
-
   let res;
+
   try {
     res = await fetch(url);
   } catch (e) {
-    console.log("❌ fetch 失敗:", e);
     return [];
   }
-
-  console.log("📘 fetch status:", res.status);
 
   const text = await res.text();
-  console.log("📄 CSV raw text:", JSON.stringify(text));
-
-  if (!text.trim()) {
-    console.log("❌ CSV が空です");
-    return [];
-  }
+  if (!text.trim()) return [];
 
   const lines = text.trim().split("\n");
-  console.log("📘 lines:", lines);
 
-  const rows = lines; // ★ ヘッダーなし
-  console.log("📘 rows:", rows);
-
-  const list = rows.map((line, i) => {
+  return lines.map(line => {
     const cols = line.split(",");
-    console.log(`🔍 row ${i} cols:`, cols);
 
     return {
       plantDate: cols[0],
@@ -99,14 +86,12 @@ async function loadPlantingCSV() {
       spacingRow: cols[5],
       spacingBed: cols[6],
       harvestPlanYM: cols[7],
-      notes: cols[8]
+      notes: cols[8],
+      machine: cols[9],
+      human: cols[10],
+      plantingRef: cols[11] || ""   // ★ 追加：plantingRef を読み込む
     };
   });
-
-  console.log("🌱 loadPlantingCSV parsed:", list);
-  console.log("🌱 parsed length:", list.length);
-
-  return list;
 }
 
 
@@ -129,39 +114,36 @@ function getHarvestYMRange(harvestDate) {
 
 
 // ===============================
-// 定植記録候補を更新
+// 定植記録候補を更新（複合キー対応版）
 // ===============================
 async function updatePlantingRefOptions() {
-  console.log("🔥 updatePlantingRefOptions 発火");
-
-  const field = getFinalField(); // ← common/ui.js の共通ロジック
+  const field = getFinalField();
   const harvestDate = document.getElementById("harvestDate").value;
-
-  console.log("🧪 field:", field, "harvestDate:", harvestDate);
 
   if (!field || !harvestDate) return;
 
   const plantingList = await loadPlantingCSV();
   const ymRange = getHarvestYMRange(harvestDate);
 
-  console.log("🧪 ymRange:", ymRange);
-
   const select = document.getElementById("plantingRef");
   select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
 
+  // 圃場一致 & 収穫予定月が近いもの
   const filtered = plantingList.filter(
     p => p.field === field && ymRange.includes(p.harvestPlanYM)
   );
 
-  console.log("🧪 filtered:", filtered);
+  filtered.forEach(p => {
+    // ★ planting.js と同じ複合キー
+    const id = `${p.plantDate.replace(/-/g, "")}-${p.field}-${p.variety}`;
 
-filtered.forEach(p => {
-  const id = `${p.plantDate.replace(/-/g, "")}-${p.field}-${p.variety}`;  // ★ 複合キー
-  const opt = document.createElement("option");
-  opt.value = id;
-  opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
-  select.appendChild(opt);
-});
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
+    select.appendChild(opt);
+  });
+}
+
 
 // ===============================
 // 入力データ収集
@@ -178,6 +160,7 @@ function collectHarvestData() {
   };
 }
 
+
 // ===============================
 // 保存処理
 // ===============================
@@ -189,10 +172,8 @@ async function saveHarvestInner() {
     return;
   }
 
-  // QR → machine
-  const machine = getMachineParam();        // ← 追加
-  // PIN → human
-  const human = window.currentHuman || "";  // ← 追加
+  const machine = getMachineParam();
+  const human = window.currentHuman || "";
 
   const dateStr = data.harvestDate.replace(/-/g, "");
 
@@ -203,15 +184,14 @@ async function saveHarvestInner() {
     data.field,
     data.amount,
     data.issue.replace(/[\r\n,]/g, " "),
-    data.plantingRef,
-    machine,   // ← ★ 追加
-    human      // ← ★ 追加
+    data.plantingRef,   // ★ 複合キーが入る
+    machine,
+    human
   ].join(",");
 
   await saveLog("harvest", dateStr, data, csvLine);
 
   alert("GitHubに保存しました");
 }
-
 
 window.saveHarvest = saveHarvestInner;
