@@ -1,3 +1,4 @@
+import { saveLog } from "../common/save/index.js";
 // ===============================
 // 権限チェック（analysis は family/admin のみ）
 // ===============================
