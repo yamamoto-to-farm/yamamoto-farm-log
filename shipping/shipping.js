@@ -102,6 +102,7 @@ async function loadUnweighedHarvests() {
     const harvestID =
       shippingDate.replace(/-/g, "") + "-" + field + "-" + idx;
 
+    //harvestIDを確認
     debug.push("harvestID = " + harvestID);
 
     return {
