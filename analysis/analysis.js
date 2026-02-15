@@ -1,5 +1,3 @@
-// analysis.js
-
 // ===============================
 // 権限チェック（analysis は family/admin のみ）
 // ===============================
@@ -19,12 +17,12 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// CSV を読み込んで配列に変換する関数（ファイルが無くても空配列を返す）
+// ===============================
+// CSV を読み込んで配列に変換（無ければ空配列）
+// ===============================
 async function loadCSV(url) {
   try {
     const res = await fetch(url);
-
-    // ファイルが存在しない場合 → 空配列
     if (!res.ok) return [];
 
     const text = await res.text();
@@ -39,16 +37,18 @@ async function loadCSV(url) {
     });
 
   } catch (e) {
-    // ネットワークエラーなど → 空配列
     return [];
   }
 }
 
+// ===============================
+// メイン処理
+// ===============================
 window.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(location.search);
   const fieldName = params.get("field");
 
-  // ★ 圃場名が無い場合 → 圃場一覧を表示して終了
+  // 圃場名が無い → 圃場一覧を表示
   if (!fieldName) {
     const fields = await fetch("../data/fields.json").then(r => r.json());
 
@@ -72,18 +72,18 @@ window.addEventListener("DOMContentLoaded", async () => {
       ul.appendChild(li);
     });
 
-    return; // ★ ここで終了（以下は field があるときだけ実行）
+    return;
   }
 
-  // ★ ここから通常の analysis ページ処理
+  // 圃場名セット
   document.getElementById("field-name").textContent = fieldName;
 
-  // CSV 読み込み（無くても空配列で返る）
+  // CSV 読み込み
   const planting = await loadCSV("../logs/planting/all.csv");
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const shipping = await loadCSV("../logs/shipping/all.csv");
 
-  // ★ 最新作付け
+  // 最新作付け
   const latestPlanting = planting
     .filter(r => r.field === fieldName)
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -99,7 +99,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("latest-planting").textContent = "データなし";
   }
 
-  // ★ 最新収穫
+  // 最新収穫
   const latestHarvest = harvest
     .filter(r => r.field === fieldName)
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -113,7 +113,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("latest-harvest").textContent = "データなし";
   }
 
-  // ★ 最新出荷
+  // 最新出荷
   const latestShipping = shipping
     .filter(r => r.field === fieldName)
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
