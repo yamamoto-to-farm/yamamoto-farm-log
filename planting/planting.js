@@ -32,7 +32,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   setupVarietySelector();
   setupInputModeSwitch();
-  setupTrayAutoCalc();
+  setupTrayAutoCalc();   // ★ 小数対応済み
 });
 
 // ============================
@@ -87,13 +87,19 @@ function setupInputModeSwitch() {
 }
 
 // ============================
-// 枚数 → 株数 自動計算
+// 枚数 → 株数 自動計算（★小数対応版）
 // ============================
 function setupTrayAutoCalc() {
   const update = () => {
-    const count = Number(document.getElementById("trayCount").value || 0);
+    const count = parseFloat(document.getElementById("trayCount").value || 0);  // ★ 小数OK
     const type = Number(document.querySelector("input[name='trayType']:checked").value);
-    document.getElementById("calcStock").textContent = count * type;
+
+    if (!isNaN(count)) {
+      const stock = count * type;  // ★ 小数のまま計算
+      document.getElementById("calcStock").textContent = stock;
+    } else {
+      document.getElementById("calcStock").textContent = 0;
+    }
   };
 
   document.getElementById("trayCount").addEventListener("input", update);
@@ -141,9 +147,9 @@ function collectPlantingData() {
   if (mode === "stock") {
     quantity = Number(document.getElementById("stockCount").value);
   } else {
-    trayCount = Number(document.getElementById("trayCount").value);
+    trayCount = parseFloat(document.getElementById("trayCount").value);  // ★ 小数OK
     trayType = Number(document.querySelector("input[name='trayType']:checked").value);
-    quantity = trayCount * trayType;
+    quantity = trayCount * trayType;  // ★ 小数のまま計算
   }
 
   // ▼ id → name に変更
@@ -165,7 +171,6 @@ function collectPlantingData() {
     worker: getSelectedWorkers("workers_box", "temp_workers"),
     field: getFinalField(),
 
-    // ▼ 保存するのも name
     variety: varietyName,
 
     quantity,
@@ -204,14 +209,14 @@ async function savePlantingInner() {
     data.plantDate,
     data.worker.replace(/,/g, "／"),
     data.field,
-    data.variety,        // ← name が入る
+    data.variety,
     data.quantity,
     data.spacingRow,
     data.spacingBed,
     data.harvestPlanYM,
     data.notes.replace(/[\r\n,]/g, " "),
-    machine,             // ← ★ 追加
-    human                // ← ★ 追加
+    machine,
+    human
   ].join(",");
 
   await saveLog("planting", dateStr, data, csvLine);
