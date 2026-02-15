@@ -81,23 +81,30 @@ window.addEventListener("DOMContentLoaded", async () => {
   const harvest  = await loadCSV("../logs/harvest/all.csv");
   const shipping = await loadCSV("../logs/weight/all.csv");
 
-  // ===============================
-  // 最新作付け
-  // ===============================
-  const latestPlanting = planting
-    .filter(r => r.field === fieldName)
-    .sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate))[0];
+// ===============================
+// 最新作付け（複数対応）
+// ===============================
+const plantingRows = planting.filter(r => r.field === fieldName);
 
-  if (latestPlanting) {
-    document.getElementById("latest-planting").innerHTML = `
-      <div class="info-line">品種：${latestPlanting.variety}</div>
-      <div class="info-line">定植日：${latestPlanting.plantDate}</div>
-      <div class="info-line">株数：${latestPlanting.quantity}</div>
-      <div class="info-line">予定収穫：${latestPlanting.harvestPlanYM}</div>
-    `;
-  } else {
-    document.getElementById("latest-planting").textContent = "データなし";
-  }
+// 最新日付を取得
+const latestDate = plantingRows
+  .sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate))[0]?.plantDate;
+
+// 最新日付の作付けを全部取得
+const latestPlantings = plantingRows.filter(r => r.plantDate === latestDate);
+
+if (latestPlantings.length > 0) {
+  document.getElementById("latest-planting").innerHTML =
+    latestPlantings.map(p => `
+      <div class="info-line">品種：${p.variety}</div>
+      <div class="info-line">定植日：${p.plantDate}</div>
+      <div class="info-line">株数：${p.quantity}</div>
+      <div class="info-line">予定収穫：${p.harvestPlanYM}</div>
+      <hr>
+    `).join("");
+} else {
+  document.getElementById("latest-planting").textContent = "データなし";
+}
 
   // ===============================
   // 最新収穫
