@@ -188,46 +188,64 @@ window.addEventListener("DOMContentLoaded", async () => {
       <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
     `;
 
-    // ===============================
-    // ★ サマリー保存ボタン
-    // ===============================
-    document.getElementById("save-summary").onclick = async () => {
-      console.log("=== save-summary clicked ===");
+// ===============================
+// ★ サマリー保存ボタン
+// ===============================
+document.getElementById("save-summary").onclick = async () => {
+  console.log("=== save-summary clicked ===");
 
-      // ① plantingRef を収穫データから取得
-      const plantingRef = sorted[0]?.plantingRef;
-      console.log("plantingRef:", plantingRef);
+  // ① plantingRef を収穫データから取得
+  const plantingRef = sorted[0]?.plantingRef;
+  console.log("plantingRef:", plantingRef);
 
-      if (!plantingRef) {
-        alert("plantingRef が取得できませんでした（harvest の plantingRef が空）");
-        return;
-      }
+  if (!plantingRef) {
+    alert("plantingRef が取得できませんでした（harvest の plantingRef が空）");
+    return;
+  }
 
-      // ② planting 側から対応する行を取り直す（念のためここで確定させる）
-      const plantingRow = planting.find(p => p.plantingRef === plantingRef) || null;
+  // ② planting 側から対応する行を取り直す
+  const plantingRow = planting.find(p => p.plantingRef === plantingRef) || null;
 
-      // ③ CSV 1 行分を組み立て
-      const csvLine = [
-        plantingRef,
-        fieldName,
-        plantingRow?.variety || "",
-        plantingRow?.plantDate || "",
-        startDate,
-        endDate,
-        days,
-        totalBins,
-        totalWeight,
-        latestTotalAreaM2,
-        yieldPer10a
-      ].join(",");
+  // ③ ファイル名として安全なキーを作る（日本語・記号を避ける）
+  const safeKey = plantingRef.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-      console.log("csvLine:", csvLine);
+  // ④ JSON（構造化データ）を作る
+  const summaryJson = {
+    plantingRef,
+    field: fieldName,
+    variety: plantingRow?.variety || "",
+    plantDate: plantingRow?.plantDate || "",
+    harvestStart: startDate,
+    harvestEnd: endDate,
+    days,
+    totalBins,
+    totalWeight,
+    areaM2: latestTotalAreaM2,
+    yieldPer10a
+  };
 
-      // ④ summary/all.csv に 1 行追記
-      await saveLog("summary", plantingRef, {}, csvLine);
+  // ⑤ CSV 1 行分を組み立て
+  const csvLine = [
+    plantingRef,
+    fieldName,
+    plantingRow?.variety || "",
+    plantingRow?.plantDate || "",
+    startDate,
+    endDate,
+    days,
+    totalBins,
+    totalWeight,
+    latestTotalAreaM2,
+    yieldPer10a
+  ].join(",");
 
-      alert("サマリーを保存しました");
-    };
+  console.log("csvLine:", csvLine);
+
+  // ⑥ summary/all.csv に追記 ＋ summary/{safeKey}.json を保存
+  await saveLog("summary", safeKey, summaryJson, csvLine);
+
+  alert("サマリーを保存しました");
+};
 
   }
 });
