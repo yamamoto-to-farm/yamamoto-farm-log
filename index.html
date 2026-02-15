@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>山本農園ログ - 目次</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
     h1 { margin-bottom: 20px; }
@@ -30,29 +31,91 @@
       color: #2b6cb0;
       text-decoration: none;
     }
+
+    /* PIN ゲート */
+    #pin-area {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
   </style>
+
+  <script type="module">
+    import { showPinGate } from "./common/ui.js";
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      // PIN 認証
+      showPinGate("pin-area", () => {
+        document.getElementById("menu-area").style.display = "block";
+
+        // ロールに応じてメニューを切り替え
+        const role = window.currentRole;
+
+        // worker → 分析・管理メニューを非表示
+        if (role === "worker") {
+          document.getElementById("menu-analysis").style.display = "none";
+          document.getElementById("menu-admin").style.display = "none";
+        }
+
+        // family → 管理メニューだけ非表示
+        if (role === "family") {
+          document.getElementById("menu-admin").style.display = "none";
+        }
+
+        // admin → 全部表示（何もしない）
+      });
+
+    });
+  </script>
+
 </head>
 
 <body>
+
   <h1>山本農園ログ - 目次</h1>
 
-  <div class="section-title">ページ</div>
-  <div class="grid">
-    <div class="card"><a href="./map/index.html">圃場マップ</a></div>
-    
-    <div class="card"><a href="./planting/index.html">定植ログ</a></div>
-    <div class="card"><a href="./harvest/index.html">収穫ログ</a></div>
-    <div class="card"><a href="./shipping/index.html">出荷ログ</a></div>
-
+  <!-- PIN 入力エリア -->
+  <div id="pin-area">
+    <div>アクセスキーを入力してください</div>
+    <input id="pin-input" type="password" style="font-size:18px; padding:6px; margin-top:8px;">
+    <button id="pin-submit" style="font-size:18px; padding:6px 12px;">OK</button>
   </div>
 
-  <div class="section-title">データ</div>
-  <div class="grid">
-    <div class="card"><a href="./logs/planting/all.csv">定植データ（CSV）</a></div>
-    <div class="card"><a href="./logs/harvest/all.csv">収穫データ（CSV）</a></div>
-    <div class="card"><a href="./logs/weight/all.csv">出荷データ（CSV）</a></div>
-    
-    <div class="card"><a href="./analysis/index.html">圃場分析データ</a></div>
+  <!-- メニュー本体（PIN 認証後に表示） -->
+  <div id="menu-area" style="display:none">
+
+    <div class="section-title">ページ</div>
+    <div class="grid">
+      <div class="card"><a href="./map/index.html">圃場マップ</a></div>
+
+      <div class="card"><a href="./planting/index.html">定植ログ</a></div>
+      <div class="card"><a href="./harvest/index.html">収穫ログ</a></div>
+      <div class="card"><a href="./shipping/index.html">出荷ログ</a></div>
+
+      <!-- family/admin のみ -->
+      <div class="card" id="menu-analysis">
+        <a href="./analysis/index.html">圃場分析データ</a>
+      </div>
+    </div>
+
+    <div class="section-title">データ</div>
+    <div class="grid">
+      <div class="card"><a href="./logs/planting/all.csv">定植データ（CSV）</a></div>
+      <div class="card"><a href="./logs/harvest/all.csv">収穫データ（CSV）</a></div>
+      <div class="card"><a href="./logs/weight/all.csv">出荷データ（CSV）</a></div>
+    </div>
+
+    <!-- admin 専用メニュー -->
+    <div class="section-title" id="menu-admin">
+      管理メニュー
+    </div>
+    <div class="grid" id="menu-admin">
+      <div class="card"><a href="./admin/index.html">管理ページ（CSV編集など）</a></div>
+    </div>
+
   </div>
 
 </body>

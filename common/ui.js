@@ -266,14 +266,22 @@ export function getFinalField(
 // ============================
 // ui.js
 
-// PIN → human の対応表（あとから増やせる）
-export const PIN_MAP = {
-  "000": "naoki",
-  "001": "sakiko",
-  "002": "masahiko",
-  "Y005": "wakatsuki",
-  "Y006": "ishihara"
-};
+export async function loadAccessMap() {
+  const text = await fetch("../data/access.csv").then(r => r.text());
+  const lines = text.trim().split("\n");
+  const headers = lines[0].split(",");
+
+  const list = lines.slice(1).map(line => {
+    const cols = line.split(",");
+    return {
+      pin: cols[0],
+      name: cols[1],
+      role: cols[2]
+    };
+  });
+
+  return list;
+}
 
 // PIN ゲート
 export function showPinGate(containerId, onSuccess) {

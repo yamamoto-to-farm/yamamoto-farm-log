@@ -1,5 +1,24 @@
 // analysis.js
 
+// ===============================
+// 権限チェック（analysis は family/admin のみ）
+// ===============================
+window.addEventListener("DOMContentLoaded", () => {
+  // PIN 未入力（＝currentRole が undefined）
+  if (!window.currentRole) {
+    alert("アクセス権限がありません（PIN を入力してください）");
+    location.href = "../map/index.html";
+    return;
+  }
+
+  // worker はアクセス禁止
+  if (window.currentRole !== "family" && window.currentRole !== "admin") {
+    alert("このページは家族のみ閲覧できます");
+    location.href = "../map/index.html";
+    return;
+  }
+});
+
 // CSV を読み込んで配列に変換する関数（ファイルが無くても空配列を返す）
 async function loadCSV(url) {
   try {
