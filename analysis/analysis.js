@@ -2,14 +2,12 @@
 // 権限チェック（analysis は family/admin のみ）
 // ===============================
 window.addEventListener("DOMContentLoaded", () => {
-  // PIN 未入力（＝currentRole が undefined）
   if (!window.currentRole) {
     alert("アクセス権限がありません（PIN を入力してください）");
     location.href = "../map/index.html";
     return;
   }
 
-  // worker はアクセス禁止
   if (window.currentRole !== "family" && window.currentRole !== "admin") {
     alert("このページは家族のみ閲覧できます");
     location.href = "../map/index.html";
@@ -32,7 +30,7 @@ async function loadCSV(url) {
     return lines.slice(1).map(line => {
       const cols = line.split(",");
       const obj = {};
-      headers.forEach((h, i) => obj[h] = cols[i]);
+      headers.forEach((h, i) => obj[h] = cols[i] || "");
       return obj;
     });
 
@@ -79,49 +77,55 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("field-name").textContent = fieldName;
 
   // CSV 読み込み
-  const planting = await loadCSV("./logs/planting/all.csv");
-  const harvest = await loadCSV("./logs/harvest/all.csv");
-  const shipping = await loadCSV("./logs/shipping/all.csv");
+  const planting = await loadCSV("../logs/planting/all.csv");
+  const harvest  = await loadCSV("../logs/harvest/all.csv");
+  const shipping = await loadCSV("../logs/weight/all.csv");
 
+  // ===============================
   // 最新作付け
+  // ===============================
   const latestPlanting = planting
     .filter(r => r.field === fieldName)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    .sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate))[0];
 
   if (latestPlanting) {
     document.getElementById("latest-planting").innerHTML = `
-      <div class="info-line">品目：${latestPlanting.crop}</div>
       <div class="info-line">品種：${latestPlanting.variety}</div>
-      <div class="info-line">定植日：${latestPlanting.date}</div>
-      <div class="info-line">面積：${latestPlanting.area}㎡</div>
+      <div class="info-line">定植日：${latestPlanting.plantDate}</div>
+      <div class="info-line">株数：${latestPlanting.quantity}</div>
+      <div class="info-line">予定収穫：${latestPlanting.harvestPlanYM}</div>
     `;
   } else {
     document.getElementById("latest-planting").textContent = "データなし";
   }
 
+  // ===============================
   // 最新収穫
+  // ===============================
   const latestHarvest = harvest
     .filter(r => r.field === fieldName)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    .sort((a, b) => new Date(b.harvestDate) - new Date(a.harvestDate))[0];
 
   if (latestHarvest) {
     document.getElementById("latest-harvest").innerHTML = `
-      <div class="info-line">収穫日：${latestHarvest.date}</div>
-      <div class="info-line">収穫基数：${latestHarvest.count}</div>
+      <div class="info-line">収穫日：${latestHarvest.harvestDate}</div>
+      <div class="info-line">収穫基数：${latestHarvest.bins}</div>
     `;
   } else {
     document.getElementById("latest-harvest").textContent = "データなし";
   }
 
-  // 最新出荷
+  // ===============================
+  // 最新出荷（計量）
+  // ===============================
   const latestShipping = shipping
     .filter(r => r.field === fieldName)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    .sort((a, b) => new Date(b.shippingDate) - new Date(a.shippingDate))[0];
 
   if (latestShipping) {
     document.getElementById("latest-shipping").innerHTML = `
-      <div class="info-line">出荷日：${latestShipping.date}</div>
-      <div class="info-line">重量：${latestShipping.weight}kg</div>
+      <div class="info-line">出荷日：${latestShipping.shippingDate}</div>
+      <div class="info-line">重量：${latestShipping.totalWeight}kg</div>
     `;
   } else {
     document.getElementById("latest-shipping").textContent = "データなし";
