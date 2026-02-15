@@ -193,6 +193,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     // ===============================
     document.getElementById("save-summary").onclick = async () => {
 
+        console.log("=== save-summary clicked ===");
+
+        console.log("sorted:", sorted);
+        console.log("plantingRef:", sorted[0]?.plantingRef);
+        console.log("csvLine:", csvLine);
+
       const plantingRef = sorted[0].plantingRef;
 
       const csvLine = [
