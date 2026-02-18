@@ -272,7 +272,7 @@ async function saveShipping() {
       human
     ].join(",");
 
-    await saveLog("weight", "all", {}, csvLine);
+    await saveLog("weight", "all", {}, csvLine + "\n");
   }
 
   alert("保存しました");

@@ -189,7 +189,7 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  await saveLog("harvest", dateStr, data, csvLine);
+  await saveLog("harvest", dateStr, data, csvLine + "\n");
 
   alert("GitHubに保存しました");
 }

@@ -223,7 +223,7 @@ const csvLine = [
   human,
   plantingRef   // ★ 追加
 ].join(",");
-  await saveLog("planting", dateStr, data, csvLine);
+  await saveLog("planting", dateStr, data, csvLine + "\n");
 
   alert("GitHubに保存しました");
 }
