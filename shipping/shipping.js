@@ -4,7 +4,6 @@
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
-
 // ===============================
 // チェック順管理
 // ===============================
@@ -23,14 +22,24 @@ export function initShippingPage() {
 
 
 // ===============================
-// CSV 読み込み
+// ★ CSV 読み込み（ヘッダー対応版）
 // ===============================
 async function loadCSV(url) {
   try {
     const res = await fetch(url + "?ts=" + Date.now());
     const text = await res.text();
     if (!text.trim()) return [];
-    return text.trim().split("\n").map(line => line.split(","));
+
+    const lines = text.trim().split("\n");
+    const headers = lines[0].split(",");
+
+    return lines.slice(1).map(line => {
+      const cols = line.split(",");
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = cols[i] || "");
+      return obj;
+    });
+
   } catch {
     return [];
   }
@@ -45,11 +54,11 @@ async function loadUnshipped() {
   const weight  = await loadCSV("../logs/weight/all.csv");
 
   const harvestMap = {};
-  harvest.forEach(cols => {
-    const shippingDate = cols[1];
-    const plantingRef  = cols[6];
-    const field        = cols[3];
-    const bins         = Number(cols[4]) || 0;
+  harvest.forEach(row => {
+    const shippingDate = row.shippingDate;
+    const plantingRef  = row.plantingRef;
+    const field        = row.field;
+    const bins         = Number(row.bins) || 0;
 
     const key = shippingDate + "_" + plantingRef;
 
@@ -58,10 +67,10 @@ async function loadUnshipped() {
   });
 
   const weightMap = {};
-  weight.forEach(cols => {
-    const shippingDate = cols[0];
-    const plantingRef  = cols[5];
-    const bins         = Number(cols[2]) || 0;
+  weight.forEach(row => {
+    const shippingDate = row.shippingDate;
+    const plantingRef  = row.plantingRef;
+    const bins         = Number(row.bins) || 0;
 
     const key = shippingDate + "_" + plantingRef;
 
@@ -183,7 +192,7 @@ function allocateWeights(targets, weights) {
 
 
 // ===============================
-// 保存処理（修正版）
+// ★ 保存処理（ヘッダー対応版）
 // ===============================
 async function saveShipping() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -207,19 +216,19 @@ async function saveShipping() {
   const weight  = await loadCSV("../logs/weight/all.csv");
 
   const harvestMap = {};
-  harvest.forEach(cols => {
-    const key  = cols[1] + "_" + cols[6];
-    const field = cols[3];
-    const bins  = Number(cols[4]) || 0;
+  harvest.forEach(row => {
+    const key  = row.shippingDate + "_" + row.plantingRef;
+    const field = row.field;
+    const bins  = Number(row.bins) || 0;
 
     if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
     harvestMap[key].bins += bins;
   });
 
   const weightMap = {};
-  weight.forEach(cols => {
-    const key  = cols[0] + "_" + cols[5];
-    const bins = Number(cols[2]) || 0;
+  weight.forEach(row => {
+    const key  = row.shippingDate + "_" + row.plantingRef;
+    const bins = Number(row.bins) || 0;
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
@@ -239,7 +248,11 @@ async function saveShipping() {
 
   allocateWeights(targets, weightList);
 
-  let csvLines = "";
+  // ★ ヘッダー
+  const header =
+    "shippingDate,field,bins,totalWeight,notes,plantingRef,machine,human\n";
+
+  let csvLines = header;
 
   for (let t of targets) {
     const shippedBins = t.originalRemain - t.remainBins;

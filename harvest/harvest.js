@@ -48,15 +48,16 @@ export async function initHarvestPage() {
 
 
 // ===============================
-// 定植CSV読み込み（ヘッダーなし）
+// ★ 定植CSV読み込み（ヘッダー対応版）
 // ===============================
 async function loadPlantingCSV() {
   const url = "../logs/planting/all.csv?ts=" + Date.now();
-  let res;
 
+  let res;
   try {
     res = await fetch(url);
   } catch (e) {
+    console.error("fetch失敗:", e);
     return [];
   }
 
@@ -64,24 +65,13 @@ async function loadPlantingCSV() {
   if (!text.trim()) return [];
 
   const lines = text.trim().split("\n");
+  const headers = lines[0].split(",");
 
-  return lines.map(line => {
+  return lines.slice(1).map(line => {
     const cols = line.split(",");
-
-    return {
-      plantDate: cols[0],
-      worker: cols[1],
-      field: cols[2],
-      variety: cols[3],
-      quantity: cols[4],
-      spacingRow: cols[5],
-      spacingBed: cols[6],
-      harvestPlanYM: cols[7],
-      notes: cols[8],
-      machine: cols[9],
-      human: cols[10],
-      plantingRef: cols[11] || ""
-    };
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cols[i] || "");
+    return obj;
   });
 }
 
@@ -124,8 +114,7 @@ async function updatePlantingRefOptions() {
   );
 
   filtered.forEach(p => {
-    const id = `${p.plantDate.replace(/-/g, "")}-${p.field}-${p.variety}`;
-
+    const id = p.plantingRef;
     const opt = document.createElement("option");
     opt.value = id;
     opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
@@ -151,7 +140,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// 保存処理
+// ★ 保存処理（ヘッダー対応版）
 // ===============================
 async function saveHarvestInner() {
   const data = collectHarvestData();
@@ -178,7 +167,15 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  await saveLog("harvest", dateStr, data, csvLine + "\n");
+  // ★ ヘッダー行
+  const header =
+    "harvestDate,shippingDate,worker,field,bins,issue,plantingRef,machine,human\n";
+
+  // ★ saveLog にヘッダーと行を渡す
+  await saveLog("harvest", dateStr, data, {
+    header,
+    line: csvLine + "\n"
+  });
 
   alert("GitHubに保存しました");
 }

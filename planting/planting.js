@@ -189,7 +189,7 @@ function collectPlantingData() {
 
 
 // ============================
-// 保存処理
+// ★ 保存処理（ヘッダー自動生成対応）
 // ============================
 async function savePlantingInner() {
   const data = collectPlantingData();
@@ -221,7 +221,15 @@ async function savePlantingInner() {
     plantingRef
   ].join(",");
 
-  await saveLog("planting", dateStr, data, csvLine + "\n");
+  // ★ ヘッダー行
+  const header =
+    "plantDate,worker,field,variety,quantity,spacingRow,spacingBed,harvestPlanYM,notes,machine,human,plantingRef\n";
+
+  // ★ saveLog に渡す内容
+  await saveLog("planting", dateStr, data, {
+    header,
+    line: csvLine + "\n"
+  });
 
   alert("GitHubに保存しました");
 }
