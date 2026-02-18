@@ -5,12 +5,14 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
 
-import { showPinGate } from "../common/ui.js";
-
+// ===============================
+// ページ読み込み時（認証チェックなし：harvest と完全一致）
+// ===============================
 window.addEventListener("DOMContentLoaded", () => {
-  showPinGate("pin-area", () => {
-    document.getElementById("form-area").style.display = "block";
-  });
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("shippingDate").value = today;
+
+  loadUnshipped();
 });
 
 
