@@ -13,127 +13,197 @@ window.addEventListener("DOMContentLoaded", () => {
   showPinGate("pin-area", () => {
     document.getElementById("form-area").style.display = "block";
 
-    // 日付初期値
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById("shippingDate").value = today;
+
+    loadUnshipped();
   });
 });
 
 
 // ===============================
-// harvest CSV 読み込み
+// CSV 読み込み
 // ===============================
-async function loadHarvestCSV() {
-  const url = "../logs/harvest/all.csv?ts=" + Date.now();
-  let res;
-
+async function loadCSV(url) {
   try {
-    res = await fetch(url);
-  } catch (e) {
+    const res = await fetch(url + "?ts=" + Date.now());
+    const text = await res.text();
+    if (!text.trim()) return [];
+    return text.trim().split("\n").map(line => line.split(","));
+  } catch {
     return [];
   }
+}
 
-  const text = await res.text();
-  if (!text.trim()) return [];
 
-  const lines = text.trim().split("\n");
+// ===============================
+// 未計量の収穫（shippingDate × plantingRef）
+// ===============================
+async function loadUnshipped() {
+  const harvest = await loadCSV("../logs/harvest/all.csv");
+  const weight  = await loadCSV("../logs/weight/all.csv");
 
-  return lines.map(line => {
-    const cols = line.split(",");
+  // harvest の集計
+  const harvestMap = {}; // key → { field, bins }
+  harvest.forEach(cols => {
+    const shippingDate = cols[1];
+    const plantingRef  = cols[6];
+    const field        = cols[3];
+    const bins         = Number(cols[4]) || 0;
 
-    return {
-      harvestDate: cols[0],
-      shippingDate: cols[1],
-      worker: cols[2],
-      field: cols[3],
-      bins: cols[4],
-      issue: cols[5],
-      plantingRef: cols[6],
-      machine: cols[7],
-      human: cols[8]
-    };
+    const key = shippingDate + "_" + plantingRef;
+
+    if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
+    harvestMap[key].bins += bins;
+  });
+
+  // weight の集計
+  const weightMap = {}; // key → bins
+  weight.forEach(cols => {
+    const shippingDate = cols[0];
+    const plantingRef  = cols[5];
+    const bins         = Number(cols[2]) || 0;
+
+    const key = shippingDate + "_" + plantingRef;
+
+    weightMap[key] = (weightMap[key] || 0) + bins;
+  });
+
+  // 差分で未計量判定
+  const unshipped = [];
+  Object.keys(harvestMap).forEach(key => {
+    const harvested = harvestMap[key].bins;
+    const shipped   = weightMap[key] || 0;
+    const remain    = harvested - shipped;
+
+    if (remain > 0) {
+      unshipped.push({
+        key,
+        shippingDate: key.split("_")[0],
+        plantingRef:  key.split("_")[1],
+        field:        harvestMap[key].field,
+        remainBins:   remain
+      });
+    }
+  });
+
+  // 表示
+  const area = document.getElementById("unshippedArea");
+  area.innerHTML = "";
+
+  unshipped.forEach(u => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <label>
+        <input type="checkbox" class="refCheck" value="${u.key}">
+        ${u.shippingDate} / ${u.field} / ${u.plantingRef}
+        （未計量 ${u.remainBins} 基）
+      </label>
+    `;
+
+    area.appendChild(div);
   });
 }
 
 
 // ===============================
-// 未計量の収穫ログを読み込む
+// 重量パース（改行・カンマ・スペース対応）
 // ===============================
-window.loadShipping = async function () {
-  const harvestList = await loadHarvestCSV();
-
-  // shippingDate が空 → 未計量
-  const unshipped = harvestList.filter(h => !h.shippingDate);
-
-  const area = document.getElementById("resultArea");
-  area.innerHTML = "";
-
-  if (unshipped.length === 0) {
-    area.textContent = "未計量の収穫ログはありません。";
-    return;
-  }
-
-  unshipped.forEach(h => {
-    const div = document.createElement("div");
-    div.style.padding = "8px";
-    div.style.marginBottom = "8px";
-    div.style.background = "#fff";
-    div.style.border = "1px solid #ccc";
-
-    div.innerHTML = `
-      <div>収穫日：${h.harvestDate}</div>
-      <div>圃場：${h.field}</div>
-      <div>収穫基数：${h.bins}</div>
-      <div>plantingRef：${h.plantingRef}</div>
-    `;
-
-    area.appendChild(div);
-  });
-};
-
-
-// ===============================
-// 入力データ収集
-// ===============================
-function collectShippingData() {
-  return {
-    shippingDate: document.getElementById("shippingDate").value,
-    weight: document.getElementById("weight").value,
-    notes: document.getElementById("notes").value
-  };
+function parseWeights(raw) {
+  return raw
+    .split(/[\s,]+/)
+    .map(v => v.trim())
+    .filter(v => v.length > 0)
+    .map(v => Number(v))
+    .filter(v => !isNaN(v));
 }
 
 
 // ===============================
 // 保存処理
 // ===============================
-async function saveShippingInner() {
-  const data = collectShippingData();
+async function saveShipping() {
+  const shippingDate = document.getElementById("shippingDate").value;
+  const notes        = document.getElementById("notes").value;
+  const machine      = getMachineParam();
+  const human        = window.currentHuman || "";
 
-  if (!data.shippingDate) {
-    alert("出荷日を入力してください");
+  // 選択された key
+  const selected = [...document.querySelectorAll(".refCheck:checked")].map(c => c.value);
+  if (selected.length === 0) {
+    alert("対象を選択してください");
     return;
   }
 
-  const machine = getMachineParam();
-  const human = window.currentHuman || "";
+  // 重量リスト
+  const raw = document.getElementById("weights").value;
+  const weightList = parseWeights(raw);
+  if (weightList.length === 0) {
+    alert("重量を入力してください");
+    return;
+  }
 
-  const dateStr = data.shippingDate.replace(/-/g, "");
+  // harvest と weight を再読み込みして bins 差分を取得
+  const harvest = await loadCSV("../logs/harvest/all.csv");
+  const weight  = await loadCSV("../logs/weight/all.csv");
 
-  // shipping は plantingRef を持たない（harvest 側が持っている）
-  const csvLine = [
-    data.shippingDate,
-    "",          // field（shipping では不要）
-    data.weight,
-    data.notes.replace(/[\r\n,]/g, " "),
-    "",          // plantingRef（shipping では不要）
-    machine,
-    human
-  ].join(",");
+  // harvest 集計
+  const harvestMap = {};
+  harvest.forEach(cols => {
+    const key  = cols[1] + "_" + cols[6];
+    const field = cols[3];
+    const bins  = Number(cols[4]) || 0;
 
-  await saveLog("shipping", dateStr, data, csvLine);
+    if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
+    harvestMap[key].bins += bins;
+  });
 
-  alert("GitHubに保存しました");
+  // weight 集計
+  const weightMap = {};
+  weight.forEach(cols => {
+    const key  = cols[0] + "_" + cols[5];
+    const bins = Number(cols[2]) || 0;
+    weightMap[key] = (weightMap[key] || 0) + bins;
+  });
+
+  // 選択された key の残り基数を計算
+  const targets = selected.map(key => {
+    const harvested = harvestMap[key].bins;
+    const shipped   = weightMap[key] || 0;
+    const remain    = harvested - shipped;
+    return {
+      key,
+      plantingRef: key.split("_")[1],
+      field: harvestMap[key].field,
+      remainBins: remain
+    };
+  });
+
+  // 合計基数
+  const totalRemainBins = targets.reduce((a, t) => a + t.remainBins, 0);
+
+  // 各重量（2基ごと）を targets に配分して保存
+  for (let W of weightList) {
+    for (let t of targets) {
+      const ratio = t.remainBins / totalRemainBins;
+      const weightForRef = W * ratio;
+
+      const csvLine = [
+        shippingDate,
+        t.field,
+        t.remainBins,       // この行が担当する基数
+        weightForRef,       // 自動配分された重量
+        notes.replace(/[\r\n,]/g, " "),
+        t.plantingRef,
+        machine,
+        human
+      ].join(",");
+
+      await saveLog("shipping", shippingDate.replace(/-/g, ""), {}, csvLine);
+    }
+  }
+
+  alert("保存しました");
 }
-
-window.saveShipping = saveShippingInner;
