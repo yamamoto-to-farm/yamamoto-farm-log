@@ -2,7 +2,7 @@ import { saveLog } from "../common/save/index.js";
 import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 
 // ===============================
-// 権限チェック（analysis は family/admin のみ）
+// ページ読み込み → 認証チェック → メイン処理
 // ===============================
 window.addEventListener("DOMContentLoaded", async () => {
 
@@ -17,22 +17,22 @@ window.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ★ 認証OK → 以下のメイン処理へ
+  // ★ 認証OK → メイン処理へ
   initAnalysisPage();
 });
 
 
 // ===============================
-// メイン処理（元の DOMContentLoaded の中身を関数化）
+// ★ メイン処理（export 必須）
 // ===============================
-async function initAnalysisPage() {
+export async function initAnalysisPage() {
 
   const params = new URLSearchParams(location.search);
   const fieldName = params.get("field");
 
   // 圃場名が無い → 圃場一覧を表示
   if (!fieldName) {
-    const fields = await fetch("../data/fields.json").then(r => r.json());
+    const fields = await fetch("/yamamoto-farm-log/data/fields.json").then(r => r.json());
 
     document.body.innerHTML = `
       <h1>圃場を選択</h1>
@@ -61,9 +61,9 @@ async function initAnalysisPage() {
   document.getElementById("field-name").textContent = fieldName;
 
   // CSV 読み込み
-  const planting = await loadCSV("../logs/planting/all.csv");
-  const harvest  = await loadCSV("../logs/harvest/all.csv");
-  const shipping = await loadCSV("../logs/weight/all.csv");
+  const planting = await loadCSV("/yamamoto-farm-log/logs/planting/all.csv");
+  const harvest  = await loadCSV("/yamamoto-farm-log/logs/harvest/all.csv");
+  const shipping = await loadCSV("/yamamoto-farm-log/logs/weight/all.csv");
 
   // ★ 作付け単収用：最新作付けの合計面積（㎡）
   let latestTotalAreaM2 = 0;
@@ -243,7 +243,7 @@ async function initAnalysisPage() {
 
 // ===============================
 // CSV を読み込んで配列に変換（無ければ空配列）
-// ===============================
+// ===============================  
 async function loadCSV(url) {
   try {
     const res = await fetch(url);

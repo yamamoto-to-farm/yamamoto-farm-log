@@ -27,7 +27,7 @@
   </div>
 
   <!-- 戻るボタン -->
-  <button class="back-btn" onclick="location.href='../map/index.html'">
+  <button class="back-btn" onclick="location.href='/yamamoto-farm-log/map/index.html'">
     地図に戻る
   </button>
 
@@ -45,7 +45,7 @@
       // ★ worker → 閲覧禁止
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
         alert("このページは家族のみ閲覧できます");
-        location.href = "../map/index.html";
+        location.href = "/yamamoto-farm-log/map/index.html";
         return;
       }
 
