@@ -1,3 +1,6 @@
+// ===============================
+// import（必ずファイル先頭）
+// ===============================
 import {
   createWorkerCheckboxes,
   createFieldSelector,
@@ -6,46 +9,44 @@ import {
 } from "../common/ui.js";
 
 import { saveLog } from "../common/save/index.js";
-
-import { showPinGate } from "../common/ui.js";
-
 import { getMachineParam } from "../common/utils.js";
-
-window.addEventListener("DOMContentLoaded", () => {
-  showPinGate("pin-area", () => {
-    document.getElementById("form-area").style.display = "block";
-  });
-});
 
 let VARIETY_LIST = []; // ★ 品種データを保持する
 
-// ============================
-// 初期化
-// ============================
-window.addEventListener("DOMContentLoaded", () => {
+
+// ===============================
+// 初期化（認証後に index.html から呼ばれる）
+// ===============================
+export async function initPlantingPage() {
+
+  // 作業者チェックボックス
   createWorkerCheckboxes("workers_box");
 
-  createFieldSelector("field_auto", "field_area", "field_manual")
-    .then(() => {
-      autoDetectField("field_auto", "field_area", "field_manual");
-    });
+  // 圃場セレクタ
+  await createFieldSelector("field_auto", "field_area", "field_manual");
+  autoDetectField("field_auto", "field_area", "field_manual");
 
+  // 品種セレクタ
   setupVarietySelector();
+
+  // 株数/枚数切り替え
   setupInputModeSwitch();
-  setupTrayAutoCalc();   // ★ 小数対応済み
-});
+
+  // セルトレイ → 株数 自動計算
+  setupTrayAutoCalc();
+}
+
 
 // ============================
 // 品種プルダウン（type → name）
 // ============================
 async function setupVarietySelector() {
   const res = await fetch("../data/varieties.json");
-  VARIETY_LIST = await res.json();   // ★ 保存しておく
+  VARIETY_LIST = await res.json();
 
   const typeSel = document.getElementById("varietyType");
   const nameSel = document.getElementById("variety");
 
-  // ▼ タイプ一覧（寒玉 / 初夏 / レッド）
   const types = [...new Set(VARIETY_LIST.map(v => v.type))];
   types.forEach(t => {
     const opt = document.createElement("option");
@@ -54,7 +55,6 @@ async function setupVarietySelector() {
     typeSel.appendChild(opt);
   });
 
-  // ▼ タイプ選択で品種を絞り込み
   typeSel.addEventListener("change", () => {
     const selectedType = typeSel.value;
     nameSel.innerHTML = "<option value=''>品名を選択</option>";
@@ -65,12 +65,13 @@ async function setupVarietySelector() {
 
     filtered.forEach(v => {
       const opt = document.createElement("option");
-      opt.value = v.name;      // ★ id → name に統一
+      opt.value = v.name;      // ★ name ベース
       opt.textContent = v.name;
       nameSel.appendChild(opt);
     });
   });
 }
+
 
 // ============================
 // 株数 / 枚数 切り替え
@@ -86,16 +87,17 @@ function setupInputModeSwitch() {
   });
 }
 
+
 // ============================
-// 枚数 → 株数 自動計算（★小数対応版）
+// 枚数 → 株数 自動計算（小数対応）
 // ============================
 function setupTrayAutoCalc() {
   const update = () => {
-    const count = parseFloat(document.getElementById("trayCount").value || 0);  // ★ 小数OK
+    const count = parseFloat(document.getElementById("trayCount").value || 0);
     const type = Number(document.querySelector("input[name='trayType']:checked").value);
 
     if (!isNaN(count)) {
-      const stock = count * type;  // ★ 小数のまま計算
+      const stock = count * type;
       document.getElementById("calcStock").textContent = stock;
     } else {
       document.getElementById("calcStock").textContent = 0;
@@ -105,6 +107,7 @@ function setupTrayAutoCalc() {
   document.getElementById("trayCount").addEventListener("input", update);
   document.querySelectorAll("input[name='trayType']").forEach(r => r.addEventListener("change", update));
 }
+
 
 // ============================
 // 圃場の最終決定ロジック
@@ -119,6 +122,7 @@ function getFinalField() {
   return auto;
 }
 
+
 // ============================
 // 収穫予定年月の自動計算
 // ============================
@@ -126,7 +130,6 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
   const d = new Date(plantDate);
   let year = d.getFullYear();
 
-  // 収穫月が定植月より前なら翌年
   if (harvestMonth <= d.getMonth() + 1) {
     year += 1;
   }
@@ -134,8 +137,9 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
   return `${year}-${String(harvestMonth).padStart(2, "0")}`;
 }
 
+
 // ============================
-// 入力データ収集（name ベース版）
+// 入力データ収集（name ベース）
 // ============================
 function collectPlantingData() {
   const mode = document.querySelector("input[name='mode']:checked").value;
@@ -147,18 +151,14 @@ function collectPlantingData() {
   if (mode === "stock") {
     quantity = Number(document.getElementById("stockCount").value);
   } else {
-    trayCount = parseFloat(document.getElementById("trayCount").value);  // ★ 小数OK
+    trayCount = parseFloat(document.getElementById("trayCount").value);
     trayType = Number(document.querySelector("input[name='trayType']:checked").value);
-    quantity = trayCount * trayType;  // ★ 小数のまま計算
+    quantity = trayCount * trayType;
   }
 
-  // ▼ id → name に変更
   const varietyName = document.getElementById("variety").value;
-
-  // ▼ name で検索
   const variety = VARIETY_LIST.find(v => v.name === varietyName);
 
-  // ▼ 自動計算（harvestMonth を使用）
   const harvestPlanYM = variety
     ? calcHarvestPlanYM(
         document.getElementById("plantDate").value,
@@ -187,6 +187,7 @@ function collectPlantingData() {
   };
 }
 
+
 // ============================
 // 保存処理
 // ============================
@@ -198,31 +199,28 @@ async function savePlantingInner() {
     return;
   }
 
-  // QR → machine
-  const machine = getMachineParam();        // utils.js
-  // PIN → human
-  const human = window.currentHuman || "";  // ui.js の PIN_MAP で決まる
+  const machine = getMachineParam();
+  const human = window.currentHuman || "";
 
   const dateStr = data.plantDate.replace(/-/g, "");
 
-// plantingRef を生成
-const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
+  const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
 
-// CSV 行に追加
-const csvLine = [
-  data.plantDate,
-  data.worker.replace(/,/g, "／"),
-  data.field,
-  data.variety,
-  data.quantity,
-  data.spacingRow,
-  data.spacingBed,
-  data.harvestPlanYM,
-  data.notes.replace(/[\r\n,]/g, " "),
-  machine,
-  human,
-  plantingRef   // ★ 追加
-].join(",");
+  const csvLine = [
+    data.plantDate,
+    data.worker.replace(/,/g, "／"),
+    data.field,
+    data.variety,
+    data.quantity,
+    data.spacingRow,
+    data.spacingBed,
+    data.harvestPlanYM,
+    data.notes.replace(/[\r\n,]/g, " "),
+    machine,
+    human,
+    plantingRef
+  ].join(",");
+
   await saveLog("planting", dateStr, data, csvLine + "\n");
 
   alert("GitHubに保存しました");

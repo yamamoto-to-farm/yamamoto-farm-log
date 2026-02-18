@@ -136,17 +136,14 @@
 
   <!-- JS -->
   <script type="module">
-    // ★ localStorage → window.currentRole を復元
-    import "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { initPlantingPage } from "./planting.js";
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ 未認証端末は index に戻す
-      if (!window.currentRole) {
-        alert("アクセス権限がありません（PIN を入力してください）");
-        location.href = "../index.html";
-        return;
-      }
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
 
       // 認証済み → フォーム表示
       document.getElementById("form-area").style.display = "block";
@@ -154,11 +151,13 @@
       // 日付初期値
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("plantDate").value = today;
+
+      // ★ planting.js の初期化
+      initPlantingPage();
     });
   </script>
 
   <script type="module" src="../common/save/index.js"></script>
-  <script type="module" src="./planting.js"></script>
 
 </body>
 </html>

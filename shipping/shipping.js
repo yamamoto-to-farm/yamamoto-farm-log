@@ -12,14 +12,14 @@ let checkedOrder = [];   // 例: ["2025-02-10_ABC123", "2025-02-10_DEF456"]
 
 
 // ===============================
-// ページ読み込み
+// 初期化（認証後に index.html から呼ばれる）
 // ===============================
-window.addEventListener("DOMContentLoaded", () => {
+export function initShippingPage() {
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("shippingDate").value = today;
 
   loadUnshipped();
-});
+}
 
 
 // ===============================

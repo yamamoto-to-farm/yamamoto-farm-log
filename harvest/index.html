@@ -110,19 +110,15 @@
 
   <!-- JS -->
   <script type="module">
-    // ★ localStorage → window.currentRole を復元
-    import "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ 未認証端末は index に戻す
-      if (!window.currentRole) {
-        alert("アクセス権限がありません（PIN を入力してください）");
-        location.href = "../index.html";
-        return;
-      }
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;   // 無効なら index.html に戻される
 
-      // harvest は worker も使えるのでロール制限なし
+      // 認証OK → harvest フォームを表示
       document.getElementById("form-area").style.display = "block";
 
       // 日付初期値

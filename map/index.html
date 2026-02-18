@@ -21,20 +21,14 @@
   </div>
 
   <script type="module">
-    // ★ localStorage → window.currentRole を復元
-    import "/yamamoto-farm-log/common/ui.js";
-
-    // ★ map.js の initMap を読み込む
+    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
     import { initMap } from "./map.js";
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ 未認証端末はトップページへ戻す
-      if (!window.currentRole) {
-        alert("アクセス権限がありません（PIN を入力してください）");
-        location.href = "../index.html";
-        return;
-      }
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;   // 無効なら index.html に戻される
 
       // ★ 認証済み → 地図を表示
       document.getElementById("map-container").style.display = "block";

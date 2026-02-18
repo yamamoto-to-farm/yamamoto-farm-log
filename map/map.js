@@ -31,10 +31,15 @@ export function initMap() {
     });
   }
 
-  fetch("../data/fields.json")
+  // ★ 絶対パスに変更（安全 & 安定）
+  fetch("/yamamoto-farm-log/data/fields.json")
     .then(res => res.json())
     .then(fields => {
+
       fields.forEach(field => {
+
+        // ★ id として安全な文字列に変換
+        const safeId = field.name.replace(/[^a-zA-Z0-9_-]/g, "_");
 
         if (field.coords) {
           L.polygon(field.coords, {
@@ -51,12 +56,12 @@ export function initMap() {
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
 
-            <button id="nav-${field.name}"
+            <button id="nav-${safeId}"
               style="margin:4px; padding:4px 10px;">
               Google Maps（ナビ）
             </button>
 
-            <button id="analysis-${field.name}"
+            <button id="analysis-${safeId}"
               style="margin:4px; padding:4px 10px;">
               圃場分析ページへ
             </button>
@@ -67,7 +72,7 @@ export function initMap() {
 
         marker.on("popupopen", () => {
 
-          const navBtn = document.getElementById(`nav-${field.name}`);
+          const navBtn = document.getElementById(`nav-${safeId}`);
           if (navBtn) {
             navBtn.addEventListener("click", () => {
               const url = `https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`;
@@ -75,7 +80,7 @@ export function initMap() {
             });
           }
 
-          const analysisBtn = document.getElementById(`analysis-${field.name}`);
+          const analysisBtn = document.getElementById(`analysis-${safeId}`);
           if (analysisBtn) {
             analysisBtn.addEventListener("click", () => {
               const fieldName = encodeURIComponent(field.name);

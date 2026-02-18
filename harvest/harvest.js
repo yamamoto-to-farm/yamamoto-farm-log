@@ -1,7 +1,7 @@
 // ===============================
 // import（必ずファイル先頭）
 // ===============================
-import { 
+import {
   createWorkerCheckboxes,
   createFieldSelector,
   autoDetectField,
@@ -10,22 +10,13 @@ import {
 } from "../common/ui.js";
 
 import { saveLog } from "../common/save/index.js";
-
 import { getMachineParam } from "../common/utils.js";
 
-import { showPinGate } from "../common/ui.js";
-
-window.addEventListener("DOMContentLoaded", () => {
-  showPinGate("pin-area", () => {
-    document.getElementById("form-area").style.display = "block";
-  });
-});
-
 
 // ===============================
-// 初期化処理
+// 初期化処理（認証後に index.html から呼ばれる）
 // ===============================
-window.addEventListener("DOMContentLoaded", async () => {
+export async function initHarvestPage() {
 
   // 作業者チェックボックス
   createWorkerCheckboxes("workers_box");
@@ -53,7 +44,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("harvestDate").value = today;
   document.getElementById("shippingDate").value = today;
-});
+}
 
 
 // ===============================
@@ -89,7 +80,7 @@ async function loadPlantingCSV() {
       notes: cols[8],
       machine: cols[9],
       human: cols[10],
-      plantingRef: cols[11] || ""   // ★ 追加：plantingRef を読み込む
+      plantingRef: cols[11] || ""
     };
   });
 }
@@ -114,7 +105,7 @@ function getHarvestYMRange(harvestDate) {
 
 
 // ===============================
-// 定植記録候補を更新（複合キー対応版）
+// 定植記録候補を更新
 // ===============================
 async function updatePlantingRefOptions() {
   const field = getFinalField();
@@ -128,13 +119,11 @@ async function updatePlantingRefOptions() {
   const select = document.getElementById("plantingRef");
   select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
 
-  // 圃場一致 & 収穫予定月が近いもの
   const filtered = plantingList.filter(
     p => p.field === field && ymRange.includes(p.harvestPlanYM)
   );
 
   filtered.forEach(p => {
-    // ★ planting.js と同じ複合キー
     const id = `${p.plantDate.replace(/-/g, "")}-${p.field}-${p.variety}`;
 
     const opt = document.createElement("option");
@@ -184,7 +173,7 @@ async function saveHarvestInner() {
     data.field,
     data.amount,
     data.issue.replace(/[\r\n,]/g, " "),
-    data.plantingRef,   // ★ 複合キーが入る
+    data.plantingRef,
     machine,
     human
   ].join(",");

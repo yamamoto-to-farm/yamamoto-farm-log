@@ -330,13 +330,66 @@ export function showPinGate(containerId, onSuccess) {
 }
 
 // ===============================
-// ページ読み込み時に localStorage から認証情報を復元
+// localStorage の認証情報がまだ有効かチェック
+// （退職者を確実に締め出す）
+// ===============================
+export async function verifyLocalAuth() {
+  const savedHuman = localStorage.getItem("human");
+  const savedRole = localStorage.getItem("role");
+
+  // localStorage に何もない → index に戻す
+  if (!savedHuman || !savedRole) {
+    location.href = "/yamamoto-farm-log/index.html";
+    return false;
+  }
+
+  try {
+    const res = await fetch("/yamamoto-farm-log/data/access.csv");
+    const text = await res.text();
+    const lines = text.trim().split("\n");
+    const headers = lines[0].split(",");
+
+    const users = lines.slice(1).map(line => {
+      const cols = line.split(",");
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = cols[i]);
+      return obj;
+    });
+
+    // localStorage の情報が access.csv に存在するか確認
+    const user = users.find(u => u.name === savedHuman && u.role === savedRole);
+
+    if (!user) {
+      // ★ 退職者 or 削除されたユーザー
+      localStorage.removeItem("human");
+      localStorage.removeItem("role");
+      alert("認証情報が無効になりました。再ログインしてください。");
+      location.href = "/yamamoto-farm-log/index.html";
+      return false;
+    }
+
+    // 有効
+    return true;
+
+  } catch (e) {
+    console.error("認証データ読み込みエラー:", e);
+    alert("認証データの読み込みに失敗しました");
+    return false;
+  }
+}
+
+// ===============================
+// ページ読み込み時に localStorage を検証
 // （index 以外のページで利用）
 // ===============================
-window.addEventListener("DOMContentLoaded", () => {
-  const savedRole = localStorage.getItem("role");
-  const savedHuman = localStorage.getItem("human");
+window.addEventListener("DOMContentLoaded", async () => {
+  // index.html では verifyLocalAuth を呼ばない
+  if (location.pathname.includes("index.html")) return;
 
-  if (savedRole) window.currentRole = savedRole;
-  if (savedHuman) window.currentHuman = savedHuman;
+  const ok = await verifyLocalAuth();
+  if (!ok) return;
+
+  // 認証OK → グローバル変数に反映
+  window.currentRole = localStorage.getItem("role");
+  window.currentHuman = localStorage.getItem("human");
 });

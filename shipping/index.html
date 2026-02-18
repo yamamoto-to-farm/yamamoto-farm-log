@@ -28,14 +28,12 @@
     }
     button:active { opacity: 0.8; }
 
-    /* 追加：順番表示 */
     .order-label {
       font-weight: bold;
       color: #444;
       margin-left: 10px;
     }
 
-    /* 未計量カード */
     .unshipped-card {
       padding: 10px;
       border-bottom: 1px solid #ddd;
@@ -48,7 +46,7 @@
 
 <body>
 
-  <!-- harvest と同じ PIN UI 制御 -->
+  <!-- harvest と同じ：PIN UI は不要。未認証端末は index に戻す -->
   <div id="form-area" style="display:none;">
 
     <h1>出荷ログ</h1>
@@ -80,20 +78,17 @@
 
   </div><!-- /form-area -->
 
-  <!-- PIN UI 読み込み -->
+  <!-- JS -->
   <script type="module">
-    import "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
 
-      // 未認証端末は index に戻す（harvest と完全一致）
-      if (!window.currentRole) {
-        alert("アクセス権限がありません（PIN を入力してください）");
-        location.href = "../index.html";
-        return;
-      }
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;   // 無効なら index.html に戻される
 
-      // UI 表示
+      // 認証済み → UI 表示
       document.getElementById("form-area").style.display = "block";
 
       // 日付初期値
@@ -102,7 +97,6 @@
     });
   </script>
 
-  <!-- shipping.js -->
   <script type="module" src="./shipping.js"></script>
 
 </body>
