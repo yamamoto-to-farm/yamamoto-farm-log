@@ -60,10 +60,24 @@ export async function initAnalysisPage() {
   // 圃場名セット
   document.getElementById("field-name").textContent = fieldName;
 
-  // CSV 読み込み
+  // ===============================
+  // ★ CSV 読み込み（デバッグ付き）
+  // ===============================
+  console.log("🌱 planting/all.csv を読み込みます");
   const planting = await loadCSV("/yamamoto-farm-log/logs/planting/all.csv");
+  console.log("🌱 planting 読み込み件数:", planting.length);
+
+  console.log("🌾 harvest/all.csv を読み込みます");
   const harvest  = await loadCSV("/yamamoto-farm-log/logs/harvest/all.csv");
+  console.log("🌾 harvest 読み込み件数:", harvest.length);
+
+  console.log("⚖️ weight/all.csv を読み込みます");
   const shipping = await loadCSV("/yamamoto-farm-log/logs/weight/all.csv");
+  console.log("⚖️ shipping 読み込み件数:", shipping.length);
+
+  if (planting.length === 0) {
+    alert("planting/all.csv が読み込めていません。BOM や改行コード、カラム数を確認してください。");
+  }
 
   // ★ 作付け単収用：最新作付けの合計面積（㎡）
   let latestTotalAreaM2 = 0;
@@ -242,25 +256,42 @@ export async function initAnalysisPage() {
 
 
 // ===============================
-// CSV を読み込んで配列に変換（無ければ空配列）
-// ===============================  
+// CSV を読み込んで配列に変換（デバッグ強化版）
+// ===============================
 async function loadCSV(url) {
   try {
+    console.log("📥 CSV読み込み開始:", url);
+
     const res = await fetch(url);
-    if (!res.ok) return [];
+    console.log("📡 fetch結果:", url, res.status);
+
+    if (!res.ok) {
+      console.warn("⚠️ fetch失敗:", url);
+      return [];
+    }
 
     const text = await res.text();
-    const lines = text.trim().split("\n");
-    const headers = lines[0].split(",");
+    console.log("📄 CSVテキスト先頭100文字:", JSON.stringify(text.slice(0, 100)));
 
-    return lines.slice(1).map(line => {
+    const lines = text.trim().split("\n");
+    console.log("📊 行数:", lines.length);
+
+    const headers = lines[0].split(",");
+    console.log("🧩 ヘッダー:", headers);
+
+    const rows = lines.slice(1).map(line => {
       const cols = line.split(",");
       const obj = {};
       headers.forEach((h, i) => obj[h] = cols[i] || "");
       return obj;
     });
 
+    console.log("✅ パース後の最初の1行:", rows[0]);
+
+    return rows;
+
   } catch (e) {
+    console.error("❌ CSV読み込みエラー:", url, e);
     return [];
   }
 }
