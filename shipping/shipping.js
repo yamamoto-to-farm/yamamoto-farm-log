@@ -6,7 +6,7 @@ import { getMachineParam } from "../common/utils.js";
 
 
 // ===============================
-// ページ読み込み時（認証チェックなし：harvest と完全一致）
+// ページ読み込み
 // ===============================
 window.addEventListener("DOMContentLoaded", () => {
   const today = new Date().toISOString().slice(0, 10);
@@ -100,7 +100,7 @@ async function loadUnshipped() {
 
 
 // ===============================
-// 重量パース（改行・カンマ・スペース対応）
+// 重量パース
 // ===============================
 function parseWeights(raw) {
   return raw
@@ -109,6 +109,41 @@ function parseWeights(raw) {
     .filter(v => v.length > 0)
     .map(v => Number(v))
     .filter(v => !isNaN(v));
+}
+
+
+// ===============================
+// 必要回数（2基単位）
+// ===============================
+function calcRequiredCount(remainBins) {
+  const full = Math.floor(remainBins / 2);
+  const hasFraction = (remainBins % 2) > 0;
+  return full + (hasFraction ? 1 : 0);
+}
+
+
+// ===============================
+// 重量割当（2基単位・端数処理）
+// ===============================
+function allocateWeights(targets, weights) {
+  for (let W of weights) {
+    let remainBinsInW = 2.0;   // 1回の計量は最大2基ぶん
+    let remainWeight  = W;
+
+    for (let t of targets) {
+      if (remainBinsInW <= 0) break;
+      if (t.remainBins <= 0) continue;
+
+      const binsForThis = Math.min(t.remainBins, remainBinsInW);
+      const weightForThis = W * (binsForThis / 2.0);
+
+      t.totalWeight += weightForThis;
+      t.remainBins  -= binsForThis;
+
+      remainBinsInW -= binsForThis;
+      remainWeight  -= weightForThis;
+    }
+  }
 }
 
 
@@ -125,6 +160,10 @@ async function saveShipping() {
   if (selected.length === 0) {
     alert("対象を選択してください");
     return;
+  }
+
+  if (selected.length === 1) {
+    if (!confirm("1つの圃場しか選択されていません。このまま記録しますか？")) return;
   }
 
   const raw = document.getElementById("weights").value;
@@ -154,6 +193,7 @@ async function saveShipping() {
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
+  // チェック順（index.html 側で管理）
   const targets = selected.map(key => {
     const harvested = harvestMap[key].bins;
     const shipped   = weightMap[key] || 0;
@@ -162,30 +202,41 @@ async function saveShipping() {
       key,
       plantingRef: key.split("_")[1],
       field: harvestMap[key].field,
-      remainBins: remain
+      remainBins: remain,
+      totalWeight: 0
     };
   });
 
-  const totalRemainBins = targets.reduce((a, t) => a + t.remainBins, 0);
+  // 必要回数チェック
+  const requiredCount = targets
+    .map(t => calcRequiredCount(t.remainBins))
+    .reduce((a, b) => a + b, 0);
 
-  for (let W of weightList) {
-    for (let t of targets) {
-      const ratio = t.remainBins / totalRemainBins;
-      const weightForRef = W * ratio;
-
-      const csvLine = [
-        shippingDate,
-        t.field,
-        t.remainBins,
-        weightForRef,
-        notes.replace(/[\r\n,]/g, " "),
-        t.plantingRef,
-        machine,
-        human
-      ].join(",");
-
-      await saveLog("shipping", shippingDate.replace(/-/g, ""), {}, csvLine);
+  if (weightList.length < requiredCount) {
+    if (!confirm(`必要回数は ${requiredCount} 回ですが、入力は ${weightList.length} 回です。このまま続行しますか？`)) {
+      return;
     }
+  } else if (weightList.length > requiredCount) {
+    alert(`必要回数は ${requiredCount} 回です。余分な入力は無視されます。`);
+  }
+
+  // 割当実行
+  allocateWeights(targets, weightList);
+
+  // 圃場ごとに1行だけ保存
+  for (let t of targets) {
+    const csvLine = [
+      shippingDate,
+      t.field,
+      t.remainBins, // 保存時点の残り基数（分析で使うなら元値も可）
+      t.totalWeight,
+      notes.replace(/[\r\n,]/g, " "),
+      t.plantingRef,
+      machine,
+      human
+    ].join(",");
+
+    await saveLog("shipping", shippingDate.replace(/-/g, ""), {}, csvLine);
   }
 
   alert("保存しました");

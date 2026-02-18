@@ -2,68 +2,57 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>出荷計量 - 山本農園</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <title>出荷記録</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h2 { margin-bottom: 16px; }
-    .card { padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; background:#fff; }
-    textarea, input { width:100%; padding:8px; box-sizing:border-box; }
-    button {
-      width:100%; padding:12px; font-size:16px;
-      background:#2f855a; color:#fff; border:none; border-radius:4px;
-      margin-top:20px;
+    body { font-family: sans-serif; padding: 20px; }
+    .field-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 6px;
+      border-bottom: 1px solid #ddd;
+    }
+    .field-row input[type="checkbox"] {
+      transform: scale(1.3);
+      margin-right: 10px;
+    }
+    .order-label {
+      width: 60px;
+      text-align: center;
+      font-weight: bold;
+      color: #444;
+    }
+    .weight-input {
+      width: 120px;
+      margin-bottom: 5px;
+    }
+    #saveBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- ▼ shipping は PIN UI を持たない。未認証端末は index に戻す -->
-  <div id="form-area" style="display:none;">
+<h2>未計量の出荷申込一覧</h2>
 
-    <h2>出荷計量</h2>
+<div id="fieldList">
+  <!-- JSで圃場リストを挿入 -->
+</div>
 
-    <label>出荷日（伝票日）</label>
-    <input type="date" id="shippingDate">
+<h2>重量入力</h2>
+<div id="weightList">
+  <input class="weight-input" type="number" step="0.1"><br>
+  <input class="weight-input" type="number" step="0.1"><br>
+  <input class="weight-input" type="number" step="0.1"><br>
+  <input class="weight-input" type="number" step="0.1"><br>
+  <input class="weight-input" type="number" step="0.1"><br>
+</div>
 
-    <h3>未計量の収穫（shippingDate × plantingRef）</h3>
-    <div id="unshippedArea"></div>
+<button id="saveBtn">保存</button>
 
-    <h3>重量入力（改行・カンマ・スペース対応）</h3>
-    <textarea id="weights" rows="5"></textarea>
-
-    <h3>メモ</h3>
-    <textarea id="notes" rows="3"></textarea>
-
-    <button onclick="saveShipping()">保存</button>
-
-  </div><!-- /form-area -->
-
-  <!-- ★ harvest と完全一致：認証チェックは index の PIN に依存 -->
-  <script type="module">
-    import "/yamamoto-farm-log/common/ui.js";
-
-    window.addEventListener("DOMContentLoaded", () => {
-
-      // ★ 未認証端末は index に戻す（harvest と完全一致）
-      if (!window.currentRole) {
-        alert("アクセス権限がありません（PIN を入力してください）");
-        location.href = "../index.html";
-        return;
-      }
-
-      // 認証済み → フォーム表示
-      document.getElementById("form-area").style.display = "block";
-
-      // 日付初期値
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("shippingDate").value = today;
-    });
-  </script>
-
-  <script type="module" src="./shipping.js"></script>
-
+<script src="shipping.js"></script>
 </body>
 </html>
