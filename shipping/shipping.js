@@ -190,3 +190,5 @@ async function saveShipping() {
 
   alert("保存しました");
 }
+
+window.saveShipping = saveShipping;
