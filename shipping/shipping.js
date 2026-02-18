@@ -122,13 +122,11 @@ function onCheckChange(key, checked) {
 }
 
 function updateOrderLabels() {
-  // 番号を振る
   checkedOrder.forEach((key, idx) => {
     const label = document.querySelector(`.order-label[data-key="${key}"]`);
     if (label) label.textContent = `順番：${idx + 1}`;
   });
 
-  // チェックされていないものは「－」
   document.querySelectorAll(".order-label").forEach(label => {
     const key = label.dataset.key;
     if (!checkedOrder.includes(key)) {
@@ -166,7 +164,7 @@ function calcRequiredCount(remainBins) {
 // ===============================
 function allocateWeights(targets, weights) {
   for (let W of weights) {
-    let remainBinsInW = 2.0;   // 1回の計量は最大2基ぶん
+    let remainBinsInW = 2.0;
 
     for (let t of targets) {
       if (remainBinsInW <= 0) break;
@@ -185,7 +183,7 @@ function allocateWeights(targets, weights) {
 
 
 // ===============================
-// 保存処理
+// 保存処理（修正版）
 // ===============================
 async function saveShipping() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -196,10 +194,6 @@ async function saveShipping() {
   if (checkedOrder.length === 0) {
     alert("対象を選択してください");
     return;
-  }
-
-  if (checkedOrder.length === 1) {
-    if (!confirm("1つの圃場しか選択されていません。このまま記録しますか？")) return;
   }
 
   const raw = document.getElementById("weights").value;
@@ -229,7 +223,6 @@ async function saveShipping() {
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
-  // チェック順で targets を作成
   const targets = checkedOrder.map(key => {
     const harvested = harvestMap[key].bins;
     const shipped   = weightMap[key] || 0;
@@ -238,44 +231,33 @@ async function saveShipping() {
       key,
       plantingRef: key.split("_")[1],
       field: harvestMap[key].field,
+      originalRemain: remain,
       remainBins: remain,
       totalWeight: 0
     };
   });
 
-  // 必要回数チェック
-  const requiredCount = targets
-    .map(t => calcRequiredCount(t.remainBins))
-    .reduce((a, b) => a + b, 0);
-
-  if (weightList.length < requiredCount) {
-    if (!confirm(`必要回数は ${requiredCount} 回ですが、入力は ${weightList.length} 回です。このまま続行しますか？`)) {
-      return;
-    }
-  } else if (weightList.length > requiredCount) {
-    alert(`必要回数は ${requiredCount} 回です。余分な入力は無視されます。`);
-  }
-
-  // 割当実行
   allocateWeights(targets, weightList);
 
-  // 圃場ごとに1行だけ保存
-  let csvLines = "";   // ← ここが重要（複数行をためる）
+  let csvLines = "";
 
   for (let t of targets) {
-    csvLines += [
+    const shippedBins = t.originalRemain - t.remainBins;
+
+    const csvLine = [
       shippingDate,
       t.field,
-      t.remainBins,
+      shippedBins,
       t.totalWeight,
       notes.replace(/[\r\n,]/g, " "),
       t.plantingRef,
       machine,
       human
-    ].join(",") + "\n";
+    ].join(",");
+
+    csvLines += csvLine + "\n";
   }
 
-  // ← saveLog は 1 回だけ
   await saveLog("weight", "all", {}, csvLines);
 
   alert("保存しました");
