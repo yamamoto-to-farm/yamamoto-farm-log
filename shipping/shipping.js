@@ -1,23 +1,29 @@
 // ===============================
 // import
 // ===============================
-import { showPinGate } from "../common/ui.js";
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
 
 // ===============================
-// PIN 認証
+// ページ読み込み時：認証チェック
 // ===============================
 window.addEventListener("DOMContentLoaded", () => {
-  showPinGate("pin-area", () => {
-    document.getElementById("form-area").style.display = "block";
+  const human = localStorage.getItem("human");
 
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("shippingDate").value = today;
+  if (!human) {
+    // 未認証 → index に戻す
+    location.href = "../index.html";
+    return;
+  }
 
-    loadUnshipped();
-  });
+  // 認証済み → フォーム表示
+  document.getElementById("form-area").style.display = "block";
+
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("shippingDate").value = today;
+
+  loadUnshipped();
 });
 
 
@@ -43,7 +49,7 @@ async function loadUnshipped() {
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const weight  = await loadCSV("../logs/weight/all.csv");
 
-  // harvest の集計
+  // harvest 集計
   const harvestMap = {}; // key → { field, bins }
   harvest.forEach(cols => {
     const shippingDate = cols[1];
@@ -57,7 +63,7 @@ async function loadUnshipped() {
     harvestMap[key].bins += bins;
   });
 
-  // weight の集計
+  // weight 集計
   const weightMap = {}; // key → bins
   weight.forEach(cols => {
     const shippingDate = cols[0];

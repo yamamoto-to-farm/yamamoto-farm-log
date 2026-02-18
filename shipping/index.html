@@ -10,12 +10,10 @@
 </head>
 <body>
 
-  <h2>出荷計量</h2>
-
-  <!-- PIN 認証 -->
-  <div id="pin-area"></div>
-
+  <!-- ▼ shipping は PIN UI を持たない。未認証端末は index に戻す -->
   <div id="form-area" style="display:none;">
+
+    <h2>出荷計量</h2>
 
     <label>出荷日（伝票日）</label><br>
     <input type="date" id="shippingDate"><br><br>
