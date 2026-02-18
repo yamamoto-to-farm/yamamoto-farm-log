@@ -111,6 +111,7 @@
   <!-- JS -->
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { initHarvestPage } from "./harvest.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -121,14 +122,10 @@
       // 認証OK → harvest フォームを表示
       document.getElementById("form-area").style.display = "block";
 
-      // 日付初期値
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("harvestDate").value = today;
-      document.getElementById("shippingDate").value = today;
+      // ★ harvest.js の初期化を呼ぶ（これが無かった）
+      initHarvestPage();
     });
   </script>
-
-  <script type="module" src="./harvest.js"></script>
 
 </body>
 </html>
