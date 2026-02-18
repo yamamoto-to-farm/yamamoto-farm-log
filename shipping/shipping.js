@@ -260,20 +260,23 @@ async function saveShipping() {
   allocateWeights(targets, weightList);
 
   // 圃場ごとに1行だけ保存
+  let csvLines = "";   // ← ここが重要（複数行をためる）
+
   for (let t of targets) {
-    const csvLine = [
+    csvLines += [
       shippingDate,
       t.field,
-      t.remainBins, // 保存時点の残り基数（分析で使うなら元値も可）
+      t.remainBins,
       t.totalWeight,
       notes.replace(/[\r\n,]/g, " "),
       t.plantingRef,
       machine,
       human
-    ].join(",");
-
-    await saveLog("weight", "all", {}, csvLine + "\n");
+    ].join(",") + "\n";
   }
+
+  // ← saveLog は 1 回だけ
+  await saveLog("weight", "all", {}, csvLines);
 
   alert("保存しました");
 }
