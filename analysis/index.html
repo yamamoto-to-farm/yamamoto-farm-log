@@ -5,7 +5,7 @@
   <title>圃場分析</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- デザイン用CSS（analysis.css） -->
+  <!-- デザイン用CSS -->
   <link rel="stylesheet" href="analysis.css">
 </head>
 
@@ -31,10 +31,27 @@
     地図に戻る
   </button>
 
-  <!-- 認証情報復元 & メイン処理 -->
+  <!-- 認証チェック & メイン処理 -->
   <script type="module">
-    import "/yamamoto-farm-log/common/ui.js";  // localStorage → window.currentRole
-    import "./analysis.js";                    // このページのメイン処理
+    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { initAnalysisPage } from "./analysis.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // ★ worker → 閲覧禁止
+      if (window.currentRole !== "family" && window.currentRole !== "admin") {
+        alert("このページは家族のみ閲覧できます");
+        location.href = "../map/index.html";
+        return;
+      }
+
+      // ★ 認証OK → analysis.js のメイン処理へ
+      initAnalysisPage();
+    });
   </script>
 
 </body>

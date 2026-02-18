@@ -49,19 +49,15 @@
   </div>
 
   <script type="module">
-    // ★ localStorage → window.currentRole を復元
-    import "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ 未認証端末 → トップページへ
-      if (!window.currentRole) {
-        alert("アクセス権限がありません（PIN を入力してください）");
-        location.href = "../index.html";
-        return;
-      }
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
 
-      // ★ worker → admin ページ禁止
+      // ★ worker → 管理ページ禁止
       if (window.currentRole === "worker") {
         alert("このページは管理者のみアクセスできます");
         location.href = "../index.html";

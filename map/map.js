@@ -22,7 +22,7 @@ export function initMap() {
           ">
             ${field.name}
           </div>
-          <img src="../img/cabbage.png" style="width:40px; height:40px;">
+          <img src="/yamamoto-farm-log/img/cabbage.png" style="width:40px; height:40px;">
         </div>
       `,
       className: "",
@@ -31,7 +31,7 @@ export function initMap() {
     });
   }
 
-  // ★ 絶対パスに変更（安全 & 安定）
+  // ★ 絶対パスに統一（GitHub Pages で安定）
   fetch("/yamamoto-farm-log/data/fields.json")
     .then(res => res.json())
     .then(fields => {
@@ -41,6 +41,7 @@ export function initMap() {
         // ★ id として安全な文字列に変換
         const safeId = field.name.replace(/[^a-zA-Z0-9_-]/g, "_");
 
+        // ★ ポリゴン（あれば）
         if (field.coords) {
           L.polygon(field.coords, {
             color: field.color || "#3388ff",
@@ -48,10 +49,12 @@ export function initMap() {
           }).addTo(map);
         }
 
+        // ★ マーカー
         const marker = L.marker([field.lat, field.lng], {
           icon: createFieldIcon(field)
         }).addTo(map);
 
+        // ★ ポップアップ HTML
         const popupHtml = `
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
@@ -70,8 +73,10 @@ export function initMap() {
 
         marker.bindPopup(popupHtml);
 
+        // ★ ポップアップが開いた時にボタンへイベント付与
         marker.on("popupopen", () => {
 
+          // Google Maps ナビ
           const navBtn = document.getElementById(`nav-${safeId}`);
           if (navBtn) {
             navBtn.addEventListener("click", () => {
@@ -80,11 +85,12 @@ export function initMap() {
             });
           }
 
+          // 圃場分析ページへ
           const analysisBtn = document.getElementById(`analysis-${safeId}`);
           if (analysisBtn) {
             analysisBtn.addEventListener("click", () => {
               const fieldName = encodeURIComponent(field.name);
-              location.href = `../analysis/index.html?field=${fieldName}`;
+              location.href = `/yamamoto-farm-log/analysis/index.html?field=${fieldName}`;
             });
           }
         });

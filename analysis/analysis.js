@@ -1,50 +1,32 @@
 import { saveLog } from "../common/save/index.js";
+import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 
 // ===============================
 // 権限チェック（analysis は family/admin のみ）
 // ===============================
-window.addEventListener("DOMContentLoaded", () => {
-  if (!window.currentRole) {
-    alert("アクセス権限がありません（PIN を入力してください）");
-    location.href = "../map/index.html";
-    return;
-  }
+window.addEventListener("DOMContentLoaded", async () => {
 
+  // ★ localStorage の認証情報が有効かチェック
+  const ok = await verifyLocalAuth();
+  if (!ok) return;
+
+  // ★ worker → 閲覧禁止
   if (window.currentRole !== "family" && window.currentRole !== "admin") {
     alert("このページは家族のみ閲覧できます");
     location.href = "../map/index.html";
     return;
   }
+
+  // ★ 認証OK → 以下のメイン処理へ
+  initAnalysisPage();
 });
 
-// ===============================
-// CSV を読み込んで配列に変換（無ければ空配列）
-// ===============================
-async function loadCSV(url) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-
-    const text = await res.text();
-    const lines = text.trim().split("\n");
-    const headers = lines[0].split(",");
-
-    return lines.slice(1).map(line => {
-      const cols = line.split(",");
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = cols[i] || "");
-      return obj;
-    });
-
-  } catch (e) {
-    return [];
-  }
-}
 
 // ===============================
-// メイン処理
+// メイン処理（元の DOMContentLoaded の中身を関数化）
 // ===============================
-window.addEventListener("DOMContentLoaded", async () => {
+async function initAnalysisPage() {
+
   const params = new URLSearchParams(location.search);
   const fieldName = params.get("field");
 
@@ -138,14 +120,15 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("latest-planting").textContent = "データなし";
   }
 
-// ===============================
-// 収穫サマリー（複数 plantingRef 対応）
-// ===============================
-const harvestRows = harvest.filter(r => r.field === fieldName);
+  // ===============================
+  // 収穫サマリー（複数 plantingRef 対応）
+  // ===============================
+  const harvestRows = harvest.filter(r => r.field === fieldName);
 
-if (harvestRows.length === 0) {
-  document.getElementById("latest-harvest").textContent = "データなし";
-} else {
+  if (harvestRows.length === 0) {
+    document.getElementById("latest-harvest").textContent = "データなし";
+    return;
+  }
 
   // ★ plantingRef ごとにグループ化
   const groups = {};
@@ -218,28 +201,26 @@ if (harvestRows.length === 0) {
       yieldPer10a
     ].join(",");
 
-    // ★ <hr> を外に出し、ボタンは 1 個だけ
-html += `
-  <div class="summary-card">
-    <div class="info-line">品種：${plantingRow?.variety || ""}</div>
-    <div class="info-line">定植日：${plantDate}</div>
-    <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
-    <div class="info-line">収穫回数：${count} 回</div>
-    <div class="info-line">定植 → 初回収穫：${days} 日</div>
-    <div class="info-line">合計収量：${totalBins} 基</div>
-    <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
-    <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
+    html += `
+      <div class="summary-card">
+        <div class="info-line">品種：${plantingRow?.variety || ""}</div>
+        <div class="info-line">定植日：${plantDate}</div>
+        <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
+        <div class="info-line">収穫回数：${count} 回</div>
+        <div class="info-line">定植 → 初回収穫：${days} 日</div>
+        <div class="info-line">合計収量：${totalBins} 基</div>
+        <div class="info-line">合計重量：${totalWeight.toFixed(1)} kg</div>
+        <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
 
-    <button class="save-btn"
-            data-key="${safeKey}"
-            data-json='${JSON.stringify(summaryJson)}'
-            data-csv="${csvLine}">
-      このサマリーを保存
-    </button>
-  </div>
-  <hr>
-`;
-
+        <button class="save-btn"
+                data-key="${safeKey}"
+                data-json='${JSON.stringify(summaryJson)}'
+                data-csv="${csvLine}">
+          このサマリーを保存
+        </button>
+      </div>
+      <hr>
+    `;
   }
 
   document.getElementById("latest-harvest").innerHTML = html;
@@ -258,4 +239,28 @@ html += `
     };
   });
 }
-});
+
+
+// ===============================
+// CSV を読み込んで配列に変換（無ければ空配列）
+// ===============================
+async function loadCSV(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+
+    const text = await res.text();
+    const lines = text.trim().split("\n");
+    const headers = lines[0].split(",");
+
+    return lines.slice(1).map(line => {
+      const cols = line.split(",");
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = cols[i] || "");
+      return obj;
+    });
+
+  } catch (e) {
+    return [];
+  }
+}
