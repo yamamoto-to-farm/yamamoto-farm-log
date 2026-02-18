@@ -2,57 +2,98 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>出荷記録</title>
+  <title>出荷ログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .field-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 8px;
-      padding: 6px;
-      border-bottom: 1px solid #ddd;
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 16px; }
+    h2 { margin-top: 24px; }
+    .field { margin-bottom: 12px; }
+    .field label { display:block; margin-bottom:4px; }
+    .box {
+      padding: 15px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      background:#fff;
+      border-radius: 6px;
     }
-    .field-row input[type="checkbox"] {
-      transform: scale(1.3);
-      margin-right: 10px;
+    input, select, textarea {
+      width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px;
     }
+    button {
+      width: 100%; padding: 12px; font-size: 16px;
+      background: #2f855a; color: #fff; border: none; border-radius: 4px;
+      margin-top: 20px;
+    }
+    button:active { opacity: 0.8; }
+
     .order-label {
-      width: 60px;
-      text-align: center;
       font-weight: bold;
       color: #444;
-    }
-    .weight-input {
-      width: 120px;
-      margin-bottom: 5px;
-    }
-    #saveBtn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
+      margin-left: 10px;
     }
   </style>
 </head>
 
 <body>
 
-<h2>未計量の出荷申込一覧</h2>
+  <!-- harvest と同じ PIN UI 制御 -->
+  <div id="form-area" style="display:none;">
 
-<div id="fieldList">
-  <!-- JSで圃場リストを挿入 -->
-</div>
+    <h1>出荷ログ</h1>
 
-<h2>重量入力</h2>
-<div id="weightList">
-  <input class="weight-input" type="number" step="0.1"><br>
-  <input class="weight-input" type="number" step="0.1"><br>
-  <input class="weight-input" type="number" step="0.1"><br>
-  <input class="weight-input" type="number" step="0.1"><br>
-  <input class="weight-input" type="number" step="0.1"><br>
-</div>
+    <!-- 出荷日 -->
+    <div class="field">
+      <label for="shippingDate">出荷日</label>
+      <input type="date" id="shippingDate">
+    </div>
 
-<button id="saveBtn">保存</button>
+    <!-- 未計量リスト -->
+    <h2>未計量の出荷申込一覧</h2>
+    <div class="box" id="unshippedArea"></div>
 
-<script src="shipping.js"></script>
+    <!-- 重量入力 -->
+    <h2>重量入力（改行 or カンマ区切り）</h2>
+    <div class="box">
+      <textarea id="weights" rows="5" placeholder="例：500 650 600 550 650"></textarea>
+    </div>
+
+    <!-- メモ -->
+    <h2>メモ</h2>
+    <div class="box">
+      <textarea id="notes" rows="3"></textarea>
+    </div>
+
+    <!-- 保存 -->
+    <button type="button" onclick="saveShipping()">GitHub に保存する</button>
+
+  </div><!-- /form-area -->
+
+  <!-- PIN UI 読み込み -->
+  <script type="module">
+    import "/yamamoto-farm-log/common/ui.js";
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      // 未認証端末は index に戻す（harvest と完全一致）
+      if (!window.currentRole) {
+        alert("アクセス権限がありません（PIN を入力してください）");
+        location.href = "../index.html";
+        return;
+      }
+
+      // UI 表示
+      document.getElementById("form-area").style.display = "block";
+
+      // 日付初期値
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("shippingDate").value = today;
+    });
+  </script>
+
+  <!-- shipping.js -->
+  <script type="module" src="./shipping.js"></script>
+
 </body>
 </html>

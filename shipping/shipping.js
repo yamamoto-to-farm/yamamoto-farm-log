@@ -6,6 +6,12 @@ import { getMachineParam } from "../common/utils.js";
 
 
 // ===============================
+// チェック順管理
+// ===============================
+let checkedOrder = [];   // 例: ["2025-02-10_ABC123", "2025-02-10_DEF456"]
+
+
+// ===============================
 // ページ読み込み
 // ===============================
 window.addEventListener("DOMContentLoaded", () => {
@@ -92,9 +98,42 @@ async function loadUnshipped() {
         ${u.shippingDate} / ${u.field} / ${u.plantingRef}
         （未計量 ${u.remainBins} 基）
       </label>
+      <span class="order-label" data-key="${u.key}">順番：－</span>
     `;
 
+    const cb = div.querySelector(".refCheck");
+    cb.addEventListener("change", () => onCheckChange(u.key, cb.checked));
+
     area.appendChild(div);
+  });
+}
+
+
+// ===============================
+// チェック順更新
+// ===============================
+function onCheckChange(key, checked) {
+  if (checked) {
+    if (!checkedOrder.includes(key)) checkedOrder.push(key);
+  } else {
+    checkedOrder = checkedOrder.filter(k => k !== key);
+  }
+  updateOrderLabels();
+}
+
+function updateOrderLabels() {
+  // 番号を振る
+  checkedOrder.forEach((key, idx) => {
+    const label = document.querySelector(`.order-label[data-key="${key}"]`);
+    if (label) label.textContent = `順番：${idx + 1}`;
+  });
+
+  // チェックされていないものは「－」
+  document.querySelectorAll(".order-label").forEach(label => {
+    const key = label.dataset.key;
+    if (!checkedOrder.includes(key)) {
+      label.textContent = "順番：－";
+    }
   });
 }
 
@@ -128,7 +167,6 @@ function calcRequiredCount(remainBins) {
 function allocateWeights(targets, weights) {
   for (let W of weights) {
     let remainBinsInW = 2.0;   // 1回の計量は最大2基ぶん
-    let remainWeight  = W;
 
     for (let t of targets) {
       if (remainBinsInW <= 0) break;
@@ -141,7 +179,6 @@ function allocateWeights(targets, weights) {
       t.remainBins  -= binsForThis;
 
       remainBinsInW -= binsForThis;
-      remainWeight  -= weightForThis;
     }
   }
 }
@@ -156,13 +193,12 @@ async function saveShipping() {
   const machine      = getMachineParam();
   const human        = window.currentHuman || "";
 
-  const selected = [...document.querySelectorAll(".refCheck:checked")].map(c => c.value);
-  if (selected.length === 0) {
+  if (checkedOrder.length === 0) {
     alert("対象を選択してください");
     return;
   }
 
-  if (selected.length === 1) {
+  if (checkedOrder.length === 1) {
     if (!confirm("1つの圃場しか選択されていません。このまま記録しますか？")) return;
   }
 
@@ -193,8 +229,8 @@ async function saveShipping() {
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
-  // チェック順（index.html 側で管理）
-  const targets = selected.map(key => {
+  // チェック順で targets を作成
+  const targets = checkedOrder.map(key => {
     const harvested = harvestMap[key].bins;
     const shipped   = weightMap[key] || 0;
     const remain    = harvested - shipped;
