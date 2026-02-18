@@ -303,11 +303,11 @@ export function showPinGate(containerId, onSuccess) {
 
       // ★ 認証成功 → グローバル変数に保存
       window.currentHuman = user.name;
-      window.currentRole = user.role;
+      window.currentRole  = user.role;
 
       // ★ localStorage にも保存（QR 直アクセス対応）
       localStorage.setItem("human", user.name);
-      localStorage.setItem("role", user.role);
+      localStorage.setItem("role",  user.role);
 
       // PIN UI を非表示
       container.style.display = "none";
@@ -329,13 +329,15 @@ export function showPinGate(containerId, onSuccess) {
   });
 }
 
+
+
 // ===============================
 // localStorage の認証情報がまだ有効かチェック
 // （退職者を確実に締め出す）
 // ===============================
 export async function verifyLocalAuth() {
   const savedHuman = localStorage.getItem("human");
-  const savedRole = localStorage.getItem("role");
+  const savedRole  = localStorage.getItem("role");
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
@@ -368,7 +370,10 @@ export async function verifyLocalAuth() {
       return false;
     }
 
-    // 有効
+    // ★★★ ここが最重要：グローバル変数に反映 ★★★
+    window.currentHuman = savedHuman;
+    window.currentRole  = savedRole;
+
     return true;
 
   } catch (e) {
@@ -378,18 +383,24 @@ export async function verifyLocalAuth() {
   }
 }
 
+
+
 // ===============================
 // ページ読み込み時に localStorage を検証
 // （index 以外のページで利用）
 // ===============================
 window.addEventListener("DOMContentLoaded", async () => {
+
   // index.html では verifyLocalAuth を呼ばない
-  if (location.pathname.includes("index.html")) return;
+  if (location.pathname.endsWith("/index.html") ||
+      location.pathname.endsWith("/yamamoto-farm-log/")) {
+    return;
+  }
 
   const ok = await verifyLocalAuth();
   if (!ok) return;
 
-  // 認証OK → グローバル変数に反映
-  window.currentRole = localStorage.getItem("role");
+  // 認証OK → グローバル変数に反映（保険）
+  window.currentRole  = localStorage.getItem("role");
   window.currentHuman = localStorage.getItem("human");
 });
