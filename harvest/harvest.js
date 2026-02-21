@@ -149,7 +149,7 @@ async function updatePlantingRefOptions() {
     if (plannedDays === null) return true;
 
     // 予定日数 ±40日以内ならヒット
-    return Math.abs(actualDays - plannedDays) <= 40;
+    return Math.abs(actualDays - plannedDays) <= 60;
   });
 
   filtered.forEach(p => {
