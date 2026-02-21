@@ -41,7 +41,6 @@ function diffDays(dateA, dateB) {
 function calcPlannedDays(plantDate, harvestPlanYM) {
   if (!plantDate) return null;
 
-  // YM が空 → 予定日数不明 → null
   if (!harvestPlanYM || !harvestPlanYM.includes("-")) return null;
 
   const [y, m] = harvestPlanYM.split("-");
@@ -120,7 +119,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// 定植記録候補を更新（予定日数 ±40日）
+// ★ 定植記録候補を更新（analysis.js に寄せたロジック）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -136,33 +135,50 @@ async function updatePlantingRefOptions() {
   const plantingList = await loadPlantingCSV();
   const nf = normalizeFieldName(field);
 
-  const filtered = plantingList.filter(p => {
-    const pf = normalizeFieldName(p.field || "");
-    if (nf !== pf) return false;
+  // ===============================
+  // ① 畑名一致でまず全部拾う（analysis.js と同じ）
+  // ===============================
+  const candidates = plantingList.filter(p =>
+    normalizeFieldName(p.field || "") === nf
+  );
 
+  if (candidates.length === 0) return;
+
+  // ===============================
+  // ② 日数ロジックで「強い候補」を抽出（補助的）
+  // ===============================
+  const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
 
     const actualDays = diffDays(harvestDate, p.plantDate);
     const plannedDays = calcPlannedDays(p.plantDate, p.harvestPlanYM);
 
-    // YM が空 → 予定日数不明 → とりあえず候補に入れる
-    if (plannedDays === null) return true;
+    if (plannedDays === null) return false;
 
-    // 予定日数 ±40日以内ならヒット
     return Math.abs(actualDays - plannedDays) <= 60;
   });
 
-  filtered.forEach(p => {
+  // ===============================
+  // ③ 表示する候補を決定
+  // ===============================
+  let finalList = strongMatches.length > 0 ? strongMatches : candidates;
+
+  // ===============================
+  // ④ プルダウンに追加
+  // ===============================
+  finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
     opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
     select.appendChild(opt);
   });
 
-  // ★ 候補が1件なら自動選択
-  if (filtered.length === 1) {
-    select.value = filtered[0].plantingRef;
-    console.log("✨ 候補が1件 → 自動選択:", filtered[0].plantingRef);
+  // ===============================
+  // ⑤ 候補が1件なら自動選択
+  // ===============================
+  if (finalList.length === 1) {
+    select.value = finalList[0].plantingRef;
+    console.log("✨ 候補1件 → 自動選択:", finalList[0].plantingRef);
   }
 }
 
