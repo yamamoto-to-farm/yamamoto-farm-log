@@ -26,6 +26,32 @@ function normalizeFieldName(name) {
 
 
 // ===============================
+// 日数差を計算
+// ===============================
+function diffDays(dateA, dateB) {
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+  return Math.floor((a - b) / 86400000);
+}
+
+
+// ===============================
+// 予定日数を YM から推定（YM が空でも動く）
+// ===============================
+function calcPlannedDays(plantDate, harvestPlanYM) {
+  if (!plantDate) return null;
+
+  // YM が空 → 予定日数不明 → null
+  if (!harvestPlanYM || !harvestPlanYM.includes("-")) return null;
+
+  const [y, m] = harvestPlanYM.split("-");
+  const plannedHarvest = new Date(`${y}-${m}-01`);
+
+  return diffDays(plannedHarvest, plantDate);
+}
+
+
+// ===============================
 // planting CSV キャッシュ
 // ===============================
 let plantingCache = null;
@@ -94,23 +120,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// 収穫年月 ±1ヶ月
-// ===============================
-function getHarvestYMRange(harvestDate) {
-  const d = new Date(harvestDate);
-  const list = [];
-  for (let offset = -1; offset <= 1; offset++) {
-    const tmp = new Date(d);
-    tmp.setMonth(tmp.getMonth() + offset);
-    const ym = `${tmp.getFullYear()}-${String(tmp.getMonth() + 1).padStart(2, "0")}`;
-    list.push(ym);
-  }
-  return list;
-}
-
-
-// ===============================
-// 定植記録候補を更新
+// 定植記録候補を更新（予定日数 ±40日）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -124,12 +134,22 @@ async function updatePlantingRefOptions() {
   if (!field || !harvestDate) return;
 
   const plantingList = await loadPlantingCSV();
-  const ymRange = getHarvestYMRange(harvestDate);
   const nf = normalizeFieldName(field);
 
   const filtered = plantingList.filter(p => {
     const pf = normalizeFieldName(p.field || "");
-    return nf === pf && ymRange.includes(p.harvestPlanYM);
+    if (nf !== pf) return false;
+
+    if (!p.plantDate) return false;
+
+    const actualDays = diffDays(harvestDate, p.plantDate);
+    const plannedDays = calcPlannedDays(p.plantDate, p.harvestPlanYM);
+
+    // YM が空 → 予定日数不明 → とりあえず候補に入れる
+    if (plannedDays === null) return true;
+
+    // 予定日数 ±40日以内ならヒット
+    return Math.abs(actualDays - plannedDays) <= 40;
   });
 
   filtered.forEach(p => {
@@ -138,6 +158,12 @@ async function updatePlantingRefOptions() {
     opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
     select.appendChild(opt);
   });
+
+  // ★ 候補が1件なら自動選択
+  if (filtered.length === 1) {
+    select.value = filtered[0].plantingRef;
+    console.log("✨ 候補が1件 → 自動選択:", filtered[0].plantingRef);
+  }
 }
 
 
