@@ -84,13 +84,23 @@ export async function initAnalysisPage() {
 
   // ===============================
   // 最新作付け（複数対応 + 面積計算 + 合計面積）
+  // → 最新日付 ±30日を「最新作付けグループ」として扱う
   // ===============================
   const plantingRows = planting.filter(r => r.field === fieldName);
 
   const latestDate = plantingRows
     .sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate))[0]?.plantDate;
 
-  const latestPlantings = plantingRows.filter(r => r.plantDate === latestDate);
+  const latestDateObj = latestDate ? new Date(latestDate) : null;
+
+  const latestPlantings = latestDateObj
+    ? plantingRows.filter(r => {
+        if (!r.plantDate) return false;
+        const d = new Date(r.plantDate);
+        const diffDays = Math.abs((d - latestDateObj) / (1000 * 60 * 60 * 24));
+        return diffDays <= 30; // ★ ここが「最新 ±30日」
+      })
+    : [];
 
   if (latestPlantings.length > 0) {
 

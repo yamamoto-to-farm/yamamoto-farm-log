@@ -119,7 +119,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植記録候補を更新（analysis.js に寄せたロジック）
+// ★ 定植記録候補を更新（analysis.js と同期）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -136,7 +136,7 @@ async function updatePlantingRefOptions() {
   const nf = normalizeFieldName(field);
 
   // ===============================
-  // ① 畑名一致でまず全部拾う（analysis.js と同じ）
+  // ① 畑名一致でまず全部拾う（analysis と同じ）
   // ===============================
   const candidates = plantingList.filter(p =>
     normalizeFieldName(p.field || "") === nf
@@ -145,7 +145,27 @@ async function updatePlantingRefOptions() {
   if (candidates.length === 0) return;
 
   // ===============================
-  // ② 日数ロジックで「強い候補」を抽出（補助的）
+  // ② 最新 plantDate を取得
+  // ===============================
+  const latestDate = candidates
+    .sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate))[0]?.plantDate;
+
+  const latestDateObj = latestDate ? new Date(latestDate) : null;
+
+  // ===============================
+  // ③ 最新 ±30日 のグループ（analysis と同期）
+  // ===============================
+  const nearLatest = latestDateObj
+    ? candidates.filter(p => {
+        if (!p.plantDate) return false;
+        const d = new Date(p.plantDate);
+        const diff = Math.abs((d - latestDateObj) / 86400000);
+        return diff <= 30;
+      })
+    : [];
+
+  // ===============================
+  // ④ 日数ロジック（±60日）で強い候補
   // ===============================
   const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
@@ -159,12 +179,25 @@ async function updatePlantingRefOptions() {
   });
 
   // ===============================
-  // ③ 表示する候補を決定
+  // ⑤ 優先順位で候補を決定
   // ===============================
-  let finalList = strongMatches.length > 0 ? strongMatches : candidates;
+  let finalList = [];
+
+  // 最強：最新 ±30日 × 日数ロジック
+  const best = nearLatest.filter(p => strongMatches.includes(p));
+  if (best.length > 0) finalList = best;
+
+  // 次：最新 ±30日
+  else if (nearLatest.length > 0) finalList = nearLatest;
+
+  // 次：日数ロジック
+  else if (strongMatches.length > 0) finalList = strongMatches;
+
+  // 最後：畑一致の全件
+  else finalList = candidates;
 
   // ===============================
-  // ④ プルダウンに追加
+  // ⑥ プルダウンに追加
   // ===============================
   finalList.forEach(p => {
     const opt = document.createElement("option");
@@ -174,7 +207,7 @@ async function updatePlantingRefOptions() {
   });
 
   // ===============================
-  // ⑤ 候補が1件なら自動選択
+  // ⑦ 候補が1件なら自動選択
   // ===============================
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
