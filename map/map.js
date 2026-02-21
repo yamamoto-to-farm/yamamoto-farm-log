@@ -13,28 +13,39 @@ export function initMap() {
   // ★ 畑データ保持用（ハイライト用）
   // ===============================
   const fieldLayers = {};   // { fieldName: { polygon, marker, field } }
-  let lastSelected = "";    // ★ 前回選択した畑名（再タップで解除）
+  let lastSelected = "";    // 前回選択した畑名
+  let nextSelected = "";    // click 時点の値（再タップ判定用）
 
+  // ===============================
+  // ★ マーカーアイコン（大きく・見やすく）
+  // ===============================
   function createFieldIcon(field, isSelected = false) {
     return L.divIcon({
       html: `
-        <div style="text-align:center; transform: translateY(-10px);">
+        <div style="text-align:center; transform: translateY(-16px);">
           <div style="
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 900;
             color: ${isSelected ? "red" : "black"};
             white-space: nowrap;
-            text-shadow: 0 0 3px white, 0 0 3px white;
+            text-shadow:
+              0 0 4px white,
+              0 0 4px white,
+              0 0 6px white;
           ">
             ${field.name}
           </div>
           <img src="/yamamoto-farm-log/img/cabbage.png"
-               style="width:40px; height:40px; ${isSelected ? "filter: drop-shadow(0 0 6px red);" : ""}">
+               style="
+                 width:60px;
+                 height:60px;
+                 ${isSelected ? "filter: drop-shadow(0 0 8px red);" : ""}
+               ">
         </div>
       `,
       className: "",
-      iconSize: [40, 40],
-      iconAnchor: [20, 40]
+      iconSize: [60, 60],
+      iconAnchor: [30, 60]
     });
   }
 
@@ -115,13 +126,20 @@ export function initMap() {
       });
 
       // ===============================
-      // ★ 畑選択 → ハイライト処理
+      // ★ 選択リスト：再タップ判定（click）
+      // ===============================
+      select.addEventListener("click", () => {
+        nextSelected = select.value;
+      });
+
+      // ===============================
+      // ★ 畑選択 → ハイライト処理（change）
       // ===============================
       select.addEventListener("change", () => {
         let selected = select.value;
 
         // ★ 同じ畑をもう一度選んだ → 解除
-        if (selected === lastSelected) {
+        if (selected === lastSelected && selected === nextSelected) {
           selected = "";
           select.value = "";
         }
@@ -153,7 +171,7 @@ export function initMap() {
           }
         });
 
-        // ★ 解除時は全体表示に戻す（任意）
+        // ★ 解除時は全体表示に戻す
         if (selected === "") {
           map.setView([34.75, 137.38], 13);
         }
