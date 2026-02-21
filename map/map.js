@@ -12,7 +12,8 @@ export function initMap() {
   // ===============================
   // ★ 畑データ保持用（ハイライト用）
   // ===============================
-  const fieldLayers = {};   // { fieldName: { polygon, marker } }
+  const fieldLayers = {};   // { fieldName: { polygon, marker, field } }
+  let lastSelected = "";    // ★ 前回選択した畑名（再タップで解除）
 
   function createFieldIcon(field, isSelected = false) {
     return L.divIcon({
@@ -117,11 +118,18 @@ export function initMap() {
       // ★ 畑選択 → ハイライト処理
       // ===============================
       select.addEventListener("change", () => {
-        const selected = select.value;
+        let selected = select.value;
+
+        // ★ 同じ畑をもう一度選んだ → 解除
+        if (selected === lastSelected) {
+          selected = "";
+          select.value = "";
+        }
+
+        lastSelected = selected;
 
         Object.keys(fieldLayers).forEach(name => {
           const { polygon, marker, field } = fieldLayers[name];
-
           const isSelected = (name === selected);
 
           // ▼ ポリゴンのスタイル変更
@@ -144,6 +152,11 @@ export function initMap() {
             }
           }
         });
+
+        // ★ 解除時は全体表示に戻す（任意）
+        if (selected === "") {
+          map.setView([34.75, 137.38], 13);
+        }
       });
 
     });
