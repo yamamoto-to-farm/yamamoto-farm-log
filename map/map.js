@@ -9,20 +9,26 @@ export function initMap() {
     maxZoom: 19
   }).addTo(map);
 
-  function createFieldIcon(field) {
+  // ===============================
+  // ★ 畑データ保持用（ハイライト用）
+  // ===============================
+  const fieldLayers = {};   // { fieldName: { polygon, marker } }
+
+  function createFieldIcon(field, isSelected = false) {
     return L.divIcon({
       html: `
         <div style="text-align:center; transform: translateY(-10px);">
           <div style="
             font-size: 14px;
             font-weight: bold;
-            color: black;
+            color: ${isSelected ? "red" : "black"};
             white-space: nowrap;
             text-shadow: 0 0 3px white, 0 0 3px white;
           ">
             ${field.name}
           </div>
-          <img src="/yamamoto-farm-log/img/cabbage.png" style="width:40px; height:40px;">
+          <img src="/yamamoto-farm-log/img/cabbage.png"
+               style="width:40px; height:40px; ${isSelected ? "filter: drop-shadow(0 0 6px red);" : ""}">
         </div>
       `,
       className: "",
@@ -31,19 +37,31 @@ export function initMap() {
     });
   }
 
-  // ★ 絶対パスに統一（GitHub Pages で安定）
+  // ===============================
+  // ★ fields.json 読み込み
+  // ===============================
   fetch("/yamamoto-farm-log/data/fields.json")
     .then(res => res.json())
     .then(fields => {
 
+      // ▼ 選択リストに追加
+      const select = document.getElementById("fieldSelect");
+      fields.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f.name;
+        opt.textContent = f.name;
+        select.appendChild(opt);
+      });
+
+      // ▼ 地図に描画
       fields.forEach(field => {
 
-        // ★ id として安全な文字列に変換
         const safeId = field.name.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-        // ★ ポリゴン（あれば）
+        // ★ ポリゴン
+        let polygon = null;
         if (field.coords) {
-          L.polygon(field.coords, {
+          polygon = L.polygon(field.coords, {
             color: field.color || "#3388ff",
             weight: 2
           }).addTo(map);
@@ -54,7 +72,7 @@ export function initMap() {
           icon: createFieldIcon(field)
         }).addTo(map);
 
-        // ★ ポップアップ HTML
+        // ★ ポップアップ
         const popupHtml = `
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
@@ -73,10 +91,7 @@ export function initMap() {
 
         marker.bindPopup(popupHtml);
 
-        // ★ ポップアップが開いた時にボタンへイベント付与
         marker.on("popupopen", () => {
-
-          // Google Maps ナビ
           const navBtn = document.getElementById(`nav-${safeId}`);
           if (navBtn) {
             navBtn.addEventListener("click", () => {
@@ -85,7 +100,6 @@ export function initMap() {
             });
           }
 
-          // 圃場分析ページへ
           const analysisBtn = document.getElementById(`analysis-${safeId}`);
           if (analysisBtn) {
             analysisBtn.addEventListener("click", () => {
@@ -94,6 +108,43 @@ export function initMap() {
             });
           }
         });
+
+        // ★ レイヤーを保存（ハイライト用）
+        fieldLayers[field.name] = { polygon, marker, field };
       });
+
+      // ===============================
+      // ★ 畑選択 → ハイライト処理
+      // ===============================
+      select.addEventListener("change", () => {
+        const selected = select.value;
+
+        Object.keys(fieldLayers).forEach(name => {
+          const { polygon, marker, field } = fieldLayers[name];
+
+          const isSelected = (name === selected);
+
+          // ▼ ポリゴンのスタイル変更
+          if (polygon) {
+            polygon.setStyle({
+              color: isSelected ? "red" : (field.color || "#3388ff"),
+              weight: isSelected ? 4 : 2
+            });
+          }
+
+          // ▼ マーカーのアイコン変更
+          marker.setIcon(createFieldIcon(field, isSelected));
+
+          // ▼ 選択された畑へズーム
+          if (isSelected) {
+            if (polygon) {
+              map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
+            } else {
+              map.setView([field.lat, field.lng], 17);
+            }
+          }
+        });
+      });
+
     });
 }
