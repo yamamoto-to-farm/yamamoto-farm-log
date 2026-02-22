@@ -1,20 +1,74 @@
-/* スマホだけポップアップを大きくする */
+/* ============================
+   PC / タブレット用（全体拡大）
+   ============================ */
+.leaflet-popup-content {
+  width: 260px !important;
+  max-width: 300px !important;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.leaflet-popup-content-wrapper {
+  padding: 14px;
+}
+
+/* ============================
+   優しめの色味（ナビ＝緑）
+   ============================ */
+button[id^="nav-"] {
+  background: #d8f3dc;        /* 淡いミントグリーン */
+  color: #1b4332;             /* 深い緑で視認性UP */
+  border: 1px solid #95d5b2;  /* 優しい緑の枠線 */
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  width: 100%;
+  margin: 8px 0;
+}
+
+button[id^="nav-"]:hover {
+  background: #b7e4c7;
+}
+
+/* ============================
+   優しめの色味（分析＝青）
+   ============================ */
+button[id^="analysis-"] {
+  background: #e7f1ff;        /* 淡いパステルブルー */
+  color: #1d3557;             /* 深い青で視認性UP */
+  border: 1px solid #a8c9ff;  /* 優しい青の枠線 */
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  width: 100%;
+  margin: 8px 0;
+}
+
+button[id^="analysis-"]:hover {
+  background: #d0e4ff;
+}
+
+/* ============================
+   スマホ用（さらに大きく）
+   ============================ */
 @media (max-width: 600px) {
   .leaflet-popup-content {
-    width: 260px !important;
-    max-width: 300px !important;
-    font-size: 18px;
-    line-height: 1.5;
-  }
-
-  .leaflet-popup-content button {
-    width: 100%;
-    padding: 12px 0;
-    font-size: 18px;
-    margin: 8px 0;
+    width: 300px !important;
+    max-width: 320px !important;
+    font-size: 20px;
+    line-height: 1.6;
   }
 
   .leaflet-popup-content-wrapper {
-    padding: 12px;
+    padding: 16px;
+  }
+
+  button[id^="nav-"],
+  button[id^="analysis-"] {
+    padding: 14px 0;
+    font-size: 20px;
+    margin: 10px 0;
   }
 }
