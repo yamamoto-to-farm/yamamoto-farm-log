@@ -119,7 +119,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植候補更新（最新日特別扱いなし・全候補統合版）
+// ★ 定植候補更新（畑名一致 × 生育日数 ±60 ＋ fallback）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -142,24 +142,7 @@ async function updatePlantingRefOptions() {
 
   if (candidates.length === 0) return;
 
-  // 最新日
-  const sorted = [...candidates].sort(
-    (a, b) => new Date(b.plantDate) - new Date(a.plantDate)
-  );
-  const latestDate = sorted[0]?.plantDate;
-
-  // 最新 ±30日
-  const latestDateObj = latestDate ? new Date(latestDate) : null;
-  const nearLatest = latestDateObj
-    ? candidates.filter(p => {
-        if (!p.plantDate) return false;
-        const d = new Date(p.plantDate);
-        const diff = Math.abs((d - latestDateObj) / 86400000);
-        return diff <= 30;
-      })
-    : [];
-
-  // 生育日数ロジック（±60日）
+  // ② 生育日数ロジック（±60）
   const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
 
@@ -171,25 +154,14 @@ async function updatePlantingRefOptions() {
     return Math.abs(actualDays - plannedDays) <= 60;
   });
 
-  // ★ 全候補をまとめてから重複除去
-  let finalList = [
-    ...strongMatches,
-    ...nearLatest,
-    ...candidates
-  ];
+  // ③ strongMatches があればそれを使う
+  //    なければ fallback として candidates を使う
+  let finalList = strongMatches.length > 0 ? strongMatches : candidates;
 
-  // 重複除去（plantingRef ベース）
-  const seen = new Set();
-  finalList = finalList.filter(p => {
-    if (seen.has(p.plantingRef)) return false;
-    seen.add(p.plantingRef);
-    return true;
-  });
-
-  // 日付降順ソート
+  // ④ 日付降順で並べる
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
 
-  // プルダウンに追加
+  // ⑤ プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
@@ -197,7 +169,7 @@ async function updatePlantingRefOptions() {
     select.appendChild(opt);
   });
 
-  // 候補が1件なら自動選択
+  // ⑥ 候補が1件なら自動選択
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
     console.log("✨ 候補1件 → 自動選択:", finalList[0].plantingRef);
