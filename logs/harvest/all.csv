@@ -5,3 +5,11 @@ harvestDate,shippingDate,worker,field,bins,issue,plantingRef,machine,human
   "header": "harvestDate,shippingDate,worker,field,bins,issue,plantingRef,machine,human\n",
   "line": "2026-02-22,2026-02-23,山本 雅彦／山本 咲子／山本 直輝／石原 孝晋,若松(新･小),22,,20250909-若松(新･小)-たいと,machine1,naoki\n"
 }
+{
+  "header": "harvestDate,shippingDate,worker,field,bins,issue,plantingRef,machine,human\n",
+  "line": "2026-02-23,2026-02-23,山本 雅彦／山本 咲子／山本 直輝／若月 道昭,ヨコモク(ハウス跡),2,n831,20250908-ヨコモク(ハウス跡)-冬銀河,machine1,naoki\n"
+}
+{
+  "header": "harvestDate,shippingDate,worker,field,bins,issue,plantingRef,machine,human\n",
+  "line": "2026-02-23,2026-02-25,山本 雅彦／山本 咲子／山本 直輝／若月 道昭,ヨコモク(ハウス跡),18,n831,20250908-ヨコモク(ハウス跡)-冬銀河,machine1,naoki\n"
+}
