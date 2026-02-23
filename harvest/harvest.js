@@ -119,7 +119,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植記録候補を更新（analysis.js と同期）
+// ★ 定植記録候補を更新（同一日付複数対応版）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -135,26 +135,24 @@ async function updatePlantingRefOptions() {
   const plantingList = await loadPlantingCSV();
   const nf = normalizeFieldName(field);
 
-  // ===============================
-  // ① 畑名一致でまず全部拾う（analysis と同じ）
-  // ===============================
+  // ① 畑名一致の全件
   const candidates = plantingList.filter(p =>
     normalizeFieldName(p.field || "") === nf
   );
 
   if (candidates.length === 0) return;
 
-  // ===============================
-  // ② 最新 plantDate を取得
-  // ===============================
-  const latestDate = candidates
-    .sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate))[0]?.plantDate;
+  // ② 最新日付を取得（複数対応）
+  const sorted = [...candidates].sort(
+    (a, b) => new Date(b.plantDate) - new Date(a.plantDate)
+  );
+  const latestDate = sorted[0]?.plantDate;
 
+  // ★ 同一日付のものを全部拾う（最優先）
+  const latestGroup = candidates.filter(p => p.plantDate === latestDate);
+
+  // ③ 最新 ±30日
   const latestDateObj = latestDate ? new Date(latestDate) : null;
-
-  // ===============================
-  // ③ 最新 ±30日 のグループ（analysis と同期）
-  // ===============================
   const nearLatest = latestDateObj
     ? candidates.filter(p => {
         if (!p.plantDate) return false;
@@ -164,9 +162,7 @@ async function updatePlantingRefOptions() {
       })
     : [];
 
-  // ===============================
-  // ④ 日数ロジック（±60日）で強い候補
-  // ===============================
+  // ④ 日数ロジック（±60日）
   const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
 
@@ -178,27 +174,24 @@ async function updatePlantingRefOptions() {
     return Math.abs(actualDays - plannedDays) <= 60;
   });
 
-  // ===============================
-  // ⑤ 優先順位で候補を決定
-  // ===============================
+  // ⑤ 優先順位
   let finalList = [];
 
-  // 最強：最新 ±30日 × 日数ロジック
-  const best = nearLatest.filter(p => strongMatches.includes(p));
-  if (best.length > 0) finalList = best;
+  // ★ 最優先：同一日付の複数定植は全部出す
+  if (latestGroup.length > 0) {
+    finalList = latestGroup;
+  }
+  else if (nearLatest.length > 0) {
+    finalList = nearLatest;
+  }
+  else if (strongMatches.length > 0) {
+    finalList = strongMatches;
+  }
+  else {
+    finalList = candidates;
+  }
 
-  // 次：最新 ±30日
-  else if (nearLatest.length > 0) finalList = nearLatest;
-
-  // 次：日数ロジック
-  else if (strongMatches.length > 0) finalList = strongMatches;
-
-  // 最後：畑一致の全件
-  else finalList = candidates;
-
-  // ===============================
   // ⑥ プルダウンに追加
-  // ===============================
   finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
@@ -206,9 +199,7 @@ async function updatePlantingRefOptions() {
     select.appendChild(opt);
   });
 
-  // ===============================
   // ⑦ 候補が1件なら自動選択
-  // ===============================
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
     console.log("✨ 候補1件 → 自動選択:", finalList[0].plantingRef);
@@ -233,7 +224,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// ★ 保存処理（ヘッダー対応版）
+// ★ 保存処理（header を渡さない版）
 // ===============================
 async function saveHarvestInner() {
   console.log("💾 saveHarvestInner()");
@@ -265,11 +256,10 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  const header =
-    "harvestDate,shippingDate,worker,field,bins,issue,plantingRef,machine,human\n";
-
-  await saveLog("harvest", dateStr, data, {
-    header,
+  // ★ header を渡さない → Worker 側が自動で付ける
+  await saveLog("harvest", dateStr, {
+    plantingRef: data.plantingRef
+  }, {
     line: csvLine + "\n"
   });
 

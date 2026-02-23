@@ -225,9 +225,10 @@ async function savePlantingInner() {
   const header =
     "plantDate,worker,field,variety,quantity,spacingRow,spacingBed,harvestPlanYM,notes,machine,human,plantingRef\n";
 
-  // ★ saveLog に渡す内容
-  await saveLog("planting", dateStr, data, {
-    header,
+  // ★ header を渡さない → Worker 側が自動で付ける
+  await saveLog("harvest", dateStr, {
+    plantingRef: data.plantingRef
+  }, {
     line: csvLine + "\n"
   });
 
