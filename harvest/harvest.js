@@ -11,8 +11,6 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
-
-// ★ 重複チェックを追加
 import { checkDuplicate } from "../common/duplicate.js";
 
 
@@ -39,11 +37,10 @@ function diffDays(dateA, dateB) {
 
 
 // ===============================
-// 予定日数を YM から推定（YM が空でも動く）
+// 予定日数を YM から推定
 // ===============================
 function calcPlannedDays(plantDate, harvestPlanYM) {
   if (!plantDate) return null;
-
   if (!harvestPlanYM || !harvestPlanYM.includes("-")) return null;
 
   const [y, m] = harvestPlanYM.split("-");
@@ -60,7 +57,7 @@ let plantingCache = null;
 
 
 // ===============================
-// 初期化処理（認証後に index.html から呼ばれる）
+// 初期化
 // ===============================
 export async function initHarvestPage() {
   console.log("🔥 initHarvestPage() 開始");
@@ -87,7 +84,7 @@ export async function initHarvestPage() {
 
 
 // ===============================
-// ★ 定植CSV読み込み（ヘッダー対応＋キャッシュ）
+// planting CSV 読み込み
 // ===============================
 async function loadPlantingCSV() {
   if (plantingCache) return plantingCache;
@@ -122,7 +119,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植記録候補を更新（同一日付複数対応版）
+// ★ 定植候補更新（最新日特別扱いなし版）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -138,23 +135,21 @@ async function updatePlantingRefOptions() {
   const plantingList = await loadPlantingCSV();
   const nf = normalizeFieldName(field);
 
-  // ① 畑名一致の全件
+  // ① 畑名一致
   const candidates = plantingList.filter(p =>
     normalizeFieldName(p.field || "") === nf
   );
 
   if (candidates.length === 0) return;
 
-  // ② 最新日付を取得（複数対応）
+  // 最新日
   const sorted = [...candidates].sort(
     (a, b) => new Date(b.plantDate) - new Date(a.plantDate)
   );
   const latestDate = sorted[0]?.plantDate;
-
-  // ★ 同一日付のものを全部拾う（最優先）
   const latestGroup = candidates.filter(p => p.plantDate === latestDate);
 
-  // ③ 最新 ±30日
+  // 最新 ±30日
   const latestDateObj = latestDate ? new Date(latestDate) : null;
   const nearLatest = latestDateObj
     ? candidates.filter(p => {
@@ -165,7 +160,7 @@ async function updatePlantingRefOptions() {
       })
     : [];
 
-  // ④ 日数ロジック（±60日）
+  // 生育日数ロジック（±60日）
   const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
 
@@ -177,23 +172,31 @@ async function updatePlantingRefOptions() {
     return Math.abs(actualDays - plannedDays) <= 60;
   });
 
-  // ⑤ 優先順位
+  // ★ 最新日特別扱いをやめる
   let finalList = [];
 
-  if (latestGroup.length > 0) {
-    finalList = latestGroup;
+  if (strongMatches.length > 0) {
+    finalList = strongMatches;
   }
   else if (nearLatest.length > 0) {
     finalList = nearLatest;
-  }
-  else if (strongMatches.length > 0) {
-    finalList = strongMatches;
   }
   else {
     finalList = candidates;
   }
 
-  // ⑥ プルダウンに追加
+  // 重複除去
+  const seen = new Set();
+  finalList = finalList.filter(p => {
+    if (seen.has(p.plantingRef)) return false;
+    seen.add(p.plantingRef);
+    return true;
+  });
+
+  //　並び替え
+  finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
+  
+  // プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
@@ -201,7 +204,7 @@ async function updatePlantingRefOptions() {
     select.appendChild(opt);
   });
 
-  // ⑦ 候補が1件なら自動選択
+  // 候補が1件なら自動選択
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
     console.log("✨ 候補1件 → 自動選択:", finalList[0].plantingRef);
@@ -226,7 +229,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// ★ 保存処理（duplicate.js 組み込み版）
+// 保存処理
 // ===============================
 async function saveHarvestInner() {
   console.log("💾 saveHarvestInner()");
@@ -242,7 +245,7 @@ async function saveHarvestInner() {
     return;
   }
 
-  // ★ 重複チェック（harvest）
+  // 重複チェック
   const dup = await checkDuplicate("harvest", {
     plantingRef: data.plantingRef,
     harvestDate: data.harvestDate,
