@@ -12,6 +12,9 @@ import {
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
+// ★ 重複チェックを追加
+import { checkDuplicate } from "../common/duplicate.js";
+
 
 // ===============================
 // 畑名称ゆらぎ吸収
@@ -177,7 +180,6 @@ async function updatePlantingRefOptions() {
   // ⑤ 優先順位
   let finalList = [];
 
-  // ★ 最優先：同一日付の複数定植は全部出す
   if (latestGroup.length > 0) {
     finalList = latestGroup;
   }
@@ -224,7 +226,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// ★ 保存処理（header を渡さない版）
+// ★ 保存処理（duplicate.js 組み込み版）
 // ===============================
 async function saveHarvestInner() {
   console.log("💾 saveHarvestInner()");
@@ -237,6 +239,19 @@ async function saveHarvestInner() {
   }
   if (!data.plantingRef) {
     alert("定植記録を選択してください");
+    return;
+  }
+
+  // ★ 重複チェック（harvest）
+  const dup = await checkDuplicate("harvest", {
+    plantingRef: data.plantingRef,
+    harvestDate: data.harvestDate,
+    shippingDate: data.shippingDate,
+    amount: data.amount
+  });
+
+  if (!dup.ok) {
+    alert(dup.message);
     return;
   }
 
@@ -256,7 +271,6 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  // ★ header を渡さない → Worker 側が自動で付ける
   await saveLog("harvest", dateStr, {
     plantingRef: data.plantingRef
   }, {

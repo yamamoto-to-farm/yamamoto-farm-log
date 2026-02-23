@@ -192,6 +192,31 @@ function allocateWeights(targets, weights) {
 
 
 // ===============================
+// ★ shipping 専用の重複チェック
+// ===============================
+async function checkShippingDuplicate(shippingDate, targets) {
+  const weight = await loadCSV("../logs/weight/all.csv");
+
+  for (let t of targets) {
+    const dup = weight.find(w =>
+      w.shippingDate === shippingDate &&
+      w.plantingRef  === t.plantingRef &&
+      Number(w.bins) === t.originalRemain
+    );
+
+    if (dup) {
+      return {
+        ok: false,
+        message: `${t.plantingRef} は既に同じ基数で出荷済みです`
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+
+// ===============================
 // ★ 保存処理（ヘッダー対応版）
 // ===============================
 async function saveShipping() {
@@ -245,6 +270,13 @@ async function saveShipping() {
       totalWeight: 0
     };
   });
+
+  // ★ shipping 専用重複チェック
+  const dup = await checkShippingDuplicate(shippingDate, targets);
+  if (!dup.ok) {
+    alert(dup.message);
+    return;
+  }
 
   allocateWeights(targets, weightList);
 

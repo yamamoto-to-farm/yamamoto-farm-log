@@ -11,6 +11,9 @@ import {
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
+// ★ 重複チェックを追加
+import { checkDuplicate } from "../common/duplicate.js";
+
 let VARIETY_LIST = []; // ★ 品種データを保持する
 
 
@@ -189,7 +192,7 @@ function collectPlantingData() {
 
 
 // ============================
-// ★ 保存処理（ヘッダー自動生成対応）
+// ★ 保存処理（duplicate.js 組み込み版）
 // ============================
 async function savePlantingInner() {
   const data = collectPlantingData();
@@ -199,12 +202,25 @@ async function savePlantingInner() {
     return;
   }
 
+  // ★ plantingRef を生成
+  const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
+
+  // ★ 重複チェック（planting）
+  const dup = await checkDuplicate("planting", {
+    date: data.plantDate,
+    field: data.field,
+    variety: data.variety,
+    quantity: data.quantity
+  });
+
+  if (!dup.ok) {
+    alert(dup.message);
+    return;
+  }
+
   const machine = getMachineParam();
   const human = window.currentHuman || "";
-
   const dateStr = data.plantDate.replace(/-/g, "");
-
-  const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
 
   const csvLine = [
     data.plantDate,
@@ -221,13 +237,9 @@ async function savePlantingInner() {
     plantingRef
   ].join(",");
 
-  // ★ ヘッダー行
-  const header =
-    "plantDate,worker,field,variety,quantity,spacingRow,spacingBed,harvestPlanYM,notes,machine,human,plantingRef\n";
-
-  // ★ header を渡さない → Worker 側が自動で付ける
-  await saveLog("harvest", dateStr, {
-    plantingRef: data.plantingRef
+  // ★ planting に保存（元コードのバグ修正）
+  await saveLog("planting", dateStr, {
+    plantingRef
   }, {
     line: csvLine + "\n"
   });
