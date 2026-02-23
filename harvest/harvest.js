@@ -119,7 +119,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植候補更新（最新日特別扱いなし版）
+// ★ 定植候補更新（最新日特別扱いなし・全候補統合版）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions()");
@@ -147,7 +147,6 @@ async function updatePlantingRefOptions() {
     (a, b) => new Date(b.plantDate) - new Date(a.plantDate)
   );
   const latestDate = sorted[0]?.plantDate;
-  const latestGroup = candidates.filter(p => p.plantDate === latestDate);
 
   // 最新 ±30日
   const latestDateObj = latestDate ? new Date(latestDate) : null;
@@ -172,20 +171,14 @@ async function updatePlantingRefOptions() {
     return Math.abs(actualDays - plannedDays) <= 60;
   });
 
-  // ★ 最新日特別扱いをやめる
-  let finalList = [];
+  // ★ 全候補をまとめてから重複除去
+  let finalList = [
+    ...strongMatches,
+    ...nearLatest,
+    ...candidates
+  ];
 
-  if (strongMatches.length > 0) {
-    finalList = strongMatches;
-  }
-  else if (nearLatest.length > 0) {
-    finalList = nearLatest;
-  }
-  else {
-    finalList = candidates;
-  }
-
-  // 重複除去
+  // 重複除去（plantingRef ベース）
   const seen = new Set();
   finalList = finalList.filter(p => {
     if (seen.has(p.plantingRef)) return false;
@@ -193,9 +186,9 @@ async function updatePlantingRefOptions() {
     return true;
   });
 
-  //　並び替え
+  // 日付降順ソート
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
-  
+
   // プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
