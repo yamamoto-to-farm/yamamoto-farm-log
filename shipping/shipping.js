@@ -4,6 +4,14 @@
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
+console.log("=== shipping.js loaded ===");
+
+try {
+  console.log("import saveLog:", saveLog);
+} catch (e) {
+  console.error("import saveLog 失敗:", e);
+}
+
 // ===============================
 // チェック順管理
 // ===============================
