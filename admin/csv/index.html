@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV 編集（管理者）</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 6px 10px; }
+    th { background: #f0f0f0; }
+    #csvTableArea { margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>CSV 編集（管理者）</h1>
+
+  <div>
+    <label>種類：</label>
+    <select id="csvType">
+      <option value="planting">planting</option>
+      <option value="harvest">harvest</option>
+      <option value="weight">weight</option>
+    </select>
+
+    <label>ファイル：</label>
+    <select id="csvFile">
+      <option value="all.csv">all.csv</option>
+    </select>
+
+    <button id="loadCsvBtn">読み込む</button>
+  </div>
+
+  <div id="csvTableArea"></div>
+
+  <script type="module" src="./csv.js"></script>
+</body>
+</html>
