@@ -122,7 +122,7 @@ async function loadPlantingCSV() {
 // ★ 定植候補更新（畑名一致 × 生育日数 ±60 ＋ fallback）
 // ===============================
 async function updatePlantingRefOptions() {
-  console.log("🔄 updatePlantingRefOptions()");
+  console.log("🔄 updatePlantingRefOptions() START");
 
   const field = getFinalField();
   const harvestDate = document.getElementById("harvestDate").value;
@@ -130,7 +130,10 @@ async function updatePlantingRefOptions() {
 
   select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
 
-  if (!field || !harvestDate) return;
+  if (!field || !harvestDate) {
+    console.log("❌ field or harvestDate が未入力");
+    return;
+  }
 
   const plantingList = await loadPlantingCSV();
   const nf = normalizeFieldName(field);
@@ -140,28 +143,64 @@ async function updatePlantingRefOptions() {
     normalizeFieldName(p.field || "") === nf
   );
 
-  if (candidates.length === 0) return;
+  console.log("📌 畑名一致 candidates:", candidates);
+
+  if (candidates.length === 0) {
+    console.log("❌ 畑名一致が0件");
+    return;
+  }
 
   // ② 生育日数ロジック（±60）
   const strongMatches = candidates.filter(p => {
-    if (!p.plantDate) return false;
+    if (!p.plantDate) {
+      console.log("⚠️ plantDate 空:", p);
+      return false;
+    }
 
     const actualDays = diffDays(harvestDate, p.plantDate);
     const plannedDays = calcPlannedDays(p.plantDate, p.harvestPlanYM);
 
-    // harvestPlanYM が空 → 生育日数ロジックでは拾わない
-    if (plannedDays === null) return false;
+    console.log("🔍 チェック:", {
+      plantingRef: p.plantingRef,
+      plantDate: p.plantDate,
+      variety: p.variety,
+      harvestPlanYM: p.harvestPlanYM,
+      actualDays,
+      plannedDays,
+      diff: plannedDays !== null ? Math.abs(actualDays - plannedDays) : "N/A"
+    });
 
-    return Math.abs(actualDays - plannedDays) <= 60;
+    // harvestPlanYM が空 → strongMatches には入れない
+    if (plannedDays === null) {
+      console.log("➡️ 除外: harvestPlanYM が空");
+      return false;
+    }
+
+    const ok = Math.abs(actualDays - plannedDays) <= 60;
+    if (!ok) {
+      console.log("➡️ 除外: ±60 超え");
+    }
+    return ok;
   });
+
+  console.log("🎯 strongMatches:", strongMatches);
 
   // ③ strongMatches があればそれを使う
   //    なければ fallback として candidates を使う
-  let finalList = strongMatches.length > 0 ? strongMatches : candidates;
+  let finalList;
+  if (strongMatches.length > 0) {
+    console.log("✨ strongMatches 採用");
+    finalList = strongMatches;
+  } else {
+    console.log("✨ fallback 発動 → candidates 全件採用");
+    finalList = candidates;
+  }
 
   // ④ 新しい順（plantDate 降順）
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
-//
+
+  console.log("📌 finalList:", finalList);
+
   // ⑤ プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
@@ -175,8 +214,9 @@ async function updatePlantingRefOptions() {
     select.value = finalList[0].plantingRef;
     console.log("✨ 候補1件 → 自動選択:", finalList[0].plantingRef);
   }
-}
 
+  console.log("🔄 updatePlantingRefOptions() END");
+}
 
 // ===============================
 // 入力データ収集
