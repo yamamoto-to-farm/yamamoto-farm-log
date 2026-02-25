@@ -280,12 +280,7 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  await saveLog("harvest", dateStr, {
-    plantingRef: data.plantingRef
-  }, {
-    line: csvLine + "\n"
-  });
-
+  await saveLog("harvest", dateStr, { plantingRef }, csvLine + "\n");
   alert("GitHubに保存しました");
 }
 
