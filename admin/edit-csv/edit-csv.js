@@ -1,7 +1,7 @@
 import { loadCSV } from "./loader.js";
 import { renderCsvTable } from "./table.js";
 
-console.log("=== admin/csv/csv.js loaded ===");
+console.log("=== admin/edit-csv/edit-csv.js loaded ===");
 
 document.getElementById("loadCsvBtn").addEventListener("click", async () => {
   const type = document.getElementById("csvType").value;
