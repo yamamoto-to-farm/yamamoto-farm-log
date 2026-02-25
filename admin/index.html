@@ -15,7 +15,7 @@
       border: 1px solid #ddd;
       margin-bottom: 16px;
     }
-    a {
+    .card a {
       color: #2b6cb0;
       font-weight: bold;
       text-decoration: none;
@@ -25,51 +25,50 @@
 
 <body>
 
-  <!-- 認証後に表示される管理メニュー -->
   <div id="admin-area" style="display:none;">
-
     <h1>管理ページ</h1>
-
-    <div class="card">
-      <a href="./edit-csv.html">CSV 編集ツール</a>
-    </div>
-
-   <div class="card">
-      <a href="https://yamamoto-to-farm.github.io/yamamoto-farm-log/tools/machine-qr.html">QRコード 生成ツール</a>
-    </div>
-
-    <div class="card">
-      <a href="./varieties.html">品種データ管理</a>
-    </div>
-
-    <div class="card">
-      <a href="./fields.html">圃場データ管理</a>
-    </div>
-
-    <div class="card">
-      <a href="./access.html">アクセス権限（PIN）管理</a>
-    </div>
-
+    <div id="admin-list"></div>
   </div>
 
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 
+    async function loadPages() {
+      const res = await fetch("/yamamoto-farm-log/data/pages.json");
+      return (await res.json()).pages;
+    }
+
     window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ localStorage の認証情報が有効かチェック
+      // 認証チェック
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ★ worker → 管理ページ禁止
+      // worker → アクセス禁止
       if (window.currentRole === "worker") {
         alert("このページは管理者のみアクセスできます");
         location.href = "../index.html";
         return;
       }
 
-      // ★ family / admin → 通過
+      // family/admin → 表示
       document.getElementById("admin-area").style.display = "block";
+
+      // pages.json 読み込み
+      const pages = await loadPages();
+
+      // category = "管理" のページだけ抽出
+      const adminPages = pages.filter(p => p.category === "管理");
+
+      const list = document.getElementById("admin-list");
+
+      // カード生成
+      adminPages.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `<a href="${p.path}">${p.name}</a>`;
+        list.appendChild(div);
+      });
     });
   </script>
 
