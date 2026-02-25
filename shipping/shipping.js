@@ -332,6 +332,9 @@ async function saveShipping() {
       human
     ].join(",");
 
+    console.log("[saveShipping] 送信する1行:", csvLine);
+    console.log("[saveShipping] jsonData:", { plantingRef: t.plantingRef });
+
     await saveLog(
       "weight",
       "all",
@@ -339,6 +342,7 @@ async function saveShipping() {
       csvLine + "\n"
     );
   }
+  console.log("=== saveShipping: 全行送信完了 ===");
 
   alert("保存しました");
 }
