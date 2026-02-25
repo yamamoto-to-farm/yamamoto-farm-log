@@ -231,11 +231,7 @@ async function savePlantingInner() {
     plantingRef
   ].join(",");
 
-  await saveLog("planting", dateStr, {
-    plantingRef
-  }, {
-    line: csvLine + "\n"
-  });
+  await saveLog("planting", dateStr, { plantingRef }, csvLine + "\n");
 
   alert("GitHubに保存しました");
 }
