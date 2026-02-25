@@ -4,6 +4,9 @@
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
+// ===============================
+// ★ デバッグ：shipping.js が読み込まれたか確認
+// ===============================
 console.log("=== shipping.js loaded ===");
 
 try {
