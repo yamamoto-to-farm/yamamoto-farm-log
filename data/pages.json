@@ -61,7 +61,7 @@
     {
       "id": "machine-qr",
       "name": "QRコード生成ツール",
-      "path": "./tools/machine-qr.html",
+      "path": "./admin/machine-qr.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/qr.png"

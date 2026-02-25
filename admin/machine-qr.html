@@ -76,13 +76,14 @@
     }
 
     async function init() {
-      const pages = (await loadJSON("../data/pages.json")).pages;
-      const machines = (await loadJSON("../data/machines.json")).machines;
+      // ★ admin/ からの絶対パスに変更
+      const pages = (await loadJSON("/yamamoto-farm-log/data/pages.json")).pages;
+      const machines = (await loadJSON("/yamamoto-farm-log/data/machines.json")).machines;
 
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
 
-      // ページ一覧
+      // ページ一覧（管理/ツール も含めて全部）
       pages.forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.path;  // "./planting/index.html"
@@ -100,11 +101,10 @@
       });
 
       document.getElementById("generate-btn").onclick = () => {
-        const pagePath = pageSel.value;   // "./planting/index.html"
+        const pagePath = pageSel.value;
         const machineId = machineSel.value;
 
-        // ★ ここが今回の修正ポイント ★
-        // サイトのトップを基準に絶対URLを作る
+        // ★ サイトのトップを基準に絶対URLを作る
         const siteRoot = "https://yamamoto-to-farm.github.io/yamamoto-farm-log/";
 
         let absUrl = new URL(pagePath, siteRoot).href;
