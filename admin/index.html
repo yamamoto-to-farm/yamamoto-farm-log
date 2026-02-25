@@ -57,8 +57,10 @@
       // pages.json 読み込み
       const pages = await loadPages();
 
-      // category = "管理" のページだけ抽出
-      const adminPages = pages.filter(p => p.category === "管理");
+      // ★ 管理ページ一覧（admin 自身は除外）
+      const adminPages = pages.filter(p =>
+        p.category === "管理" && p.id !== "admin"
+      );
 
       const list = document.getElementById("admin-list");
 
