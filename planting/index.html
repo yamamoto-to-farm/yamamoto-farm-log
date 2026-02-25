@@ -31,7 +31,6 @@
 
 <body>
 
-  <!-- ▼ PIN UI は不要。未認証端末は index に戻す -->
   <div id="form-area" style="display:none;">
 
     <h1>定植ログ</h1>
@@ -89,9 +88,17 @@
       </select>
     </div>
 
-    <!-- 株数 or 枚数 -->
+    <!-- 植え付け量 -->
     <h2>植え付け量</h2>
     <div class="box">
+
+      <!-- ★ セルトレイ種別（共通） -->
+      <label>セルトレイ種別</label>
+      <label><input type="radio" name="trayType" value="128" checked>128穴</label>
+      <label><input type="radio" name="trayType" value="200">200穴</label>
+
+      <hr style="margin: 15px 0;">
+
       <label>入力方法</label>
       <label><input type="radio" name="mode" value="stock" checked> 株数で入力</label>
       <label><input type="radio" name="mode" value="tray"> セルトレイ枚数で入力</label>
@@ -104,10 +111,6 @@
       <div id="tray-input" class="field" style="display:none;">
         <label>枚数</label>
         <input type="number" id="trayCount" inputmode="numeric">
-
-        <label>穴数</label>
-        <label><input type="radio" name="trayType" value="128" checked>128穴</label>
-        <label><input type="radio" name="trayType" value="200">200穴</label>
 
         <p>自動計算：<span id="calcStock">0</span> 株</p>
       </div>
@@ -132,27 +135,21 @@
     <!-- 保存 -->
     <button type="button" onclick="savePlanting()">GitHub に保存する</button>
 
-  </div><!-- /form-area -->
+  </div>
 
-  <!-- JS -->
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
     import { initPlantingPage } from "./planting.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
-
-      // ★ localStorage の認証情報が有効かチェック
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // 認証済み → フォーム表示
       document.getElementById("form-area").style.display = "block";
 
-      // 日付初期値
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("plantDate").value = today;
 
-      // ★ planting.js の初期化
       initPlantingPage();
     });
   </script>
