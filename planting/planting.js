@@ -11,37 +11,32 @@ import {
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 
-// ★ 重複チェックを追加
+// ★ 重複チェック
 import { checkDuplicate } from "../common/duplicate.js";
 
-let VARIETY_LIST = []; // ★ 品種データを保持する
+let VARIETY_LIST = [];
 
 
 // ===============================
-// 初期化（認証後に index.html から呼ばれる）
+// 初期化
 // ===============================
 export async function initPlantingPage() {
 
-  // 作業者チェックボックス
   createWorkerCheckboxes("workers_box");
 
-  // 圃場セレクタ
   await createFieldSelector("field_auto", "field_area", "field_manual");
   autoDetectField("field_auto", "field_area", "field_manual");
 
-  // 品種セレクタ
   setupVarietySelector();
 
-  // 株数/枚数切り替え
   setupInputModeSwitch();
 
-  // セルトレイ → 株数 自動計算
   setupTrayAutoCalc();
 }
 
 
 // ============================
-// 品種プルダウン（type → name）
+// 品種プルダウン
 // ============================
 async function setupVarietySelector() {
   const res = await fetch("../data/varieties.json");
@@ -68,7 +63,7 @@ async function setupVarietySelector() {
 
     filtered.forEach(v => {
       const opt = document.createElement("option");
-      opt.value = v.name;      // ★ name ベース
+      opt.value = v.name;
       opt.textContent = v.name;
       nameSel.appendChild(opt);
     });
@@ -92,7 +87,7 @@ function setupInputModeSwitch() {
 
 
 // ============================
-// 枚数 → 株数 自動計算（小数対応）
+// 枚数 → 株数 自動計算
 // ============================
 function setupTrayAutoCalc() {
   const update = () => {
@@ -113,7 +108,7 @@ function setupTrayAutoCalc() {
 
 
 // ============================
-// 圃場の最終決定ロジック
+// 圃場の最終決定
 // ============================
 function getFinalField() {
   const auto = document.getElementById("field_auto").value;
@@ -142,20 +137,20 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
 
 
 // ============================
-// 入力データ収集（name ベース）
+// 入力データ収集
 // ============================
 function collectPlantingData() {
   const mode = document.querySelector("input[name='mode']:checked").value;
 
+  const trayType = Number(document.querySelector("input[name='trayType']:checked").value);
+
   let quantity = 0;
   let trayCount = null;
-  let trayType = null;
 
   if (mode === "stock") {
     quantity = Number(document.getElementById("stockCount").value);
   } else {
     trayCount = parseFloat(document.getElementById("trayCount").value);
-    trayType = Number(document.querySelector("input[name='trayType']:checked").value);
     quantity = trayCount * trayType;
   }
 
@@ -177,9 +172,9 @@ function collectPlantingData() {
     variety: varietyName,
 
     quantity,
-    inputMode: mode,
-    trayCount,
     trayType,
+    trayCount,
+    inputMode: mode,
 
     spacingRow: Number(document.getElementById("spacingRow").value),
     spacingBed: Number(document.getElementById("spacingBed").value),
@@ -192,7 +187,7 @@ function collectPlantingData() {
 
 
 // ============================
-// ★ 保存処理（duplicate.js 組み込み版）
+// 保存処理
 // ============================
 async function savePlantingInner() {
   const data = collectPlantingData();
@@ -202,10 +197,8 @@ async function savePlantingInner() {
     return;
   }
 
-  // ★ plantingRef を生成
   const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
 
-  // ★ 重複チェック（planting）
   const dup = await checkDuplicate("planting", {
     date: data.plantDate,
     field: data.field,
@@ -228,6 +221,7 @@ async function savePlantingInner() {
     data.field,
     data.variety,
     data.quantity,
+    data.trayType,     // ★ 追加
     data.spacingRow,
     data.spacingBed,
     data.harvestPlanYM,
@@ -237,7 +231,6 @@ async function savePlantingInner() {
     plantingRef
   ].join(",");
 
-  // ★ planting に保存（元コードのバグ修正）
   await saveLog("planting", dateStr, {
     plantingRef
   }, {

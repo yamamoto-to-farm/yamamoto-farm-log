@@ -6,31 +6,27 @@ import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
 // ===============================
 window.addEventListener("DOMContentLoaded", async () => {
 
-  // ★ localStorage の認証情報が有効かチェック
   const ok = await verifyLocalAuth();
   if (!ok) return;
 
-  // ★ worker → 閲覧禁止
   if (window.currentRole !== "family" && window.currentRole !== "admin") {
     alert("このページは家族のみ閲覧できます");
     location.href = "../map/index.html";
     return;
   }
 
-  // ★ 認証OK → メイン処理へ
   initAnalysisPage();
 });
 
 
 // ===============================
-// ★ メイン処理（export 必須）
+// ★ メイン処理
 // ===============================
 export async function initAnalysisPage() {
 
   const params = new URLSearchParams(location.search);
   const fieldName = params.get("field");
 
-  // 圃場名が無い → 圃場一覧を表示
   if (!fieldName) {
     const fields = await fetch("/yamamoto-farm-log/data/fields.json").then(r => r.json());
 
@@ -57,34 +53,28 @@ export async function initAnalysisPage() {
     return;
   }
 
-  // 圃場名セット
   document.getElementById("field-name").textContent = fieldName;
 
   // ===============================
-  // ★ CSV 読み込み（デバッグ付き）
+  // CSV 読み込み
   // ===============================
   console.log("🌱 planting/all.csv を読み込みます");
   const planting = await loadCSV("/yamamoto-farm-log/logs/planting/all.csv");
-  console.log("🌱 planting 読み込み件数:", planting.length);
 
   console.log("🌾 harvest/all.csv を読み込みます");
   const harvest  = await loadCSV("/yamamoto-farm-log/logs/harvest/all.csv");
-  console.log("🌾 harvest 読み込み件数:", harvest.length);
 
   console.log("⚖️ weight/all.csv を読み込みます");
   const shipping = await loadCSV("/yamamoto-farm-log/logs/weight/all.csv");
-  console.log("⚖️ shipping 読み込み件数:", shipping.length);
 
   if (planting.length === 0) {
     alert("planting/all.csv が読み込めていません。BOM や改行コード、カラム数を確認してください。");
   }
 
-  // ★ 作付け単収用：最新作付けの合計面積（㎡）
   let latestTotalAreaM2 = 0;
 
   // ===============================
-  // 最新作付け（複数対応 + 面積計算 + 合計面積）
-  // → 最新日付 ±30日を「最新作付けグループ」として扱う
+  // 最新作付け（±30日）
   // ===============================
   const plantingRows = planting.filter(r => r.field === fieldName);
 
@@ -98,7 +88,7 @@ export async function initAnalysisPage() {
         if (!r.plantDate) return false;
         const d = new Date(r.plantDate);
         const diffDays = Math.abs((d - latestDateObj) / (1000 * 60 * 60 * 24));
-        return diffDays <= 30; // ★ ここが「最新 ±30日」
+        return diffDays <= 30;
       })
     : [];
 
@@ -107,6 +97,7 @@ export async function initAnalysisPage() {
     let totalArea = 0;
 
     const html = latestPlantings.map(p => {
+
       const area =
         Number(p.quantity) *
         (Number(p.spacingRow) / 100) *
@@ -117,7 +108,10 @@ export async function initAnalysisPage() {
       return `
         <div class="info-line">品種：${p.variety}</div>
         <div class="info-line">定植日：${p.plantDate}</div>
-        <div class="info-line">株数：${p.quantity}</div>
+
+        <!-- ★ trayType を追加 -->
+        <div class="info-line">株数：${p.quantity}（${p.trayType || "-"}穴）</div>
+
         <div class="info-line">条間：${p.spacingRow}cm / 株間：${p.spacingBed}cm</div>
         <div class="info-line">作付け面積：約 ${area.toFixed(1)} ㎡</div>
         <div class="info-line">予定収穫：${p.harvestPlanYM}</div>
@@ -145,7 +139,7 @@ export async function initAnalysisPage() {
   }
 
   // ===============================
-  // 収穫サマリー（複数 plantingRef 対応）
+  // 収穫サマリー（plantingRef ごと）
   // ===============================
   const harvestRows = harvest.filter(r => r.field === fieldName);
 
@@ -154,7 +148,6 @@ export async function initAnalysisPage() {
     return;
   }
 
-  // ★ plantingRef ごとにグループ化
   const groups = {};
   harvestRows.forEach(r => {
     if (!groups[r.plantingRef]) groups[r.plantingRef] = [];
@@ -163,7 +156,6 @@ export async function initAnalysisPage() {
 
   let html = "";
 
-  // ★ 各 plantingRef ごとにサマリーを作成
   for (const plantingRef of Object.keys(groups)) {
 
     const rows = groups[plantingRef].sort(
@@ -197,10 +189,12 @@ export async function initAnalysisPage() {
 
     const safeKey = plantingRef.replace(/[^a-zA-Z0-9_-]/g, "_");
 
+    // ★ trayType を summaryJson に追加
     const summaryJson = {
       plantingRef,
       field: fieldName,
       variety: plantingRow?.variety || "",
+      trayType: plantingRow?.trayType || "",   // ★ 追加
       plantDate,
       harvestStart: startDate,
       harvestEnd: endDate,
@@ -211,10 +205,12 @@ export async function initAnalysisPage() {
       yieldPer10a
     };
 
+    // ★ CSV にも trayType を追加
     const csvLine = [
       plantingRef,
       fieldName,
       plantingRow?.variety || "",
+      plantingRow?.trayType || "",   // ★ 追加
       plantDate,
       startDate,
       endDate,
@@ -229,6 +225,10 @@ export async function initAnalysisPage() {
       <div class="summary-card">
         <div class="info-line">品種：${plantingRow?.variety || ""}</div>
         <div class="info-line">定植日：${plantDate}</div>
+
+        <!-- ★ trayType を表示 -->
+        <div class="info-line">セルトレイ：${plantingRow?.trayType || "-"}穴</div>
+
         <div class="info-line">収穫期間：${startDate} ～ ${endDate}</div>
         <div class="info-line">収穫回数：${count} 回</div>
         <div class="info-line">定植 → 初回収穫：${days} 日</div>
@@ -250,7 +250,7 @@ export async function initAnalysisPage() {
   document.getElementById("latest-harvest").innerHTML = html;
 
   // ===============================
-  // ★ 各サマリーの保存ボタン
+  // サマリー保存ボタン
   // ===============================
   document.querySelectorAll(".save-btn").forEach(btn => {
     btn.onclick = async () => {
@@ -266,28 +266,17 @@ export async function initAnalysisPage() {
 
 
 // ===============================
-// CSV を読み込んで配列に変換（デバッグ強化版）
+// CSV 読み込み
 // ===============================
 async function loadCSV(url) {
   try {
-    console.log("📥 CSV読み込み開始:", url);
-
     const res = await fetch(url);
-    console.log("📡 fetch結果:", url, res.status);
-
-    if (!res.ok) {
-      console.warn("⚠️ fetch失敗:", url);
-      return [];
-    }
+    if (!res.ok) return [];
 
     const text = await res.text();
-    console.log("📄 CSVテキスト先頭100文字:", JSON.stringify(text.slice(0, 100)));
-
     const lines = text.trim().split("\n");
-    console.log("📊 行数:", lines.length);
 
     const headers = lines[0].split(",");
-    console.log("🧩 ヘッダー:", headers);
 
     const rows = lines.slice(1).map(line => {
       const cols = line.split(",");
@@ -295,8 +284,6 @@ async function loadCSV(url) {
       headers.forEach((h, i) => obj[h] = cols[i] || "");
       return obj;
     });
-
-    console.log("✅ パース後の最初の1行:", rows[0]);
 
     return rows;
 
