@@ -86,7 +86,8 @@ async function loadUnshipped() {
     const shippingDate = row.shippingDate;
     const plantingRef  = row.plantingRef;
     const field        = row.field;
-    const bins         = Number(row.amount) || 0;   // ★ amount を bins として扱う
+
+    const bins         = Number(row.amount) || 0;
 
     const key = shippingDate + "_" + plantingRef;
 
@@ -341,5 +342,6 @@ async function saveShipping() {
 
   alert("保存しました");
 }
+
 
 window.saveShipping = saveShipping;
