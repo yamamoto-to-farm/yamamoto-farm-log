@@ -161,7 +161,7 @@ async function updatePlantingRefOptions() {
 
   // ④ 新しい順（plantDate 降順）
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
-
+//
   // ⑤ プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
