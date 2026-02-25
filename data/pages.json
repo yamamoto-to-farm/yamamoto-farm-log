@@ -53,7 +53,7 @@
     {
       "id": "edit-csv",
       "name": "CSV 編集ツール",
-      "path": "./admin/edit-csv.html",
+      "path": "./edit-csv.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/csv.png"
@@ -61,7 +61,7 @@
     {
       "id": "machine-qr",
       "name": "QRコード生成ツール",
-      "path": "./admin/machine-qr.html",
+      "path": "./machine-qr.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/qr.png"
@@ -69,7 +69,7 @@
     {
       "id": "varieties",
       "name": "品種データ管理",
-      "path": "./admin/varieties.html",
+      "path": "./varieties.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/varieties.png"
@@ -77,7 +77,7 @@
     {
       "id": "fields",
       "name": "圃場データ管理",
-      "path": "./admin/fields.html",
+      "path": "./fields.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/fields.png"
@@ -85,7 +85,7 @@
     {
       "id": "access",
       "name": "アクセス権限（PIN）管理",
-      "path": "./admin/access.html",
+      "path": "./access.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/access.png"
