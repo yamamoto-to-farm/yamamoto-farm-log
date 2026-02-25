@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>QRコード生成 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+    select, button {
+      width: 100%; padding: 10px; margin-top: 10px; font-size: 16px;
+    }
+    #qr-area { margin-top: 30px; text-align: center; }
+    #qr-area canvas { margin-top: 10px; }
+    .url-box {
+      margin-top: 10px; padding: 10px; background: #f0f0f0;
+      font-size: 14px; word-break: break-all;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <h1>QRコード生成</h1>
+
+  <label>ページを選択</label>
+  <select id="page-select"></select>
+
+  <label style="margin-top:20px;">機械を選択（任意）</label>
+  <select id="machine-select">
+    <option value="">（なし）</option>
+  </select>
+
+  <button id="generate-btn">QRコード生成</button>
+
+  <div id="qr-area"></div>
+
+  <script type="module">
+    async function loadJSON(path) {
+      const res = await fetch(path);
+      return await res.json();
+    }
+
+    async function init() {
+      const pages = (await loadJSON("/yamamoto-farm-log/data/pages.json")).pages;
+      const machines = (await loadJSON("/yamamoto-farm-log/data/machines.json")).machines;
+
+      const pageSel = document.getElementById("page-select");
+      const machineSel = document.getElementById("machine-select");
+
+      pages.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.path;
+        opt.textContent = p.name;
+        pageSel.appendChild(opt);
+      });
+
+      machines.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.name;
+        machineSel.appendChild(opt);
+      });
+
+      document.getElementById("generate-btn").onclick = () => {
+        const page = pageSel.value;
+        const machine = machineSel.value;
+
+        let url = page;
+        if (machine) url += `?machine=${machine}`;
+
+        const area = document.getElementById("qr-area");
+        area.innerHTML = `
+          <div class="url-box">${url}</div>
+          <div id="qrcode"></div>
+        `;
+
+        new QRCode(document.getElementById("qrcode"), {
+          text: url,
+          width: 256,
+          height: 256
+        });
+      };
+    }
+
+    init();
+  </script>
+
+</body>
+</html>

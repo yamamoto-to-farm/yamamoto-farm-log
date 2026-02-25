@@ -44,46 +44,53 @@
   <script type="module">
     import { showPinGate } from "/yamamoto-farm-log/common/ui.js";
 
+    async function loadPages() {
+      const res = await fetch("/yamamoto-farm-log/data/pages.json");
+      return (await res.json()).pages;
+    }
+
+    function createCard(page) {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `<a href="${page.path}">${page.name}</a>`;
+      return div;
+    }
+
+    function ensureSection(category) {
+      let section = document.querySelector(`[data-category="${category}"]`);
+      if (!section) {
+        const title = document.createElement("div");
+        title.className = "section-title";
+        title.textContent = category;
+
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        grid.dataset.category = category;
+
+        const menu = document.getElementById("menu-area");
+        menu.appendChild(title);
+        menu.appendChild(grid);
+
+        return grid;
+      }
+      return section;
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
+      showPinGate("pin-area", async () => {
 
-      // ★ PIN 認証 UI を表示
-      showPinGate("pin-area", () => {
-
-        // 認証成功 → メニュー表示
         document.getElementById("menu-area").style.display = "block";
 
-        // ロールデバッグ表示（任意）
-        document.body.insertAdjacentHTML(
-          "afterbegin",
-          `<div style="padding:10px; background:#eef; border:1px solid #99f; margin-bottom:10px;">
-             ログイン中: ${window.currentHuman}（role: ${window.currentRole}）
-           </div>`
-        );
-
         const role = window.currentRole;
+        const pages = await loadPages();
 
-        // worker → 分析・管理メニューを非表示
-        if (role === "worker") {
-          document.getElementById("menu-analysis").style.display = "none";
-          document.getElementById("admin-section").style.display = "none";
-          document.getElementById("admin-grid").style.display = "none";
-        }
+        pages.forEach(page => {
+          if (!page.roles.includes(role)) return;
 
-        // family → 管理メニューだけ非表示
-        if (role === "family") {
-          document.getElementById("admin-section").style.display = "none";
-          document.getElementById("admin-grid").style.display = "none";
-          document.getElementById("menu-analysis").style.display = "block";
-        }
-
-        // admin → 全部表示
-        if (role === "admin") {
-          document.getElementById("menu-analysis").style.display = "block";
-          document.getElementById("admin-section").style.display = "block";
-          document.getElementById("admin-grid").style.display = "grid";
-        }
+          const grid = ensureSection(page.category);
+          grid.appendChild(createCard(page));
+        });
       });
-
     });
   </script>
 
@@ -93,42 +100,13 @@
 
   <h1>山本農園ログ - 目次</h1>
 
-  <!-- PIN 入力エリア -->
   <div id="pin-area">
     <div>アクセスキーを入力してください</div>
     <input id="pin-input" type="password" style="font-size:18px; padding:6px; margin-top:8px;">
     <button id="pin-submit" style="font-size:18px; padding:6px 12px;">OK</button>
   </div>
 
-  <!-- メニュー本体（PIN 認証後に表示） -->
-  <div id="menu-area" style="display:none">
-
-    <!-- 作業ログ -->
-    <div class="section-title">作業ログ</div>
-    <div class="grid">
-      <div class="card"><a href="./planting/index.html">定植ログ</a></div>
-      <div class="card"><a href="./harvest/index.html">収穫ログ</a></div>
-      <div class="card"><a href="./shipping/index.html">出荷ログ</a></div>
-    </div>
-
-    <!-- 圃場 -->
-    <div class="section-title">圃場</div>
-    <div class="grid">
-      <div class="card"><a href="./map/index.html">圃場マップ</a></div>
-
-      <!-- family/admin のみ -->
-      <div class="card" id="menu-analysis" style="display:none">
-        <a href="./analysis/index.html">圃場分析データ</a>
-      </div>
-    </div>
-
-    <!-- 管理（admin のみ） -->
-    <div class="section-title" id="admin-section" style="display:none">管理</div>
-    <div class="grid" id="admin-grid" style="display:none">
-      <div class="card"><a href="./admin/index.html">管理ページ</a></div>
-    </div>
-
-  </div>
+  <div id="menu-area" style="display:none"></div>
 
 </body>
 </html>
