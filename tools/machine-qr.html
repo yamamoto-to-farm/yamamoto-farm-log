@@ -71,30 +71,27 @@
   <script type="module">
     async function loadJSON(path) {
       const res = await fetch(path);
-      if (!res.ok) {
-        throw new Error(`Failed to load ${path}: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Failed to load ${path}`);
       return await res.json();
     }
 
     async function init() {
-      // tools/machine-qr.html から見て ../data/ が正しい
       const pages = (await loadJSON("../data/pages.json")).pages;
       const machines = (await loadJSON("../data/machines.json")).machines;
 
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
 
-      // ページ一覧を追加
+      // ページ一覧
       pages.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.path;  // 例: "./planting/index.html"
+        opt.value = p.path;  // "./planting/index.html"
         opt.textContent = p.name;
         opt.dataset.icon = p.icon || "";
         pageSel.appendChild(opt);
       });
 
-      // 機械一覧を追加
+      // 機械一覧
       machines.forEach(m => {
         const opt = document.createElement("option");
         opt.value = m.id;
@@ -103,41 +100,35 @@
       });
 
       document.getElementById("generate-btn").onclick = () => {
-        const pagePath = pageSel.value;   // "./planting/index.html" など
+        const pagePath = pageSel.value;   // "./planting/index.html"
         const machineId = machineSel.value;
 
-        // 相対パスをベースに URL を組み立て
-        let rel = pagePath || "./";
-        if (!rel.startsWith("./") && !rel.startsWith("../")) {
-          rel = "./" + rel.replace(/^\//, "");
-        }
-        if (machineId) {
-          rel += (rel.includes("?") ? "&" : "?") + `machine=${machineId}`;
-        }
+        // ★ ここが今回の修正ポイント ★
+        // サイトのトップを基準に絶対URLを作る
+        const siteRoot = "https://yamamoto-to-farm.github.io/yamamoto-farm-log/";
 
-        // 絶対URLに正規化（QRコードにはこれを埋め込む）
-        const absUrl = new URL(rel, window.location.href).href;
+        let absUrl = new URL(pagePath, siteRoot).href;
+        if (machineId) absUrl += `?machine=${machineId}`;
 
-        // ページアイコン
+        // アイコン
         const iconPath = pageSel.selectedOptions[0].dataset.icon;
         const iconImg = document.getElementById("qr-icon");
         if (iconPath) {
-          // iconPath も相対パス前提なので location.href 基準で解決される
-          iconImg.src = iconPath;
+          iconImg.src = new URL(iconPath, siteRoot).href;
           iconImg.style.display = "block";
         } else {
           iconImg.style.display = "none";
         }
 
-        // 機械名表示
+        // 機械名
         const machineName = machineSel.selectedOptions[0].textContent;
         document.getElementById("qr-machine").textContent =
           machineId ? machineName : "（機械なし）";
 
-        // URL表示（絶対URLを表示）
+        // URL表示
         document.getElementById("qr-url").textContent = absUrl;
 
-        // QRコード生成
+        // QR生成
         document.getElementById("qrcode").innerHTML = "";
         new QRCode(document.getElementById("qrcode"), {
           text: absUrl,
@@ -147,8 +138,8 @@
       };
     }
 
-    init().catch(e => {
-      console.error(e);
+    init().catch(err => {
+      console.error(err);
       alert("設定ファイルの読み込みに失敗しました");
     });
   </script>
