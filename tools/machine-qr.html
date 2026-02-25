@@ -71,10 +71,14 @@
   <script type="module">
     async function loadJSON(path) {
       const res = await fetch(path);
+      if (!res.ok) {
+        throw new Error(`Failed to load ${path}: ${res.status}`);
+      }
       return await res.json();
     }
 
     async function init() {
+      // tools/machine-qr.html から見て ../data/ が正しい
       const pages = (await loadJSON("../data/pages.json")).pages;
       const machines = (await loadJSON("../data/machines.json")).machines;
 
@@ -99,17 +103,26 @@
       });
 
       document.getElementById("generate-btn").onclick = () => {
-        const pagePath = pageSel.value;
+        const pagePath = pageSel.value;   // "./planting/index.html" など
         const machineId = machineSel.value;
 
-        // URL生成（相対パス）
-        let url = pagePath;
-        if (machineId) url += `?machine=${machineId}`;
+        // 相対パスをベースに URL を組み立て
+        let rel = pagePath || "./";
+        if (!rel.startsWith("./") && !rel.startsWith("../")) {
+          rel = "./" + rel.replace(/^\//, "");
+        }
+        if (machineId) {
+          rel += (rel.includes("?") ? "&" : "?") + `machine=${machineId}`;
+        }
+
+        // 絶対URLに正規化（QRコードにはこれを埋め込む）
+        const absUrl = new URL(rel, window.location.href).href;
 
         // ページアイコン
         const iconPath = pageSel.selectedOptions[0].dataset.icon;
         const iconImg = document.getElementById("qr-icon");
         if (iconPath) {
+          // iconPath も相対パス前提なので location.href 基準で解決される
           iconImg.src = iconPath;
           iconImg.style.display = "block";
         } else {
@@ -121,20 +134,23 @@
         document.getElementById("qr-machine").textContent =
           machineId ? machineName : "（機械なし）";
 
-        // URL表示
-        document.getElementById("qr-url").textContent = url;
+        // URL表示（絶対URLを表示）
+        document.getElementById("qr-url").textContent = absUrl;
 
         // QRコード生成
         document.getElementById("qrcode").innerHTML = "";
         new QRCode(document.getElementById("qrcode"), {
-          text: url,
+          text: absUrl,
           width: 256,
           height: 256
         });
       };
     }
 
-    init();
+    init().catch(e => {
+      console.error(e);
+      alert("設定ファイルの読み込みに失敗しました");
+    });
   </script>
 
 </body>
