@@ -8,14 +8,40 @@
   <style>
     body { font-family: sans-serif; padding: 20px; }
     h1 { margin-bottom: 20px; }
+
     select, button {
-      width: 100%; padding: 10px; margin-top: 10px; font-size: 16px;
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
     }
-    #qr-area { margin-top: 30px; text-align: center; }
-    #qr-area canvas { margin-top: 10px; }
+
+    #qr-area {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    #qr-icon {
+      width: 80px;
+      margin-bottom: 10px;
+    }
+
+    #qr-machine {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    #qr-area canvas {
+      margin-top: 10px;
+    }
+
     .url-box {
-      margin-top: 10px; padding: 10px; background: #f0f0f0;
-      font-size: 14px; word-break: break-all;
+      margin-top: 10px;
+      padding: 10px;
+      background: #f0f0f0;
+      font-size: 14px;
+      word-break: break-all;
     }
   </style>
 
@@ -35,7 +61,12 @@
 
   <button id="generate-btn">QRコード生成</button>
 
-  <div id="qr-area"></div>
+  <div id="qr-area">
+    <img id="qr-icon" style="display:none;">
+    <div id="qr-machine"></div>
+    <div id="qrcode"></div>
+    <div class="url-box" id="qr-url"></div>
+  </div>
 
   <script type="module">
     async function loadJSON(path) {
@@ -44,19 +75,22 @@
     }
 
     async function init() {
-      const pages = (await loadJSON("/yamamoto-farm-log/data/pages.json")).pages;
-      const machines = (await loadJSON("/yamamoto-farm-log/data/machines.json")).machines;
+      const pages = (await loadJSON("../data/pages.json")).pages;
+      const machines = (await loadJSON("../data/machines.json")).machines;
 
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
 
+      // ページ一覧を追加
       pages.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.path;
+        opt.value = p.path;  // 例: "./planting/index.html"
         opt.textContent = p.name;
+        opt.dataset.icon = p.icon || "";
         pageSel.appendChild(opt);
       });
 
+      // 機械一覧を追加
       machines.forEach(m => {
         const opt = document.createElement("option");
         opt.value = m.id;
@@ -65,18 +99,33 @@
       });
 
       document.getElementById("generate-btn").onclick = () => {
-        const page = pageSel.value;
-        const machine = machineSel.value;
+        const pagePath = pageSel.value;
+        const machineId = machineSel.value;
 
-        let url = page;
-        if (machine) url += `?machine=${machine}`;
+        // URL生成（相対パス）
+        let url = pagePath;
+        if (machineId) url += `?machine=${machineId}`;
 
-        const area = document.getElementById("qr-area");
-        area.innerHTML = `
-          <div class="url-box">${url}</div>
-          <div id="qrcode"></div>
-        `;
+        // ページアイコン
+        const iconPath = pageSel.selectedOptions[0].dataset.icon;
+        const iconImg = document.getElementById("qr-icon");
+        if (iconPath) {
+          iconImg.src = iconPath;
+          iconImg.style.display = "block";
+        } else {
+          iconImg.style.display = "none";
+        }
 
+        // 機械名表示
+        const machineName = machineSel.selectedOptions[0].textContent;
+        document.getElementById("qr-machine").textContent =
+          machineId ? machineName : "（機械なし）";
+
+        // URL表示
+        document.getElementById("qr-url").textContent = url;
+
+        // QRコード生成
+        document.getElementById("qrcode").innerHTML = "";
         new QRCode(document.getElementById("qrcode"), {
           text: url,
           width: 256,

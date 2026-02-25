@@ -3,44 +3,50 @@
     {
       "id": "planting",
       "name": "定植ログ",
-      "path": "/yamamoto-farm-log/planting/index.html",
+      "path": "./planting/index.html",
       "category": "作業ログ",
-      "roles": ["worker", "family", "admin"]
+      "roles": ["worker", "family", "admin"],
+      "icon": "./assets/icons/planting.png"
     },
     {
       "id": "harvest",
       "name": "収穫ログ",
-      "path": "/yamamoto-farm-log/harvest/index.html",
+      "path": "./harvest/index.html",
       "category": "作業ログ",
-      "roles": ["worker", "family", "admin"]
+      "roles": ["worker", "family", "admin"],
+      "icon": "./assets/icons/harvest.png"
     },
     {
       "id": "shipping",
       "name": "出荷ログ",
-      "path": "/yamamoto-farm-log/shipping/index.html",
+      "path": "./shipping/index.html",
       "category": "作業ログ",
-      "roles": ["worker", "family", "admin"]
+      "roles": ["worker", "family", "admin"],
+      "icon": "./assets/icons/shipping.png"
     },
     {
       "id": "map",
       "name": "圃場マップ",
-      "path": "/yamamoto-farm-log/map/index.html",
+      "path": "./map/index.html",
       "category": "圃場",
-      "roles": ["worker", "family", "admin"]
+      "roles": ["worker", "family", "admin"],
+      "icon": "./assets/icons/map.png"
     },
     {
       "id": "analysis",
       "name": "圃場分析データ",
-      "path": "/yamamoto-farm-log/analysis/index.html",
+      "path": "./analysis/index.html",
       "category": "圃場",
-      "roles": ["family", "admin"]
+      "roles": ["family", "admin"],
+      "icon": "./assets/icons/analysis.png"
     },
     {
       "id": "admin",
       "name": "管理ページ",
-      "path": "/yamamoto-farm-log/admin/index.html",
+      "path": "./admin/index.html",
       "category": "管理",
-      "roles": ["admin"]
+      "roles": ["admin"],
+      "icon": "./assets/icons/admin.png"
     }
   ]
 }
