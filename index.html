@@ -85,7 +85,12 @@
         const pages = await loadPages();
 
         pages.forEach(page => {
+          // ロール制御
           if (!page.roles.includes(role)) return;
+
+          // ★ 階層カテゴリ対応
+          // トップページでは「管理/〜」は表示しない
+          if (page.category.startsWith("管理/")) return;
 
           const grid = ensureSection(page.category);
           grid.appendChild(createCard(page));

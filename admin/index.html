@@ -57,15 +57,17 @@
       // pages.json 読み込み
       const pages = await loadPages();
 
-      // ★ 管理ページ一覧（admin 自身は除外）
-      const adminPages = pages.filter(p =>
-        p.category === "管理" && p.id !== "admin"
+      // ★ 階層カテゴリ対応
+      // 管理ページ自身（id: admin）は除外
+      // 管理/〜 のツールだけ表示
+      const adminTools = pages.filter(p =>
+        p.category.startsWith("管理/") && p.id !== "admin"
       );
 
       const list = document.getElementById("admin-list");
 
       // カード生成
-      adminPages.forEach(p => {
+      adminTools.forEach(p => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `<a href="${p.path}">${p.name}</a>`;
