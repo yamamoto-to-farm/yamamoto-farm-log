@@ -149,6 +149,7 @@ async function updatePlantingRefOptions() {
     const actualDays = diffDays(harvestDate, p.plantDate);
     const plannedDays = calcPlannedDays(p.plantDate, p.harvestPlanYM);
 
+    // harvestPlanYM が空 → 生育日数ロジックでは拾わない
     if (plannedDays === null) return false;
 
     return Math.abs(actualDays - plannedDays) <= 60;
@@ -158,7 +159,7 @@ async function updatePlantingRefOptions() {
   //    なければ fallback として candidates を使う
   let finalList = strongMatches.length > 0 ? strongMatches : candidates;
 
-  // ④ 日付降順で並べる
+  // ④ 新しい順（plantDate 降順）
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
 
   // ⑤ プルダウンに追加
