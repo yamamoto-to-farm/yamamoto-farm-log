@@ -1,4 +1,4 @@
-name: Save harvest log
+name: Save log
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout data repo
         uses: actions/checkout@v4
         with:
-          repository: yamamoto-to-farm/yamamoto-farm-log   # ★ 修正
+          repository: yamamoto-to-farm/yamamoto-farm-log
           token: ${{ secrets.FARM_DATA_TOKEN }}
 
       - name: Parse payload
@@ -33,11 +33,33 @@ jobs:
           echo "type=$TYPE" >> $GITHUB_OUTPUT
           echo "date=$DATE" >> $GITHUB_OUTPUT
 
-      - name: Save JSON
+      # ============================================
+      # JSON 保存（配列として蓄積）
+      # ============================================
+      - name: Save JSON (append to array)
         run: |
-          mkdir -p logs/${{ steps.extract.outputs.type }}
-          cp payload.json logs/${{ steps.extract.outputs.type }}/${{ steps.extract.outputs.date }}.json
+          TYPE=${{ steps.extract.outputs.type }}
+          DATE=${{ steps.extract.outputs.date }}
+          JSON_FILE="logs/$TYPE/$DATE.json"
 
+          mkdir -p logs/$TYPE
+
+          # 既存 JSON を読み込み（なければ空配列）
+          if [ -f "$JSON_FILE" ]; then
+            EXISTING=$(cat "$JSON_FILE")
+          else
+            EXISTING="[]"
+          fi
+
+          # payload.json を配列に追加
+          UPDATED=$(jq -s '.[0] + [.[1]]' <(echo "$EXISTING") payload.json)
+
+          # 上書き保存（配列として）
+          echo "$UPDATED" > "$JSON_FILE"
+
+      # ============================================
+      # CSV 保存（追記）
+      # ============================================
       - name: Save CSV
         run: |
           TYPE=${{ steps.extract.outputs.type }}
@@ -48,6 +70,9 @@ jobs:
 
           echo "$CSV_LINE" >> "$CSV_FILE"
 
+      # ============================================
+      # Commit & Push
+      # ============================================
       - name: Commit & Push
         run: |
           git config user.name "farm-bot"
