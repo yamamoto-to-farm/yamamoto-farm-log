@@ -282,7 +282,7 @@ async function saveShipping() {
   harvest.forEach(row => {
     const key  = row.shippingDate + "_" + row.plantingRef;
     const field = row.field;
-    const bins  = Number(row.amount) || 0;
+    const bins  = Number(row.amount) || 0;//修正
 
     if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
     harvestMap[key].bins += bins;
