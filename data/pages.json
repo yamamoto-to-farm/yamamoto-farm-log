@@ -40,6 +40,7 @@
       "roles": ["family", "admin"],
       "icon": "./assets/icons/analysis.png"
     },
+
     {
       "id": "admin",
       "name": "管理ページ",
@@ -48,11 +49,12 @@
       "roles": ["admin"],
       "icon": "./assets/icons/admin.png"
     },
+
     {
       "id": "edit-csv",
       "name": "CSV 編集ツール",
       "path": "./admin/edit-csv.html",
-      "category": "管理",
+      "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/csv.png"
     },
@@ -60,7 +62,7 @@
       "id": "machine-qr",
       "name": "QRコード生成ツール",
       "path": "./tools/machine-qr.html",
-      "category": "管理",
+      "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/qr.png"
     },
@@ -68,7 +70,7 @@
       "id": "varieties",
       "name": "品種データ管理",
       "path": "./admin/varieties.html",
-      "category": "管理",
+      "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/varieties.png"
     },
@@ -76,7 +78,7 @@
       "id": "fields",
       "name": "圃場データ管理",
       "path": "./admin/fields.html",
-      "category": "管理",
+      "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/fields.png"
     },
@@ -84,7 +86,7 @@
       "id": "access",
       "name": "アクセス権限（PIN）管理",
       "path": "./admin/access.html",
-      "category": "管理",
+      "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/access.png"
     }
