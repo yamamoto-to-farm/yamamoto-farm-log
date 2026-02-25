@@ -81,6 +81,7 @@
   <!-- JS -->
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { initShippingPage } from "./shipping.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -94,10 +95,11 @@
       // 日付初期値
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("shippingDate").value = today;
+
+      // ★ planting と同じ：ここで initShippingPage を呼ぶ
+      initShippingPage();
     });
   </script>
-
-  <script type="module" src="./shipping.js"></script>
 
 </body>
 </html>
