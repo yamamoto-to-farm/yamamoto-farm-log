@@ -317,6 +317,8 @@ async function saveShipping() {
   }
 
   allocateWeights(targets, weightList);
+  const dateStr = shippingDate.replace(/-/g, "");
+
 
   for (let t of targets) {
     const shippedBins = t.originalRemain - t.remainBins;
@@ -337,7 +339,7 @@ async function saveShipping() {
 
     await saveLog(
       "weight",
-      "all",
+      dateStr,
       { plantingRef: t.plantingRef },
       csvLine + "\n"
     );
