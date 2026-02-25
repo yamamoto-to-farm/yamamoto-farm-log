@@ -53,7 +53,7 @@
     {
       "id": "edit-csv",
       "name": "CSV 編集ツール",
-      "path": "./edit-csv.html",
+      "path": "edit-csv/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/csv.png"
