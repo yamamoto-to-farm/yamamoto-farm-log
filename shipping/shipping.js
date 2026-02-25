@@ -22,25 +22,37 @@ export function initShippingPage() {
 
 
 // ===============================
-// ★ CSV 読み込み（ヘッダー対応版）
+// ★ CSV 読み込み（ヘッダー対応版 + デバッグ）
 // ===============================
 async function loadCSV(url) {
+  console.log("[loadCSV] 読み込み開始:", url);
+
   try {
     const res = await fetch(url + "?ts=" + Date.now());
     const text = await res.text();
-    if (!text.trim()) return [];
+
+    console.log("[loadCSV] 生テキスト:", text);
+
+    if (!text.trim()) {
+      console.log("[loadCSV] 空ファイル → []");
+      return [];
+    }
 
     const lines = text.trim().split("\n");
     const headers = lines[0].split(",");
 
-    return lines.slice(1).map(line => {
+    const rows = lines.slice(1).map(line => {
       const cols = line.split(",");
       const obj = {};
       headers.forEach((h, i) => obj[h] = cols[i] || "");
       return obj;
     });
 
-  } catch {
+    console.log("[loadCSV] パース結果:", rows);
+    return rows;
+
+  } catch (e) {
+    console.error("[loadCSV] 例外:", e);
     return [];
   }
 }
@@ -50,8 +62,13 @@ async function loadCSV(url) {
 // 未計量の収穫（shippingDate × plantingRef）
 // ===============================
 async function loadUnshipped() {
+  console.log("=== loadUnshipped 開始 ===");
+
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const weight  = await loadCSV("../logs/weight/all.csv");
+
+  console.log("[loadUnshipped] harvest:", harvest);
+  console.log("[loadUnshipped] weight:", weight);
 
   const harvestMap = {};
   harvest.forEach(row => {
@@ -66,6 +83,8 @@ async function loadUnshipped() {
     harvestMap[key].bins += bins;
   });
 
+  console.log("[loadUnshipped] harvestMap:", harvestMap);
+
   const weightMap = {};
   weight.forEach(row => {
     const shippingDate = row.shippingDate;
@@ -77,11 +96,15 @@ async function loadUnshipped() {
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
+  console.log("[loadUnshipped] weightMap:", weightMap);
+
   const unshipped = [];
   Object.keys(harvestMap).forEach(key => {
     const harvested = harvestMap[key].bins;
     const shipped   = weightMap[key] || 0;
     const remain    = harvested - shipped;
+
+    console.log(`[loadUnshipped] key=${key} harvested=${harvested} shipped=${shipped} remain=${remain}`);
 
     if (remain > 0) {
       unshipped.push({
@@ -93,6 +116,8 @@ async function loadUnshipped() {
       });
     }
   });
+
+  console.log("[loadUnshipped] 未計量候補:", unshipped);
 
   const area = document.getElementById("unshippedArea");
   area.innerHTML = "";
@@ -115,6 +140,8 @@ async function loadUnshipped() {
 
     area.appendChild(div);
   });
+
+  console.log("=== loadUnshipped 終了 ===");
 }
 
 
@@ -271,7 +298,6 @@ async function saveShipping() {
     };
   });
 
-  // ★ shipping 専用重複チェック
   const dup = await checkShippingDuplicate(shippingDate, targets);
   if (!dup.ok) {
     alert(dup.message);
@@ -280,7 +306,6 @@ async function saveShipping() {
 
   allocateWeights(targets, weightList);
 
-  // ★ ヘッダー
   const header =
     "shippingDate,field,bins,totalWeight,notes,plantingRef,machine,human\n";
 
