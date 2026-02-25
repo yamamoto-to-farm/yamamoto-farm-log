@@ -256,7 +256,7 @@ async function checkShippingDuplicate(shippingDate, targets) {
 
 
 // ===============================
-// ★ 保存処理（planting と同じ saveLog 形式）
+// ★ 保存処理（複数行をまとめて 1 回 saveLog）
 // ===============================
 async function saveShipping() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -319,6 +319,8 @@ async function saveShipping() {
   allocateWeights(targets, weightList);
   const dateStr = shippingDate.replace(/-/g, "");
 
+  // ★ ここから：複数行をまとめて 1 回 saveLog
+  const lines = [];
 
   for (let t of targets) {
     const shippedBins = t.originalRemain - t.remainBins;
@@ -335,19 +337,22 @@ async function saveShipping() {
     ].join(",");
 
     console.log("[saveShipping] 送信する1行:", csvLine);
-    console.log("[saveShipping] jsonData:", { plantingRef: t.plantingRef });
-
-    await saveLog(
-      "weight",
-      dateStr,
-      { plantingRef: t.plantingRef },
-      csvLine + "\n"
-    );
+    lines.push(csvLine);
   }
-  console.log("=== saveShipping: 全行送信完了 ===");
 
+  const csvPayload = lines.join("\n") + "\n";
+
+  console.log("[saveShipping] まとめて送信するCSV:\n" + csvPayload);
+
+  await saveLog(
+    "weight",
+    dateStr,                                   // JSON のファイル名用（このままでOK）
+    { plantingRefs: targets.map(t => t.plantingRef) },
+    csvPayload
+  );
+
+  console.log("=== saveShipping: 全行送信完了 ===");
   alert("保存しました");
 }
-
 
 window.saveShipping = saveShipping;
