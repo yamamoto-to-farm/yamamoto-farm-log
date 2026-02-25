@@ -86,7 +86,7 @@ async function loadUnshipped() {
     const shippingDate = row.shippingDate;
     const plantingRef  = row.plantingRef;
     const field        = row.field;
-    const bins         = Number(row.bins) || 0;
+    const bins         = Number(row.amount) || 0;   // ★ amount を bins として扱う
 
     const key = shippingDate + "_" + plantingRef;
 
@@ -255,7 +255,7 @@ async function checkShippingDuplicate(shippingDate, targets) {
 
 
 // ===============================
-// ★ 保存処理（ヘッダー対応版）
+// ★ 保存処理（planting と同じ saveLog 形式）
 // ===============================
 async function saveShipping() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -282,7 +282,7 @@ async function saveShipping() {
   harvest.forEach(row => {
     const key  = row.shippingDate + "_" + row.plantingRef;
     const field = row.field;
-    const bins  = Number(row.amount) || 0;//修正
+    const bins  = Number(row.amount) || 0;   // ★ amount を bins として扱う
 
     if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
     harvestMap[key].bins += bins;
@@ -317,11 +317,6 @@ async function saveShipping() {
 
   allocateWeights(targets, weightList);
 
-  const header =
-    "shippingDate,field,bins,totalWeight,notes,plantingRef,machine,human\n";
-
-  let csvLines = header;
-
   for (let t of targets) {
     const shippedBins = t.originalRemain - t.remainBins;
 
@@ -336,10 +331,13 @@ async function saveShipping() {
       human
     ].join(",");
 
-    csvLines += csvLine + "\n";
+    await saveLog(
+      "weight",
+      "all",
+      { plantingRef: t.plantingRef },
+      csvLine + "\n"
+    );
   }
-
-  await saveLog("weight", "all", {}, csvLines);
 
   alert("保存しました");
 }
