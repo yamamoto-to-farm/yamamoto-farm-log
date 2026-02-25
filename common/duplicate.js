@@ -1,9 +1,29 @@
 // common/duplicate.js
 import { loadCSV } from "./csv.js";
 
+// =======================================
+// 重複チェック（カテゴリ別に all.csv を読む）
+// =======================================
 export async function checkDuplicate(category, entry) {
-  const rows = await loadCSV(`${category}.csv`);
 
+  // ★ カテゴリごとに正しい CSV を読む
+  let path = "";
+
+  if (category === "planting") {
+    path = "logs/planting/all.csv";
+  } else if (category === "harvest") {
+    path = "logs/harvest/all.csv";
+  } else if (category === "shipping") {
+    path = "logs/shipping/all.csv";
+  } else {
+    // 未対応カテゴリは常にOK
+    return { ok: true };
+  }
+
+  // ★ CSV 読み込み（404 → 空配列になるよう loadCSV 側で処理）
+  const rows = await loadCSV(path);
+
+  // カテゴリ別チェック
   if (category === "planting") {
     return checkPlanting(rows, entry);
   }
@@ -17,9 +37,9 @@ export async function checkDuplicate(category, entry) {
   return { ok: true };
 }
 
-// ------------------------------
+// =======================================
 // planting
-// ------------------------------
+// =======================================
 function checkPlanting(rows, e) {
   const dup = rows.find(r =>
     r.date === e.date &&
@@ -34,16 +54,15 @@ function checkPlanting(rows, e) {
   return { ok: true };
 }
 
-// ------------------------------
+// =======================================
 // harvest
-// ------------------------------
+// =======================================
 function checkHarvest(rows, e) {
   const dup = rows.find(r =>
     r.plantingRef === e.plantingRef &&
     r.harvestDate === e.harvestDate &&
     r.shippingDate === e.shippingDate &&
     r.amount == e.amount
-
   );
 
   if (dup) {
@@ -52,9 +71,9 @@ function checkHarvest(rows, e) {
   return { ok: true };
 }
 
-// ------------------------------
+// =======================================
 // shipping
-// ------------------------------
+// =======================================
 function checkShipping(rows, e) {
   const dup = rows.find(r =>
     r.harvestRef === e.harvestRef &&
