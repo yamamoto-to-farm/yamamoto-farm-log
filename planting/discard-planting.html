@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>定植後の破棄（植え直し）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../common.css">
+  <script src="../utils.js"></script>
+  <script src="../github.js"></script>
+  <script src="../csv.js"></script>
+  <script src="discard-planting.js"></script>
+</head>
+
+<body>
+
+  <h2>定植後の破棄（植え直し）</h2>
+
+  <!-- 定植情報 -->
+  <section id="planting-info" class="info-box">
+    <h3>定植記録</h3>
+    <div>定植日：<span id="plantDate"></span></div>
+    <div>圃場：<span id="field"></span></div>
+    <div>品種：<span id="variety"></span></div>
+    <div>定植株数：<span id="quantity"></span> 株</div>
+  </section>
+
+  <!-- 破棄入力 -->
+  <section class="input-box">
+
+    <label>破棄日</label>
+    <input type="date" id="discardDate">
+
+    <label>全体の畝数</label>
+    <input type="number" id="totalBeds" min="1" placeholder="例：10">
+
+    <label>耕うんした畝数</label>
+    <input type="number" id="tilledBeds" min="0" placeholder="例：3">
+
+    <div class="calc-box">
+      <div>破棄割合：<span id="discardRate">-</span>%</div>
+      <div>破棄株数：<span id="discardQuantity">-</span> 株</div>
+    </div>
+
+    <label>破棄理由・状況（任意）</label>
+    <textarea id="notes" rows="3" placeholder="例：暑さで焼けた。南側の畝が特に弱かった。"></textarea>
+
+  </section>
+
+  <!-- ボタン -->
+  <div class="button-row">
+    <button onclick="history.back()">← 定植ページに戻る</button>
+    <button id="saveBtn" class="primary">破棄ログを保存</button>
+  </div>
+
+</body>
+</html>
