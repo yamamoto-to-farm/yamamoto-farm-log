@@ -18,9 +18,9 @@
     },
     {
       "id": "planting-list",
-      "name": "定植一覧",
+      "name": "定植記録",
       "path": "./planting/list.html",
-      "category": "作業ログ",
+      "category": "記録一覧",
       "roles": ["family", "admin"],
       "icon": "./assets/icons/planting.png"
     },
