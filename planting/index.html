@@ -88,11 +88,21 @@
       </select>
     </div>
 
+    <!-- ★ 播種ロット（seedRef） -->
+    <h2>播種ロット（seedRef）</h2>
+    <div class="box">
+      <label>選択</label>
+      <select id="seedRef">
+        <option value="">品名を選択してください</option>
+      </select>
+
+      <p>残り株数：<span id="remainingCount">-</span></p>
+    </div>
+
     <!-- 植え付け量 -->
     <h2>植え付け量</h2>
     <div class="box">
 
-      <!-- ★ セルトレイ種別（共通） -->
       <label>セルトレイ種別</label>
       <label><input type="radio" name="trayType" value="128" checked>128穴</label>
       <label><input type="radio" name="trayType" value="200">200穴</label>
