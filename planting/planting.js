@@ -20,23 +20,20 @@ let VARIETY_LIST = [];
 // 初期化
 // ===============================
 export async function initPlantingPage() {
-
   createWorkerCheckboxes("workers_box");
 
   await createFieldSelector("field_auto", "field_area", "field_manual");
   autoDetectField("field_auto", "field_area", "field_manual");
 
-  setupVarietySelector();
-  setupSeedRefSelector();
-
+  await setupVarietySelector();
   setupInputModeSwitch();
   setupTrayAutoCalc();
 }
 
 
-// ============================
+// ===============================
 // 品種プルダウン
-// ============================
+// ===============================
 async function setupVarietySelector() {
   const res = await fetch("../data/varieties.json");
   VARIETY_LIST = await res.json();
@@ -68,60 +65,86 @@ async function setupVarietySelector() {
     });
   });
 
-  // 品名が変わったら seedRef を更新
   nameSel.addEventListener("change", updateSeedRefSelector);
 }
 
 
-// ============================
-// seedRef プルダウン
-// ============================
-async function setupSeedRefSelector() {
-  document.getElementById("seedRef").addEventListener("change", async () => {
-    const seedRef = document.getElementById("seedRef").value;
-    if (!seedRef) return;
-
-    const rows = await loadCSV("logs/seed/all.csv");
-    const row = rows.find(r => r.seedRef === seedRef);
-
-    document.getElementById("remainingCount").textContent =
-      row ? row.remainingCount : "-";
-  });
-}
-
-
-// ============================
-// seedRef の更新
-// ============================
+// ===============================
+// seedRef プルダウン更新（計算方式）
+// ===============================
 async function updateSeedRefSelector() {
   const variety = document.getElementById("variety").value;
   const sel = document.getElementById("seedRef");
+  const remainSpan = document.getElementById("remainingCount");
 
   sel.innerHTML = "<option value=''>選択してください</option>";
-  document.getElementById("remainingCount").textContent = "-";
+  remainSpan.textContent = "-";
 
   if (!variety) return;
 
-  const rows = await loadCSV("logs/seed/all.csv");
+  const seedRows = await loadCSV("logs/seed/all.csv");
+  const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
-  // ★ remainingCount > 0 のロットだけ表示
-  const list = rows.filter(r =>
-    r.varietyName === variety &&
-    Number(r.remainingCount) > 0
-  );
+  // ★ nursery がまだ無い場合は空配列
+  let nurseryRows = [];
+  try {
+    nurseryRows = await loadCSV("logs/nursery/all.csv");
+  } catch (e) {
+    nurseryRows = [];
+  }
 
-  list.forEach(r => {
-    const opt = document.createElement("option");
-    opt.value = r.seedRef;
-    opt.textContent = `${r.seedRef}（残 ${r.remainingCount} 株）`;
-    sel.appendChild(opt);
+  const list = seedRows.filter(r => r.varietyName === variety);
+
+  for (const r of list) {
+    const seedRef = r.seedRef;
+    const seedCount = Number(r.seedCount);
+
+    const planted = plantingRows
+      .filter(p => p.seedRef === seedRef)
+      .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+
+    const discarded = nurseryRows
+      .filter(n => n.seedRef === seedRef)
+      .reduce((sum, n) => sum + Number(n.discard || 0), 0);
+
+    const remaining = seedCount - planted - discarded;
+
+    if (remaining > 0) {
+      const opt = document.createElement("option");
+      opt.value = seedRef;
+      opt.textContent = `${seedRef}（残 ${remaining} 株）`;
+      sel.appendChild(opt);
+    }
+  }
+
+  sel.addEventListener("change", async () => {
+    const seedRef = sel.value;
+    if (!seedRef) {
+      remainSpan.textContent = "-";
+      return;
+    }
+
+    const seedRow = seedRows.find(r => r.seedRef === seedRef);
+    const seedCount = Number(seedRow.seedCount);
+
+    const planted = plantingRows
+      .filter(p => p.seedRef === seedRef)
+      .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+
+    const discarded = nurseryRows
+      .filter(n => n.seedRef === seedRef)
+      .reduce((sum, n) => sum + Number(n.discard || 0), 0);
+
+    const remaining = seedCount - planted - discarded;
+
+    remainSpan.textContent = remaining;
   });
 }
 
 
-// ============================
+// ===============================
 // 株数 / 枚数 切り替え
-// ============================
+// ===============================
 function setupInputModeSwitch() {
   const radios = document.querySelectorAll("input[name='mode']");
   radios.forEach(r => {
@@ -134,9 +157,9 @@ function setupInputModeSwitch() {
 }
 
 
-// ============================
+// ===============================
 // 枚数 → 株数 自動計算
-// ============================
+// ===============================
 function setupTrayAutoCalc() {
   const update = () => {
     const count = parseFloat(document.getElementById("trayCount").value || 0);
@@ -155,9 +178,9 @@ function setupTrayAutoCalc() {
 }
 
 
-// ============================
+// ===============================
 // 圃場の最終決定
-// ============================
+// ===============================
 function getFinalField() {
   const auto = document.getElementById("field_auto").value;
   const manual = document.getElementById("field_manual").value;
@@ -169,9 +192,9 @@ function getFinalField() {
 }
 
 
-// ============================
+// ===============================
 // 収穫予定年月の自動計算
-// ============================
+// ===============================
 function calcHarvestPlanYM(plantDate, harvestMonth) {
   const d = new Date(plantDate);
   let year = d.getFullYear();
@@ -184,12 +207,11 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
 }
 
 
-// ============================
+// ===============================
 // 入力データ収集
-// ============================
+// ===============================
 function collectPlantingData() {
   const mode = document.querySelector("input[name='mode']:checked").value;
-
   const trayType = Number(document.querySelector("input[name='trayType']:checked").value);
 
   let quantity = 0;
@@ -235,29 +257,9 @@ function collectPlantingData() {
 }
 
 
-// ============================
-// remainingCount 更新
-// ============================
-async function updateSeedRemaining(seedRef, used) {
-  const rows = await loadCSV("logs/seed/all.csv");
-
-  const target = rows.find(r => r.seedRef === seedRef);
-  if (!target) return;
-
-  const newRemain = Number(target.remainingCount) - used;
-  target.remainingCount = Math.max(newRemain, 0);
-
-  // CSV 再構築
-  const header = Object.keys(rows[0]).join(",");
-  const body = rows.map(r => Object.values(r).join(",")).join("\n");
-
-  await saveLog("seed", "all", {}, header + "\n" + body + "\n");
-}
-
-
-// ============================
-// 保存処理
-// ============================
+// ===============================
+// 保存処理（計算方式）
+// ===============================
 async function savePlantingInner() {
   const data = collectPlantingData();
 
@@ -271,16 +273,34 @@ async function savePlantingInner() {
     return;
   }
 
-  // ★ remainingCount チェック
-  const rows = await loadCSV("logs/seed/all.csv");
-  const row = rows.find(r => r.seedRef === data.seedRef);
+  // ★ 最新の remainingCount を再計算（nursery が無くても安全）
+  const seedRows = await loadCSV("logs/seed/all.csv");
+  const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
-  if (!row) {
+  let nurseryRows = [];
+  try {
+    nurseryRows = await loadCSV("logs/nursery/all.csv");
+  } catch (e) {
+    nurseryRows = [];
+  }
+
+  const seedRow = seedRows.find(r => r.seedRef === data.seedRef);
+  if (!seedRow) {
     alert("選択した seedRef が見つかりません");
     return;
   }
 
-  const remaining = Number(row.remainingCount);
+  const seedCount = Number(seedRow.seedCount);
+
+  const planted = plantingRows
+    .filter(p => p.seedRef === data.seedRef)
+    .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+
+  const discarded = nurseryRows
+    .filter(n => n.seedRef === data.seedRef)
+    .reduce((sum, n) => sum + Number(n.discard || 0), 0);
+
+  const remaining = seedCount - planted - discarded;
 
   if (data.quantity > remaining) {
     alert(
@@ -304,7 +324,6 @@ async function savePlantingInner() {
   }
 
   const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
-
   const machine = getMachineParam();
   const human = window.currentHuman || "";
   const dateStr = data.plantDate.replace(/-/g, "");
@@ -314,7 +333,7 @@ async function savePlantingInner() {
     data.worker.replace(/,/g, "／"),
     data.field,
     data.variety,
-    data.seedRef,        // ★ 追加
+    data.seedRef,
     data.quantity,
     data.trayType,
     data.spacingRow,
@@ -326,10 +345,6 @@ async function savePlantingInner() {
     plantingRef
   ].join(",");
 
-  // ★ remainingCount を減算
-  await updateSeedRemaining(data.seedRef, data.quantity);
-
-  // 定植ログ保存
   await saveLog("planting", dateStr, { plantingRef }, csvLine + "\n");
 
   alert("GitHubに保存しました");
