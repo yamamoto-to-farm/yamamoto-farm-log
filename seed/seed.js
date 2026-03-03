@@ -95,7 +95,7 @@ function setupSeedRefAuto() {
     let rows = [];
 
     try {
-      rows = await loadCSV("/yamamoto-farm-log/logs/seed/all.csv");
+      rows = await loadCSV("/logs/seed/all.csv");
     } catch (e) {
       rows = [];
     }
