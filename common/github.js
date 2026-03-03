@@ -1,27 +1,31 @@
 // common/github.js
 
-// ★ 必ず自分のリポジトリ情報に書き換える
+// ★ 自分のリポジトリ情報
 const OWNER = "yamamoto-to-farm";
 const REPO  = "yamamoto-farm-log";
 const BRANCH = "main";
 
-// ★ GitHub Token は script タグで window.GITHUB_TOKEN として渡す前提
+// ★ GitHub Token（保存時のみ使用）
 const TOKEN = window.GITHUB_TOKEN;
 
 // --------------------------------------
 // GitHub GET（ファイル読み込み）
+// → raw.githubusercontent.com に変更（403対策）
 // --------------------------------------
 async function githubGet(path) {
-  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`;
+  // ★ API ではなく raw を使う
+  const url = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error("GitHub GET failed: " + path);
 
-  return res.json();
+  // raw は base64 ではなく「そのままテキスト」
+  return res.text();
 }
 
 // --------------------------------------
 // GitHub PUT（ファイル書き込み）
+// → API を使う（従来通り）
 // --------------------------------------
 async function githubPut(path, content, sha) {
   const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`;
@@ -51,16 +55,21 @@ async function githubPut(path, content, sha) {
 // 公開関数：テキスト読み込み
 // --------------------------------------
 export async function readText(path) {
-  const data = await githubGet(path);
-  return decodeURIComponent(escape(atob(data.content)));
+  // ★ raw からそのままテキストが返る
+  return githubGet(path);
 }
 
 // --------------------------------------
 // 公開関数：テキスト上書き
 // --------------------------------------
 export async function writeText(path, text) {
-  const data = await githubGet(path);
-  return githubPut(path, text, data.sha);
+  // ★ sha を取得するためだけに API を使う
+  const metaUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`;
+  const metaRes = await fetch(metaUrl);
+  if (!metaRes.ok) throw new Error("GitHub GET (meta) failed: " + path);
+  const meta = await metaRes.json();
+
+  return githubPut(path, text, meta.sha);
 }
 
 // --------------------------------------
