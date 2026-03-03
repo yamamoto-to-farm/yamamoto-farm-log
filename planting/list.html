@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>定植ログ一覧 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 16px; }
+
+    .filter-box {
+      background: #fff;
+      padding: 12px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      background: #e2e8f0;
+    }
+
+    .btn-discard {
+      background: #c53030;
+      color: #fff;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-new {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      margin-top: 20px;
+      font-size: 16px;
+      text-align: center;
+      text-decoration: none;
+    }
+  </style>
+
+  <script src="../utils.js"></script>
+  <script src="../github.js"></script>
+  <script src="../csv.js"></script>
+</head>
+
+<body>
+
+  <h1>定植ログ一覧</h1>
+
+  <a href="index.html" class="btn-new">＋ 新しい定植ログを追加</a>
+
+  <!-- ★ フィルタ -->
+  <div class="filter-box">
+
+    <label>年</label>
+    <select id="filterYear">
+      <option value="">すべて</option>
+    </select>
+
+    <label style="margin-left:10px;">月</label>
+    <select id="filterMonth">
+      <option value="">すべて</option>
+      <option value="01">1月</option>
+      <option value="02">2月</option>
+      <option value="03">3月</option>
+      <option value="04">4月</option>
+      <option value="05">5月</option>
+      <option value="06">6月</option>
+      <option value="07">7月</option>
+      <option value="08">8月</option>
+      <option value="09">9月</option>
+      <option value="10">10月</option>
+      <option value="11">11月</option>
+      <option value="12">12月</option>
+    </select>
+
+    <label style="margin-left:10px;">圃場</label>
+    <select id="filterField">
+      <option value="">すべて</option>
+    </select>
+
+    <label style="margin-left:10px;">品名</label>
+    <select id="filterVariety">
+      <option value="">すべて</option>
+    </select>
+
+    <button style="margin-top:10px;" onclick="applyFilter()">フィルタ適用</button>
+  </div>
+
+  <table id="plantingTable">
+    <thead>
+      <tr>
+        <th>定植日</th>
+        <th>圃場</th>
+        <th>品名</th>
+        <th>株数</th>
+        <th>播種ID</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let isFamily = false;
+    let plantingRows = [];
+
+    async function loadAuth() {
+      const key = localStorage.getItem("accessKey");
+      if (!key) return;
+
+      const csvText = await githubGet("access/access.csv");
+      const rows = parseCSV(csvText);
+
+      const row = rows.find(r => r.key === key);
+      if (row && row.role === "family") {
+        isFamily = true;
+      }
+    }
+
+    async function loadPlantingList() {
+      const csvText = await githubGet("logs/planting/all.csv");
+      plantingRows = parseCSV(csvText);
+
+      populateYearFilter();
+      populateFieldFilter();
+      populateVarietyFilter();
+
+      renderTable(plantingRows);
+    }
+
+    function populateYearFilter() {
+      const yearSet = new Set();
+
+      plantingRows.forEach(r => {
+        if (r.plantDate && r.plantDate.length >= 4) {
+          yearSet.add(r.plantDate.slice(0, 4));
+        }
+      });
+
+      const yearSelect = document.getElementById("filterYear");
+      yearSet.forEach(y => {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+    }
+
+    function populateFieldFilter() {
+      const fieldSet = new Set();
+
+      plantingRows.forEach(r => {
+        if (r.field) fieldSet.add(r.field);
+      });
+
+      const fieldSelect = document.getElementById("filterField");
+      fieldSet.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f;
+        opt.textContent = f;
+        fieldSelect.appendChild(opt);
+      });
+    }
+
+    function populateVarietyFilter() {
+      const varietySet = new Set();
+
+      plantingRows.forEach(r => {
+        if (r.variety) varietySet.add(r.variety);
+      });
+
+      const varietySelect = document.getElementById("filterVariety");
+      varietySet.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        varietySelect.appendChild(opt);
+      });
+    }
+
+    function applyFilter() {
+      const year = document.getElementById("filterYear").value;
+      const month = document.getElementById("filterMonth").value;
+      const field = document.getElementById("filterField").value;
+      const variety = document.getElementById("filterVariety").value;
+
+      const filtered = plantingRows.filter(r => {
+        if (!r.plantDate) return false;
+
+        const y = r.plantDate.slice(0, 4);
+        const m = r.plantDate.slice(5, 7);
+
+        if (year && y !== year) return false;
+        if (month && m !== month) return false;
+        if (field && r.field !== field) return false;
+        if (variety && r.variety !== variety) return false;
+
+        return true;
+      });
+
+      renderTable(filtered);
+    }
+
+    function renderTable(rows) {
+      const tbody = document.querySelector("#plantingTable tbody");
+      tbody.innerHTML = "";
+
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${r.plantDate}</td>
+          <td>${r.field}</td>
+          <td>${r.variety}</td>
+          <td>${r.quantity}</td>
+          <td>${r.seedRef}</td>
+          <td>
+            ${isFamily ? `<button class="btn-discard" onclick="goDiscard('${r.plantingRef}')">破棄</button>` : ""}
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function goDiscard(ref) {
+      location.href = `discard-planting.html?ref=${ref}`;
+    }
+
+    (async () => {
+      await loadAuth();
+      await loadPlantingList();
+    })();
+  </script>
+
+</body>
+</html>
