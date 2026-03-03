@@ -1,6 +1,14 @@
 {
   "pages": [
     {
+      "id": "seed",
+      "name": "播種ログ",
+      "path": "./seed/index.html",
+      "category": "作業ログ",
+      "roles": ["worker", "family", "admin"],
+      "icon": "./assets/icons/seed.png"
+    },
+    {
       "id": "planting",
       "name": "定植ログ",
       "path": "./planting/index.html",
