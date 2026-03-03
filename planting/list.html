@@ -70,7 +70,7 @@
       const key = localStorage.getItem("accessKey");
       if (!key) return;
 
-      const rows = await loadCSV("/yamamoto-farm-log/access/access.csv");
+      const rows = await loadCSV("access/access.csv");
       const row = rows.find(r => r.key === key);
 
       if (row && row.role === "family") {
@@ -82,7 +82,7 @@
     // 定植ログの読み込み
     // -----------------------------
     async function loadPlantingList() {
-      plantingRows = await loadCSV("/yamamoto-farm-log/logs/planting/all.csv");
+      plantingRows = await loadCSV("logs/planting/all.csv");
 
       populateYearFilter();
       populateFieldFilter();
