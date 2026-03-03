@@ -39,6 +39,18 @@
       border: 1px solid #ddd;
       margin-bottom: 20px;
     }
+
+    #login-user {
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    #logout-btn {
+      margin-left: 10px;
+      padding: 6px 12px;
+      font-size: 16px;
+    }
   </style>
 
   <script type="module">
@@ -77,8 +89,18 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+
+      // ★ PIN 認証 UI を表示
       showPinGate("pin-area", async () => {
 
+        // ★ ログイン中ユーザーを表示
+        document.getElementById("login-user").textContent =
+          `ログイン中：${window.currentHuman}（${window.currentRole}）`;
+
+        // ★ ログアウトボタン表示
+        document.getElementById("logout-btn").style.display = "inline-block";
+
+        // メニュー表示
         document.getElementById("menu-area").style.display = "block";
 
         const role = window.currentRole;
@@ -88,13 +110,19 @@
           // ロール制御
           if (!page.roles.includes(role)) return;
 
-          // ★ 階層カテゴリ対応
-          // トップページでは「管理/〜」は表示しない
+          // トップでは「管理/〜」は非表示
           if (page.category.startsWith("管理/")) return;
 
           const grid = ensureSection(page.category);
           grid.appendChild(createCard(page));
         });
+      });
+
+      // ★ ログアウト処理
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        localStorage.removeItem("human");
+        localStorage.removeItem("role");
+        location.reload();
       });
     });
   </script>
@@ -105,12 +133,18 @@
 
   <h1>山本農園ログ - 目次</h1>
 
+  <!-- ★ ログイン中ユーザー表示 -->
+  <div id="login-user"></div>
+  <button id="logout-btn" style="display:none;">ログアウト</button>
+
+  <!-- PIN 入力エリア -->
   <div id="pin-area">
     <div>アクセスキーを入力してください</div>
     <input id="pin-input" type="password" style="font-size:18px; padding:6px; margin-top:8px;">
     <button id="pin-submit" style="font-size:18px; padding:6px 12px;">OK</button>
   </div>
 
+  <!-- メニュー -->
   <div id="menu-area" style="display:none"></div>
 
 </body>
