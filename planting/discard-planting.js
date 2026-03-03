@@ -1,22 +1,30 @@
-// ------------------------------
-// URL パラメータから plantingRef を取得
-// ------------------------------
+// ===============================
+// モジュール変数
+// ===============================
 let plantingRef = null;
 let plantingRow = null;
 
-const params = new URLSearchParams(location.search);
-plantingRef = params.get("ref");
+// ===============================
+// 初期化（plantingRef 取得 → 定植データ読み込み）
+// ===============================
+export async function initDiscardPage(readText, loadCSV, formatDate) {
+  const params = new URLSearchParams(location.search);
+  plantingRef = params.get("ref");
 
-if (!plantingRef) {
-  alert("plantingRef が指定されていません");
+  if (!plantingRef) {
+    alert("plantingRef が指定されていません");
+    return;
+  }
+
+  await loadPlanting(loadCSV);
+  setupAutoCalc();
 }
 
-// ------------------------------
+// ===============================
 // 定植データ読み込み
-// ------------------------------
-async function loadPlanting() {
-  const csvText = await githubGet("logs/planting/all.csv");
-  const rows = parseCSV(csvText);
+// ===============================
+async function loadPlanting(loadCSV) {
+  const rows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
   plantingRow = rows.find(r => r.plantingRef === plantingRef);
 
@@ -25,44 +33,42 @@ async function loadPlanting() {
     return;
   }
 
-  // 表示
   document.getElementById("plantDate").textContent = plantingRow.plantDate;
   document.getElementById("field").textContent = plantingRow.field;
   document.getElementById("variety").textContent = plantingRow.variety;
   document.getElementById("quantity").textContent = plantingRow.quantity;
 }
 
-loadPlanting();
+// ===============================
+// 自動計算セットアップ
+// ===============================
+function setupAutoCalc() {
+  const calc = () => {
+    const total = Number(document.getElementById("totalBeds").value);
+    const tilled = Number(document.getElementById("tilledBeds").value);
 
-// ------------------------------
-// 自動計算
-// ------------------------------
-function calc() {
-  const total = Number(document.getElementById("totalBeds").value);
-  const tilled = Number(document.getElementById("tilledBeds").value);
+    if (!total || total <= 0) return;
 
-  if (!total || total <= 0) return;
+    const rate = tilled / total;
+    const discardRate = Math.min(Math.max(rate, 0), 1);
 
-  const rate = tilled / total;
-  const discardRate = Math.min(Math.max(rate, 0), 1);
+    const plantingQty = Number(plantingRow?.quantity ?? 0);
+    const discardQty = Math.ceil(plantingQty * discardRate);
 
-  const plantingQty = Number(plantingRow?.quantity ?? 0);
-  const discardQty = Math.ceil(plantingQty * discardRate);
+    document.getElementById("discardRate").textContent = Math.round(discardRate * 100);
+    document.getElementById("discardQuantity").textContent = discardQty;
+  };
 
-  document.getElementById("discardRate").textContent = Math.round(discardRate * 100);
-  document.getElementById("discardQuantity").textContent = discardQty;
+  document.getElementById("totalBeds").addEventListener("input", calc);
+  document.getElementById("tilledBeds").addEventListener("input", calc);
 }
 
-document.getElementById("totalBeds").addEventListener("input", calc);
-document.getElementById("tilledBeds").addEventListener("input", calc);
-
-// ------------------------------
-// 保存
-// ------------------------------
-document.getElementById("saveBtn").addEventListener("click", async () => {
+// ===============================
+// 保存処理
+// ===============================
+export async function saveDiscard(readText, writeText, appendCSV) {
   const discardDate = document.getElementById("discardDate").value;
   const notes = document.getElementById("notes").value;
-
   const discardQty = Number(document.getElementById("discardQuantity").textContent);
 
   if (!discardDate) {
@@ -80,12 +86,12 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     plantingRef,
     discardQuantity: discardQty,
     notes,
-    machine: getMachineName(),
-    human: getHumanName()
+    machine: window.currentMachine ?? "",
+    human: window.currentHuman ?? ""
   };
 
-  await githubAppend("logs/discard-planting/all.csv", line);
+  await appendCSV("logs/discard-planting/all.csv", line);
 
   alert("破棄ログを保存しました");
   location.href = "../index.html";
-});
+}
