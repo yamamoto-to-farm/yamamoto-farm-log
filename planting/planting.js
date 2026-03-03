@@ -14,6 +14,7 @@ import { checkDuplicate } from "../common/duplicate.js";
 import { loadCSV } from "../common/csv.js";
 
 let VARIETY_LIST = [];
+let GLOBAL_SEED_ROWS = null;   // ★ seed/all.csv を1回だけ読み込むキャッシュ
 
 
 // ===============================
@@ -24,6 +25,9 @@ export async function initPlantingPage() {
 
   await createFieldSelector("field_auto", "field_area", "field_manual");
   autoDetectField("field_auto", "field_area", "field_manual");
+
+  // ★ seed/all.csv を1回だけ読み込む（403対策）
+  GLOBAL_SEED_ROWS = await loadCSV("logs/seed/all.csv");
 
   await setupVarietySelector();
   setupInputModeSwitch();
@@ -70,7 +74,7 @@ async function setupVarietySelector() {
 
 
 // ===============================
-// seedRef プルダウン更新（計算方式）
+// seedRef プルダウン更新
 // ===============================
 async function updateSeedRefSelector() {
   const variety = document.getElementById("variety").value;
@@ -82,10 +86,13 @@ async function updateSeedRefSelector() {
 
   if (!variety) return;
 
-  const seedRows = await loadCSV("logs/seed/all.csv");
+  // ★ seedRows はキャッシュを使う（403対策）
+  const seedRows = GLOBAL_SEED_ROWS;
+
+  // plantingRows は毎回読み込む（最新の残数計算のため）
   const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
-  // ★ nursery がまだ無い場合は空配列
+  // nurseryRows は無ければ空配列
   let nurseryRows = [];
   try {
     nurseryRows = await loadCSV("logs/nursery/all.csv");
@@ -125,6 +132,11 @@ async function updateSeedRefSelector() {
     }
 
     const seedRow = seedRows.find(r => r.seedRef === seedRef);
+    if (!seedRow) {
+      remainSpan.textContent = "-";
+      return;
+    }
+
     const seedCount = Number(seedRow.seedCount);
 
     const planted = plantingRows
@@ -258,7 +270,7 @@ function collectPlantingData() {
 
 
 // ===============================
-// 保存処理（計算方式）
+// 保存処理
 // ===============================
 async function savePlantingInner() {
   const data = collectPlantingData();
@@ -273,8 +285,9 @@ async function savePlantingInner() {
     return;
   }
 
-  // ★ 最新の remainingCount を再計算（nursery が無くても安全）
-  const seedRows = await loadCSV("logs/seed/all.csv");
+  // ★ seedRows はキャッシュを使う（403対策）
+  const seedRows = GLOBAL_SEED_ROWS;
+
   const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
   let nurseryRows = [];
@@ -286,7 +299,7 @@ async function savePlantingInner() {
 
   const seedRow = seedRows.find(r => r.seedRef === data.seedRef);
   if (!seedRow) {
-    alert("選択した seedRef が見つかりません");
+    alert("選択した seedRef が seed/all.csv に存在しません");
     return;
   }
 
@@ -310,7 +323,6 @@ async function savePlantingInner() {
     return;
   }
 
-  // 重複チェック
   const dup = await checkDuplicate("planting", {
     date: data.plantDate,
     field: data.field,
@@ -328,6 +340,10 @@ async function savePlantingInner() {
   const human = window.currentHuman || "";
   const dateStr = data.plantDate.replace(/-/g, "");
 
+  const notes = data.notes
+    ? data.notes.replace(/[\r\n,]/g, " ")
+    : "";
+
   const csvLine = [
     data.plantDate,
     data.worker.replace(/,/g, "／"),
@@ -339,7 +355,7 @@ async function savePlantingInner() {
     data.spacingRow,
     data.spacingBed,
     data.harvestPlanYM,
-    data.notes.replace(/[\r\n,]/g, " "),
+    notes,
     machine,
     human,
     plantingRef
