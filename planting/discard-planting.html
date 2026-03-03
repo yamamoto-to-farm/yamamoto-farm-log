@@ -6,10 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="../common.css">
-  <script src="../common/utils.js"></script>
-  <script src="../common/github.js"></script>
-  <script src="../common/csv.js"></script>
-  <script src="discard-planting.js"></script>
 </head>
 
 <body>
@@ -52,6 +48,24 @@
     <button onclick="history.back()">← 定植ページに戻る</button>
     <button id="saveBtn" class="primary">破棄ログを保存</button>
   </div>
+
+  <!-- ★ module 化した JS 読み込み -->
+  <script type="module">
+    import { githubGet } from "../common/github.js";
+    import { parseCSV } from "../common/csv.js";
+    import { formatDate } from "../common/utils.js";
+    import { initDiscardPage, saveDiscard } from "./discard-planting.js";
+
+    // ページ初期化
+    window.addEventListener("DOMContentLoaded", () => {
+      initDiscardPage(githubGet, parseCSV, formatDate);
+    });
+
+    // 保存ボタン
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      saveDiscard(githubGet);
+    });
+  </script>
 
 </body>
 </html>
