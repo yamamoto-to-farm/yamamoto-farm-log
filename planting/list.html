@@ -56,10 +56,9 @@
     }
   </style>
 
-  <!-- ★ ES Module 化 -->
+  <!-- ★ ES Module -->
   <script type="module">
-    import { readText } from "../common/github.js";
-    import { parseCSV } from "../common/csv.js";
+    import { loadCSV } from "../common/csv.js";
 
     let isFamily = false;
     let plantingRows = [];
@@ -71,10 +70,9 @@
       const key = localStorage.getItem("accessKey");
       if (!key) return;
 
-      const csvText = await readText("/yamamoto-farm-log/access/access.csv");
-      const rows = parseCSV(csvText);
-
+      const rows = await loadCSV("/yamamoto-farm-log/access/access.csv");
       const row = rows.find(r => r.key === key);
+
       if (row && row.role === "family") {
         isFamily = true;
       }
@@ -84,8 +82,7 @@
     // 定植ログの読み込み
     // -----------------------------
     async function loadPlantingList() {
-      const csvText = await readText("/yamamoto-farm-log/logs/planting/all.csv");
-      plantingRows = parseCSV(csvText);
+      plantingRows = await loadCSV("/yamamoto-farm-log/logs/planting/all.csv");
 
       populateYearFilter();
       populateFieldFilter();
