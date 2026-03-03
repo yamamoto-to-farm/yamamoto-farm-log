@@ -78,7 +78,6 @@ function setupTrayAutoCalc() {
 
 // ===============================
 // seedRef 自動生成（YYYYMMDD-品名-連番）
-// 連番は「年 × 品名」ごとにリセット
 // ===============================
 function setupSeedRefAuto() {
   const update = async () => {
@@ -90,23 +89,22 @@ function setupSeedRefAuto() {
       return;
     }
 
-    const ymd = date.replace(/-/g, ""); // 20250303
-    const year = date.slice(0, 4);      // 2025
+    const ymd = date.replace(/-/g, "");
+    const year = date.slice(0, 4);
     let rows = [];
 
     try {
-      rows = await loadCSV("/logs/seed/all.csv");
+      // ★ パス修正（先頭 / を絶対に付けない）
+      rows = await loadCSV("logs/seed/all.csv");
     } catch (e) {
       rows = [];
     }
 
-    // ★ 同じ「年」かつ同じ「品名」の既存レコードを対象にする
     const sameList = rows.filter(r =>
       r.seedDate?.startsWith(year) &&
       r.varietyName === variety
     );
 
-    // ★ 連番を決定（01, 02, 03…）
     let nextNo = 1;
     if (sameList.length > 0) {
       const nums = sameList
@@ -122,8 +120,6 @@ function setupSeedRefAuto() {
     }
 
     const noStr = String(nextNo).padStart(2, "0");
-
-    // ★ 例：20250303-藍天-01
     const ref = `${ymd}-${variety}-${noStr}`;
     document.getElementById("seedRef").value = ref;
   };
@@ -147,7 +143,7 @@ function collectSeedData() {
     trayType,
     trayCount,
     seedCount,
-    remainingCount: seedCount, // 初期値＝全量
+    remainingCount: seedCount, // ★ 初期値として保存するだけ（計算方式に切り替えるため）
     source: document.querySelector("input[name='source']:checked").value,
     memo: document.getElementById("memo").value,
     seedRef: document.getElementById("seedRef").value
@@ -174,7 +170,6 @@ async function saveSeedInner() {
     return;
   }
 
-  // 重複チェック（同じ日・品名・枚数）
   const dup = await checkDuplicate("seed", {
     date: data.seedDate,
     variety: data.varietyName,
@@ -195,7 +190,6 @@ async function saveSeedInner() {
     data.trayType,
     data.trayCount,
     data.seedCount,
-    data.remainingCount,
     data.source,
     data.memo.replace(/[\r\n,]/g, " ")
   ].join(",");
