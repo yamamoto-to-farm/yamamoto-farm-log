@@ -17,9 +17,9 @@
       "icon": "./assets/icons/planting.png"
     },
     {
-      "id": "planting",
-      "name": "破棄(植え直し)",
-      "path": "./planting/index.html",
+      "id": "planting-list",
+      "name": "定植一覧",
+      "path": "./planting/list.html",
       "category": "作業ログ",
       "roles": ["family", "admin"],
       "icon": "./assets/icons/planting.png"
