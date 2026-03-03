@@ -71,12 +71,12 @@
     // -----------------------------
     window.addEventListener("DOMContentLoaded", async () => {
 
-      // 認証チェック（index.html と同じ）
-      const auth = await verifyLocalAuth();
-      if (!auth.ok) return;
+      // ★ verifyLocalAuth は true / false を返す
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
 
-      // admin / family は破棄可能
-      if (auth.role === "admin" || auth.role === "family") {
+      // ★ ロールは window.currentRole に入っている
+      if (window.currentRole === "admin" || window.currentRole === "family") {
         canDiscard = true;
       }
 
