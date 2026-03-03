@@ -51,19 +51,19 @@
 
   <!-- ★ module 化した JS 読み込み -->
   <script type="module">
-    import { githubGet } from "../common/github.js";
+    import { readText, writeText, appendText } from "../common/github.js";
     import { parseCSV } from "../common/csv.js";
     import { formatDate } from "../common/utils.js";
     import { initDiscardPage, saveDiscard } from "./discard-planting.js";
 
     // ページ初期化
     window.addEventListener("DOMContentLoaded", () => {
-      initDiscardPage(githubGet, parseCSV, formatDate);
+      initDiscardPage(readText, parseCSV, formatDate);
     });
 
     // 保存ボタン
     document.getElementById("saveBtn").addEventListener("click", () => {
-      saveDiscard(githubGet);
+      saveDiscard(readText, writeText, appendText);
     });
   </script>
 

@@ -56,19 +56,22 @@
     }
   </style>
 
-  <!-- ★ ここを module にする -->
+  <!-- ★ ES Module 化 -->
   <script type="module">
-    import { githubGet } from "../common/github.js";
+    import { readText } from "../common/github.js";
     import { parseCSV } from "../common/csv.js";
 
     let isFamily = false;
     let plantingRows = [];
 
+    // -----------------------------
+    // 認証情報の読み込み
+    // -----------------------------
     async function loadAuth() {
       const key = localStorage.getItem("accessKey");
       if (!key) return;
 
-      const csvText = await githubGet("/yamamoto-farm-log/access/access.csv");
+      const csvText = await readText("/yamamoto-farm-log/access/access.csv");
       const rows = parseCSV(csvText);
 
       const row = rows.find(r => r.key === key);
@@ -77,8 +80,11 @@
       }
     }
 
+    // -----------------------------
+    // 定植ログの読み込み
+    // -----------------------------
     async function loadPlantingList() {
-      const csvText = await githubGet("/yamamoto-farm-log/logs/planting/all.csv");
+      const csvText = await readText("/yamamoto-farm-log/logs/planting/all.csv");
       plantingRows = parseCSV(csvText);
 
       populateYearFilter();
@@ -88,6 +94,9 @@
       renderTable(plantingRows);
     }
 
+    // -----------------------------
+    // フィルタ生成
+    // -----------------------------
     function populateYearFilter() {
       const yearSet = new Set();
       plantingRows.forEach(r => {
@@ -133,6 +142,9 @@
       });
     }
 
+    // -----------------------------
+    // フィルタ適用
+    // -----------------------------
     function applyFilter() {
       const year = document.getElementById("filterYear").value;
       const month = document.getElementById("filterMonth").value;
@@ -154,26 +166,36 @@
       renderTable(filtered);
     }
 
+    window.applyFilter = applyFilter;
+
+    // -----------------------------
+    // テーブル描画
+    // -----------------------------
     function renderTable(rows) {
       const tbody = document.querySelector("#plantingTable tbody");
       tbody.innerHTML = "";
 
       rows.forEach(r => {
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
           <td>${r.plantDate}</td>
           <td>${r.field}</td>
           <td>${r.variety}</td>
           <td>${r.quantity}</td>
           <td>${r.seedRef}</td>
-          <td>${isFamily ? `<button class="btn-discard" onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">破棄</button>` : ""}</td>
+          <td>
+            ${isFamily ? `<button class="btn-discard" onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">破棄</button>` : ""}
+          </td>
         `;
+
         tbody.appendChild(tr);
       });
     }
 
-    window.applyFilter = applyFilter;
-
+    // -----------------------------
+    // 初期化
+    // -----------------------------
     (async () => {
       await loadAuth();
       await loadPlantingList();
