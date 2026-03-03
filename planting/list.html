@@ -73,7 +73,7 @@
       const rows = await loadCSV("access/access.csv");
       const row = rows.find(r => r.key === key);
 
-      if (row && row.role === "family") {
+      if (row && (row.role === "family" || row.role === "admin")) {
         isFamily = true;
       }
     }
