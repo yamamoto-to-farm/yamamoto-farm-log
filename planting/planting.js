@@ -74,25 +74,30 @@ async function setupVarietySelector() {
 
 
 // ===============================
-// seedRef プルダウン更新
+// seedRef プルダウン更新（播種枚数・トレイ種別も表示）
 // ===============================
 async function updateSeedRefSelector() {
   const variety = document.getElementById("variety").value;
   const sel = document.getElementById("seedRef");
-  const remainSpan = document.getElementById("remainingCount");
 
+  const remainSpan     = document.getElementById("remainingCount");
+  const trayCountSpan  = document.getElementById("seedTrayCount");
+  const trayTypeSpan   = document.getElementById("seedTrayType");
+
+  // 初期化
   sel.innerHTML = "<option value=''>選択してください</option>";
   remainSpan.textContent = "-";
+  trayCountSpan.textContent = "-";
+  trayTypeSpan.textContent = "-";
 
   if (!variety) return;
 
-  // ★ seedRows はキャッシュを使う（403対策）
+  // ★ seedRows はキャッシュ（403対策）
   const seedRows = GLOBAL_SEED_ROWS;
 
-  // plantingRows は毎回読み込む（最新の残数計算のため）
+  // 最新の残数計算のため毎回読み込む
   const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
-  // nurseryRows は無ければ空配列
   let nurseryRows = [];
   try {
     nurseryRows = await loadCSV("logs/nursery/all.csv");
@@ -100,8 +105,10 @@ async function updateSeedRefSelector() {
     nurseryRows = [];
   }
 
+  // 品種一致の seedRef を抽出
   const list = seedRows.filter(r => r.varietyName === variety);
 
+  // プルダウン生成
   for (const r of list) {
     const seedRef = r.seedRef;
     const seedCount = Number(r.seedCount);
@@ -124,16 +131,22 @@ async function updateSeedRefSelector() {
     }
   }
 
-  sel.addEventListener("change", async () => {
+  // ★ seedRef 選択時の詳細表示
+  sel.addEventListener("change", () => {
     const seedRef = sel.value;
+
     if (!seedRef) {
       remainSpan.textContent = "-";
+      trayCountSpan.textContent = "-";
+      trayTypeSpan.textContent = "-";
       return;
     }
 
     const seedRow = seedRows.find(r => r.seedRef === seedRef);
     if (!seedRow) {
       remainSpan.textContent = "-";
+      trayCountSpan.textContent = "-";
+      trayTypeSpan.textContent = "-";
       return;
     }
 
@@ -149,7 +162,10 @@ async function updateSeedRefSelector() {
 
     const remaining = seedCount - planted - discarded;
 
+    // ★ 表示更新
     remainSpan.textContent = remaining;
+    trayCountSpan.textContent = seedRow.trayCount || "-";
+    trayTypeSpan.textContent  = seedRow.trayType  || "-";
   });
 }
 
