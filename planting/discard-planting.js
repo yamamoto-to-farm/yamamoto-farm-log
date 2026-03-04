@@ -81,17 +81,24 @@ export async function saveDiscard(readText, writeText, appendCSV) {
     return;
   }
 
-  const line = {
-    discardDate,
-    plantingRef,
-    discardQuantity: discardQty,
-    notes,
-    machine: window.currentMachine ?? "",
-    human: window.currentHuman ?? ""
-  };
+const dateStr = discardDate.replace(/-/g, "");
 
-  await appendCSV("logs/discard-planting/all.csv", line);
+const csvLine = [
+  discardDate,
+  plantingRef,
+  discardQty,
+  notes.replace(/[\r\n,]/g, " "),
+  window.currentMachine ?? "",
+  window.currentHuman ?? ""
+].join(",");
 
-  alert("破棄ログを保存しました");
-  location.href = "../index.html";
+await saveLog(
+  "discard-planting",
+  dateStr,
+  { plantingRef },
+  csvLine + "\n"
+);
+
+alert("破棄ログを保存しました");
+location.href = "../index.html";
 }
