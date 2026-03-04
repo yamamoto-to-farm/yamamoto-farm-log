@@ -97,13 +97,7 @@ async function updateSeedRefSelector() {
 
   // 最新の残数計算のため毎回読み込む
   const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
-
-  let nurseryRows = [];
-  try {
-    nurseryRows = await loadCSV("logs/nursery/all.csv");
-  } catch (e) {
-    nurseryRows = [];
-  }
+  const nurseryRows  = await loadCSV("logs/nursery/all.csv").catch(() => []);
 
   // 品種一致の seedRef を抽出
   const list = seedRows.filter(r => r.varietyName === variety);
@@ -131,9 +125,13 @@ async function updateSeedRefSelector() {
     }
   }
 
-  // ★ seedRef 選択時の詳細表示
-  sel.addEventListener("change", () => {
-    const seedRef = sel.value;
+  // ★ 既存の change イベントを一旦削除（イベント重複防止）
+  const newSel = sel.cloneNode(true);
+  sel.parentNode.replaceChild(newSel, sel);
+
+  // ★ seedRef 選択時の詳細表示（イベントは1回だけ）
+  newSel.addEventListener("change", async () => {
+    const seedRef = newSel.value;
 
     if (!seedRef) {
       remainSpan.textContent = "-";
@@ -150,13 +148,17 @@ async function updateSeedRefSelector() {
       return;
     }
 
+    // 最新の残数を再計算
+    const plantingRows2 = await loadCSV("logs/planting/all.csv").catch(() => []);
+    const nurseryRows2  = await loadCSV("logs/nursery/all.csv").catch(() => []);
+
     const seedCount = Number(seedRow.seedCount);
 
-    const planted = plantingRows
+    const planted = plantingRows2
       .filter(p => p.seedRef === seedRef)
       .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
 
-    const discarded = nurseryRows
+    const discarded = nurseryRows2
       .filter(n => n.seedRef === seedRef)
       .reduce((sum, n) => sum + Number(n.discard || 0), 0);
 
