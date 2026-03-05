@@ -9,15 +9,16 @@
     th, td { border: 1px solid #ccc; padding: 6px 10px; }
     th { background: #f0f0f0; }
     #csvTableArea { margin-top: 20px; }
-    .button-row { margin-top: 10px; }
-    button { padding: 8px 16px; margin-right: 10px; }
+    .row { margin-top: 15px; }
+    button, select { padding: 8px 16px; }
   </style>
 </head>
 <body>
 
   <h1>CSV 編集（管理者）</h1>
 
-  <div>
+  <!-- 上段：ファイル操作 -->
+  <div class="row">
     <label>種類：</label>
     <select id="csvType">
       <option value="planting">planting</option>
@@ -28,19 +29,27 @@
       <option value="discard-planting">discard-planting</option>
     </select>
 
-    <label>ファイル：</label>
+    <label>フォルダ：</label>
+    <select id="csvFolder">
+      <option value="logs">logs</option>
+    </select>
+
+    <label>ファイル名：</label>
     <select id="csvFile">
       <option value="all.csv">all.csv</option>
     </select>
 
     <button id="loadCsvBtn">読み込む</button>
+    <button id="saveCsvBtn">保存する</button>
   </div>
 
-  <!-- ★ 保存ボタンをここに移動 -->
-  <div class="button-row">
-    <button id="saveCsvBtn">保存する（全書き換え）</button>
+  <!-- 中段：行操作 -->
+  <div class="row">
+    <button id="addRowBtn">行を追加</button>
+    <button id="deleteRowBtn">選択行を削除</button>
   </div>
 
+  <!-- 下段：テーブル -->
   <div id="csvTableArea"></div>
 
   <script type="module" src="./edit-csv.js"></script>

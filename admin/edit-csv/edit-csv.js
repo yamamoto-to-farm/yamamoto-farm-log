@@ -2,7 +2,7 @@
 
 import { loadCSV } from "./loader.js";
 import { renderCsvTable } from "./table.js";
-import { attachEditor } from "./editor.js";
+import { attachEditor, addRow } from "./editor.js";
 import { saveCsvFile } from "./saver.js";
 
 console.log("=== admin/edit-csv/edit-csv.js loaded ===");
@@ -29,6 +29,29 @@ document.getElementById("loadCsvBtn").addEventListener("click", async () => {
   currentRows = attachEditor(table);
 
   console.log("✔ editor attached. rows:", currentRows);
+});
+
+// 行追加
+document.getElementById("addRowBtn").addEventListener("click", () => {
+  if (!currentRows) {
+    alert("先に CSV を読み込んでください");
+    return;
+  }
+
+  // ヘッダー取得
+  const table = document.querySelector("#csvTableArea table");
+  const headerCells = table.querySelectorAll("thead th");
+  const headers = Array.from(headerCells).slice(1).map(th => th.textContent);
+
+  // 行追加
+  addRow(currentRows, headers);
+
+  // 再描画
+  renderCsvTable(currentRows);
+
+  // 編集ロジックを再度紐づける
+  const newTable = document.querySelector("#csvTableArea table");
+  currentRows = attachEditor(newTable);
 });
 
 // CSV 保存（全書き換え）

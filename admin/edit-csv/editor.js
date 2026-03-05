@@ -43,3 +43,11 @@ export function attachEditor(tableElement) {
 
   return rows;
 }
+// 行追加（末尾に空行を追加）
+export function addRow(rows, headers) {
+  const newRow = {};
+  headers.forEach(h => {
+    newRow[h] = ""; // 全部空欄で追加
+  });
+  rows.push(newRow);
+}
