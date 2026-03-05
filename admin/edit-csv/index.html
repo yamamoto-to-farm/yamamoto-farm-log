@@ -9,6 +9,8 @@
     th, td { border: 1px solid #ccc; padding: 6px 10px; }
     th { background: #f0f0f0; }
     #csvTableArea { margin-top: 20px; }
+    .button-row { margin-top: 20px; }
+    button { padding: 8px 16px; margin-right: 10px; }
   </style>
 </head>
 <body>
@@ -21,6 +23,9 @@
       <option value="planting">planting</option>
       <option value="harvest">harvest</option>
       <option value="weight">weight</option>
+      <option value="seed">seed</option>
+      <option value="nursery">nursery</option>
+      <option value="discard-planting">discard-planting</option>
     </select>
 
     <label>ファイル：</label>
@@ -32,6 +37,10 @@
   </div>
 
   <div id="csvTableArea"></div>
+
+  <div class="button-row">
+    <button id="saveCsvBtn">保存する（全書き換え）</button>
+  </div>
 
   <script type="module" src="./edit-csv.js"></script>
 </body>
