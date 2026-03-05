@@ -15,7 +15,21 @@ export function renderCsvTable(rows) {
   // ------------------------------
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  trHead.innerHTML = "<th>#</th>" + headers.map(h => `<th>${h}</th>`).join("");
+
+  // 行番号（#）
+  const thIndex = document.createElement("th");
+  thIndex.textContent = "#";
+  trHead.appendChild(thIndex);
+
+  // 各列ヘッダー（ソート用 data-key 付き）
+  headers.forEach(h => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    th.dataset.key = h;   // ← ★ ソート用キー
+    th.classList.add("sortable"); // CSSでカーソル変更などに使える
+    trHead.appendChild(th);
+  });
+
   thead.appendChild(trHead);
   table.appendChild(thead);
 
@@ -30,7 +44,7 @@ export function renderCsvTable(rows) {
     // 行番号
     const tdIndex = document.createElement("td");
     tdIndex.textContent = idx + 1;
-    tdIndex.dataset.rowIndex = idx;   // ★ 追加
+    tdIndex.dataset.rowIndex = idx;
     tdIndex.classList.add("row-index");
     tr.appendChild(tdIndex);
 
@@ -38,19 +52,17 @@ export function renderCsvTable(rows) {
     headers.forEach(h => {
       const td = document.createElement("td");
       td.textContent = row[h] ?? "";
-
-      // ★ 編集可能にする
       td.contentEditable = true;
 
-      // ★ 編集時に余計な改行を防ぐ
+      // Enter で確定（改行禁止）
       td.addEventListener("keydown", e => {
         if (e.key === "Enter") {
           e.preventDefault();
-          td.blur(); // Enter で確定
+          td.blur();
         }
       });
 
-      // ★ 編集後に trim（前後の空白を削除）
+      // blur 時に trim
       td.addEventListener("blur", () => {
         td.textContent = td.textContent.trim();
       });

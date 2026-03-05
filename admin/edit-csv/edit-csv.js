@@ -2,7 +2,7 @@
 
 import { loadCSV } from "./loader.js";
 import { renderCsvTable } from "./table.js";
-import { attachEditor, addRow, deleteRow, getSelectedRowIndex } from "./editor.js";
+import { attachEditor, addRow, deleteRow, getSelectedRowIndex, sortRows } from "./editor.js";
 import { saveCsvFile } from "./saver.js";
 
 console.log("=== admin/edit-csv/edit-csv.js loaded ===");
@@ -10,6 +10,7 @@ console.log("=== admin/edit-csv/edit-csv.js loaded ===");
 let currentRows = null;   // editor.js が管理する rows
 let currentType = "";
 let currentFile = "";
+let sortState = {};       // 列ごとの昇順/降順を記録
 
 // CSV 読み込み
 document.getElementById("loadCsvBtn").addEventListener("click", async () => {
@@ -69,6 +70,27 @@ document.getElementById("deleteRowBtn").addEventListener("click", () => {
 
   // 行削除
   deleteRow(currentRows, index);
+
+  // 再描画
+  renderCsvTable(currentRows);
+
+  // 編集ロジックを再度紐づける
+  const newTable = document.querySelector("#csvTableArea table");
+  currentRows = attachEditor(newTable);
+});
+
+// 列名クリックでソート
+document.getElementById("csvTableArea").addEventListener("click", e => {
+  if (e.target.tagName !== "TH") return;
+
+  const key = e.target.dataset.key;
+  if (!key) return; // "#" の列は無視
+
+  // 昇順/降順トグル
+  sortState[key] = !sortState[key];
+
+  // ソート実行
+  sortRows(currentRows, key, sortState[key]);
 
   // 再描画
   renderCsvTable(currentRows);

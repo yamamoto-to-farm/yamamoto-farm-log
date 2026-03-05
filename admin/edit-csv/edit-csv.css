@@ -40,3 +40,12 @@ button, select {
 .selected-row {
   background-color: #ffe9a8 !important;
 }
+
+/* ソート可能な列 */
+th.sortable {
+  cursor: pointer;
+}
+
+th.sortable:hover {
+  background-color: #e8e8e8;
+}
