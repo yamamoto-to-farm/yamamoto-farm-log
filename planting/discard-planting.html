@@ -49,21 +49,16 @@
     <button id="saveBtn" class="primary">破棄ログを保存</button>
   </div>
 
-  <!-- ★ module 化した JS 読み込み -->
+  <!-- JS 読み込み -->
   <script type="module">
-    import { readText, writeText } from "../common/github.js";
-    import { loadCSV, appendCSV } from "../common/csv.js";
-    import { formatDate } from "../common/utils.js?v=1";
     import { initDiscardPage, saveDiscard } from "./discard-planting.js";
 
-    // ページ初期化
     window.addEventListener("DOMContentLoaded", () => {
-      initDiscardPage(readText, loadCSV, formatDate);
+      initDiscardPage();
     });
 
-    // 保存ボタン
     document.getElementById("saveBtn").addEventListener("click", () => {
-      saveDiscard(readText, writeText, appendCSV);
+      saveDiscard();
     });
   </script>
 
