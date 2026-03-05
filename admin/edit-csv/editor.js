@@ -44,12 +44,25 @@ export function attachEditor(tableElement) {
     true
   );
 
-  // 行番号クリックで選択
+  // 行番号クリックで選択 / 解除
   tableElement.addEventListener("click", e => {
     if (!e.target.classList.contains("row-index")) return;
 
-    // 選択行インデックスを更新
-    selectedRowIndex = Number(e.target.dataset.rowIndex);
+    const index = Number(e.target.dataset.rowIndex);
+
+    // すでに選択されている行をもう一度クリック → 解除
+    if (selectedRowIndex === index) {
+      selectedRowIndex = null;
+
+      // ハイライト解除
+      tableElement.querySelectorAll("tr").forEach(tr => {
+        tr.classList.remove("selected-row");
+      });
+      return;
+    }
+
+    // 新しく選択
+    selectedRowIndex = index;
 
     // ハイライト更新
     tableElement.querySelectorAll("tr").forEach(tr => {
