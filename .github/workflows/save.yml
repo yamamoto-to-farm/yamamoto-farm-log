@@ -13,18 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # --------------------------------------------
+      # 1. データリポジトリをチェックアウト
+      # --------------------------------------------
       - name: Checkout data repo
         uses: actions/checkout@v4
         with:
           repository: yamamoto-to-farm/yamamoto-farm-log
           token: ${{ secrets.FARM_DATA_TOKEN }}
 
+      # --------------------------------------------
+      # 2. payload をファイルに保存
+      # --------------------------------------------
       - name: Parse payload
         id: parse
         run: |
           echo '${{ inputs.payload }}' > payload.json
           cat payload.json
 
+      # --------------------------------------------
+      # 3. type と dateStr を抽出
+      # --------------------------------------------
       - name: Extract fields
         id: extract
         run: |
@@ -33,9 +42,9 @@ jobs:
           echo "type=$TYPE" >> $GITHUB_OUTPUT
           echo "date=$DATE" >> $GITHUB_OUTPUT
 
-      # ============================================
-      # JSON 保存（配列として蓄積）
-      # ============================================
+      # --------------------------------------------
+      # 4. JSON 保存（append）
+      # --------------------------------------------
       - name: Save JSON (append to array)
         run: |
           TYPE=${{ steps.extract.outputs.type }}
@@ -54,13 +63,15 @@ jobs:
           # payload.json を配列に追加
           UPDATED=$(jq -s '.[0] + [.[1]]' <(echo "$EXISTING") payload.json)
 
-          # 上書き保存（配列として）
+          # 上書き保存
           echo "$UPDATED" > "$JSON_FILE"
 
-      # ============================================
-      # CSV 保存（追記）
-      # ============================================
-      - name: Save CSV
+      # --------------------------------------------
+      # 5. CSV append（通常の saveLog 用）
+      #    ※ replaceCsv が空のときだけ実行
+      # --------------------------------------------
+      - name: Save CSV (append)
+        if: ${{ fromJson(inputs.payload).replaceCsv == '' }}
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           CSV_LINE=$(jq -r '.csv' payload.json)
@@ -70,9 +81,22 @@ jobs:
 
           echo "$CSV_LINE" >> "$CSV_FILE"
 
-      # ============================================
-      # Commit & Push
-      # ============================================
+      # --------------------------------------------
+      # 6. CSV 全書き換え（管理画面用）
+      #    ※ replaceCsv が空でないときだけ実行
+      # --------------------------------------------
+      - name: Replace CSV (overwrite all.csv)
+        if: ${{ fromJson(inputs.payload).replaceCsv != '' }}
+        run: |
+          TYPE=${{ steps.extract.outputs.type }}
+          mkdir -p logs/$TYPE
+
+          # replaceCsv の内容をそのまま all.csv に書き込む
+          jq -r '.replaceCsv' payload.json > logs/$TYPE/all.csv
+
+      # --------------------------------------------
+      # 7. Commit & Push
+      # --------------------------------------------
       - name: Commit & Push
         run: |
           git config user.name "farm-bot"

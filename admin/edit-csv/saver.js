@@ -1,5 +1,5 @@
 // admin/edit-csv/saver.js
-import { writeText } from "../../common/github.js";
+import { saveLog } from "../common/save/index.js";
 
 export async function saveCsvFile(csvType, csvFile) {
   console.log("=== saveCsvFile START ===");
@@ -61,17 +61,17 @@ export async function saveCsvFile(csvType, csvFile) {
   console.log("=== FINAL CSV TEXT ===\n" + csvText);
 
   // ------------------------------
-  // 4. GitHub に保存（全書き換え）
+  // 4. saveLog 経由で GitHub Actions に送信（全書き換え）
   // ------------------------------
-  const path = `logs/${csvType}/${csvFile}`;
-  console.log("✔ writeText path:", path);
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  console.log("✔ dateStr:", dateStr);
 
   try {
-    const result = await writeText(path, csvText);
-    console.log("✔ writeText result:", result);
-    alert("CSV を保存しました（全行を上書きしました）");
+    console.log("✔ sending replaceCsv via saveLog...");
+    await saveLog(csvType, dateStr, {}, "", csvText);
+    alert("CSV を保存しました（GitHub Actions 経由で全書き換え）");
   } catch (e) {
-    console.error("❌ writeText error:", e);
+    console.error("❌ saveLog error:", e);
     alert("保存に失敗しました（Console を確認してください）");
   }
 
