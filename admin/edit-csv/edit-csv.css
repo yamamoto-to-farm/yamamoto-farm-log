@@ -1,7 +1,42 @@
-.selected-row {
-  background: #ffe9a8;
+body {
+  font-family: sans-serif;
+  padding: 20px;
 }
+
+table {
+  border-collapse: collapse;
+  margin-top: 20px;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+#csvTableArea {
+  margin-top: 20px;
+}
+
+.row {
+  margin-top: 15px;
+}
+
+button, select {
+  padding: 8px 16px;
+}
+
+/* 行番号セル */
 .row-index {
   cursor: pointer;
-  background: #f7f7f7;
+  background-color: #f7f7f7;
+}
+
+/* 行選択ハイライト */
+.selected-row {
+  background-color: #ffe9a8 !important;
 }
