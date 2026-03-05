@@ -94,3 +94,22 @@ export function deleteRow(rows, index) {
   rows.splice(index, 1);
   selectedRowIndex = null; // 削除後は選択解除
 }
+
+// 列ソート
+export function sortRows(rows, key, asc = true) {
+  rows.sort((a, b) => {
+    const va = a[key] ?? "";
+    const vb = b[key] ?? "";
+
+    // 数値 or 日付（YYYY-MM-DD）は Number で比較
+    const na = Number(va);
+    const nb = Number(vb);
+
+    if (!isNaN(na) && !isNaN(nb)) {
+      return asc ? na - nb : nb - na;
+    }
+
+    // 文字列比較
+    return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+}
