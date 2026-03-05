@@ -5,9 +5,15 @@ let plantingRef = null;
 let plantingRow = null;
 
 // ===============================
+// 必要なモジュール
+// ===============================
+import { loadCSV } from "../common/csv.js";
+import { saveLog } from "../common/save/index.js";
+
+// ===============================
 // 初期化（plantingRef 取得 → 定植データ読み込み）
 // ===============================
-export async function initDiscardPage(readText, loadCSV, formatDate) {
+export async function initDiscardPage() {
   const params = new URLSearchParams(location.search);
   plantingRef = params.get("ref");
 
@@ -16,14 +22,14 @@ export async function initDiscardPage(readText, loadCSV, formatDate) {
     return;
   }
 
-  await loadPlanting(loadCSV);
+  await loadPlanting();
   setupAutoCalc();
 }
 
 // ===============================
 // 定植データ読み込み
 // ===============================
-async function loadPlanting(loadCSV) {
+async function loadPlanting() {
   const rows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
   plantingRow = rows.find(r => r.plantingRef === plantingRef);
@@ -64,9 +70,9 @@ function setupAutoCalc() {
 }
 
 // ===============================
-// 保存処理
+// 保存処理（saveLog 方式）
 // ===============================
-export async function saveDiscard(readText, writeText, appendCSV) {
+export async function saveDiscard() {
   const discardDate = document.getElementById("discardDate").value;
   const notes = document.getElementById("notes").value;
   const discardQty = Number(document.getElementById("discardQuantity").textContent);
@@ -81,24 +87,24 @@ export async function saveDiscard(readText, writeText, appendCSV) {
     return;
   }
 
-const dateStr = discardDate.replace(/-/g, "");
+  const dateStr = discardDate.replace(/-/g, "");
 
-const csvLine = [
-  discardDate,
-  plantingRef,
-  discardQty,
-  notes.replace(/[\r\n,]/g, " "),
-  window.currentMachine ?? "",
-  window.currentHuman ?? ""
-].join(",");
+  const csvLine = [
+    discardDate,
+    plantingRef,
+    discardQty,
+    notes.replace(/[\r\n,]/g, " "),
+    window.currentMachine ?? "",
+    window.currentHuman ?? ""
+  ].join(",");
 
-await saveLog(
-  "discard-planting",
-  dateStr,
-  { plantingRef },
-  csvLine + "\n"
-);
+  await saveLog(
+    "discard-planting",
+    dateStr,
+    { plantingRef },
+    csvLine + "\n"
+  );
 
-alert("破棄ログを保存しました");
-location.href = "../index.html";
+  alert("破棄ログを保存しました");
+  location.href = "../index.html";
 }
