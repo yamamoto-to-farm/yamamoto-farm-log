@@ -2,11 +2,16 @@
 import { writeText } from "../../common/github.js";
 
 export async function saveCsvFile(csvType, csvFile) {
+  console.log("=== saveCsvFile START ===");
+  console.log("csvType:", csvType, "csvFile:", csvFile);
+
   const table = document.querySelector("#csvTableArea table");
   if (!table) {
+    console.error("❌ テーブルが見つかりません");
     alert("テーブルがありません");
     return;
   }
+  console.log("✔ table found:", table);
 
   // ------------------------------
   // 1. ヘッダー取得
@@ -16,13 +21,17 @@ export async function saveCsvFile(csvType, csvFile) {
     .slice(1) // 先頭の "#" を除く
     .map(th => th.textContent);
 
+  console.log("✔ headers:", headers);
+
   // ------------------------------
   // 2. 行データ取得
   // ------------------------------
   const rows = [];
   const trList = table.querySelectorAll("tbody tr");
 
-  trList.forEach(tr => {
+  console.log("✔ tr count:", trList.length);
+
+  trList.forEach((tr, rowIndex) => {
     const cells = tr.querySelectorAll("td");
     const obj = {};
 
@@ -30,6 +39,7 @@ export async function saveCsvFile(csvType, csvFile) {
       obj[h] = cells[i + 1].textContent; // 先頭の "#" を除く
     });
 
+    console.log(`row ${rowIndex}:`, obj);
     rows.push(obj);
   });
 
@@ -38,23 +48,32 @@ export async function saveCsvFile(csvType, csvFile) {
   // ------------------------------
   const csvLines = [];
 
-  // ヘッダー行
   csvLines.push(headers.join(","));
 
-  // データ行
-  rows.forEach(row => {
+  rows.forEach((row, i) => {
     const line = headers.map(h => row[h] ?? "").join(",");
     csvLines.push(line);
+    console.log(`csv line ${i}:`, line);
   });
 
   const csvText = csvLines.join("\n") + "\n";
+
+  console.log("=== FINAL CSV TEXT ===\n" + csvText);
 
   // ------------------------------
   // 4. GitHub に保存（全書き換え）
   // ------------------------------
   const path = `logs/${csvType}/${csvFile}`;
+  console.log("✔ writeText path:", path);
 
-  await writeText(path, csvText);
+  try {
+    const result = await writeText(path, csvText);
+    console.log("✔ writeText result:", result);
+    alert("CSV を保存しました（全行を上書きしました）");
+  } catch (e) {
+    console.error("❌ writeText error:", e);
+    alert("保存に失敗しました（Console を確認してください）");
+  }
 
-  alert("CSV を保存しました（全行を上書きしました）");
+  console.log("=== saveCsvFile END ===");
 }
