@@ -2,7 +2,7 @@
 
 import { loadCSV } from "./loader.js";
 import { renderCsvTable } from "./table.js";
-import { attachEditor, addRow } from "./editor.js";
+import { attachEditor, addRow, deleteRow, getSelectedRowIndex } from "./editor.js";
 import { saveCsvFile } from "./saver.js";
 
 console.log("=== admin/edit-csv/edit-csv.js loaded ===");
@@ -45,6 +45,30 @@ document.getElementById("addRowBtn").addEventListener("click", () => {
 
   // 行追加
   addRow(currentRows, headers);
+
+  // 再描画
+  renderCsvTable(currentRows);
+
+  // 編集ロジックを再度紐づける
+  const newTable = document.querySelector("#csvTableArea table");
+  currentRows = attachEditor(newTable);
+});
+
+// 行削除
+document.getElementById("deleteRowBtn").addEventListener("click", () => {
+  if (!currentRows) {
+    alert("先に CSV を読み込んでください");
+    return;
+  }
+
+  const index = getSelectedRowIndex();
+  if (index === null) {
+    alert("削除する行番号をクリックしてください");
+    return;
+  }
+
+  // 行削除
+  deleteRow(currentRows, index);
 
   // 再描画
   renderCsvTable(currentRows);

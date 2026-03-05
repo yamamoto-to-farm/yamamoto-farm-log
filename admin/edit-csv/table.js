@@ -30,6 +30,8 @@ export function renderCsvTable(rows) {
     // 行番号
     const tdIndex = document.createElement("td");
     tdIndex.textContent = idx + 1;
+    tdIndex.dataset.rowIndex = idx;   // ★ 追加
+    tdIndex.classList.add("row-index");
     tr.appendChild(tdIndex);
 
     // 各セル

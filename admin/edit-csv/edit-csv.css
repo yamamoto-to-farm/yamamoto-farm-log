@@ -1,0 +1,7 @@
+.selected-row {
+  background: #ffe9a8;
+}
+.row-index {
+  cursor: pointer;
+  background: #f7f7f7;
+}
