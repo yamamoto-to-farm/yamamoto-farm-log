@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>サマリー管理</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { margin-bottom: 10px; }
+    .list { margin-top: 20px; }
+    .item {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 6px 12px;
+      background: #0078d4;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn:disabled {
+      background: #aaa;
+      cursor: default;
+    }
+    #generateAll {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>サマリー管理</h1>
+  <p>サマリーが未生成の作付けを一覧表示します。</p>
+
+  <!-- 一覧を入れる場所 -->
+  <div id="summaryList" class="list">
+    <!-- JS で以下のような item を追加する -->
+    <!--
+    <div class="item">
+      <div>
+        <strong>2023-04-10</strong> 三角畑(下) 春キャベツ
+      </div>
+      <button class="btn">生成</button>
+    </div>
+    -->
+  </div>
+
+  <!-- 一括生成ボタン -->
+  <button id="generateAll" class="btn">すべて生成</button>
+
+  <!-- ステータス表示 -->
+  <div id="status"></div>
+
+  <script src="../common/summary.js"></script>
+  <script src="./summary-manager.js"></script>
+
+</body>
+</html>
