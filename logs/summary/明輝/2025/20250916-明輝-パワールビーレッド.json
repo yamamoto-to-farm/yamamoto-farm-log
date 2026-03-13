@@ -1,0 +1,24 @@
+{
+  "plantingRef": "20250916-明輝-パワールビーレッド",
+  "field": "明輝",
+  "year": 2025,
+  "variety": "パワールビーレッド",
+  "plantDate": "2025-09-16",
+  "seedRef": "20250802-パワールビーレッド-01",
+  "harvest": {
+    "count": 1,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 8064,
+  "spacing": {
+    "row": 33,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-13T23:42:17.597Z"
+}
