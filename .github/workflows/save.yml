@@ -43,35 +43,27 @@ jobs:
           echo "date=$DATE" >> $GITHUB_OUTPUT
 
       # --------------------------------------------
-      # 4. JSON 保存（append）
+      # 4. JSON 保存（summary はここだけ使う）
       # --------------------------------------------
-      - name: Save JSON (append to array)
+      - name: Save JSON (summary or normal log)
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           DATE=${{ steps.extract.outputs.date }}
-          JSON_FILE="logs/$TYPE/$DATE.json"
 
-          mkdir -p logs/$TYPE
+          # summary の場合は DATE が "logs/summary/field/year/ref.json"
+          JSON_FILE="$DATE"
 
-          # 既存 JSON を読み込み（なければ空配列）
-          if [ -f "$JSON_FILE" ]; then
-            EXISTING=$(cat "$JSON_FILE")
-          else
-            EXISTING="[]"
-          fi
+          # ディレクトリ作成
+          mkdir -p "$(dirname "$JSON_FILE")"
 
-          # payload.json を配列に追加
-          UPDATED=$(jq -s '.[0] + [.[1]]' <(echo "$EXISTING") payload.json)
-
-          # 上書き保存
-          echo "$UPDATED" > "$JSON_FILE"
+          # JSON をそのまま保存
+          jq -r '.json' payload.json > "$JSON_FILE"
 
       # --------------------------------------------
-      # 5. CSV append（通常の saveLog 用）
-      #    ※ replaceCsv が空のときだけ実行
+      # 5. CSV append（通常ログのみ）
       # --------------------------------------------
       - name: Save CSV (append)
-        if: ${{ fromJson(inputs.payload).replaceCsv == '' }}
+        if: ${{ fromJson(inputs.payload).replaceCsv == '' && fromJson(inputs.payload).type != 'summary' }}
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           CSV_LINE=$(jq -r '.csv' payload.json)
@@ -83,15 +75,13 @@ jobs:
 
       # --------------------------------------------
       # 6. CSV 全書き換え（管理画面用）
-      #    ※ replaceCsv が空でないときだけ実行
       # --------------------------------------------
       - name: Replace CSV (overwrite all.csv)
-        if: ${{ fromJson(inputs.payload).replaceCsv != '' }}
+        if: ${{ fromJson(inputs.payload).replaceCsv != '' && fromJson(inputs.payload).type != 'summary' }}
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           mkdir -p logs/$TYPE
 
-          # replaceCsv の内容をそのまま all.csv に書き込む
           jq -r '.replaceCsv' payload.json > logs/$TYPE/all.csv
 
       # --------------------------------------------
