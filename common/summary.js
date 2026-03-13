@@ -60,9 +60,9 @@ async function summaryUpdate(plantingRef) {
   await summaryEnsureFolders(field, year);
 
   // CSV 読み込み
-  const planting = await loadCsv("data/planting/all.csv");
-  const harvest = await loadCsv("data/harvest/all.csv");
-  const shipping = await loadCsv("data/shipping/all.csv");
+  const planting = await loadCsv("../data/planting/all.csv");
+  const harvest = await loadCsv("../data/harvest/all.csv");
+  const shipping = await loadCsv("../data/shipping/all.csv");
 
   // 対象作付けの抽出
   const p = planting.find(x => x.plantingRef === plantingRef);
