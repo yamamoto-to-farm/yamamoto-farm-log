@@ -17,9 +17,12 @@ async function summaryExists(field, year, plantingRef) {
   const path = `../summary/${field}/${year}/${plantingRef}.json`;
 
   try {
-    const res = await fetch(path, { method: "HEAD", cache: "no-store"});
-    return res.ok; // 200 → true、404 → false
+    const res = await fetch(path, { method: "HEAD", cache: "no-store" });
+
+    // res.ok → 200 のときだけ true
+    return res.ok;
   } catch (e) {
+    // ネットワークエラー時も false 扱い
     return false;
   }
 }
