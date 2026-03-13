@@ -14,7 +14,7 @@ async function loadCsv(path) {
    サマリー存在チェック（HEAD + no-store）
 --------------------------------------------------------- */
 async function summaryExists(field, year, plantingRef) {
-  const path = `../summary/${field}/${year}/${plantingRef}.json`;
+  const path = `../logs/summary/${field}/${year}/${plantingRef}.json`;
 
   try {
     const res = await fetch(path, { method: "HEAD", cache: "no-store" });
