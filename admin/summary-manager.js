@@ -2,7 +2,7 @@
 // サマリー未生成一覧の表示と、生成ボタンの制御
 
 /* ---------------------------------------------------------
-   CSV 読み込み（summary.js と同じ loadCsv を使用）
+   CSV 読み込み
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(path);
@@ -11,30 +11,34 @@ async function loadCsv(path) {
 }
 
 /* ---------------------------------------------------------
-   サマリー存在チェック
+   サマリー存在チェック（HEAD + no-store）
 --------------------------------------------------------- */
 async function summaryExists(field, year, plantingRef) {
   const path = `../summary/${field}/${year}/${plantingRef}.json`;
 
   try {
     const res = await fetch(path, { method: "HEAD", cache: "no-store" });
-
-    // res.ok → 200 のときだけ true
-    return res.ok;
+    return res.ok; // 200 → true、404 → false
   } catch (e) {
-    // ネットワークエラー時も false 扱い
     return false;
   }
 }
 
 /* ---------------------------------------------------------
-   plantingRef から field / year を抽出
+   plantingRef → field/year 抽出（安全版）
 --------------------------------------------------------- */
 function parsePlantingRef(plantingRef) {
+  if (!plantingRef || typeof plantingRef !== "string") return null;
+
   const parts = plantingRef.split("-");
+  if (parts.length < 2) return null;
+
   const date = parts[0];
   const field = parts[1];
   const year = date.substring(0, 4);
+
+  if (!field || !year) return null;
+
   return { field, year };
 }
 
@@ -42,19 +46,19 @@ function parsePlantingRef(plantingRef) {
    未生成サマリー一覧を取得
 --------------------------------------------------------- */
 async function getMissingSummaries() {
-  // /admin から見た正しいパス
   const planting = await loadCsv("../logs/planting/all.csv");
   const missing = [];
 
   for (const p of planting) {
-    if (!p.plantingRef) continue; // 空行対策
+    if (!p.plantingRef) continue; // ★ 空行スキップ
 
-    const { field, year } = parsePlantingRef(p.plantingRef);
+    const parsed = parsePlantingRef(p.plantingRef);
+    if (!parsed) continue;
+
+    const { field, year } = parsed;
+
     const exists = await summaryExists(field, year, p.plantingRef);
-
-    if (!exists) {
-      missing.push(p);
-    }
+    if (!exists) missing.push(p);
   }
 
   return missing;
@@ -73,14 +77,15 @@ function renderList(list) {
   }
 
   for (const p of list) {
-    const { field } = parsePlantingRef(p.plantingRef);
+    const parsed = parsePlantingRef(p.plantingRef);
+    const field = parsed ? parsed.field : "(不明)";
 
     const div = document.createElement("div");
     div.className = "item";
 
     div.innerHTML = `
       <div>
-        <strong>${p.plantDate}</strong> ${field} ${p.variety}
+        <strong>${p.plantDate || "(日付不明)"}</strong> ${field} ${p.variety}
       </div>
       <button class="btn" data-ref="${p.plantingRef}">生成</button>
     `;
@@ -88,7 +93,7 @@ function renderList(list) {
     container.appendChild(div);
   }
 
-  // 個別生成ボタンにイベント付与
+  // 個別生成ボタン
   container.querySelectorAll("button").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       const ref = e.target.dataset.ref;
@@ -108,7 +113,6 @@ async function generateOne(plantingRef) {
 
   status.textContent = `${plantingRef} の生成が完了しました。`;
 
-  // 再読み込みして一覧更新
   const missing = await getMissingSummaries();
   renderList(missing);
 }
@@ -124,7 +128,6 @@ async function generateAll() {
 
   status.textContent = "すべてのサマリー生成が完了しました。";
 
-  // 再読み込みして一覧更新
   const missing = await getMissingSummaries();
   renderList(missing);
 }
