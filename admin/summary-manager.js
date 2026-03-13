@@ -17,7 +17,7 @@ async function summaryExists(field, year, plantingRef) {
   const path = `../summary/${field}/${year}/${plantingRef}.json`;
 
   try {
-    const res = await fetch(path, { method: "HEAD" });
+    const res = await fetch(path, { method: "HEAD", cache: "no-store"});
     return res.ok; // 200 → true、404 → false
   } catch (e) {
     return false;
