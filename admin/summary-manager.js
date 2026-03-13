@@ -14,6 +14,7 @@ async function loadCsv(path) {
    サマリー存在チェック
 --------------------------------------------------------- */
 async function summaryExists(field, year, plantingRef) {
+  // /admin から見た相対パス
   const path = `../summary/${field}/${year}/${plantingRef}.json`;
   const res = await fetch(path, { method: "GET" });
   return res.status === 200;
@@ -34,13 +35,16 @@ function parsePlantingRef(plantingRef) {
    未生成サマリー一覧を取得
 --------------------------------------------------------- */
 async function getMissingSummaries() {
-  // ★ /admin から見た正しいパスに修正
+  // /admin から見た正しいパス
   const planting = await loadCsv("../data/planting/all.csv");
   const missing = [];
 
   for (const p of planting) {
+    if (!p.plantingRef) continue; // 空行対策
+
     const { field, year } = parsePlantingRef(p.plantingRef);
     const exists = await summaryExists(field, year, p.plantingRef);
+
     if (!exists) {
       missing.push(p);
     }
