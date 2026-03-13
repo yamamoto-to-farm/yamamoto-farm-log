@@ -73,7 +73,7 @@ function renderList(list) {
 
     div.innerHTML = `
       <div>
-        <strong>${p.plantingDate}</strong> ${field} ${p.variety}
+        <strong>${p.plantDate}</strong> ${field} ${p.variety}
       </div>
       <button class="btn" data-ref="${p.plantingRef}">生成</button>
     `;
