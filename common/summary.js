@@ -143,6 +143,10 @@ async function summaryUpdate(plantingRef) {
 /* ---------------------------------------------------------
    5. summaryUpdateAll()
 --------------------------------------------------------- */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function summaryUpdateAll() {
   const planting = await loadCsv("../logs/planting/all.csv");
 
@@ -161,6 +165,8 @@ async function summaryUpdateAll() {
     if (res.ok) continue;
 
     await summaryUpdate(p.plantingRef);
+    // ★ GitHub Actions の負荷を避けるための待ち時間
+    await sleep(1200); // 1秒待機
   }
 }
 
