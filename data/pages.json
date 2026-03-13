@@ -65,7 +65,6 @@
       "roles": ["admin"],
       "icon": "./assets/icons/admin.png"
     },
-
     {
       "id": "edit-csv",
       "name": "CSV 編集ツール",
@@ -81,6 +80,14 @@
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "./assets/icons/qr.png"
+    },
+    {
+      "id": "summary-manager",
+      "name": "サマリー管理",
+      "path": "./summary-manager.html",
+      "category": "管理/ツール",
+      "roles": ["admin"],
+      "icon": "./assets/icons/summary.png"
     },
     {
       "id": "varieties",
