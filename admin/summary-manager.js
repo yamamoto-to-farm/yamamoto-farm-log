@@ -36,7 +36,7 @@ function parsePlantingRef(plantingRef) {
 --------------------------------------------------------- */
 async function getMissingSummaries() {
   // /admin から見た正しいパス
-  const planting = await loadCsv("../data/planting/all.csv");
+  const planting = await loadCsv("../logs/planting/all.csv");
   const missing = [];
 
   for (const p of planting) {
