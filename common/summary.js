@@ -1,31 +1,34 @@
 // common/summary.js
-// サマリー生成ロジック（フォルダ生成・サマリー生成・一括生成）
+// サマリー生成ロジック（logs/summary/ に保存）
 
 /* ---------------------------------------------------------
-   1. GitHub 保存ラッパー
+   1. Cloudflare Workers 経由で GitHub Actions を起動
 --------------------------------------------------------- */
 async function saveToGitHub(path, content) {
-  const res = await fetch("/api/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, content })
-  });
-  return await res.json();
+  const payload = {
+    type: "summary",     // logs/summary/ に保存される
+    dateStr: path,       // summary/三角畑/2026/xxxx.json
+    json: content,
+    csv: "",
+    replaceCsv: ""       // summary は CSV を触らない
+  };
+
+  const res = await fetch(
+    "https://raspy-poetry-cf6f.yamamoto-to-farm.workers.dev",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("サマリー保存サーバーへの送信に失敗");
+  }
 }
 
 /* ---------------------------------------------------------
-   2. summary フォルダの存在保証
---------------------------------------------------------- */
-async function summaryEnsureFolders(field, year) {
-  const base = `summary/${field}`;
-  const yearPath = `${base}/${year}`;
-
-  await saveToGitHub(`${base}/.keep`, "");
-  await saveToGitHub(`${yearPath}/.keep`, "");
-}
-
-/* ---------------------------------------------------------
-   3. CSV 読み込み
+   2. CSV 読み込み
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(path);
@@ -34,7 +37,7 @@ async function loadCsv(path) {
 }
 
 /* ---------------------------------------------------------
-   4. plantingRef → field/year 抽出（安全版）
+   3. plantingRef → field/year 抽出（安全版）
 --------------------------------------------------------- */
 function parsePlantingRef(plantingRef) {
   if (!plantingRef || typeof plantingRef !== "string") return null;
@@ -52,17 +55,15 @@ function parsePlantingRef(plantingRef) {
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate(plantingRef)
+   4. summaryUpdate(plantingRef)
 --------------------------------------------------------- */
 async function summaryUpdate(plantingRef) {
   const parsed = parsePlantingRef(plantingRef);
-  if (!parsed) return; // 不正データは無視
+  if (!parsed) return;
 
   const { field, year } = parsed;
 
-  await summaryEnsureFolders(field, year);
-
-  // ★ 正しいパス（logs 配下）
+  // logs 配下の CSV を読む
   const planting = await loadCsv("../logs/planting/all.csv");
   const harvest = await loadCsv("../logs/harvest/all.csv");
   const shipping = await loadCsv("../logs/shipping/all.csv");
@@ -108,7 +109,7 @@ async function summaryUpdate(plantingRef) {
     year: Number(year),
     variety: p.variety,
     cropType: p.cropType,
-    plantDate: p.plantDate, // ★ 修正済み
+    plantDate: p.plantDate,
     seedRef: p.seedRef,
     harvest: {
       start: harvestStart,
@@ -131,29 +132,29 @@ async function summaryUpdate(plantingRef) {
   };
 
   /* ------------------------------
-     保存
+     保存（logs/summary/ に統一）
   ------------------------------ */
-  const path = `summary/${field}/${year}/${plantingRef}.json`;
+  const path = `logs/summary/${field}/${year}/${plantingRef}.json`;
   await saveToGitHub(path, JSON.stringify(summary, null, 2));
 
   return summary;
 }
 
 /* ---------------------------------------------------------
-   6. summaryUpdateAll()
+   5. summaryUpdateAll()
 --------------------------------------------------------- */
 async function summaryUpdateAll() {
   const planting = await loadCsv("../logs/planting/all.csv");
 
   for (const p of planting) {
-    if (!p.plantingRef) continue; // ★ 空行スキップ
+    if (!p.plantingRef) continue;
 
     const parsed = parsePlantingRef(p.plantingRef);
     if (!parsed) continue;
 
     const { field, year } = parsed;
 
-    const path = `../summary/${field}/${year}/${p.plantingRef}.json`;
+    const path = `../logs/summary/${field}/${year}/${p.plantingRef}.json`;
 
     // HEAD で静かに存在チェック
     const res = await fetch(path, { method: "HEAD", cache: "no-store" });
@@ -164,7 +165,7 @@ async function summaryUpdateAll() {
 }
 
 /* ---------------------------------------------------------
-   7. 公開 API
+   6. 公開 API
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.summaryUpdateAll = summaryUpdateAll;
