@@ -89,7 +89,15 @@ export async function initSummaryManager() {
     container.querySelectorAll("button").forEach(btn => {
       btn.addEventListener("click", async (e) => {
         const ref = e.target.dataset.ref;
-        await window.summaryUpdate(ref);
+
+        try {
+          await window.summaryUpdate(ref);
+          alert("サマリーを生成しました！");
+        } catch (err) {
+          console.error(err);
+          alert("サマリー生成に失敗しました");
+        }
+
         const missing = await getMissingSummaries();
         renderList(missing);
       });
