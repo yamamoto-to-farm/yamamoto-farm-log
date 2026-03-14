@@ -17,6 +17,10 @@ export async function initSummaryManager() {
 
     try {
       const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
+      
+      // 404 → 未生成 → false
+      if (res.status === 404) return false;
+
       return res.ok;
     } catch {
       return false;
