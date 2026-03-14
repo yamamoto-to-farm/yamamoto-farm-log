@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250921-事業所(西・３)-青龍345",
+  "field": "事業所(西・３)",
+  "year": 2025,
+  "variety": "青龍345",
+  "plantDate": "2025-09-21",
+  "seedRef": "20250823-青龍345-01",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 11520,
+  "spacing": {
+    "row": 33,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T06:21:38.577Z"
+}
