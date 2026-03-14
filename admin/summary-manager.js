@@ -1,5 +1,6 @@
 // summary-manager.js
 import { cb, safeFieldName, safeFileName } from "../common/utils.js";
+import { summaryUpdate, summaryUpdateAll } from "../common/summary.js";
 
 /* ---------------------------------------------------------
    CSV 読み込み
