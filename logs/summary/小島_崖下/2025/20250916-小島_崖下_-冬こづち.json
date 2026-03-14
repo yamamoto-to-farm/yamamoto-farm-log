@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250916-小島(崖下)-冬こづち",
+  "field": "小島(崖下)",
+  "year": 2025,
+  "variety": "冬こづち",
+  "plantDate": "2025-09-16",
+  "seedRef": "20250807-冬こづち-02",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 4928,
+  "spacing": {
+    "row": 33,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T12:49:56.389Z"
+}
