@@ -11,21 +11,22 @@ export async function initSummaryManager() {
   }
 
   async function summaryExists(field, year, plantingRef) {
-    const safeField = safeFieldName(field);
-    const safeRef = safeFileName(plantingRef);
-    const path = `../logs/summary/${safeField}/${year}/${safeRef}.json`;
+  const safeField = safeFieldName(field);
+  const safeRef = safeFileName(plantingRef);
+  const path = `../logs/summary/${safeField}/${year}/${safeRef}.json`;
 
-    try {
-      const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
-      
-      // 404 → 未生成 → false
-      if (res.status === 404) return false;
+  try {
+    const res = await fetch(cb(path), {
+      method: "GET",
+      cache: "no-store"
+    });
 
-      return res.ok;
-    } catch {
-      return false;
-    }
+    // JSON が返ってきたら存在
+    return res.ok;
+  } catch {
+    return false;
   }
+}
 
   function parsePlantingRef(plantingRef) {
     const parts = plantingRef.split("-");
