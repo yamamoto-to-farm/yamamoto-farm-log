@@ -11,8 +11,11 @@ async function loadIndex() {
   try {
     const res = await fetch(cb("../data/summary-index.json"));
     if (!res.ok) return {};
-    return await res.json();
-  } catch {
+    const json = await res.json();
+    console.log(">>> loadIndex OK:", json);
+    return json;
+  } catch (e) {
+    console.warn(">>> loadIndex ERROR:", e);
     return {};
   }
 }
@@ -21,6 +24,9 @@ async function loadIndex() {
    2. summary-index.json を保存（saveLog 統一）
 --------------------------------------------------------- */
 async function saveIndex(index) {
+  console.log(">>> saveIndex CALLED");
+  console.log(">>> saveIndex DATA:", JSON.stringify(index, null, 2));
+
   await saveLog(
     "file",
     "data/summary-index.json",
@@ -32,11 +38,10 @@ async function saveIndex(index) {
 
 /* ---------------------------------------------------------
    3. CSV 読み込み（404 → 空配列）
-      weight/all.csv は存在しない可能性 → HEAD で確認
 --------------------------------------------------------- */
 async function loadCsv(path) {
+  console.log(">>> loadCsv:", path);
 
-  // weight/all.csv の存在チェック（404 を Network に出さない）
   if (path.includes("weight/all.csv")) {
     try {
       const check = await fetch(cb(path), {
@@ -46,14 +51,15 @@ async function loadCsv(path) {
       });
 
       if (!check.ok) {
-        return []; // 存在しない → 空配列
+        console.log(">>> weight/all.csv NOT FOUND → []");
+        return [];
       }
     } catch {
+      console.log(">>> weight/all.csv HEAD ERROR → []");
       return [];
     }
   }
 
-  // 通常の CSV 読み込み
   const res = await fetch(cb(path));
   if (!res.ok) return [];
   const text = await res.text();
@@ -64,6 +70,8 @@ async function loadCsv(path) {
    4. plantingRef → field/year 抽出
 --------------------------------------------------------- */
 function parsePlantingRef(plantingRef) {
+  console.log(">>> parsePlantingRef:", plantingRef);
+
   if (!plantingRef || typeof plantingRef !== "string") return null;
 
   const parts = plantingRef.split("-");
@@ -72,6 +80,8 @@ function parsePlantingRef(plantingRef) {
   const date = parts[0];
   const field = parts[1];
   const year = date.substring(0, 4);
+
+  console.log(">>> parsed:", { field, year });
 
   if (!field || !year) return null;
 
@@ -82,21 +92,36 @@ function parsePlantingRef(plantingRef) {
    5. summaryUpdate(plantingRef)
 --------------------------------------------------------- */
 async function summaryUpdate(plantingRef) {
+  console.log("==============================================");
+  console.log(">>> summaryUpdate START:", plantingRef);
+
   const parsed = parsePlantingRef(plantingRef);
-  if (!parsed) return;
+  if (!parsed) {
+    console.warn(">>> parsePlantingRef FAILED");
+    return;
+  }
 
   const { field, year } = parsed;
 
   const safeField = safeFieldName(field);
   const safeRef = safeFileName(plantingRef);
 
+  console.log(">>> field =", field);
+  console.log(">>> safeField =", safeField);
+  console.log(">>> safeRef =", safeRef);
+
   // logs 配下の CSV を読む
   const planting = await loadCsv("../logs/planting/all.csv");
   const harvest = await loadCsv("../logs/harvest/all.csv");
-  const shipping = await loadCsv("../logs/weight/all.csv"); // ← 修正済み
+  const shipping = await loadCsv("../logs/weight/all.csv");
 
   const p = planting.find(x => x.plantingRef === plantingRef);
-  if (!p) return;
+  console.log(">>> p =", p);
+
+  if (!p) {
+    console.warn(">>> p NOT FOUND → summaryUpdate STOP");
+    return;
+  }
 
   const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
   const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
@@ -158,12 +183,17 @@ async function summaryUpdate(plantingRef) {
     lastUpdated: new Date().toISOString()
   };
 
+  console.log(">>> summary JSON:", summary);
+
   /* ------------------------------
-     サマリー保存（saveLog 統一）
+     サマリー保存
   ------------------------------ */
+  const summaryPath = `logs/summary/${safeField}/${year}/${safeRef}.json`;
+  console.log(">>> save summary:", summaryPath);
+
   await saveLog(
     "summary",
-    `logs/summary/${safeField}/${year}/${safeRef}.json`,
+    summaryPath,
     JSON.stringify(summary, null, 2),
     "",
     ""
@@ -174,15 +204,26 @@ async function summaryUpdate(plantingRef) {
   ------------------------------ */
   const index = await loadIndex();
 
+  console.log(">>> index BEFORE UPDATE:", JSON.stringify(index, null, 2));
+
   if (!index[safeField]) index[safeField] = {};
   if (!index[safeField][year]) index[safeField][year] = [];
 
   const fileName = `${safeRef}.json`;
+
+  console.log(">>> fileName =", fileName);
+  console.log(">>> exists =", index[safeField][year].includes(fileName));
+
   if (!index[safeField][year].includes(fileName)) {
     index[safeField][year].push(fileName);
   }
 
+  console.log(">>> index AFTER UPDATE:", JSON.stringify(index, null, 2));
+
   await saveIndex(index);
+
+  console.log(">>> summaryUpdate END");
+  console.log("==============================================");
 
   return summary;
 }
@@ -195,6 +236,8 @@ function sleep(ms) {
 }
 
 async function summaryUpdateAll() {
+  console.log(">>> summaryUpdateAll START");
+
   const planting = await loadCsv("../logs/planting/all.csv");
   const index = await loadIndex();
 
@@ -210,18 +253,22 @@ async function summaryUpdateAll() {
     const safeRef = safeFileName(p.plantingRef);
     const fileName = `${safeRef}.json`;
 
-    // index.json に存在するならスキップ
+    console.log(">>> check:", safeField, year, fileName);
+
     if (
       index[safeField] &&
       index[safeField][year] &&
       index[safeField][year].includes(fileName)
     ) {
+      console.log(">>> SKIP:", fileName);
       continue;
     }
 
     await summaryUpdate(p.plantingRef);
     await sleep(1200);
   }
+
+  console.log(">>> summaryUpdateAll END");
 }
 
 /* ---------------------------------------------------------

@@ -15,21 +15,40 @@ export function formatDate(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/* ---------------------------------------------------------
+   safeFieldName（デバッグログ付き）
+--------------------------------------------------------- */
 export function safeFieldName(field) {
-  return field
-    .replace(/[()（）]/g, "_")  // 括弧を _
-    .replace(/_+$/g, "");       // ★ 末尾の _ を削除（これが決定打）
+  const before = field;
+  const after = field
+    .replace(/[()（）]/g, "_")
+    .replace(/_+$/g, "");
+
+  console.log("[safeFieldName] before =", before, "after =", after);
+  return after;
 }
 
+/* ---------------------------------------------------------
+   safeFileName（デバッグログ付き）
+--------------------------------------------------------- */
 export function safeFileName(name) {
-  return name
-    .replace(/[()（）]/g, "_")      // 括弧を _
-    .replace(/[^\w\u3040-\u30FF\u4E00-\u9FFF-]/g, "_") // 日本語・英数字・ハイフン以外を _
-    .replace(/_+/g, "_")            // 連続した _ を1つに
-    .replace(/^_+|_+$/g, "");       // 先頭・末尾の _ を削除
+  const before = name;
+  const after = name
+    .replace(/[()（）]/g, "_")
+    .replace(/[^\w\u3040-\u30FF\u4E00-\u9FFF-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  console.log("[safeFileName] before =", before, "after =", after);
+  return after;
 }
 
+/* ---------------------------------------------------------
+   cb（キャッシュバスター）
+--------------------------------------------------------- */
 export function cb(url) {
   const v = Date.now();
-  return url.includes("?") ? `${url}&v=${v}` : `${url}?v=${v}`;
+  const out = url.includes("?") ? `${url}&v=${v}` : `${url}?v=${v}`;
+  console.log("[cb] in =", url, "out =", out);
+  return out;
 }
