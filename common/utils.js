@@ -23,8 +23,10 @@ export function safeFieldName(field) {
 
 export function safeFileName(name) {
   return name
-    .replace(/[()（）]/g, "_")  // 括弧を _
-    .replace(/_+$/g, "");       // ★ 末尾の _ を削除
+    .replace(/[()（）]/g, "_")      // 括弧を _
+    .replace(/[^\w\u3040-\u30FF\u4E00-\u9FFF-]/g, "_") // 日本語・英数字・ハイフン以外を _
+    .replace(/_+/g, "_")            // 連続した _ を1つに
+    .replace(/^_+|_+$/g, "");       // 先頭・末尾の _ を削除
 }
 
 
