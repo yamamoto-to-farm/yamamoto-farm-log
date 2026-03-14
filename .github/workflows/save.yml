@@ -81,7 +81,7 @@ jobs:
           jq -r '.replaceCsv' payload.json > logs/$TYPE/all.csv
 
       # --------------------------------------------
-      # 7. Commit & Push（★修正ポイント★）
+      # 7. Commit & Push（★重要修正ポイント★）
       # --------------------------------------------
       - name: Commit & Push
         run: |
@@ -91,5 +91,7 @@ jobs:
           # ★ logs/* ではなく、全体をコミットする
           git add .
 
-          git commit -m "save ${{ steps.extract.outputs.type }} log for ${{ steps.extract.outputs.date }}" || echo "No changes"
+          # ★ summary-index.json だけ変更された場合でも commit される
+          git commit -am "save ${{ steps.extract.outputs.type }} log for ${{ steps.extract.outputs.date }}" || echo "No changes"
+
           git push
