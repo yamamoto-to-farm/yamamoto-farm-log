@@ -43,20 +43,16 @@ jobs:
           echo "date=$DATE" >> $GITHUB_OUTPUT
 
       # --------------------------------------------
-      # 4. JSON 保存（summary はここだけ使う）
+      # 4. JSON 保存（summary も通常ログもここ）
       # --------------------------------------------
       - name: Save JSON (summary or normal log)
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           DATE=${{ steps.extract.outputs.date }}
 
-          # summary の場合は DATE が "logs/summary/field/year/ref.json"
           JSON_FILE="$DATE"
 
-          # ディレクトリ作成
           mkdir -p "$(dirname "$JSON_FILE")"
-
-          # JSON をそのまま保存
           jq -r '.json' payload.json > "$JSON_FILE"
 
       # --------------------------------------------
@@ -85,12 +81,15 @@ jobs:
           jq -r '.replaceCsv' payload.json > logs/$TYPE/all.csv
 
       # --------------------------------------------
-      # 7. Commit & Push
+      # 7. Commit & Push（★修正ポイント★）
       # --------------------------------------------
       - name: Commit & Push
         run: |
           git config user.name "farm-bot"
           git config user.email "actions@github.com"
-          git add logs/*
-          git commit -m "save ${{ steps.extract.outputs.type }} log for ${{ steps.extract.outputs.date }}"
+
+          # ★ logs/* ではなく、全体をコミットする
+          git add .
+
+          git commit -m "save ${{ steps.extract.outputs.type }} log for ${{ steps.extract.outputs.date }}" || echo "No changes"
           git push
