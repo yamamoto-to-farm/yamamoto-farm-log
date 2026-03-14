@@ -1,11 +1,18 @@
 // summary-manager.js
-import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
+import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=20260314";
 
 export async function initSummaryManager() {
 
-  /* ---------------------------------------------------------
-     CSV 読み込み（404 → 空配列）
-  --------------------------------------------------------- */
+  async function loadIndex() {
+    try {
+      const res = await fetch(cb("../data/summary-index.json"));
+      if (!res.ok) return {};
+      return await res.json();
+    } catch {
+      return {};
+    }
+  }
+
   async function loadCsv(path) {
     const res = await fetch(cb(path));
     if (!res.ok) return [];
@@ -13,31 +20,6 @@ export async function initSummaryManager() {
     return Papa.parse(text, { header: true }).data;
   }
 
-  /* ---------------------------------------------------------
-     サマリー存在チェック（GET で静かに確認）
-     → 404 が出ない
-  --------------------------------------------------------- */
-  async function summaryExists(field, year, plantingRef) {
-    const safeField = safeFieldName(field);
-    const safeRef = safeFileName(plantingRef);
-    const path = `../logs/summary/${safeField}/${year}/${safeRef}.json`;
-
-    try {
-      const res = await fetch(cb(path), {
-        method: "GET",
-        cache: "no-store",
-        redirect: "manual"
-      });
-
-      return res.ok; // 200 → true / 404 → false
-    } catch {
-      return false;
-    }
-  }
-
-  /* ---------------------------------------------------------
-     plantingRef → field/year
-  --------------------------------------------------------- */
   function parsePlantingRef(plantingRef) {
     const parts = plantingRef.split("-");
     if (parts.length < 2) return null;
@@ -47,11 +29,18 @@ export async function initSummaryManager() {
     };
   }
 
-  /* ---------------------------------------------------------
-     未生成サマリー一覧
-  --------------------------------------------------------- */
+  function summaryExistsInIndex(index, field, year, safeRef) {
+    return (
+      index[field] &&
+      index[field][year] &&
+      index[field][year].includes(`${safeRef}.json`)
+    );
+  }
+
   async function getMissingSummaries() {
+    const index = await loadIndex();
     const planting = await loadCsv("../logs/planting/all.csv");
+
     const missing = [];
 
     for (const p of planting) {
@@ -60,16 +49,17 @@ export async function initSummaryManager() {
       const parsed = parsePlantingRef(p.plantingRef);
       if (!parsed) continue;
 
-      const exists = await summaryExists(parsed.field, parsed.year, p.plantingRef);
+      const safeField = safeFieldName(parsed.field);
+      const safeRef = safeFileName(p.plantingRef);
+
+      const exists = summaryExistsInIndex(index, safeField, parsed.year, safeRef);
+
       if (!exists) missing.push(p);
     }
 
     return missing;
   }
 
-  /* ---------------------------------------------------------
-     UI 描画
-  --------------------------------------------------------- */
   function renderList(list) {
     const container = document.getElementById("summaryList");
     container.innerHTML = "";
@@ -96,25 +86,21 @@ export async function initSummaryManager() {
       container.appendChild(div);
     }
 
-    // 個別生成
     container.querySelectorAll("button").forEach(btn => {
       btn.addEventListener("click", async (e) => {
         const ref = e.target.dataset.ref;
-        await window.summaryUpdate(ref);   // ← window 方式
+        await window.summaryUpdate(ref);
         const missing = await getMissingSummaries();
         renderList(missing);
       });
     });
   }
 
-  /* ---------------------------------------------------------
-     すべて生成
-  --------------------------------------------------------- */
   document.getElementById("generateAll").addEventListener("click", async () => {
     const status = document.getElementById("status");
     status.textContent = "すべてのサマリーを生成中…";
 
-    await window.summaryUpdateAll();       // ← window 方式
+    await window.summaryUpdateAll();
 
     status.textContent = "すべてのサマリー生成が完了しました。";
 
@@ -122,9 +108,6 @@ export async function initSummaryManager() {
     renderList(missing);
   });
 
-  /* ---------------------------------------------------------
-     初期表示
-  --------------------------------------------------------- */
   const missing = await getMissingSummaries();
   renderList(missing);
 }

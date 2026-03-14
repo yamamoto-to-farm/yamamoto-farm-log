@@ -30,7 +30,28 @@ async function saveToGitHub(path, content) {
 }
 
 /* ---------------------------------------------------------
-   2. CSV 読み込み（404 → 空配列）
+   2. summary-index.json を読み込み
+--------------------------------------------------------- */
+async function loadIndex() {
+  try {
+    const res = await fetch(cb("../data/summary-index.json"));
+    if (!res.ok) return {};
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
+/* ---------------------------------------------------------
+   3. summary-index.json を保存
+--------------------------------------------------------- */
+async function saveIndex(index) {
+  const path = "data/summary-index.json";
+  await saveToGitHub(path, JSON.stringify(index, null, 2));
+}
+
+/* ---------------------------------------------------------
+   4. CSV 読み込み（404 → 空配列）
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(cb(path));
@@ -40,7 +61,7 @@ async function loadCsv(path) {
 }
 
 /* ---------------------------------------------------------
-   3. plantingRef → field/year 抽出
+   5. plantingRef → field/year 抽出
 --------------------------------------------------------- */
 function parsePlantingRef(plantingRef) {
   if (!plantingRef || typeof plantingRef !== "string") return null;
@@ -58,7 +79,7 @@ function parsePlantingRef(plantingRef) {
 }
 
 /* ---------------------------------------------------------
-   4. summaryUpdate(plantingRef)
+   6. summaryUpdate(plantingRef)
 --------------------------------------------------------- */
 async function summaryUpdate(plantingRef) {
   const parsed = parsePlantingRef(plantingRef);
@@ -138,16 +159,31 @@ async function summaryUpdate(plantingRef) {
   };
 
   /* ------------------------------
-     保存（logs/summary/<safeField>/<year>/<safeRef>.json）
+     サマリー保存
   ------------------------------ */
   const path = `logs/summary/${safeField}/${year}/${safeRef}.json`;
   await saveToGitHub(path, JSON.stringify(summary, null, 2));
+
+  /* ------------------------------
+     index.json を更新
+  ------------------------------ */
+  const index = await loadIndex();
+
+  if (!index[safeField]) index[safeField] = {};
+  if (!index[safeField][year]) index[safeField][year] = [];
+
+  const fileName = `${safeRef}.json`;
+  if (!index[safeField][year].includes(fileName)) {
+    index[safeField][year].push(fileName);
+  }
+
+  await saveIndex(index);
 
   return summary;
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdateAll()
+   7. summaryUpdateAll()
 --------------------------------------------------------- */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -155,6 +191,7 @@ function sleep(ms) {
 
 async function summaryUpdateAll() {
   const planting = await loadCsv("../logs/planting/all.csv");
+  const index = await loadIndex();
 
   for (const p of planting) {
     if (!p.plantingRef) continue;
@@ -166,11 +203,16 @@ async function summaryUpdateAll() {
 
     const safeField = safeFieldName(field);
     const safeRef = safeFileName(p.plantingRef);
+    const fileName = `${safeRef}.json`;
 
-    const path = `../logs/summary/${safeField}/${year}/${safeRef}.json`;
-
-    const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
-    if (res.ok) continue;
+    // index.json に存在するならスキップ
+    if (
+      index[safeField] &&
+      index[safeField][year] &&
+      index[safeField][year].includes(fileName)
+    ) {
+      continue;
+    }
 
     await summaryUpdate(p.plantingRef);
     await sleep(1200);
@@ -178,7 +220,7 @@ async function summaryUpdateAll() {
 }
 
 /* ---------------------------------------------------------
-   6. 公開 API（OS 全体の window 方式に統一）
+   8. 公開 API
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.summaryUpdateAll = summaryUpdateAll;
