@@ -73,9 +73,14 @@ function parsePlantingRef(plantingRef) {
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate(plantingRef)
+   5. summaryUpdate(plantingRef, options)
+   options:
+     - skipSave: true のとき saveLog しない（summaryUpdateAll 用）
+     - index: 共有 index オブジェクト（あればそれを使う）
 --------------------------------------------------------- */
-async function summaryUpdate(plantingRef) {
+async function summaryUpdate(plantingRef, options = {}) {
+  const { skipSave = false, index: externalIndex = null } = options;
+
   console.log("==============================================");
   console.log(">>> summaryUpdate START:", plantingRef);
 
@@ -172,7 +177,10 @@ async function summaryUpdate(plantingRef) {
   /* ------------------------------
      index.json を更新
   ------------------------------ */
-  const index = await loadIndex();
+  let index = externalIndex;
+  if (!index) {
+    index = await loadIndex();
+  }
 
   console.log(">>> index BEFORE UPDATE:", JSON.stringify(index, null, 2));
 
@@ -190,11 +198,18 @@ async function summaryUpdate(plantingRef) {
 
   console.log(">>> index AFTER UPDATE:", JSON.stringify(index, null, 2));
 
-  /* ------------------------------
-     ★ multi-saveLog で一括保存 ★
-  ------------------------------ */
   const summaryPath = `logs/summary/${safeField}/${year}/${safeRef}.json`;
 
+  // skipSave のときは保存せず、summary と index を返す（summaryUpdateAll 用）
+  if (skipSave) {
+    console.log(">>> summaryUpdate SKIP SAVE (batch mode)");
+    console.log("==============================================");
+    return { summary, index, summaryPath };
+  }
+
+  /* ------------------------------
+     ★ 通常モード：multi-saveLog で一括保存 ★
+  ------------------------------ */
   await saveLog({
     type: "multi",
     files: [
@@ -217,16 +232,15 @@ async function summaryUpdate(plantingRef) {
 
 /* ---------------------------------------------------------
    6. summaryUpdateAll()
+   → 全件分の summary と index をまとめて 1 回だけ保存
 --------------------------------------------------------- */
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function summaryUpdateAll() {
   console.log(">>> summaryUpdateAll START");
 
   const planting = await loadCsv("../logs/planting/all.csv");
   const index = await loadIndex();
+
+  const files = [];
 
   for (const p of planting) {
     if (!p.plantingRef) continue;
@@ -251,8 +265,32 @@ async function summaryUpdateAll() {
       continue;
     }
 
-    await summaryUpdate(p.plantingRef);
-    await sleep(1200);
+    // 保存はせず、summary と index 更新だけ行う
+    const result = await summaryUpdate(p.plantingRef, {
+      skipSave: true,
+      index
+    });
+    if (!result) continue;
+
+    const { summary, summaryPath } = result;
+
+    files.push({
+      path: summaryPath,
+      content: JSON.stringify(summary, null, 2)
+    });
+  }
+
+  // 最後に index.json をまとめて追加
+  files.push({
+    path: "data/summary-index.json",
+    content: JSON.stringify(index, null, 2)
+  });
+
+  if (files.length > 0) {
+    await saveLog({
+      type: "multi",
+      files
+    });
   }
 
   console.log(">>> summaryUpdateAll END");
