@@ -6,6 +6,11 @@
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(path);
+  
+  if (!res.ok) {
+    return []; // ★ shipping/all.csv が無くても安全
+  }
+
   const text = await res.text();
   return Papa.parse(text, { header: true }).data;
 }
