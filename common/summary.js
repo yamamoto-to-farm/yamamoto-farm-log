@@ -178,7 +178,7 @@ async function summaryUpdateAll() {
 }
 
 /* ---------------------------------------------------------
-   6. 公開 API
+   6. 公開 API（OS 全体の window 方式に統一）
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.summaryUpdateAll = summaryUpdateAll;

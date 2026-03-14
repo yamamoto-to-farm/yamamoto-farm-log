@@ -22,8 +22,11 @@ export function safeFieldName(field) {
 }
 
 export function safeFileName(name) {
-  return name.replace(/[()（）]/g, "_");
+  return name
+    .replace(/[()（）]/g, "_")  // 括弧を _
+    .replace(/_+$/g, "");       // ★ 末尾の _ を削除
 }
+
 
 export function cb(url) {
   const v = Date.now();
