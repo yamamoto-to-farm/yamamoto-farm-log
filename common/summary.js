@@ -22,7 +22,7 @@ async function loadIndex() {
 --------------------------------------------------------- */
 async function saveIndex(index) {
   await saveLog(
-    "summary",
+    "file",
     "data/summary-index.json",
     JSON.stringify(index, null, 2),
     "",
