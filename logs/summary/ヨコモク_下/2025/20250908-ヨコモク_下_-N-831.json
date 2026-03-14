@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250908-ヨコモク(下)-N-831",
+  "field": "ヨコモク(下)",
+  "year": 2025,
+  "variety": "N-831",
+  "plantDate": "2025-09-08",
+  "seedRef": "20250806-N-831-02",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 11000,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T06:20:45.884Z"
+}
