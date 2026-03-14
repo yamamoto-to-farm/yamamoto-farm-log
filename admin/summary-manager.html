@@ -49,9 +49,7 @@
 
 <body>
 
-  <!-- 認証後に表示 -->
   <div id="form-area" style="display:none;">
-
     <h1>サマリー管理</h1>
     <p>未生成のサマリーを一覧表示します。</p>
 
@@ -60,24 +58,21 @@
     <button id="generateAll">すべて生成</button>
 
     <div id="status"></div>
-
   </div>
 
-  <!-- JS -->
+  <!-- JS 読み込み順が超重要 -->
+  <script type="module" src="../common/summary.js?v=2026031418"></script>
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js?v=2026031418";
     import { initSummaryManager } from "./summary-manager.js?v=2026031418";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ 認証チェック（shipping と同じ）
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // 認証済み → UI 表示
       document.getElementById("form-area").style.display = "block";
 
-      // ★ summary-manager 初期化
       initSummaryManager();
     });
   </script>
