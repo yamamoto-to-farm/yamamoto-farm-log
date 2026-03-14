@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250909-若松(新･小)-たいと",
+  "field": "若松(新･小)",
+  "year": 2025,
+  "variety": "たいと",
+  "plantDate": "2025-09-09",
+  "seedRef": "20250805-たいと-02",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 10112,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T09:52:29.577Z"
+}
