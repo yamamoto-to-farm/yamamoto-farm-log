@@ -2,15 +2,22 @@
 // サマリー生成ロジック（logs/summary/ に保存）
 
 /* ---------------------------------------------------------
+   0. field を URL-safe に変換（括弧 → _）
+--------------------------------------------------------- */
+function safeFieldName(field) {
+  return field.replace(/[()]/g, "_");
+}
+
+/* ---------------------------------------------------------
    1. Cloudflare Workers 経由で GitHub Actions を起動
 --------------------------------------------------------- */
 async function saveToGitHub(path, content) {
   const payload = {
-    type: "summary",     // logs/summary/ に保存される
-    dateStr: path,       // summary/三角畑/2026/xxxx.json
+    type: "summary",
+    dateStr: path,
     json: content,
     csv: "",
-    replaceCsv: ""       // summary は CSV を触らない
+    replaceCsv: ""
   };
 
   const res = await fetch(
@@ -28,21 +35,17 @@ async function saveToGitHub(path, content) {
 }
 
 /* ---------------------------------------------------------
-   2. CSV 読み込み
+   2. CSV 読み込み（404 → 空配列）
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(path);
-  
-  if (!res.ok) {
-    return []; // ★ shipping/all.csv が無くても安全
-  }
-
+  if (!res.ok) return []; // shipping/all.csv が無くても安全
   const text = await res.text();
   return Papa.parse(text, { header: true }).data;
 }
 
 /* ---------------------------------------------------------
-   3. plantingRef → field/year 抽出（安全版）
+   3. plantingRef → field/year 抽出
 --------------------------------------------------------- */
 function parsePlantingRef(plantingRef) {
   if (!plantingRef || typeof plantingRef !== "string") return null;
@@ -67,6 +70,7 @@ async function summaryUpdate(plantingRef) {
   if (!parsed) return;
 
   const { field, year } = parsed;
+  const safeField = safeFieldName(field);
 
   // logs 配下の CSV を読む
   const planting = await loadCsv("../logs/planting/all.csv");
@@ -110,7 +114,7 @@ async function summaryUpdate(plantingRef) {
   ------------------------------ */
   const summary = {
     plantingRef,
-    field,
+    field,                 // ← データは本来の圃場名のまま
     year: Number(year),
     variety: p.variety,
     cropType: p.cropType,
@@ -137,9 +141,9 @@ async function summaryUpdate(plantingRef) {
   };
 
   /* ------------------------------
-     保存（logs/summary/ に統一）
+     保存（logs/summary/<safeField>/<year>/）
   ------------------------------ */
-  const path = `logs/summary/${field}/${year}/${plantingRef}.json`;
+  const path = `logs/summary/${safeField}/${year}/${plantingRef}.json`;
   await saveToGitHub(path, JSON.stringify(summary, null, 2));
 
   return summary;
@@ -162,16 +166,16 @@ async function summaryUpdateAll() {
     if (!parsed) continue;
 
     const { field, year } = parsed;
+    const safeField = safeFieldName(field);
 
-    const path = `../logs/summary/${field}/${year}/${p.plantingRef}.json`;
+    const path = `../logs/summary/${safeField}/${year}/${p.plantingRef}.json`;
 
-    // HEAD で静かに存在チェック
+    // HEAD で存在チェック
     const res = await fetch(path, { method: "HEAD", cache: "no-store" });
     if (res.ok) continue;
 
     await summaryUpdate(p.plantingRef);
-    // ★ GitHub Actions の負荷を避けるための待ち時間
-    await sleep(1200); // 1秒待機
+    await sleep(1200); // GitHub Actions の詰まり防止
   }
 }
 

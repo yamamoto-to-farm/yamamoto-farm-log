@@ -2,15 +2,18 @@
 // サマリー未生成一覧の表示と、生成ボタンの制御
 
 /* ---------------------------------------------------------
-   CSV 読み込み
+   0. field を URL-safe に変換（括弧 → _）
+--------------------------------------------------------- */
+function safeFieldName(field) {
+  return field.replace(/[()]/g, "_");
+}
+
+/* ---------------------------------------------------------
+   CSV 読み込み（404 → 空配列）
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(path);
-  
-  if (!res.ok) {
-    return []; // ★ shipping/all.csv が無くても安全
-  }
-
+  if (!res.ok) return []; // shipping/all.csv が無くても安全
   const text = await res.text();
   return Papa.parse(text, { header: true }).data;
 }
@@ -19,11 +22,12 @@ async function loadCsv(path) {
    サマリー存在チェック（HEAD + no-store）
 --------------------------------------------------------- */
 async function summaryExists(field, year, plantingRef) {
-  const path = `../logs/summary/${field}/${year}/${plantingRef}.json`;
+  const safeField = safeFieldName(field);
+  const path = `../logs/summary/${safeField}/${year}/${plantingRef}.json`;
 
   try {
     const res = await fetch(path, { method: "HEAD", cache: "no-store" });
-    return res.ok; // 200 → true、404 → false
+    return res.ok;
   } catch (e) {
     return false;
   }
@@ -55,7 +59,7 @@ async function getMissingSummaries() {
   const missing = [];
 
   for (const p of planting) {
-    if (!p.plantingRef) continue; // ★ 空行スキップ
+    if (!p.plantingRef) continue;
 
     const parsed = parsePlantingRef(p.plantingRef);
     if (!parsed) continue;
