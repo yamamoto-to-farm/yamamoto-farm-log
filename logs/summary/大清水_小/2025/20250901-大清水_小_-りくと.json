@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250901-大清水(小)-りくと",
+  "field": "大清水(小)",
+  "year": 2025,
+  "variety": "りくと",
+  "plantDate": "2025-09-01",
+  "seedRef": "20250801-りくと-01",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 8832,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T09:32:28.116Z"
+}
