@@ -1,0 +1,24 @@
+{
+  "plantingRef": "20250911-七根(伊古部)-N-831",
+  "field": "七根(伊古部)",
+  "year": 2025,
+  "variety": "N-831",
+  "plantDate": "2025-09-11",
+  "seedRef": "20250806-N-831-01",
+  "harvest": {
+    "count": 1,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 2432,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T09:34:01.091Z"
+}
