@@ -1,7 +1,7 @@
 // common/summary.js
 // サマリー生成ロジック（logs/summary/ に保存）
 
-import { cb, safeFieldName, safeFileName } from "./utils.js";
+import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 
 /* ---------------------------------------------------------
    1. Cloudflare Workers 経由で GitHub Actions を起動
