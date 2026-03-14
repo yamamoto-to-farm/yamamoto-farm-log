@@ -16,7 +16,9 @@ export function formatDate(date) {
 }
 
 export function safeFieldName(field) {
-  return field.replace(/[()（）]/g, "_");
+  return field
+    .replace(/[()（）]/g, "_")  // 括弧を _
+    .replace(/_+$/g, "");       // ★ 末尾の _ を削除（これが決定打）
 }
 
 export function safeFileName(name) {
