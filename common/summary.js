@@ -93,7 +93,7 @@ async function summaryUpdate(plantingRef) {
   // logs 配下の CSV を読む
   const planting = await loadCsv("../logs/planting/all.csv");
   const harvest = await loadCsv("../logs/harvest/all.csv");
-  const shipping = await loadCsv("../logs/shipping/all.csv");
+  const shipping = await loadCsv("../logs/weight/all.csv");
 
   const p = planting.find(x => x.plantingRef === plantingRef);
   if (!p) return;
