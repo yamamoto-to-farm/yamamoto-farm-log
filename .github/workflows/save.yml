@@ -43,9 +43,28 @@ jobs:
           echo "date=$DATE" >> $GITHUB_OUTPUT
 
       # --------------------------------------------
-      # 4. JSON 保存（summary も通常ログもここ）
+      # 4A. MULTI 保存（複数ファイルを一度に保存）
+      # --------------------------------------------
+      - name: Save MULTI files
+        if: ${{ fromJson(inputs.payload).type == 'multi' }}
+        run: |
+          FILE_COUNT=$(jq '.files | length' payload.json)
+          echo "Saving $FILE_COUNT files"
+
+          for i in $(seq 0 $((FILE_COUNT - 1))); do
+            FILE_PATH=$(jq -r ".files[$i].path" payload.json)
+            FILE_CONTENT=$(jq -r ".files[$i].content" payload.json)
+
+            echo "Saving $FILE_PATH"
+            mkdir -p "$(dirname "$FILE_PATH")"
+            echo "$FILE_CONTENT" > "$FILE_PATH"
+          done
+
+      # --------------------------------------------
+      # 4B. 通常の JSON 保存（multi 以外）
       # --------------------------------------------
       - name: Save JSON (summary or normal log)
+        if: ${{ fromJson(inputs.payload).type != 'multi' }}
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           DATE=${{ steps.extract.outputs.date }}
@@ -59,7 +78,7 @@ jobs:
       # 5. CSV append（通常ログのみ）
       # --------------------------------------------
       - name: Save CSV (append)
-        if: ${{ fromJson(inputs.payload).replaceCsv == '' && fromJson(inputs.payload).type != 'summary' }}
+        if: ${{ fromJson(inputs.payload).replaceCsv == '' && fromJson(inputs.payload).type != 'summary' && fromJson(inputs.payload).type != 'multi' }}
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           CSV_LINE=$(jq -r '.csv' payload.json)
@@ -73,7 +92,7 @@ jobs:
       # 6. CSV 全書き換え（管理画面用）
       # --------------------------------------------
       - name: Replace CSV (overwrite all.csv)
-        if: ${{ fromJson(inputs.payload).replaceCsv != '' && fromJson(inputs.payload).type != 'summary' }}
+        if: ${{ fromJson(inputs.payload).replaceCsv != '' && fromJson(inputs.payload).type != 'summary' && fromJson(inputs.payload).type != 'multi' }}
         run: |
           TYPE=${{ steps.extract.outputs.type }}
           mkdir -p logs/$TYPE
@@ -81,17 +100,15 @@ jobs:
           jq -r '.replaceCsv' payload.json > logs/$TYPE/all.csv
 
       # --------------------------------------------
-      # 7. Commit & Push（★重要修正ポイント★）
+      # 7. Commit & Push
       # --------------------------------------------
       - name: Commit & Push
         run: |
           git config user.name "farm-bot"
           git config user.email "actions@github.com"
 
-          # ★ logs/* ではなく、全体をコミットする
           git add .
 
-          # ★ summary-index.json だけ変更された場合でも commit される
           git commit -am "save ${{ steps.extract.outputs.type }} log for ${{ steps.extract.outputs.date }}" || echo "No changes"
 
           git push

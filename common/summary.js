@@ -21,22 +21,6 @@ async function loadIndex() {
 }
 
 /* ---------------------------------------------------------
-   2. summary-index.json を保存（saveLog 統一）
---------------------------------------------------------- */
-async function saveIndex(index) {
-  console.log(">>> saveIndex CALLED");
-  console.log(">>> saveIndex DATA:", JSON.stringify(index, null, 2));
-
-  await saveLog(
-    "file",
-    "data/summary-index.json",
-    JSON.stringify(index, null, 2),
-    "",
-    ""
-  );
-}
-
-/* ---------------------------------------------------------
    3. CSV 読み込み（404 → 空配列）
 --------------------------------------------------------- */
 async function loadCsv(path) {
@@ -186,20 +170,6 @@ async function summaryUpdate(plantingRef) {
   console.log(">>> summary JSON:", summary);
 
   /* ------------------------------
-     サマリー保存
-  ------------------------------ */
-  const summaryPath = `logs/summary/${safeField}/${year}/${safeRef}.json`;
-  console.log(">>> save summary:", summaryPath);
-
-  await saveLog(
-    "summary",
-    summaryPath,
-    JSON.stringify(summary, null, 2),
-    "",
-    ""
-  );
-
-  /* ------------------------------
      index.json を更新
   ------------------------------ */
   const index = await loadIndex();
@@ -220,7 +190,24 @@ async function summaryUpdate(plantingRef) {
 
   console.log(">>> index AFTER UPDATE:", JSON.stringify(index, null, 2));
 
-  await saveIndex(index);
+  /* ------------------------------
+     ★ multi-saveLog で一括保存 ★
+  ------------------------------ */
+  const summaryPath = `logs/summary/${safeField}/${year}/${safeRef}.json`;
+
+  await saveLog({
+    type: "multi",
+    files: [
+      {
+        path: summaryPath,
+        content: JSON.stringify(summary, null, 2)
+      },
+      {
+        path: "data/summary-index.json",
+        content: JSON.stringify(index, null, 2)
+      }
+    ]
+  });
 
   console.log(">>> summaryUpdate END");
   console.log("==============================================");
