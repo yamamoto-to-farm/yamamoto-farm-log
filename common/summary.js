@@ -2,7 +2,7 @@
 // サマリー生成ロジック（logs/summary/ に保存）
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
-import { saveLog } from "./saveLog.js?v=2026031418";
+import { saveLog } from "./save/index.js?v=2026031418";
 
 /* ---------------------------------------------------------
    1. summary-index.json を読み込み
