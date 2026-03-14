@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250908-ヨコモク(ハウス跡)-冬銀河",
+  "field": "ヨコモク(ハウス跡)",
+  "year": 2025,
+  "variety": "冬銀河",
+  "plantDate": "2025-09-08",
+  "seedRef": "20250802-冬銀河-01",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 3968,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T09:33:24.082Z"
+}
