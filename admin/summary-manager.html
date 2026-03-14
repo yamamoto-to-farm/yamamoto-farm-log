@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>サマリー管理</title>
 
-  <!-- ★ PapaParse を追加（必須） -->
+  <!-- PapaParse（通常スクリプトでOK） -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
@@ -54,8 +54,9 @@
 
   <div id="status"></div>
 
-  <script src="../common/summary.js?v=20260314"></script>
-  <script src="./summary-manager.js?v=20260314"></script>
+  <!-- ★ ここが最重要：ES Module として読み込む -->
+  <script type="module" src="../common/summary.js?v=20260314"></script>
+  <script type="module" src="./summary-manager.js?v=20260314"></script>
 
 </body>
 </html>
