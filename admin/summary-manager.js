@@ -1,17 +1,8 @@
 // summary-manager.js
-// サマリー未生成一覧の表示と、生成ボタンの制御
-
-import { cb } from "../common/utils.js";
+import { cb, safeFieldName, safeFileName } from "../common/utils.js";
 
 /* ---------------------------------------------------------
-   0. field を URL-safe に変換（括弧 → _）
---------------------------------------------------------- */
-function safeFieldName(field) {
-  return field.replace(/[()]/g, "_");
-}
-
-/* ---------------------------------------------------------
-   CSV 読み込み（404 → 空配列）
+   CSV 読み込み
 --------------------------------------------------------- */
 async function loadCsv(path) {
   const res = await fetch(cb(path));
@@ -21,11 +12,13 @@ async function loadCsv(path) {
 }
 
 /* ---------------------------------------------------------
-   サマリー存在チェック（HEAD + no-store）
+   サマリー存在チェック（HEAD）
 --------------------------------------------------------- */
 async function summaryExists(field, year, plantingRef) {
   const safeField = safeFieldName(field);
-  const path = `../logs/summary/${safeField}/${year}/${plantingRef}.json`;
+  const safeRef = safeFileName(plantingRef);
+
+  const path = `../logs/summary/${safeField}/${year}/${safeRef}.json`;
 
   try {
     const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
@@ -36,7 +29,7 @@ async function summaryExists(field, year, plantingRef) {
 }
 
 /* ---------------------------------------------------------
-   plantingRef → field/year 抽出（安全版）
+   plantingRef → field/year 抽出
 --------------------------------------------------------- */
 function parsePlantingRef(plantingRef) {
   if (!plantingRef || typeof plantingRef !== "string") return null;
@@ -54,7 +47,7 @@ function parsePlantingRef(plantingRef) {
 }
 
 /* ---------------------------------------------------------
-   未生成サマリー一覧を取得
+   未生成サマリー一覧
 --------------------------------------------------------- */
 async function getMissingSummaries() {
   const planting = await loadCsv("../logs/planting/all.csv");
@@ -76,7 +69,7 @@ async function getMissingSummaries() {
 }
 
 /* ---------------------------------------------------------
-   UI に一覧を描画
+   UI 描画
 --------------------------------------------------------- */
 function renderList(list) {
   const container = document.getElementById("summaryList");

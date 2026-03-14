@@ -1,14 +1,7 @@
 // common/summary.js
 // サマリー生成ロジック（logs/summary/ に保存）
 
-import { cb } from "./utils.js";
-
-/* ---------------------------------------------------------
-   0. field を URL-safe に変換（括弧 → _）
---------------------------------------------------------- */
-function safeFieldName(field) {
-  return field.replace(/[()]/g, "_");
-}
+import { cb, safeFieldName, safeFileName } from "./utils.js";
 
 /* ---------------------------------------------------------
    1. Cloudflare Workers 経由で GitHub Actions を起動
@@ -72,7 +65,9 @@ async function summaryUpdate(plantingRef) {
   if (!parsed) return;
 
   const { field, year } = parsed;
+
   const safeField = safeFieldName(field);
+  const safeRef = safeFileName(plantingRef);
 
   // logs 配下の CSV を読む
   const planting = await loadCsv("../logs/planting/all.csv");
@@ -116,7 +111,7 @@ async function summaryUpdate(plantingRef) {
   ------------------------------ */
   const summary = {
     plantingRef,
-    field,                 // ← データは本来の圃場名のまま
+    field,
     year: Number(year),
     variety: p.variety,
     cropType: p.cropType,
@@ -143,9 +138,9 @@ async function summaryUpdate(plantingRef) {
   };
 
   /* ------------------------------
-     保存（logs/summary/<safeField>/<year>/）
+     保存（logs/summary/<safeField>/<year>/<safeRef>.json）
   ------------------------------ */
-  const path = `logs/summary/${safeField}/${year}/${plantingRef}.json`;
+  const path = `logs/summary/${safeField}/${year}/${safeRef}.json`;
   await saveToGitHub(path, JSON.stringify(summary, null, 2));
 
   return summary;
@@ -168,16 +163,17 @@ async function summaryUpdateAll() {
     if (!parsed) continue;
 
     const { field, year } = parsed;
+
     const safeField = safeFieldName(field);
+    const safeRef = safeFileName(p.plantingRef);
 
-    const path = `../logs/summary/${safeField}/${year}/${p.plantingRef}.json`;
+    const path = `../logs/summary/${safeField}/${year}/${safeRef}.json`;
 
-    // HEAD で存在チェック（キャッシュバスター必須）
     const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
     if (res.ok) continue;
 
     await summaryUpdate(p.plantingRef);
-    await sleep(1200); // GitHub Actions の詰まり防止
+    await sleep(1200);
   }
 }
 

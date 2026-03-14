@@ -15,8 +15,15 @@ export function formatDate(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// URL にキャッシュバスターを付ける
+export function safeFieldName(field) {
+  return field.replace(/[()（）]/g, "_");
+}
+
+export function safeFileName(name) {
+  return name.replace(/[()（）]/g, "_");
+}
+
 export function cb(url) {
-  const v = Date.now(); // 毎回ユニーク
+  const v = Date.now();
   return url.includes("?") ? `${url}&v=${v}` : `${url}?v=${v}`;
 }
