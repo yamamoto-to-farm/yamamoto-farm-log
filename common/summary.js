@@ -1,6 +1,8 @@
 // common/summary.js
 // サマリー生成ロジック（logs/summary/ に保存）
 
+import { cb } from "./utils.js";
+
 /* ---------------------------------------------------------
    0. field を URL-safe に変換（括弧 → _）
 --------------------------------------------------------- */
@@ -38,8 +40,8 @@ async function saveToGitHub(path, content) {
    2. CSV 読み込み（404 → 空配列）
 --------------------------------------------------------- */
 async function loadCsv(path) {
-  const res = await fetch(path);
-  if (!res.ok) return []; // shipping/all.csv が無くても安全
+  const res = await fetch(cb(path));
+  if (!res.ok) return [];
   const text = await res.text();
   return Papa.parse(text, { header: true }).data;
 }
@@ -170,8 +172,8 @@ async function summaryUpdateAll() {
 
     const path = `../logs/summary/${safeField}/${year}/${p.plantingRef}.json`;
 
-    // HEAD で存在チェック
-    const res = await fetch(path, { method: "HEAD", cache: "no-store" });
+    // HEAD で存在チェック（キャッシュバスター必須）
+    const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
     if (res.ok) continue;
 
     await summaryUpdate(p.plantingRef);

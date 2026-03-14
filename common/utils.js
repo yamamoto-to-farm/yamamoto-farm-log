@@ -14,3 +14,9 @@ export function formatDate(date) {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
+// URL にキャッシュバスターを付ける
+export function cb(url) {
+  const v = Date.now(); // 毎回ユニーク
+  return url.includes("?") ? `${url}&v=${v}` : `${url}?v=${v}`;
+}

@@ -1,11 +1,13 @@
 // common/csv.js
 import { readText, writeText } from "./github.js";
+import { cb } from "./utils.js";
 
 // --------------------------------------
 // CSV 読み込み → 配列オブジェクト
 // --------------------------------------
 export async function loadCSV(path) {
-  const text = await readText(path);
+  // ★ キャッシュバスターを付けて常に最新を読む
+  const text = await readText(cb(path));
 
   const lines = text.trim().split("\n");
   const headers = lines[0].split(",");
@@ -22,7 +24,8 @@ export async function loadCSV(path) {
 // CSV 追記（append）
 // --------------------------------------
 export async function appendCSV(path, rows) {
-  const text = await readText(path);
+  // ★ 最新の CSV を読んでから追記する
+  const text = await readText(cb(path));
   const headers = text.trim().split("\n")[0].split(",");
 
   const newLines = rows.map(r =>

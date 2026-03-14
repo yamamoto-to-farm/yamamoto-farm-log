@@ -1,6 +1,8 @@
 // summary-manager.js
 // サマリー未生成一覧の表示と、生成ボタンの制御
 
+import { cb } from "../common/utils.js";
+
 /* ---------------------------------------------------------
    0. field を URL-safe に変換（括弧 → _）
 --------------------------------------------------------- */
@@ -12,8 +14,8 @@ function safeFieldName(field) {
    CSV 読み込み（404 → 空配列）
 --------------------------------------------------------- */
 async function loadCsv(path) {
-  const res = await fetch(path);
-  if (!res.ok) return []; // shipping/all.csv が無くても安全
+  const res = await fetch(cb(path));
+  if (!res.ok) return [];
   const text = await res.text();
   return Papa.parse(text, { header: true }).data;
 }
@@ -26,7 +28,7 @@ async function summaryExists(field, year, plantingRef) {
   const path = `../logs/summary/${safeField}/${year}/${plantingRef}.json`;
 
   try {
-    const res = await fetch(path, { method: "HEAD", cache: "no-store" });
+    const res = await fetch(cb(path), { method: "HEAD", cache: "no-store" });
     return res.ok;
   } catch (e) {
     return false;
@@ -102,7 +104,6 @@ function renderList(list) {
     container.appendChild(div);
   }
 
-  // 個別生成ボタン
   container.querySelectorAll("button").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       const ref = e.target.dataset.ref;
