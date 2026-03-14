@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250823-中日新聞-ロイド(C-147)",
+  "field": "中日新聞",
+  "year": 2025,
+  "variety": "ロイド(C-147)",
+  "plantDate": "2025-08-23",
+  "seedRef": "20250726-ロイド(C-147)-02",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 3814.4,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T06:20:13.945Z"
+}
