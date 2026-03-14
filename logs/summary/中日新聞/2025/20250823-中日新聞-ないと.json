@@ -1,9 +1,9 @@
 {
-  "plantingRef": "20250822-王崎-ないと",
-  "field": "王崎",
+  "plantingRef": "20250823-中日新聞-ないと",
+  "field": "中日新聞",
   "year": 2025,
   "variety": "ないと",
-  "plantDate": "2025-08-22",
+  "plantDate": "2025-08-23",
   "seedRef": "20250726-ないと-01",
   "harvest": {
     "start": null,
@@ -16,11 +16,11 @@
     "totalWeight": 0
   },
   "yieldRate": null,
-  "quantity": 8384,
+  "quantity": 1664,
   "spacing": {
     "row": 34,
     "bed": 60
   },
   "notes": "",
-  "lastUpdated": "2026-03-14T13:06:22.423Z"
+  "lastUpdated": "2026-03-14T13:06:22.517Z"
 }

@@ -1,10 +1,10 @@
 {
-  "plantingRef": "20250822-王崎-ないと",
-  "field": "王崎",
+  "plantingRef": "20250820-長沢(27a)-たいと",
+  "field": "長沢(27a)",
   "year": 2025,
-  "variety": "ないと",
-  "plantDate": "2025-08-22",
-  "seedRef": "20250726-ないと-01",
+  "variety": "たいと",
+  "plantDate": "2025-08-20",
+  "seedRef": "20250722-たいと-01",
   "harvest": {
     "start": null,
     "end": null,
@@ -16,11 +16,11 @@
     "totalWeight": 0
   },
   "yieldRate": null,
-  "quantity": 8384,
+  "quantity": 10304,
   "spacing": {
     "row": 34,
     "bed": 60
   },
   "notes": "",
-  "lastUpdated": "2026-03-14T13:06:22.423Z"
+  "lastUpdated": "2026-03-14T13:06:22.141Z"
 }

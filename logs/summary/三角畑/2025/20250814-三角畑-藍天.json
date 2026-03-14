@@ -1,10 +1,10 @@
 {
-  "plantingRef": "20250814-しあわせ地蔵-はやとよ",
-  "field": "しあわせ地蔵",
+  "plantingRef": "20250814-三角畑-藍天",
+  "field": "三角畑",
   "year": 2025,
-  "variety": "はやとよ",
+  "variety": "藍天",
   "plantDate": "2025-08-14",
-  "seedRef": "20250711-はやとよ-01",
+  "seedRef": "20250711-藍天-01",
   "harvest": {
     "start": null,
     "end": null,
@@ -16,11 +16,11 @@
     "totalWeight": 0
   },
   "yieldRate": null,
-  "quantity": 1984,
+  "quantity": 256,
   "spacing": {
     "row": 33,
     "bed": 60
   },
-  "notes": "南側",
-  "lastUpdated": "2026-03-14T13:06:21.659Z"
+  "notes": "先端",
+  "lastUpdated": "2026-03-14T13:06:21.714Z"
 }
