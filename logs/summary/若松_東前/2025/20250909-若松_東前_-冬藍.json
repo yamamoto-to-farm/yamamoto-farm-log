@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250909-若松(東前)-冬藍",
+  "field": "若松(東前)",
+  "year": 2025,
+  "variety": "冬藍",
+  "plantDate": "2025-09-09",
+  "seedRef": "20250805-冬藍-01",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 5248,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-14T08:34:55.067Z"
+}
