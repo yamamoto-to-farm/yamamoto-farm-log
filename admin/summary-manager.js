@@ -5,7 +5,8 @@ export async function initSummaryManager() {
 
   async function loadIndex() {
     try {
-      const res = await fetch(cb("../data/summary-index.json"));
+      const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) return {};
       return await res.json();
     } catch {
