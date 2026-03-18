@@ -1,9 +1,9 @@
-// summary-manager.js — 完全修正版（パス修正 + UI描画 + 安全化）
+// summary-manager.js — 完全版（すべて生成は1回だけ通知）
 
 import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
 
 /* ---------------------------------------------------------
-   1. index.json の読み込み（キャッシュ無効化）
+   1. index.json の読み込み
 --------------------------------------------------------- */
 async function loadIndex() {
     try {
@@ -69,17 +69,56 @@ function renderMissingList(list) {
         area.appendChild(div);
     }
 
-    // 個別生成ボタン
+    // 個別生成
     document.querySelectorAll(".btn[data-ref]").forEach(btn => {
         btn.addEventListener("click", () => {
-            const ref = btn.dataset.ref;
-            enqueueSummaryUpdate(ref);
+            enqueueSummaryUpdate(btn.dataset.ref);
         });
     });
 }
 
 /* ---------------------------------------------------------
-   4. UI 更新（GitHub 反映遅延を吸収）
+   4. すべて生成ボタン
+--------------------------------------------------------- */
+document.getElementById("generateAll").addEventListener("click", async () => {
+    const missing = await getMissingSummaries();
+
+    if (missing.length === 0) {
+        alert("未生成のサマリーはありません");
+        return;
+    }
+
+    // ★ すべて生成の件数と一覧を保存しておく
+    window._bulkSummaryList = missing;
+
+    for (const ref of missing) {
+        enqueueSummaryUpdate(ref);
+    }
+});
+
+/* ---------------------------------------------------------
+   5. summaryQueueEmpty → すべて生成完了通知
+--------------------------------------------------------- */
+window.addEventListener("summaryQueueEmpty", () => {
+    refreshMissingSummaries();
+
+    // ★ すべて生成のときだけダイアログを出す
+    if (window._bulkSummaryList && window._bulkSummaryList.length > 0) {
+        const count = window._bulkSummaryList.length;
+        const list = window._bulkSummaryList.join("\n");
+
+        alert(
+            `すべてのサマリーを生成しました\n\n` +
+            `件数: ${count}\n\n` +
+            `生成した plantingRef:\n${list}`
+        );
+
+        window._bulkSummaryList = null;
+    }
+});
+
+/* ---------------------------------------------------------
+   6. 初期表示
 --------------------------------------------------------- */
 export function refreshMissingSummaries() {
     setTimeout(async () => {
@@ -88,14 +127,4 @@ export function refreshMissingSummaries() {
     }, 500);
 }
 
-/* ---------------------------------------------------------
-   5. summaryQueue が空になったら UI 更新
---------------------------------------------------------- */
-window.addEventListener("summaryQueueEmpty", () => {
-    refreshMissingSummaries();
-});
-
-/* ---------------------------------------------------------
-   6. ページ初期表示時にも missing を更新（重要）
---------------------------------------------------------- */
 refreshMissingSummaries();
