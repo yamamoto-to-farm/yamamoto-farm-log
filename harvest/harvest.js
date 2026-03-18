@@ -13,6 +13,9 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
+// ★ サマリー自動更新
+import { enqueueSummaryUpdate } from "../common/summary.js";
+
 
 // ===============================
 // 畑名称ゆらぎ吸収
@@ -143,63 +146,23 @@ async function updatePlantingRefOptions() {
     normalizeFieldName(p.field || "") === nf
   );
 
-  console.log("📌 畑名一致 candidates:", candidates);
-
-  if (candidates.length === 0) {
-    console.log("❌ 畑名一致が0件");
-    return;
-  }
+  if (candidates.length === 0) return;
 
   // ② 生育日数ロジック（±60）
   const strongMatches = candidates.filter(p => {
-    if (!p.plantDate) {
-      console.log("⚠️ plantDate 空:", p);
-      return false;
-    }
+    if (!p.plantDate) return false;
 
     const actualDays = diffDays(harvestDate, p.plantDate);
     const plannedDays = calcPlannedDays(p.plantDate, p.harvestPlanYM);
 
-    console.log("🔍 チェック:", {
-      plantingRef: p.plantingRef,
-      plantDate: p.plantDate,
-      variety: p.variety,
-      harvestPlanYM: p.harvestPlanYM,
-      actualDays,
-      plannedDays,
-      diff: plannedDays !== null ? Math.abs(actualDays - plannedDays) : "N/A"
-    });
-
-    // harvestPlanYM が空 → strongMatches には入れない
-    if (plannedDays === null) {
-      console.log("➡️ 除外: harvestPlanYM が空");
-      return false;
-    }
-
-    const ok = Math.abs(actualDays - plannedDays) <= 60;
-    if (!ok) {
-      console.log("➡️ 除外: ±60 超え");
-    }
-    return ok;
+    if (plannedDays === null) return false;
+    return Math.abs(actualDays - plannedDays) <= 60;
   });
 
-  console.log("🎯 strongMatches:", strongMatches);
+  let finalList = strongMatches.length > 0 ? strongMatches : candidates;
 
-  // ③ strongMatches があればそれを使う
-  //    なければ fallback として candidates を使う
-  let finalList;
-  if (strongMatches.length > 0) {
-    console.log("✨ strongMatches 採用");
-    finalList = strongMatches;
-  } else {
-    console.log("✨ fallback 発動 → candidates 全件採用");
-    finalList = candidates;
-  }
-
-  // ④ 新しい順（plantDate 降順）
+  // ④ 新しい順
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
-
-  console.log("📌 finalList:", finalList);
 
   // ⑤ プルダウンに追加
   finalList.forEach(p => {
@@ -209,14 +172,14 @@ async function updatePlantingRefOptions() {
     select.appendChild(opt);
   });
 
-  // ⑥ 候補が1件なら自動選択
+  // ⑥ 候補1件なら自動選択
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
-    console.log("✨ 候補1件 → 自動選択:", finalList[0].plantingRef);
   }
 
   console.log("🔄 updatePlantingRefOptions() END");
 }
+
 
 // ===============================
 // 入力データ収集
@@ -235,7 +198,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// 保存処理
+// 保存処理（★サマリー自動更新つき）
 // ===============================
 async function saveHarvestInner() {
   console.log("💾 saveHarvestInner()");
@@ -280,8 +243,27 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  await saveLog("harvest", dateStr, { plantingRef }, csvLine + "\n");
-  alert("GitHubに保存しました");
+  // ★ 正しい saveLog 形式
+  await saveLog({
+    type: "append",
+    path: "logs/harvest/all.csv",
+    content: csvLine + "\n"
+  });
+
+  // ★ サマリー自動更新
+  enqueueSummaryUpdate(data.plantingRef);
+
+  // ★ 保存内容をサマリー風にダイアログ表示
+  alert(
+    `収穫ログを保存しました\n\n` +
+    `定植: ${data.plantingRef}\n` +
+    `収穫日: ${data.harvestDate}\n` +
+    `出荷日: ${data.shippingDate}\n` +
+    `畑: ${data.field}\n` +
+    `収穫量: ${data.amount}\n` +
+    `作業者: ${data.worker}\n` +
+    `備考: ${data.issue || "なし"}`
+  );
 }
 
 window.saveHarvest = saveHarvestInner;
