@@ -56,7 +56,7 @@ export async function saveCsvFile(csvType, csvFile) {
     console.log(`csv line ${i}:`, line);
   });
 
-  const csvText = csvLines.join("\n") + "\n";
+  const csvText = csvLines.join("\n").trimEnd();
 
   console.log("=== FINAL CSV TEXT ===\n" + csvText);
 
