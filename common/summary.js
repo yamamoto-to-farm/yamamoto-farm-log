@@ -1,7 +1,7 @@
 // summary.js  — 軽量化 + キュー + キャッシュ制御
 
-import { cb, safeFieldName, safeFileName } from "../common/util.js?v=2026031418";
-import { saveLog } from "./save/index.js?v=2026031418";
+import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
+import { saveLog } from "../common/save/index.js?v=2026031418";
 
 /* ---------------------------------------------------------
    0. サマリー更新キュー（非同期で1件ずつ処理）
