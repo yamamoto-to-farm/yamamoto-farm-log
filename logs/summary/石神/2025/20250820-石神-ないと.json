@@ -1,0 +1,26 @@
+{
+  "plantingRef": "20250820-石神-ないと",
+  "field": "石神",
+  "year": 2025,
+  "variety": "ないと",
+  "plantDate": "2025-08-20",
+  "seedRef": "20250726-ないと-01",
+  "harvest": {
+    "start": null,
+    "end": null,
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "yieldRate": null,
+  "quantity": 1280,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "notes": "",
+  "lastUpdated": "2026-03-18T12:57:58.982Z"
+}
