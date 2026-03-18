@@ -62,9 +62,10 @@
 
   <!-- JS 読み込み順が超重要 -->
   <script type="module" src="../common/summary.js?v=2026031418"></script>
+
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js?v=2026031418";
-    import { initSummaryManager } from "./summary-manager.js?v=2026031418";
+    import "./summary-manager.js?v=2026031418";   <!-- ★ initSummaryManager を削除 -->
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -73,7 +74,8 @@
 
       document.getElementById("form-area").style.display = "block";
 
-      initSummaryManager();
+      // ★ initSummaryManager() は不要
+      // summary-manager.js が自動で refreshMissingSummaries() を実行する
     });
   </script>
 
