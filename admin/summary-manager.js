@@ -1,19 +1,14 @@
 // summary-manager.js — 未生成リストが即時更新される完全版
+// CDN 遅延を完全に無視し、UI はローカルで更新する
 
 import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
 
+let currentMissing = [];
+
 /* ---------------------------------------------------------
-   1. index.json の読み込み（ローカルキャッシュ優先）
+   1. index.json の読み込み（初回のみ）
 --------------------------------------------------------- */
 async function loadIndex() {
-
-    // ★ summary.js が更新したローカルキャッシュを最優先で使う
-    if (window.indexCache) {
-        console.log(">>> loadIndex: using local indexCache");
-        return window.indexCache;
-    }
-
-    // ★ なければ fetch
     try {
         const res = await fetch(cb("../data/summary-index.json"), {
             cache: "no-store"
@@ -26,7 +21,7 @@ async function loadIndex() {
 }
 
 /* ---------------------------------------------------------
-   2. 未生成チェック
+   2. 未生成チェック（初回のみ）
 --------------------------------------------------------- */
 async function getMissingSummaries() {
     const index = await loadIndex();
@@ -77,7 +72,6 @@ function renderMissingList(list) {
         area.appendChild(div);
     }
 
-    // 個別生成
     document.querySelectorAll(".btn[data-ref]").forEach(btn => {
         btn.addEventListener("click", () => {
             enqueueSummaryUpdate(btn.dataset.ref);
@@ -86,31 +80,46 @@ function renderMissingList(list) {
 }
 
 /* ---------------------------------------------------------
-   4. すべて生成ボタン
+   4. 初期ロード
+--------------------------------------------------------- */
+export async function refreshMissingSummaries() {
+    currentMissing = await getMissingSummaries();
+    renderMissingList(currentMissing);
+}
+
+refreshMissingSummaries();
+
+/* ---------------------------------------------------------
+   5. すべて生成ボタン
 --------------------------------------------------------- */
 document.getElementById("generateAll").addEventListener("click", async () => {
-    const missing = await getMissingSummaries();
-
-    if (missing.length === 0) {
+    if (!currentMissing || currentMissing.length === 0) {
         alert("未生成のサマリーはありません");
         return;
     }
 
-    // ★ 一括生成リストを保存
-    window._bulkSummaryList = missing;
+    window._bulkSummaryList = [...currentMissing];
 
-    for (const ref of missing) {
+    for (const ref of currentMissing) {
         enqueueSummaryUpdate(ref);
     }
 });
 
 /* ---------------------------------------------------------
-   5. summaryQueueEmpty → すべて生成完了通知
+   6. summaryGenerated → ローカル配列から削除して即時反映
+--------------------------------------------------------- */
+window.addEventListener("summaryGenerated", (e) => {
+    const ref = e.detail.plantingRef;
+    if (!ref) return;
+
+    currentMissing = currentMissing.filter(r => r !== ref);
+    renderMissingList(currentMissing);
+});
+
+/* ---------------------------------------------------------
+   7. summaryQueueEmpty → 一括生成完了通知
 --------------------------------------------------------- */
 window.addEventListener("summaryQueueEmpty", () => {
-    refreshMissingSummaries();
-
-    // ★ 一括生成のときだけ通知
     if (window._bulkSummaryList && window._bulkSummaryList.length > 0) {
         const count = window._bulkSummaryList.length;
         const list = window._bulkSummaryList.join("\n");
@@ -124,15 +133,3 @@ window.addEventListener("summaryQueueEmpty", () => {
         window._bulkSummaryList = null;
     }
 });
-
-/* ---------------------------------------------------------
-   6. 初期表示
---------------------------------------------------------- */
-export function refreshMissingSummaries() {
-    setTimeout(async () => {
-        const missing = await getMissingSummaries();
-        renderMissingList(missing);
-    }, 200);
-}
-
-refreshMissingSummaries();

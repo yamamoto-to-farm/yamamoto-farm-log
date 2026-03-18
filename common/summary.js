@@ -1,4 +1,5 @@
 // common/summary.js — 個別生成は1件ずつ通知、すべて生成は1回だけ通知
+// さらに「summaryGenerated」イベントを飛ばして UI を即時更新できるようにする
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
@@ -25,7 +26,7 @@ async function processSummaryQueue() {
         try {
             const summary = await summaryUpdate(ref);
 
-            // ★ 個別生成のときだけ通知（すべて生成のときは通知しない）
+            // ★ 個別生成のときだけ詳細通知
             if (!window._bulkSummaryList) {
                 alert(
                     `サマリーを生成しました\n\n` +
@@ -40,17 +41,21 @@ async function processSummaryQueue() {
                 );
             }
 
+            // ★ UI に即時反映させるためのイベント
+            window.dispatchEvent(
+                new CustomEvent("summaryGenerated", {
+                    detail: { plantingRef: ref }
+                })
+            );
+
         } catch (e) {
             console.error("summaryUpdate failed:", e);
         }
 
-        // GitHub Pages の反映遅延を吸収
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 200));
     }
 
     summaryProcessing = false;
-
-    // ★ 全部終わった通知
     window.dispatchEvent(new Event("summaryQueueEmpty"));
 }
 
@@ -90,26 +95,21 @@ async function loadIndexCached() {
 }
 
 /* ---------------------------------------------------------
-   2. summaryUpdate（軽量化 + 安全化）
+   2. summaryUpdate
 --------------------------------------------------------- */
 export async function summaryUpdate(plantingRef) {
     console.log(">>> summaryUpdate START:", plantingRef);
 
-    // ---- CSV 読み込み ----
     const planting = await loadCsvCached("../logs/planting/all.csv", { value: plantingCache });
     const harvest = await loadCsvCached("../logs/harvest/all.csv", { value: harvestCache });
     const shipping = await loadCsvCached("../logs/weight/all.csv", { value: shippingCache });
 
     const p = planting.find(x => x.plantingRef === plantingRef);
-    if (!p) {
-        console.warn(">>> plantingRef not found:", plantingRef);
-        return;
-    }
+    if (!p) return;
 
     const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
     const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
-    // ---- サマリー生成 ----
     const summary = {
         plantingRef,
         variety: p.variety || "",
@@ -132,7 +132,6 @@ export async function summaryUpdate(plantingRef) {
         lastUpdated: new Date().toISOString()
     };
 
-    // ---- index.json 更新 ----
     const index = await loadIndexCached();
 
     const year = p.plantDate?.substring(0, 4) || "unknown";
@@ -147,7 +146,6 @@ export async function summaryUpdate(plantingRef) {
         index[safeField][year].push(fileName);
     }
 
-    // ---- 保存 ----
     await saveLog({
         type: "multi",
         files: [
@@ -162,8 +160,9 @@ export async function summaryUpdate(plantingRef) {
         ]
     });
 
-    // ★ GitHub 反映遅延を待たずに即時反映
+    // ★ ローカルキャッシュ更新
     indexCache = index;
+    window.indexCache = index;
 
     console.log(">>> summaryUpdate END:", plantingRef);
     return summary;
@@ -174,4 +173,3 @@ export async function summaryUpdate(plantingRef) {
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.enqueueSummaryUpdate = enqueueSummaryUpdate;
-window.indexCache = index;
