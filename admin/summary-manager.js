@@ -4,6 +4,7 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 export async function initSummaryManager() {
 
   async function loadIndex() {
+    // 相対パス + キャッシュ破り（CORSなし）
     const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return {};
@@ -76,7 +77,7 @@ export async function initSummaryManager() {
 
       div.innerHTML = `
         <div>
-          <strong>${p.plantDate || "(日付不明)"}</strong> ${field} ${p.variety}
+          <strong>${p.plantDate || "(日付不明)"} </strong> ${field} ${p.variety}
         </div>
         <button class="btn" data-ref="${p.plantingRef}">生成</button>
       `;
@@ -114,7 +115,7 @@ export async function initSummaryManager() {
 
     status.textContent = "すべてのサマリー生成が完了しました。";
 
-    // ★ GitHub → Raw CDN の反映待ち
+    // ★ 全保存後も反映待ち
     await new Promise(r => setTimeout(r, 1500));
 
     const missing = await getMissingSummaries();
