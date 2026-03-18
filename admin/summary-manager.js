@@ -1,6 +1,6 @@
 // summary-manager.js — 安定版（キャッシュ無効化 + 遅延更新 + キュー連携）
 
-import { cb, safeFieldName, safeFileName } from "../common/util.js?v=2026031418";
+import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
 
 /* ---------------------------------------------------------
    1. index.json の読み込み（キャッシュ無効化）
