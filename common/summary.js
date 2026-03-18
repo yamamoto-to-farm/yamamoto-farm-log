@@ -132,7 +132,7 @@ export async function summaryUpdate(plantingRef) {
         index[safeField][year].push(fileName);
     }
 
-    // ---- 保存 ----
+    // ---- 保存（軽量・確実） ----
     await saveLog({
         type: "multi",
         files: [
@@ -146,6 +146,9 @@ export async function summaryUpdate(plantingRef) {
             }
         ]
     });
+
+    // ★ GitHub 反映遅延を待たずに即時反映
+    indexCache = index;
 
     console.log(">>> summaryUpdate END:", plantingRef);
     return summary;
