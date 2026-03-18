@@ -1,7 +1,7 @@
-// summary.js — 安定版（キュー + キャッシュ制御 + 安全化）
+// common/summary.js — 安定版（キュー + キャッシュ制御 + 安全化）
 
-import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
-import { saveLog } from "../common/save/index.js?v=2026031418";
+import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
+import { saveLog } from "./save/index.js?v=2026031418";
 
 /* ---------------------------------------------------------
    0. サマリー更新キュー（非同期で1件ずつ処理）
@@ -29,13 +29,13 @@ async function processSummaryQueue() {
             console.error(">>> summaryUpdate failed:", e);
         }
 
-        // GitHub の反映遅延を吸収（重要）
+        // GitHub の反映遅延を少し吸収
         await new Promise(r => setTimeout(r, 300));
     }
 
     summaryProcessing = false;
 
-    // ★ キューが空になったことを summary-manager に通知
+    // キューが空になったことを summary-manager に通知
     window.dispatchEvent(new Event("summaryQueueEmpty"));
 }
 
@@ -64,7 +64,7 @@ async function loadIndexCached() {
     if (indexCache) return indexCache;
 
     try {
-        const res = await fetch(cb("data/summary-index.json"), {
+        const res = await fetch(cb("../data/summary-index.json"), {
             cache: "no-store"
         });
         if (!res.ok) return (indexCache = {});
@@ -81,9 +81,9 @@ export async function summaryUpdate(plantingRef) {
     console.log(">>> summaryUpdate START:", plantingRef);
 
     // ---- CSV 読み込み（キャッシュ利用） ----
-    const planting = await loadCsvCached("logs/planting/all.csv", { value: plantingCache });
-    const harvest = await loadCsvCached("logs/harvest/all.csv", { value: harvestCache });
-    const shipping = await loadCsvCached("logs/weight/all.csv", { value: shippingCache });
+    const planting = await loadCsvCached("../logs/planting/all.csv", { value: plantingCache });
+    const harvest = await loadCsvCached("../logs/harvest/all.csv", { value: harvestCache });
+    const shipping = await loadCsvCached("../logs/weight/all.csv", { value: shippingCache });
 
     const p = planting.find(x => x.plantingRef === plantingRef);
     if (!p) {
@@ -94,7 +94,7 @@ export async function summaryUpdate(plantingRef) {
     const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
     const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
-    // ---- サマリー生成（軽量化） ----
+    // ---- サマリー生成 ----
     const summary = {
         plantingRef,
         variety: p.variety || "",
@@ -121,7 +121,7 @@ export async function summaryUpdate(plantingRef) {
     const index = await loadIndexCached();
 
     const year = p.plantDate?.substring(0, 4) || "unknown";
-    const safeField = safeFieldName(p.field || "");   // ★ 安全化
+    const safeField = safeFieldName(p.field || "");
     const safeRef = safeFileName(plantingRef);
     const fileName = `${safeRef}.json`;
 
@@ -132,7 +132,7 @@ export async function summaryUpdate(plantingRef) {
         index[safeField][year].push(fileName);
     }
 
-    // ---- 保存（軽量・確実） ----
+    // ---- 保存 ----
     await saveLog({
         type: "multi",
         files: [
