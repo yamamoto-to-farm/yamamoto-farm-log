@@ -4,7 +4,6 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 export async function initSummaryManager() {
 
   async function loadIndex() {
-    // ★ 相対パス + キャッシュ破り（CORS 回避 & Raw CDN キャッシュ破壊）
     const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return {};
@@ -93,8 +92,11 @@ export async function initSummaryManager() {
           await window.summaryUpdate(ref);
           alert("サマリーを生成しました！");
 
-          // ★ 保存直後にキャッシュ破り付きリロード
-          location.href = location.pathname + "?t=" + Date.now();
+          // ★ GitHub → Raw CDN の反映待ち
+          await new Promise(r => setTimeout(r, 1500));
+
+          const missing = await getMissingSummaries();
+          renderList(missing);
 
         } catch (err) {
           console.error(err);
@@ -112,8 +114,11 @@ export async function initSummaryManager() {
 
     status.textContent = "すべてのサマリー生成が完了しました。";
 
-    // ★ 全生成後も即リロード
-    location.href = location.pathname + "?t=" + Date.now();
+    // ★ GitHub → Raw CDN の反映待ち
+    await new Promise(r => setTimeout(r, 1500));
+
+    const missing = await getMissingSummaries();
+    renderList(missing);
   });
 
   const missing = await getMissingSummaries();
