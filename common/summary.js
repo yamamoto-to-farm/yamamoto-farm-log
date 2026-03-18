@@ -1,315 +1,158 @@
-// common/summary.js
-// サマリー生成ロジック（logs/summary/ に保存）
+// summary.js  — 軽量化 + キュー + キャッシュ制御
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
 
 /* ---------------------------------------------------------
-   1. summary-index.json を読み込み
+   0. サマリー更新キュー（非同期で1件ずつ処理）
 --------------------------------------------------------- */
-async function loadIndex() {
-  try {
-    const res = await fetch(cb("../data/summary-index.json") + `?t=${Date.now()}`, {
-      cache: "no-store"
-    });
-    if (!res.ok) return {};
-    const json = await res.json();
-    console.log(">>> loadIndex OK:", json);
-    return json;
-  } catch (e) {
-    console.warn(">>> loadIndex ERROR:", e);
-    return {};
-  }
+window.summaryQueue = [];
+let summaryProcessing = false;
+
+export function enqueueSummaryUpdate(plantingRef) {
+    if (!plantingRef) return;
+    summaryQueue.push(plantingRef);
+    processSummaryQueue();
 }
 
-/* ---------------------------------------------------------
-   3. CSV 読み込み（404 → 空配列）
---------------------------------------------------------- */
-async function loadCsv(path) {
-  console.log(">>> loadCsv:", path);
+async function processSummaryQueue() {
+    if (summaryProcessing) return;
+    summaryProcessing = true;
 
-  if (path.includes("weight/all.csv")) {
-    try {
-      const check = await fetch(cb(path), {
-        method: "HEAD",
-        redirect: "manual",
-        cache: "no-store"
-      });
+    while (summaryQueue.length > 0) {
+        const ref = summaryQueue.shift();
+        console.log(">>> summaryQueue processing:", ref);
 
-      if (!check.ok) {
-        console.log(">>> weight/all.csv NOT FOUND → []");
-        return [];
-      }
-    } catch {
-      console.log(">>> weight/all.csv HEAD ERROR → []");
-      return [];
+        try {
+            await summaryUpdate(ref);
+        } catch (e) {
+            console.error(">>> summaryUpdate failed:", e);
+        }
+
+        // GitHub の反映遅延を吸収（重要）
+        await new Promise(r => setTimeout(r, 300));
     }
-  }
 
-  const res = await fetch(cb(path) + `?t=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const text = await res.text();
-  return Papa.parse(text, { header: true }).data;
+    summaryProcessing = false;
+
+    // ★ キューが空になったことを summary-manager に通知
+    window.dispatchEvent(new Event("summaryQueueEmpty"));
 }
 
 /* ---------------------------------------------------------
-   4. plantingRef → field/year 抽出
+   1. CSV / index のキャッシュ
 --------------------------------------------------------- */
-function parsePlantingRef(plantingRef) {
-  console.log(">>> parsePlantingRef:", plantingRef);
+let plantingCache = null;
+let harvestCache = null;
+let shippingCache = null;
+let indexCache = null;
 
-  if (!plantingRef || typeof plantingRef !== "string") return null;
+async function loadCsvCached(path, cacheVar) {
+    if (cacheVar.value) return cacheVar.value;
 
-  const parts = plantingRef.split("-");
-  if (parts.length < 2) return null;
+    const res = await fetch(cb(path) + `?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return [];
 
-  const date = parts[0];
-  const field = parts[1];
-  const year = date.substring(0, 4);
+    const text = await res.text();
+    const data = Papa.parse(text, { header: true }).data;
 
-  console.log(">>> parsed:", { field, year });
+    cacheVar.value = data;
+    return data;
+}
 
-  if (!field || !year) return null;
+async function loadIndexCached() {
+    if (indexCache) return indexCache;
 
-  return { field, year };
+    try {
+        const res = await fetch(cb("../data/summary-index.json") + `?t=${Date.now()}`, {
+            cache: "no-store"
+        });
+        if (!res.ok) return (indexCache = {});
+        return (indexCache = await res.json());
+    } catch {
+        return (indexCache = {});
+    }
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate(plantingRef, options)
-   options:
-     - skipSave: true のとき saveLog しない（summaryUpdateAll 用）
-     - index: 共有 index オブジェクト（あればそれを使う）
+   2. summaryUpdate（軽量化版）
 --------------------------------------------------------- */
-async function summaryUpdate(plantingRef, options = {}) {
-  const { skipSave = false, index: externalIndex = null } = options;
+export async function summaryUpdate(plantingRef) {
+    console.log(">>> summaryUpdate START:", plantingRef);
 
-  console.log("==============================================");
-  console.log(">>> summaryUpdate START:", plantingRef);
+    // ---- CSV 読み込み（キャッシュ利用） ----
+    const planting = await loadCsvCached("../logs/planting/all.csv", { value: plantingCache });
+    const harvest = await loadCsvCached("../logs/harvest/all.csv", { value: harvestCache });
+    const shipping = await loadCsvCached("../logs/weight/all.csv", { value: shippingCache });
 
-  const parsed = parsePlantingRef(plantingRef);
-  if (!parsed) {
-    console.warn(">>> parsePlantingRef FAILED");
-    return;
-  }
+    const p = planting.find(x => x.plantingRef === plantingRef);
+    if (!p) {
+        console.warn(">>> plantingRef not found:", plantingRef);
+        return;
+    }
 
-  const { field, year } = parsed;
+    const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
+    const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
-  const safeField = safeFieldName(field);
-  const safeRef = safeFileName(plantingRef);
+    // ---- サマリー生成（軽量化） ----
+    const summary = {
+        plantingRef,
+        variety: p.variety,
+        cropType: p.cropType,
+        plantDate: p.plantDate,
+        seedRef: p.seedRef,
+        quantity: Number(p.quantity || 0),
+        spacing: {
+            row: Number(p.spacingRow || 0),
+            bed: Number(p.spacingBed || 0)
+        },
+        harvest: {
+            count: harvestRows.length,
+            totalWeight: harvestRows.reduce((s, x) => s + Number(x.weight || 0), 0)
+        },
+        shipping: {
+            count: shippingRows.length,
+            totalWeight: shippingRows.reduce((s, x) => s + Number(x.weight || 0), 0)
+        },
+        lastUpdated: new Date().toISOString()
+    };
 
-  console.log(">>> field =", field);
-  console.log(">>> safeField =", safeField);
-  console.log(">>> safeRef =", safeRef);
+    // ---- index.json 更新（キャッシュ利用） ----
+    const index = await loadIndexCached();
 
-  // logs 配下の CSV を読む
-  const planting = await loadCsv("../logs/planting/all.csv");
-  const harvest = await loadCsv("../logs/harvest/all.csv");
-  const shipping = await loadCsv("../logs/weight/all.csv");
-
-  const p = planting.find(x => x.plantingRef === plantingRef);
-  console.log(">>> p =", p);
-
-  if (!p) {
-    console.warn(">>> p NOT FOUND → summaryUpdate STOP");
-    return;
-  }
-
-  const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
-  const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
-
-  /* ------------------------------
-     収穫集計
-  ------------------------------ */
-  let harvestStart = null;
-  let harvestEnd = null;
-  let harvestCount = harvestRows.length;
-  let harvestTotal = 0;
-
-  if (harvestRows.length > 0) {
-    const dates = harvestRows.map(x => x.date).filter(Boolean).sort();
-    harvestStart = dates[0];
-    harvestEnd = dates[dates.length - 1];
-    harvestTotal = harvestRows.reduce((sum, x) => sum + Number(x.weight || 0), 0);
-  }
-
-  /* ------------------------------
-     出荷集計（weight）
-  ------------------------------ */
-  let shippingCount = shippingRows.length;
-  let shippingTotal = shippingRows.reduce((sum, x) => sum + Number(x.weight || 0), 0);
-
-  /* ------------------------------
-     歩留まり
-  ------------------------------ */
-  let yieldRate = harvestTotal > 0 ? shippingTotal / harvestTotal : null;
-
-  /* ------------------------------
-     サマリー JSON
-  ------------------------------ */
-  const summary = {
-    plantingRef,
-    field,
-    year: Number(year),
-    variety: p.variety,
-    cropType: p.cropType,
-    plantDate: p.plantDate,
-    seedRef: p.seedRef,
-    harvest: {
-      start: harvestStart,
-      end: harvestEnd,
-      count: harvestCount,
-      totalWeight: harvestTotal
-    },
-    shipping: {
-      count: shippingCount,
-      totalWeight: shippingTotal
-    },
-    yieldRate,
-    quantity: Number(p.quantity || 0),
-    spacing: {
-      row: Number(p.spacingRow || 0),
-      bed: Number(p.spacingBed || 0)
-    },
-    notes: p.notes || "",
-    lastUpdated: new Date().toISOString()
-  };
-
-  console.log(">>> summary JSON:", summary);
-
-  /* ------------------------------
-     index.json を更新
-  ------------------------------ */
-  let index = externalIndex;
-  if (!index) {
-    index = await loadIndex();
-  }
-
-  console.log(">>> index BEFORE UPDATE:", JSON.stringify(index, null, 2));
-
-  if (!index[safeField]) index[safeField] = {};
-  if (!index[safeField][year]) index[safeField][year] = [];
-
-  const fileName = `${safeRef}.json`;
-
-  console.log(">>> fileName =", fileName);
-  console.log(">>> exists =", index[safeField][year].includes(fileName));
-
-  if (!index[safeField][year].includes(fileName)) {
-    index[safeField][year].push(fileName);
-  }
-
-  console.log(">>> index AFTER UPDATE:", JSON.stringify(index, null, 2));
-
-  const summaryPath = `logs/summary/${safeField}/${year}/${safeRef}.json`;
-
-  // skipSave のときは保存せず、summary と index を返す（summaryUpdateAll 用）
-  if (skipSave) {
-    console.log(">>> summaryUpdate SKIP SAVE (batch mode)");
-    console.log("==============================================");
-    return { summary, index, summaryPath };
-  }
-
-  /* ------------------------------
-     通常モード：multi-saveLog で一括保存
-  ------------------------------ */
-  await saveLog({
-    type: "multi",
-    files: [
-      {
-        path: summaryPath,
-        content: JSON.stringify(summary, null, 2)
-      },
-      {
-        path: "data/summary-index.json",
-        content: JSON.stringify(index, null, 2)
-      }
-    ]
-  });
-
-  console.log(">>> summaryUpdate END");
-  console.log("==============================================");
-
-  return summary;
-}
-
-/* ---------------------------------------------------------
-   6. summaryUpdateAll()  ← 20件ずつ分割保存
-   各サマリーごとに index も一緒に保存して競合を避ける
---------------------------------------------------------- */
-async function summaryUpdateAll() {
-  console.log(">>> summaryUpdateAll START");
-
-  const planting = await loadCsv("../logs/planting/all.csv");
-  const index = await loadIndex();
-
-  const files = [];
-
-  for (const p of planting) {
-    if (!p.plantingRef) continue;
-
-    const parsed = parsePlantingRef(p.plantingRef);
-    if (!parsed) continue;
-
-    const { field, year } = parsed;
-
-    const safeField = safeFieldName(field);
-    const safeRef = safeFileName(p.plantingRef);
+    const year = p.plantDate?.substring(0, 4) || "unknown";
+    const safeField = safeFieldName(p.field);
+    const safeRef = safeFileName(plantingRef);
     const fileName = `${safeRef}.json`;
 
-    console.log(">>> check:", safeField, year, fileName);
+    if (!index[safeField]) index[safeField] = {};
+    if (!index[safeField][year]) index[safeField][year] = [];
 
-    // 既に存在するならスキップ
-    if (
-      index[safeField] &&
-      index[safeField][year] &&
-      index[safeField][year].includes(fileName)
-    ) {
-      console.log(">>> SKIP:", fileName);
-      continue;
+    if (!index[safeField][year].includes(fileName)) {
+        index[safeField][year].push(fileName);
     }
 
-    // 保存せず summary と path を取得（index は参照渡しで更新される）
-    const result = await summaryUpdate(p.plantingRef, {
-      skipSave: true,
-      index
-    });
-    if (!result) continue;
-
-    const { summary, summaryPath } = result;
-
-    // サマリー本体
-    files.push({
-      path: summaryPath,
-      content: JSON.stringify(summary, null, 2)
-    });
-
-    // その時点の index も一緒に保存キューに積む
-    files.push({
-      path: "data/summary-index.json",
-      content: JSON.stringify(index, null, 2)
-    });
-  }
-
-  // 5件ずつ分割して保存（index.json もバッチごとに何度も書かれるが、
-  // saveLog が直列なので最後のものが必ず残る）
-  const batchSize = 5;
-
-  for (let i = 0; i < files.length; i += batchSize) {
-    const chunk = files.slice(i, i + batchSize);
-
-    console.log(`>>> Saving batch ${i / batchSize + 1}`);
-
+    // ---- 保存（軽量・確実） ----
     await saveLog({
-      type: "multi",
-      files: chunk
+        type: "multi",
+        files: [
+            {
+                path: `logs/summary/${safeField}/${year}/${fileName}`,
+                content: JSON.stringify(summary, null, 2)
+            },
+            {
+                path: "data/summary-index.json",
+                content: JSON.stringify(index, null, 2)
+            }
+        ]
     });
-  }
 
-  console.log(">>> summaryUpdateAll END");
+    console.log(">>> summaryUpdate END:", plantingRef);
+    return summary;
 }
 
 /* ---------------------------------------------------------
-   7. 公開 API
+   3. 公開 API
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
-window.summaryUpdateAll = summaryUpdateAll;
+window.enqueueSummaryUpdate = enqueueSummaryUpdate;

@@ -1,131 +1,68 @@
-// summary-manager.js
-import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
+// summary-manager.js — 安定版（キャッシュ無効化 + 遅延更新 + キュー連携）
 
-export async function initSummaryManager() {
+import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 
-  async function loadIndex() {
+/* ---------------------------------------------------------
+   1. index.json の読み込み（キャッシュ無効化）
+--------------------------------------------------------- */
+async function loadIndex() {
     try {
-      const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) return {};
-      return await res.json();
-    } catch (e) {
-      console.warn(">>> loadIndex JSON parse error:", e);
-      return {}; // ★ 壊れてても落とさない
+        const res = await fetch(cb("../data/summary-index.json") + `?t=${Date.now()}`, {
+            cache: "no-store"
+        });
+        if (!res.ok) return {};
+        return await res.json();
+    } catch {
+        return {};
     }
-  }
+}
 
-  async function loadCsv(path) {
-    const url = cb(path) + `?t=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return [];
-    const text = await res.text();
-    return Papa.parse(text, { header: true }).data;
-  }
-
-  function parsePlantingRef(plantingRef) {
-    const parts = plantingRef.split("-");
-    if (parts.length < 2) return null;
-    return {
-      field: parts[1],
-      year: parts[0].substring(0, 4)
-    };
-  }
-
-  function summaryExistsInIndex(index, field, year, safeRef) {
-    return (
-      index[field] &&
-      index[field][year] &&
-      index[field][year].includes(`${safeRef}.json`)
-    );
-  }
-
-  async function getMissingSummaries() {
+/* ---------------------------------------------------------
+   2. 未生成チェック
+--------------------------------------------------------- */
+async function getMissingSummaries() {
     const index = await loadIndex();
-    const planting = await loadCsv("../logs/planting/all.csv");
+
+    const planting = await fetch(cb("../logs/planting/all.csv") + `?t=${Date.now()}`, {
+        cache: "no-store"
+    })
+        .then(r => r.text())
+        .then(t => Papa.parse(t, { header: true }).data);
 
     const missing = [];
 
     for (const p of planting) {
-      if (!p.plantingRef) continue;
+        const year = p.plantDate?.substring(0, 4);
+        const safeField = safeFieldName(p.field);
+        const safeRef = safeFileName(p.plantingRef);
+        const fileName = `${safeRef}.json`;
 
-      const parsed = parsePlantingRef(p.plantingRef);
-      if (!parsed) continue;
-
-      const safeField = safeFieldName(parsed.field);
-      const safeRef = safeFileName(p.plantingRef);
-
-      const exists = summaryExistsInIndex(index, safeField, parsed.year, safeRef);
-
-      if (!exists) missing.push(p);
+        if (!index[safeField] || !index[safeField][year] || !index[safeField][year].includes(fileName)) {
+            missing.push(p.plantingRef);
+        }
     }
 
     return missing;
-  }
-
-  function renderList(list) {
-    const container = document.getElementById("summaryList");
-    container.innerHTML = "";
-
-    if (list.length === 0) {
-      container.innerHTML = "<p>すべてのサマリーが生成済みです。</p>";
-      return;
-    }
-
-    for (const p of list) {
-      const parsed = parsePlantingRef(p.plantingRef);
-      const field = parsed ? parsed.field : "(不明)";
-
-      const div = document.createElement("div");
-      div.className = "item";
-
-      div.innerHTML = `
-        <div>
-          <strong>${p.plantDate || "(日付不明)"} </strong> ${field} ${p.variety}
-        </div>
-        <button class="btn" data-ref="${p.plantingRef}">生成</button>
-      `;
-
-      container.appendChild(div);
-    }
-
-    container.querySelectorAll("button").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const ref = e.target.dataset.ref;
-
-        try {
-          await window.summaryUpdate(ref);
-          alert("サマリーを生成しました！");
-
-          // ★ GitHub → Raw CDN の反映待ち
-          await new Promise(r => setTimeout(r, 1500));
-
-          const missing = await getMissingSummaries();
-          renderList(missing);
-
-        } catch (err) {
-          console.error(err);
-          alert("サマリー生成に失敗しました");
-        }
-      });
-    });
-  }
-
-  document.getElementById("generateAll").addEventListener("click", async () => {
-    const status = document.getElementById("status");
-    status.textContent = "すべてのサマリーを生成中…";
-
-    await window.summaryUpdateAll();
-
-    status.textContent = "すべてのサマリー生成が完了しました。";
-
-    // ★ 全保存後も反映待ち
-    await new Promise(r => setTimeout(r, 1500));
-
-    const missing = await getMissingSummaries();
-    renderList(missing);
-  });
-
-  const missing = await getMissingSummaries();
-  renderList(missing);
 }
+
+/* ---------------------------------------------------------
+   3. UI 更新（GitHub 反映遅延を吸収）
+--------------------------------------------------------- */
+export function refreshMissingSummaries() {
+    setTimeout(async () => {
+        const missing = await getMissingSummaries();
+        renderMissingList(missing);
+    }, 500);
+}
+
+/* ---------------------------------------------------------
+   4. summaryQueue が空になったら UI 更新
+--------------------------------------------------------- */
+window.addEventListener("summaryQueueEmpty", () => {
+    refreshMissingSummaries();
+});
+
+/* ---------------------------------------------------------
+   5. ページ初期表示時にも missing を更新（重要）
+--------------------------------------------------------- */
+refreshMissingSummaries();
