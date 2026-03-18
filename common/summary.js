@@ -290,9 +290,9 @@ async function summaryUpdateAll() {
     });
   }
 
-  // 20件ずつ分割して保存（index.json もバッチごとに何度も書かれるが、
+  // 5件ずつ分割して保存（index.json もバッチごとに何度も書かれるが、
   // saveLog が直列なので最後のものが必ず残る）
-  const batchSize = 20;
+  const batchSize = 5;
 
   for (let i = 0; i < files.length; i += batchSize) {
     const chunk = files.slice(i, i + batchSize);
