@@ -7,7 +7,7 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 --------------------------------------------------------- */
 async function loadIndex() {
     try {
-        const res = await fetch(cb("../data/summary-index.json") + `?t=${Date.now()}`, {
+        const res = await fetch(cb("data/summary-index.json") + `?t=${Date.now()}`, {
             cache: "no-store"
         });
         if (!res.ok) return {};
@@ -23,7 +23,7 @@ async function loadIndex() {
 async function getMissingSummaries() {
     const index = await loadIndex();
 
-    const planting = await fetch(cb("../logs/planting/all.csv") + `?t=${Date.now()}`, {
+    const planting = await fetch(cb("logs/planting/all.csv") + `?t=${Date.now()}`, {
         cache: "no-store"
     })
         .then(r => r.text())
@@ -32,8 +32,10 @@ async function getMissingSummaries() {
     const missing = [];
 
     for (const p of planting) {
+        if (!p.plantingRef) continue;
+
         const year = p.plantDate?.substring(0, 4);
-        const safeField = safeFieldName(p.field);
+        const safeField = safeFieldName(p.field || "");   // ★ 修正
         const safeRef = safeFileName(p.plantingRef);
         const fileName = `${safeRef}.json`;
 

@@ -16,11 +16,18 @@ export function formatDate(date) {
 }
 
 /* ---------------------------------------------------------
-   safeFieldName（デバッグログ付き）
+   safeFieldName（デバッグログ付き・安全版）
 --------------------------------------------------------- */
 export function safeFieldName(field) {
   const before = field;
-  const after = field
+
+  // ★ undefined / null / 空欄でも落ちないようにする
+  if (!field) {
+    console.warn("[safeFieldName] field is empty/undefined → 'unknown'");
+    return "unknown";
+  }
+
+  const after = String(field)
     .replace(/[()（）]/g, "_")
     .replace(/_+$/g, "");
 
@@ -29,11 +36,17 @@ export function safeFieldName(field) {
 }
 
 /* ---------------------------------------------------------
-   safeFileName（デバッグログ付き）
+   safeFileName（デバッグログ付き・安全版）
 --------------------------------------------------------- */
 export function safeFileName(name) {
   const before = name;
-  const after = name
+
+  if (!name) {
+    console.warn("[safeFileName] name is empty/undefined → 'unknown'");
+    return "unknown";
+  }
+
+  const after = String(name)
     .replace(/[()（）]/g, "_")
     .replace(/[^\w\u3040-\u30FF\u4E00-\u9FFF-]/g, "_")
     .replace(/_+/g, "_")
