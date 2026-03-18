@@ -174,3 +174,4 @@ export async function summaryUpdate(plantingRef) {
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.enqueueSummaryUpdate = enqueueSummaryUpdate;
+window.indexCache = index;
