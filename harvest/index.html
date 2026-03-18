@@ -108,7 +108,14 @@
 
   </div><!-- /form-area -->
 
-  <!-- JS -->
+  <!-- ▼ 必須ライブラリ（順番が重要） -->
+  <!-- ① PapaParse（CSV パーサー） -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- ② summary.js（Papa.parse を使うので必ず先に読み込む） -->
+  <script src="/yamamoto-farm-log/common/summary.js?v=2026031418"></script>
+
+  <!-- ③ harvest.js（summary.js を使うので後） -->
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
     import { initHarvestPage } from "./harvest.js";
