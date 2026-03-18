@@ -4,11 +4,15 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 export async function initSummaryManager() {
 
   async function loadIndex() {
-    // 相対パス + キャッシュ破り（CORSなし）
-    const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return {};
-    return await res.json();
+    try {
+      const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) return {};
+      return await res.json();
+    } catch (e) {
+      console.warn(">>> loadIndex JSON parse error:", e);
+      return {}; // ★ 壊れてても落とさない
+    }
   }
 
   async function loadCsv(path) {
