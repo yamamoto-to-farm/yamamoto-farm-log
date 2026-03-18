@@ -1,6 +1,6 @@
 // summary.js  — 軽量化 + キュー + キャッシュ制御
 
-import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
+import { cb, safeFieldName, safeFileName } from "../common/util.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
 
 /* ---------------------------------------------------------
