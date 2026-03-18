@@ -1,5 +1,5 @@
-// common/summary.js — 個別生成は1件ずつ通知、すべて生成は1回だけ通知
-// さらに「summaryGenerated」イベントを飛ばして UI を即時更新できるようにする
+// common/summary.js — サマリー構造を最適化（planting / harvest / shipping）
+// 収穫基数・開始/終了日、出荷開始/終了日、harvestPlanYM を反映
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
@@ -30,14 +30,21 @@ async function processSummaryQueue() {
             if (!window._bulkSummaryList) {
                 alert(
                     `サマリーを生成しました\n\n` +
+                    `【定植】\n` +
                     `plantingRef: ${summary.plantingRef}\n` +
-                    `品種: ${summary.variety}\n` +
-                    `作型: ${summary.cropType}\n` +
-                    `定植日: ${summary.plantDate}\n` +
-                    `収穫回数: ${summary.harvest.count}\n` +
-                    `収穫総重量: ${summary.harvest.totalWeight} kg\n` +
-                    `出荷回数: ${summary.shipping.count}\n` +
-                    `出荷総重量: ${summary.shipping.totalWeight} kg`
+                    `品種: ${summary.planting.variety}\n` +
+                    `定植日: ${summary.planting.plantDate}\n` +
+                    `収穫予定: ${summary.planting.harvestPlanYM}\n\n` +
+                    `【収穫】\n` +
+                    `回数: ${summary.harvest.count}\n` +
+                    `基数合計: ${summary.harvest.totalAmount}\n` +
+                    `開始: ${summary.harvest.firstDate || "-"}\n` +
+                    `最新: ${summary.harvest.lastDate || "-"}\n\n` +
+                    `【出荷】\n` +
+                    `回数: ${summary.shipping.count}\n` +
+                    `重量合計: ${summary.shipping.totalWeight} kg\n` +
+                    `開始: ${summary.shipping.firstDate || "-"}\n` +
+                    `最新: ${summary.shipping.lastDate || "-"}`
                 );
             }
 
@@ -95,7 +102,7 @@ async function loadIndexCached() {
 }
 
 /* ---------------------------------------------------------
-   2. summaryUpdate
+   2. summaryUpdate（サマリー構造を最適化）
 --------------------------------------------------------- */
 export async function summaryUpdate(plantingRef) {
     console.log(">>> summaryUpdate START:", plantingRef);
@@ -110,28 +117,57 @@ export async function summaryUpdate(plantingRef) {
     const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
     const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
+    /* ------------------------------
+       収穫（harvest）
+    ------------------------------ */
+    const harvestDates = harvestRows.map(x => x.harvestDate).filter(Boolean).sort();
+    const harvestTotalAmount = harvestRows.reduce((s, x) => s + Number(x.amount || 0), 0);
+
+    /* ------------------------------
+       出荷（shipping）
+    ------------------------------ */
+    const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
+    const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.weight || 0), 0);
+
+    /* ------------------------------
+       サマリー構造（最終形）
+    ------------------------------ */
     const summary = {
         plantingRef,
-        variety: p.variety || "",
-        cropType: p.cropType || "",
-        plantDate: p.plantDate || "",
-        seedRef: p.seedRef || "",
-        quantity: Number(p.quantity || 0),
-        spacing: {
-            row: Number(p.spacingRow || 0),
-            bed: Number(p.spacingBed || 0)
+
+        planting: {
+            plantDate: p.plantDate || "",
+            field: p.field || "",
+            variety: p.variety || "",
+            seedRef: p.seedRef || "",
+            quantity: Number(p.quantity || 0),
+            spacing: {
+                row: Number(p.spacingRow || 0),
+                bed: Number(p.spacingBed || 0)
+            },
+            harvestPlanYM: p.harvestPlanYM || ""
         },
+
         harvest: {
             count: harvestRows.length,
-            totalWeight: harvestRows.reduce((s, x) => s + Number(x.weight || 0), 0)
+            totalAmount: harvestTotalAmount,
+            firstDate: harvestDates[0] || null,
+            lastDate: harvestDates[harvestDates.length - 1] || null
         },
+
         shipping: {
             count: shippingRows.length,
-            totalWeight: shippingRows.reduce((s, x) => s + Number(x.weight || 0), 0)
+            totalWeight: shippingTotalWeight,
+            firstDate: shippingDates[0] || null,
+            lastDate: shippingDates[shippingDates.length - 1] || null
         },
+
         lastUpdated: new Date().toISOString()
     };
 
+    /* ------------------------------
+       summary-index.json 更新
+    ------------------------------ */
     const index = await loadIndexCached();
 
     const year = p.plantDate?.substring(0, 4) || "unknown";
@@ -160,7 +196,6 @@ export async function summaryUpdate(plantingRef) {
         ]
     });
 
-    // ★ ローカルキャッシュ更新
     indexCache = index;
     window.indexCache = index;
 
