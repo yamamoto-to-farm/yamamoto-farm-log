@@ -3,9 +3,15 @@
 import { readText } from "../github.js";
 import { loadCSV } from "../csv.js";
 
+// ------------------------------
+// 保存キュー
+// ------------------------------
 const saveQueue = [];
 let saving = false;
 
+// ------------------------------
+// saveLog（名前はそのまま）
+// ------------------------------
 export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replaceCsv = "") {
   let payload;
 
@@ -27,6 +33,9 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
   return enqueueSave(payload);
 }
 
+// ------------------------------
+// キューに追加
+// ------------------------------
 function enqueueSave(payload) {
   return new Promise((resolve, reject) => {
     saveQueue.push({ payload, resolve, reject });
@@ -34,6 +43,9 @@ function enqueueSave(payload) {
   });
 }
 
+// ------------------------------
+// キュー処理（直列化）
+// ------------------------------
 async function processQueue() {
   if (saving) return;
   if (saveQueue.length === 0) return;
@@ -43,13 +55,13 @@ async function processQueue() {
   const { payload, resolve, reject } = saveQueue.shift();
 
   try {
-    // -----------------------------
+    // ------------------------------
     // 1. 保存前の内容を取得
-    // -----------------------------
+    // ------------------------------
     let before = null;
 
     if (payload.type === "multi") {
-      // multi の場合は確認しない（大量なので）
+      // multi は大量なので確認しない
     } else if (payload.csv && payload.replaceCsv === "") {
       // CSV append の場合
       before = await loadCSV(`logs/${payload.type}/all.csv`);
@@ -58,9 +70,9 @@ async function processQueue() {
       before = await readText(payload.dateStr);
     }
 
-    // -----------------------------
+    // ------------------------------
     // 2. Worker に保存リクエスト
-    // -----------------------------
+    // ------------------------------
     const res = await fetch(
       "https://raspy-poetry-cf6f.yamamoto-to-farm.workers.dev",
       {
@@ -72,22 +84,33 @@ async function processQueue() {
 
     if (!res.ok) throw new Error("保存サーバーへの送信に失敗");
 
-    // -----------------------------
-    // 3. 保存後の内容を取得して比較
-    // -----------------------------
+    // ------------------------------
+    // 3. 保存後の更新確認（GitHub raw の遅延に対応）
+    // ------------------------------
     if (before !== null) {
-      let after;
+      let updated = false;
 
-      if (payload.csv && payload.replaceCsv === "") {
-        after = await loadCSV(`logs/${payload.type}/all.csv`);
-        if (after.length <= before.length) {
-          throw new Error("CSV が更新されていません");
+      // 最大5回リトライ（200ms × 5 = 最大1秒）
+      for (let i = 0; i < 5; i++) {
+        await new Promise(r => setTimeout(r, 200));
+
+        if (payload.csv && payload.replaceCsv === "") {
+          const after = await loadCSV(`logs/${payload.type}/all.csv`);
+          if (after.length > before.length) {
+            updated = true;
+            break;
+          }
+        } else if (payload.json) {
+          const after = await readText(payload.dateStr);
+          if (after.trim() !== before.trim()) {
+            updated = true;
+            break;
+          }
         }
-      } else if (payload.json) {
-        after = await readText(payload.dateStr);
-        if (after.trim() === before.trim()) {
-          throw new Error("JSON が更新されていません");
-        }
+      }
+
+      if (!updated) {
+        throw new Error("保存は完了しましたが、反映が遅れています（CSV/JSON 未更新）");
       }
     }
 
