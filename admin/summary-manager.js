@@ -1,4 +1,4 @@
-// summary-manager.js — 安定版（キャッシュ無効化 + 遅延更新 + キュー連携）
+// summary-manager.js — 完全修正版（パス修正 + UI描画 + 安全化）
 
 import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
 
@@ -7,7 +7,7 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 --------------------------------------------------------- */
 async function loadIndex() {
     try {
-        const res = await fetch(cb("data/summary-index.json") + `?t=${Date.now()}`, {
+        const res = await fetch(cb("../data/summary-index.json"), {
             cache: "no-store"
         });
         if (!res.ok) return {};
@@ -23,7 +23,7 @@ async function loadIndex() {
 async function getMissingSummaries() {
     const index = await loadIndex();
 
-    const planting = await fetch(cb("logs/planting/all.csv") + `?t=${Date.now()}`, {
+    const planting = await fetch(cb("../logs/planting/all.csv"), {
         cache: "no-store"
     })
         .then(r => r.text())
@@ -35,7 +35,7 @@ async function getMissingSummaries() {
         if (!p.plantingRef) continue;
 
         const year = p.plantDate?.substring(0, 4);
-        const safeField = safeFieldName(p.field || "");   // ★ 修正
+        const safeField = safeFieldName(p.field || "");
         const safeRef = safeFileName(p.plantingRef);
         const fileName = `${safeRef}.json`;
 
@@ -48,7 +48,38 @@ async function getMissingSummaries() {
 }
 
 /* ---------------------------------------------------------
-   3. UI 更新（GitHub 反映遅延を吸収）
+   3. UI 描画
+--------------------------------------------------------- */
+function renderMissingList(list) {
+    const area = document.getElementById("summaryList");
+    area.innerHTML = "";
+
+    if (list.length === 0) {
+        area.innerHTML = "<p>すべて生成済みです。</p>";
+        return;
+    }
+
+    for (const ref of list) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+            <span>${ref}</span>
+            <button class="btn" data-ref="${ref}">生成</button>
+        `;
+        area.appendChild(div);
+    }
+
+    // 個別生成ボタン
+    document.querySelectorAll(".btn[data-ref]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const ref = btn.dataset.ref;
+            enqueueSummaryUpdate(ref);
+        });
+    });
+}
+
+/* ---------------------------------------------------------
+   4. UI 更新（GitHub 反映遅延を吸収）
 --------------------------------------------------------- */
 export function refreshMissingSummaries() {
     setTimeout(async () => {
@@ -58,13 +89,13 @@ export function refreshMissingSummaries() {
 }
 
 /* ---------------------------------------------------------
-   4. summaryQueue が空になったら UI 更新
+   5. summaryQueue が空になったら UI 更新
 --------------------------------------------------------- */
 window.addEventListener("summaryQueueEmpty", () => {
     refreshMissingSummaries();
 });
 
 /* ---------------------------------------------------------
-   5. ページ初期表示時にも missing を更新（重要）
+   6. ページ初期表示時にも missing を更新（重要）
 --------------------------------------------------------- */
 refreshMissingSummaries();
