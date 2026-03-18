@@ -1,9 +1,9 @@
 {
-  "plantingRef": "20250822-王崎-ないと",
-  "field": "王崎",
+  "plantingRef": "20250825-高田(南・1)-ないと",
+  "field": "高田(南・1)",
   "year": 2025,
   "variety": "ないと",
-  "plantDate": "2025-08-22",
+  "plantDate": "2025-08-25",
   "seedRef": "20250726-ないと-01",
   "harvest": {
     "start": null,
@@ -16,11 +16,11 @@
     "totalWeight": 0
   },
   "yieldRate": null,
-  "quantity": 8384,
+  "quantity": 5120,
   "spacing": {
     "row": 34,
     "bed": 60
   },
-  "notes": "",
-  "lastUpdated": "2026-03-18T11:07:24.551Z"
+  "notes": "谷側",
+  "lastUpdated": "2026-03-18T11:07:24.815Z"
 }
