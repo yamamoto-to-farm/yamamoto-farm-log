@@ -65,7 +65,7 @@
 
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js?v=2026031418";
-    import "./summary-manager.js?v=2026031418";   <!-- ★ initSummaryManager を削除 -->
+    import "./summary-manager.js?v=2026031418";   // initSummaryManager は不要
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -74,7 +74,6 @@
 
       document.getElementById("form-area").style.display = "block";
 
-      // ★ initSummaryManager() は不要
       // summary-manager.js が自動で refreshMissingSummaries() を実行する
     });
   </script>
