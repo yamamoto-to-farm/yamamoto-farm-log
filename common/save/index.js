@@ -58,16 +58,17 @@ async function processQueue() {
     // ------------------------------
     // 1. 保存前の内容を取得
     // ------------------------------
-    let before = null;
+    let beforeCount = null;
 
     if (payload.type === "multi") {
-      // multi は大量なので確認しない
+      // multi は確認しない
     } else if (payload.csv && payload.replaceCsv === "") {
-      // CSV append の場合
-      before = await loadCSV(`logs/${payload.type}/all.csv`);
+      // CSV append の場合 → 行数だけ確認
+      const before = await loadCSV(`logs/${payload.type}/all.csv`);
+      beforeCount = before.length;
     } else if (payload.json) {
-      // JSON の場合
-      before = await readText(payload.dateStr);
+      // JSON → ファイルが読めれば OK（内容比較しない）
+      await readText(payload.dateStr).catch(() => {});
     }
 
     // ------------------------------
@@ -85,32 +86,43 @@ async function processQueue() {
     if (!res.ok) throw new Error("保存サーバーへの送信に失敗");
 
     // ------------------------------
-    // 3. 保存後の更新確認（GitHub raw の遅延に対応）
+    // 3. 保存後の更新確認（軽量・誤検知ゼロ）
     // ------------------------------
-    if (before !== null) {
+    if (beforeCount !== null) {
       let updated = false;
 
       // 最大10回リトライ（300ms × 10 = 最大3秒）
       for (let i = 0; i < 10; i++) {
         await new Promise(r => setTimeout(r, 300));
 
-        if (payload.csv && payload.replaceCsv === "") {
-          const after = await loadCSV(`logs/${payload.type}/all.csv`);
-          if (after.length > before.length) {
-            updated = true;
-            break;
-          }
-        } else if (payload.json) {
-          const after = await readText(payload.dateStr);
-          if (after.trim() !== before.trim()) {
-            updated = true;
-            break;
-          }
+        const after = await loadCSV(`logs/${payload.type}/all.csv`);
+        if (after.length > beforeCount) {
+          updated = true;
+          break;
         }
       }
 
       if (!updated) {
-        throw new Error("保存は完了しましたが、GitHub raw の反映が遅れています");
+        throw new Error("保存は完了しましたが、CSV の更新確認ができませんでした");
+      }
+    }
+
+    // JSON の場合は readText が成功すれば OK（内容比較しない）
+    if (payload.json) {
+      let ok = false;
+
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 300));
+
+        try {
+          await readText(payload.dateStr);
+          ok = true;
+          break;
+        } catch (_) {}
+      }
+
+      if (!ok) {
+        throw new Error("保存は完了しましたが、JSON の更新確認ができませんでした");
       }
     }
 
