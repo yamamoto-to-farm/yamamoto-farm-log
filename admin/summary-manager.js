@@ -4,14 +4,11 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 export async function initSummaryManager() {
 
   async function loadIndex() {
-    try {
-      const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) return {};
-      return await res.json();
-    } catch {
-      return {};
-    }
+    // GitHub Pages 経由 + キャッシュ破り
+    const url = `https://yamamoto-farm.github.io/yamamoto-farm-log/data/summary-index.json?t=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return {};
+    return await res.json();
   }
 
   async function loadCsv(path) {
@@ -94,13 +91,14 @@ export async function initSummaryManager() {
         try {
           await window.summaryUpdate(ref);
           alert("サマリーを生成しました！");
+
+          // ★ 保存直後にキャッシュ破り付きリロード
+          location.href = location.pathname + "?t=" + Date.now();
+
         } catch (err) {
           console.error(err);
           alert("サマリー生成に失敗しました");
         }
-
-        const missing = await getMissingSummaries();
-        renderList(missing);
       });
     });
   }
@@ -113,8 +111,8 @@ export async function initSummaryManager() {
 
     status.textContent = "すべてのサマリー生成が完了しました。";
 
-    const missing = await getMissingSummaries();
-    renderList(missing);
+    // ★ まとめて生成後も即リロード
+    location.href = location.pathname + "?t=" + Date.now();
   });
 
   const missing = await getMissingSummaries();
