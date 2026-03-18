@@ -1,10 +1,10 @@
 {
-  "plantingRef": "20250831-高田-CTみかさ",
-  "field": "高田",
+  "plantingRef": "20250903-西天伯(30a)-りくと",
+  "field": "西天伯(30a)",
   "year": 2025,
-  "variety": "CTみかさ",
-  "plantDate": "2025-08-31",
-  "seedRef": "20250730-CTみかさ-02",
+  "variety": "りくと",
+  "plantDate": "2025-09-03",
+  "seedRef": "20250801-りくと-01",
   "harvest": {
     "start": null,
     "end": null,
@@ -16,11 +16,11 @@
     "totalWeight": 0
   },
   "yieldRate": null,
-  "quantity": 9600,
+  "quantity": 14464,
   "spacing": {
     "row": 34,
     "bed": 60
   },
   "notes": "",
-  "lastUpdated": "2026-03-18T11:05:08.543Z"
+  "lastUpdated": "2026-03-18T11:05:08.904Z"
 }

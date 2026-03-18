@@ -1,10 +1,10 @@
 {
-  "plantingRef": "20250903-西天伯(20a)-レッドマーケット",
+  "plantingRef": "20250903-西天伯(20a)-レッドコメット(MKS-C901)",
   "field": "西天伯(20a)",
   "year": 2025,
-  "variety": "レッドマーケット",
+  "variety": "レッドコメット(MKS-C901)",
   "plantDate": "2025-09-03",
-  "seedRef": "20250730-レッドマーケット-01",
+  "seedRef": "20250727-レッドコメット(MKS-C901)-01",
   "harvest": {
     "start": null,
     "end": null,
@@ -16,11 +16,11 @@
     "totalWeight": 0
   },
   "yieldRate": null,
-  "quantity": 5632,
+  "quantity": 2560,
   "spacing": {
     "row": 34,
     "bed": 60
   },
   "notes": "",
-  "lastUpdated": "2026-03-18T11:05:08.757Z"
+  "lastUpdated": "2026-03-18T11:05:08.808Z"
 }
