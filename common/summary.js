@@ -1,312 +1,121 @@
-// common/summary.js
-// サマリー生成ロジック（logs/summary/ に保存）
+// summary-manager.js
+import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418";
 
-import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
-import { saveLog } from "./save/index.js?v=2026031418";
+export async function initSummaryManager() {
 
-/* ---------------------------------------------------------
-   1. summary-index.json を読み込み
---------------------------------------------------------- */
-async function loadIndex() {
-    try {
-        const res = await fetch(cb("../data/summary-index.json"));
-        if (!res.ok) return {};
-        const json = await res.json();
-        console.log(">>> loadIndex OK:", json);
-        return json;
-    } catch (e) {
-        console.warn(">>> loadIndex ERROR:", e);
-        return {};
-    }
-}
+  async function loadIndex() {
+    // ★ 相対パス + キャッシュ破り（CORS 回避 & Raw CDN キャッシュ破壊）
+    const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return {};
+    return await res.json();
+  }
 
-/* ---------------------------------------------------------
-   3. CSV 読み込み（404 → 空配列）
---------------------------------------------------------- */
-async function loadCsv(path) {
-    console.log(">>> loadCsv:", path);
-
-    if (path.includes("weight/all.csv")) {
-        try {
-            const check = await fetch(cb(path), {
-                method: "HEAD",
-                redirect: "manual",
-                cache: "no-store"
-            });
-
-            if (!check.ok) {
-                console.log(">>> weight/all.csv NOT FOUND → []");
-                return [];
-            }
-        } catch {
-            console.log(">>> weight/all.csv HEAD ERROR → []");
-            return [];
-        }
-    }
-
-    const res = await fetch(cb(path));
+  async function loadCsv(path) {
+    const url = cb(path) + `?t=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return [];
     const text = await res.text();
     return Papa.parse(text, { header: true }).data;
-}
+  }
 
-/* ---------------------------------------------------------
-   4. plantingRef → field/year 抽出
---------------------------------------------------------- */
-function parsePlantingRef(plantingRef) {
-    console.log(">>> parsePlantingRef:", plantingRef);
-
-    if (!plantingRef || typeof plantingRef !== "string") return null;
-
+  function parsePlantingRef(plantingRef) {
     const parts = plantingRef.split("-");
     if (parts.length < 2) return null;
-
-    const date = parts[0];
-    const field = parts[1];
-    const year = date.substring(0, 4);
-
-    console.log(">>> parsed:", { field, year });
-
-    if (!field || !year) return null;
-
-    return { field, year };
-}
-
-/* ---------------------------------------------------------
-   5. summaryUpdate(plantingRef, options)
-   options:
-     - skipSave: true のとき saveLog しない（summaryUpdateAll 用）
-     - index: 共有 index オブジェクト（あればそれを使う）
---------------------------------------------------------- */
-async function summaryUpdate(plantingRef, options = {}) {
-    const { skipSave = false, index: externalIndex = null } = options;
-
-    console.log("==============================================");
-    console.log(">>> summaryUpdate START:", plantingRef);
-
-    const parsed = parsePlantingRef(plantingRef);
-    if (!parsed) {
-        console.warn(">>> parsePlantingRef FAILED");
-        return;
-    }
-
-    const { field, year } = parsed;
-
-    const safeField = safeFieldName(field);
-    const safeRef = safeFileName(plantingRef);
-
-    console.log(">>> field =", field);
-    console.log(">>> safeField =", safeField);
-    console.log(">>> safeRef =", safeRef);
-
-    // logs 配下の CSV を読む
-    const planting = await loadCsv("../logs/planting/all.csv");
-    const harvest = await loadCsv("../logs/harvest/all.csv");
-    const shipping = await loadCsv("../logs/weight/all.csv");
-
-    const p = planting.find(x => x.plantingRef === plantingRef);
-    console.log(">>> p =", p);
-
-    if (!p) {
-        console.warn(">>> p NOT FOUND → summaryUpdate STOP");
-        return;
-    }
-
-    const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
-    const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
-
-    /* ------------------------------
-       収穫集計
-    ------------------------------ */
-    let harvestStart = null;
-    let harvestEnd = null;
-    let harvestCount = harvestRows.length;
-    let harvestTotal = 0;
-
-    if (harvestRows.length > 0) {
-        const dates = harvestRows.map(x => x.date).filter(Boolean).sort();
-        harvestStart = dates[0];
-        harvestEnd = dates[dates.length - 1];
-        harvestTotal = harvestRows.reduce((sum, x) => sum + Number(x.weight || 0), 0);
-    }
-
-    /* ------------------------------
-       出荷集計（weight）
-    ------------------------------ */
-    let shippingCount = shippingRows.length;
-    let shippingTotal = shippingRows.reduce((sum, x) => sum + Number(x.weight || 0), 0);
-
-    /* ------------------------------
-       歩留まり
-    ------------------------------ */
-    let yieldRate = harvestTotal > 0 ? shippingTotal / harvestTotal : null;
-
-    /* ------------------------------
-       サマリー JSON
-    ------------------------------ */
-    const summary = {
-        plantingRef,
-        field,
-        year: Number(year),
-        variety: p.variety,
-        cropType: p.cropType,
-        plantDate: p.plantDate,
-        seedRef: p.seedRef,
-        harvest: {
-            start: harvestStart,
-            end: harvestEnd,
-            count: harvestCount,
-            totalWeight: harvestTotal
-        },
-        shipping: {
-            count: shippingCount,
-            totalWeight: shippingTotal
-        },
-        yieldRate,
-        quantity: Number(p.quantity || 0),
-        spacing: {
-            row: Number(p.spacingRow || 0),
-            bed: Number(p.spacingBed || 0)
-        },
-        notes: p.notes || "",
-        lastUpdated: new Date().toISOString()
+    return {
+      field: parts[1],
+      year: parts[0].substring(0, 4)
     };
+  }
 
-    console.log(">>> summary JSON:", summary);
+  function summaryExistsInIndex(index, field, year, safeRef) {
+    return (
+      index[field] &&
+      index[field][year] &&
+      index[field][year].includes(`${safeRef}.json`)
+    );
+  }
 
-    /* ------------------------------
-       index.json を更新
-    ------------------------------ */
-    let index = externalIndex;
-    if (!index) {
-        index = await loadIndex();
-    }
-
-    console.log(">>> index BEFORE UPDATE:", JSON.stringify(index, null, 2));
-
-    if (!index[safeField]) index[safeField] = {};
-    if (!index[safeField][year]) index[safeField][year] = [];
-
-    const fileName = `${safeRef}.json`;
-
-    console.log(">>> fileName =", fileName);
-    console.log(">>> exists =", index[safeField][year].includes(fileName));
-
-    if (!index[safeField][year].includes(fileName)) {
-        index[safeField][year].push(fileName);
-    }
-
-    console.log(">>> index AFTER UPDATE:", JSON.stringify(index, null, 2));
-
-    const summaryPath = `logs/summary/${safeField}/${year}/${safeRef}.json`;
-
-    // skipSave のときは保存せず、summary と index を返す（summaryUpdateAll 用）
-    if (skipSave) {
-        console.log(">>> summaryUpdate SKIP SAVE (batch mode)");
-        console.log("==============================================");
-        return { summary, index, summaryPath };
-    }
-
-    /* ------------------------------
-       ★ 通常モード：multi-saveLog で一括保存 ★
-    ------------------------------ */
-    await saveLog({
-        type: "multi",
-        files: [
-            {
-                path: summaryPath,
-                content: JSON.stringify(summary, null, 2)
-            },
-            {
-                path: "data/summary-index.json",
-                content: JSON.stringify(index, null, 2)
-            }
-        ]
-    });
-
-    console.log(">>> summaryUpdate END");
-    console.log("==============================================");
-
-    return summary;
-}
-
-/* ---------------------------------------------------------
-   6. summaryUpdateAll()  ← 20件ずつ分割保存
---------------------------------------------------------- */
-async function summaryUpdateAll() {
-    console.log(">>> summaryUpdateAll START");
-
-    const planting = await loadCsv("../logs/planting/all.csv");
+  async function getMissingSummaries() {
     const index = await loadIndex();
+    const planting = await loadCsv("../logs/planting/all.csv");
 
-    const files = [];
+    const missing = [];
 
     for (const p of planting) {
-        if (!p.plantingRef) continue;
+      if (!p.plantingRef) continue;
 
-        const parsed = parsePlantingRef(p.plantingRef);
-        if (!parsed) continue;
+      const parsed = parsePlantingRef(p.plantingRef);
+      if (!parsed) continue;
 
-        const { field, year } = parsed;
+      const safeField = safeFieldName(parsed.field);
+      const safeRef = safeFileName(p.plantingRef);
 
-        const safeField = safeFieldName(field);
-        const safeRef = safeFileName(p.plantingRef);
-        const fileName = `${safeRef}.json`;
+      const exists = summaryExistsInIndex(index, safeField, parsed.year, safeRef);
 
-        console.log(">>> check:", safeField, year, fileName);
+      if (!exists) missing.push(p);
+    }
 
-        // 既に存在するならスキップ
-        if (
-            index[safeField] &&
-            index[safeField][year] &&
-            index[safeField][year].includes(fileName)
-        ) {
-            console.log(">>> SKIP:", fileName);
-            continue;
+    return missing;
+  }
+
+  function renderList(list) {
+    const container = document.getElementById("summaryList");
+    container.innerHTML = "";
+
+    if (list.length === 0) {
+      container.innerHTML = "<p>すべてのサマリーが生成済みです。</p>";
+      return;
+    }
+
+    for (const p of list) {
+      const parsed = parsePlantingRef(p.plantingRef);
+      const field = parsed ? parsed.field : "(不明)";
+
+      const div = document.createElement("div");
+      div.className = "item";
+
+      div.innerHTML = `
+        <div>
+          <strong>${p.plantDate || "(日付不明)"}</strong> ${field} ${p.variety}
+        </div>
+        <button class="btn" data-ref="${p.plantingRef}">生成</button>
+      `;
+
+      container.appendChild(div);
+    }
+
+    container.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const ref = e.target.dataset.ref;
+
+        try {
+          await window.summaryUpdate(ref);
+          alert("サマリーを生成しました！");
+
+          // ★ 保存直後にキャッシュ破り付きリロード
+          location.href = location.pathname + "?t=" + Date.now();
+
+        } catch (err) {
+          console.error(err);
+          alert("サマリー生成に失敗しました");
         }
-
-        // 保存せず summary と path を取得（index は参照渡しで更新される）
-        const result = await summaryUpdate(p.plantingRef, {
-            skipSave: true,
-            index
-        });
-        if (!result) continue;
-
-        const { summary, summaryPath } = result;
-
-        files.push({
-            path: summaryPath,
-            content: JSON.stringify(summary, null, 2)
-        });
-    }
-
-    // 最後に index.json を追加
-    files.push({
-        path: "data/summary-index.json",
-        content: JSON.stringify(index, null, 2)
+      });
     });
+  }
 
-    /* ------------------------------
-       ★ 20件ずつ分割して保存
-    ------------------------------ */
-    const batchSize = 20;
+  document.getElementById("generateAll").addEventListener("click", async () => {
+    const status = document.getElementById("status");
+    status.textContent = "すべてのサマリーを生成中…";
 
-    for (let i = 0; i < files.length; i += batchSize) {
-        const chunk = files.slice(i, i + batchSize);
+    await window.summaryUpdateAll();
 
-        console.log(`>>> Saving batch ${i / batchSize + 1}`);
+    status.textContent = "すべてのサマリー生成が完了しました。";
 
-        await saveLog({
-            type: "multi",
-            files: chunk
-        });
-    }
+    // ★ 全生成後も即リロード
+    location.href = location.pathname + "?t=" + Date.now();
+  });
 
-    console.log(">>> summaryUpdateAll END");
+  const missing = await getMissingSummaries();
+  renderList(missing);
 }
-
-/* ---------------------------------------------------------
-   7. 公開 API
---------------------------------------------------------- */
-window.summaryUpdate = summaryUpdate;
-window.summaryUpdateAll = summaryUpdateAll;
