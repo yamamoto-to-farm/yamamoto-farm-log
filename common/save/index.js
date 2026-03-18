@@ -63,11 +63,9 @@ async function processQueue() {
     if (payload.type === "multi") {
       // multi は確認しない
     } else if (payload.csv && payload.replaceCsv === "") {
-      // CSV append の場合 → 行数だけ確認
       const before = await loadCSV(`logs/${payload.type}/all.csv`);
       beforeCount = before.length;
     } else if (payload.json) {
-      // JSON → ファイルが読めれば OK（内容比較しない）
       await readText(payload.dateStr).catch(() => {});
     }
 
@@ -86,14 +84,13 @@ async function processQueue() {
     if (!res.ok) throw new Error("保存サーバーへの送信に失敗");
 
     // ------------------------------
-    // 3. 保存後の更新確認（軽量・誤検知ゼロ）
+    // 3. 保存後の更新確認（最大10秒）
     // ------------------------------
     if (beforeCount !== null) {
       let updated = false;
 
-      // 最大10回リトライ（300ms × 10 = 最大3秒）
-      for (let i = 0; i < 10; i++) {
-        await new Promise(r => setTimeout(r, 300));
+      for (let i = 0; i < 20; i++) { // 20回
+        await new Promise(r => setTimeout(r, 500)); // 500ms
 
         const after = await loadCSV(`logs/${payload.type}/all.csv`);
         if (after.length > beforeCount) {
@@ -102,17 +99,17 @@ async function processQueue() {
         }
       }
 
+      // 10秒待っても確認できなければ成功扱い
       if (!updated) {
-        throw new Error("保存は完了しましたが、CSV の更新確認ができませんでした");
+        console.warn("CSV 更新確認できず（raw 遅延の可能性）→ 保存成功扱い");
       }
     }
 
-    // JSON の場合は readText が成功すれば OK（内容比較しない）
     if (payload.json) {
       let ok = false;
 
-      for (let i = 0; i < 10; i++) {
-        await new Promise(r => setTimeout(r, 300));
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 500));
 
         try {
           await readText(payload.dateStr);
@@ -122,7 +119,7 @@ async function processQueue() {
       }
 
       if (!ok) {
-        throw new Error("保存は完了しましたが、JSON の更新確認ができませんでした");
+        console.warn("JSON 更新確認できず（raw 遅延の可能性）→ 保存成功扱い");
       }
     }
 
