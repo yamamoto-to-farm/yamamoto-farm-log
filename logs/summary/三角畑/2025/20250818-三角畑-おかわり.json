@@ -1,0 +1,21 @@
+{
+  "plantingRef": "20250818-三角畑-おかわり",
+  "variety": "おかわり",
+  "cropType": "",
+  "plantDate": "2025-08-18",
+  "seedRef": "20250718-おかわり-01",
+  "quantity": 4928,
+  "spacing": {
+    "row": 34,
+    "bed": 60
+  },
+  "harvest": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0
+  },
+  "lastUpdated": "2026-03-18T15:08:23.210Z"
+}

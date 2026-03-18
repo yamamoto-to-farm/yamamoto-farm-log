@@ -1,10 +1,10 @@
 {
-  "plantingRef": "20250814-しあわせ地蔵-はやとよ",
+  "plantingRef": "20250814-三角畑-はやとよ",
   "variety": "はやとよ",
   "cropType": "",
   "plantDate": "2025-08-14",
   "seedRef": "20250711-はやとよ-01",
-  "quantity": 1984,
+  "quantity": 3046.4,
   "spacing": {
     "row": 33,
     "bed": 60
@@ -17,5 +17,5 @@
     "count": 0,
     "totalWeight": 0
   },
-  "lastUpdated": "2026-03-18T15:04:58.088Z"
+  "lastUpdated": "2026-03-18T15:07:39.652Z"
 }
