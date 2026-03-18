@@ -4,15 +4,16 @@ import { cb, safeFieldName, safeFileName } from "../common/utils.js?v=2026031418
 export async function initSummaryManager() {
 
   async function loadIndex() {
-    // GitHub Pages 経由 + キャッシュ破り
-    const url = `https://yamamoto-farm.github.io/yamamoto-farm-log/data/summary-index.json?t=${Date.now()}`;
+    // ★ 相対パス + キャッシュ破り（CORS 回避 & Raw CDN キャッシュ破壊）
+    const url = cb("../data/summary-index.json") + `?t=${Date.now()}`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return {};
     return await res.json();
   }
 
   async function loadCsv(path) {
-    const res = await fetch(cb(path));
+    const url = cb(path) + `?t=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return [];
     const text = await res.text();
     return Papa.parse(text, { header: true }).data;
@@ -111,7 +112,7 @@ export async function initSummaryManager() {
 
     status.textContent = "すべてのサマリー生成が完了しました。";
 
-    // ★ まとめて生成後も即リロード
+    // ★ 全生成後も即リロード
     location.href = location.pathname + "?t=" + Date.now();
   });
 
