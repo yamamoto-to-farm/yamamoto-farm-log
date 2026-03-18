@@ -90,9 +90,9 @@ async function processQueue() {
     if (before !== null) {
       let updated = false;
 
-      // 最大5回リトライ（200ms × 5 = 最大1秒）
-      for (let i = 0; i < 5; i++) {
-        await new Promise(r => setTimeout(r, 200));
+      // 最大10回リトライ（300ms × 10 = 最大3秒）
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 300));
 
         if (payload.csv && payload.replaceCsv === "") {
           const after = await loadCSV(`logs/${payload.type}/all.csv`);
@@ -110,7 +110,7 @@ async function processQueue() {
       }
 
       if (!updated) {
-        throw new Error("保存は完了しましたが、反映が遅れています（CSV/JSON 未更新）");
+        throw new Error("保存は完了しましたが、GitHub raw の反映が遅れています");
       }
     }
 
