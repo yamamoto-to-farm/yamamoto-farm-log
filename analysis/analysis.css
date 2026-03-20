@@ -46,61 +46,41 @@ h1 {
   line-height: 1.6;
 }
 
-.info hr {
-  border: none;
-  border-top: 1px solid #eee;
-  margin: 14px 0;
+.info-block {
+  margin-bottom: 18px;
+}
+
+.info-block-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 12px 0 6px;
+  color: #333;
 }
 
 /* ===============================
    数値強調
 =============================== */
-.summary-number {
-  font-size: 28px;
+.highlight {
   font-weight: bold;
   color: #2c7;
 }
 
-.summary-unit {
-  font-size: 14px;
-  color: #666;
-  margin-left: 4px;
-}
-
 /* ===============================
-   ボタン
+   年ごとの折りたたみ
 =============================== */
-.save-btn,
-.back-btn {
-  display: block;
-  width: 100%;
-  max-width: 260px;
-  margin: 20px auto 0;
-  padding: 12px 0;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: none;
+details {
+  background: #fff;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+details summary {
   cursor: pointer;
-  transition: 0.2s;
-}
-
-.save-btn {
-  background: #4CAF50;
-  color: white;
-}
-
-.save-btn:hover {
-  background: #43a047;
-}
-
-.back-btn {
-  background: #ddd;
+  font-size: 20px;
+  font-weight: 600;
   color: #333;
-}
-
-.back-btn:hover {
-  background: #ccc;
 }
 
 /* ===============================
@@ -125,11 +105,5 @@ h1 {
 
   .info-line {
     font-size: 15px;
-  }
-
-  .save-btn,
-  .back-btn {
-    font-size: 15px;
-    padding: 10px 0;
   }
 }
