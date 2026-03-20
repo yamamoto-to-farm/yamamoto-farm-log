@@ -355,9 +355,15 @@ async function saveShipping() {
   );
 
   // ★ サマリー自動更新
-  // ★ 1秒遅らせて summaryUpdate を呼ぶ（競合回避）
+  // ★ 1秒遅らせて summaryUpdate を呼ぶ・さらに前回処理まで待つ（競合回避）
   setTimeout(() => {
-    targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
+    let delay = 0;
+    targets.forEach(t => {
+      setTimeout(() => {
+        enqueueSummaryUpdate(t.plantingRef);
+      }, delay);
+      delay += 1500;
+    });
   }, 1000);
 
   // ★ 保存内容をサマリー風にダイアログ表示
