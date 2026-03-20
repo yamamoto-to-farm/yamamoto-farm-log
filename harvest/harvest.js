@@ -12,6 +12,7 @@ import {
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
+import { enqueueSummaryUpdate } from "../common/summary.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
@@ -247,7 +248,7 @@ async function saveHarvestInner() {
   await saveLog(
     "harvest",
     dateStr,
-    { plantingRefs: targets.map(t => t.plantingRef) },
+    { plantingRefs: [data.plantingRef] },
     csvLine + "\n"
   );
 
