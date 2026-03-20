@@ -6,6 +6,7 @@
     "variety": "夏ごろも",
     "seedRef": "20250711-夏ごろも-01",
     "quantity": 4096,
+    "trayType": 128,
     "spacing": {
       "row": 34,
       "bed": 60
@@ -20,9 +21,9 @@
   },
   "shipping": {
     "count": 1,
-    "totalWeight": 0,
+    "totalWeight": 1266,
     "firstDate": "2025-10-26",
     "lastDate": "2025-10-26"
   },
-  "lastUpdated": "2026-03-18T15:52:58.882Z"
+  "lastUpdated": "2026-03-20T19:42:40.831Z"
 }

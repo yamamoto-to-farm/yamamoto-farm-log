@@ -6,6 +6,7 @@
     "variety": "藍天",
     "seedRef": "20250711-藍天-01",
     "quantity": 3840,
+    "trayType": 128,
     "spacing": {
       "row": 34,
       "bed": 60
@@ -20,9 +21,9 @@
   },
   "shipping": {
     "count": 1,
-    "totalWeight": 0,
+    "totalWeight": 5187,
     "firstDate": "2025-10-26",
     "lastDate": "2025-10-26"
   },
-  "lastUpdated": "2026-03-18T15:53:29.454Z"
+  "lastUpdated": "2026-03-20T19:43:16.629Z"
 }
