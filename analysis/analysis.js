@@ -92,42 +92,87 @@ export async function initAnalysisPage() {
    summary.json → カード生成
 =============================== */
 function renderSummaryCard(s) {
+
+  /* ------------------------------
+     日付処理
+  ------------------------------ */
   const plantDate = new Date(s.planting.plantDate);
   const firstHarvest = new Date(s.harvest.firstDate);
   const lastHarvest = new Date(s.harvest.lastDate);
 
+  // 定植 → 初回収穫日数
   const daysToHarvest =
     Math.floor((firstHarvest - plantDate) / (1000 * 60 * 60 * 24));
 
+  /* ------------------------------
+     面積計算（㎡・反）
+     株数 × 条間(m) × 株間(m)
+  ------------------------------ */
   const areaM2 =
     Number(s.planting.quantity) *
     (Number(s.planting.spacing.row) / 100) *
     (Number(s.planting.spacing.bed) / 100);
 
-  const areaTan = areaM2 / 990;
+  const areaTan = areaM2 / 990; // 1反 = 990㎡
 
+  /* ------------------------------
+     spacing 表示
+  ------------------------------ */
   const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
 
+  /* ------------------------------
+     最終更新（日本時間）
+  ------------------------------ */
   const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", {
     timeZone: "Asia/Tokyo"
   });
 
-  const totalAmount = s.harvest.totalAmount;
-  const totalWeight = s.shipping.totalWeight;
+  /* ------------------------------
+     収穫データ
+  ------------------------------ */
+  const totalAmount = s.harvest.totalAmount; // 基数
+  const totalWeight = s.shipping.totalWeight; // kg
 
+  /* ------------------------------
+     1基あたり平均重量（kg/基）
+     → 重量 ÷ 基数
+  ------------------------------ */
   const avgPerUnit = totalAmount > 0
-    ? ((totalWeight * 1000) / totalAmount).toFixed(0)
+    ? (totalWeight / totalAmount).toFixed(2)
     : "-";
 
+  /* ------------------------------
+     1株あたり収量（kg/株）
+     → 重量 ÷ 株数
+  ------------------------------ */
+  const avgPerPlant = s.planting.quantity > 0
+    ? (totalWeight / s.planting.quantity).toFixed(3)
+    : "-";
+
+  /* ------------------------------
+     単収（kg/10a）
+     → 重量 ÷ (面積㎡ / 1000)
+  ------------------------------ */
   const yieldPer10a =
     areaM2 > 0 ? (totalWeight / (areaM2 / 1000)).toFixed(1) : "-";
 
+  /* ------------------------------
+     反当たり収量（kg/反）
+     → 重量 ÷ 反
+  ------------------------------ */
   const yieldPerTan =
     areaTan > 0 ? (totalWeight / areaTan).toFixed(1) : "-";
 
+  /* ------------------------------
+     1㎡あたり収量（kg/㎡）
+     → 重量 ÷ 面積㎡
+  ------------------------------ */
   const yieldPerM2 =
     areaM2 > 0 ? (totalWeight / areaM2).toFixed(2) : "-";
 
+  /* ------------------------------
+     収穫期間の短縮表示
+  ------------------------------ */
   const harvestDays =
     Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1;
 
@@ -139,6 +184,16 @@ function renderSummaryCard(s) {
       ? `${firstMD}（1日）`
       : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
 
+  /* ------------------------------
+     収穫効率（回/日）
+     → 収穫回数 ÷ 収穫期間日数
+  ------------------------------ */
+  const harvestEfficiency =
+    harvestDays > 0 ? (s.harvest.count / harvestDays).toFixed(2) : "-";
+
+  /* ------------------------------
+     HTML 出力
+  ------------------------------ */
   return `
     <div class="card">
 
@@ -165,10 +220,10 @@ function renderSummaryCard(s) {
         <div class="info-block-title">【分析指標】</div>
         <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
         <div class="info-line">反当たり収量：${yieldPerTan} kg/反</div>
-        <div class="info-line">1株あたり収量：${avgPerUnit} g/株</div>
-        <div class="info-line">1基あたり平均重量：${avgPerUnit} g/基</div>
+        <div class="info-line">1株あたり収量：${avgPerPlant} kg/株</div>
+        <div class="info-line">1基あたり平均重量：${avgPerUnit} kg/基</div>
         <div class="info-line">1㎡あたり収量：${yieldPerM2} kg/㎡</div>
-        <div class="info-line">収穫効率：${(s.harvest.count / harvestDays).toFixed(2)} 回/日</div>
+        <div class="info-line">収穫効率：${harvestEfficiency} 回/日</div>
       </div>
 
       <div class="info-line" style="font-size:12px; color:#666;">
