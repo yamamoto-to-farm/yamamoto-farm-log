@@ -67,12 +67,14 @@ export async function saveCsvFile(csvType, csvFile) {
   console.log("✔ dateStr:", dateStr);
 
   try {
-    console.log("✔ sending replaceCsv via saveLog...");
     await saveLog(csvType, dateStr, {}, "", csvText);
 
-    // ★ 保存した内容をローカルキャッシュに即反映（これが最重要）
+    // ★ URL を loader と同じ形式にする
+    const url = `../../logs/${csvType}/${csvFile}`;
+
+    // ★ 保存した内容をローカルキャッシュに即反映
     window._csvCache = window._csvCache || {};
-    window._csvCache[csvFile] = rows;  // ← rows は保存した最新データ
+    window._csvCache[url] = rows;
 
     alert("CSV を保存しました（GitHub Actions 経由で全書き換え）");
   } catch (e) {
