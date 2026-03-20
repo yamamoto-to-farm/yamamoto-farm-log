@@ -6,17 +6,17 @@ import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1";
 // 1. JSON / CSV を読み込む
 // ------------------------------
 async function loadHarvestBase() {
-  const res = await fetch(`/yamamoto-farm-log/data/harvestBase.json?v=${Date.now()}`);
+  const res = await fetch(`/yamamoto-farm-log/data/harvestBase.json`);
   return await res.json();
 }
 
 async function loadSummaryIndex() {
-  const res = await fetch(`/yamamoto-farm-log/data/summary-index.json?v=${Date.now()}`);
+  const res = await fetch(`/yamamoto-farm-log/data/summary-index.json`);
   return await res.json();
 }
 
 async function loadHarvestCSV() {
-  return await loadCSV(`/yamamoto-farm-log/data/harvest.csv?v=${Date.now()}`);
+  return await loadCSV(`/yamamoto-farm-log/data/harvest.csv`);
 }
 
 // ------------------------------
