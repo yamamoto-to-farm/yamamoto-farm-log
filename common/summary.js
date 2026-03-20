@@ -127,7 +127,7 @@ export async function summaryUpdate(plantingRef) {
        出荷（shipping）
     ------------------------------ */
     const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
-    const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.weight || 0), 0);
+    const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.totalWeight || 0), 0);
 
     /* ------------------------------
        サマリー構造（最終形）
