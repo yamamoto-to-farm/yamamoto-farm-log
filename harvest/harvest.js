@@ -251,7 +251,12 @@ async function saveHarvestInner() {
   });
 
   // ★ サマリー自動更新
-  enqueueSummaryUpdate(data.plantingRef);
+  // ★ 1秒遅らせて summaryUpdate を呼ぶ（競合回避）
+  /*
+  setTimeout(() => {
+    enqueueSummaryUpdate(data.plantingRef);
+  }, 1000);
+*/
 
   // ★ 保存内容をサマリー風にダイアログ表示
   alert(
