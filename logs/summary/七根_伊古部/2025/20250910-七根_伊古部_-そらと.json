@@ -19,8 +19,8 @@
     "lastDate": "2026-03-20"
   },
   "shipping": {
-    "count": 0,
-    "totalWeight": 0,
+    "count": 1,
+    "totalWeight": 6973,
     "firstDate": null,
     "lastDate": null
   },
