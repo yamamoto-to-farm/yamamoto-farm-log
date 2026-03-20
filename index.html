@@ -5,6 +5,11 @@
   <title>山本農園ログ - 目次</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- ★ キャッシュ対策 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <style>
     body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
     h1 { margin-bottom: 20px; }
@@ -53,11 +58,15 @@
     }
   </style>
 
+  <!-- ★ ui.js にキャッシュバスター -->
+  <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
+
   <script type="module">
-    import { showPinGate } from "/yamamoto-farm-log/common/ui.js";
+    import { showPinGate } from "/yamamoto-farm-log/common/ui.js?v=1";
 
     async function loadPages() {
-      const res = await fetch("/yamamoto-farm-log/data/pages.json");
+      // ★ pages.json にキャッシュバスター
+      const res = await fetch(`/yamamoto-farm-log/data/pages.json?v=${Date.now()}`);
       return (await res.json()).pages;
     }
 
@@ -90,27 +99,19 @@
 
     window.addEventListener("DOMContentLoaded", () => {
 
-      // ★ PIN 認証 UI を表示
       showPinGate("pin-area", async () => {
 
-        // ★ ログイン中ユーザーを表示
         document.getElementById("login-user").textContent =
           `ログイン中：${window.currentHuman}（${window.currentRole}）`;
 
-        // ★ ログアウトボタン表示
         document.getElementById("logout-btn").style.display = "inline-block";
-
-        // メニュー表示
         document.getElementById("menu-area").style.display = "block";
 
         const role = window.currentRole;
         const pages = await loadPages();
 
         pages.forEach(page => {
-          // ロール制御
           if (!page.roles.includes(role)) return;
-
-          // トップでは「管理/〜」は非表示
           if (page.category.startsWith("管理/")) return;
 
           const grid = ensureSection(page.category);
@@ -118,7 +119,6 @@
         });
       });
 
-      // ★ ログアウト処理
       document.getElementById("logout-btn").addEventListener("click", () => {
         localStorage.removeItem("human");
         localStorage.removeItem("role");
@@ -133,18 +133,15 @@
 
   <h1>山本農園ログ - 目次</h1>
 
-  <!-- ★ ログイン中ユーザー表示 -->
   <div id="login-user"></div>
   <button id="logout-btn" style="display:none;">ログアウト</button>
 
-  <!-- PIN 入力エリア -->
   <div id="pin-area">
     <div>アクセスキーを入力してください</div>
     <input id="pin-input" type="password" style="font-size:18px; padding:6px; margin-top:8px;">
     <button id="pin-submit" style="font-size:18px; padding:6px 12px;">OK</button>
   </div>
 
-  <!-- メニュー -->
   <div id="menu-area" style="display:none"></div>
 
 </body>
