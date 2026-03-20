@@ -362,7 +362,7 @@ async function saveShipping() {
       setTimeout(() => {
         enqueueSummaryUpdate(t.plantingRef);
       }, delay);
-      delay += 1500;
+      delay += 3500;
     });
   }, 1000);
 
