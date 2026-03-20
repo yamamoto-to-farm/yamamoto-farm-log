@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>収穫ダッシュボード（月別 予定 × 実績）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="harvest-dashboard.css">
+</head>
+<body>
+  <h1>収穫ダッシュボード（月別 予定 × 実績）</h1>
+
+  <!-- 基準編集ブロック -->
+  <section>
+    <h2>月別収穫基準（harvestBase）</h2>
+    <table id="base-table">
+      <thead>
+        <tr>
+          <th>月</th>
+          <th>yieldPerTan (kg/反)</th>
+          <th>unitsPerTan (基/反)</th>
+        </tr>
+      </thead>
+      <tbody id="base-body">
+        <!-- JS で埋める -->
+      </tbody>
+    </table>
+    <button id="save-base-btn">基準を保存</button>
+  </section>
+
+  <!-- 月別 予定 × 実績テーブル -->
+  <section>
+    <h2>月別 収穫予定 × 実績</h2>
+    <table id="monthly-table">
+      <thead>
+        <tr>
+          <th>月</th>
+          <th>予定面積(反)</th>
+          <th>実績面積(反)</th>
+          <th>差分(反)</th>
+          <th>目標収量(kg)</th>
+          <th>収穫実績(kg)</th>
+          <th>目標基数(基)</th>
+          <th>出荷実績(基)</th>
+        </tr>
+      </thead>
+      <tbody id="monthly-body">
+        <!-- JS で埋める -->
+      </tbody>
+    </table>
+  </section>
+
+  <script type="module" src="harvest-dashboard.js"></script>
+</body>
+</html>

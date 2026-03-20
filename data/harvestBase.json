@@ -1,0 +1,18 @@
+{
+  "monthly": {
+    "01": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "02": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "03": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "04": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "05": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "06": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+
+    "07": { "yieldPerTan": 0, "unitsPerTan": 0 },
+    "08": { "yieldPerTan": 0, "unitsPerTan": 0 },
+    "09": { "yieldPerTan": 0, "unitsPerTan": 0 },
+
+    "10": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "11": { "yieldPerTan": 8500, "unitsPerTan": 20 },
+    "12": { "yieldPerTan": 8500, "unitsPerTan": 20 }
+  }
+}

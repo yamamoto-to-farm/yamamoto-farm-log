@@ -89,6 +89,14 @@
       "roles": ["admin"],
       "icon": "./assets/icons/summary.png"
     },
+     {
+      "id": "harvest-dashboard",
+      "name": "収穫ダッシュボード（月別 予定 × 実績）",
+      "path": "./harvest-dashboard.html",
+      "category": "管理/ツール",
+      "roles": ["admin"],
+      "icon": "./assets/icons/harvest-dashboard.png"
+    },
     {
       "id": "varieties",
       "name": "品種データ管理",
