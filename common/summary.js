@@ -141,6 +141,7 @@ export async function summaryUpdate(plantingRef) {
             variety: p.variety || "",
             seedRef: p.seedRef || "",
             quantity: Number(p.quantity || 0),
+            trayType: p.trayType ? Number(p.trayType) : null,
             spacing: {
                 row: Number(p.spacingRow || 0),
                 bed: Number(p.spacingBed || 0)
