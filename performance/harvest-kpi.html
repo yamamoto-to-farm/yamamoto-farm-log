@@ -4,51 +4,67 @@
   <meta charset="UTF-8">
   <title>収穫KPI（月別 予定 × 実績）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="harvest-dashboard.css">
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
+    h1 { margin-bottom: 20px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: right;
+    }
+
+    th {
+      background: #f0f0f0;
+      text-align: center;
+    }
+
+    .diff-positive { color: #2e8b57; font-weight: bold; }
+    .diff-negative { color: #c0392b; font-weight: bold; }
+    .diff-zero { color: #555; }
+
+    #loading {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+
+  <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
+  <script type="module" src="./harvest-kpi.js?v=1"></script>
 </head>
+
 <body>
+
   <h1>収穫KPI（月別 予定 × 実績）</h1>
 
-  <!-- 基準編集ブロック -->
-  <section>
-    <h2>月別収穫基準（harvestBase）</h2>
-    <table id="base-table">
-      <thead>
-        <tr>
-          <th>月</th>
-          <th>yieldPerTan (kg/反)</th>
-          <th>unitsPerTan (基/反)</th>
-        </tr>
-      </thead>
-      <tbody id="base-body">
-        <!-- JS で埋める -->
-      </tbody>
-    </table>
-    <button id="save-base-btn">基準を保存</button>
-  </section>
+  <div id="loading">データ読込中...</div>
 
-  <!-- 月別 予定 × 実績テーブル -->
-  <section>
-    <h2>月別 収穫予定 × 実績</h2>
-    <table id="monthly-table">
-      <thead>
-        <tr>
-          <th>月</th>
-          <th>予定面積(反)</th>
-          <th>実績面積(反)</th>
-          <th>差分(反)</th>
-          <th>目標収量(kg)</th>
-          <th>収穫実績(kg)</th>
-          <th>目標基数(基)</th>
-          <th>出荷実績(基)</th>
-        </tr>
-      </thead>
-      <tbody id="monthly-body">
-        <!-- JS で埋める -->
-      </tbody>
-    </table>
-  </section>
+  <table id="kpi-table" style="display:none;">
+    <thead>
+      <tr>
+        <th>月</th>
+        <th>予定面積(反)</th>
+        <th>実績面積(反)</th>
+        <th>差分(反)</th>
+        <th>目標収量(kg)</th>
+        <th>収穫実績(kg)</th>
+        <th>目標基数(基)</th>
+        <th>出荷実績(基)</th>
+      </tr>
+    </thead>
+    <tbody id="kpi-body">
+      <!-- JS で埋める -->
+    </tbody>
+  </table>
 
-  <script type="module" src="harvest-dashboard.js"></script>
 </body>
 </html>
