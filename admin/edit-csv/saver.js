@@ -69,6 +69,11 @@ export async function saveCsvFile(csvType, csvFile) {
   try {
     console.log("✔ sending replaceCsv via saveLog...");
     await saveLog(csvType, dateStr, {}, "", csvText);
+
+    // ★ 保存した内容をローカルキャッシュに即反映（これが最重要）
+    window._csvCache = window._csvCache || {};
+    window._csvCache[csvFile] = rows;  // ← rows は保存した最新データ
+
     alert("CSV を保存しました（GitHub Actions 経由で全書き換え）");
   } catch (e) {
     console.error("❌ saveLog error:", e);
