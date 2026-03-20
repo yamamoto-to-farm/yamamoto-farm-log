@@ -71,12 +71,18 @@ export async function initAnalysisPage() {
     return;
   }
 
-  // 年ごとにまとめて表示
+  // 年ごとにまとめて表示（折りたたみ）
   let html = "";
 
   for (const year of Object.keys(index[fieldName]).sort()) {
 
-    html += `<h2>${year} 年</h2>`;
+    html += `
+      <details>
+        <summary style="font-size:20px; cursor:pointer; margin:10px 0;">
+          ${year} 年
+        </summary>
+        <div class="year-block">
+    `;
 
     const files = index[fieldName][year];
 
@@ -85,9 +91,13 @@ export async function initAnalysisPage() {
       const url = `/yamamoto-farm-log/logs/summary/${fieldName}/${year}/${file}`;
       const summary = await fetch(url).then(r => r.json());
 
-      const cardHtml = renderSummaryCard(summary);
-      html += cardHtml + "<hr>";
+      html += renderSummaryCard(summary) + "<hr>";
     }
+
+    html += `
+        </div>
+      </details>
+    `;
   }
 
   document.getElementById("latest-harvest").innerHTML = html;
@@ -103,6 +113,7 @@ function renderSummaryCard(s) {
   // --- 日付 ---
   const plantDate = new Date(s.planting.plantDate);
   const firstHarvest = new Date(s.harvest.firstDate);
+  const lastHarvest = new Date(s.harvest.lastDate);
 
   const daysToHarvest =
     Math.floor((firstHarvest - plantDate) / (1000 * 60 * 60 * 24));
@@ -113,9 +124,34 @@ function renderSummaryCard(s) {
     (Number(s.planting.spacing.row) / 100) *
     (Number(s.planting.spacing.bed) / 100);
 
+  const areaTan = areaM2 / 990;
+
+  // --- spacing 表示（cm × cm） ---
+  const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
+
   // --- 単収 ---
   const yieldPer10a =
     areaM2 > 0 ? (Number(s.shipping.totalWeight) / (areaM2 / 1000)).toFixed(1) : "-";
+
+  // --- 最終更新（JST） ---
+  const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo"
+  });
+
+  // --- 収穫期間の短縮表示 ---
+  let harvestPeriod = "-";
+  if (s.harvest.firstDate && s.harvest.lastDate) {
+    const days =
+      Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1;
+
+    const firstMD = s.harvest.firstDate.slice(5).replace("-", "/");
+    const lastMD = s.harvest.lastDate.slice(5).replace("-", "/");
+
+    harvestPeriod =
+      firstMD === lastMD
+        ? `${firstMD}（1日）`
+        : `${firstMD} ～ ${lastMD}（${days}日）`;
+  }
 
   return `
     <div class="summary-card">
@@ -124,21 +160,28 @@ function renderSummaryCard(s) {
 
       <div class="info-line">定植日：${s.planting.plantDate}</div>
 
-      <div class="info-line">セルトレイ：${s.planting.trayType || "-"}穴</div>
+      <div class="info-line">
+        定植株数：${s.planting.quantity} 株
+        （セルトレイ：${s.planting.trayType || "-"}穴）
+      </div>
 
-      <div class="info-line">収穫期間：${s.harvest.firstDate} ～ ${s.harvest.lastDate}</div>
+      <div class="info-line">株間 × 条間：${spacingText}</div>
+
+      <div class="info-line">
+        作付け面積：${areaTan.toFixed(2)} 反（${areaM2.toFixed(1)} ㎡）
+      </div>
+
+      <div class="info-line">収穫期間：${harvestPeriod}</div>
       <div class="info-line">収穫回数：${s.harvest.count} 回</div>
 
       <div class="info-line">合計重量：${Number(s.shipping.totalWeight).toFixed(1)} kg</div>
 
       <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
 
-      <div class="info-line">作付け面積：${areaM2.toFixed(1)} ㎡</div>
-
       <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
 
       <div class="info-line" style="font-size:12px; color:#666;">
-        最終更新：${s.lastUpdated}
+        最終更新：${updatedJST}
       </div>
 
     </div>
