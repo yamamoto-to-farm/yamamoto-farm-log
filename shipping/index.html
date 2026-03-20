@@ -1,32 +1,66 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>出荷ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 16px; }
-    h2 { margin-top: 24px; }
-    .field { margin-bottom: 12px; }
-    .field label { display:block; margin-bottom:4px; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin-top: 24px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 4px;
+    }
+
     .box {
       padding: 15px;
       border: 1px solid #ccc;
       margin-top: 10px;
-      background:#fff;
+      background: #fff;
       border-radius: 6px;
     }
-    input, select, textarea {
-      width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px;
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
     }
+
     button {
-      width: 100%; padding: 12px; font-size: 16px;
-      background: #2f855a; color: #fff; border: none; border-radius: 4px;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background: #2f855a;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
       margin-top: 20px;
     }
-    button:active { opacity: 0.8; }
+
+    button:active {
+      opacity: 0.8;
+    }
 
     .order-label {
       font-weight: bold;
@@ -77,7 +111,9 @@
     <button type="button" onclick="saveShipping()">GitHub に保存する</button>
 
   </div><!-- /form-area -->
-
+  <!-- ① PapaParse（CSV パーサー） -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  
   <!-- JS -->
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
@@ -102,4 +138,5 @@
   </script>
 
 </body>
+
 </html>
