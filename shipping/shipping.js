@@ -381,7 +381,6 @@ async function saveShipping() {
   alert(msg);
 
   console.log("=== saveShipping: 全行送信完了 ===");
-  alert("保存しました");
 }
 
 window.saveShipping = saveShipping;
