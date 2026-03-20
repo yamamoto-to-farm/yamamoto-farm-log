@@ -1,0 +1,28 @@
+{
+  "plantingRef": "20250910-七根(伊古部)-そらと",
+  "planting": {
+    "plantDate": "2025-09-10",
+    "field": "七根(伊古部)",
+    "variety": "そらと",
+    "seedRef": "20250810-そらと-01",
+    "quantity": 13200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 5,
+    "totalAmount": 50,
+    "firstDate": "2026-03-12",
+    "lastDate": "2026-03-19"
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-03-20T17:26:20.312Z"
+}
