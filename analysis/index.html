@@ -11,13 +11,12 @@
 
 <body>
 
-  <!-- 圃場名 -->
+  <!-- 圃場名（analysis.js で書き換え） -->
   <h1 id="field-name"></h1>
 
-  <!-- 収穫サマリーカード -->
-  <div class="card">
-    <h2>収穫サマリー</h2>
-    <div id="latest-harvest" class="info"></div>
+  <!-- ★ 分析カードをまとめるコンテナ -->
+  <div id="analysis-container">
+    <!-- ★ カードは analysis.js が動的に追加する -->
   </div>
 
   <!-- 戻るボタン -->
@@ -32,18 +31,18 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ localStorage の認証情報が有効かチェック
+      // 認証チェック
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ★ worker → 閲覧禁止
+      // worker → 閲覧禁止
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
         alert("このページは家族のみ閲覧できます");
         location.href = "/yamamoto-farm-log/map/index.html";
         return;
       }
 
-      // ★ 認証OK → analysis.js のメイン処理へ
+      // メイン処理
       initAnalysisPage();
     });
   </script>
