@@ -93,7 +93,7 @@ function groupWeightByRef(weightRows) {
   const map = {};
 
   weightRows.forEach(row => {
-    // ★ CSV 側の plantingRef を safeFileName で逆変換
+    // ★ CSV 側の plantingRef を safeFileName で正規化
     const ref = safeFileName(row.plantingRef);
 
     if (!ref) {
@@ -131,7 +131,10 @@ function calcTargets(areaMonthly, harvestBase) {
   const targetUnits = Array(12).fill(0);
 
   for (let m = 0; m < 12; m++) {
-    const base = harvestBase[m + 1];
+    // ★ harvestBase.monthly["01"] の形式に合わせる
+    const key = String(m + 1).padStart(2, "0");
+    const base = harvestBase.monthly[key];
+
     if (!base) continue;
 
     targetKg[m] = areaMonthly[m] * Number(base.yieldPerTan || 0);
