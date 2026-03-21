@@ -1,22 +1,22 @@
 // harvest-kpi.js
 
-import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1";
+import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
 
 // ------------------------------
 // 1. JSON / CSV を読み込む
 // ------------------------------
 async function loadHarvestBase() {
-  const res = await fetch(`/data/harvestBase.json`);
+  const res = await fetch(`/yamamoto-farm-log/data/harvestBase.json`);
   return await res.json();
 }
 
 async function loadSummaryIndex() {
-  const res = await fetch(`/data/summary-index.json`);
+  const res = await fetch(`/yamamoto-farm-log/data/summary-index.json`);
   return await res.json();
 }
 
 async function loadWeightCSV() {
-  return await loadCSV(`/logs/weight/all.csv`);
+  return await loadCSV(`/yamamoto-farm-log/logs/weight/all.csv`);
 }
 
 async function loadPlantingRef(path) {
@@ -25,7 +25,34 @@ async function loadPlantingRef(path) {
 }
 
 // ------------------------------
-// 2. 面積（反）を計算
+// 2. summary-index.json を展開して一覧化
+// ------------------------------
+async function loadAllPlantingRefs() {
+  const index = await loadSummaryIndex();
+  const list = [];
+
+  for (const fieldName in index) {
+    const years = index[fieldName];
+
+    for (const year in years) {
+      const files = years[year];
+
+      for (const fileName of files) {
+        list.push({
+          field: fieldName,
+          year: year,
+          file: fileName,
+          plantingRef: fileName.replace(".json", "")
+        });
+      }
+    }
+  }
+
+  return list;
+}
+
+// ------------------------------
+// 3. 面積（反）を計算
 // ------------------------------
 function calcAreaTan(planting) {
   const qty = Number(planting.quantity || 0);
@@ -36,7 +63,7 @@ function calcAreaTan(planting) {
 }
 
 // ------------------------------
-// 3. plantingRef ごとの月別重量を集計
+// 4. plantingRef ごとの月別重量を集計
 // ------------------------------
 function groupWeightByRef(weightRows) {
   const map = {};
@@ -53,7 +80,7 @@ function groupWeightByRef(weightRows) {
       };
     }
 
-    const m = new Date(row.shippingDate).getMonth(); // 0-11
+    const m = new Date(row.shippingDate).getMonth();
 
     const kg = Number(row.totalWeight || 0);
     const units = Number(row.bins || 0);
@@ -67,7 +94,7 @@ function groupWeightByRef(weightRows) {
 }
 
 // ------------------------------
-// 4. 月別の目標値（kg・基数）を計算
+// 5. 月別の目標値（kg・基数）
 // ------------------------------
 function calcTargets(areaMonthly, harvestBase) {
   const targetKg = Array(12).fill(0);
@@ -85,7 +112,7 @@ function calcTargets(areaMonthly, harvestBase) {
 }
 
 // ------------------------------
-// 5. テーブルに反映（予定→実績の順）
+// 6. テーブルに反映（予定→実績）
 // ------------------------------
 function renderTable(planArea, areaMonthly, actuals, targets) {
   const tbody = document.getElementById("kpi-body");
@@ -98,13 +125,16 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
 
     tr.innerHTML = `
       <td style="text-align:center;">${m + 1}月</td>
+
       <td>${planArea[m].toFixed(2)}</td>
       <td>${areaMonthly[m].toFixed(2)}</td>
+
       <td>${targets.targetKg[m].toFixed(0)}</td>
       <td>${actuals.kg[m].toFixed(0)}</td>
       <td class="${diffKg > 0 ? "diff-positive" : diffKg < 0 ? "diff-negative" : "diff-zero"}">
         ${diffKg > 0 ? "+" : ""}${diffKg.toFixed(0)}
       </td>
+
       <td>${targets.targetUnits[m].toFixed(0)}</td>
       <td>${actuals.units[m].toFixed(0)}</td>
       <td class="${diffUnits > 0 ? "diff-positive" : diffUnits < 0 ? "diff-negative" : "diff-zero"}">
@@ -120,11 +150,11 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
 }
 
 // ------------------------------
-// 6. メイン処理（予定→実績）
+// 7. メイン処理（予定→実績）
 // ------------------------------
 async function main() {
   const harvestBase = await loadHarvestBase();
-  const summaryIndex = await loadSummaryIndex();
+  const plantingList = await loadAllPlantingRefs();
   const weightRows = await loadWeightCSV();
 
   const weightMap = groupWeightByRef(weightRows);
@@ -143,15 +173,15 @@ async function main() {
     actuals.units[m] += Number(row.bins || 0);
   });
 
-  for (const item of summaryIndex) {
+  for (const item of plantingList) {
     const ref = item.plantingRef;
-    if (!weightMap[ref]) continue;
+    const w = weightMap[ref];
+    if (!w) continue;
 
-    const refPath = `/summary/${item.field}/${item.year}/${ref}.json`;
+    const refPath = `/yamamoto-farm-log/summary/${item.field}/${item.year}/${item.file}`;
     const refData = await loadPlantingRef(refPath);
 
     const area = calcAreaTan(refData.planting);
-    const w = weightMap[ref];
 
     // 予定面積（harvestPlanYM）
     const ym = refData.planting.harvestPlanYM;
