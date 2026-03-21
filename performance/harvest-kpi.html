@@ -5,48 +5,13 @@
   <title>収穫KPI（月別 予定 × 実績）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 20px; }
+  <!-- 外部CSS -->
+  <link rel="stylesheet" href="./harvest-kpi.css?v=1.0">
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: #fff;
-    }
-
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px 10px;
-      text-align: right;
-    }
-
-    th {
-      background: #f0f0f0;
-      text-align: center;
-    }
-
-    .diff-positive { color: #2e8b57; font-weight: bold; }
-    .diff-negative { color: #c0392b; font-weight: bold; }
-    .diff-zero { color: #555; }
-
-    details {
-      margin-bottom: 20px;
-      background: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-    }
-
-    summary {
-      font-size: 18px;
-      cursor: pointer;
-      padding: 5px;
-    }
-  </style>
-
+  <!-- 共通UI -->
   <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
+
+  <!-- KPI ロジック -->
   <script type="module">
     import { renderKpiPage } from "./harvest-kpi.js?v=1.1";
     renderKpiPage();

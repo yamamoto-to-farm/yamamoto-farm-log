@@ -1,4 +1,4 @@
-// harvest-kpi.js（デバッグ強化版）
+// harvest-kpi.js（年ごと自動展開版・完全修正版）
 
 import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
 import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
@@ -148,13 +148,19 @@ function renderKpiTable(planArea, areaMonthly, actuals, targets) {
 
   for (let m = 0; m < 12; m++) {
     const diff = areaMonthly[m] - planArea[m];
+    const diffClass =
+      diff > 0 ? "diff-positive" :
+      diff < 0 ? "diff-negative" :
+      "diff-zero";
 
     html += `
       <tr>
         <td>${m + 1}月</td>
-        <td>${Number(planArea[m].toFixed(2)).toLocaleString("ja-JP")}</td>
-        <td>${Number(areaMonthly[m].toFixed(2)).toLocaleString("ja-JP")}</td>
-        <td>${diff > 0 ? "+" : ""}${Number(diff.toFixed(2)).toLocaleString("ja-JP")}</td>
+        <td>${planArea[m].toFixed(2)}</td>
+        <td>${areaMonthly[m].toFixed(2)}</td>
+        <td class="${diffClass}">
+          ${diff > 0 ? "+" : ""}${diff.toFixed(2)}
+        </td>
         <td>${Math.round(targets.targetKg[m]).toLocaleString("ja-JP")}</td>
         <td>${Math.round(actuals.kg[m]).toLocaleString("ja-JP")}</td>
         <td>${Math.round(targets.targetUnits[m]).toLocaleString("ja-JP")}</td>
@@ -174,17 +180,12 @@ async function renderKpiForYear(year) {
   log(`===== ${year}年 KPI 生成開始 =====`);
 
   const harvestBase = await loadJSON("data/harvestBase.json");
-  log("harvestBase 読み込み成功");
-
   const plantingList = await loadPlantingRefsForYear(year);
   const weightRows = await loadCSV("logs/weight/all.csv");
-  log("CSV 読み込み成功:", weightRows.length, "行");
 
   const filteredWeightRows = weightRows.filter(row => {
     return new Date(row.shippingDate).getFullYear() === year;
   });
-
-  log(`${year}年の CSV 抽出行数:`, filteredWeightRows.length);
 
   const weightMap = groupWeightByRef(filteredWeightRows);
 
@@ -198,15 +199,11 @@ async function renderKpiForYear(year) {
     actuals.units[m] += Number(row.bins || 0);
   });
 
-  log("実績集計:", actuals);
-
   const refDatas = await Promise.all(
     plantingList.map(item =>
       loadJSON(`logs/summary/${item.field}/${item.year}/${item.file}`)
     )
   );
-
-  log("summary 読み込み完了:", refDatas.length, "件");
 
   for (let i = 0; i < plantingList.length; i++) {
     const item = plantingList[i];
@@ -229,9 +226,6 @@ async function renderKpiForYear(year) {
     }
   }
 
-  log("予定面積:", planArea);
-  log("実績面積:", areaMonthly);
-
   const targets = calcTargets(planArea, harvestBase);
 
   return renderKpiTable(planArea, areaMonthly, actuals, targets);
@@ -244,8 +238,6 @@ export async function renderKpiPage() {
   log("KPI ページ描画開始");
 
   const years = await getYearList();
-  log("年一覧:", years);
-
   let html = "";
 
   for (const year of years) {
@@ -260,10 +252,8 @@ export async function renderKpiPage() {
   document.getElementById("kpi-container").innerHTML = html;
 
   for (const year of years) {
-    log(`${year}年の KPI 描画開始`);
     const container = document.getElementById(`kpi-${year}`);
     container.innerHTML = await renderKpiForYear(year);
-    log(`${year}年の KPI 描画完了`);
   }
 
   log("KPI ページ描画完了");
