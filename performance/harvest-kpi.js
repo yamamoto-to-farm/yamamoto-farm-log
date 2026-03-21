@@ -154,7 +154,7 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
       <td style="text-align:center;">${m + 1}月</td>
 
       <td>${planArea[m].toFixed(2)}</td>
-      <td>${areaMonthly[m].toFixed(2)}</td>
+      <td>${areaMonthly[m].toFixed(2)}</td>   <!-- ★ 修正：実績面積 -->
 
       <td>${targets.targetKg[m].toFixed(0)}</td>
       <td>${actuals.kg[m].toFixed(0)}</td>
@@ -220,12 +220,14 @@ async function main() {
     const area = calcAreaTan(refData.planting);
     const w = weightMap[item.plantingRef];
 
+    // 予定面積（planArea）
     const ym = refData.planting.harvestPlanYM;
     if (ym) {
       const planMonth = Number(ym.split("-")[1]) - 1;
       planArea[planMonth] += area;
     }
 
+    // 実績面積（areaMonthly）
     if (w && w.totalKg > 0) {
       for (let m = 0; m < 12; m++) {
         const ratio = w.monthlyKg[m] / w.totalKg;
