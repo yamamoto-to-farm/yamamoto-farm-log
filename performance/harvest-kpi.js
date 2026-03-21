@@ -1,7 +1,20 @@
-// harvest-kpi.js
+// harvest-kpi.js（デバッグ ON/OFF 付き）
 
 import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
 import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
+
+// ------------------------------
+// デバッグ切り替え
+// ------------------------------
+const DEBUG = true;
+
+function log(...args) {
+  if (DEBUG) console.log(...args);
+}
+
+function logError(...args) {
+  if (DEBUG) console.error(...args);
+}
 
 // ------------------------------
 // 1. JSON / CSV を読み込む
@@ -19,7 +32,15 @@ async function loadWeightCSV() {
 }
 
 async function loadPlantingRef(path) {
-  return await loadJSON(path);
+  log("🔍 loadPlantingRef(): 読み込み開始 →", path);
+  try {
+    const data = await loadJSON(path);
+    log("✅ 読み込み成功 →", path);
+    return data;
+  } catch (e) {
+    logError("❌ 読み込み失敗 →", path);
+    throw e;
+  }
 }
 
 // ------------------------------
@@ -27,6 +48,8 @@ async function loadPlantingRef(path) {
 // ------------------------------
 async function loadAllPlantingRefs() {
   const index = await loadSummaryIndex();
+  log("📘 summary-index.json の内容:", index);
+
   const list = [];
 
   for (const fieldName in index) {
@@ -36,6 +59,12 @@ async function loadAllPlantingRefs() {
       const files = years[year];
 
       for (const fileName of files) {
+        log("🔎 summary-index が探すファイル:", {
+          field: fieldName,
+          year: year,
+          file: fileName
+        });
+
         list.push({
           field: fieldName,
           year: year,
@@ -148,12 +177,14 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
 }
 
 // ------------------------------
-// 7. メイン処理（Promise.all で競合ゼロ）
+// 7. メイン処理（デバッグ付き）
 // ------------------------------
 async function main() {
   const harvestBase = await loadHarvestBase();
   const plantingList = await loadAllPlantingRefs();
   const weightRows = await loadWeightCSV();
+
+  log("📦 logs/weight/all.csv の行数:", weightRows.length);
 
   const weightMap = groupWeightByRef(weightRows);
 
@@ -165,7 +196,6 @@ async function main() {
     units: Array(12).fill(0)
   };
 
-  // 実績（kg / 基）
   weightRows.forEach(row => {
     const m = new Date(row.shippingDate).getMonth();
     actuals.kg[m] += Number(row.totalWeight || 0);
@@ -174,9 +204,10 @@ async function main() {
 
   // ★ plantingRef.json をすべて並列で読み込む
   const refDatas = await Promise.all(
-    plantingList.map(item =>
-      loadPlantingRef(`summary/${item.field}/${item.year}/${item.file}`)
-    )
+    plantingList.map(item => {
+      const path = `summary/${item.field}/${item.year}/${item.file}`;
+      return loadPlantingRef(path);
+    })
   );
 
   // ★ 読み込み済みの refDatas を使って計算
@@ -184,17 +215,17 @@ async function main() {
     const item = plantingList[i];
     const refData = refDatas[i];
 
+    log("📄 読み込めた summary ファイル:", item.file);
+
     const area = calcAreaTan(refData.planting);
     const w = weightMap[item.plantingRef];
 
-    // 予定面積（harvestPlanYM）
     const ym = refData.planting.harvestPlanYM;
     if (ym) {
       const planMonth = Number(ym.split("-")[1]) - 1;
       planArea[planMonth] += area;
     }
 
-    // 実績面積（重量按分）
     if (w && w.totalKg > 0) {
       for (let m = 0; m < 12; m++) {
         const ratio = w.monthlyKg[m] / w.totalKg;
