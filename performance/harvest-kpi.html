@@ -31,40 +31,34 @@
     .diff-negative { color: #c0392b; font-weight: bold; }
     .diff-zero { color: #555; }
 
-    #loading {
-      margin-top: 20px;
+    details {
+      margin-bottom: 20px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    summary {
       font-size: 18px;
-      color: #555;
+      cursor: pointer;
+      padding: 5px;
     }
   </style>
 
   <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
-  <script type="module" src="./harvest-kpi.js?v=1.1"></script>
+  <script type="module">
+    import { renderKpiPage } from "./harvest-kpi.js?v=1.1";
+    renderKpiPage();
+  </script>
 </head>
 
 <body>
 
   <h1>収穫KPI（月別 予定 × 実績）</h1>
 
-  <div id="loading">データ読込中...</div>
-
-  <table id="kpi-table" style="display:none;">
-    <thead>
-      <tr>
-        <th>月</th>
-        <th>予定面積(反)</th>
-        <th>収穫面積(反)</th>
-        <th>差分(反)</th>
-        <th>目標収量(kg)</th>
-        <th>収穫実績(kg)</th>
-        <th>出荷目標(基)</th>
-        <th>出荷実績(基)</th>
-      </tr>
-    </thead>
-    <tbody id="kpi-body">
-      <!-- JS で埋める -->
-    </tbody>
-  </table>
+  <!-- ★ 年ごと自動展開版はここに描画される -->
+  <div id="kpi-container">読み込み中...</div>
 
 </body>
 </html>
