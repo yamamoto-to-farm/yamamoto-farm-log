@@ -1,27 +1,25 @@
 // harvest-kpi.js
 
+import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
 import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
 
 // ------------------------------
 // 1. JSON / CSV を読み込む
 // ------------------------------
 async function loadHarvestBase() {
-  const res = await fetch(`/yamamoto-farm-log/data/harvestBase.json`);
-  return await res.json();
+  return await loadJSON(`data/harvestBase.json`);
 }
 
 async function loadSummaryIndex() {
-  const res = await fetch(`/yamamoto-farm-log/data/summary-index.json`);
-  return await res.json();
+  return await loadJSON(`data/summary-index.json`);
 }
 
 async function loadWeightCSV() {
-  return await loadCSV(`/yamamoto-farm-log/logs/weight/all.csv`);
+  return await loadCSV(`logs/weight/all.csv`);
 }
 
 async function loadPlantingRef(path) {
-  const res = await fetch(path);
-  return await res.json();
+  return await loadJSON(path);
 }
 
 // ------------------------------
@@ -178,7 +176,7 @@ async function main() {
     const w = weightMap[ref];
     if (!w) continue;
 
-    const refPath = `/yamamoto-farm-log/summary/${item.field}/${item.year}/${item.file}`;
+    const refPath = `summary/${item.field}/${item.year}/${item.file}`;
     const refData = await loadPlantingRef(refPath);
 
     const area = calcAreaTan(refData.planting);
