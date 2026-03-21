@@ -64,7 +64,6 @@ async function loadAllPlantingRefs() {
           field: fieldName,
           year: year,
           file: fileName,
-          // ★ summary 側の plantingRef を safeFileName で正規化
           plantingRef: safeFileName(fileName.replace(".json", ""))
         });
       }
@@ -76,14 +75,15 @@ async function loadAllPlantingRefs() {
 }
 
 // ------------------------------
-// 3. 面積（反）を計算
+// 3. 面積（反）を計算（10倍問題修正）
 // ------------------------------
 function calcAreaTan(planting) {
   const qty = Number(planting.quantity || 0);
-  const row = Number(planting.spacing.row || 0);
-  const bed = Number(planting.spacing.bed || 0);
+  const row = Number(planting.spacing.row || 0); // cm
+  const bed = Number(planting.spacing.bed || 0); // cm
 
-  return (qty * row * bed) / 1000000;
+  // cm² → m² → 反（1000m²）
+  return (qty * row * bed) / 10000000;
 }
 
 // ------------------------------
@@ -93,7 +93,6 @@ function groupWeightByRef(weightRows) {
   const map = {};
 
   weightRows.forEach(row => {
-    // ★ CSV 側の plantingRef を safeFileName で正規化
     const ref = safeFileName(row.plantingRef);
 
     if (!ref) {
@@ -126,50 +125,47 @@ function groupWeightByRef(weightRows) {
 // ------------------------------
 // 5. 月別の目標値（kg・基数）
 // ------------------------------
-function calcTargets(areaMonthly, harvestBase) {
+function calcTargets(planArea, harvestBase) {
   const targetKg = Array(12).fill(0);
   const targetUnits = Array(12).fill(0);
 
   for (let m = 0; m < 12; m++) {
-    // ★ harvestBase.monthly["01"] の形式に合わせる
     const key = String(m + 1).padStart(2, "0");
     const base = harvestBase.monthly[key];
 
     if (!base) continue;
 
-    targetKg[m] = areaMonthly[m] * Number(base.yieldPerTan || 0);
-    targetUnits[m] = areaMonthly[m] * Number(base.unitsPerTan || 0);
+    targetKg[m] = planArea[m] * Number(base.yieldPerTan || 0);
+    targetUnits[m] = planArea[m] * Number(base.unitsPerTan || 0);
   }
 
   return { targetKg, targetUnits };
 }
 
 // ------------------------------
-// 6. テーブルに反映（予定→実績）
+// 6. テーブルに反映（カンマ区切り対応）
 // ------------------------------
 function renderTable(planArea, areaMonthly, actuals, targets) {
   const tbody = document.getElementById("kpi-body");
 
   for (let m = 0; m < 12; m++) {
     const diffArea = areaMonthly[m] - planArea[m];
-    const diffKg = actuals.kg[m] - targets.targetKg[m];
-    const diffUnits = actuals.units[m] - targets.targetUnits[m];
 
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
       <td style="text-align:center;">${m + 1}月</td>
 
-      <td>${planArea[m].toFixed(2)}</td>
-      <td>${areaMonthly[m].toFixed(2)}</td>
+      <td>${Number(planArea[m].toFixed(2)).toLocaleString("ja-JP")}</td>
+      <td>${Number(areaMonthly[m].toFixed(2)).toLocaleString("ja-JP")}</td>
       <td class="${diffArea > 0 ? "diff-positive" : diffArea < 0 ? "diff-negative" : "diff-zero"}">
-        ${diffArea > 0 ? "+" : ""}${diffArea.toFixed(2)}
+        ${diffArea > 0 ? "+" : ""}${Number(diffArea.toFixed(2)).toLocaleString("ja-JP")}
       </td>
 
-      <td>${targets.targetKg[m].toFixed(0)}</td>
-      <td>${actuals.kg[m].toFixed(0)}</td>
-      <td>${targets.targetUnits[m].toFixed(0)}</td>
-      <td>${actuals.units[m].toFixed(0)}</td>
+      <td>${Math.round(targets.targetKg[m]).toLocaleString("ja-JP")}</td>
+      <td>${Math.round(actuals.kg[m]).toLocaleString("ja-JP")}</td>
+      <td>${Math.round(targets.targetUnits[m]).toLocaleString("ja-JP")}</td>
+      <td>${Math.round(actuals.units[m]).toLocaleString("ja-JP")}</td>
     `;
 
     tbody.appendChild(tr);
@@ -180,7 +176,7 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
 }
 
 // ------------------------------
-// 7. メイン処理（デバッグ付き）
+// 7. メイン処理
 // ------------------------------
 async function main() {
   const harvestBase = await loadHarvestBase();
@@ -203,7 +199,6 @@ async function main() {
     actuals.units[m] += Number(row.bins || 0);
   });
 
-  // ★ plantingRef.json をすべて並列で読み込む
   const refDatas = await Promise.all(
     plantingList.map(item => {
       const path = `logs/summary/${item.field}/${item.year}/${item.file}`;
@@ -211,7 +206,6 @@ async function main() {
     })
   );
 
-  // ★ 読み込み済みの refDatas を使って計算
   for (let i = 0; i < plantingList.length; i++) {
     const item = plantingList[i];
     const refData = refDatas[i];
@@ -224,21 +218,19 @@ async function main() {
       continue;
     }
 
-    // 予定面積（planArea）
     const ym = refData.planting.harvestPlanYM;
     if (ym) {
       const planMonth = Number(ym.split("-")[1]) - 1;
       planArea[planMonth] += area;
     }
 
-    // 実績面積（areaMonthly）
     for (let m = 0; m < 12; m++) {
       const ratio = w.monthlyKg[m] / w.totalKg;
       areaMonthly[m] += area * ratio;
     }
   }
 
-  const targets = calcTargets(areaMonthly, harvestBase);
+  const targets = calcTargets(planArea, harvestBase);
 
   renderTable(planArea, areaMonthly, actuals, targets);
 }
