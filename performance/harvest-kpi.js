@@ -2,6 +2,7 @@
 
 import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
 import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
+import { safeFileName } from "/yamamoto-farm-log/common/utils.js?v=1.1";
 
 // ------------------------------
 // デバッグ切り替え
@@ -63,7 +64,8 @@ async function loadAllPlantingRefs() {
           field: fieldName,
           year: year,
           file: fileName,
-          plantingRef: fileName.replace(".json", "")
+          // ★ summary 側の plantingRef を safeFileName で正規化
+          plantingRef: safeFileName(fileName.replace(".json", ""))
         });
       }
     }
@@ -85,13 +87,14 @@ function calcAreaTan(planting) {
 }
 
 // ------------------------------
-// 4. plantingRef ごとの月別重量を集計
+// 4. plantingRef ごとの月別重量を集計（CSV 側を逆変換）
 // ------------------------------
 function groupWeightByRef(weightRows) {
   const map = {};
 
   weightRows.forEach(row => {
-    const ref = row.plantingRef;
+    // ★ CSV 側の plantingRef を safeFileName で逆変換
+    const ref = safeFileName(row.plantingRef);
 
     if (!ref) {
       logError("⚠ CSV に plantingRef が入っていない行:", row);
@@ -116,7 +119,7 @@ function groupWeightByRef(weightRows) {
     map[ref].totalKg += kg;
   });
 
-  log("🧩 CSV 側 plantingRef 一覧:", Object.keys(map));
+  log("🧩 CSV 側 plantingRef（正規化後）一覧:", Object.keys(map));
   return map;
 }
 
@@ -211,10 +214,10 @@ async function main() {
     const refData = refDatas[i];
 
     const area = calcAreaTan(refData.planting);
-    const w = weightMap[item.plantingRef];
 
+    const w = weightMap[item.plantingRef];
     if (!w) {
-      logError("❌ plantingRef が CSV 側に存在しない:", item.plantingRef);
+      logError("❌ plantingRef が CSV 側に存在しない（正規化後）:", item.plantingRef);
       continue;
     }
 
