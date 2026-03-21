@@ -148,7 +148,7 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
 }
 
 // ------------------------------
-// 7. メイン処理（予定→実績）
+// 7. メイン処理（Promise.all で競合ゼロ）
 // ------------------------------
 async function main() {
   const harvestBase = await loadHarvestBase();
@@ -165,21 +165,27 @@ async function main() {
     units: Array(12).fill(0)
   };
 
+  // 実績（kg / 基）
   weightRows.forEach(row => {
     const m = new Date(row.shippingDate).getMonth();
     actuals.kg[m] += Number(row.totalWeight || 0);
     actuals.units[m] += Number(row.bins || 0);
   });
 
-  for (const item of plantingList) {
-    const ref = item.plantingRef;
-    const w = weightMap[ref];
-    if (!w) continue;
+  // ★ plantingRef.json をすべて並列で読み込む
+  const refDatas = await Promise.all(
+    plantingList.map(item =>
+      loadPlantingRef(`summary/${item.field}/${item.year}/${item.file}`)
+    )
+  );
 
-    const refPath = `summary/${item.field}/${item.year}/${item.file}`;
-    const refData = await loadPlantingRef(refPath);
+  // ★ 読み込み済みの refDatas を使って計算
+  for (let i = 0; i < plantingList.length; i++) {
+    const item = plantingList[i];
+    const refData = refDatas[i];
 
     const area = calcAreaTan(refData.planting);
+    const w = weightMap[item.plantingRef];
 
     // 予定面積（harvestPlanYM）
     const ym = refData.planting.harvestPlanYM;
@@ -189,7 +195,7 @@ async function main() {
     }
 
     // 実績面積（重量按分）
-    if (w.totalKg > 0) {
+    if (w && w.totalKg > 0) {
       for (let m = 0; m < 12; m++) {
         const ratio = w.monthlyKg[m] / w.totalKg;
         areaMonthly[m] += area * ratio;
