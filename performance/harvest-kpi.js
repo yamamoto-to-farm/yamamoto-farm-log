@@ -145,6 +145,7 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
   const tbody = document.getElementById("kpi-body");
 
   for (let m = 0; m < 12; m++) {
+    const diffArea = areaMonthly[m] - planArea[m];
     const diffKg = actuals.kg[m] - targets.targetKg[m];
     const diffUnits = actuals.units[m] - targets.targetUnits[m];
 
@@ -154,19 +155,15 @@ function renderTable(planArea, areaMonthly, actuals, targets) {
       <td style="text-align:center;">${m + 1}月</td>
 
       <td>${planArea[m].toFixed(2)}</td>
-      <td>${areaMonthly[m].toFixed(2)}</td>   <!-- ★ 修正：実績面積 -->
+      <td>${areaMonthly[m].toFixed(2)}</td>
+      <td class="${diffArea > 0 ? "diff-positive" : diffArea < 0 ? "diff-negative" : "diff-zero"}">
+        ${diffArea > 0 ? "+" : ""}${diffArea.toFixed(2)}
+      </td>
 
       <td>${targets.targetKg[m].toFixed(0)}</td>
       <td>${actuals.kg[m].toFixed(0)}</td>
-      <td class="${diffKg > 0 ? "diff-positive" : diffKg < 0 ? "diff-negative" : "diff-zero"}">
-        ${diffKg > 0 ? "+" : ""}${diffKg.toFixed(0)}
-      </td>
-
       <td>${targets.targetUnits[m].toFixed(0)}</td>
       <td>${actuals.units[m].toFixed(0)}</td>
-      <td class="${diffUnits > 0 ? "diff-positive" : diffUnits < 0 ? "diff-negative" : "diff-zero"}">
-        ${diffUnits > 0 ? "+" : ""}${diffUnits.toFixed(0)}
-      </td>
     `;
 
     tbody.appendChild(tr);
