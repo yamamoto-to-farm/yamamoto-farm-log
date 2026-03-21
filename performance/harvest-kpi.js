@@ -205,7 +205,7 @@ async function main() {
   // ★ plantingRef.json をすべて並列で読み込む
   const refDatas = await Promise.all(
     plantingList.map(item => {
-      const path = `summary/${item.field}/${item.year}/${item.file}`;
+      const path = `logs/summary/${item.field}/${item.year}/${item.file}`;
       return loadPlantingRef(path);
     })
   );
