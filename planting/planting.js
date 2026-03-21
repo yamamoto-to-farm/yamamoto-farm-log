@@ -1,387 +1,207 @@
-// ===============================
-// import（必ずファイル先頭）
-// ===============================
-import {
-  createWorkerCheckboxes,
-  createFieldSelector,
-  autoDetectField,
-  getSelectedWorkers
-} from "../common/ui.js";
+// harvest-kpi.js
 
-import { saveLog } from "../common/save/index.js";
-import { getMachineParam } from "../common/utils.js";
-import { checkDuplicate } from "../common/duplicate.js";
-import { loadCSV } from "../common/csv.js";
+import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1";
 
-let VARIETY_LIST = [];
-let GLOBAL_SEED_ROWS = null;   // ★ seed/all.csv を1回だけ読み込むキャッシュ
-
-
-// ===============================
-// 初期化
-// ===============================
-export async function initPlantingPage() {
-  createWorkerCheckboxes("workers_box");
-
-  await createFieldSelector("field_auto", "field_area", "field_manual");
-  autoDetectField("field_auto", "field_area", "field_manual");
-
-  // ★ seed/all.csv を1回だけ読み込む（403対策）
-  GLOBAL_SEED_ROWS = await loadCSV("logs/seed/all.csv");
-
-  await setupVarietySelector();
-  setupInputModeSwitch();
-  setupTrayAutoCalc();
+// ------------------------------
+// 1. JSON / CSV を読み込む
+// ------------------------------
+async function loadHarvestBase() {
+  const res = await fetch(`/data/harvestBase.json`);
+  return await res.json();
 }
 
-
-// ===============================
-// 品種プルダウン
-// ===============================
-async function setupVarietySelector() {
-  const res = await fetch("../data/varieties.json");
-  VARIETY_LIST = await res.json();
-
-  const typeSel = document.getElementById("varietyType");
-  const nameSel = document.getElementById("variety");
-
-  const types = [...new Set(VARIETY_LIST.map(v => v.type))];
-  types.forEach(t => {
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t;
-    typeSel.appendChild(opt);
-  });
-
-  typeSel.addEventListener("change", () => {
-    const selectedType = typeSel.value;
-    nameSel.innerHTML = "<option value=''>品名を選択</option>";
-
-    if (!selectedType) return;
-
-    const filtered = VARIETY_LIST.filter(v => v.type === selectedType);
-
-    filtered.forEach(v => {
-      const opt = document.createElement("option");
-      opt.value = v.name;
-      opt.textContent = v.name;
-      nameSel.appendChild(opt);
-    });
-  });
-
-  nameSel.addEventListener("change", updateSeedRefSelector);
+async function loadSummaryIndex() {
+  const res = await fetch(`/data/summary-index.json`);
+  return await res.json();
 }
 
+async function loadWeightCSV() {
+  return await loadCSV(`/logs/weight/all.csv`);
+}
 
-// ===============================
-// seedRef プルダウン更新（播種枚数・トレイ種別も表示）
-// ===============================
-async function updateSeedRefSelector() {
-  const variety = document.getElementById("variety").value;
-  const sel = document.getElementById("seedRef");
+async function loadPlantingRef(path) {
+  const res = await fetch(path);
+  return await res.json();
+}
 
-  const remainSpan     = document.getElementById("remainingCount");
-  const trayCountSpan  = document.getElementById("seedTrayCount");
-  const trayTypeSpan   = document.getElementById("seedTrayType");
+// ------------------------------
+// 2. summary-index.json を展開して一覧化
+// ------------------------------
+async function loadAllPlantingRefs() {
+  const index = await loadSummaryIndex();
+  const list = [];
 
-  // 初期化
-  sel.innerHTML = "<option value=''>選択してください</option>";
-  remainSpan.textContent = "-";
-  trayCountSpan.textContent = "-";
-  trayTypeSpan.textContent = "-";
+  for (const fieldName in index) {
+    const years = index[fieldName];
 
-  if (!variety) return;
+    for (const year in years) {
+      const files = years[year];
 
-  // ★ seedRows はキャッシュ（403対策）
-  const seedRows = GLOBAL_SEED_ROWS;
-
-  // 最新の残数計算のため毎回読み込む
-  const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
-  const nurseryRows  = await loadCSV("logs/nursery/all.csv").catch(() => []);
-
-  // 品種一致の seedRef を抽出
-  const list = seedRows.filter(r => r.varietyName === variety);
-
-  // プルダウン生成
-  for (const r of list) {
-    const seedRef = r.seedRef;
-    const seedCount = Number(r.seedCount);
-
-    const planted = plantingRows
-      .filter(p => p.seedRef === seedRef)
-      .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-
-    const discarded = nurseryRows
-      .filter(n => n.seedRef === seedRef)
-      .reduce((sum, n) => sum + Number(n.discard || 0), 0);
-
-    const remaining = seedCount - planted - discarded;
-
-    if (remaining > 0) {
-      const opt = document.createElement("option");
-      opt.value = seedRef;
-      opt.textContent = `${seedRef}（残 ${remaining} 株）`;
-      sel.appendChild(opt);
+      for (const fileName of files) {
+        list.push({
+          field: fieldName,
+          year: year,
+          file: fileName,
+          plantingRef: fileName.replace(".json", "")
+        });
+      }
     }
   }
 
-  // ★ 既存の change イベントを一旦削除（イベント重複防止）
-  const newSel = sel.cloneNode(true);
-  sel.parentNode.replaceChild(newSel, sel);
-
-  // ★ seedRef 選択時の詳細表示（イベントは1回だけ）
-  newSel.addEventListener("change", async () => {
-    const seedRef = newSel.value;
-
-    if (!seedRef) {
-      remainSpan.textContent = "-";
-      trayCountSpan.textContent = "-";
-      trayTypeSpan.textContent = "-";
-      return;
-    }
-
-    const seedRow = seedRows.find(r => r.seedRef === seedRef);
-    if (!seedRow) {
-      remainSpan.textContent = "-";
-      trayCountSpan.textContent = "-";
-      trayTypeSpan.textContent = "-";
-      return;
-    }
-
-    // 最新の残数を再計算
-    const plantingRows2 = await loadCSV("logs/planting/all.csv").catch(() => []);
-    const nurseryRows2  = await loadCSV("logs/nursery/all.csv").catch(() => []);
-
-    const seedCount = Number(seedRow.seedCount);
-
-    const planted = plantingRows2
-      .filter(p => p.seedRef === seedRef)
-      .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-
-    const discarded = nurseryRows2
-      .filter(n => n.seedRef === seedRef)
-      .reduce((sum, n) => sum + Number(n.discard || 0), 0);
-
-    const remaining = seedCount - planted - discarded;
-
-    // ★ 表示更新
-    remainSpan.textContent = remaining;
-    trayCountSpan.textContent = seedRow.trayCount || "-";
-    trayTypeSpan.textContent  = seedRow.trayType  || "-";
-  });
+  return list;
 }
 
+// ------------------------------
+// 3. 面積（反）を計算
+// ------------------------------
+function calcAreaTan(planting) {
+  const qty = Number(planting.quantity || 0);
+  const row = Number(planting.spacing.row || 0);
+  const bed = Number(planting.spacing.bed || 0);
 
-// ===============================
-// 株数 / 枚数 切り替え
-// ===============================
-function setupInputModeSwitch() {
-  const radios = document.querySelectorAll("input[name='mode']");
-  radios.forEach(r => {
-    r.addEventListener("change", () => {
-      const mode = document.querySelector("input[name='mode']:checked").value;
-      document.getElementById("stock-input").style.display = mode === "stock" ? "block" : "none";
-      document.getElementById("tray-input").style.display = mode === "tray" ? "block" : "none";
-    });
-  });
+  return (qty * row * bed) / 1000000;
 }
 
+// ------------------------------
+// 4. plantingRef ごとの月別重量を集計
+// ------------------------------
+function groupWeightByRef(weightRows) {
+  const map = {};
 
-// ===============================
-// 枚数 → 株数 自動計算
-// ===============================
-function setupTrayAutoCalc() {
-  const update = () => {
-    const count = parseFloat(document.getElementById("trayCount").value || 0);
-    const type = Number(document.querySelector("input[name='trayType']:checked").value);
+  weightRows.forEach(row => {
+    const ref = row.plantingRef;
+    if (!ref) return;
 
-    if (!isNaN(count)) {
-      const stock = count * type;
-      document.getElementById("calcStock").textContent = stock;
-    } else {
-      document.getElementById("calcStock").textContent = 0;
+    if (!map[ref]) {
+      map[ref] = {
+        monthlyKg: Array(12).fill(0),
+        monthlyUnits: Array(12).fill(0),
+        totalKg: 0
+      };
     }
+
+    const m = new Date(row.shippingDate).getMonth();
+
+    const kg = Number(row.totalWeight || 0);
+    const units = Number(row.bins || 0);
+
+    map[ref].monthlyKg[m] += kg;
+    map[ref].monthlyUnits[m] += units;
+    map[ref].totalKg += kg;
+  });
+
+  return map;
+}
+
+// ------------------------------
+// 5. 月別の目標値（kg・基数）
+// ------------------------------
+function calcTargets(areaMonthly, harvestBase) {
+  const targetKg = Array(12).fill(0);
+  const targetUnits = Array(12).fill(0);
+
+  for (let m = 0; m < 12; m++) {
+    const base = harvestBase[m + 1];
+    if (!base) continue;
+
+    targetKg[m] = areaMonthly[m] * Number(base.yieldPerTan || 0);
+    targetUnits[m] = areaMonthly[m] * Number(base.unitsPerTan || 0);
+  }
+
+  return { targetKg, targetUnits };
+}
+
+// ------------------------------
+// 6. テーブルに反映（予定→実績）
+// ------------------------------
+function renderTable(planArea, areaMonthly, actuals, targets) {
+  const tbody = document.getElementById("kpi-body");
+
+  for (let m = 0; m < 12; m++) {
+    const diffKg = actuals.kg[m] - targets.targetKg[m];
+    const diffUnits = actuals.units[m] - targets.targetUnits[m];
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td style="text-align:center;">${m + 1}月</td>
+
+      <td>${planArea[m].toFixed(2)}</td>
+      <td>${areaMonthly[m].toFixed(2)}</td>
+
+      <td>${targets.targetKg[m].toFixed(0)}</td>
+      <td>${actuals.kg[m].toFixed(0)}</td>
+      <td class="${diffKg > 0 ? "diff-positive" : diffKg < 0 ? "diff-negative" : "diff-zero"}">
+        ${diffKg > 0 ? "+" : ""}${diffKg.toFixed(0)}
+      </td>
+
+      <td>${targets.targetUnits[m].toFixed(0)}</td>
+      <td>${actuals.units[m].toFixed(0)}</td>
+      <td class="${diffUnits > 0 ? "diff-positive" : diffUnits < 0 ? "diff-negative" : "diff-zero"}">
+        ${diffUnits > 0 ? "+" : ""}${diffUnits.toFixed(0)}
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("kpi-table").style.display = "table";
+}
+
+// ------------------------------
+// 7. メイン処理（予定→実績）
+// ------------------------------
+async function main() {
+  const harvestBase = await loadHarvestBase();
+  const plantingList = await loadAllPlantingRefs();
+  const weightRows = await loadWeightCSV();
+
+  const weightMap = groupWeightByRef(weightRows);
+
+  const areaMonthly = Array(12).fill(0);
+  const planArea = Array(12).fill(0);
+
+  const actuals = {
+    kg: Array(12).fill(0),
+    units: Array(12).fill(0)
   };
 
-  document.getElementById("trayCount").addEventListener("input", update);
-  document.querySelectorAll("input[name='trayType']").forEach(r => r.addEventListener("change", update));
-}
-
-
-// ===============================
-// 圃場の最終決定
-// ===============================
-function getFinalField() {
-  const auto = document.getElementById("field_auto").value;
-  const manual = document.getElementById("field_manual").value;
-  const confirmed = document.getElementById("field_confirm").checked;
-
-  if (confirmed) return auto;
-  if (manual) return manual;
-  return auto;
-}
-
-
-// ===============================
-// 収穫予定年月の自動計算
-// ===============================
-function calcHarvestPlanYM(plantDate, harvestMonth) {
-  const d = new Date(plantDate);
-  let year = d.getFullYear();
-
-  if (harvestMonth <= d.getMonth() + 1) {
-    year += 1;
-  }
-
-  return `${year}-${String(harvestMonth).padStart(2, "0")}`;
-}
-
-
-// ===============================
-// 入力データ収集
-// ===============================
-function collectPlantingData() {
-  const mode = document.querySelector("input[name='mode']:checked").value;
-  const trayType = Number(document.querySelector("input[name='trayType']:checked").value);
-
-  let quantity = 0;
-  let trayCount = null;
-
-  if (mode === "stock") {
-    quantity = Number(document.getElementById("stockCount").value);
-  } else {
-    trayCount = parseFloat(document.getElementById("trayCount").value);
-    quantity = trayCount * trayType;
-  }
-
-  const varietyName = document.getElementById("variety").value;
-  const variety = VARIETY_LIST.find(v => v.name === varietyName);
-
-  const harvestPlanYM = variety
-    ? calcHarvestPlanYM(
-        document.getElementById("plantDate").value,
-        variety.harvestMonth
-      )
-    : "";
-
-  return {
-    plantDate: document.getElementById("plantDate").value,
-    worker: getSelectedWorkers("workers_box", "temp_workers"),
-    field: getFinalField(),
-
-    variety: varietyName,
-    seedRef: document.getElementById("seedRef").value,
-
-    quantity,
-    trayType,
-    trayCount,
-    inputMode: mode,
-
-    spacingRow: Number(document.getElementById("spacingRow").value),
-    spacingBed: Number(document.getElementById("spacingBed").value),
-
-    harvestPlanYM,
-
-    notes: document.getElementById("notes").value
-  };
-}
-
-
-// ===============================
-// 保存処理
-// ===============================
-async function savePlantingInner() {
-  const data = collectPlantingData();
-
-  if (!data.plantDate) {
-    alert("定植日を入力してください");
-    return;
-  }
-
-  if (!data.seedRef) {
-    alert("播種ロット（seedRef）を選択してください");
-    return;
-  }
-
-  // ★ seedRows はキャッシュを使う（403対策）
-  const seedRows = GLOBAL_SEED_ROWS;
-
-  const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
-
-  let nurseryRows = [];
-  try {
-    nurseryRows = await loadCSV("logs/nursery/all.csv");
-  } catch (e) {
-    nurseryRows = [];
-  }
-
-  const seedRow = seedRows.find(r => r.seedRef === data.seedRef);
-  if (!seedRow) {
-    alert("選択した seedRef が seed/all.csv に存在しません");
-    return;
-  }
-
-  const seedCount = Number(seedRow.seedCount);
-
-  const planted = plantingRows
-    .filter(p => p.seedRef === data.seedRef)
-    .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-
-  const discarded = nurseryRows
-    .filter(n => n.seedRef === data.seedRef)
-    .reduce((sum, n) => sum + Number(n.discard || 0), 0);
-
-  const remaining = seedCount - planted - discarded;
-
-  if (data.quantity > remaining) {
-    alert(
-      "植え付け株数が、この播種ロットの残り株数を超えています。\n" +
-      "seedRef の選択ミス、または別日の播種ロットを合算している可能性があります。"
-    );
-    return;
-  }
-
-  const dup = await checkDuplicate("planting", {
-    date: data.plantDate,
-    field: data.field,
-    variety: data.variety,
-    quantity: data.quantity
+  weightRows.forEach(row => {
+    const m = new Date(row.shippingDate).getMonth();
+    actuals.kg[m] += Number(row.totalWeight || 0);
+    actuals.units[m] += Number(row.bins || 0);
   });
 
-  if (!dup.ok) {
-    alert(dup.message);
-    return;
+  for (const item of plantingList) {
+    const ref = item.plantingRef;
+    const w = weightMap[ref];
+    if (!w) continue;
+
+    const refPath = `/summary/${item.field}/${item.year}/${item.file}`;
+    const refData = await loadPlantingRef(refPath);
+
+    const area = calcAreaTan(refData.planting);
+
+    // 予定面積（harvestPlanYM）
+    const ym = refData.planting.harvestPlanYM;
+    if (ym) {
+      const planMonth = Number(ym.split("-")[1]) - 1;
+      planArea[planMonth] += area;
+    }
+
+    // 実績面積（重量按分）
+    if (w.totalKg > 0) {
+      for (let m = 0; m < 12; m++) {
+        const ratio = w.monthlyKg[m] / w.totalKg;
+        areaMonthly[m] += area * ratio;
+      }
+    }
   }
 
-  const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
-  const machine = getMachineParam();
-  const human = window.currentHuman || "";
-  const dateStr = data.plantDate.replace(/-/g, "");
+  const targets = calcTargets(areaMonthly, harvestBase);
 
-  const notes = data.notes
-    ? data.notes.replace(/[\r\n,]/g, " ")
-    : "";
-
-  const csvLine = [
-    data.plantDate,
-    data.worker.replace(/,/g, "／"),
-    data.field,
-    data.variety,
-    data.seedRef,
-    data.quantity,
-    data.trayType,
-    data.spacingRow,
-    data.spacingBed,
-    data.harvestPlanYM,
-    notes,
-    machine,
-    human,
-    plantingRef
-  ].join(",");
-
-  await saveLog("planting", dateStr, { plantingRef }, csvLine + "\n");
-
-  alert("GitHubに保存しました");
+  renderTable(planArea, areaMonthly, actuals, targets);
 }
 
-window.savePlanting = savePlantingInner;
+main();
