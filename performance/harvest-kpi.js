@@ -59,12 +59,6 @@ async function loadAllPlantingRefs() {
       const files = years[year];
 
       for (const fileName of files) {
-        log("🔎 summary-index が探すファイル:", {
-          field: fieldName,
-          year: year,
-          file: fileName
-        });
-
         list.push({
           field: fieldName,
           year: year,
@@ -75,6 +69,7 @@ async function loadAllPlantingRefs() {
     }
   }
 
+  log("🧩 summary 側 plantingRef 一覧:", list.map(x => x.plantingRef));
   return list;
 }
 
@@ -97,7 +92,11 @@ function groupWeightByRef(weightRows) {
 
   weightRows.forEach(row => {
     const ref = row.plantingRef;
-    if (!ref) return;
+
+    if (!ref) {
+      logError("⚠ CSV に plantingRef が入っていない行:", row);
+      return;
+    }
 
     if (!map[ref]) {
       map[ref] = {
@@ -117,6 +116,7 @@ function groupWeightByRef(weightRows) {
     map[ref].totalKg += kg;
   });
 
+  log("🧩 CSV 側 plantingRef 一覧:", Object.keys(map));
   return map;
 }
 
@@ -181,8 +181,6 @@ async function main() {
   const plantingList = await loadAllPlantingRefs();
   const weightRows = await loadWeightCSV();
 
-  log("📦 logs/weight/all.csv の行数:", weightRows.length);
-
   const weightMap = groupWeightByRef(weightRows);
 
   const areaMonthly = Array(12).fill(0);
@@ -212,10 +210,13 @@ async function main() {
     const item = plantingList[i];
     const refData = refDatas[i];
 
-    log("📄 読み込めた summary ファイル:", item.file);
-
     const area = calcAreaTan(refData.planting);
     const w = weightMap[item.plantingRef];
+
+    if (!w) {
+      logError("❌ plantingRef が CSV 側に存在しない:", item.plantingRef);
+      continue;
+    }
 
     // 予定面積（planArea）
     const ym = refData.planting.harvestPlanYM;
@@ -225,11 +226,9 @@ async function main() {
     }
 
     // 実績面積（areaMonthly）
-    if (w && w.totalKg > 0) {
-      for (let m = 0; m < 12; m++) {
-        const ratio = w.monthlyKg[m] / w.totalKg;
-        areaMonthly[m] += area * ratio;
-      }
+    for (let m = 0; m < 12; m++) {
+      const ratio = w.monthlyKg[m] / w.totalKg;
+      areaMonthly[m] += area * ratio;
     }
   }
 
