@@ -5,67 +5,40 @@
   <title>QRコード生成 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    h1 { margin-bottom: 20px; }
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
 
-    select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    #qr-area {
-      margin-top: 30px;
-      text-align: center;
-    }
-
-    #qr-icon {
-      width: 80px;
-      margin-bottom: 10px;
-    }
-
-    #qr-machine {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    #qr-area canvas {
-      margin-top: 10px;
-    }
-
-    .url-box {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f0f0f0;
-      font-size: 14px;
-      word-break: break-all;
-    }
-  </style>
-
+  <!-- QRコード生成ライブラリ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
+
 <body>
 
   <h1>QRコード生成</h1>
 
-  <label>ページを選択</label>
-  <select id="page-select"></select>
+  <!-- ページ選択 -->
+  <div class="form-field">
+    <label>ページを選択</label>
+    <select id="page-select" class="form-input"></select>
+  </div>
 
-  <label style="margin-top:20px;">機械を選択（任意）</label>
-  <select id="machine-select">
-    <option value="">（なし）</option>
-  </select>
+  <!-- 機械選択 -->
+  <div class="form-field">
+    <label>機械を選択（任意）</label>
+    <select id="machine-select" class="form-input">
+      <option value="">（なし）</option>
+    </select>
+  </div>
 
-  <button id="generate-btn">QRコード生成</button>
+  <!-- 生成ボタン -->
+  <button id="generate-btn" class="primary-btn">QRコード生成</button>
 
-  <div id="qr-area">
-    <img id="qr-icon" style="display:none;">
-    <div id="qr-machine"></div>
+  <!-- QR表示エリア -->
+  <div id="qr-area" class="card" style="text-align:center;">
+    <img id="qr-icon" style="display:none; width:80px; margin-bottom:10px;">
+    <div id="qr-machine" class="info-line" style="font-size:18px; font-weight:600;"></div>
     <div id="qrcode"></div>
-    <div class="url-box" id="qr-url"></div>
+    <div id="qr-url" class="url-box"></div>
   </div>
 
   <script type="module">
@@ -76,17 +49,16 @@
     }
 
     async function init() {
-      // ★ admin/ からの絶対パスに変更
       const pages = (await loadJSON("/yamamoto-farm-log/data/pages.json")).pages;
       const machines = (await loadJSON("/yamamoto-farm-log/data/machines.json")).machines;
 
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
 
-      // ページ一覧（管理/ツール も含めて全部）
+      // ページ一覧（管理/ツール含む全て）
       pages.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.path;  // "./planting/index.html"
+        opt.value = p.path;
         opt.textContent = p.name;
         opt.dataset.icon = p.icon || "";
         pageSel.appendChild(opt);
@@ -104,9 +76,7 @@
         const pagePath = pageSel.value;
         const machineId = machineSel.value;
 
-        // ★ サイトのトップを基準に絶対URLを作る
         const siteRoot = "https://yamamoto-to-farm.github.io/yamamoto-farm-log/";
-
         let absUrl = new URL(pagePath, siteRoot).href;
         if (machineId) absUrl += `?machine=${machineId}`;
 

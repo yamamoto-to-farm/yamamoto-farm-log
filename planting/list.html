@@ -5,59 +5,8 @@
   <title>定植ログ一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 16px; }
-
-    .filter-box {
-      background: #fff;
-      padding: 12px;
-      border: 1px solid #ccc;
-      margin-top: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      font-size: 14px;
-      text-align: left;
-    }
-    th {
-      background: #e2e8f0;
-    }
-
-    .btn-discard {
-      background: #c53030;
-      color: #fff;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .btn-new {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background: #2b6cb0;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      margin-top: 20px;
-      font-size: 16px;
-      text-align: center;
-      text-decoration: none;
-    }
-
-    /* 認証前は非表示 */
-    #main-area { display: none; }
-  </style>
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
 
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
@@ -71,19 +20,15 @@
     // -----------------------------
     window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ verifyLocalAuth は true / false を返す
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ★ ロールは window.currentRole に入っている
       if (window.currentRole === "admin" || window.currentRole === "family") {
         canDiscard = true;
       }
 
-      // 認証済み → UI 表示
       document.getElementById("main-area").style.display = "block";
 
-      // データ読み込み
       await loadPlantingList();
     });
 
@@ -191,7 +136,7 @@
           <td>${r.quantity}</td>
           <td>${r.seedRef}</td>
           <td>
-            ${canDiscard ? `<button class="btn-discard" onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">破棄</button>` : ""}
+            ${canDiscard ? `<button class="primary-btn" style="padding:6px 10px; font-size:14px;" onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">破棄</button>` : ""}
           </td>
         `;
 
@@ -204,18 +149,20 @@
 
 <body>
 
-  <div id="main-area">
+  <div id="main-area" style="display:none;">
 
     <h1>定植ログ一覧</h1>
 
-    <a href="index.html" class="btn-new">＋ 新しい定植ログを追加</a>
+    <a href="index.html" class="primary-btn" style="text-align:center; display:block;">
+      ＋ 新しい定植ログを追加
+    </a>
 
-    <div class="filter-box">
+    <div class="card" style="margin-top:20px;">
       <label>年</label>
-      <select id="filterYear"><option value="">すべて</option></select>
+      <select id="filterYear" class="form-input"><option value="">すべて</option></select>
 
-      <label style="margin-left:10px;">月</label>
-      <select id="filterMonth">
+      <label style="margin-top:10px;">月</label>
+      <select id="filterMonth" class="form-input">
         <option value="">すべて</option>
         <option value="01">1月</option>
         <option value="02">2月</option>
@@ -231,13 +178,13 @@
         <option value="12">12月</option>
       </select>
 
-      <label style="margin-left:10px;">圃場</label>
-      <select id="filterField"><option value="">すべて</option></select>
+      <label style="margin-top:10px;">圃場</label>
+      <select id="filterField" class="form-input"><option value="">すべて</option></select>
 
-      <label style="margin-left:10px;">品名</label>
-      <select id="filterVariety"><option value="">すべて</option></select>
+      <label style="margin-top:10px;">品名</label>
+      <select id="filterVariety" class="form-input"><option value="">すべて</option></select>
 
-      <button style="margin-top:10px;" onclick="applyFilter()">フィルタ適用</button>
+      <button class="primary-btn" style="margin-top:14px;" onclick="applyFilter()">フィルタ適用</button>
     </div>
 
     <table id="plantingTable">

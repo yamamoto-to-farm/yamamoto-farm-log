@@ -5,28 +5,8 @@
   <title>定植ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 16px; }
-    h2 { margin-top: 24px; }
-    .field { margin-bottom: 12px; }
-    .field label { display:block; margin-bottom:4px; }
-    .box { padding: 15px; border: 1px solid #ccc; margin-top: 10px; background:#fff; }
-    input, select, textarea {
-      width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px;
-    }
-    button {
-      width: 100%; padding: 12px; font-size: 16px;
-      background: #2b6cb0; color: #fff; border: none; border-radius: 4px;
-      margin-top: 20px;
-    }
-    button:active { opacity: 0.8; }
-
-    #field_auto {
-      background: #fff3b0;
-      font-weight: bold;
-    }
-  </style>
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
 </head>
 
 <body>
@@ -36,25 +16,26 @@
     <h1>定植ログ</h1>
 
     <!-- 日付 -->
-    <div class="field">
+    <div class="form-field">
       <label for="plantDate">定植日</label>
-      <input type="date" id="plantDate">
+      <input type="date" id="plantDate" class="form-input">
     </div>
 
     <!-- 作業者 -->
     <h2>作業者</h2>
-    <div class="box" id="workers_box"></div>
+    <div class="card" id="workers_box"></div>
 
-    <div class="box">
+    <div class="card">
       <label for="temp_workers">単発バイト（カンマ区切り）</label>
-      <input id="temp_workers" placeholder="例：佐藤さん, 田中さん">
+      <input id="temp_workers" class="form-input" placeholder="例：佐藤さん, 田中さん">
     </div>
 
     <!-- 圃場 -->
     <h2>圃場</h2>
-    <div class="box">
+    <div class="card">
+
       <label>自動判定（推定）</label>
-      <input id="field_auto" readonly>
+      <input id="field_auto" class="form-input" readonly style="background:#fff3b0; font-weight:bold;">
 
       <label style="margin-top:10px;">
         <input type="checkbox" id="field_confirm">
@@ -64,48 +45,46 @@
       <hr style="margin: 15px 0;">
 
       <label>エリア選択</label>
-      <select id="field_area">
+      <select id="field_area" class="form-input">
         <option value="">エリアを選択</option>
       </select>
 
       <label>圃場選択</label>
-      <select id="field_manual">
+      <select id="field_manual" class="form-input">
         <option value="">エリアを選んでください</option>
       </select>
     </div>
 
     <!-- 品種 -->
     <h2>品種</h2>
-    <div class="box">
+    <div class="card">
       <label>種別</label>
-      <select id="varietyType">
+      <select id="varietyType" class="form-input">
         <option value="">種別を選択</option>
       </select>
 
       <label style="margin-top:10px;">品名</label>
-      <select id="variety">
+      <select id="variety" class="form-input">
         <option value="">種別を選んでください</option>
       </select>
     </div>
 
     <!-- 播種ロット -->
     <h2>播種ロット（seedRef）</h2>
-    <div class="box">
+    <div class="card">
       <label>選択</label>
-      <select id="seedRef">
+      <select id="seedRef" class="form-input">
         <option value="">品名を選択してください</option>
       </select>
-      
-      <!-- ★ 追加：残り株数の上に表示 -->
+
       <p>播種枚数：<span id="seedTrayCount">-</span></p>
       <p>トレイ種別：<span id="seedTrayType">-</span></p>
-
       <p>残り株数：<span id="remainingCount">-</span></p>
     </div>
 
     <!-- 植え付け量 -->
     <h2>植え付け量</h2>
-    <div class="box">
+    <div class="card">
 
       <label>セルトレイ種別</label>
       <label><input type="radio" name="trayType" value="128" checked>128穴</label>
@@ -117,14 +96,14 @@
       <label><input type="radio" name="mode" value="stock" checked> 株数で入力</label>
       <label><input type="radio" name="mode" value="tray"> セルトレイ枚数で入力</label>
 
-      <div id="stock-input" class="field">
+      <div id="stock-input" class="form-field">
         <label>株数</label>
-        <input type="number" id="stockCount" inputmode="numeric">
+        <input type="number" id="stockCount" class="form-input" inputmode="numeric">
       </div>
 
-      <div id="tray-input" class="field" style="display:none;">
+      <div id="tray-input" class="form-field" style="display:none;">
         <label>枚数</label>
-        <input type="number" id="trayCount" inputmode="numeric">
+        <input type="number" id="trayCount" class="form-input" inputmode="numeric">
 
         <p>自動計算：<span id="calcStock">0</span> 株</p>
       </div>
@@ -132,25 +111,27 @@
 
     <!-- 株間・畝間 -->
     <h2>株間・畝間</h2>
-    <div class="box">
+    <div class="card">
       <label>株間（cm）</label>
-      <input type="number" id="spacingRow" value="34">
+      <input type="number" id="spacingRow" class="form-input" value="34">
 
       <label>畝間（cm）</label>
-      <input type="number" id="spacingBed" value="60">
+      <input type="number" id="spacingBed" class="form-input" value="60">
     </div>
 
     <!-- 備考 -->
     <h2>備考</h2>
-    <div class="box">
-      <textarea id="notes" rows="3" placeholder="欠株・病害虫など"></textarea>
+    <div class="card">
+      <textarea id="notes" rows="3" class="form-textarea" placeholder="欠株・病害虫など"></textarea>
     </div>
 
     <!-- 保存 -->
-    <button type="button" onclick="savePlanting()">GitHub に保存する</button>
+    <button type="button" class="primary-btn" onclick="savePlanting()">GitHub に保存する</button>
 
     <!-- ★ 定植記録一覧へ -->
-    <a href="list.html" class="btn-list">← 定植記録一覧へ</a>
+    <a href="list.html" class="menu-card" style="display:block; margin-top:20px; padding:12px; text-align:center;">
+      ← 定植記録一覧へ
+    </a>
 
   </div>
 

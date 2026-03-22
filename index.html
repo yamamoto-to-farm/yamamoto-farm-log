@@ -10,53 +10,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 20px; }
-    .section-title { margin-top: 30px; font-size: 20px; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 12px;
-      margin-top: 10px;
-    }
-
-    .card {
-      background: #fff;
-      padding: 14px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .card a {
-      font-size: 16px;
-      font-weight: bold;
-      color: #2b6cb0;
-      text-decoration: none;
-    }
-
-    #pin-area {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      margin-bottom: 20px;
-    }
-
-    #login-user {
-      margin-bottom: 20px;
-      font-size: 18px;
-      color: #333;
-    }
-
-    #logout-btn {
-      margin-left: 10px;
-      padding: 6px 12px;
-      font-size: 16px;
-    }
-  </style>
+  <!-- ★ 共通スタイル（バージョン必須） -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
 
   <!-- ★ ui.js にキャッシュバスター -->
   <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
@@ -72,7 +27,7 @@
 
     function createCard(page) {
       const div = document.createElement("div");
-      div.className = "card";
+      div.className = "menu-card";
       div.innerHTML = `<a href="${page.path}">${page.name}</a>`;
       return div;
     }
@@ -81,11 +36,11 @@
       let section = document.querySelector(`[data-category="${category}"]`);
       if (!section) {
         const title = document.createElement("div");
-        title.className = "section-title";
+        title.className = "menu-section-title";
         title.textContent = category;
 
         const grid = document.createElement("div");
-        grid.className = "grid";
+        grid.className = "menu-grid";
         grid.dataset.category = category;
 
         const menu = document.getElementById("menu-area");
@@ -138,8 +93,8 @@
 
   <div id="pin-area">
     <div>アクセスキーを入力してください</div>
-    <input id="pin-input" type="password" style="font-size:18px; padding:6px; margin-top:8px;">
-    <button id="pin-submit" style="font-size:18px; padding:6px 12px;">OK</button>
+    <input id="pin-input" type="password" class="pin-input">
+    <button id="pin-submit" class="pin-submit">OK</button>
   </div>
 
   <div id="menu-area" style="display:none"></div>

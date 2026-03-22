@@ -5,17 +5,17 @@
   <title>圃場分析</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- デザイン用CSS -->
-  <link rel="stylesheet" href="analysis.css">
-</head>
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
 
-<body>
-
-  <!-- ★ ナビバー（公開側 family/admin 用） -->
+  <!-- ★ ナビバー -->
   <script type="module">
     import { renderNavbar } from "/yamamoto-farm-log/common/header.js?v=1.1";
     renderNavbar();
   </script>
+</head>
+
+<body>
 
   <!-- 圃場名 or 「圃場を選択してください」 -->
   <h1 id="field-name"></h1>
@@ -24,7 +24,7 @@
   <div id="analysis-container"></div>
 
   <!-- 地図に戻る -->
-  <button class="back-btn" onclick="location.href='/yamamoto-farm-log/map/index.html'">
+  <button class="primary-btn" onclick="location.href='/yamamoto-farm-log/map/index.html'">
     地図に戻る
   </button>
 

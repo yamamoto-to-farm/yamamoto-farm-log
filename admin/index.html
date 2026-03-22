@@ -5,22 +5,8 @@
   <title>管理ページ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 20px; }
-    .card {
-      background: #fff;
-      padding: 16px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      margin-bottom: 16px;
-    }
-    .card a {
-      color: #2b6cb0;
-      font-weight: bold;
-      text-decoration: none;
-    }
-  </style>
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
 </head>
 
 <body>
@@ -57,9 +43,7 @@
       // pages.json 読み込み
       const pages = await loadPages();
 
-      // ★ 階層カテゴリ対応
-      // 管理ページ自身（id: admin）は除外
-      // 管理/〜 のツールだけ表示
+      // ★ 管理/〜 のツールだけ表示（admin 自身は除外）
       const adminTools = pages.filter(p =>
         p.category.startsWith("管理/") && p.id !== "admin"
       );

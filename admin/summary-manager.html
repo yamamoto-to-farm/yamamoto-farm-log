@@ -5,59 +5,28 @@
   <title>サマリー管理 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
+
   <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <style>
-    body { font-family: sans-serif; padding: 20px; background:#f5f5f5; }
-    h1 { margin-bottom: 16px; }
-    .item {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fff;
-      border-radius: 4px;
-      margin-bottom: 8px;
-    }
-    .btn {
-      padding: 6px 12px;
-      background: #2f855a;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-      border: none;
-    }
-    #generateAll {
-      margin-top: 20px;
-      padding: 12px;
-      font-size: 16px;
-      width: 100%;
-      background: #3182ce;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #555;
-    }
-  </style>
 </head>
 
 <body>
 
   <div id="form-area" style="display:none;">
+
     <h1>サマリー管理</h1>
     <p>未生成のサマリーを一覧表示します。</p>
 
-    <div id="summaryList"></div>
+    <!-- 未生成リスト -->
+    <div id="summaryList" class="card"></div>
 
-    <button id="generateAll">すべて生成</button>
+    <!-- すべて生成 -->
+    <button id="generateAll" class="primary-btn">すべて生成</button>
 
-    <div id="status"></div>
+    <!-- ステータス -->
+    <div id="status" class="info-line"></div>
   </div>
 
   <!-- JS 読み込み順が超重要 -->
