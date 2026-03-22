@@ -103,10 +103,12 @@ async function renderMonthPage() {
     if (!summary) continue;
 
     const planting = summary.planting;
-    const area = calcAreaTan(planting);
-    const variety = planting.varietyName || "-";
-    const field = planting.fieldName || "-";
 
+    // ★ 修正ポイント：varietyName / fieldName ではなく variety / field
+    const variety = planting.variety || "-";
+    const field = planting.field || "-";
+
+    const area = calcAreaTan(planting);
     const kg = map[ref].kg;
     const units = map[ref].units;
 
