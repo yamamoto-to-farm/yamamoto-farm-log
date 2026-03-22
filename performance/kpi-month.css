@@ -28,6 +28,11 @@ th {
   text-align: center;
 }
 
+tfoot tr {
+  font-weight: bold;
+  background: #fafafa;
+}
+
 /* ===== 差分の色 ===== */
 .diff-positive {
   color: #2e8b57;
