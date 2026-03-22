@@ -8,7 +8,6 @@ export async function initAnalysisPage() {
   const rawFieldName = params.get("field");
 
   if (!rawFieldName) {
-    document.getElementById("field-name").textContent = "圃場を選択してください";
     return;
   }
 

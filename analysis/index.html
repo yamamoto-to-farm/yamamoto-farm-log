@@ -17,15 +17,13 @@
     renderNavbar();
   </script>
 
-  <!-- 圃場名（analysis.js で書き換え） -->
+  <!-- 圃場名 or 「圃場を選択してください」 -->
   <h1 id="field-name"></h1>
 
-  <!-- ★ 分析カードをまとめるコンテナ -->
-  <div id="analysis-container">
-    <!-- ★ カードは analysis.js が動的に追加する -->
-  </div>
+  <!-- ★ 分析カード or 圃場一覧 -->
+  <div id="analysis-container"></div>
 
-  <!-- 地図に戻る（これは残す：地図→圃場分析の往復が自然） -->
+  <!-- 地図に戻る -->
   <button class="back-btn" onclick="location.href='/yamamoto-farm-log/map/index.html'">
     地図に戻る
   </button>
@@ -33,7 +31,8 @@
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
     import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
-    import { initAnalysisPage } from "./analysis.js";
+    import { initAnalysisPage } from "./analysis.js";   // 圃場別分析
+    import { renderFieldList } from "./index.js";        // 圃場一覧
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -41,15 +40,26 @@
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // worker → 閲覧禁止（family/admin のみ）
+      // worker → 閲覧禁止
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
         alert("このページは家族のみ閲覧できます");
         location.href = "/yamamoto-farm-log/map/index.html";
         return;
       }
 
-      // メイン処理
-      initAnalysisPage();
+      // ★ URL パラメータ取得
+      const params = new URLSearchParams(location.search);
+      const field = params.get("field");
+
+      // ★ 分岐
+      if (field) {
+        // 圃場別分析
+        initAnalysisPage();
+      } else {
+        // 圃場一覧
+        document.getElementById("field-name").textContent = "圃場を選択してください";
+        renderFieldList();
+      }
     });
   </script>
 
