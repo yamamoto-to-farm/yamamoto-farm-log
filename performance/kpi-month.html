@@ -21,6 +21,12 @@
 
 <body>
 
+  <!-- ★ ナビバーをここに追加 -->
+  <script type="module">
+    import { renderNavbar } from "/yamamoto-farm-log/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
+
   <h1 id="month-title">読み込み中...</h1>
 
   <table>
@@ -38,10 +44,8 @@
       </tr>
     </thead>
 
-    <!-- ★ JavaScript がここに行を追加する -->
     <tbody id="kpi-month-body"></tbody>
 
-    <!-- ★ 合計行 -->
     <tfoot>
       <tr id="kpi-month-total"></tr>
     </tfoot>
