@@ -10,6 +10,12 @@ const saveQueue = [];
 let saving = false;
 
 // ------------------------------
+// UI フック（外部から登録される）
+// ------------------------------
+export let onSavingStart = null;
+export let onSavingEnd = null;
+
+// ------------------------------
 // saveLog（名前はそのまま）
 // ------------------------------
 export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replaceCsv = "") {
@@ -52,6 +58,11 @@ async function processQueue() {
 
   saving = true;
 
+  // ▼ 保存開始イベント（UIロック）
+  if (onSavingStart) {
+    try { onSavingStart(); } catch (_) {}
+  }
+
   const { payload, resolve, reject } = saveQueue.shift();
 
   try {
@@ -89,8 +100,8 @@ async function processQueue() {
     if (beforeCount !== null) {
       let updated = false;
 
-      for (let i = 0; i < 20; i++) { // 20回
-        await new Promise(r => setTimeout(r, 500)); // 500ms
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 500));
 
         const after = await loadCSV(`logs/${payload.type}/all.csv`);
         if (after.length > beforeCount) {
@@ -99,7 +110,6 @@ async function processQueue() {
         }
       }
 
-      // 10秒待っても確認できなければ成功扱い
       if (!updated) {
         console.warn("CSV 更新確認できず（raw 遅延の可能性）→ 保存成功扱い");
       }
@@ -126,6 +136,11 @@ async function processQueue() {
     resolve();
   } catch (e) {
     reject(e);
+  }
+
+  // ▼ 保存終了イベント（UI解除）
+  if (onSavingEnd) {
+    try { onSavingEnd(); } catch (_) {}
   }
 
   saving = false;
