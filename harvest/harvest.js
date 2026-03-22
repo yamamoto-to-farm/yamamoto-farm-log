@@ -9,7 +9,7 @@ import {
   getFinalField
 } from "../common/ui.js";
 
-import { saveLog, registerSavingStart, registerSavingEnd } from "../common/save/index.js";
+import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
@@ -122,7 +122,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植候補更新
+// ★ 定植候補更新（畑名一致 × 生育日数 ±60 ＋ fallback）
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions() START");
@@ -141,12 +141,14 @@ async function updatePlantingRefOptions() {
   const plantingList = await loadPlantingCSV();
   const nf = normalizeFieldName(field);
 
+  // ① 畑名一致
   const candidates = plantingList.filter(p =>
     normalizeFieldName(p.field || "") === nf
   );
 
   if (candidates.length === 0) return;
 
+  // ② 生育日数ロジック（±60）
   const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
 
@@ -159,8 +161,10 @@ async function updatePlantingRefOptions() {
 
   let finalList = strongMatches.length > 0 ? strongMatches : candidates;
 
+  // ④ 新しい順
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
 
+  // ⑤ プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
@@ -168,6 +172,7 @@ async function updatePlantingRefOptions() {
     select.appendChild(opt);
   });
 
+  // ⑥ 候補1件なら自動選択
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
   }
@@ -209,6 +214,7 @@ async function saveHarvestInner() {
     return;
   }
 
+  // 重複チェック
   const dup = await checkDuplicate("harvest", {
     plantingRef: data.plantingRef,
     harvestDate: data.harvestDate,
@@ -237,6 +243,7 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
+  // ★ 正しい saveLog 形式
   await saveLog(
     "harvest",
     dateStr,
@@ -244,10 +251,15 @@ async function saveHarvestInner() {
     csvLine + "\n"
   );
 
+  // ★ サマリー自動更新
+  // ★ 1秒遅らせて summaryUpdate を呼ぶ（競合回避）
+  
   setTimeout(() => {
     enqueueSummaryUpdate(data.plantingRef);
   }, 1000);
 
+
+  // ★ 保存内容をサマリー風にダイアログ表示
   alert(
     `収穫ログを保存しました\n\n` +
     `定植: ${data.plantingRef}\n` +
@@ -261,27 +273,3 @@ async function saveHarvestInner() {
 }
 
 window.saveHarvest = saveHarvestInner;
-
-
-// ===============================
-// ★ UI フック登録（保存中ロック）
-// ===============================
-registerSavingStart(() => {
-  const btn = document.querySelector(".primary-btn");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "保存中…";
-  }
-  const indicator = document.getElementById("saving-indicator");
-  if (indicator) indicator.style.display = "block";
-});
-
-registerSavingEnd(() => {
-  const btn = document.querySelector(".primary-btn");
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = "GitHub に保存する";
-  }
-  const indicator = document.getElementById("saving-indicator");
-  if (indicator) indicator.style.display = "none";
-});
