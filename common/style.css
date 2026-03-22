@@ -39,12 +39,12 @@ h2 {
    基本データカード（analysis）
 =============================== */
 .basic-toggle {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   margin: 0 0 10px;
   padding-left: 8px;
-  border-left: 4px solid #4CAF50;
+  border-left: 3px solid #4CAF50;
 }
 
 .basic-body {
@@ -112,17 +112,22 @@ details[open] {
 
 .field-group li {
   list-style: none;
-  margin: 4px 0;
+  margin: 6px 0; /* 行間UP */
 }
 
 .field-group a {
-  font-size: 16px;
-  color: #0066cc;
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a5fb4; /* 視認性の高い青 */
   text-decoration: none;
+  display: block; /* 押しやすい */
+  padding: 6px 4px;
+  border-radius: 4px;
 }
 
 .field-group a:hover {
-  text-decoration: underline;
+  background: #eef5ff;
+  text-decoration: none;
 }
 
 /* ===============================
@@ -301,7 +306,7 @@ tbody tr:nth-child(odd) {
   }
 
   .basic-toggle {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   .info-line {
@@ -314,6 +319,11 @@ tbody tr:nth-child(odd) {
 
   .group-title {
     font-size: 17px;
+  }
+
+  .field-group a {
+    font-size: 18px;
+    padding: 8px 6px;
   }
 
   table {
