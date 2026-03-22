@@ -173,7 +173,7 @@ function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
         html += `
       <tr>
         <td>
-          <a href="/kpi-month.html?year=${year}&month=${m + 1}">
+          <a href="kpi-month.html?year=${year}&month=${m + 1}">
             ${m + 1}月
           </a>
         </td>
