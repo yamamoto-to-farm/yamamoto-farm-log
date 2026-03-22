@@ -1,4 +1,4 @@
-// harvest-kpi.js（年ごと自動展開版・完全修正版）
+// harvest-kpi.js（収穫年ベース・完全修正版）
 
 import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
 import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
@@ -9,21 +9,32 @@ const log = (...a) => DEBUG && console.log("[KPI]", ...a);
 const logError = (...a) => DEBUG && console.error("[KPI-ERROR]", ...a);
 
 /* ===============================
-   1. 年一覧を自動抽出
+   1. 年一覧を「予定年＋実績年」から生成
 =============================== */
 async function getYearList() {
   log("年一覧取得開始");
 
   const index = await loadJSON("data/summary-index.json");
-  log("summary-index.json 読み込み成功:", index);
+  const weightRows = await loadCSV("logs/weight/all.csv");
 
   const years = new Set();
 
+  // ★ harvestPlanYM の年（予定年）
   for (const field in index) {
     for (const year in index[field]) {
-      years.add(Number(year));
+      for (const file of index[field][year]) {
+        const summary = await loadJSON(`logs/summary/${field}/${year}/${file}`);
+        const planYear = Number(summary.planting.harvestPlanYM.split("-")[0]);
+        years.add(planYear);
+      }
     }
   }
+
+  // ★ shippingDate の年（実績年）
+  weightRows.forEach(row => {
+    const y = new Date(row.shippingDate).getFullYear();
+    years.add(y);
+  });
 
   const list = [...years].sort();
   log("抽出された年一覧:", list);
@@ -32,7 +43,7 @@ async function getYearList() {
 }
 
 /* ===============================
-   2. 年ごとの plantingRef 一覧
+   2. 予定年（harvestPlanYM）で plantingRef を抽出
 =============================== */
 async function loadPlantingRefsForYear(targetYear) {
   log(`年 ${targetYear} の plantingRef 抽出開始`);
@@ -41,15 +52,20 @@ async function loadPlantingRefsForYear(targetYear) {
   const list = [];
 
   for (const field in index) {
-    if (!index[field][targetYear]) continue;
+    for (const year in index[field]) {
+      for (const file of index[field][year]) {
+        const summary = await loadJSON(`logs/summary/${field}/${year}/${file}`);
+        const planYear = Number(summary.planting.harvestPlanYM.split("-")[0]);
 
-    for (const file of index[field][targetYear]) {
-      list.push({
-        field,
-        year: targetYear,
-        file,
-        plantingRef: safeFileName(file.replace(".json", ""))
-      });
+        if (planYear === targetYear) {
+          list.push({
+            field,
+            year,
+            file,
+            plantingRef: safeFileName(file.replace(".json", ""))
+          });
+        }
+      }
     }
   }
 
@@ -69,7 +85,7 @@ function calcAreaTan(planting) {
 }
 
 /* ===============================
-   4. CSV を plantingRef ごとに集計
+   4. CSV を plantingRef ごとに集計（shippingDate ベース）
 =============================== */
 function groupWeightByRef(weightRows) {
   log("CSV → plantingRef 集計開始");
@@ -88,7 +104,8 @@ function groupWeightByRef(weightRows) {
       };
     }
 
-    const m = new Date(row.shippingDate).getMonth();
+    const d = new Date(row.shippingDate);
+    const m = d.getMonth();
     const kg = Number(row.totalWeight || 0);
     const units = Number(row.bins || 0);
 
@@ -119,14 +136,13 @@ function calcTargets(planArea, harvestBase) {
     targetUnits[m] = planArea[m] * Number(base.unitsPerTan || 0);
   }
 
-  log("目標値:", { targetKg, targetUnits });
   return { targetKg, targetUnits };
 }
 
 /* ===============================
    6. KPI テーブル HTML 生成
 =============================== */
-function renderKpiTable(planArea, areaMonthly, actuals, targets) {
+function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
   log("KPI テーブル生成開始");
 
   let html = `
@@ -155,7 +171,11 @@ function renderKpiTable(planArea, areaMonthly, actuals, targets) {
 
     html += `
       <tr>
-        <td>${m + 1}月</td>
+        <td>
+          <a href="/kpi-month.html?year=${year}&month=${m + 1}">
+            ${m + 1}月
+          </a>
+        </td>
         <td>${planArea[m].toFixed(2)}</td>
         <td>${areaMonthly[m].toFixed(2)}</td>
         <td class="${diffClass}">
@@ -183,8 +203,10 @@ async function renderKpiForYear(year) {
   const plantingList = await loadPlantingRefsForYear(year);
   const weightRows = await loadCSV("logs/weight/all.csv");
 
+  // ★ shippingDate ベースで実績を抽出
   const filteredWeightRows = weightRows.filter(row => {
-    return new Date(row.shippingDate).getFullYear() === year;
+    const d = new Date(row.shippingDate);
+    return d.getFullYear() === year;
   });
 
   const weightMap = groupWeightByRef(filteredWeightRows);
@@ -193,12 +215,15 @@ async function renderKpiForYear(year) {
   const areaMonthly = Array(12).fill(0);
   const actuals = { kg: Array(12).fill(0), units: Array(12).fill(0) };
 
+  // ★ shippingDate ベースで実績集計
   filteredWeightRows.forEach(row => {
-    const m = new Date(row.shippingDate).getMonth();
+    const d = new Date(row.shippingDate);
+    const m = d.getMonth();
     actuals.kg[m] += Number(row.totalWeight || 0);
     actuals.units[m] += Number(row.bins || 0);
   });
 
+  // ★ plantingRef の予定面積と収穫面積割当
   const refDatas = await Promise.all(
     plantingList.map(item =>
       loadJSON(`logs/summary/${item.field}/${item.year}/${item.file}`)
@@ -212,12 +237,14 @@ async function renderKpiForYear(year) {
     const area = calcAreaTan(ref.planting);
     const w = weightMap[item.plantingRef];
 
+    // 予定面積（harvestPlanYM ベース）
     const ym = ref.planting.harvestPlanYM;
     if (ym) {
       const planMonth = Number(ym.split("-")[1]) - 1;
       planArea[planMonth] += area;
     }
 
+    // 収穫面積（shippingDate ベース）
     if (w && w.totalKg > 0) {
       for (let m = 0; m < 12; m++) {
         const ratio = w.monthlyKg[m] / w.totalKg;
@@ -228,7 +255,7 @@ async function renderKpiForYear(year) {
 
   const targets = calcTargets(planArea, harvestBase);
 
-  return renderKpiTable(planArea, areaMonthly, actuals, targets);
+  return renderKpiTable(planArea, areaMonthly, actuals, targets, year);
 }
 
 /* ===============================
