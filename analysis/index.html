@@ -11,6 +11,12 @@
 
 <body>
 
+  <!-- ★ ナビバー（公開側 family/admin 用） -->
+  <script type="module">
+    import { renderNavbar } from "/yamamoto-farm-log/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
+
   <!-- 圃場名（analysis.js で書き換え） -->
   <h1 id="field-name"></h1>
 
@@ -19,7 +25,7 @@
     <!-- ★ カードは analysis.js が動的に追加する -->
   </div>
 
-  <!-- 戻るボタン -->
+  <!-- 地図に戻る（これは残す：地図→圃場分析の往復が自然） -->
   <button class="back-btn" onclick="location.href='/yamamoto-farm-log/map/index.html'">
     地図に戻る
   </button>
@@ -35,7 +41,7 @@
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // worker → 閲覧禁止
+      // worker → 閲覧禁止（family/admin のみ）
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
         alert("このページは家族のみ閲覧できます");
         location.href = "/yamamoto-farm-log/map/index.html";
