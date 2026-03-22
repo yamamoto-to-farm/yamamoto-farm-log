@@ -218,16 +218,27 @@ select {
 /* ===============================
    ボタン（共通）
 =============================== */
+
+/* PC（デスクトップ）では自然サイズ */
 .primary-btn {
-  width: 100%;
-  padding: 14px;
-  font-size: 17px;
+  width: auto;
+  padding: 12px 18px;
+  font-size: 16px;
   background: #2f855a;
   color: #fff;
   border: none;
   border-radius: 6px;
   margin-top: 20px;
   cursor: pointer;
+}
+
+/* スマホ（600px以下）では幅いっぱい */
+@media (max-width: 600px) {
+  .primary-btn {
+    width: 100%;
+    display: block;
+    text-align: center;
+  }
 }
 
 .primary-btn:active {
@@ -275,7 +286,7 @@ tbody tr:nth-child(odd) {
 }
 
 /* ===============================
-   スマホ最適化
+   スマホ最適化（追加済み）
 =============================== */
 @media (max-width: 600px) {
   body {
