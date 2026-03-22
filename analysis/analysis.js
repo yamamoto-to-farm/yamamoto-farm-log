@@ -1,6 +1,5 @@
 // analysis.js（統合フレーム）
 import { loadJSON } from "/yamamoto-farm-log/common/json.js";
-import { safeFieldName } from "/yamamoto-farm-log/common/utils.js";
 import { renderSummaryCards } from "./card-summary.js";
 
 export async function initAnalysisPage() {
@@ -18,12 +17,17 @@ export async function initAnalysisPage() {
 
   /* ===============================
      ★ 基本データカード（field-detail.json）
+     safeFieldName を使わず rawFieldName で検索
   =============================== */
   const detail = await loadJSON("data/field-detail.json");
-  const fieldKey = safeFieldName(rawFieldName);
-  const fieldData = detail[fieldKey];
 
-  container.insertAdjacentHTML("beforeend", renderBasicFieldCard(fieldData));
+  // ★ そのままの名前で検索
+  const fieldData = detail[rawFieldName];
+
+  // ★ データが無い場合は何も出さない
+  if (fieldData) {
+    container.insertAdjacentHTML("beforeend", renderBasicFieldCard(fieldData));
+  }
 
   /* ===============================
      ★ サマリーカード（年度別）
@@ -36,8 +40,6 @@ export async function initAnalysisPage() {
    基本データカード（field-detail.json）
 =============================== */
 function renderBasicFieldCard(f) {
-  if (!f) return `<p>基本データがありません</p>`;
-
   return `
     <div class="card basic-card">
       <h2>基本データ</h2>
