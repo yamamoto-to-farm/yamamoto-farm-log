@@ -2,221 +2,224 @@
    全体レイアウト（全ページ共通）
 =============================== */
 body {
-  font-family: "Helvetica", "Yu Gothic", "Hiragino Sans", sans-serif;
-  background: #f5f5f5;
-  margin: 0;
-  padding: 20px;
-  color: #333;
+    font-family: "Helvetica", "Yu Gothic", "Hiragino Sans", sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+    color: #333;
 }
 
 h1 {
-  font-size: 26px;
-  margin-bottom: 22px;
-  text-align: center;
-  font-weight: 600;
+    font-size: 26px;
+    margin-bottom: 22px;
+    text-align: center;
+    font-weight: 600;
 }
 
 h2 {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 24px 0 10px;
-  color: #333;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 24px 0 10px;
+    color: #333;
 }
 
 /* ===============================
    カード（analysis / shipping / summary 共通）
 =============================== */
 .card {
-  background: #fff;
-  padding: 18px 20px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  margin-bottom: 20px;
+    background: #fff;
+    padding: 18px 20px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
 }
 
 /* ===============================
    基本データカード（analysis）
 =============================== */
 .basic-toggle {
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  margin: 0 0 10px;
-  padding-left: 8px;
-  border-left: 3px solid #4CAF50;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0 0 10px;
+    padding-left: 8px;
+    border-left: 3px solid #4CAF50;
 }
 
 .basic-body {
-  margin-top: 10px;
+    margin-top: 10px;
 }
 
 /* ===============================
    情報行（analysis）
 =============================== */
 .info-line {
-  font-size: 16px;
-  margin: 6px 0;
-  line-height: 1.6;
+    font-size: 16px;
+    margin: 6px 0;
+    line-height: 1.6;
 }
 
 .info-block {
-  margin: 14px 0;
+    margin: 14px 0;
 }
 
 .info-block-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #333;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #333;
 }
 
 /* ===============================
    年度サマリー（details/summary）
 =============================== */
 details {
-  background: #fff;
-  padding: 14px 18px;
-  margin-bottom: 18px;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    background: #fff;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
 }
 
 details summary {
-  cursor: pointer;
-  font-size: 19px;
-  font-weight: 600;
-  color: #333;
+    cursor: pointer;
+    font-size: 19px;
+    font-weight: 600;
+    color: #333;
 }
 
 details[open] {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* ===============================
    エリア一覧（analysis/index）
 =============================== */
 .group-title {
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  margin: 12px 0 6px;
-  padding: 4px 2px;
-  color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 12px 0 6px;
+    padding: 4px 2px;
+    color: #333;
 }
 
 .field-group ul {
-  margin: 0 0 12px 12px;
-  padding: 0;
+    margin: 0 0 12px 12px;
+    padding: 0;
 }
 
 .field-group li {
-  list-style: none;
-  margin: 6px 0; /* 行間UP */
+    list-style: none;
+    margin: 6px 0;
+    /* 行間UP */
 }
 
 .field-group a {
-  font-size: 17px;
-  font-weight: 600;
-  color: #1a5fb4; /* 視認性の高い青 */
-  text-decoration: none;
-  display: block; /* 押しやすい */
-  padding: 6px 4px;
-  border-radius: 4px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a5fb4;
+    /* 視認性の高い青 */
+    text-decoration: none;
+    display: block;
+    /* 押しやすい */
+    padding: 6px 4px;
+    border-radius: 4px;
 }
 
 .field-group a:hover {
-  background: #eef5ff;
-  text-decoration: none;
+    background: #eef5ff;
+    text-decoration: none;
 }
 
 /* ===============================
    目次ページ（index.html）
 =============================== */
 .menu-section-title {
-  margin-top: 30px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
+    margin-top: 30px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
 }
 
 .menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
 }
 
 .menu-card {
-  background: #fff;
-  padding: 14px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background: #fff;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .menu-card a {
-  font-size: 16px;
-  font-weight: bold;
-  color: #2b6cb0;
-  text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    color: #2b6cb0;
+    text-decoration: none;
 }
 
 /* PIN UI */
 #pin-area {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  margin-bottom: 20px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
 }
 
 .pin-input {
-  font-size: 18px;
-  padding: 6px;
-  margin-top: 8px;
+    font-size: 18px;
+    padding: 6px;
+    margin-top: 8px;
 }
 
 .pin-submit {
-  font-size: 18px;
-  padding: 6px 12px;
+    font-size: 18px;
+    padding: 6px 12px;
 }
 
 #login-user {
-  margin-bottom: 20px;
-  font-size: 18px;
-  color: #333;
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #333;
 }
 
 /* ===============================
    フォーム（shipping / admin 共通）
 =============================== */
 .form-field {
-  margin-bottom: 16px;
+    margin-bottom: 16px;
 }
 
 .form-field label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
 }
 
 .form-input,
 .form-textarea,
 select {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-  background: #fff;
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    background: #fff;
 }
 
 .form-textarea {
-  resize: vertical;
+    resize: vertical;
 }
 
 /* ===============================
@@ -225,115 +228,125 @@ select {
 
 /* PC（デスクトップ）では自然サイズ */
 .primary-btn {
-  width: auto;
-  padding: 12px 18px;
-  font-size: 16px;
-  background: #2f855a;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  margin-top: 20px;
-  cursor: pointer;
+    width: auto;
+    padding: 12px 18px;
+    font-size: 16px;
+    background: #2f855a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    margin-top: 20px;
+    cursor: pointer;
 }
 
 /* スマホ（600px以下）では幅いっぱい */
 @media (max-width: 600px) {
-  .primary-btn {
-    width: 100%;
-    display: block;
-    text-align: center;
-  }
+    .primary-btn {
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
 }
 
 .primary-btn:active {
-  opacity: 0.85;
+    opacity: 0.85;
 }
 
 /* ===============================
    テーブル（KPI）
 =============================== */
 table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  background: #fff;
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px 10px;
-  text-align: right;
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+    text-align: right;
 }
 
 th {
-  background: #f0f0f0;
-  text-align: center;
+    background: #f0f0f0;
+    text-align: center;
 }
 
 tbody tr:nth-child(odd) {
-  background: #fafafa;
+    background: #fafafa;
 }
 
 /* 差分色 */
 .diff-positive {
-  color: #2e8b57;
-  font-weight: bold;
+    color: #2e8b57;
+    font-weight: bold;
 }
 
 .diff-negative {
-  color: #c0392b;
-  font-weight: bold;
+    color: #c0392b;
+    font-weight: bold;
 }
 
 .diff-zero {
-  color: #555;
+    color: #555;
 }
 
 /* ===============================
    スマホ最適化（追加済み）
 =============================== */
 @media (max-width: 600px) {
-  body {
-    padding: 14px;
-  }
+    body {
+        padding: 14px;
+    }
 
-  h1 {
-    font-size: 22px;
-  }
+    h1 {
+        font-size: 22px;
+    }
 
-  .card {
-    padding: 16px;
-  }
+    .card {
+        padding: 16px;
+    }
 
-  .basic-toggle {
-    font-size: 17px;
-  }
+    .basic-toggle {
+        font-size: 17px;
+    }
 
-  .info-line {
-    font-size: 15px;
-  }
+    .info-line {
+        font-size: 15px;
+    }
 
-  details summary {
-    font-size: 17px;
-  }
+    details summary {
+        font-size: 17px;
+    }
 
-  .group-title {
-    font-size: 17px;
-  }
+    .group-title {
+        font-size: 17px;
+    }
 
-  .field-group a {
-    font-size: 18px;
-    padding: 8px 6px;
-  }
+    .field-group a {
+        font-size: 18px;
+        padding: 8px 6px;
+    }
 
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
 
-  th, td {
-    padding: 6px 8px;
-    font-size: 13px;
-  }
+    th,
+    td {
+        padding: 6px 8px;
+        font-size: 13px;
+    }
+
+    details summary {
+        list-style: none;
+    }
+
+    details summary::-webkit-details-marker {
+        display: none;
+    }
 }
