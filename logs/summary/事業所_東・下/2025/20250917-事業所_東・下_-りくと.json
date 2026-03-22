@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250917-事業所(東・下)-りくと",
+  "planting": {
+    "plantDate": "2025-09-17",
+    "field": "事業所(東・下)",
+    "variety": "りくと",
+    "seedRef": "20250814-りくと-02",
+    "quantity": 6600,
+    "trayType": 200,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 12,
+    "firstDate": "2026-03-22",
+    "lastDate": "2026-03-22"
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-03-22T18:36:41.345Z"
+}
