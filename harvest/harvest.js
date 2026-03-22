@@ -9,7 +9,7 @@ import {
   getFinalField
 } from "../common/ui.js";
 
-import * as SaveUI from "../common/save/index.js";
+import { saveLog, registerSavingStart, registerSavingEnd } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
@@ -237,7 +237,7 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  await SaveUI.saveLog(
+  await saveLog(
     "harvest",
     dateStr,
     { plantingRefs: [data.plantingRef] },
@@ -266,7 +266,7 @@ window.saveHarvest = saveHarvestInner;
 // ===============================
 // ★ UI フック登録（保存中ロック）
 // ===============================
-SaveUI.onSavingStart = () => {
+registerSavingStart(() => {
   const btn = document.querySelector(".primary-btn");
   if (btn) {
     btn.disabled = true;
@@ -274,9 +274,9 @@ SaveUI.onSavingStart = () => {
   }
   const indicator = document.getElementById("saving-indicator");
   if (indicator) indicator.style.display = "block";
-};
+});
 
-SaveUI.onSavingEnd = () => {
+registerSavingEnd(() => {
   const btn = document.querySelector(".primary-btn");
   if (btn) {
     btn.disabled = false;
@@ -284,4 +284,4 @@ SaveUI.onSavingEnd = () => {
   }
   const indicator = document.getElementById("saving-indicator");
   if (indicator) indicator.style.display = "none";
-};
+});

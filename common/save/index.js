@@ -10,10 +10,18 @@ const saveQueue = [];
 let saving = false;
 
 // ------------------------------
-// UI フック（外部から登録される）
+// UI フック（コールバック登録方式）
 // ------------------------------
-export let onSavingStart = null;
-export let onSavingEnd = null;
+let savingStartCallback = null;
+let savingEndCallback = null;
+
+export function registerSavingStart(fn) {
+  savingStartCallback = fn;
+}
+
+export function registerSavingEnd(fn) {
+  savingEndCallback = fn;
+}
 
 // ------------------------------
 // saveLog（名前はそのまま）
@@ -59,8 +67,8 @@ async function processQueue() {
   saving = true;
 
   // ▼ 保存開始イベント（UIロック）
-  if (onSavingStart) {
-    try { onSavingStart(); } catch (_) {}
+  if (savingStartCallback) {
+    try { savingStartCallback(); } catch (_) {}
   }
 
   const { payload, resolve, reject } = saveQueue.shift();
@@ -139,8 +147,8 @@ async function processQueue() {
   }
 
   // ▼ 保存終了イベント（UI解除）
-  if (onSavingEnd) {
-    try { onSavingEnd(); } catch (_) {}
+  if (savingEndCallback) {
+    try { savingEndCallback(); } catch (_) {}
   }
 
   saving = false;
