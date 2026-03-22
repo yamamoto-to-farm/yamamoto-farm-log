@@ -1,8 +1,8 @@
-// kpi-month.js（完成版）
+// kpi-month.js（相対パス対応・完全版）
 
-import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
-import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
-import { safeFileName } from "/yamamoto-farm-log/common/utils.js?v=1.1";
+import { loadJSON } from "../common/json.js?v=1.1";
+import { loadCSV } from "../common/csv.js?v=1.1";
+import { safeFileName } from "../common/utils.js?v=1.1";
 
 const DEBUG = true;
 const log = (...a) => DEBUG && console.log("[KPI-MONTH]", ...a);
@@ -22,14 +22,14 @@ function getParams() {
    plantingRef → summary を読み込む
 =============================== */
 async function loadSummaryByRef(plantingRef) {
-  const index = await loadJSON("data/summary-index.json");
+  const index = await loadJSON("../data/summary-index.json");
 
   for (const field in index) {
     for (const year in index[field]) {
       for (const file of index[field][year]) {
         const ref = safeFileName(file.replace(".json", ""));
         if (ref === plantingRef) {
-          return await loadJSON(`logs/summary/${field}/${year}/${file}`);
+          return await loadJSON(`../logs/summary/${field}/${year}/${file}`);
         }
       }
     }
@@ -58,7 +58,7 @@ async function renderMonthPage() {
   document.getElementById("month-title").textContent = `${year}年${month}月`;
 
   // CSV 読み込み
-  const weightRows = await loadCSV("logs/weight/all.csv");
+  const weightRows = await loadCSV("../logs/weight/all.csv");
 
   // shippingDate で該当月を抽出
   const filtered = weightRows.filter(row => {
@@ -135,7 +135,7 @@ async function renderMonthPage() {
         <td>${ratio}</td>
         <td class="left">${period}</td>
         <td class="left">
-          <a href="/yamamoto-farm-log/performance/field-analysis.html?ref=${ref}">
+          <a href="field-analysis.html?ref=${ref}">
             分析
           </a>
         </td>
