@@ -38,7 +38,6 @@ export async function initAnalysisPage() {
       const isOpen = body.style.display !== "none";
 
       body.style.display = isOpen ? "none" : "block";
-      title.textContent = `${isOpen ? "▶" : "▼"} 基本データ`;
     });
   });
 }
