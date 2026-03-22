@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>KPI 月別ページ</title>
+
+  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1.1">
+  <link rel="stylesheet" href="/yamamoto-farm-log/performance/kpi-month.css?v=1.1">
+
+  <style>
+    /* 必要ならここに軽い調整を書く */
+
+    .month-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .month-header h2 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    .back-btn {
+      padding: 6px 12px;
+      background: #eee;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    table.kpi-month-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table.kpi-month-table th,
+    table.kpi-month-table td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      text-align: right;
+    }
+
+    table.kpi-month-table th {
+      background: #f7f7f7;
+    }
+
+    tr.total-row {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
+
+    td.left {
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- ▼ 年月タイトル + 戻る -->
+    <div class="month-header">
+      <h2 id="month-title">2025年10月</h2>
+      <button class="back-btn" onclick="history.back()">戻る</button>
+    </div>
+
+    <!-- ▼ ロット一覧テーブル（JSで生成） -->
+    <table class="kpi-month-table">
+      <thead>
+        <tr>
+          <th class="left">ロット</th>
+          <th class="left">品種</th>
+          <th class="left">圃場</th>
+          <th>面積(反)</th>
+          <th>収穫量(kg)</th>
+          <th>出荷量(基)</th>
+          <th>反当たり収量</th>
+          <th class="left">収穫期間</th>
+          <th class="left">分析</th>
+        </tr>
+      </thead>
+      <tbody id="kpi-month-body">
+        <!-- JS がここに行を追加 -->
+      </tbody>
+
+      <!-- ▼ 月の合計行（JSで生成） -->
+      <tfoot>
+        <tr class="total-row" id="kpi-month-total">
+          <!-- JS がここに合計行を追加 -->
+        </tr>
+      </tfoot>
+    </table>
+
+  </div>
+
+  <script type="module" src="/yamamoto-farm-log/performance/kpi-month.js?v=1.1"></script>
+</body>
+</html>
