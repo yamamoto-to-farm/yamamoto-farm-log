@@ -6,7 +6,7 @@ export async function renderFieldList() {
   container.innerHTML = ""; // 初期化
 
   // ★ field.json 読み込み（キャッシュバスター付き）
-  const fields = await loadJSON("/yamamoto-farm-log/data/fields.json");
+  const fields = await loadJSON("data/fields.json");
 
   // ★ グループ（エリア）ごとにまとめる
   const groups = {};
