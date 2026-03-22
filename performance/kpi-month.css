@@ -73,3 +73,35 @@ summary {
 details[open] {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
+
+/* ===== スマホ最適化 ===== */
+@media (max-width: 768px) {
+
+  body {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  th, td {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  summary {
+    font-size: 16px;
+  }
+
+  details {
+    padding: 8px;
+  }
+}
