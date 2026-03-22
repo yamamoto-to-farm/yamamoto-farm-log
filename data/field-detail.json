@@ -1,0 +1,19 @@
+{
+  "三角畑(下)": {
+    "size": 0.9,
+    "thumbnail": "",
+    "memo": "",
+    "parcels": [
+      {
+        "lotNumber": "仮-001",
+        "addressOfficial": "豊橋市（仮）",
+        "landCategory": "畑",
+        "officialArea": 900,
+        "owner": "不明",
+        "rightType": "不明",
+        "rent": null
+      }
+    ],
+    "soil": null
+  }
+}
