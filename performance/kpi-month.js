@@ -104,7 +104,7 @@ async function renderMonthPage() {
 
     const planting = summary.planting;
 
-    // ★ 修正ポイント：varietyName / fieldName ではなく variety / field
+    // ★ 修正：varietyName / fieldName ではなく variety / field
     const variety = planting.variety || "-";
     const field = planting.field || "-";
 
@@ -125,7 +125,7 @@ async function renderMonthPage() {
     totalKg += kg;
     totalUnits += units;
 
-    // 行追加
+    // 行追加（★ 圃場名で analysis に飛ばす）
     tbody.insertAdjacentHTML("beforeend", `
       <tr>
         <td class="left">${ref}</td>
@@ -137,7 +137,7 @@ async function renderMonthPage() {
         <td>${ratio}</td>
         <td class="left">${period}</td>
         <td class="left">
-          <a href="field-analysis.html?ref=${ref}">
+          <a href="../analysis/index.html?field=${encodeURIComponent(field)}">
             分析
           </a>
         </td>
