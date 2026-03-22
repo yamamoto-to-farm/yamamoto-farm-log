@@ -341,12 +341,4 @@ tbody tr:nth-child(odd) {
         padding: 6px 8px;
         font-size: 13px;
     }
-
-    details summary {
-        list-style: none;
-    }
-
-    details summary::-webkit-details-marker {
-        display: none;
-    }
 }
