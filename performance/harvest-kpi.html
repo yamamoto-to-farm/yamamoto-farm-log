@@ -8,7 +8,7 @@
   <!-- 外部CSS -->
   <link rel="stylesheet" href="./harvest-kpi.css?v=1.0">
 
-  <!-- 共通UI -->
+  <!-- 共通UI（認証など） -->
   <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
 
   <!-- KPI ロジック -->
@@ -19,6 +19,12 @@
 </head>
 
 <body>
+
+  <!-- ★ ナビバー（公開側 family/admin 用） -->
+  <script type="module">
+    import { renderNavbar } from "/yamamoto-farm-log/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
 
   <h1>収穫KPI（月別 予定 × 実績）</h1>
 
