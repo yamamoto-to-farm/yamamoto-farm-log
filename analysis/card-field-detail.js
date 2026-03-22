@@ -4,10 +4,10 @@ export function renderFieldDetailCard(f) {
     <div class="card basic-card">
 
       <!-- ▼ タイトル（クリックで開閉） -->
-      <h2 class="basic-toggle">▼ 基本データ</h2>
+      <h2 class="basic-toggle">基本データ</h2>
 
       <!-- ▼ 中身（折りたたみ対象） -->
-      <div class="basic-body">
+      <div class="basic-body" style="display:none;">
 
         <div class="info-line">実耕作面積：${f.size ?? "-"} a</div>
         <div class="info-line">特徴：${f.memo ?? "-"}</div>
