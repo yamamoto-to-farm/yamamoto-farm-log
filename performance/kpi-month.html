@@ -1,102 +1,162 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <title>KPI 月別ページ</title>
+// kpi-month.js（harvest-kpi.js と同じ動作モデルに統一）
 
-  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1.1">
-  <link rel="stylesheet" href="/yamamoto-farm-log/performance/kpi-month.css?v=1.1">
+import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
+import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
+import { safeFileName } from "/yamamoto-farm-log/common/utils.js?v=1.1";
 
-  <style>
-    /* 必要ならここに軽い調整を書く */
+const DEBUG = true;
+const log = (...a) => DEBUG && console.log("[KPI-MONTH]", ...a);
 
-    .month-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 20px 0;
+/* ===============================
+   URL パラメータ取得
+=============================== */
+function getParams() {
+  const params = new URLSearchParams(location.search);
+  return {
+    year: Number(params.get("year")),
+    month: Number(params.get("month"))
+  };
+}
+
+/* ===============================
+   plantingRef → summary を読み込む
+=============================== */
+async function loadSummaryByRef(plantingRef) {
+  const index = await loadJSON("data/summary-index.json");
+
+  for (const field in index) {
+    for (const year in index[field]) {
+      for (const file of index[field][year]) {
+        const ref = safeFileName(file.replace(".json", ""));
+        if (ref === plantingRef) {
+          return await loadJSON(`logs/summary/${field}/${year}/${file}`);
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/* ===============================
+   面積（反）
+=============================== */
+function calcAreaTan(planting) {
+  const qty = Number(planting.quantity || 0);
+  const row = Number(planting.spacing.row || 0);
+  const bed = Number(planting.spacing.bed || 0);
+  return (qty * row * bed) / 10000000;
+}
+
+/* ===============================
+   メイン処理
+=============================== */
+async function renderMonthPage() {
+  const { year, month } = getParams();
+  log("対象:", year, month);
+
+  // タイトル更新
+  document.getElementById("month-title").textContent = `${year}年${month}月`;
+
+  // CSV 読み込み（harvest-kpi.js と同じ書き方）
+  const weightRows = await loadCSV("logs/weight/all.csv");
+
+  // shippingDate で該当月を抽出
+  const filtered = weightRows.filter(row => {
+    const d = new Date(row.shippingDate);
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  });
+
+  log("該当月の出荷行:", filtered);
+
+  // plantingRef ごとに集計
+  const map = {};
+
+  filtered.forEach(row => {
+    const ref = safeFileName(row.plantingRef);
+    if (!ref) return;
+
+    if (!map[ref]) {
+      map[ref] = {
+        kg: 0,
+        units: 0,
+        dates: [],
+      };
     }
 
-    .month-header h2 {
-      margin: 0;
-      font-size: 1.6rem;
-    }
+    map[ref].kg += Number(row.totalWeight || 0);
+    map[ref].units += Number(row.bins || 0);
+    map[ref].dates.push(row.shippingDate);
+  });
 
-    .back-btn {
-      padding: 6px 12px;
-      background: #eee;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
+  log("ロット集計:", map);
 
-    table.kpi-month-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
+  const tbody = document.getElementById("kpi-month-body");
 
-    table.kpi-month-table th,
-    table.kpi-month-table td {
-      border: 1px solid #ccc;
-      padding: 6px 8px;
-      text-align: right;
-    }
+  let totalArea = 0;
+  let totalKg = 0;
+  let totalUnits = 0;
 
-    table.kpi-month-table th {
-      background: #f7f7f7;
-    }
+  // plantingRef ごとに summary を読み込みつつ行を作る
+  for (const ref of Object.keys(map)) {
+    const summary = await loadSummaryByRef(ref);
 
-    tr.total-row {
-      background: #f0f0f0;
-      font-weight: bold;
-    }
+    if (!summary) continue;
 
-    td.left {
-      text-align: left;
-    }
-  </style>
-</head>
+    const planting = summary.planting;
 
-<body>
+    // ★ 修正：varietyName / fieldName ではなく variety / field
+    const variety = planting.variety || "-";
+    const field = planting.field || "-";
 
-  <div class="container">
+    const area = calcAreaTan(planting);
+    const kg = map[ref].kg;
+    const units = map[ref].units;
 
-    <!-- ▼ 年月タイトル + 戻る -->
-    <div class="month-header">
-      <h2 id="month-title">2025年10月</h2>
-      <button class="back-btn" onclick="history.back()">戻る</button>
-    </div>
+    const ratio = area > 0 ? (kg / area).toFixed(1) : "-";
 
-    <!-- ▼ ロット一覧テーブル（JSで生成） -->
-    <table class="kpi-month-table">
-      <thead>
-        <tr>
-          <th class="left">ロット</th>
-          <th class="left">品種</th>
-          <th class="left">圃場</th>
-          <th>面積(反)</th>
-          <th>収穫量(kg)</th>
-          <th>出荷量(基)</th>
-          <th>反当たり収量</th>
-          <th class="left">収穫期間</th>
-          <th class="left">分析</th>
-        </tr>
-      </thead>
-      <tbody id="kpi-month-body">
-        <!-- JS がここに行を追加 -->
-      </tbody>
+    // 収穫期間
+    const dates = map[ref].dates.map(d => new Date(d)).sort((a, b) => a - b);
+    const start = dates.length ? dates[0].toISOString().slice(0, 10) : "-";
+    const end = dates.length ? dates[dates.length - 1].toISOString().slice(0, 10) : "-";
+    const period = start === end ? start : `${start}〜${end}`;
 
-      <!-- ▼ 月の合計行（JSで生成） -->
-      <tfoot>
-        <tr class="total-row" id="kpi-month-total">
-          <!-- JS がここに合計行を追加 -->
-        </tr>
-      </tfoot>
-    </table>
+    // 合計用
+    totalArea += area;
+    totalKg += kg;
+    totalUnits += units;
 
-  </div>
+    // 行追加（★ 圃場名で analysis に飛ばす）
+    tbody.insertAdjacentHTML("beforeend", `
+      <tr>
+        <td class="left">${ref}</td>
+        <td class="left">${variety}</td>
+        <td class="left">${field}</td>
+        <td>${area.toFixed(2)}</td>
+        <td>${kg.toLocaleString()}</td>
+        <td>${units.toLocaleString()}</td>
+        <td>${ratio}</td>
+        <td class="left">${period}</td>
+        <td class="left">
+          <a href="../analysis/index.html?field=${encodeURIComponent(field)}">
+            分析
+          </a>
+        </td>
+      </tr>
+    `);
+  }
 
-  <script type="module" src="/yamamoto-farm-log/performance/kpi-month.js?v=1.1"></script>
-</body>
-</html>
+  // 合計行
+  document.getElementById("kpi-month-total").innerHTML = `
+    <td class="left">合計</td>
+    <td></td>
+    <td></td>
+    <td>${totalArea.toFixed(2)}</td>
+    <td>${totalKg.toLocaleString()}</td>
+    <td>${totalUnits.toLocaleString()}</td>
+    <td>${totalArea > 0 ? (totalKg / totalArea).toFixed(1) : "-"}</td>
+    <td class="left">-</td>
+    <td></td>
+  `;
+}
+
+renderMonthPage();
