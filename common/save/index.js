@@ -1,6 +1,7 @@
 // common/save/index.js
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
+const APPEND_URL  = "https://kv4z4gjnq9.execute-api.ap-northeast-1.amazonaws.com/prod/append";
 
 const DEBUG_SAVELOG = true;
 function dbg(...args) {
@@ -31,8 +32,31 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
 async function saveToS3(payload) {
   dbg("=== saveToS3 START ===");
 
+  // append モード（専用 API）
+  if (payload.csv && payload.replaceCsv === "") {
+    dbg("mode: append");
+
+    const res = await fetch(APPEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: payload.type,
+        line: payload.csv
+      })
+    });
+
+    const json = await res.json();
+    dbg("append result:", json);
+
+    if (!res.ok) throw new Error("append failed");
+
+    dbg("=== saveToS3 END (append) ===");
+    return;
+  }
+
   const files = [];
 
+  // multi モード
   if (payload.type === "multi") {
     dbg("mode: multi");
 
@@ -49,6 +73,7 @@ async function saveToS3(payload) {
   } else {
     dbg("mode:", payload.type);
 
+    // JSON 保存
     if (payload.json) {
       let key = payload.dateStr;
       if (!key.endsWith(".json")) key = key + ".json";
@@ -62,10 +87,7 @@ async function saveToS3(payload) {
       });
     }
 
-    if (payload.csv && payload.replaceCsv === "") {
-      throw new Error("append は append API に移行する必要があります");
-    }
-
+    // CSV 全書き換え（replaceCsv）
     if (payload.replaceCsv !== "") {
       const key = `logs/${payload.type}/all.csv`;
       dbg("CSV file:", key);
@@ -80,6 +102,7 @@ async function saveToS3(payload) {
 
   dbg("files to upload:", files);
 
+  // presign → PUT
   for (const file of files) {
     dbg("---- presign request ----");
     dbg("key:", file.key);
