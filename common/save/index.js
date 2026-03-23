@@ -24,11 +24,11 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
 }
 
 async function saveToS3(payload) {
+  const files = [];
+
   // ------------------------------
   // 1. 保存対象ファイルを決定
   // ------------------------------
-  const files = [];
-
   if (payload.type === "multi") {
     // multi は複数ファイル
     for (const f of payload.files) {
@@ -41,14 +41,21 @@ async function saveToS3(payload) {
   } else {
     // JSON 保存
     if (payload.json) {
+      let key = payload.dateStr;
+
+      // ★★★ ここが最重要：拡張子がなければ .json を付ける
+      if (!key.endsWith(".json")) {
+        key = key + ".json";
+      }
+
       files.push({
-        key: payload.dateStr,
+        key,
         content: JSON.stringify(payload.json, null, 2),
         contentType: "application/json"
       });
     }
 
-    // CSV 保存（append は後で Lambda 化）
+    // CSV append（後で Lambda 化）
     if (payload.csv && payload.replaceCsv === "") {
       throw new Error("append は append API に移行する必要があります");
     }
@@ -67,6 +74,7 @@ async function saveToS3(payload) {
   // 2. presign → PUT
   // ------------------------------
   for (const file of files) {
+    // presign
     const presignRes = await fetch(PRESIGN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -78,6 +86,7 @@ async function saveToS3(payload) {
 
     const { url } = await presignRes.json();
 
+    // PUT
     await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": file.contentType },
