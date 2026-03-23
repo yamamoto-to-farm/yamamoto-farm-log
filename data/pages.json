@@ -3,165 +3,122 @@
     {
       "id": "seed",
       "name": "播種ログ",
-      "path": "./seed/index.html",
+      "path": "seed/index.html",
       "category": "作業ログ",
-      "roles": [
-        "worker",
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/seed.png"
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/seed.png"
     },
     {
       "id": "planting",
       "name": "定植ログ",
-      "path": "./planting/index.html",
+      "path": "planting/index.html",
       "category": "作業ログ",
-      "roles": [
-        "worker",
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/planting.png"
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/planting.png"
     },
     {
       "id": "harvest-kpi",
       "name": "収穫KPI",
-      "path": "./performance/harvest-kpi.html",
+      "path": "performance/harvest-kpi.html",
       "category": "記録一覧",
-      "roles": [
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/harvest-kpi.png"
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/harvest-kpi.png"
     },
     {
       "id": "planting-list",
       "name": "定植記録",
-      "path": "./planting/list.html",
+      "path": "planting/list.html",
       "category": "記録一覧",
-      "roles": [
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/planting.png"
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/planting.png"
     },
     {
       "id": "harvest",
       "name": "収穫ログ",
-      "path": "./harvest/index.html",
+      "path": "harvest/index.html",
       "category": "作業ログ",
-      "roles": [
-        "worker",
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/harvest.png"
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/harvest.png"
     },
     {
       "id": "shipping",
       "name": "出荷ログ",
-      "path": "./shipping/index.html",
+      "path": "shipping/index.html",
       "category": "作業ログ",
-      "roles": [
-        "worker",
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/shipping.png"
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/shipping.png"
     },
     {
       "id": "map",
       "name": "圃場マップ",
-      "path": "./map/index.html",
+      "path": "map/index.html",
       "category": "圃場",
-      "roles": [
-        "worker",
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/map.png"
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/map.png"
     },
     {
       "id": "analysis",
       "name": "圃場分析データ",
-      "path": "./analysis/index.html",
+      "path": "analysis/index.html",
       "category": "圃場",
-      "roles": [
-        "family",
-        "admin"
-      ],
-      "icon": "./assets/icons/analysis.png"
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/analysis.png"
     },
     {
       "id": "admin",
       "name": "管理ページ",
-      "path": "./admin/index.html",
+      "path": "admin/index.html",
       "category": "管理",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/admin.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/admin.png"
     },
     {
       "id": "edit-csv",
       "name": "CSV 編集ツール",
       "path": "edit-csv/index.html",
       "category": "管理/ツール",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/csv.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/csv.png"
     },
     {
       "id": "machine-qr",
       "name": "QRコード生成ツール",
-      "path": "./machine-qr.html",
+      "path": "machine-qr.html",
       "category": "管理/ツール",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/qr.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/qr.png"
     },
     {
       "id": "summary-manager",
       "name": "サマリー管理",
-      "path": "./summary-manager.html",
+      "path": "summary-manager.html",
       "category": "管理/ツール",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/summary.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/summary.png"
     },
     {
       "id": "varieties",
       "name": "品種データ管理",
-      "path": "./varieties.html",
+      "path": "varieties.html",
       "category": "管理/ツール",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/varieties.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/varieties.png"
     },
     {
       "id": "fields",
       "name": "圃場データ管理",
-      "path": "./fields.html",
+      "path": "fields.html",
       "category": "管理/ツール",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/fields.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/fields.png"
     },
     {
       "id": "access",
       "name": "アクセス権限（PIN）管理",
-      "path": "./access.html",
+      "path": "access.html",
       "category": "管理/ツール",
-      "roles": [
-        "admin"
-      ],
-      "icon": "./assets/icons/access.png"
+      "roles": ["admin"],
+      "icon": "assets/icons/access.png"
     }
   ]
 }
