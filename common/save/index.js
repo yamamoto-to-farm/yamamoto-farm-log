@@ -2,9 +2,7 @@
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 
-// ★ デバッグ ON/OFF フラグ
 const DEBUG_SAVELOG = true;
-
 function dbg(...args) {
   if (DEBUG_SAVELOG) console.log("[saveLog]", ...args);
 }
@@ -35,9 +33,6 @@ async function saveToS3(payload) {
 
   const files = [];
 
-  // ------------------------------
-  // 1. 保存対象ファイルを決定
-  // ------------------------------
   if (payload.type === "multi") {
     dbg("mode: multi");
 
@@ -54,7 +49,6 @@ async function saveToS3(payload) {
   } else {
     dbg("mode:", payload.type);
 
-    // JSON 保存
     if (payload.json) {
       let key = payload.dateStr;
       if (!key.endsWith(".json")) key = key + ".json";
@@ -68,12 +62,10 @@ async function saveToS3(payload) {
       });
     }
 
-    // CSV append（後で Lambda 化）
     if (payload.csv && payload.replaceCsv === "") {
       throw new Error("append は append API に移行する必要があります");
     }
 
-    // CSV 全書き換え
     if (payload.replaceCsv !== "") {
       const key = `logs/${payload.type}/all.csv`;
       dbg("CSV file:", key);
@@ -81,16 +73,13 @@ async function saveToS3(payload) {
       files.push({
         key,
         content: payload.replaceCsv,
-        contentType: "application/octet-stream" // ← ここが重要
+        contentType: "application/octet-stream"
       });
     }
   }
 
   dbg("files to upload:", files);
 
-  // ------------------------------
-  // 2. presign → PUT
-  // ------------------------------
   for (const file of files) {
     dbg("---- presign request ----");
     dbg("key:", file.key);
@@ -106,23 +95,22 @@ async function saveToS3(payload) {
     });
 
     const { url } = await presignRes.json();
-
     dbg("presigned URL:", url);
 
     dbg("---- PUT request ----");
     dbg("PUT to:", url);
-    dbg("PUT Content-Type:", file.contentType);
 
+    // ★ Content-Type を送らない（署名と一致させるため）
     const putRes = await fetch(url, {
       method: "PUT",
-      headers: { "Content-Type": file.contentType },
       body: file.content
     });
 
     dbg("PUT status:", putRes.status);
 
     if (!putRes.ok) {
-      dbg("PUT failed:", putRes.status, putRes.statusText);
+      const text = await putRes.text();
+      dbg("PUT failed body:", text);
       throw new Error("PUT failed: " + putRes.status);
     }
   }
@@ -132,6 +120,6 @@ async function saveToS3(payload) {
 
 function guessType(path) {
   if (path.endsWith(".json")) return "application/json";
-  if (path.endsWith(".csv")) return "application/octet-stream"; // ← CSV はこれ
+  if (path.endsWith(".csv")) return "application/octet-stream";
   return "text/plain";
 }
