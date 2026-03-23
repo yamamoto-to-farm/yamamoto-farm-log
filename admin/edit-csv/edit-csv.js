@@ -64,7 +64,7 @@ document.getElementById("deleteRowBtn").addEventListener("click", () => {
   }
 
   const index = getSelectedRowIndex();
- もし (index === null) {
+  if (index === null) {
     alert("削除する行番号をクリックしてください");
     return;
   }
