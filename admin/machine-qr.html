@@ -76,7 +76,7 @@
         const pagePath = pageSel.value;
         const machineId = machineSel.value;
 
-        const siteRoot = "https://yamamoto-to-farm.github.io/";
+        const siteRoot = "https://d3sscxnlo0qnhe.cloudfront.net/";
         let absUrl = new URL(pagePath, siteRoot).href;
         if (machineId) absUrl += `?machine=${machineId}`;
 
