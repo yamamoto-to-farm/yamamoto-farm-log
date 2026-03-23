@@ -341,7 +341,7 @@ export async function verifyLocalAuth() {
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
-    location.href = "/index.html";
+    location.href = "../index.html";
     return false;
   }
 
@@ -366,7 +366,7 @@ export async function verifyLocalAuth() {
       localStorage.removeItem("human");
       localStorage.removeItem("role");
       alert("認証情報が無効になりました。再ログインしてください。");
-      location.href = "/index.html";
+      location.href = "../index.html";
       return false;
     }
 
@@ -392,7 +392,7 @@ export async function verifyLocalAuth() {
 window.addEventListener("DOMContentLoaded", async () => {
 
   // index.html では verifyLocalAuth を呼ばない
-  if (location.pathname.endsWith("/index.html") ||
+  if (location.pathname.endsWith("../index.html") ||
       location.pathname.endsWith("/")) {
     return;
   }
