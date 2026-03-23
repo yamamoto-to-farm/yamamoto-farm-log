@@ -61,22 +61,20 @@ export async function saveCsvFile(csvType, csvFile) {
   console.log("=== FINAL CSV TEXT ===\n" + csvText);
 
   // ------------------------------
-  // 4. saveLog 経由で GitHub Actions に送信（全書き換え）
+  // 4. saveLog 経由で S3 に全書き換え保存
   // ------------------------------
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  console.log("✔ dateStr:", dateStr);
-
   try {
-    await saveLog(csvType, dateStr, {}, "", csvText);
+    // ★ S3 書き換えモードで保存
+    await saveLog(csvType, "all", {}, "", csvText, "csv-replace");
 
-    // ★ URL を loader と同じ形式にする
-    const url = `../../logs/${csvType}/${csvFile}`;
+    // ★ CloudFront の URL（loader.js と統一）
+    const url = `https://d3sscxnlo0qnhe.cloudfront.net/logs/${csvType}/${csvFile}`;
 
     // ★ 保存した内容をローカルキャッシュに即反映
     window._csvCache = window._csvCache || {};
     window._csvCache[url] = rows;
 
-    alert("CSV を保存しました（GitHub Actions 経由で全書き換え）");
+    alert("CSV を保存しました（S3 に全書き換え）");
   } catch (e) {
     console.error("❌ saveLog error:", e);
     alert("保存に失敗しました（Console を確認してください）");
