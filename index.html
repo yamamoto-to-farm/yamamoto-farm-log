@@ -10,17 +10,17 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <!-- ★ 共通スタイル（相対パスに修正） -->
+  <!-- ★ 共通スタイル（相対パス） -->
   <link rel="stylesheet" href="common/style.css?v=1">
 
-  <!-- ★ ui.js（相対パスに修正） -->
+  <!-- ★ ui.js（相対パス） -->
   <script type="module" src="common/ui.js?v=1"></script>
 
   <script type="module">
     import { showPinGate } from "./common/ui.js?v=1";
 
     async function loadPages() {
-      // ★ pages.json も相対パスに修正
+      // ★ pages.json も相対パス
       const res = await fetch(`data/pages.json?v=${Date.now()}`);
       return (await res.json()).pages;
     }
