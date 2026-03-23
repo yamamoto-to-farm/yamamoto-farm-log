@@ -17,7 +17,8 @@ document.getElementById("loadCsvBtn").addEventListener("click", async () => {
   currentType = document.getElementById("csvType").value;
   currentFile = document.getElementById("csvFile").value;
 
-  const url = `../../logs/${currentType}/${currentFile}`;
+  // ★ GitHub の静的ファイルではなく S3 の最新 CSV を読む
+  const url = `https://yamamoto-farm-log.s3.ap-northeast-1.amazonaws.com/logs/${currentType}/${currentFile}`;
   console.log("[admin] CSV 読み込み:", url);
 
   const rows = await loadCSV(url);
@@ -63,7 +64,7 @@ document.getElementById("deleteRowBtn").addEventListener("click", () => {
   }
 
   const index = getSelectedRowIndex();
-  if (index === null) {
+ もし (index === null) {
     alert("削除する行番号をクリックしてください");
     return;
   }
