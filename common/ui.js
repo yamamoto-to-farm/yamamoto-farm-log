@@ -282,7 +282,7 @@ export function showPinGate(containerId, onSuccess) {
     if (!pin) return;
 
     try {
-      const res = await fetch("/yamamoto-farm-log/data/access.csv");
+      const res = await fetch("data/access.csv");
       const text = await res.text();
       const lines = text.trim().split("\n");
       const headers = lines[0].split(",");
@@ -346,7 +346,7 @@ export async function verifyLocalAuth() {
   }
 
   try {
-    const res = await fetch("/yamamoto-farm-log/data/access.csv");
+    const res = await fetch("data/access.csv");
     const text = await res.text();
     const lines = text.trim().split("\n");
     const headers = lines[0].split(",");
