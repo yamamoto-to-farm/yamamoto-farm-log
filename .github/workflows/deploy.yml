@@ -3,7 +3,7 @@ name: Deploy to S3
 on:
   push:
     branches:
-      - main  # ← 直輝さんのメインブランチ名に合わせてOK
+      - main
 
 jobs:
   deploy:
@@ -22,4 +22,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-northeast-1
-          SOURCE_DIR: ./  # ← index.html がある場所
+          SOURCE_DIR: ./
+
+      - name: Create CloudFront invalidation
+        uses: chetan/invalidate-cloudfront-action@v2
+        env:
+          DISTRIBUTION: E4GPTH342P29X   # ← CloudFront の ID を入れる
+          PATHS: "/*"
+          AWS_REGION: ap-northeast-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
