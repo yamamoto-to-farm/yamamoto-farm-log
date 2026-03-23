@@ -1,5 +1,5 @@
 // =========================================================
-// common/summary.js — サマリー生成（キャッシュ破棄ロジック付き）
+// common/summary.js — CloudFront + S3 最適化版（相対パス廃止）
 // =========================================================
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
@@ -8,8 +8,8 @@ import { saveLog } from "./save/index.js?v=2026031418";
 /* ---------------------------------------------------------
    0. デバッグフラグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = false;               // ← ON/OFF
-const SUMMARY_DEBUG_BYPASS_CACHE = false;  // ← true で毎回読み直し
+const SUMMARY_DEBUG = false;
+const SUMMARY_DEBUG_BYPASS_CACHE = false;
 
 function dlog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
@@ -24,7 +24,7 @@ let shippingCache = null;
 let indexCache = null;
 
 /* ---------------------------------------------------------
-   2. キャッシュ破棄（③の本体）
+   2. キャッシュ破棄
 --------------------------------------------------------- */
 export function invalidateSummaryCache(type) {
   dlog("invalidateSummaryCache:", type);
@@ -34,7 +34,6 @@ export function invalidateSummaryCache(type) {
   if (type === "weight") shippingCache = null;
   if (type === "index") indexCache = null;
 
-  // 全破棄
   if (type === "all") {
     plantingCache = null;
     harvestCache = null;
@@ -44,16 +43,22 @@ export function invalidateSummaryCache(type) {
 }
 
 /* ---------------------------------------------------------
-   3. CSV 読み込み（キャッシュ対応）
+   3. CSV 読み込み（CloudFront 絶対パス）
 --------------------------------------------------------- */
+
+// CloudFront のベース URL
+const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+
 async function loadCsvCached(path, cacheVar, type) {
   if (!SUMMARY_DEBUG_BYPASS_CACHE && cacheVar.value) {
     dlog("loadCsvCached: use cache for", type, "rows =", cacheVar.value.length);
     return cacheVar.value;
   }
 
-  dlog("loadCsvCached: fetch", type, path);
-  const res = await fetch(cb(path), { cache: "no-store" });
+  const url = `${CF_BASE}/${path}?ts=${Date.now()}`;
+  dlog("loadCsvCached: fetch", type, url);
+
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) return [];
 
   const text = await res.text();
@@ -66,7 +71,8 @@ async function loadCsvCached(path, cacheVar, type) {
 async function loadIndexCached() {
   if (indexCache && !SUMMARY_DEBUG_BYPASS_CACHE) return indexCache;
 
-  const res = await fetch(cb("../data/summary-index.json"), { cache: "no-store" });
+  const url = `${CF_BASE}/data/summary-index.json?ts=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) return (indexCache = {});
 
   indexCache = await res.json();
@@ -93,7 +99,7 @@ async function processSummaryQueue() {
     const ref = summaryQueue.shift();
 
     try {
-      const summary = await summaryUpdate(ref);
+      await summaryUpdate(ref);
 
       window.dispatchEvent(
         new CustomEvent("summaryGenerated", { detail: { plantingRef: ref } })
@@ -111,19 +117,19 @@ async function processSummaryQueue() {
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate（キャッシュ破棄対応）
+   5. summaryUpdate（CloudFront 最新読み込み）
 --------------------------------------------------------- */
 export async function summaryUpdate(plantingRef) {
   console.log(">>> summaryUpdate START:", plantingRef);
 
-  // ★ CSV が更新された可能性があるので、必要なキャッシュを破棄
-  //   → enqueueSummaryUpdate を呼ぶ前に saveLog が走っているため
+  // ★ CSV が更新された可能性があるのでキャッシュ破棄
   invalidateSummaryCache("harvest");
   invalidateSummaryCache("weight");
 
-  const planting = await loadCsvCached("../logs/planting/all.csv", { value: plantingCache }, "planting");
-  const harvest  = await loadCsvCached("../logs/harvest/all.csv",  { value: harvestCache },  "harvest");
-  const shipping = await loadCsvCached("../logs/weight/all.csv",   { value: shippingCache }, "weight");
+  // ★ CloudFront の絶対パスで読み込み
+  const planting = await loadCsvCached("logs/planting/all.csv", { value: plantingCache }, "planting");
+  const harvest  = await loadCsvCached("logs/harvest/all.csv",  { value: harvestCache },  "harvest");
+  const shipping = await loadCsvCached("logs/weight/all.csv",   { value: shippingCache }, "weight");
 
   const p = planting.find(x => x.plantingRef === plantingRef);
   if (!p) return;
