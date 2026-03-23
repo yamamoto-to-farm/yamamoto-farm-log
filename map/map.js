@@ -35,7 +35,7 @@ export function initMap() {
           ">
             ${field.name}
           </div>
-          <img src="/yamamoto-farm-log/img/cabbage.png"
+          <img src="img/cabbage.png"
                style="
                  width:60px;
                  height:60px;
@@ -52,7 +52,7 @@ export function initMap() {
   // ===============================
   // ★ fields.json 読み込み
   // ===============================
-  fetch("/yamamoto-farm-log/data/fields.json")
+  fetch("data/fields.json")
     .then(res => res.json())
     .then(fields => {
 
@@ -116,7 +116,7 @@ export function initMap() {
           if (analysisBtn) {
             analysisBtn.addEventListener("click", () => {
               const fieldName = encodeURIComponent(field.name);
-              location.href = `/yamamoto-farm-log/analysis/index.html?field=${fieldName}`;
+              location.href = `analysis/index.html?field=${fieldName}`;
             });
           }
         });
