@@ -282,7 +282,8 @@ export function showPinGate(containerId, onSuccess) {
     if (!pin) return;
 
     try {
-      const res = await fetch("data/access.csv");
+      // ★ AWS では絶対ルートパスが最も安全
+      const res = await fetch("/data/access.csv");
       const text = await res.text();
       const lines = text.trim().split("\n");
       const headers = lines[0].split(",");
@@ -301,11 +302,11 @@ export function showPinGate(containerId, onSuccess) {
         return;
       }
 
-      // ★ 認証成功 → グローバル変数に保存
+      // 認証成功 → グローバル変数に保存
       window.currentHuman = user.name;
       window.currentRole  = user.role;
 
-      // ★ localStorage にも保存（QR 直アクセス対応）
+      // localStorage に保存（QR 直アクセス対応）
       localStorage.setItem("human", user.name);
       localStorage.setItem("role",  user.role);
 
@@ -333,7 +334,6 @@ export function showPinGate(containerId, onSuccess) {
 
 // ===============================
 // localStorage の認証情報がまだ有効かチェック
-// （退職者を確実に締め出す）
 // ===============================
 export async function verifyLocalAuth() {
   const savedHuman = localStorage.getItem("human");
@@ -341,12 +341,13 @@ export async function verifyLocalAuth() {
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
-    location.href = "../index.html";
+    location.href = "/index.html";
     return false;
   }
 
   try {
-    const res = await fetch("data/access.csv");
+    // ★ AWS では絶対ルートパスが正解
+    const res = await fetch("/data/access.csv");
     const text = await res.text();
     const lines = text.trim().split("\n");
     const headers = lines[0].split(",");
@@ -362,15 +363,15 @@ export async function verifyLocalAuth() {
     const user = users.find(u => u.name === savedHuman && u.role === savedRole);
 
     if (!user) {
-      // ★ 退職者 or 削除されたユーザー
+      // 退職者 or 削除されたユーザー
       localStorage.removeItem("human");
       localStorage.removeItem("role");
       alert("認証情報が無効になりました。再ログインしてください。");
-      location.href = "../index.html";
+      location.href = "/index.html";
       return false;
     }
 
-    // ★★★ ここが最重要：グローバル変数に反映 ★★★
+    // 認証OK → グローバル変数に反映
     window.currentHuman = savedHuman;
     window.currentRole  = savedRole;
 
@@ -392,8 +393,8 @@ export async function verifyLocalAuth() {
 window.addEventListener("DOMContentLoaded", async () => {
 
   // index.html では verifyLocalAuth を呼ばない
-  if (location.pathname.endsWith("../index.html") ||
-      location.pathname.endsWith("/")) {
+  if (location.pathname === "/" ||
+      location.pathname === "/index.html") {
     return;
   }
 
