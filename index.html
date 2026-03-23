@@ -10,18 +10,18 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <!-- ★ 共通スタイル（バージョン必須） -->
-  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
+  <!-- ★ 共通スタイル（相対パスに修正） -->
+  <link rel="stylesheet" href="common/style.css?v=1">
 
-  <!-- ★ ui.js にキャッシュバスター -->
-  <script type="module" src="/yamamoto-farm-log/common/ui.js?v=1"></script>
+  <!-- ★ ui.js（相対パスに修正） -->
+  <script type="module" src="common/ui.js?v=1"></script>
 
   <script type="module">
-    import { showPinGate } from "/yamamoto-farm-log/common/ui.js?v=1";
+    import { showPinGate } from "./common/ui.js?v=1";
 
     async function loadPages() {
-      // ★ pages.json にキャッシュバスター
-      const res = await fetch(`/yamamoto-farm-log/data/pages.json?v=${Date.now()}`);
+      // ★ pages.json も相対パスに修正
+      const res = await fetch(`data/pages.json?v=${Date.now()}`);
       return (await res.json()).pages;
     }
 
