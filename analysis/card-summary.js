@@ -1,5 +1,5 @@
 // card-summary.js
-import { safeFieldName } from "/yamamoto-farm-log/common/utils.js";
+import { safeFieldName } from "/common/utils.js";
 
 /* ===============================
    メインエントリ：カード生成
@@ -7,7 +7,7 @@ import { safeFieldName } from "/yamamoto-farm-log/common/utils.js";
 export async function renderSummaryCards(rawFieldName) {
   const fieldName = safeFieldName(rawFieldName);
 
-  const index = await fetch("/yamamoto-farm-log/data/summary-index.json")
+  const index = await fetch("/data/summary-index.json")
     .then(r => r.json())
     .catch(() => ({}));
 
@@ -27,7 +27,7 @@ export async function renderSummaryCards(rawFieldName) {
     const files = index[fieldName][year];
 
     for (const file of files) {
-      const url = `/yamamoto-farm-log/logs/summary/${fieldName}/${year}/${file}`;
+      const url = `/logs/summary/${fieldName}/${year}/${file}`;
       const summary = await fetch(url).then(r => r.json());
       html += renderSummaryCard(summary);
     }

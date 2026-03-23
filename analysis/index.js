@@ -1,5 +1,5 @@
 // analysis/index.js
-import { loadJSON } from "/yamamoto-farm-log/common/json.js";
+import { loadJSON } from "/common/json.js";
 
 export async function renderFieldList() {
   const container = document.getElementById("analysis-container");

@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- ★ 共通デザイン -->
-  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
+  <link rel="stylesheet" href="/common/style.css?v=1">
 
   <!-- ★ ナビバー -->
   <script type="module">
-    import { renderNavbar } from "/yamamoto-farm-log/common/header.js?v=1.1";
+    import { renderNavbar } from "/common/header.js?v=1.1";
     renderNavbar();
   </script>
 </head>
@@ -24,13 +24,13 @@
   <div id="analysis-container"></div>
 
   <!-- 地図に戻る -->
-  <button class="primary-btn" onclick="location.href='/yamamoto-farm-log/map/index.html'">
+  <button class="primary-btn" onclick="location.href='/map/index.html'">
     地図に戻る
   </button>
 
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
-    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "/common/ui.js";
     import { initAnalysisPage } from "./analysis.js";   // 圃場別分析
     import { renderFieldList } from "./index.js";        // 圃場一覧
 
@@ -43,7 +43,7 @@
       // worker → 閲覧禁止
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
         alert("このページは家族のみ閲覧できます");
-        location.href = "/yamamoto-farm-log/map/index.html";
+        location.href = "/map/index.html";
         return;
       }
 

@@ -1,5 +1,5 @@
 // analysis.js（統合フレーム）
-import { loadJSON } from "/yamamoto-farm-log/common/json.js";
+import { loadJSON } from "/common/json.js";
 import { renderSummaryCards } from "./card-summary.js";
 import { renderFieldDetailCard } from "./card-field-detail.js";
 

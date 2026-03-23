@@ -42,7 +42,7 @@ function debugLog(msg) {
 export async function createFieldSelector(autoId, areaId, manualId) {
 
     // ▼ fields.json 読み込み
-    const res = await fetch("/yamamoto-farm-log/data/fields.json");
+    const res = await fetch("/data/fields.json");
     const fields = await res.json();
 
     // 自動判定欄（読み取り専用）
@@ -184,7 +184,7 @@ accuracy: ±${accuracy}m
 // ===============================
 export async function createWorkerCheckboxes(containerId) {
     
-    const res = await fetch("/yamamoto-farm-log/data/workers.json");
+    const res = await fetch("/data/workers.json");
     const workers = await res.json();
 
     const box = document.getElementById(containerId);
@@ -341,7 +341,7 @@ export async function verifyLocalAuth() {
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
-    location.href = "/yamamoto-farm-log/index.html";
+    location.href = "/index.html";
     return false;
   }
 
@@ -366,7 +366,7 @@ export async function verifyLocalAuth() {
       localStorage.removeItem("human");
       localStorage.removeItem("role");
       alert("認証情報が無効になりました。再ログインしてください。");
-      location.href = "/yamamoto-farm-log/index.html";
+      location.href = "/index.html";
       return false;
     }
 
@@ -393,7 +393,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // index.html では verifyLocalAuth を呼ばない
   if (location.pathname.endsWith("/index.html") ||
-      location.pathname.endsWith("/yamamoto-farm-log/")) {
+      location.pathname.endsWith("/")) {
     return;
   }
 

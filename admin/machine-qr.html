@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- ★ 共通デザイン -->
-  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
+  <link rel="stylesheet" href="/common/style.css?v=1">
 
   <!-- QRコード生成ライブラリ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -49,8 +49,8 @@
     }
 
     async function init() {
-      const pages = (await loadJSON("/yamamoto-farm-log/data/pages.json")).pages;
-      const machines = (await loadJSON("/yamamoto-farm-log/data/machines.json")).machines;
+      const pages = (await loadJSON("/data/pages.json")).pages;
+      const machines = (await loadJSON("/data/machines.json")).machines;
 
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
@@ -76,7 +76,7 @@
         const pagePath = pageSel.value;
         const machineId = machineSel.value;
 
-        const siteRoot = "https://yamamoto-to-farm.github.io/yamamoto-farm-log/";
+        const siteRoot = "https://yamamoto-to-farm.github.io/";
         let absUrl = new URL(pagePath, siteRoot).href;
         if (machineId) absUrl += `?machine=${machineId}`;
 

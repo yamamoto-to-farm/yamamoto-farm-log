@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- ★ 共通デザイン -->
-  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
+  <link rel="stylesheet" href="/common/style.css?v=1">
 </head>
 
 <body>
@@ -17,10 +17,10 @@
   </div>
 
   <script type="module">
-    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "/common/ui.js";
 
     async function loadPages() {
-      const res = await fetch("/yamamoto-farm-log/data/pages.json");
+      const res = await fetch("/data/pages.json");
       return (await res.json()).pages;
     }
 

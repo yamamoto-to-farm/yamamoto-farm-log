@@ -1,8 +1,8 @@
 // harvest-kpi.js（収穫年ベース・完全修正版）
 
-import { loadJSON } from "/yamamoto-farm-log/common/json.js?v=1.1";
-import { loadCSV } from "/yamamoto-farm-log/common/csv.js?v=1.1";
-import { safeFileName } from "/yamamoto-farm-log/common/utils.js?v=1.1";
+import { loadJSON } from "/common/json.js?v=1.1";
+import { loadCSV } from "/common/csv.js?v=1.1";
+import { safeFileName } from "/common/utils.js?v=1.1";
 
 const DEBUG = true;
 const log = (...a) => DEBUG && console.log("[KPI]", ...a);
