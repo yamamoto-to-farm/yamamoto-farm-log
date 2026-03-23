@@ -1,17 +1,7 @@
 // common/save/index.js
 
-import { readText } from "../github.js";
-import { loadCSV } from "../csv.js";
+const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 
-// ------------------------------
-// 保存キュー
-// ------------------------------
-const saveQueue = [];
-let saving = false;
-
-// ------------------------------
-// saveLog（名前はそのまま）
-// ------------------------------
 export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replaceCsv = "") {
   let payload;
 
@@ -30,104 +20,74 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
     };
   }
 
-  return enqueueSave(payload);
+  return saveToS3(payload);
 }
 
-// ------------------------------
-// キューに追加
-// ------------------------------
-function enqueueSave(payload) {
-  return new Promise((resolve, reject) => {
-    saveQueue.push({ payload, resolve, reject });
-    processQueue();
-  });
-}
+async function saveToS3(payload) {
+  // ------------------------------
+  // 1. 保存対象ファイルを決定
+  // ------------------------------
+  const files = [];
 
-// ------------------------------
-// キュー処理（直列化）
-// ------------------------------
-async function processQueue() {
-  if (saving) return;
-  if (saveQueue.length === 0) return;
-
-  saving = true;
-
-  const { payload, resolve, reject } = saveQueue.shift();
-
-  try {
-    // ------------------------------
-    // 1. 保存前の内容を取得
-    // ------------------------------
-    let beforeCount = null;
-
-    if (payload.type === "multi") {
-      // multi は確認しない
-    } else if (payload.csv && payload.replaceCsv === "") {
-      const before = await loadCSV(`logs/${payload.type}/all.csv`);
-      beforeCount = before.length;
-    } else if (payload.json) {
-      await readText(payload.dateStr).catch(() => {});
+  if (payload.type === "multi") {
+    // multi は複数ファイル
+    for (const f of payload.files) {
+      files.push({
+        key: f.path,
+        content: f.content,
+        contentType: guessType(f.path)
+      });
     }
-
-    // ------------------------------
-    // 2. Worker に保存リクエスト
-    // ------------------------------
-    const res = await fetch(
-      "https://raspy-poetry-cf6f.yamamoto-to-farm.workers.dev",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }
-    );
-
-    if (!res.ok) throw new Error("保存サーバーへの送信に失敗");
-
-    // ------------------------------
-    // 3. 保存後の更新確認（最大10秒）
-    // ------------------------------
-    if (beforeCount !== null) {
-      let updated = false;
-
-      for (let i = 0; i < 20; i++) { // 20回
-        await new Promise(r => setTimeout(r, 500)); // 500ms
-
-        const after = await loadCSV(`logs/${payload.type}/all.csv`);
-        if (after.length > beforeCount) {
-          updated = true;
-          break;
-        }
-      }
-
-      // 10秒待っても確認できなければ成功扱い
-      if (!updated) {
-        console.warn("CSV 更新確認できず（raw 遅延の可能性）→ 保存成功扱い");
-      }
-    }
-
+  } else {
+    // JSON 保存
     if (payload.json) {
-      let ok = false;
-
-      for (let i = 0; i < 20; i++) {
-        await new Promise(r => setTimeout(r, 500));
-
-        try {
-          await readText(payload.dateStr);
-          ok = true;
-          break;
-        } catch (_) {}
-      }
-
-      if (!ok) {
-        console.warn("JSON 更新確認できず（raw 遅延の可能性）→ 保存成功扱い");
-      }
+      files.push({
+        key: payload.dateStr,
+        content: JSON.stringify(payload.json, null, 2),
+        contentType: "application/json"
+      });
     }
 
-    resolve();
-  } catch (e) {
-    reject(e);
+    // CSV 保存（append は後で Lambda 化）
+    if (payload.csv && payload.replaceCsv === "") {
+      throw new Error("append は append API に移行する必要があります");
+    }
+
+    // CSV 全書き換え
+    if (payload.replaceCsv !== "") {
+      files.push({
+        key: `logs/${payload.type}/all.csv`,
+        content: payload.replaceCsv,
+        contentType: "text/csv"
+      });
+    }
   }
 
-  saving = false;
-  processQueue();
+  // ------------------------------
+  // 2. presign → PUT
+  // ------------------------------
+  for (const file of files) {
+    const presignRes = await fetch(PRESIGN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: file.key,
+        contentType: file.contentType
+      })
+    });
+
+    const { url } = await presignRes.json();
+
+    await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": file.contentType },
+      body: file.content
+    });
+  }
+}
+
+function guessType(path) {
+  if (path.endsWith(".json")) return "application/json";
+  if (path.endsWith(".csv")) return "text/csv";
+  return "text/plain";
 }
