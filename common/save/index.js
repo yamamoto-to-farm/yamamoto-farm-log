@@ -2,15 +2,19 @@
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 
+// ★ デバッグ ON/OFF フラグ
+const DEBUG_SAVELOG = true;
+
+function dbg(...args) {
+  if (DEBUG_SAVELOG) console.log("[saveLog]", ...args);
+}
+
 export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replaceCsv = "") {
   let payload;
 
-  // A. multi-saveLog 形式
   if (typeof payloadOrType === "object") {
     payload = payloadOrType;
-  }
-  // B. 従来形式
-  else {
+  } else {
     payload = {
       type: payloadOrType,
       dateStr,
@@ -20,33 +24,42 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
     };
   }
 
+  dbg("=== saveLog START ===");
+  dbg("payload:", payload);
+
   return saveToS3(payload);
 }
 
 async function saveToS3(payload) {
+  dbg("=== saveToS3 START ===");
+
   const files = [];
 
   // ------------------------------
   // 1. 保存対象ファイルを決定
   // ------------------------------
   if (payload.type === "multi") {
-    // multi は複数ファイル
+    dbg("mode: multi");
+
     for (const f of payload.files) {
+      const type = guessType(f.path);
+      dbg("multi file:", f.path, "type:", type);
+
       files.push({
         key: f.path,
         content: f.content,
-        contentType: guessType(f.path)
+        contentType: type
       });
     }
   } else {
+    dbg("mode:", payload.type);
+
     // JSON 保存
     if (payload.json) {
       let key = payload.dateStr;
+      if (!key.endsWith(".json")) key = key + ".json";
 
-      // ★★★ 拡張子がなければ .json を付ける
-      if (!key.endsWith(".json")) {
-        key = key + ".json";
-      }
+      dbg("JSON file:", key);
 
       files.push({
         key,
@@ -62,20 +75,27 @@ async function saveToS3(payload) {
 
     // CSV 全書き換え
     if (payload.replaceCsv !== "") {
+      const key = `logs/${payload.type}/all.csv`;
+      dbg("CSV file:", key);
+
       files.push({
-        key: `logs/${payload.type}/all.csv`,
+        key,
         content: payload.replaceCsv,
-        // ★★★ CSV は application/octet-stream に統一
-        contentType: "application/octet-stream"
+        contentType: "application/octet-stream" // ← ここが重要
       });
     }
   }
+
+  dbg("files to upload:", files);
 
   // ------------------------------
   // 2. presign → PUT
   // ------------------------------
   for (const file of files) {
-    // presign
+    dbg("---- presign request ----");
+    dbg("key:", file.key);
+    dbg("contentType:", file.contentType);
+
     const presignRes = await fetch(PRESIGN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,17 +107,31 @@ async function saveToS3(payload) {
 
     const { url } = await presignRes.json();
 
-    // PUT
-    await fetch(url, {
+    dbg("presigned URL:", url);
+
+    dbg("---- PUT request ----");
+    dbg("PUT to:", url);
+    dbg("PUT Content-Type:", file.contentType);
+
+    const putRes = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": file.contentType },
       body: file.content
     });
+
+    dbg("PUT status:", putRes.status);
+
+    if (!putRes.ok) {
+      dbg("PUT failed:", putRes.status, putRes.statusText);
+      throw new Error("PUT failed: " + putRes.status);
+    }
   }
+
+  dbg("=== saveToS3 END ===");
 }
 
 function guessType(path) {
   if (path.endsWith(".json")) return "application/json";
-  if (path.endsWith(".csv")) return "application/octet-stream"; // ★ CSV はこれ
+  if (path.endsWith(".csv")) return "application/octet-stream"; // ← CSV はこれ
   return "text/plain";
 }
