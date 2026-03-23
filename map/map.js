@@ -52,7 +52,7 @@ export function initMap() {
   // ===============================
   // ★ fields.json 読み込み
   // ===============================
-  fetch("data/fields.json")
+  fetch("../data/fields.json")
     .then(res => res.json())
     .then(fields => {
 
