@@ -94,8 +94,8 @@ function setupSeedRefAuto() {
     let rows = [];
 
     try {
-      // ★ パス修正（先頭 / を絶対に付けない）
-      rows = await loadCSV("logs/seed/all.csv");
+      // ★ AWS 版：相対パスに統一
+      rows = await loadCSV("../logs/seed/all.csv");
     } catch (e) {
       rows = [];
     }
@@ -143,7 +143,7 @@ function collectSeedData() {
     trayType,
     trayCount,
     seedCount,
-    remainingCount: seedCount, // ★ 初期値として保存するだけ（計算方式に切り替えるため）
+    remainingCount: seedCount,
     source: document.querySelector("input[name='source']:checked").value,
     memo: document.getElementById("memo").value,
     seedRef: document.getElementById("seedRef").value

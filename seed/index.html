@@ -5,8 +5,8 @@
   <title>播種ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン -->
-  <link rel="stylesheet" href="/yamamoto-farm-log/common/style.css?v=1">
+  <!-- ★ 共通デザイン（相対パス） -->
+  <link rel="stylesheet" href="../common/style.css?v=1">
 </head>
 
 <body>
@@ -77,7 +77,7 @@
   </div>
 
   <script type="module">
-    import { verifyLocalAuth } from "/yamamoto-farm-log/common/ui.js";
+    import { verifyLocalAuth } from "../common/ui.js";
     import { initSeedPage } from "./seed.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
@@ -93,6 +93,7 @@
     });
   </script>
 
+  <!-- 保存処理 -->
   <script type="module" src="../common/save/index.js"></script>
 
 </body>
