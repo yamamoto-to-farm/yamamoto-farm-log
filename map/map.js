@@ -116,7 +116,7 @@ export function initMap() {
           if (analysisBtn) {
             analysisBtn.addEventListener("click", () => {
               const fieldName = encodeURIComponent(field.name);
-              location.href = `analysis/index.html?field=${fieldName}`;
+              location.href = `/analysis/index.html?field=${fieldName}`;
             });
           }
         });
