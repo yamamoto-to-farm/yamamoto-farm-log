@@ -1,14 +1,14 @@
-// グローバルキャッシュ
-window._csvCache = window._csvCache || {};
+// admin/edit-csv/loader.js
+
+// ★ キャッシュは使わない（常に最新を取得）
+window._csvCache = {};
 
 export async function loadCSV(url) {
   try {
-    // ★ 1. ローカルキャッシュがあれば即返す（GitHub 遅延を無視）
-    if (window._csvCache[url]) {
-      return window._csvCache[url];
-    }
+    // ★ 毎回キャッシュ破棄（編集画面は常に最新を読む）
+    delete window._csvCache[url];
 
-    // ★ 2. なければ fetch（初回のみ）
+    // ★ CloudFront キャッシュ回避（?ts=）
     const res = await fetch(url + "?ts=" + Date.now());
     const text = await res.text();
 
@@ -24,7 +24,7 @@ export async function loadCSV(url) {
       return obj;
     });
 
-    // ★ 3. 読み込んだ内容をキャッシュ
+    // ★ 必要ならキャッシュ（ただし毎回破棄される）
     window._csvCache[url] = data;
 
     return data;
