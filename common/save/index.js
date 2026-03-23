@@ -43,7 +43,7 @@ async function saveToS3(payload) {
     if (payload.json) {
       let key = payload.dateStr;
 
-      // ★★★ ここが最重要：拡張子がなければ .json を付ける
+      // ★★★ 拡張子がなければ .json を付ける
       if (!key.endsWith(".json")) {
         key = key + ".json";
       }
@@ -65,7 +65,8 @@ async function saveToS3(payload) {
       files.push({
         key: `logs/${payload.type}/all.csv`,
         content: payload.replaceCsv,
-        contentType: "text/csv"
+        // ★★★ CSV は application/octet-stream に統一
+        contentType: "application/octet-stream"
       });
     }
   }
@@ -97,6 +98,6 @@ async function saveToS3(payload) {
 
 function guessType(path) {
   if (path.endsWith(".json")) return "application/json";
-  if (path.endsWith(".csv")) return "text/csv";
+  if (path.endsWith(".csv")) return "application/octet-stream"; // ★ CSV はこれ
   return "text/plain";
 }
