@@ -35,7 +35,7 @@ export function initMap() {
           ">
             ${field.name}
           </div>
-          <img src="img/cabbage.png"
+          <img src="../img/cabbage.png"
                style="
                  width:60px;
                  height:60px;
