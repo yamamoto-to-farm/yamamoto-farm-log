@@ -1,13 +1,29 @@
-// common/csv.js
-import { readText, writeText } from "./github.js";
-import { cb } from "./utils.js";
+// =========================================================
+// common/csv.js — CloudFront + S3 時代の CSV 読み込み専用
+// =========================================================
 
-// --------------------------------------
-// CSV 読み込み → 配列オブジェクト
-// --------------------------------------
+// ★ CloudFront のベース URL（あなたの環境に合わせて固定）
+const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+
+// ---------------------------------------------------------
+// CSV 読み込み（CloudFront → S3）
+// ---------------------------------------------------------
 export async function loadCSV(path) {
-  // ★ キャッシュバスターを付けて常に最新を読む
-  const text = await readText(cb(path));
+  // 先頭が "/" の場合は CloudFront 絶対パスに変換
+  let url = path.startsWith("/")
+    ? `${CF_BASE}${path}`
+    : `${CF_BASE}/${path}`;
+
+  // キャッシュ破棄（常に最新を読む）
+  url += `?ts=${Date.now()}`;
+
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    console.error("[loadCSV] fetch failed:", url, res.status);
+    throw new Error("CSV fetch failed: " + url);
+  }
+
+  const text = await res.text();
 
   const lines = text.trim().split("\n");
   const headers = lines[0].split(",");
@@ -20,18 +36,9 @@ export async function loadCSV(path) {
   });
 }
 
-// --------------------------------------
-// CSV 追記（append）
-// --------------------------------------
-export async function appendCSV(path, rows) {
-  // ★ 最新の CSV を読んでから追記する
-  const text = await readText(cb(path));
-  const headers = text.trim().split("\n")[0].split(",");
-
-  const newLines = rows.map(r =>
-    headers.map(h => r[h] ?? "").join(",")
-  );
-
-  const updated = text.trim() + "\n" + newLines.join("\n") + "\n";
-  await writeText(path, updated);
+// ---------------------------------------------------------
+// appendCSV はもう使わない（append API に完全移行）
+// ---------------------------------------------------------
+export async function appendCSV() {
+  throw new Error("appendCSV は使用禁止：append API を使ってください");
 }
