@@ -5,7 +5,7 @@
   <title>サマリー管理 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン -->
+  <!-- ★ 共通デザイン（絶対パスに統一） -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 
   <!-- PapaParse -->
@@ -30,11 +30,11 @@
   </div>
 
   <!-- JS 読み込み順が超重要 -->
-  <script type="module" src="../common/summary.js?v=2026031418"></script>
+  <script type="module" src="/common/summary.js?v=2026031418"></script>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js?v=2026031418";
-    import "./summary-manager.js?v=2026031418";   // initSummaryManager は不要
+    import "/summary-manager/summary-manager.js?v=2026031418";
 
     window.addEventListener("DOMContentLoaded", async () => {
 

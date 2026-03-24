@@ -10,7 +10,7 @@ let currentMissing = [];
 --------------------------------------------------------- */
 async function loadIndex() {
     try {
-        const res = await fetch(cb("../data/summary-index.json"), {
+        const res = await fetch(cb("/data/summary-index.json"), {
             cache: "no-store"
         });
         if (!res.ok) return {};
@@ -26,7 +26,7 @@ async function loadIndex() {
 async function getMissingSummaries() {
     const index = await loadIndex();
 
-    const planting = await fetch(cb("../logs/planting/all.csv"), {
+    const planting = await fetch(cb("/logs/planting/all.csv"), {
         cache: "no-store"
     })
         .then(r => r.text())

@@ -1,4 +1,4 @@
-// harvest-kpi.js（デバッグ強化・完全版）
+// harvest-kpi.js（CloudFront 対応・完全版）
 
 import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
@@ -149,7 +149,6 @@ function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
     `;
     }
 
-    // 合計行
     const totalPlan = planArea.reduce((a, b) => a + b, 0);
     const totalArea = areaMonthly.reduce((a, b) => a + b, 0);
     const totalDiff = totalArea - totalPlan;
@@ -183,15 +182,15 @@ function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
 async function getYearList() {
     log("年一覧取得開始");
 
-    const index = await debugLoadJSON("data/summary-index.json");
-    const weightRows = await debugLoadCSV("logs/weight/all.csv");
+    const index = await debugLoadJSON("/data/summary-index.json");
+    const weightRows = await debugLoadCSV("/logs/weight/all.csv");
 
     const years = new Set();
 
     for (const field in index) {
         for (const year in index[field]) {
             for (const file of index[field][year]) {
-                const path = `logs/summary/${field}/${year}/${file}`;
+                const path = `/logs/summary/${field}/${year}/${file}`;
                 const summary = await debugLoadJSON(path);
                 const planYear = Number(summary.planting.harvestPlanYM.split("-")[0]);
                 years.add(planYear);
@@ -216,14 +215,14 @@ async function getYearList() {
 async function loadPlantingRefsForYear(targetYear) {
     log(`年 ${targetYear} の plantingRef 抽出開始`);
 
-    const index = await debugLoadJSON("data/summary-index.json");
+    const index = await debugLoadJSON("/data/summary-index.json");
     const list = [];
 
     for (const field in index) {
         for (const year in index[field]) {
             for (const file of index[field][year]) {
 
-                const path = `logs/summary/${field}/${year}/${file}`;
+                const path = `/logs/summary/${field}/${year}/${file}`;
                 const summary = await debugLoadJSON(path);
 
                 const planYear = Number(summary.planting.harvestPlanYM.split("-")[0]);
@@ -250,9 +249,9 @@ async function loadPlantingRefsForYear(targetYear) {
 async function renderKpiForYear(year) {
     log(`===== ${year}年 KPI 生成開始 =====`);
 
-    const harvestBase = await debugLoadJSON("data/harvestBase.json");
+    const harvestBase = await debugLoadJSON("/data/harvestBase.json");
     const plantingList = await loadPlantingRefsForYear(year);
-    const weightRows = await debugLoadCSV("logs/weight/all.csv");
+    const weightRows = await debugLoadCSV("/logs/weight/all.csv");
 
     const filteredWeightRows = weightRows.filter(row => {
         const d = new Date(row.shippingDate);
@@ -274,7 +273,7 @@ async function renderKpiForYear(year) {
 
     const refDatas = await Promise.all(
         plantingList.map(item => {
-            const path = `logs/summary/${item.field}/${item.year}/${item.file}`;
+            const path = `/logs/summary/${item.field}/${item.year}/${item.file}`;
             return debugLoadJSON(path);
         })
     );

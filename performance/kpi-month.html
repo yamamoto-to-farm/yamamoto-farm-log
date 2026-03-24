@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KPI 月別分析</title>
 
-  <!-- CSS（存在しないと 404 になるので、空でも作っておく） -->
+  <!-- CSS -->
   <link rel="stylesheet" href="/common/style.css">
 
   <style>
-    /* 最低限の保険スタイル（CSS が無くても崩れないように） */
     body { font-family: sans-serif; padding: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 6px 8px; }
@@ -21,7 +20,7 @@
 
 <body>
 
-  <!-- ★ ナビバーをここに追加 -->
+  <!-- ★ ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
     renderNavbar();
@@ -51,8 +50,8 @@
     </tfoot>
   </table>
 
-  <!-- JS 読み込み -->
-  <script type="module" src="kpi-month.js?v=1.1"></script>
+  <!-- JS 読み込み（絶対パスに変更） -->
+  <script type="module" src="/harvest-kpi/kpi-month.js?v=1.1"></script>
 
 </body>
 </html>
