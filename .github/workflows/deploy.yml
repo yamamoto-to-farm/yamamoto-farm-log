@@ -16,7 +16,7 @@ jobs:
       - name: Sync to S3
         uses: jakejarvis/s3-sync-action@master
         with:
-          args: >
+          args: |
             --delete
             --exclude "logs/*"
             --exclude "logs/**"
