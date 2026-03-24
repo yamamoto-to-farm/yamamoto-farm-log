@@ -96,39 +96,25 @@ async function loadPlantingCSV() {
   if (plantingCache) return plantingCache;
 
   const url = "../logs/planting/all.csv?ts=" + Date.now();
-  console.log("📥 loadPlantingCSV:", url);
-
   const res = await fetch(url);
   const text = await res.text();
   if (!text.trim()) return [];
 
   const lines = text.trim().split("\n");
-  const headers = lines[0].split(",");
 
-  console.log("🟦 CSV ヘッダ:", headers);
-  console.log("🟦 CSV 行数:", lines.length - 1);
+  // ★ ヘッダの CR を除去
+  const headers = lines[0].split(",").map(h => h.replace(/\r$/, ""));
 
-  const rows = lines.slice(1).map((line, idx) => {
+  const rows = lines.slice(1).map(line => {
     let cols = line.split(",");
 
-    // ★ デバッグ：split の結果を表示
-    console.log(`🟨 [${idx}] split結果(${cols.length}列):`, cols);
+    // ★ データ側の CR を除去
+    cols = cols.map(c => c.replace(/\r$/, ""));
 
-    // ★ 列数が足りない場合は埋める
-    while (cols.length < headers.length) {
-      cols.push("");
-    }
-
-    // ★ デバッグ：補正後の列
-    if (cols.length !== headers.length) {
-      console.warn(`🟥 [${idx}] 列数不一致: ${cols.length} / ${headers.length}`);
-    }
+    while (cols.length < headers.length) cols.push("");
 
     const obj = {};
     headers.forEach((h, i) => (obj[h] = cols[i] || ""));
-
-    // ★ デバッグ：plantingRef を確認
-    console.log(`🟩 [${idx}] plantingRef=`, obj.plantingRef);
 
     return obj;
   });
@@ -136,6 +122,8 @@ async function loadPlantingCSV() {
   plantingCache = rows;
   return rows;
 }
+
+ 
 
 
 // ===============================
