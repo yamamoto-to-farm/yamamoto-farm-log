@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>出荷ログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ★ キャッシュ対策 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- ★ 共通スタイル -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- CSV パーサー -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- JS -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { initShippingPage } from "./shipping.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+
+      // ★ localStorage の認証情報が有効かチェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;   // 無効なら index.html に戻される
+
+      // 認証済み → UI 表示
+      document.getElementById("form-area").style.display = "block";
+
+      // 日付初期値
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("shippingDate").value = today;
+
+      // ★ 出荷ページ初期化
+      initShippingPage();
+    });
+  </script>
+
+</head>
+
+<body>
+
+  <div id="form-area" style="display:none;">
+
+    <h1>出荷ログ</h1>
+
+    <!-- 出荷日 -->
+    <div class="form-field">
+      <label for="shippingDate">出荷日</label>
+      <input type="date" id="shippingDate" class="form-input">
+    </div>
+
+    <!-- 未計量リスト -->
+    <h2 class="section-title">未計量の出荷申込一覧</h2>
+    <div class="card" id="unshippedArea"></div>
+
+    <!-- 重量入力 -->
+    <h2 class="section-title">重量入力（改行 or カンマ区切り）</h2>
+    <div class="card">
+      <textarea id="weights" rows="5" class="form-textarea"
+        placeholder="例：500 650 600 550 650"></textarea>
+    </div>
+
+    <!-- メモ -->
+    <h2 class="section-title">メモ</h2>
+    <div class="card">
+      <textarea id="notes" rows="3" class="form-textarea"></textarea>
+    </div>
+
+    <!-- 保存 -->
+    <button type="button" class="primary-btn" onclick="saveShipping()">GitHub に保存する</button>
+
+  </div><!-- /form-area -->
+
+</body>
+
+</html>

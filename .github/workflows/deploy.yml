@@ -16,34 +16,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Sync to S3
+      - name: Sync to S3 (deploy フォルダのみアップロード)
         uses: jakejarvis/s3-sync-action@master
-        with:
-          args: |
-            --delete
-            --exclude "*"
-            --include "index.html"
-            --include "admin/*"
-            --include "analysis/*"
-            --include "assets/*"
-            --include "common/*"
-            --include "data/*"
-            --include "harvest/*"
-            --include "img/*"
-            --include "map/*"
-            --include "performance/*"
-            --include "planting/*"
-            --include "seed/*"
-            --include "shipping/*"
-            --include "*.html"
-            --include "*.js"
-            --include "*.css"
         env:
           AWS_S3_BUCKET: yamamoto-farm-log
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-northeast-1
-          SOURCE_DIR: .
+          SOURCE_DIR: deploy
+        with:
+          args: --delete
 
       - name: Create CloudFront invalidation
         uses: chetan/invalidate-cloudfront-action@v2
