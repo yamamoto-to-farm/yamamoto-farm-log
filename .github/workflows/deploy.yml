@@ -21,8 +21,23 @@ jobs:
         with:
           args: |
             --delete
-            --exclude "logs/*"
-            --exclude "logs/**"
+            --exclude "*"
+            --include "index.html"
+            --include "admin/*"
+            --include "analysis/*"
+            --include "assets/*"
+            --include "common/*"
+            --include "data/*"
+            --include "harvest/*"
+            --include "img/*"
+            --include "map/*"
+            --include "performance/*"
+            --include "planting/*"
+            --include "seed/*"
+            --include "shipping/*"
+            --include "*.html"
+            --include "*.js"
+            --include "*.css"
         env:
           AWS_S3_BUCKET: yamamoto-farm-log
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
