@@ -93,7 +93,6 @@ export async function initHarvestPage() {
 // planting CSV 読み込み（CloudFront）
 // ===============================
 async function loadPlantingCSV() {
-async function loadPlantingCSV() {
   if (plantingCache) return plantingCache;
 
   const url = "../logs/planting/all.csv?ts=" + Date.now();
