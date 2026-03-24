@@ -5,13 +5,16 @@ on:
     branches:
       - main
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← これで警告が消える！
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4   # ← Node.js 24 対応版
+        uses: actions/checkout@v4
 
       - name: Sync to S3
         uses: jakejarvis/s3-sync-action@master
