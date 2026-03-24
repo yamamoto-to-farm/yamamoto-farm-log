@@ -1,4 +1,4 @@
-// kpi-month.js（harvest-kpi.js と同じ動作モデルに統一）
+// kpi-month.js（CloudFront 対応・完全版）
 
 import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
@@ -22,14 +22,14 @@ function getParams() {
    plantingRef → summary を読み込む
 =============================== */
 async function loadSummaryByRef(plantingRef) {
-  const index = await loadJSON("data/summary-index.json");
+  const index = await loadJSON("/data/summary-index.json");
 
   for (const field in index) {
     for (const year in index[field]) {
       for (const file of index[field][year]) {
         const ref = safeFileName(file.replace(".json", ""));
         if (ref === plantingRef) {
-          return await loadJSON(`logs/summary/${field}/${year}/${file}`);
+          return await loadJSON(`/logs/summary/${field}/${year}/${file}`);
         }
       }
     }
@@ -57,8 +57,8 @@ async function renderMonthPage() {
   // タイトル更新
   document.getElementById("month-title").textContent = `${year}年${month}月`;
 
-  // CSV 読み込み（harvest-kpi.js と同じ書き方）
-  const weightRows = await loadCSV("logs/weight/all.csv");
+  // CSV 読み込み（CloudFront 絶対パス）
+  const weightRows = await loadCSV("/logs/weight/all.csv");
 
   // shippingDate で該当月を抽出
   const filtered = weightRows.filter(row => {
@@ -104,7 +104,6 @@ async function renderMonthPage() {
 
     const planting = summary.planting;
 
-    // ★ 修正：varietyName / fieldName ではなく variety / field
     const variety = planting.variety || "-";
     const field = planting.field || "-";
 
@@ -125,7 +124,7 @@ async function renderMonthPage() {
     totalKg += kg;
     totalUnits += units;
 
-    // 行追加（★ 圃場名で analysis に飛ばす）
+    // 行追加（★ analysis も絶対パスに修正）
     tbody.insertAdjacentHTML("beforeend", `
       <tr>
         <td class="left">${ref}</td>
@@ -137,7 +136,7 @@ async function renderMonthPage() {
         <td>${ratio}</td>
         <td class="left">${period}</td>
         <td class="left">
-          <a href="../analysis/index.html?field=${encodeURIComponent(field)}">
+          <a href="/analysis/index.html?field=${encodeURIComponent(field)}">
             分析
           </a>
         </td>
