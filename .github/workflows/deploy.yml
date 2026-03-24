@@ -16,7 +16,10 @@ jobs:
       - name: Sync to S3
         uses: jakejarvis/s3-sync-action@master
         with:
-          args: --delete
+          args: >
+            --delete
+            --exclude "logs/*"
+            --exclude "logs/**"
         env:
           AWS_S3_BUCKET: yamamoto-farm-log
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -27,7 +30,7 @@ jobs:
       - name: Create CloudFront invalidation
         uses: chetan/invalidate-cloudfront-action@v2
         env:
-          DISTRIBUTION: E4GPTH342P29X   # ← CloudFront の ID を入れる
+          DISTRIBUTION: E4GPTH342P29X
           PATHS: "/*"
           AWS_REGION: ap-northeast-1
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
