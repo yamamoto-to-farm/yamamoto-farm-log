@@ -64,7 +64,6 @@ export async function saveCsvFile(csvType, csvFile) {
   // 4. saveLog 経由で S3 に全書き換え保存
   // ------------------------------
   try {
-    // ★ S3 書き換えモードで保存
     await saveLog(csvType, "all", {}, "", csvText, "csv-replace");
 
     // ★ CloudFront の URL（loader.js と統一）
@@ -75,6 +74,33 @@ export async function saveCsvFile(csvType, csvFile) {
     window._csvCache[url] = rows;
 
     alert("CSV を保存しました（S3 に全書き換え）");
+
+    // ------------------------------
+    // 5. ★ サマリー更新（本丸）
+    // ------------------------------
+    console.log("=== summary update START ===");
+
+    // plantingRef を含む CSV の場合のみサマリー更新
+    if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
+
+      // 1) plantingRef を全部抽出
+      const plantingRefs = rows
+        .map(r => r.plantingRef)
+        .filter(ref => ref && ref.trim() !== "");
+
+      // 2) 重複排除
+      const uniqueRefs = [...new Set(plantingRefs)];
+
+      console.log("summary targets:", uniqueRefs);
+
+      // 3) それぞれサマリー更新キューに投入
+      for (const ref of uniqueRefs) {
+        window.enqueueSummaryUpdate(ref);
+      }
+    }
+
+    console.log("=== summary update ENQUEUED ===");
+
   } catch (e) {
     console.error("❌ saveLog error:", e);
     alert("保存に失敗しました（Console を確認してください）");
