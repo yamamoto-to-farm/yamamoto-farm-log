@@ -13,8 +13,11 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
-// ★ サマリー自動更新 + safeFileName
-import { enqueueSummaryUpdate, safeFileName } from "../common/summary.js";
+// ★ サマリー自動更新
+import { enqueueSummaryUpdate } from "../common/summary.js";
+
+// ★ safeFileName は utils.js にある
+import { safeFileName } from "../common/utils.js";
 
 
 // ===============================
