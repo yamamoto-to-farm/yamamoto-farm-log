@@ -1,4 +1,4 @@
-// harvest-kpi.js（CloudFront 対応・完全版）
+// harvest-kpi.js（CloudFront 完全版）
 
 import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
@@ -8,7 +8,9 @@ const DEBUG = true;
 const log = (...a) => DEBUG && console.log("[KPI]", ...a);
 const logError = (...a) => DEBUG && console.error("[KPI-ERROR]", ...a);
 
-// ★ JSON 読み込みをラップしてパスを全部ログ出力
+// ===============================
+// JSON 読み込み（CloudFront）
+// ===============================
 async function debugLoadJSON(path) {
     log("JSON 読み込み:", path);
     try {
@@ -21,7 +23,9 @@ async function debugLoadJSON(path) {
     }
 }
 
-// ★ CSV 読み込みもログ出す
+// ===============================
+// CSV 読み込み（CloudFront）
+// ===============================
 async function debugLoadCSV(path) {
     log("CSV 読み込み:", path);
     try {
