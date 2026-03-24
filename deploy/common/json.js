@@ -1,20 +1,19 @@
-// common/json.js
-import { readText, writeText } from "./github.js";
-import { cb } from "./utils.js";
+export async function saveJSON(path, jsonObj) {
+  const url = "https://whc3hq3yq6.execute-api.ap-northeast-1.amazonaws.com/prod/save-json";
 
-// --------------------------------------
-// JSON 読み込み → オブジェクト
-// --------------------------------------
-export async function loadJSON(path) {
-  // ★ キャッシュバスター付きで常に最新を読む
-  const text = await readText(cb(path));
-  return JSON.parse(text);
-}
+  const body = {
+    path: path,
+    content: JSON.stringify(jsonObj)
+  };
 
-// --------------------------------------
-// JSON 保存（上書き）
-// --------------------------------------
-export async function saveJSON(path, obj) {
-  const text = JSON.stringify(obj, null, 2) + "\n";
-  await writeText(path, text);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  if (!data.ok) {
+    throw new Error("saveJSON failed: " + JSON.stringify(data));
+  }
 }
