@@ -13,8 +13,8 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
-// ★ サマリー自動更新
-import { enqueueSummaryUpdate } from "../common/summary.js";
+// ★ サマリー自動更新 + safeFileName
+import { enqueueSummaryUpdate, safeFileName } from "../common/summary.js";
 
 
 // ===============================
@@ -87,7 +87,7 @@ export async function initHarvestPage() {
 
 
 // ===============================
-// planting CSV 読み込み
+// planting CSV 読み込み（CloudFront）
 // ===============================
 async function loadPlantingCSV() {
   if (plantingCache) return plantingCache;
@@ -122,7 +122,7 @@ async function loadPlantingCSV() {
 
 
 // ===============================
-// ★ 定植候補更新（畑名一致 × 生育日数 ±60 ＋ fallback）
+// ★ 定植候補更新
 // ===============================
 async function updatePlantingRefOptions() {
   console.log("🔄 updatePlantingRefOptions() START");
@@ -231,6 +231,9 @@ async function saveHarvestInner() {
   const human = window.currentHuman || "";
   const dateStr = data.harvestDate.replace(/-/g, "");
 
+  // ★ safeFileName に変換（summaryUpdate に必須）
+  const safeField = safeFileName(data.plantingRef);
+
   const csvLine = [
     data.harvestDate,
     data.shippingDate,
@@ -243,23 +246,19 @@ async function saveHarvestInner() {
     human
   ].join(",");
 
-  // ★ 正しい saveLog 形式
+  // ★ 正しい saveLog 形式（plantingRefs は safeField）
   await saveLog(
     "harvest",
     dateStr,
-    { plantingRefs: [data.plantingRef] },
+    { plantingRefs: [safeField] },
     csvLine + "\n"
   );
 
-  // ★ サマリー自動更新
-  // ★ 1秒遅らせて summaryUpdate を呼ぶ（競合回避）
-  
+  // ★ サマリー自動更新（safeField を渡す）
   setTimeout(() => {
-    enqueueSummaryUpdate(data.plantingRef);
+    enqueueSummaryUpdate(safeField);
   }, 1000);
 
-
-  // ★ 保存内容をサマリー風にダイアログ表示
   alert(
     `収穫ログを保存しました\n\n` +
     `定植: ${data.plantingRef}\n` +
