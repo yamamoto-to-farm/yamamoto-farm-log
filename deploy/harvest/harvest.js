@@ -98,14 +98,7 @@ async function loadPlantingCSV() {
   const url = "../logs/planting/all.csv?ts=" + Date.now();
   console.log("📥 loadPlantingCSV:", url);
 
-  let res;
-  try {
-    res = await fetch(url);
-  } catch (e) {
-    console.error("❌ fetch失敗:", e);
-    return [];
-  }
-
+  const res = await fetch(url);
   const text = await res.text();
   if (!text.trim()) return [];
 
@@ -113,7 +106,11 @@ async function loadPlantingCSV() {
   const headers = lines[0].split(",");
 
   const rows = lines.slice(1).map(line => {
-    const cols = line.split(",");
+    let cols = line.split(",");
+
+    // ★ 列数が足りない場合は埋める（これが重要）
+    while (cols.length < headers.length) cols.push("");
+
     const obj = {};
     headers.forEach((h, i) => (obj[h] = cols[i] || ""));
     return obj;
