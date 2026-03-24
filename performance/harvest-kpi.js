@@ -35,6 +35,40 @@ async function debugLoadCSV(path) {
 }
 
 /* ===============================
+   4. CSV を plantingRef ごとに集計（shippingDate ベース）
+=============================== */
+function groupWeightByRef(weightRows) {
+    log("CSV → plantingRef 集計開始");
+
+    const map = {};
+
+    weightRows.forEach(row => {
+        const ref = safeFileName(row.plantingRef);
+        if (!ref) return;
+
+        if (!map[ref]) {
+            map[ref] = {
+                monthlyKg: Array(12).fill(0),
+                monthlyUnits: Array(12).fill(0),
+                totalKg: 0
+            };
+        }
+
+        const d = new Date(row.shippingDate);
+        const m = d.getMonth();
+        const kg = Number(row.totalWeight || 0);
+        const units = Number(row.bins || 0);
+
+        map[ref].monthlyKg[m] += kg;
+        map[ref].monthlyUnits[m] += units;
+        map[ref].totalKg += kg;
+    });
+
+    log("CSV 集計結果:", map);
+    return map;
+}
+
+/* ===============================
    1. 年一覧を「予定年＋実績年」から生成
 =============================== */
 async function getYearList() {
@@ -142,8 +176,7 @@ async function renderKpiForYear(year) {
         })
     );
 
-    // …（以下は元のまま）
-    // 省略しても動作に影響なし
+    // ここから先は元の処理（省略）
 }
 
 /* ===============================
