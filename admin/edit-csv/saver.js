@@ -1,5 +1,6 @@
 // admin/edit-csv/saver.js
 import { saveLog } from "../../common/save/index.js";
+import { enqueueSummaryUpdate } from "../../common/summary.js";   // ★ サマリー更新を直接 import
 
 export async function saveCsvFile(csvType, csvFile) {
   console.log("=== saveCsvFile START ===");
@@ -80,7 +81,7 @@ export async function saveCsvFile(csvType, csvFile) {
     // ------------------------------
     console.log("=== summary update START ===");
 
-    // plantingRef を含む CSV の場合のみサマリー更新
+    // planting / harvest / weight のときだけサマリー更新
     if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
 
       // 1) plantingRef を全部抽出
@@ -95,7 +96,7 @@ export async function saveCsvFile(csvType, csvFile) {
 
       // 3) それぞれサマリー更新キューに投入
       for (const ref of uniqueRefs) {
-        window.enqueueSummaryUpdate(ref);
+        enqueueSummaryUpdate(ref);   // ★ import した関数を直接呼ぶ
       }
     }
 
