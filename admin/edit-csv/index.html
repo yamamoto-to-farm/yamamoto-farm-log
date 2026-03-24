@@ -41,6 +41,19 @@
   <!-- 下段：テーブル -->
   <div id="csvTableArea"></div>
 
-  <script type="module" src="./edit-csv.js"></script>
+  <!-- ★ ① PapaParse（summary.js が必要とする） -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- ★ ② 共通ロジック（summary.js を先に読み込む） -->
+  <script type="module" src="../../common/summary.js?v=20260323"></script>
+  <script type="module" src="../../common/save/index.js?v=20260323"></script>
+
+  <!-- ★ ③ 編集画面ロジック -->
+  <script type="module" src="./loader.js?v=20260323"></script>
+  <script type="module" src="./table.js?v=20260323"></script>
+  <script type="module" src="./editor.js?v=20260323"></script>
+  <script type="module" src="./saver.js?v=20260323"></script>
+  <script type="module" src="./edit-csv.js?v=20260323"></script>
+
 </body>
 </html>
