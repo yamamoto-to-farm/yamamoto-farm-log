@@ -93,6 +93,7 @@ export async function initHarvestPage() {
 // planting CSV 読み込み（CloudFront）
 // ===============================
 async function loadPlantingCSV() {
+async function loadPlantingCSV() {
   if (plantingCache) return plantingCache;
 
   const url = "../logs/planting/all.csv?ts=" + Date.now();
@@ -105,14 +106,31 @@ async function loadPlantingCSV() {
   const lines = text.trim().split("\n");
   const headers = lines[0].split(",");
 
-  const rows = lines.slice(1).map(line => {
+  console.log("🟦 CSV ヘッダ:", headers);
+  console.log("🟦 CSV 行数:", lines.length - 1);
+
+  const rows = lines.slice(1).map((line, idx) => {
     let cols = line.split(",");
 
-    // ★ 列数が足りない場合は埋める（これが重要）
-    while (cols.length < headers.length) cols.push("");
+    // ★ デバッグ：split の結果を表示
+    console.log(`🟨 [${idx}] split結果(${cols.length}列):`, cols);
+
+    // ★ 列数が足りない場合は埋める
+    while (cols.length < headers.length) {
+      cols.push("");
+    }
+
+    // ★ デバッグ：補正後の列
+    if (cols.length !== headers.length) {
+      console.warn(`🟥 [${idx}] 列数不一致: ${cols.length} / ${headers.length}`);
+    }
 
     const obj = {};
     headers.forEach((h, i) => (obj[h] = cols[i] || ""));
+
+    // ★ デバッグ：plantingRef を確認
+    console.log(`🟩 [${idx}] plantingRef=`, obj.plantingRef);
+
     return obj;
   });
 
