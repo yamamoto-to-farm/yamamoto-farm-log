@@ -9,10 +9,9 @@ import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 /* ---------------------------------------------------------
    0. デバッグフラグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = false;
-const SUMMARY_DEBUG_BYPASS_CACHE = false;
+const SUMMARY_DEBUG = true;
 
-function dlog(...args) {
+function slog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
 }
 
@@ -28,7 +27,7 @@ let indexCache = null;
    2. キャッシュ破棄
 --------------------------------------------------------- */
 export function invalidateSummaryCache(type) {
-  dlog("invalidateSummaryCache:", type);
+  slog("invalidateSummaryCache:", type);
 
   if (type === "planting") plantingCache = null;
   if (type === "harvest") harvestCache = null;
@@ -47,36 +46,39 @@ export function invalidateSummaryCache(type) {
    3. CSV 読み込み（CloudFront 絶対パス）
 --------------------------------------------------------- */
 
-// CloudFront のベース URL
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
-async function loadCsvCached(path, cacheVar, type) {
-  if (!SUMMARY_DEBUG_BYPASS_CACHE && cacheVar.value) {
-    dlog("loadCsvCached: use cache for", type, "rows =", cacheVar.value.length);
-    return cacheVar.value;
+async function loadCsvNoCache(path, type) {
+  const url = `${CF_BASE}/${path}?ts=${Date.now()}&r=${Math.random()}`;
+  slog("FETCH:", type, url);
+
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0"
+    }
+  });
+
+  if (!res.ok) {
+    slog("FETCH FAILED:", type, res.status);
+    return [];
   }
-
-  const url = `${CF_BASE}/${path}?ts=${Date.now()}`;
-  dlog("loadCsvCached: fetch", type, url);
-
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return [];
 
   const text = await res.text();
   const data = Papa.parse(text, { header: true }).data;
+  slog("FETCH OK:", type, data.length, "rows");
 
-  cacheVar.value = data;
   return data;
 }
 
 async function loadIndexCached() {
-  if (indexCache && !SUMMARY_DEBUG_BYPASS_CACHE) return indexCache;
+  if (indexCache) return indexCache;
 
   try {
-    // /data/summary-index.json を CloudFront 経由で読む
     const raw = await loadJSON("/data/summary-index.json");
 
-    // CR 除去して安全化
     const cleaned = {};
     for (const key of Object.keys(raw)) {
       cleaned[key.replace(/\r$/, "")] = raw[key];
@@ -92,13 +94,17 @@ async function loadIndexCached() {
 }
 
 /* ---------------------------------------------------------
-   4. サマリー更新キュー
+   4. サマリー更新キュー（デバッグ＋プール方式）
 --------------------------------------------------------- */
 window.summaryQueue = [];
 let summaryProcessing = false;
 
+// ★ summary を一時保存するプール
+window._summaryPool = window._summaryPool || {};
+
 export function enqueueSummaryUpdate(plantingRef) {
   if (!plantingRef) return;
+  slog("enqueue:", plantingRef);
   window.summaryQueue.push(plantingRef);
   processSummaryQueue();
 }
@@ -107,8 +113,11 @@ async function processSummaryQueue() {
   if (summaryProcessing) return;
   summaryProcessing = true;
 
+  slog("QUEUE START:", window.summaryQueue);
+
   while (window.summaryQueue.length > 0) {
     const ref = window.summaryQueue.shift();
+    slog("PROCESS:", ref);
 
     try {
       await summaryUpdate(ref);
@@ -124,59 +133,46 @@ async function processSummaryQueue() {
   }
 
   summaryProcessing = false;
+  slog("QUEUE END");
+
   window.dispatchEvent(new Event("summaryQueueEmpty"));
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate（CloudFront 最新読み込み）
+   5. summaryUpdate（デバッグ＋プール方式）
 --------------------------------------------------------- */
 export async function summaryUpdate(plantingRef) {
-  console.log(">>> summaryUpdate START:", plantingRef);
+  slog(">>> summaryUpdate START:", plantingRef);
 
-  // CSV が更新された可能性があるのでキャッシュ破棄
   invalidateSummaryCache("harvest");
   invalidateSummaryCache("weight");
 
-  // CloudFront の絶対パスで読み込み
-  const planting = await loadCsvCached(
-    "logs/planting/all.csv",
-    { value: plantingCache },
-    "planting"
-  );
-  const harvest = await loadCsvCached(
-    "logs/harvest/all.csv",
-    { value: harvestCache },
-    "harvest"
-  );
-  const shipping = await loadCsvCached(
-    "logs/weight/all.csv",
-    { value: shippingCache },
-    "weight"
-  );
+  const planting = await loadCsvNoCache("logs/planting/all.csv", "planting");
+  const harvest = await loadCsvNoCache("logs/harvest/all.csv", "harvest");
+  const shipping = await loadCsvNoCache("logs/weight/all.csv", "weight");
 
   const p = planting.find(x => x.plantingRef === plantingRef);
-  if (!p) return;
+  slog("planting match:", p);
+
+  if (!p) {
+    slog("NO planting found → END");
+    return;
+  }
 
   const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
   const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
-  const harvestDates = harvestRows
-    .map(x => x.harvestDate)
-    .filter(Boolean)
-    .sort();
-  const harvestTotalAmount = harvestRows.reduce(
-    (s, x) => s + Number(x.amount || 0),
-    0
-  );
+  slog("harvestRows:", harvestRows);
+  slog("shippingRows:", shippingRows);
 
-  const shippingDates = shippingRows
-    .map(x => x.shippingDate)
-    .filter(Boolean)
-    .sort();
-  const shippingTotalWeight = shippingRows.reduce(
-    (s, x) => s + Number(x.totalWeight || 0),
-    0
-  );
+  const harvestDates = harvestRows.map(x => x.harvestDate).filter(Boolean).sort();
+  const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
+
+  const harvestTotalAmount = harvestRows.reduce((s, x) => s + Number(x.amount || 0), 0);
+  const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.totalWeight || 0), 0);
+
+  slog("harvestTotalAmount:", harvestTotalAmount);
+  slog("shippingTotalWeight:", shippingTotalWeight);
 
   const summary = {
     plantingRef,
@@ -208,53 +204,76 @@ export async function summaryUpdate(plantingRef) {
     lastUpdated: new Date().toISOString()
   };
 
-  /* ------------------------------
-     summary-index.json 更新
-  ------------------------------ */
-  const index = await loadIndexCached();
+  slog("SUMMARY GENERATED:", summary);
 
-  const year = p.plantDate?.substring(0, 4) || "unknown";
-  const safeField = safeFieldName(p.field || "");
-  const safeRef = safeFileName(plantingRef);
-  const fileName = `${safeRef}.json`;
+  // ★ 保存はせず、プールに入れるだけ
+  window._summaryPool[plantingRef] = summary;
+  slog("PUSH TO POOL:", plantingRef);
 
-  if (!index[safeField]) index[safeField] = {};
-  if (!index[safeField][year]) index[safeField][year] = [];
-
-  if (!index[safeField][year].includes(fileName)) {
-    index[safeField][year].push(fileName);
-  }
-
-  // 並びを安定させたい場合はここでソート
-  for (const field of Object.keys(index)) {
-    for (const y of Object.keys(index[field])) {
-      index[field][y].sort();
-    }
-  }
-
-  // 1) summary 本体は saveLog で logs/summary に保存
-  await saveLog({
-    type: "multi",
-    files: [
-      {
-        path: `logs/summary/${safeField}/${year}/${fileName}`,
-        content: JSON.stringify(summary, null, 2)
-      }
-    ]
-  });
-
-  // 2) index は saveJSON で /data/summary-index.json に保存
-  await saveJSON("data/summary-index.json", index);
-
-  indexCache = index;
-
-  console.log(">>> summaryUpdate END:", plantingRef);
+  slog(">>> summaryUpdate END:", plantingRef);
   return summary;
 }
 
 /* ---------------------------------------------------------
-   6. 公開 API
+   5.5 summary-index.json を含めてまとめて保存
+--------------------------------------------------------- */
+export async function flushSummaryPool() {
+  slog("=== FLUSH SUMMARY POOL START ===");
+
+  const index = await loadIndexCached();
+
+  for (const plantingRef of Object.keys(window._summaryPool)) {
+    const summary = window._summaryPool[plantingRef];
+
+    const safeField = safeFieldName(summary.planting.field);
+    const year = summary.planting.plantDate.substring(0, 4) || "unknown";
+    const fileName = `${safeFileName(plantingRef)}.json`;
+
+    // index 更新
+    if (!index[safeField]) index[safeField] = {};
+    if (!index[safeField][year]) index[safeField][year] = [];
+    if (!index[safeField][year].includes(fileName)) {
+      index[safeField][year].push(fileName);
+      index[safeField][year].sort();
+    }
+
+    slog("SAVE SUMMARY FILE:", plantingRef);
+
+    await saveLog({
+      type: "multi",
+      files: [
+        {
+          path: `logs/summary/${safeField}/${year}/${fileName}`,
+          content: JSON.stringify(summary, null, 2)
+        }
+      ]
+    });
+  }
+
+  slog("SAVE SUMMARY INDEX");
+  await saveJSON("data/summary-index.json", index);
+  indexCache = index;
+
+  slog("=== FLUSH SUMMARY POOL END ===");
+
+  window._summaryPool = {};
+}
+
+/* ---------------------------------------------------------
+   6. 公開 API（イベントリスナーは一度だけ登録）
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.enqueueSummaryUpdate = enqueueSummaryUpdate;
 window.invalidateSummaryCache = invalidateSummaryCache;
+window.flushSummaryPool = flushSummaryPool;
+
+// ★ 多重登録防止
+if (!window._summaryQueueListenerAdded) {
+  window._summaryQueueListenerAdded = true;
+
+  window.addEventListener("summaryQueueEmpty", () => {
+    window.flushSummaryPool();
+  });
+
+  slog("summaryQueueEmpty listener registered");
+}
