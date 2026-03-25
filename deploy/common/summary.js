@@ -67,7 +67,11 @@ async function loadCsvNoCache(path, type) {
   }
 
   const text = await res.text();
+  slog("CSV RAW TEXT:", type, text);   // ★ 追加：生テキストを出す
+
   const data = Papa.parse(text, { header: true }).data;
+  slog("CSV PARSED:", type, data);     // ★ 追加：パース後の配列を出す
+
   slog("FETCH OK:", type, data.length, "rows");
 
   return data;
