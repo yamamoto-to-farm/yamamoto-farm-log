@@ -43,8 +43,27 @@ export async function saveJSON(path, jsonObj) {
     body: JSON.stringify(body)
   });
 
-  const data = await res.json();
-  if (!data.ok) {
-    throw new Error("saveJSON failed: " + JSON.stringify(data));
+  // ★ HTTP レベルで失敗していないかチェック
+  if (!res.ok) {
+    throw new Error("saveJSON failed (HTTP): " + res.status);
   }
+
+  // ★ body は文字列 JSON の場合があるので text() で受ける
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = {};
+  }
+
+  // ★ Lambda のレスポンスは { ok: true } が body に入っている
+  //   ただし data.ok が undefined でも HTTP 200 なら成功扱いにする
+  if (data.ok === false) {
+    throw new Error("saveJSON failed: " + text);
+  }
+
+  // ★ ここまで来たら成功
+  return true;
 }
