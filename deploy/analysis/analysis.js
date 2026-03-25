@@ -1,4 +1,4 @@
-// analysis.js（統合フレーム）
+// analysis.js（CloudFront 統一版）
 import { loadJSON } from "/common/json.js";
 import { renderSummaryCards } from "./card-summary.js";
 import { renderFieldDetailCard } from "./card-field-detail.js";
@@ -16,7 +16,7 @@ export async function initAnalysisPage() {
   /* ===============================
      ★ 基本データカード
   =============================== */
-  const detail = await loadJSON("data/field-detail.json");
+  const detail = await loadJSON("/data/field-detail.json");
   const fieldData = detail[rawFieldName];
 
   if (fieldData) {
