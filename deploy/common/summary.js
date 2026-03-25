@@ -1,9 +1,10 @@
 // =========================================================
-// common/summary.js — CloudFront + S3 最適化版（相対パス廃止）
+// common/summary.js — CloudFront + S3 最適化版（index 自動更新版）
 // =========================================================
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
+import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 
 /* ---------------------------------------------------------
    0. デバッグフラグ
@@ -71,11 +72,22 @@ async function loadCsvCached(path, cacheVar, type) {
 async function loadIndexCached() {
   if (indexCache && !SUMMARY_DEBUG_BYPASS_CACHE) return indexCache;
 
-  const url = `${CF_BASE}/data/summary-index.json?ts=${Date.now()}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return (indexCache = {});
+  try {
+    // /data/summary-index.json を CloudFront 経由で読む
+    const raw = await loadJSON("/data/summary-index.json");
 
-  indexCache = await res.json();
+    // CR 除去して安全化
+    const cleaned = {};
+    for (const key of Object.keys(raw)) {
+      cleaned[key.replace(/\r$/, "")] = raw[key];
+    }
+
+    indexCache = cleaned;
+  } catch (e) {
+    console.warn("[summary] loadIndexCached failed, use empty index:", e);
+    indexCache = {};
+  }
+
   return indexCache;
 }
 
@@ -87,7 +99,7 @@ let summaryProcessing = false;
 
 export function enqueueSummaryUpdate(plantingRef) {
   if (!plantingRef) return;
-  summaryQueue.push(plantingRef);
+  window.summaryQueue.push(plantingRef);
   processSummaryQueue();
 }
 
@@ -95,8 +107,8 @@ async function processSummaryQueue() {
   if (summaryProcessing) return;
   summaryProcessing = true;
 
-  while (summaryQueue.length > 0) {
-    const ref = summaryQueue.shift();
+  while (window.summaryQueue.length > 0) {
+    const ref = window.summaryQueue.shift();
 
     try {
       await summaryUpdate(ref);
@@ -104,7 +116,6 @@ async function processSummaryQueue() {
       window.dispatchEvent(
         new CustomEvent("summaryGenerated", { detail: { plantingRef: ref } })
       );
-
     } catch (e) {
       console.error("summaryUpdate failed:", e);
     }
@@ -122,14 +133,26 @@ async function processSummaryQueue() {
 export async function summaryUpdate(plantingRef) {
   console.log(">>> summaryUpdate START:", plantingRef);
 
-  // ★ CSV が更新された可能性があるのでキャッシュ破棄
+  // CSV が更新された可能性があるのでキャッシュ破棄
   invalidateSummaryCache("harvest");
   invalidateSummaryCache("weight");
 
-  // ★ CloudFront の絶対パスで読み込み
-  const planting = await loadCsvCached("logs/planting/all.csv", { value: plantingCache }, "planting");
-  const harvest  = await loadCsvCached("logs/harvest/all.csv",  { value: harvestCache },  "harvest");
-  const shipping = await loadCsvCached("logs/weight/all.csv",   { value: shippingCache }, "weight");
+  // CloudFront の絶対パスで読み込み
+  const planting = await loadCsvCached(
+    "logs/planting/all.csv",
+    { value: plantingCache },
+    "planting"
+  );
+  const harvest = await loadCsvCached(
+    "logs/harvest/all.csv",
+    { value: harvestCache },
+    "harvest"
+  );
+  const shipping = await loadCsvCached(
+    "logs/weight/all.csv",
+    { value: shippingCache },
+    "weight"
+  );
 
   const p = planting.find(x => x.plantingRef === plantingRef);
   if (!p) return;
@@ -137,11 +160,23 @@ export async function summaryUpdate(plantingRef) {
   const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
   const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
-  const harvestDates = harvestRows.map(x => x.harvestDate).filter(Boolean).sort();
-  const harvestTotalAmount = harvestRows.reduce((s, x) => s + Number(x.amount || 0), 0);
+  const harvestDates = harvestRows
+    .map(x => x.harvestDate)
+    .filter(Boolean)
+    .sort();
+  const harvestTotalAmount = harvestRows.reduce(
+    (s, x) => s + Number(x.amount || 0),
+    0
+  );
 
-  const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
-  const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.totalWeight || 0), 0);
+  const shippingDates = shippingRows
+    .map(x => x.shippingDate)
+    .filter(Boolean)
+    .sort();
+  const shippingTotalWeight = shippingRows.reduce(
+    (s, x) => s + Number(x.totalWeight || 0),
+    0
+  );
 
   const summary = {
     plantingRef,
@@ -190,19 +225,26 @@ export async function summaryUpdate(plantingRef) {
     index[safeField][year].push(fileName);
   }
 
+  // 並びを安定させたい場合はここでソート
+  for (const field of Object.keys(index)) {
+    for (const y of Object.keys(index[field])) {
+      index[field][y].sort();
+    }
+  }
+
+  // 1) summary 本体は saveLog で logs/summary に保存
   await saveLog({
     type: "multi",
     files: [
       {
         path: `logs/summary/${safeField}/${year}/${fileName}`,
         content: JSON.stringify(summary, null, 2)
-      },
-      {
-        path: "/data/summary-index.json",
-        content: JSON.stringify(index, null, 2)
       }
     ]
   });
+
+  // 2) index は saveJSON で /data/summary-index.json に保存
+  await saveJSON("data/summary-index.json", index);
 
   indexCache = index;
 
