@@ -198,7 +198,7 @@ export async function summaryUpdate(plantingRef) {
         content: JSON.stringify(summary, null, 2)
       },
       {
-        path: "data/summary-index.json",
+        path: "/data/summary-index.json",
         content: JSON.stringify(index, null, 2)
       }
     ]
