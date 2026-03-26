@@ -46,10 +46,10 @@ export function invalidateSummaryCache(type) {
    3. CSV 読み込み（CloudFront 絶対パス）
 --------------------------------------------------------- */
 
-const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+const S3_BASE = "https://yamamoto-farm-log.s3.ap-northeast-1.amazonaws.com";
 
 async function loadCsvNoCache(path, type) {
-  const url = `${CF_BASE}/${path}?ts=${Date.now()}&r=${Math.random()}`;
+  const url = `${S3_BASE}/${path}?ts=${Date.now()}&r=${Math.random()}`;
   slog("FETCH:", type, url);
 
   const res = await fetch(url, {
@@ -67,13 +67,17 @@ async function loadCsvNoCache(path, type) {
   }
 
   const text = await res.text();
-  slog("CSV RAW TEXT:", type, text);   // ★ 追加：生テキストを出す
 
-  const data = Papa.parse(text, { header: true }).data;
-  slog("CSV PARSED:", type, data);     // ★ 追加：パース後の配列を出す
+  // ★ KPI と同じ強い設定
+  const data = Papa.parse(text, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true,
+    transformHeader: h => h.trim(),
+    transform: v => (typeof v === "string" ? v.trim() : v)
+  }).data;
 
-  slog("FETCH OK:", type, data.length, "rows");
-
+  slog("CSV PARSED:", type, data.length, "rows");
   return data;
 }
 
