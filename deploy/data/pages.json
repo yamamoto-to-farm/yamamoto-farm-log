@@ -98,27 +98,11 @@
     },
     {
       "id": "summary-manager",
-      "name": "サマリー管理",
+      "name": "サマリー閲覧",
       "path": "summary-manager.html",
       "category": "管理/ツール",
-      "roles": ["admin"],
+      "roles": ["family", "admin"],
       "icon": "assets/icons/summary.png"
-    },
-    {
-      "id": "varieties",
-      "name": "品種データ管理",
-      "path": "varieties.html",
-      "category": "管理/ツール",
-      "roles": ["admin"],
-      "icon": "assets/icons/varieties.png"
-    },
-    {
-      "id": "fields",
-      "name": "圃場データ管理",
-      "path": "fields.html",
-      "category": "管理/ツール",
-      "roles": ["admin"],
-      "icon": "assets/icons/fields.png"
     },
     {
       "id": "access",

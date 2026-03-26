@@ -123,7 +123,7 @@ async function loadPlantingCSV() {
   return rows;
 }
 
- 
+
 
 
 // ===============================
@@ -260,8 +260,9 @@ async function saveHarvestInner() {
   );
 
   // ★ サマリー自動更新（safeField を渡す）
+  // ★ サマリー自動更新（plantingRef を渡す）
   setTimeout(() => {
-    enqueueSummaryUpdate(safeField);
+    enqueueSummaryUpdate(data.plantingRef);
   }, 1000);
 
   alert(
