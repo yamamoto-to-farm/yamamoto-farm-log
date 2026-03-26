@@ -1,4 +1,4 @@
-// harvest-kpi.js（CloudFront 完全版・予定面積だけ planting ベース）
+// harvest-kpi.js（CloudFront 完全版・予定面積は planting、収穫面積は summary）
 
 import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
@@ -9,7 +9,7 @@ const log = (...a) => DEBUG && console.log("[KPI]", ...a);
 const logError = (...a) => DEBUG && console.error("[KPI-ERROR]", ...a);
 
 // ===============================
-// JSON 読み込み（CloudFront）
+// JSON 読み込み
 // ===============================
 async function debugLoadJSON(path) {
     log("JSON 読み込み:", path);
@@ -24,7 +24,7 @@ async function debugLoadJSON(path) {
 }
 
 // ===============================
-// CSV 読み込み（CloudFront）
+// CSV 読み込み
 // ===============================
 async function debugLoadCSV(path) {
     log("CSV 読み込み:", path);
@@ -39,7 +39,7 @@ async function debugLoadCSV(path) {
 }
 
 /* ===============================
-   面積（反）計算（planting row から直接）
+   面積（反）計算：planting/all.csv 用
 =============================== */
 function calcAreaTanFromPlantingRow(row) {
     const qty = Number(row.quantity || 0);
@@ -49,7 +49,17 @@ function calcAreaTanFromPlantingRow(row) {
 }
 
 /* ===============================
-   CSV を plantingRef ごとに集計（weight）
+   面積（反）計算：summary.json 用
+=============================== */
+function calcAreaTanFromSummaryPlanting(planting) {
+    const qty = Number(planting.quantity || 0);
+    const rowSpace = Number(planting.spacing?.row || 0);
+    const bedSpace = Number(planting.spacing?.bed || 0);
+    return (qty * rowSpace * bedSpace) / 10000000;
+}
+
+/* ===============================
+   weight CSV → plantingRef 集計
 =============================== */
 function groupWeightByRef(weightRows) {
     log("CSV → plantingRef 集計開始");
@@ -78,7 +88,6 @@ function groupWeightByRef(weightRows) {
         map[ref].totalKg += kg;
     });
 
-    log("CSV 集計結果:", map);
     return map;
 }
 
@@ -86,8 +95,6 @@ function groupWeightByRef(weightRows) {
    目標値（予定面積 × 基準値）
 =============================== */
 function calcTargets(planArea, harvestBase) {
-    log("目標値計算開始");
-
     const targetKg = Array(12).fill(0);
     const targetUnits = Array(12).fill(0);
 
@@ -107,8 +114,6 @@ function calcTargets(planArea, harvestBase) {
    KPI テーブル HTML 生成
 =============================== */
 function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
-    log("KPI テーブル生成開始");
-
     let html = `
     <table class="kpi-table">
       <thead>
@@ -184,8 +189,6 @@ function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
    年一覧生成
 =============================== */
 async function getYearList() {
-    log("年一覧取得開始");
-
     const index = await debugLoadJSON("/data/summary-index.json");
     const weightRows = await debugLoadCSV("/logs/weight/all.csv");
 
@@ -207,18 +210,13 @@ async function getYearList() {
         years.add(y);
     });
 
-    const list = [...years].sort();
-    log("抽出された年一覧:", list);
-
-    return list;
+    return [...years].sort();
 }
 
 /* ===============================
    年ごとの plantingRef 抽出（収穫面積用）
 =============================== */
 async function loadPlantingRefsForYear(targetYear) {
-    log(`年 ${targetYear} の plantingRef 抽出開始`);
-
     const index = await debugLoadJSON("/data/summary-index.json");
     const list = [];
 
@@ -243,12 +241,11 @@ async function loadPlantingRefsForYear(targetYear) {
         }
     }
 
-    log(`年 ${targetYear} の plantingRef 一覧:`, list);
     return list;
 }
 
 /* ===============================
-   年ごとの KPI を生成（予定面積だけ planting ベース）
+   年ごとの KPI を生成（予定面積＝planting、収穫面積＝summary）
 =============================== */
 async function renderKpiForYear(year) {
     log(`===== ${year}年 KPI 生成開始 =====`);
@@ -308,9 +305,9 @@ async function renderKpiForYear(year) {
 
     for (let i = 0; i < plantingList.length; i++) {
         const item = plantingList[i];
-        const ref = refDatas[i];
+        const summary = refDatas[i];
 
-        const area = calcAreaTanFromPlantingRow(ref.planting);
+        const area = calcAreaTanFromSummaryPlanting(summary.planting);
         const w = weightMap[item.plantingRef];
 
         if (w && w.totalKg > 0) {
@@ -330,8 +327,6 @@ async function renderKpiForYear(year) {
    ページ描画
 =============================== */
 export async function renderKpiPage() {
-    log("KPI ページ描画開始");
-
     const years = await getYearList();
     let html = "";
 
@@ -350,6 +345,4 @@ export async function renderKpiPage() {
         const container = document.getElementById(`kpi-${year}`);
         container.innerHTML = await renderKpiForYear(year);
     }
-
-    log("KPI ページ描画完了");
 }
