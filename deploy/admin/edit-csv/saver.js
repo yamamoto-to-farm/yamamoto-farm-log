@@ -20,7 +20,7 @@ export async function saveCsvFile(csvType, csvFile) {
   const headerCells = table.querySelectorAll("thead th");
   const headers = Array.from(headerCells)
     .slice(1) // 先頭の "#" を除く
-    .map(th => th.textContent);
+    .map(th => th.textContent.trim());
 
   console.log("✔ headers:", headers);
 
@@ -37,7 +37,8 @@ export async function saveCsvFile(csvType, csvFile) {
     const obj = {};
 
     headers.forEach((h, i) => {
-      obj[h] = cells[i + 1].textContent; // 先頭の "#" を除く
+      // textContent に不可視文字が混ざることがあるので trim する
+      obj[h] = (cells[i + 1].textContent || "").trim();
     });
 
     console.log(`row ${rowIndex}:`, obj);
@@ -45,21 +46,14 @@ export async function saveCsvFile(csvType, csvFile) {
   });
 
   // ------------------------------
-  // 3. CSV 文字列に変換
+  // 3. CSV 文字列に変換（★ Papa.unparse を使用）
   // ------------------------------
-  const csvLines = [];
-
-  csvLines.push(headers.join(","));
-
-  rows.forEach((row, i) => {
-    const line = headers.map(h => row[h] ?? "").join(",");
-    csvLines.push(line);
-    console.log(`csv line ${i}:`, line);
+  const csvText = Papa.unparse(rows, {
+    columns: headers,
+    skipEmptyLines: true
   });
 
-  const csvText = csvLines.join("\n").trimEnd();
-
-  console.log("=== FINAL CSV TEXT ===\n" + csvText);
+  console.log("=== FINAL CSV TEXT (Papa.unparse) ===\n" + csvText);
 
   // ------------------------------
   // 4. saveLog 経由で S3 に全書き換え保存
@@ -81,7 +75,6 @@ export async function saveCsvFile(csvType, csvFile) {
     // ------------------------------
     console.log("=== summary update START ===");
 
-    // planting / harvest / weight のときだけサマリー更新
     if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
 
       // 1) plantingRef を全部抽出
@@ -96,7 +89,7 @@ export async function saveCsvFile(csvType, csvFile) {
 
       // 3) それぞれサマリー更新キューに投入
       for (const ref of uniqueRefs) {
-        enqueueSummaryUpdate(ref);   // ★ import した関数を直接呼ぶ
+        enqueueSummaryUpdate(ref);
       }
     }
 
