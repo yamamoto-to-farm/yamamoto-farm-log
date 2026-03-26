@@ -72,9 +72,17 @@
       "roles": ["admin"],
       "icon": "assets/icons/admin.png"
     },
+       {
+      "id": "edit-json",
+      "name": "管理データ編集（JSON）",
+      "path": "edit-json/index.html",
+      "category": "管理/ツール",
+      "roles": ["admin"],
+      "icon": "assets/icons/json.png"
+    },
     {
       "id": "edit-csv",
-      "name": "CSV 編集ツール",
+      "name": "記録データ編集（CSV）",
       "path": "edit-csv/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
