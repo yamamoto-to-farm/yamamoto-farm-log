@@ -10,14 +10,11 @@ import {
 } from "../common/ui.js";
 
 import { saveLog } from "../common/save/index.js";
-import { getMachineParam } from "../common/utils.js";
+import { getMachineParam, safeFileName } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
-
-// ★ safeFileName は utils.js にある
-import { safeFileName } from "../common/utils.js";
 
 
 // ===============================
@@ -102,28 +99,21 @@ async function loadPlantingCSV() {
 
   const lines = text.trim().split("\n");
 
-  // ★ ヘッダの CR を除去
   const headers = lines[0].split(",").map(h => h.replace(/\r$/, ""));
 
   const rows = lines.slice(1).map(line => {
     let cols = line.split(",");
-
-    // ★ データ側の CR を除去
     cols = cols.map(c => c.replace(/\r$/, ""));
-
     while (cols.length < headers.length) cols.push("");
 
     const obj = {};
     headers.forEach((h, i) => (obj[h] = cols[i] || ""));
-
     return obj;
   });
 
   plantingCache = rows;
   return rows;
 }
-
-
 
 
 // ===============================
@@ -146,14 +136,12 @@ async function updatePlantingRefOptions() {
   const plantingList = await loadPlantingCSV();
   const nf = normalizeFieldName(field);
 
-  // ① 畑名一致
   const candidates = plantingList.filter(p =>
     normalizeFieldName(p.field || "") === nf
   );
 
   if (candidates.length === 0) return;
 
-  // ② 生育日数ロジック（±60）
   const strongMatches = candidates.filter(p => {
     if (!p.plantDate) return false;
 
@@ -166,10 +154,8 @@ async function updatePlantingRefOptions() {
 
   let finalList = strongMatches.length > 0 ? strongMatches : candidates;
 
-  // ④ 新しい順
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
 
-  // ⑤ プルダウンに追加
   finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
@@ -177,7 +163,6 @@ async function updatePlantingRefOptions() {
     select.appendChild(opt);
   });
 
-  // ⑥ 候補1件なら自動選択
   if (finalList.length === 1) {
     select.value = finalList[0].plantingRef;
   }
@@ -203,7 +188,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// 保存処理（★サマリー自動更新つき）
+// ★ harvest/all.csv を replace 方式で保存
 // ===============================
 async function saveHarvestInner() {
   console.log("💾 saveHarvestInner()");
@@ -219,7 +204,6 @@ async function saveHarvestInner() {
     return;
   }
 
-  // 重複チェック
   const dup = await checkDuplicate("harvest", {
     plantingRef: data.plantingRef,
     harvestDate: data.harvestDate,
@@ -234,36 +218,41 @@ async function saveHarvestInner() {
 
   const machine = getMachineParam();
   const human = window.currentHuman || "";
-  const dateStr = data.harvestDate.replace(/-/g, "");
 
-  // ★ safeFileName に変換（summaryUpdate に必須）
-  const safeField = safeFileName(data.plantingRef);
+  // ★ まず harvest/all.csv を読み込む
+  const url = "../logs/harvest/all.csv?ts=" + Date.now();
+  const res = await fetch(url);
+  const text = await res.text();
 
-  const csvLine = [
-    data.harvestDate,
-    data.shippingDate,
-    data.worker.replace(/,/g, "／"),
-    data.field,
-    data.amount,
-    data.issue.replace(/[\r\n,]/g, " "),
-    data.plantingRef,
+  let rows = [];
+  if (text.trim()) {
+    rows = Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true
+    }).data;
+  }
+
+  // ★ 新しい行を追加
+  rows.push({
+    harvestDate: data.harvestDate,
+    shippingDate: data.shippingDate,
+    worker: data.worker.replace(/,/g, "／"),
+    field: data.field,
+    amount: data.amount,
+    issue: data.issue.replace(/[\r\n,]/g, " "),
+    plantingRef: data.plantingRef,
     machine,
     human
-  ].join(",");
+  });
 
-  // ★ 正しい saveLog 形式（plantingRefs は safeField）
-  await saveLog(
-    "harvest",
-    dateStr,
-    { plantingRefs: [safeField] },
-    csvLine + "\n"
-  );
+  // ★ CSV 再生成
+  const csvText = Papa.unparse(rows);
 
-  // ★ サマリー自動更新（safeField を渡す）
-  // ★ サマリー自動更新（plantingRef を渡す）
-  setTimeout(() => {
-    enqueueSummaryUpdate(data.plantingRef);
-  }, 1000);
+  // ★ replace 保存
+  await saveLog("harvest", "all", {}, "", csvText, "csv-replace");
+
+  // ★ summaryUpdate（plantingRef を渡す）
+  enqueueSummaryUpdate(data.plantingRef);
 
   alert(
     `収穫ログを保存しました\n\n` +
