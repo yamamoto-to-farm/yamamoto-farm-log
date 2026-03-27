@@ -3,15 +3,23 @@
     "size": "未入力（a）",
     "thumbnail": "未設定",
     "memo": "未入力",
+
     "parcels": [
       {
-        "lotNumber": "未入力",
-        "addressOfficial": "未入力",
-        "landCategory": "未入力",
+        "address": "未入力",
         "officialArea": "未入力（㎡）",
         "owner": "未入力",
         "rightType": "未入力",
         "rent": "未入力"
+      }
+    ],
+
+    "contracts": [
+      {
+        "start": "未入力",
+        "end": "未入力",
+        "rent": "未入力",
+        "notes": "未入力"
       }
     ]
   }

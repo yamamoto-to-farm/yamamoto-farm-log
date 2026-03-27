@@ -18,10 +18,11 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
       <div class="basic-body" style="display:none;">
 
-        <!-- ★ テンプレート or 実データをそのまま表示 -->
+        <!-- ★ 基本情報 -->
         <div class="info-line">実耕作面積：${data.size} a</div>
         <div class="info-line">特徴：${data.memo}</div>
 
+        <!-- ★ 筆情報 -->
         <div class="info-block">
           <div class="info-block-title">【筆情報】</div>
 
@@ -29,15 +30,36 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
             .map(
               p => `
             <div class="info-line">
-              【筆番号】${p.lotNumber}　
-              【地目】${p.landCategory}　
-              【公簿面積】${p.officialArea}㎡　
-              【所有者】${p.owner}　
-              【権利】${p.rightType}
+              【所在】${p.address}　
+              【登記面積】${p.officialArea}　
+              【地権者】${p.owner}　
+              【利用権】${p.rightType}　
+              【支払金額】${p.rent}
             </div>
           `
             )
             .join("")}
+        </div>
+
+        <!-- ★ 契約情報 -->
+        <div class="info-block">
+          <div class="info-block-title">【契約情報】</div>
+
+          ${
+            data.contracts && data.contracts.length > 0
+              ? data.contracts
+                  .map(
+                    c => `
+              <div class="info-line">
+                契約期間：${c.start} 〜 ${c.end}　
+                賃料：${c.rent}　
+                備考：${c.notes}
+              </div>
+            `
+                  )
+                  .join("")
+              : `<div class="info-line">契約情報は登録されていません。</div>`
+          }
         </div>
 
         <!-- ★ 空データの場合だけ追加表示 -->
