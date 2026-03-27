@@ -48,4 +48,5 @@ export async function initAnalysisPage() {
       body.style.display = isOpen ? "none" : "block";
     });
   });
+  
 }
