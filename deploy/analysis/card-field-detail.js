@@ -1,7 +1,14 @@
+// card-field-detail.js
 export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
+
+  console.log("=== card-field-detail.js: f ===", f);
+  console.log("=== card-field-detail.js: fieldName ===", fieldName);
+  console.log("=== card-field-detail.js: TEMPLATE_FIELD ===", TEMPLATE_FIELD);
 
   // ★ データが無い場合はテンプレートを使う
   const data = f ? f : { ...TEMPLATE_FIELD, __empty: true, field: fieldName };
+
+  console.log("=== card-field-detail.js: 最終 data ===", data);
 
   // ★ 空データの場合
   if (data.__empty) {
