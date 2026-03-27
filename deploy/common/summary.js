@@ -9,7 +9,7 @@ import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 /* ---------------------------------------------------------
    0. デバッグフラグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = true;
+const SUMMARY_DEBUG = false;   // ★ デバッグOFF
 
 function slog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
@@ -68,7 +68,6 @@ async function loadCsvNoCache(path, type) {
 
   const text = await res.text();
 
-  // ★ KPI と同じ強い設定
   const data = Papa.parse(text, {
     header: true,
     skipEmptyLines: true,
@@ -107,6 +106,9 @@ async function loadIndexCached() {
 window.summaryQueue = [];
 let summaryProcessing = false;
 
+// ★ サマリー更新中フラグ（多重アラート防止）
+window._summaryUpdating = window._summaryUpdating || false;
+
 // ★ summary を一時保存するプール
 window._summaryPool = window._summaryPool || {};
 
@@ -120,6 +122,12 @@ export function enqueueSummaryUpdate(plantingRef) {
 async function processSummaryQueue() {
   if (summaryProcessing) return;
   summaryProcessing = true;
+
+  // ★ サマリー更新開始アラート（最初の1回だけ）
+  if (!window._summaryUpdating) {
+    window._summaryUpdating = true;
+    alert("サマリーを更新しています。少しお待ちください…");
+  }
 
   slog("QUEUE START:", window.summaryQueue);
 
@@ -170,17 +178,11 @@ export async function summaryUpdate(plantingRef) {
   const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
   const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
 
-  slog("harvestRows:", harvestRows);
-  slog("shippingRows:", shippingRows);
-
   const harvestDates = harvestRows.map(x => x.harvestDate).filter(Boolean).sort();
   const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
 
   const harvestTotalAmount = harvestRows.reduce((s, x) => s + Number(x.amount || 0), 0);
   const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.totalWeight || 0), 0);
-
-  slog("harvestTotalAmount:", harvestTotalAmount);
-  slog("shippingTotalWeight:", shippingTotalWeight);
 
   const summary = {
     plantingRef,
@@ -212,11 +214,7 @@ export async function summaryUpdate(plantingRef) {
     lastUpdated: new Date().toISOString()
   };
 
-  slog("SUMMARY GENERATED:", summary);
-
-  // ★ 保存はせず、プールに入れるだけ
   window._summaryPool[plantingRef] = summary;
-  slog("PUSH TO POOL:", plantingRef);
 
   slog(">>> summaryUpdate END:", plantingRef);
   return summary;
@@ -237,15 +235,12 @@ export async function flushSummaryPool() {
     const year = summary.planting.plantDate.substring(0, 4) || "unknown";
     const fileName = `${safeFileName(plantingRef)}.json`;
 
-    // index 更新
     if (!index[safeField]) index[safeField] = {};
     if (!index[safeField][year]) index[safeField][year] = [];
     if (!index[safeField][year].includes(fileName)) {
       index[safeField][year].push(fileName);
       index[safeField][year].sort();
     }
-
-    slog("SAVE SUMMARY FILE:", plantingRef);
 
     await saveLog({
       type: "multi",
@@ -258,13 +253,18 @@ export async function flushSummaryPool() {
     });
   }
 
-  slog("SAVE SUMMARY INDEX");
   await saveJSON("data/summary-index.json", index);
   indexCache = index;
 
   slog("=== FLUSH SUMMARY POOL END ===");
 
   window._summaryPool = {};
+
+  // ★ サマリー更新完了アラート
+  if (window._summaryUpdating) {
+    window._summaryUpdating = false;
+    alert("サマリーの更新が完了しました。");
+  }
 }
 
 /* ---------------------------------------------------------
@@ -275,7 +275,6 @@ window.enqueueSummaryUpdate = enqueueSummaryUpdate;
 window.invalidateSummaryCache = invalidateSummaryCache;
 window.flushSummaryPool = flushSummaryPool;
 
-// ★ 多重登録防止
 if (!window._summaryQueueListenerAdded) {
   window._summaryQueueListenerAdded = true;
 
