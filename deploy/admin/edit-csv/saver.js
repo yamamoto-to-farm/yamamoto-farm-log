@@ -1,6 +1,9 @@
 // admin/edit-csv/saver.js
 import { saveLog } from "../../common/save/index.js";
-import { enqueueSummaryUpdate } from "../../common/summary.js";   // ★ サマリー更新を直接 import
+import { enqueueSummaryUpdate } from "../../common/summary.js";
+
+// ★ 追加：共通保存モーダル
+import { updateSaveModal } from "../../common/save-modal.js";
 
 export async function saveCsvFile(csvType, csvFile) {
   console.log("=== saveCsvFile START ===");
@@ -9,7 +12,7 @@ export async function saveCsvFile(csvType, csvFile) {
   const table = document.querySelector("#csvTableArea table");
   if (!table) {
     console.error("❌ テーブルが見つかりません");
-    alert("テーブルがありません");
+    updateSaveModal("テーブルがありません");
     return;
   }
   console.log("✔ table found:", table);
@@ -37,7 +40,6 @@ export async function saveCsvFile(csvType, csvFile) {
     const obj = {};
 
     headers.forEach((h, i) => {
-      // textContent に不可視文字が混ざることがあるので trim する
       obj[h] = (cells[i + 1].textContent || "").trim();
     });
 
@@ -46,7 +48,7 @@ export async function saveCsvFile(csvType, csvFile) {
   });
 
   // ------------------------------
-  // 3. CSV 文字列に変換（★ Papa.unparse を使用）
+  // 3. CSV 文字列に変換
   // ------------------------------
   const csvText = Papa.unparse(rows, {
     columns: headers,
@@ -68,7 +70,8 @@ export async function saveCsvFile(csvType, csvFile) {
     window._csvCache = window._csvCache || {};
     window._csvCache[url] = rows;
 
-    alert("CSV を保存しました（S3 に全書き換え）");
+    // ★ alert → モーダルに置き換え
+    updateSaveModal("CSV の保存が完了しました。サマリー更新を待っています…");
 
     // ------------------------------
     // 5. ★ サマリー更新（本丸）
@@ -76,7 +79,6 @@ export async function saveCsvFile(csvType, csvFile) {
     console.log("=== summary update START ===");
 
     if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
-      // ★ 全 plantingRef を再計算（行削除にも完全対応）
       enqueueSummaryUpdate("*");
       console.log("summary target: ALL (*)");
     }
@@ -85,7 +87,7 @@ export async function saveCsvFile(csvType, csvFile) {
 
   } catch (e) {
     console.error("❌ saveLog error:", e);
-    alert("保存に失敗しました（Console を確認してください）");
+    updateSaveModal("保存に失敗しました（Console を確認してください）");
   }
 
   console.log("=== saveCsvFile END ===");
