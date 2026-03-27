@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>農業OS：次の進化ロードマップ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/style.css?v=1">
+</head>
+
+<body>
+
+<h1>農業OS：次の進化ロードマップ</h1>
+
+<div class="card">
+  <h2>1. 管理作業ログ（施肥・防除）</h2>
+  <p>経営改善・補助金・圃場分析の中心となる最重要領域。</p>
+
+  <h3>● 必要なログ</h3>
+  <ul>
+    <li>施肥：肥料種類・量・時期・担当者・コスト</li>
+    <li>防除：農薬種類・希釈倍率・散布量・時期・担当者</li>
+  </ul>
+
+  <h3>● 圃場分析ページに追加するカード</h3>
+  <ul>
+    <li>施肥履歴</li>
+    <li>防除履歴</li>
+    <li>施肥量 × 反収の散布図</li>
+    <li>防除回数 × 反収の散布図</li>
+  </ul>
+
+  <h3>● 得られる価値</h3>
+  <ul>
+    <li>補助金申請の強化</li>
+    <li>肥料・農薬コストの最適化</li>
+    <li>病害虫リスクの可視化</li>
+    <li>反収改善の根拠が揃う</li>
+  </ul>
+</div>
+
+
+<div class="card">
+  <h2>2. 育苗管理（播種 → 定植 → 収穫）</h2>
+  <p>技術の見える化と、品種 × 圃場 × 育苗の相性分析の基盤。</p>
+
+  <h3>● 必要なデータ構造</h3>
+  <ul>
+    <li>seedRef（品種・ロット）</li>
+    <li>trayCount（トレイ数）</li>
+    <li>sowingDate（播種日）</li>
+    <li>germinationRate（発芽率）</li>
+    <li>transplantDate（定植日）</li>
+    <li>transplantRef（どの plantingRef に紐づくか）</li>
+  </ul>
+
+  <h3>● リンク先</h3>
+  <ul>
+    <li>varieties-detail.json</li>
+    <li>plantingRef（圃場 × 品種 × 年度）</li>
+    <li>収穫サマリー（反収）</li>
+  </ul>
+
+  <h3>● 圃場分析ページに追加するカード</h3>
+  <ul>
+    <li>播種ログ</li>
+    <li>育苗 → 定植 → 収穫の流れ</li>
+    <li>育苗日数 × 反収の散布図</li>
+  </ul>
+</div>
+
+
+<div class="card">
+  <h2>3. 品種サマリー分析（varieties-detail.json）</h2>
+  <p>作付け計画の意思決定エンジン。</p>
+
+  <h3>● 新規ファイル案</h3>
+  <pre>{
+  "TEMPLATE_VARIETY": {
+    "name": "",
+    "type": "",
+    "seedCost": "",
+    "notes": ""
+  },
+  "品種A": {
+    "name": "品種A",
+    "type": "早生",
+    "seedCost": 1200,
+    "notes": "高温に強い"
+  }
+}</pre>
+
+  <h3>● 品種分析ページで見たい情報</h3>
+  <ul>
+    <li>品種ごとの反収</li>
+    <li>品種ごとの安定性（標準偏差）</li>
+    <li>品種ごとの利益（反収 × 単価）</li>
+    <li>品種 × 圃場の相性</li>
+    <li>品種 × 面積の限界</li>
+  </ul>
+
+  <h3>● 散布図（品種版）</h3>
+  <ul>
+    <li>横軸：作付面積</li>
+    <li>縦軸：反収</li>
+    <li>点：圃場</li>
+    <li>色：品種</li>
+    <li>クリック：analysis/?field=◯◯</li>
+  </ul>
+</div>
+
+
+<div class="card">
+  <h2>4. 散布図（面積 × 反収）</h2>
+  <p>経営判断の地図になる可視化ツール。</p>
+
+  <h3>● 圃場版</h3>
+  <ul>
+    <li>横軸：作付面積</li>
+    <li>縦軸：反収</li>
+    <li>点：plantingRef</li>
+    <li>色：品種</li>
+    <li>クリック：圃場分析へ</li>
+  </ul>
+
+  <h3>● 品種版</h3>
+  <ul>
+    <li>横軸：面積</li>
+    <li>縦軸：反収</li>
+    <li>点：圃場</li>
+    <li>色：品種</li>
+  </ul>
+</div>
+
+
+<div class="card">
+  <h2>5. 天候・積算温度 × 収穫サマリー</h2>
+  <p>生育予測の基礎データ。</p>
+
+  <h3>● 必要なデータ</h3>
+  <ul>
+    <li>日別気温</li>
+    <li>積算温度</li>
+    <li>降水量</li>
+    <li>日照時間</li>
+    <li>収穫日</li>
+    <li>反収</li>
+  </ul>
+
+  <h3>● 分析できること</h3>
+  <ul>
+    <li>積算温度と収穫日の関係</li>
+    <li>積算温度と反収の関係</li>
+    <li>気象条件と品種の相性</li>
+    <li>異常気象時の反収低下パターン</li>
+  </ul>
+</div>
+
+
+<div class="card">
+  <h2>6. NARO（農研機構）生育モデル</h2>
+  <p>OS の AI 化の入口。</p>
+
+  <h3>● できること</h3>
+  <ul>
+    <li>生育ステージの予測</li>
+    <li>病害虫リスクの予測</li>
+    <li>収穫日の予測</li>
+    <li>反収の予測</li>
+  </ul>
+
+  <h3>● OS に統合すると</h3>
+  <ul>
+    <li>「あと◯日で収穫」</li>
+    <li>「今週の施肥タイミング」</li>
+    <li>「病害虫リスク：高」</li>
+    <li>「予測収量：◯kg」</li>
+  </ul>
+</div>
+
+
+<div class="card">
+  <h2>優先順位（収益 × 補助金の軸）</h2>
+  <ol>
+    <li>施肥・防除ログ（管理作業ログ）</li>
+    <li>育苗管理（播種 → 定植 → 収穫）</li>
+    <li>品種サマリー分析（varieties-detail.json）</li>
+    <li>天候・積算温度 × 収穫サマリー</li>
+    <li>NARO 生育モデル</li>
+  </ol>
+</div>
+
+</body>
+</html>
