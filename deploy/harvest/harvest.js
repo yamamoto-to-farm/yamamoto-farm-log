@@ -264,6 +264,9 @@ async function saveHarvestInner() {
     `作業者: ${data.worker}\n` +
     `備考: ${data.issue || "なし"}`
   );
+  
+  setTimeout(() => location.reload(), 300);
+
 }
 
 window.saveHarvest = saveHarvestInner;

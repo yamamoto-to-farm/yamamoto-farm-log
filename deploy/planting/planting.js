@@ -381,7 +381,10 @@ async function savePlantingInner() {
 
   await saveLog("planting", dateStr, { plantingRef }, csvLine + "\n");
 
-  alert("GitHubに保存しました");
+  alert("保存");
+
+  setTimeout(() => location.reload(), 300);
+
 }
 
 window.savePlanting = savePlantingInner;

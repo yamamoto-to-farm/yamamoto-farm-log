@@ -334,26 +334,26 @@ async function saveShipping() {
 
   targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
 
-  let msg = "出荷ログを保存しました\n\n";
+let msg = "出荷ログを保存しました\n\n";
 
-  targets.forEach(t => {
-    const shippedBins = t.originalRemain - t.remainBins;
-
-    msg +=
-      `定植: ${t.plantingRef}\n` +
-      `圃場: ${t.field}\n` +
-      `出荷基数: ${shippedBins} 基\n` +
-      `重量: ${t.totalWeight.toFixed(1)} kg\n\n`;
-  });
+targets.forEach(t => {
+  const shippedBins = t.originalRemain - t.remainBins;
 
   msg +=
+    `定植: ${t.plantingRef}\n` +
     `出荷日: ${shippingDate}\n` +
+    `圃場: ${t.field}\n` +
+    `出荷基数: ${shippedBins} 基\n` +
+    `重量: ${t.totalWeight.toFixed(1)} kg\n` +
     `作業者: ${cleanHuman}\n` +
-    `備考: ${notes || "なし"}`;
+    `備考: ${notes || "なし"}\n\n`;
+});
 
-  alert(msg);
+alert(msg);
 
   console.log("=== saveShipping: replace 保存完了 ===");
+  setTimeout(() => location.reload(), 300);
+
 }
 
 window.saveShipping = saveShipping;
