@@ -76,21 +76,9 @@ export async function saveCsvFile(csvType, csvFile) {
     console.log("=== summary update START ===");
 
     if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
-
-      // 1) plantingRef を全部抽出
-      const plantingRefs = rows
-        .map(r => r.plantingRef)
-        .filter(ref => ref && ref.trim() !== "");
-
-      // 2) 重複排除
-      const uniqueRefs = [...new Set(plantingRefs)];
-
-      console.log("summary targets:", uniqueRefs);
-
-      // 3) それぞれサマリー更新キューに投入
-      for (const ref of uniqueRefs) {
-        enqueueSummaryUpdate(ref);
-      }
+      // ★ 全 plantingRef を再計算（行削除にも完全対応）
+      enqueueSummaryUpdate("*");
+      console.log("summary target: ALL (*)");
     }
 
     console.log("=== summary update ENQUEUED ===");
