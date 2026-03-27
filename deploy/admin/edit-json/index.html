@@ -3,24 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <title>管理データ編集（JSON）</title>
-  <link rel="stylesheet" href="/common/style.css">
-  <script type="module" src="./edit-json.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- ★ ナビバー -->
+  <script type="module">
+    import { renderNavbar } from "/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
 </head>
 
 <body>
 
-  <div class="page-header">
-    <h1 id="page-title">管理データ編集（JSON）</h1>
-    <div id="page-subtitle" class="page-subtitle"></div>
-  </div>
+  <!-- タイトル（analysis と同じ構成） -->
+  <h1 id="page-title">管理データ編集（JSON）</h1>
+  <div id="page-subtitle" class="page-subtitle"></div>
 
-  <main id="edit-container">
-    <!-- 
-      edit-json.js がここにカードを差し込む。
-      data パラメータが無い場合は「編集可能な JSON 一覧」を表示。
-      data パラメータがある場合は card-edit-〇〇.js を読み込んで編集画面を表示。
-    -->
-  </main>
+  <!-- ★ ハブ or 編集カード -->
+  <div id="edit-container"></div>
+
+  <!-- 戻るボタン（analysis と同じ位置・同じ UI） -->
+  <button class="primary-btn" onclick="location.href='/admin/index.html'">
+    管理ページに戻る
+  </button>
+
+  <!-- 認証チェック & メイン処理 -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { initEditJson } from "./edit-json.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+
+      // 認証チェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // admin のみ
+      if (window.currentRole !== "admin") {
+        alert("このページは管理者のみ利用できます");
+        location.href = "/admin/index.html";
+        return;
+      }
+
+      // ★ メイン処理（analysis と同じ構造）
+      initEditJson();
+    });
+  </script>
 
 </body>
 </html>
