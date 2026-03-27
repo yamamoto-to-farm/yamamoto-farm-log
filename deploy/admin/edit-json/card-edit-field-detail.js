@@ -12,6 +12,14 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
     return;
   }
 
+  /* ----------------------------------------
+     ★ 圃場名入りタイトルに変更（analysis と統一）
+  ---------------------------------------- */
+  const title = document.getElementById("page-title");
+  if (title) {
+    title.textContent = `管理データ編集（${fieldName}）`;
+  }
+
   const TEMPLATE = json["TEMPLATE_FIELD"];
   const data = json[fieldName] ? json[fieldName] : { ...TEMPLATE };
 
@@ -123,9 +131,9 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
 }
 
 
-// ============================
-// parcels 行テンプレート
-// ============================
+/* ============================
+   parcels 行テンプレート
+============================ */
 function renderParcelRow(p) {
   return `
     <div class="parcel-row">
@@ -139,9 +147,9 @@ function renderParcelRow(p) {
 }
 
 
-// ============================
-// contracts 行テンプレート
-// ============================
+/* ============================
+   contracts 行テンプレート
+============================ */
 function renderContractRow(c) {
   return `
     <div class="contract-row">
@@ -154,9 +162,9 @@ function renderContractRow(c) {
 }
 
 
-// ============================
-// 保存処理（全文更新＋保存モーダル）
-// ============================
+/* ============================
+   保存処理（全文更新＋保存モーダル）
+============================ */
 async function saveFieldDetail(dataName, fieldName) {
 
   const size = document.getElementById("size").value;
