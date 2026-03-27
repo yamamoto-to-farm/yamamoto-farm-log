@@ -1,5 +1,8 @@
 // common/save/index.js
 
+import { showSaveModal, updateSaveModal, completeSaveModal }
+  from "../save-modal.js?v=2026031418";
+
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const APPEND_URL  = "https://kv4z4gjnq9.execute-api.ap-northeast-1.amazonaws.com/prod/append";
 
@@ -26,13 +29,16 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
   dbg("=== saveLog START ===");
   dbg("payload:", payload);
 
+  // ★ 保存開始モーダル
+  showSaveModal("保存しています…");
+
   return saveToS3(payload);
 }
 
 async function saveToS3(payload) {
   dbg("=== saveToS3 START ===");
 
-  // append モード（専用 API）
+  // append モード
   if (payload.csv && payload.replaceCsv === "") {
     dbg("mode: append");
 
@@ -51,6 +57,10 @@ async function saveToS3(payload) {
     if (!res.ok) throw new Error("append failed");
 
     dbg("=== saveToS3 END (append) ===");
+
+    // ★ 保存完了モーダル
+    completeSaveModal("保存が完了しました");
+
     return;
   }
 
@@ -87,7 +97,7 @@ async function saveToS3(payload) {
       });
     }
 
-    // CSV 全書き換え（replaceCsv）
+    // CSV 全書き換え
     if (payload.replaceCsv !== "") {
       const key = `logs/${payload.type}/all.csv`;
       dbg("CSV file:", key);
@@ -123,7 +133,6 @@ async function saveToS3(payload) {
     dbg("---- PUT request ----");
     dbg("PUT to:", url);
 
-    // ★ Content-Type を送らない（署名と一致させるため）
     const putRes = await fetch(url, {
       method: "PUT",
       body: file.content
@@ -139,6 +148,9 @@ async function saveToS3(payload) {
   }
 
   dbg("=== saveToS3 END ===");
+
+  // ★ 保存完了モーダル
+  completeSaveModal("保存が完了しました");
 }
 
 function guessType(path) {

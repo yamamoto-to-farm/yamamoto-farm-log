@@ -76,6 +76,18 @@
 
   </div><!-- /form-area -->
 
+
+  <!-- ★★★★★ 追加：共通保存モーダルの読み込み ★★★★★ -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
+
 </body>
 
 </html>

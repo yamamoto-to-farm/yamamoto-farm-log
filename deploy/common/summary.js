@@ -6,10 +6,14 @@ import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
 import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 
+// ★ 追加：汎用保存モーダル
+import { showSaveModal, updateSaveModal, completeSaveModal }
+  from "./save-modal.js?v=2026031418";
+
 /* ---------------------------------------------------------
    0. デバッグフラグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = false;   // ★ デバッグOFF
+const SUMMARY_DEBUG = false;
 
 function slog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
@@ -43,7 +47,7 @@ export function invalidateSummaryCache(type) {
 }
 
 /* ---------------------------------------------------------
-   3. CSV 読み込み（CloudFront 絶対パス）
+   3. CSV 読み込み
 --------------------------------------------------------- */
 
 const S3_BASE = "https://yamamoto-farm-log.s3.ap-northeast-1.amazonaws.com";
@@ -101,12 +105,12 @@ async function loadIndexCached() {
 }
 
 /* ---------------------------------------------------------
-   4. サマリー更新キュー（デバッグ＋プール方式）
+   4. サマリー更新キュー
 --------------------------------------------------------- */
 window.summaryQueue = [];
 let summaryProcessing = false;
 
-// ★ サマリー更新中フラグ（多重アラート防止）
+// ★ サマリー更新中フラグ（多重表示防止）
 window._summaryUpdating = window._summaryUpdating || false;
 
 // ★ summary を一時保存するプール
@@ -123,10 +127,10 @@ async function processSummaryQueue() {
   if (summaryProcessing) return;
   summaryProcessing = true;
 
-  // ★ サマリー更新開始アラート（最初の1回だけ）
+  // ★ サマリー更新開始（alert → モーダル）
   if (!window._summaryUpdating) {
     window._summaryUpdating = true;
-    alert("サマリーを更新しています。少しお待ちください…");
+    showSaveModal("サマリーを更新しています…");
   }
 
   slog("QUEUE START:", window.summaryQueue);
@@ -155,7 +159,7 @@ async function processSummaryQueue() {
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate（デバッグ＋プール方式）
+   5. summaryUpdate
 --------------------------------------------------------- */
 export async function summaryUpdate(plantingRef) {
   slog(">>> summaryUpdate START:", plantingRef);
@@ -260,15 +264,15 @@ export async function flushSummaryPool() {
 
   window._summaryPool = {};
 
-  // ★ サマリー更新完了アラート
+  // ★ サマリー更新完了（alert → モーダル）
   if (window._summaryUpdating) {
     window._summaryUpdating = false;
-    alert("サマリーの更新が完了しました。");
+    completeSaveModal("サマリーの更新が完了しました");
   }
 }
 
 /* ---------------------------------------------------------
-   6. 公開 API（イベントリスナーは一度だけ登録）
+   6. 公開 API
 --------------------------------------------------------- */
 window.summaryUpdate = summaryUpdate;
 window.enqueueSummaryUpdate = enqueueSummaryUpdate;
