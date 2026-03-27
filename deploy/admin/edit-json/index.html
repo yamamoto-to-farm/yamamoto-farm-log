@@ -5,10 +5,10 @@
   <title>管理データ編集（JSON）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン -->
+  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 
-  <!-- ★ ナビバー -->
+  <!-- ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
     renderNavbar();
@@ -20,13 +20,24 @@
   <h1 id="page-title">管理データ編集（JSON）</h1>
   <div id="page-subtitle" class="page-subtitle"></div>
 
-  <!-- ★ ハブ or 編集カード -->
+  <!-- ハブ or 編集カード -->
   <div id="edit-container"></div>
 
   <!-- 戻るボタン -->
   <button class="primary-btn" onclick="location.href='/admin/index.html'">
     管理ページに戻る
   </button>
+
+  <!-- ★★★★★ 共通保存モーダル ★★★★★ -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
 
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
@@ -46,7 +57,7 @@
         return;
       }
 
-      // ★ メイン処理（edit-json.js がルーター）
+      // ★ initEditJson を呼ぶのはここだけ（重複防止）
       initEditJson();
     });
   </script>

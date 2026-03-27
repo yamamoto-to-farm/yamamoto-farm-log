@@ -1,5 +1,6 @@
 // admin/edit-json/card-edit-field-detail.js
 import { loadJSON, saveJSON } from "/common/json.js?v=2026031418";
+import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=2026031418";
 
 export function renderEditCard({ dataName, fieldName, json, container }) {
 
@@ -135,7 +136,7 @@ function renderContractRow(c) {
 
 
 // ============================
-// 保存処理（全文更新）
+// 保存処理（全文更新＋保存モーダル）
 // ============================
 async function saveFieldDetail(dataName, fieldName) {
 
@@ -164,9 +165,9 @@ async function saveFieldDetail(dataName, fieldName) {
     contracts
   };
 
-  // ============================
-  // ★ JSON 全体更新（replace-json.js 不要）
-  // ============================
+  // ★ 保存モーダル開始
+  showSaveModal("保存しています…");
+
   const fileName = `${dataName}.json`;
 
   const current = await loadJSON(`/data/${fileName}`);
@@ -174,6 +175,10 @@ async function saveFieldDetail(dataName, fieldName) {
 
   await saveJSON(`data/${fileName}`, current);
 
-  alert("保存しました");
-  location.href = `/analysis/?field=${encodeURIComponent(fieldName)}`;
+  // ★ 保存完了モーダル
+  completeSaveModal("保存が完了しました");
+
+  setTimeout(() => {
+    location.href = `/analysis/?field=${encodeURIComponent(fieldName)}`;
+  }, 800);
 }
