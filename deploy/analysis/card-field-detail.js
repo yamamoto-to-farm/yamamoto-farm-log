@@ -62,20 +62,27 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
           }
         </div>
 
-        <!-- ★ 空データの場合だけ追加表示 -->
+        <!-- ★ 編集ボタン or 初期作成ボタン -->
         ${
           isEmpty
             ? `
           <div class="info-line">この圃場の基本データは登録されていません。</div>
 
           <button class="primary-btn"
-            onclick="location.href='/admin/edit-json/?field=${encodeURIComponent(
+            onclick="location.href='/admin/edit-json/?data=field-detail&field=${encodeURIComponent(
               fieldName
             )}'">
             基本情報を作成
           </button>
         `
-            : ""
+            : `
+          <button class="secondary-btn"
+            onclick="location.href='/admin/edit-json/?data=field-detail&field=${encodeURIComponent(
+              fieldName
+            )}'">
+            編集する
+          </button>
+        `
         }
 
       </div>
