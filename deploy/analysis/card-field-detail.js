@@ -24,22 +24,37 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
         <div class="info-block">
           <div class="info-block-title">【筆情報】</div>
-          ${data.parcels.map(p => `
+
+          ${data.parcels
+            .map(
+              p => `
             <div class="info-line">
-              ${p.lotNumber}（${p.landCategory} / ${p.officialArea} / ${p.owner} / ${p.rightType}）
+              【筆番号】${p.lotNumber}　
+              【地目】${p.landCategory}　
+              【公簿面積】${p.officialArea}㎡　
+              【所有者】${p.owner}　
+              【権利】${p.rightType}
             </div>
-          `).join("")}
+          `
+            )
+            .join("")}
         </div>
 
         <!-- ★ 空データの場合だけ追加表示 -->
-        ${isEmpty ? `
+        ${
+          isEmpty
+            ? `
           <div class="info-line">この圃場の基本データは登録されていません。</div>
 
           <button class="primary-btn"
-            onclick="location.href='/admin/edit-json/?field=${encodeURIComponent(fieldName)}'">
+            onclick="location.href='/admin/edit-json/?field=${encodeURIComponent(
+              fieldName
+            )}'">
             基本情報を作成
           </button>
-        ` : ""}
+        `
+            : ""
+        }
 
       </div>
     </div>
