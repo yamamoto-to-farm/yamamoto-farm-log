@@ -21,11 +21,11 @@ try {
 // ===============================
 // チェック順管理
 // ===============================
-let checkedOrder = [];   // 例: ["2025-02-10_ABC123", "2025-02-10_DEF456"]
+let checkedOrder = [];
 
 
 // ===============================
-// 初期化（認証後に index.html から呼ばれる）
+// 初期化
 // ===============================
 export function initShippingPage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -36,7 +36,7 @@ export function initShippingPage() {
 
 
 // ===============================
-// ★ CSV 読み込み（ヘッダー対応版 + デバッグ）
+// ★ CSV 読み込み（壊れたヘッダー修正版）
 // ===============================
 async function loadCSV(url) {
   console.log("[loadCSV] 読み込み開始:", url);
@@ -45,24 +45,27 @@ async function loadCSV(url) {
     const res = await fetch(url + "?ts=" + Date.now());
     const text = await res.text();
 
-    console.log("[loadCSV] 生テキスト:", text);
-
-    if (!text.trim()) {
-      console.log("[loadCSV] 空ファイル → []");
-      return [];
-    }
+    if (!text.trim()) return [];
 
     const lines = text.trim().split("\n");
-    const headers = lines[0].split(",");
+
+    // ★ ヘッダーのダブルクォート・空白を除去
+    const headers = lines[0]
+      .split(",")
+      .map(h => h.replace(/["\s]/g, ""));
 
     const rows = lines.slice(1).map(line => {
       const cols = line.split(",");
       const obj = {};
-      headers.forEach((h, i) => obj[h] = cols[i] || "");
+      headers.forEach((h, i) => {
+        let v = cols[i] || "";
+        // ★ 値のダブルクォートも除去
+        v = v.replace(/^"+|"+$/g, "").trim();
+        obj[h] = v;
+      });
       return obj;
     });
 
-    console.log("[loadCSV] パース結果:", rows);
     return rows;
 
   } catch (e) {
@@ -73,53 +76,34 @@ async function loadCSV(url) {
 
 
 // ===============================
-// 未計量の収穫（shippingDate × plantingRef）
+// 未計量の収穫
 // ===============================
 async function loadUnshipped() {
-  console.log("=== loadUnshipped 開始 ===");
-
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const weight = await loadCSV("../logs/weight/all.csv");
 
-  console.log("[loadUnshipped] harvest:", harvest);
-  console.log("[loadUnshipped] weight:", weight);
-
   const harvestMap = {};
   harvest.forEach(row => {
-    const shippingDate = row.shippingDate;
-    const plantingRef = row.plantingRef;
-    const field = row.field;
-
+    const key = row.shippingDate + "_" + row.plantingRef;
     const bins = Number(row.amount) || 0;
-
-    const key = shippingDate + "_" + plantingRef;
+    const field = row.field;
 
     if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
     harvestMap[key].bins += bins;
   });
 
-  console.log("[loadUnshipped] harvestMap:", harvestMap);
-
   const weightMap = {};
   weight.forEach(row => {
-    const shippingDate = row.shippingDate;
-    const plantingRef = row.plantingRef;
+    const key = row.shippingDate + "_" + row.plantingRef;
     const bins = Number(row.bins) || 0;
-
-    const key = shippingDate + "_" + plantingRef;
-
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
-
-  console.log("[loadUnshipped] weightMap:", weightMap);
 
   const unshipped = [];
   Object.keys(harvestMap).forEach(key => {
     const harvested = harvestMap[key].bins;
     const shipped = weightMap[key] || 0;
     const remain = harvested - shipped;
-
-    console.log(`[loadUnshipped] key=${key} harvested=${harvested} shipped=${shipped} remain=${remain}`);
 
     if (remain > 0) {
       unshipped.push({
@@ -131,8 +115,6 @@ async function loadUnshipped() {
       });
     }
   });
-
-  console.log("[loadUnshipped] 未計量候補:", unshipped);
 
   const area = document.getElementById("unshippedArea");
   area.innerHTML = "";
@@ -155,8 +137,6 @@ async function loadUnshipped() {
 
     area.appendChild(div);
   });
-
-  console.log("=== loadUnshipped 終了 ===");
 }
 
 
@@ -201,17 +181,7 @@ function parseWeights(raw) {
 
 
 // ===============================
-// 必要回数（2基単位）
-// ===============================
-function calcRequiredCount(remainBins) {
-  const full = Math.floor(remainBins / 2);
-  const hasFraction = (remainBins % 2) > 0;
-  return full + (hasFraction ? 1 : 0);
-}
-
-
-// ===============================
-// 重量割当（2基単位・端数処理）
+// 重量割当
 // ===============================
 function allocateWeights(targets, weights) {
   for (let W of weights) {
@@ -234,7 +204,7 @@ function allocateWeights(targets, weights) {
 
 
 // ===============================
-// ★ shipping 専用の重複チェック
+// 重複チェック
 // ===============================
 async function checkShippingDuplicate(shippingDate, targets) {
   const weight = await loadCSV("../logs/weight/all.csv");
@@ -259,13 +229,16 @@ async function checkShippingDuplicate(shippingDate, targets) {
 
 
 // ===============================
-// ★ 保存処理（replace 方式）
+// ★ 保存処理（replace 方式 + human 正規化）
 // ===============================
 async function saveShipping() {
   const shippingDate = document.getElementById("shippingDate").value;
   const notes = document.getElementById("notes").value;
   const machine = getMachineParam();
-  const human = window.currentHuman || "";
+
+  // ★ human を完全正規化（クォート除去）
+  const rawHuman = window.currentHuman || "";
+  const cleanHuman = rawHuman.replace(/"/g, "").trim();
 
   if (checkedOrder.length === 0) {
     alert("対象を選択してください");
@@ -279,11 +252,9 @@ async function saveShipping() {
     return;
   }
 
-  // ★ 最新の harvest / weight を読み込む
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const weight = await loadCSV("../logs/weight/all.csv");
 
-  // ★ harvestMap / weightMap を作成
   const harvestMap = {};
   harvest.forEach(row => {
     const key = row.shippingDate + "_" + row.plantingRef;
@@ -301,7 +272,6 @@ async function saveShipping() {
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
-  // ★ shipping 対象を作成
   const targets = checkedOrder.map(key => {
     const harvested = harvestMap[key].bins;
     const shipped = weightMap[key] || 0;
@@ -317,25 +287,20 @@ async function saveShipping() {
     };
   });
 
-  // ★ 重複チェック
   const dup = await checkShippingDuplicate(shippingDate, targets);
   if (!dup.ok) {
     alert(dup.message);
     return;
   }
 
-  // ★ 重量割当
   allocateWeights(targets, weightList);
 
   // ===============================
-  // ★ weight/all.csv を replace 方式で保存
+  // ★ weight/all.csv を replace 保存
   // ===============================
-
-  // 1. 既存 weight/all.csv を読み込む
   let rows = [];
   if (weight.length > 0) rows = weight;
 
-  // 2. 新しい行を rows に追加
   targets.forEach(t => {
     const shippedBins = t.originalRemain - t.remainBins;
 
@@ -347,22 +312,28 @@ async function saveShipping() {
       notes: notes.replace(/[\r\n,]/g, " "),
       plantingRef: t.plantingRef,
       machine,
-      human
+      human: cleanHuman   // ← ★ human を完全正規化して保存
     });
   });
 
-  // 3. CSV 再生成
-  const csvText = Papa.unparse(rows);
+  // ★ ヘッダーを強制指定（壊れたヘッダーを完全修正）
+  const csvText = Papa.unparse(rows, {
+    columns: [
+      "shippingDate",
+      "field",
+      "bins",
+      "totalWeight",
+      "notes",
+      "plantingRef",
+      "machine",
+      "human"
+    ]
+  });
 
-  // 4. replace 保存
   await saveLog("weight", "all", {}, "", csvText, "csv-replace");
 
-  // 5. summaryUpdate（plantingRef を直接渡す）
   targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
 
-  // ===============================
-  // ★ 完了メッセージ
-  // ===============================
   let msg = "出荷ログを保存しました\n\n";
 
   targets.forEach(t => {
@@ -377,7 +348,7 @@ async function saveShipping() {
 
   msg +=
     `出荷日: ${shippingDate}\n` +
-    `作業者: ${human}\n` +
+    `作業者: ${cleanHuman}\n` +
     `備考: ${notes || "なし"}`;
 
   alert(msg);
