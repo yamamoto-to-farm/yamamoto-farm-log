@@ -1,6 +1,13 @@
 // admin/diary/card-common.js
-import { loadJSON } from "/common/json.js?v=2026031418";
+import {
+  createWorkerCheckboxes,
+  createFieldSelector,
+  autoDetectField,
+  getSelectedWorkers,
+  getFinalField
+} from "../common/ui.js";
 
+// ▼ 共通カードの HTML
 export function renderCommonCard() {
   return `
     <div class="card" id="card-common">
@@ -15,7 +22,27 @@ export function renderCommonCard() {
       <div id="workers_box">読み込み中…</div>
 
       <h3>圃場（複数選択）</h3>
-      <div id="fields_box">読み込み中…</div>
+      <div id="fields_box">
+        <label>自動判定（推定）</label>
+        <input id="field_auto" class="form-input" readonly style="background:#fff3b0; font-weight:bold;">
+
+        <label style="margin-top:10px;">
+          <input type="checkbox" id="field_confirm">
+          この圃場で確定する
+        </label>
+
+        <hr style="margin: 15px 0;">
+
+        <label>エリア選択</label>
+        <select id="field_area" class="form-input">
+          <option value="">エリアを選択</option>
+        </select>
+
+        <label>圃場選択</label>
+        <select id="field_manual" class="form-input">
+          <option value="">エリアを選んでください</option>
+        </select>
+      </div>
 
       <h3>天候</h3>
       <select id="weather" class="form-input">
@@ -32,32 +59,13 @@ export function renderCommonCard() {
   `;
 }
 
-// ★★★ これが無いとエラーになる ★★★
+// ▼ 共通カードの初期化（harvest と同じ）
 export async function initCommonCard() {
-  await loadWorkers();
-  await loadFields();
-}
+  createWorkerCheckboxes("workers_box");
+  await createFieldSelector("field_auto", "field_area", "field_manual");
+  autoDetectField("field_auto", "field_area", "field_manual");
 
-async function loadWorkers() {
-  const box = document.getElementById("workers_box");
-  const workers = await loadJSON("/data/workers.json");
-
-  box.innerHTML = workers.map(w => `
-    <label class="check-line">
-      <input type="checkbox" value="${w}">
-      ${w}
-    </label>
-  `).join("");
-}
-
-async function loadFields() {
-  const box = document.getElementById("fields_box");
-  const fields = await loadJSON("/data/fields.json");
-
-  box.innerHTML = fields.map(f => `
-    <label class="check-line">
-      <input type="checkbox" value="${f.field}">
-      ${f.field}
-    </label>
-  `).join("");
+  // 今日の日付をセット
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("workDate").value = today;
 }

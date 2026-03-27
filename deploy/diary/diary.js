@@ -1,88 +1,78 @@
 // admin/diary/diary.js
 import { verifyLocalAuth } from "../common/ui.js";
 
-// ▼ カードモジュール
 import { renderCommonCard, initCommonCard } from "./card-common.js";
-import { renderWorkTypeCard } from "./card-worktype.js";
 import { renderFertilizerCard } from "./card-fertilizer.js";
 import { renderPesticideCard } from "./card-pesticide.js";
 import { renderOtherCard } from "./card-other.js";
 
-window.addEventListener("DOMContentLoaded", async () => {
+// ▼ 一覧ページ（analysis/index と同じ思想）
+function renderWorkTypeList() {
+  return `
+    <div class="card">
+      <h2>作業種別を選択</h2>
+      <ul class="link-list">
+        <li><a href="?type=fertilizer">施肥</a></li>
+        <li><a href="?type=pesticide">防除</a></li>
+        <li><a href="?type=other">その他作業</a></li>
+      </ul>
+    </div>
+  `;
+}
 
-  // ▼ 認証チェック
-  const ok = await verifyLocalAuth();
-  if (!ok) return;
-
-  const container = document.getElementById("diary-container");
+export async function initDiaryPage() {
+  const container = document.getElementById("page-area");
 
   // ▼ URL パラメータ取得
   const params = new URLSearchParams(location.search);
-  const typeParam = params.get("type");     // fertilizer / pesticide / other
-  const fieldParam = params.get("field");   // 圃場名
-  const workerParam = params.get("worker"); // 作業者名
+  const type = params.get("type");
+  const fieldParam = params.get("field");
 
-  // ------------------------------------------------------------
-  // ① 共通カードを差し込む
-  // ------------------------------------------------------------
+  // ▼ 認証（ログインユーザー名）
+  const ok = await verifyLocalAuth();
+  if (!ok) return;
+
+  const user = localStorage.getItem("user");
+
+  // ===============================
+  // ① パラメータなし → 一覧ページ
+  // ===============================
+  if (!type) {
+    container.innerHTML = renderWorkTypeList();
+    return;
+  }
+
+  // ===============================
+  // ② パラメータあり → 専用ページ
+  // ===============================
+  container.innerHTML = "";
+
+  // ▼ 共通カード
   container.insertAdjacentHTML("beforeend", renderCommonCard());
-  await initCommonCard(); // 作業者・圃場の読み込み
+  await initCommonCard();
 
-  // ------------------------------------------------------------
-  // ② 作業種別カードを差し込む
-  // ------------------------------------------------------------
-  container.insertAdjacentHTML("beforeend", renderWorkTypeCard());
-
-  // ▼ 種別選択イベント
-  document.getElementById("workType").addEventListener("change", (e) => {
-    openWorkTypeCard(e.target.value, container);
-  });
-
-  // ------------------------------------------------------------
-  // ③ URL パラメータで専用カードを自動展開
-  // ------------------------------------------------------------
-  if (typeParam) {
-    openWorkTypeCard(typeParam, container);
-
-    // ▼ UI の select も同期
-    const select = document.getElementById("workType");
-    if (select) select.value = typeParam;
-  }
-
-  // ------------------------------------------------------------
-  // ④ 圃場の自動選択（?field=〇〇）
-  // ------------------------------------------------------------
-  if (fieldParam) {
-    const boxes = document.querySelectorAll("#fields_box input[type=checkbox]");
-    boxes.forEach(b => {
-      if (b.value === fieldParam) b.checked = true;
-    });
-  }
-
-  // ------------------------------------------------------------
-  // ⑤ 作業者の自動選択（?worker=〇〇）
-  // ------------------------------------------------------------
-  if (workerParam) {
+  // ▼ ログインユーザーを自動選択
+  if (user) {
     const boxes = document.querySelectorAll("#workers_box input[type=checkbox]");
     boxes.forEach(b => {
-      if (b.value === workerParam) b.checked = true;
+      if (b.value === user) b.checked = true;
     });
   }
-});
 
+  // ▼ 圃場の自動選択（URL → GPS → 手動）
+  if (fieldParam) {
+    const areaSel = document.getElementById("field_area");
+    const manualSel = document.getElementById("field_manual");
 
-// ------------------------------------------------------------
-// 専用カードを開く関数（URL でも select でも共通）
-// ------------------------------------------------------------
-function openWorkTypeCard(type, container) {
+    // エリアと圃場を探して選択
+    [...manualSel.options].forEach(opt => {
+      if (opt.value === fieldParam) {
+        manualSel.value = fieldParam;
+      }
+    });
+  }
 
-  // 既存の専用カードを削除
-  ["card-fertilizer", "card-pesticide", "card-other"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  });
-
-  // ▼ 種別ごとにカードを差し込む
+  // ▼ 作業種別ごとのカード
   if (type === "fertilizer") {
     container.insertAdjacentHTML("beforeend", renderFertilizerCard());
   }
