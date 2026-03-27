@@ -18,17 +18,12 @@ export async function initAnalysisPage() {
   =============================== */
   const detail = await loadJSON("/data/field-detail.json");
 
-  // ★ JSON 内のテンプレートを取得
-  const TEMPLATE_FIELD = detail["TEMPLATE_FIELD"];
-
-  // ★ 圃場データが無い場合はテンプレートを使用
-  const fieldData = detail[rawFieldName]
-    ? detail[rawFieldName]
-    : { ...TEMPLATE_FIELD, __empty: true, field: rawFieldName };
+  // ★ 圃場データ（存在しない場合は undefined のまま渡す）
+  const fieldData = detail[rawFieldName];
 
   container.insertAdjacentHTML(
     "beforeend",
-    renderFieldDetailCard(fieldData)
+    renderFieldDetailCard(fieldData, rawFieldName, detail["TEMPLATE_FIELD"])
   );
 
   /* ===============================
@@ -48,5 +43,4 @@ export async function initAnalysisPage() {
       body.style.display = isOpen ? "none" : "block";
     });
   });
-  
 }
