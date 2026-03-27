@@ -164,6 +164,7 @@ async function saveFieldDetail(dataName, fieldName) {
     contracts
   };
 
+
   // ★ dataName を使うように修正
   await replaceJson(`${dataName}.json`, fieldName, newData);
 
