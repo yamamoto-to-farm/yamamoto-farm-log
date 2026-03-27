@@ -17,14 +17,13 @@
 
 <body>
 
-  <!-- タイトル（analysis と同じ構成） -->
   <h1 id="page-title">管理データ編集（JSON）</h1>
   <div id="page-subtitle" class="page-subtitle"></div>
 
   <!-- ★ ハブ or 編集カード -->
   <div id="edit-container"></div>
 
-  <!-- 戻るボタン（analysis と同じ位置・同じ UI） -->
+  <!-- 戻るボタン -->
   <button class="primary-btn" onclick="location.href='/admin/index.html'">
     管理ページに戻る
   </button>
@@ -47,7 +46,7 @@
         return;
       }
 
-      // ★ メイン処理（analysis と同じ構造）
+      // ★ メイン処理（edit-json.js がルーター）
       initEditJson();
     });
   </script>
