@@ -23,12 +23,12 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
       <h2>基本情報</h2>
 
       <div class="edit-line">
-        <label>size</label>
+        <label>面積（size）</label>
         <input id="size" value="${data.size}">
       </div>
 
       <div class="edit-line">
-        <label>memo</label>
+        <label>メモ（memo）</label>
         <textarea id="memo">${data.memo}</textarea>
       </div>
     </div>
@@ -39,7 +39,17 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
   // ============================
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <h2>parcels</h2>
+      <h2>筆情報（parcels）</h2>
+
+      <!-- ★ ラベル行 -->
+      <div class="parcel-header">
+        <div>住所</div>
+        <div>公簿面積</div>
+        <div>所有者</div>
+        <div>権利</div>
+        <div>賃料</div>
+      </div>
+
       <div id="parcels-container"></div>
       <button id="add-parcel" class="secondary-btn">＋ 行追加</button>
     </div>
@@ -67,7 +77,16 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
   // ============================
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <h2>contracts</h2>
+      <h2>契約情報（contracts）</h2>
+
+      <!-- ★ ラベル行 -->
+      <div class="contract-header">
+        <div>開始日</div>
+        <div>終了日</div>
+        <div>賃料</div>
+        <div>備考</div>
+      </div>
+
       <div id="contracts-container"></div>
       <button id="add-contract" class="secondary-btn">＋ 行追加</button>
     </div>
