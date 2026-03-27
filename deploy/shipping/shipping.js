@@ -259,7 +259,7 @@ async function checkShippingDuplicate(shippingDate, targets) {
 
 
 // ===============================
-// ★ 保存処理（複数行をまとめて 1 回 saveLog）
+// ★ 保存処理（replace 方式）
 // ===============================
 async function saveShipping() {
   const shippingDate = document.getElementById("shippingDate").value;
@@ -279,14 +279,16 @@ async function saveShipping() {
     return;
   }
 
+  // ★ 最新の harvest / weight を読み込む
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const weight = await loadCSV("../logs/weight/all.csv");
 
+  // ★ harvestMap / weightMap を作成
   const harvestMap = {};
   harvest.forEach(row => {
     const key = row.shippingDate + "_" + row.plantingRef;
+    const bins = Number(row.amount) || 0;
     const field = row.field;
-    const bins = Number(row.amount) || 0;   // ★ amount を bins として扱う
 
     if (!harvestMap[key]) harvestMap[key] = { field, bins: 0 };
     harvestMap[key].bins += bins;
@@ -299,10 +301,12 @@ async function saveShipping() {
     weightMap[key] = (weightMap[key] || 0) + bins;
   });
 
+  // ★ shipping 対象を作成
   const targets = checkedOrder.map(key => {
     const harvested = harvestMap[key].bins;
     const shipped = weightMap[key] || 0;
     const remain = harvested - shipped;
+
     return {
       key,
       plantingRef: key.split("_")[1],
@@ -313,60 +317,52 @@ async function saveShipping() {
     };
   });
 
+  // ★ 重複チェック
   const dup = await checkShippingDuplicate(shippingDate, targets);
   if (!dup.ok) {
     alert(dup.message);
     return;
   }
 
+  // ★ 重量割当
   allocateWeights(targets, weightList);
-  const dateStr = shippingDate.replace(/-/g, "");
 
-  // ★ ここから：複数行をまとめて 1 回 saveLog
-  const lines = [];
+  // ===============================
+  // ★ weight/all.csv を replace 方式で保存
+  // ===============================
 
-  for (let t of targets) {
+  // 1. 既存 weight/all.csv を読み込む
+  let rows = [];
+  if (weight.length > 0) rows = weight;
+
+  // 2. 新しい行を rows に追加
+  targets.forEach(t => {
     const shippedBins = t.originalRemain - t.remainBins;
 
-    const csvLine = [
+    rows.push({
       shippingDate,
-      t.field,
-      shippedBins,
-      t.totalWeight,
-      notes.replace(/[\r\n,]/g, " "),
-      t.plantingRef,
+      field: t.field,
+      bins: shippedBins,
+      totalWeight: t.totalWeight,
+      notes: notes.replace(/[\r\n,]/g, " "),
+      plantingRef: t.plantingRef,
       machine,
       human
-    ].join(",");
-
-    console.log("[saveShipping] 送信する1行:", csvLine);
-    lines.push(csvLine);
-  }
-
-  const csvPayload = lines.join("\n") + "\n";
-
-  console.log("[saveShipping] まとめて送信するCSV:\n" + csvPayload);
-
-  await saveLog(
-    "weight",
-    dateStr,                                   // JSON のファイル名用（このままでOK）
-    { plantingRefs: targets.map(t => t.plantingRef) },
-    csvPayload
-  );
-
-  // ★ サマリー自動更新
-  // ★ 1秒遅らせて summaryUpdate を呼ぶ・さらに前回処理まで待つ（競合回避）
-  setTimeout(() => {
-    let delay = 0;
-    targets.forEach(t => {
-      setTimeout(() => {
-        enqueueSummaryUpdate(t.plantingRef);
-      }, delay);
-      delay += 3500;
     });
-  }, 1000);
+  });
 
-  // ★ 保存内容をサマリー風にダイアログ表示
+  // 3. CSV 再生成
+  const csvText = Papa.unparse(rows);
+
+  // 4. replace 保存
+  await saveLog("weight", "all", {}, "", csvText, "csv-replace");
+
+  // 5. summaryUpdate（plantingRef を直接渡す）
+  targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
+
+  // ===============================
+  // ★ 完了メッセージ
+  // ===============================
   let msg = "出荷ログを保存しました\n\n";
 
   targets.forEach(t => {
@@ -386,7 +382,7 @@ async function saveShipping() {
 
   alert(msg);
 
-  console.log("=== saveShipping: 全行送信完了 ===");
+  console.log("=== saveShipping: replace 保存完了 ===");
 }
 
 window.saveShipping = saveShipping;
