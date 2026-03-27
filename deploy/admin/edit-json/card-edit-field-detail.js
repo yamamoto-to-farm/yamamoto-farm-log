@@ -1,5 +1,5 @@
 // admin/edit-json/card-edit-field-detail.js
-import { replaceJson } from "/common/replace-json.js";
+import { loadJSON, saveJSON } from "/common/json.js?v=2026031418";
 
 export function renderEditCard({ dataName, fieldName, json, container }) {
 
@@ -135,7 +135,7 @@ function renderContractRow(c) {
 
 
 // ============================
-// 保存処理
+// 保存処理（全文更新）
 // ============================
 async function saveFieldDetail(dataName, fieldName) {
 
@@ -164,9 +164,15 @@ async function saveFieldDetail(dataName, fieldName) {
     contracts
   };
 
+  // ============================
+  // ★ JSON 全体更新（replace-json.js 不要）
+  // ============================
+  const fileName = `${dataName}.json`;
 
-  // ★ dataName を使うように修正
-  await replaceJson(`${dataName}.json`, fieldName, newData);
+  const current = await loadJSON(`/data/${fileName}`);
+  current[fieldName] = newData;
+
+  await saveJSON(`data/${fileName}`, current);
 
   alert("保存しました");
   location.href = `/analysis/?field=${encodeURIComponent(fieldName)}`;
