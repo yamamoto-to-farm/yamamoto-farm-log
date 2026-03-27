@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>作業日誌（Diary） - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ▼ OS 全体の CSS -->
+  <link rel="stylesheet" href="../common/style.css">
+</head>
+
+<body>
+
+  <!-- ▼ PIN UI は diary も不要。未認証なら index に戻す -->
+  <div id="form-area" style="display:none;">
+
+    <h1>作業日誌（Diary）</h1>
+
+    <!-- 作業日 -->
+    <div class="form-field">
+      <label for="workDate">作業日</label>
+      <input type="date" id="workDate" class="form-input">
+    </div>
+
+    <!-- 作業種別 -->
+    <h2>作業種別</h2>
+    <div class="card">
+      <select id="workType" class="form-input">
+        <option value="">選択してください</option>
+        <option value="fertilizer">施肥</option>
+        <option value="pesticide">防除</option>
+        <option value="other">その他作業</option>
+      </select>
+    </div>
+
+    <!-- 複数圃場選択 -->
+    <h2>対象圃場（複数選択）</h2>
+    <div class="card" id="fields_box">
+      <!-- JS でチェックボックスを生成 -->
+      読み込み中…
+    </div>
+
+    <!-- 資材入力（肥料・農薬） -->
+    <h2>使用資材</h2>
+    <div class="card">
+      <div class="form-field">
+        <label for="materialName">資材名</label>
+        <input id="materialName" class="form-input" placeholder="例：化成14-14-14、スミチオンなど">
+      </div>
+
+      <div class="form-field">
+        <label for="totalAmount">全体使用量</label>
+        <input id="totalAmount" class="form-input" inputmode="numeric" placeholder="例：50（kg または L）">
+      </div>
+
+      <div class="form-field">
+        <label for="unit">単位</label>
+        <select id="unit" class="form-input">
+          <option value="kg">kg</option>
+          <option value="L">L</option>
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="allocation">按分方法</label>
+        <select id="allocation" class="form-input">
+          <option value="area">面積按分</option>
+          <option value="equal">均等按分</option>
+          <option value="manual">手動入力</option>
+        </select>
+      </div>
+
+      <!-- 手動按分用のエリア（必要時に JS で表示） -->
+      <div id="manual-allocation-area" style="display:none;">
+        <h3>手動按分</h3>
+        <div id="manual-fields"></div>
+      </div>
+    </div>
+
+    <!-- 作業時間 -->
+    <h2>作業時間</h2>
+    <div class="card">
+      <div class="form-field">
+        <label for="startTime">開始時刻</label>
+        <input type="time" id="startTime" class="form-input">
+      </div>
+
+      <div class="form-field">
+        <label for="endTime">終了時刻</label>
+        <input type="time" id="endTime" class="form-input">
+      </div>
+
+      <label style="margin-top:10px;">
+        <input type="checkbox" id="autoTime">
+        圃場数から自動推定する（開始・終了を入力しない場合）
+      </label>
+    </div>
+
+    <!-- 天候・メモ -->
+    <h2>天候・メモ</h2>
+    <div class="card">
+      <div class="form-field">
+        <label for="weather">天候</label>
+        <select id="weather" class="form-input">
+          <option value="">選択</option>
+          <option value="晴れ">晴れ</option>
+          <option value="曇り">曇り</option>
+          <option value="雨">雨</option>
+          <option value="風強い">風強い</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="notes">メモ</label>
+        <textarea id="notes" class="form-textarea" rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- 保存ボタン -->
+    <button type="button" class="primary-btn" id="save-btn">保存</button>
+
+  </div><!-- /form-area -->
+
+  <!-- ▼ 認証・初期化 -->
+  <script type="module">
+    import { verifyLocalAuth } from "../common/ui.js";
+    import { initDiaryPage } from "./diary.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      document.getElementById("form-area").style.display = "block";
+      initDiaryPage();
+    });
+  </script>
+
+  <!-- ▼ 保存モーダル -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
+</body>
+</html>

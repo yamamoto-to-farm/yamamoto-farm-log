@@ -71,6 +71,18 @@
       "icon": "assets/icons/shipping.png"
     },
     {
+      "id": "diary",
+      "name": "作業日誌",
+      "path": "diary/index.html",
+      "category": "作業ログ",
+      "roles": [
+        "worker",
+        "family",
+        "admin"
+      ],
+      "icon": "assets/icons/diary.png"
+    },
+    {
       "id": "map",
       "name": "圃場マップ",
       "path": "map/index.html",

@@ -1,0 +1,31 @@
+{
+  "id": "2025-02-28-fertilizer-01",
+  "date": "2025-02-28",
+  "workType": "fertilizer",
+
+  "fields": [
+    {
+      "field": "A圃場",
+      "plantingRef": "2025-A-品種X",
+      "area": 12.3,
+      "amount": 15
+    },
+    {
+      "field": "B圃場",
+      "plantingRef": "2025-B-品種X",
+      "area": 8.1,
+      "amount": 10
+    }
+  ],
+
+  "material": {
+    "name": "化成14-14-14",
+    "totalAmount": 25,
+    "unit": "kg"
+  },
+
+  "weather": "晴れ",
+  "start": "09:00",
+  "end": "11:30",
+  "notes": "風弱い"
+}
