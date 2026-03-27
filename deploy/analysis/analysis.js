@@ -17,11 +17,19 @@ export async function initAnalysisPage() {
      ★ 基本データカード
   =============================== */
   const detail = await loadJSON("/data/field-detail.json");
-  const fieldData = detail[rawFieldName];
 
-  if (fieldData) {
-    container.insertAdjacentHTML("beforeend", renderFieldDetailCard(fieldData));
-  }
+  // ★ JSON 内のテンプレートを取得
+  const TEMPLATE_FIELD = detail["TEMPLATE_FIELD"];
+
+  // ★ 圃場データが無い場合はテンプレートを使用
+  const fieldData = detail[rawFieldName]
+    ? detail[rawFieldName]
+    : { ...TEMPLATE_FIELD, __empty: true, field: rawFieldName };
+
+  container.insertAdjacentHTML(
+    "beforeend",
+    renderFieldDetailCard(fieldData)
+  );
 
   /* ===============================
      ★ サマリーカード
