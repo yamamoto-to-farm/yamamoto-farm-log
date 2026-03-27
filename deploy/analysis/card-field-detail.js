@@ -10,41 +10,37 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
   console.log("=== card-field-detail.js: 最終 data ===", data);
 
-  // ★ 空データの場合
-  if (data.__empty) {
-    return `
-      <div class="card basic-card">
-        <h2 class="basic-toggle">基本データ</h2>
+  const isEmpty = data.__empty;
 
-        <div class="basic-body" style="display:none;">
+  return `
+    <div class="card basic-card">
+      <h2 class="basic-toggle">基本データ</h2>
+
+      <div class="basic-body" style="display:none;">
+
+        <!-- ★ テンプレート or 実データをそのまま表示 -->
+        <div class="info-line">実耕作面積：${data.size} a</div>
+        <div class="info-line">特徴：${data.memo}</div>
+
+        <div class="info-block">
+          <div class="info-block-title">【筆情報】</div>
+          ${data.parcels.map(p => `
+            <div class="info-line">
+              ${p.lotNumber}（${p.landCategory} / ${p.officialArea} / ${p.owner} / ${p.rightType}）
+            </div>
+          `).join("")}
+        </div>
+
+        <!-- ★ 空データの場合だけ追加表示 -->
+        ${isEmpty ? `
           <div class="info-line">この圃場の基本データは登録されていません。</div>
 
           <button class="primary-btn"
             onclick="location.href='/admin/edit-json/?field=${encodeURIComponent(fieldName)}'">
             基本情報を作成
           </button>
-        </div>
-      </div>
-    `;
-  }
+        ` : ""}
 
-  // ★ 通常データ
-  return `
-    <div class="card basic-card">
-      <h2 class="basic-toggle">基本データ</h2>
-
-      <div class="basic-body" style="display:none;">
-        <div class="info-line">実耕作面積：${data.size ?? "-"} a</div>
-        <div class="info-line">特徴：${data.memo ?? "-"}</div>
-
-        <div class="info-block">
-          <div class="info-block-title">【筆情報】</div>
-          ${data.parcels.map(p => `
-            <div class="info-line">
-              ${p.lotNumber}（${p.landCategory} / ${p.officialArea}㎡ / ${p.owner} / ${p.rightType}）
-            </div>
-          `).join("")}
-        </div>
       </div>
     </div>
   `;
