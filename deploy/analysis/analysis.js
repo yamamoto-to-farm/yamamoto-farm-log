@@ -16,9 +16,6 @@ export async function initAnalysisPage() {
   /* ===============================
      ★ 基本データカード
   =============================== */
-  /* ===============================
-     ★ 基本データカード
-  =============================== */
   console.log("=== field-detail.json 読み込み開始 ===");
 
   const detail = await loadJSON("/data/field-detail.json");
@@ -38,6 +35,16 @@ export async function initAnalysisPage() {
   if (!detail?.[rawFieldName]) {
     console.warn(`⚠️ 圃場データ '${rawFieldName}' は存在しない → テンプレートを使う`);
   }
+
+  // ★ ここが抜けていた：基本データカードを描画する
+  container.insertAdjacentHTML(
+    "beforeend",
+    renderFieldDetailCard(
+      detail[rawFieldName],        // 圃場データ（undefined ならテンプレート扱い）
+      rawFieldName,                // 圃場名
+      detail["TEMPLATE_FIELD"]     // テンプレート
+    )
+  );
 
   /* ===============================
      ★ サマリーカード
