@@ -13,7 +13,7 @@ import { showSaveModal, updateSaveModal, completeSaveModal }
 /* ---------------------------------------------------------
    0. デバッグフラグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = false;
+const SUMMARY_DEBUG = true;
 
 function slog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
