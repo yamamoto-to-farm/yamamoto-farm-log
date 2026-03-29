@@ -1,20 +1,19 @@
 // =========================================================
-// common/summary.js — CloudFront + S3 最適化版（index 自動更新版）
+// common/summary.js — CloudFront + S3 最適化版（ALL(*) 対応版）
 // =========================================================
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
 import { saveLog } from "./save/index.js?v=2026031418";
 import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 
-// ★ 追加：汎用保存モーダル
+// ★ 保存モーダル
 import { showSaveModal, updateSaveModal, completeSaveModal }
   from "./save-modal.js?v=2026031418";
 
 /* ---------------------------------------------------------
-   0. デバッグフラグ
+   0. デバッグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = true;
-
+const SUMMARY_DEBUG = false;
 function slog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
 }
@@ -49,7 +48,6 @@ export function invalidateSummaryCache(type) {
 /* ---------------------------------------------------------
    3. CSV 読み込み
 --------------------------------------------------------- */
-
 const S3_BASE = "https://yamamoto-farm-log.s3.ap-northeast-1.amazonaws.com";
 
 async function loadCsvNoCache(path, type) {
@@ -105,15 +103,12 @@ async function loadIndexCached() {
 }
 
 /* ---------------------------------------------------------
-   4. サマリー更新キュー
+   4. キュー
 --------------------------------------------------------- */
 window.summaryQueue = [];
 let summaryProcessing = false;
 
-// ★ サマリー更新中フラグ（多重表示防止）
 window._summaryUpdating = window._summaryUpdating || false;
-
-// ★ summary を一時保存するプール
 window._summaryPool = window._summaryPool || {};
 
 export function enqueueSummaryUpdate(plantingRef) {
@@ -127,7 +122,6 @@ async function processSummaryQueue() {
   if (summaryProcessing) return;
   summaryProcessing = true;
 
-  // ★ サマリー更新開始（alert → モーダル）
   if (!window._summaryUpdating) {
     window._summaryUpdating = true;
     showSaveModal("サマリーを更新しています…");
@@ -159,10 +153,30 @@ async function processSummaryQueue() {
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate
+   5. summaryUpdate（★ "*" 対応 & normalize 対応）
 --------------------------------------------------------- */
+
+// ★ plantingRef の正規化
+function normalizeRef(s) {
+  return (s || "")
+    .trim()
+    .replace(/\r/g, "")
+    .replace(/\u00A0/g, "");
+}
+
 export async function summaryUpdate(plantingRef) {
   slog(">>> summaryUpdate START:", plantingRef);
+
+  // ★ "*" の場合は全 plantingRef を再計算
+  if (plantingRef === "*") {
+    slog(">>> summaryUpdate: FULL REBUILD");
+    const planting = await loadCsvNoCache("logs/planting/all.csv", "planting");
+
+    for (const p of planting) {
+      await summaryUpdate(p.plantingRef);
+    }
+    return;
+  }
 
   invalidateSummaryCache("harvest");
   invalidateSummaryCache("weight");
@@ -171,7 +185,10 @@ export async function summaryUpdate(plantingRef) {
   const harvest = await loadCsvNoCache("logs/harvest/all.csv", "harvest");
   const shipping = await loadCsvNoCache("logs/weight/all.csv", "weight");
 
-  const p = planting.find(x => x.plantingRef === plantingRef);
+  const p = planting.find(
+    x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
+  );
+
   slog("planting match:", p);
 
   if (!p) {
@@ -179,14 +196,26 @@ export async function summaryUpdate(plantingRef) {
     return;
   }
 
-  const harvestRows = harvest.filter(x => x.plantingRef === plantingRef);
-  const shippingRows = shipping.filter(x => x.plantingRef === plantingRef);
+  const harvestRows = harvest.filter(
+    x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
+  );
+
+  const shippingRows = shipping.filter(
+    x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
+  );
 
   const harvestDates = harvestRows.map(x => x.harvestDate).filter(Boolean).sort();
   const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
 
-  const harvestTotalAmount = harvestRows.reduce((s, x) => s + Number(x.amount || 0), 0);
-  const shippingTotalWeight = shippingRows.reduce((s, x) => s + Number(x.totalWeight || 0), 0);
+  const harvestTotalAmount = harvestRows.reduce(
+    (s, x) => s + Number(x.amount || 0),
+    0
+  );
+
+  const shippingTotalWeight = shippingRows.reduce(
+    (s, x) => s + Number(x.totalWeight || 0),
+    0
+  );
 
   const summary = {
     plantingRef,
@@ -225,7 +254,7 @@ export async function summaryUpdate(plantingRef) {
 }
 
 /* ---------------------------------------------------------
-   5.5 summary-index.json を含めてまとめて保存
+   5.5 summary-index.json まとめて保存
 --------------------------------------------------------- */
 export async function flushSummaryPool() {
   slog("=== FLUSH SUMMARY POOL START ===");
@@ -264,7 +293,6 @@ export async function flushSummaryPool() {
 
   window._summaryPool = {};
 
-  // ★ サマリー更新完了（alert → モーダル）
   if (window._summaryUpdating) {
     window._summaryUpdating = false;
     completeSaveModal("サマリーの更新が完了しました");
