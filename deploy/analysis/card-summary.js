@@ -17,6 +17,11 @@ export async function renderSummaryCards(rawFieldName) {
     return `<p>サマリーがありません</p>`;
   }
 
+  // ★ 目標値（harvestBase.json）を先に読み込む
+  const harvestBase = await fetch(`${CF_BASE}/data/harvestBase.json?ts=${Date.now()}`)
+    .then(r => r.json())
+    .catch(() => ({ monthly: {} }));
+
   let html = "";
 
   for (const year of Object.keys(index[fieldName]).sort()) {
@@ -32,7 +37,7 @@ export async function renderSummaryCards(rawFieldName) {
       const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
       const summary = await fetch(url).then(r => r.json());
 
-      html += renderSummaryCard(summary);
+      html += renderSummaryCard(summary, harvestBase);
     }
 
     html += `</div></details>`;
@@ -44,7 +49,7 @@ export async function renderSummaryCards(rawFieldName) {
 /* ===============================
    summary.json → カードHTML
 =============================== */
-function renderSummaryCard(s) {
+function renderSummaryCard(s, harvestBase) {
 
   /* -------------------------------
      日付の安全処理
@@ -79,34 +84,39 @@ function renderSummaryCard(s) {
   const totalWeight = s.shipping.totalWeight;
 
   /* -------------------------------
-     分析指標（未収穫時は "—"）
+     主指標：反収（kg/反）
+  --------------------------------*/
+  const yieldPerTan = hasHarvest
+    ? (totalWeight / areaTan).toFixed(1)
+    : "—";
+
+  /* -------------------------------
+     主指標：1基あたり平均重量（kg/基）
   --------------------------------*/
   const avgPerUnit = hasHarvest
     ? (totalWeight / totalAmount).toFixed(2)
     : "—";
 
-  const avgPerPlant = hasHarvest
-    ? (totalWeight / s.planting.quantity).toFixed(3)
-    : "—";
+  /* -------------------------------
+     目標反収（harvestBase.json）
+  --------------------------------*/
+  const ym = s.planting.harvestPlanYM; // "2026-11"
+  const month = ym?.slice(5); // "11"
 
-  const yieldPer10a = hasHarvest
-    ? (totalWeight / (areaM2 / 1000)).toFixed(1)
-    : "—";
-
-  const yieldPerTan = hasHarvest
-    ? (totalWeight / areaTan).toFixed(1)
-    : "—";
-
-  const yieldPerM2 = hasHarvest
-    ? (totalWeight / areaM2).toFixed(2)
-    : "—";
-
-  const harvestDays = hasHarvest
-    ? Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1
+  const targetPerTan = month && harvestBase.monthly[month]
+    ? harvestBase.monthly[month].yieldPerTan
     : null;
 
   /* -------------------------------
-     収穫期間の表示改善
+     達成率（%）
+  --------------------------------*/
+  const achieveRate =
+    hasHarvest && targetPerTan
+      ? ((yieldPerTan / targetPerTan) * 100).toFixed(1)
+      : "—";
+
+  /* -------------------------------
+     収穫期間
   --------------------------------*/
   let harvestPeriod = "未収穫";
 
@@ -114,17 +124,18 @@ function renderSummaryCard(s) {
     const firstMD = s.harvest.firstDate.slice(5).replace("-", "/");
     const lastMD = s.harvest.lastDate.slice(5).replace("-", "/");
 
+    const harvestDays =
+      Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1;
+
     harvestPeriod =
       firstMD === lastMD
         ? `${firstMD}（1日）`
         : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
   }
 
-  const harvestEfficiency =
-    hasHarvest && harvestDays > 0
-      ? (s.harvest.count / harvestDays).toFixed(2)
-      : "—";
-
+  /* -------------------------------
+     HTML 出力
+  --------------------------------*/
   return `
     <div class="card">
 
@@ -149,12 +160,14 @@ function renderSummaryCard(s) {
 
       <div class="info-block">
         <div class="info-block-title">【分析指標】</div>
-        <div class="info-line">単収（作付け）：${yieldPer10a} kg/10a</div>
         <div class="info-line">反当たり収量：${yieldPerTan} kg/反</div>
-        <div class="info-line">1株あたり収量：${avgPerPlant} kg/株</div>
         <div class="info-line">1基あたり平均重量：${avgPerUnit} kg/基</div>
-        <div class="info-line">1㎡あたり収量：${yieldPerM2} kg/㎡</div>
-        <div class="info-line">収穫効率：${harvestEfficiency} 回/日</div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-title">【目標比較】</div>
+        <div class="info-line">目標反収：${targetPerTan ? targetPerTan + " kg/反" : "—"}</div>
+        <div class="info-line">達成率：${achieveRate !== "—" ? achieveRate + "%" : "—"}</div>
       </div>
 
       <div class="info-line" style="font-size:12px; color:#666;">
