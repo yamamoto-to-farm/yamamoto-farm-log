@@ -1,5 +1,6 @@
 // card-summary.js（CloudFront 統一版）
 import { safeFieldName } from "/common/utils.js";
+import { loadNotesForPlantingRef } from "./notes.js";   // ★ 追加
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
@@ -37,7 +38,7 @@ export async function renderSummaryCards(rawFieldName) {
       const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
       const summary = await fetch(url).then(r => r.json());
 
-      html += renderSummaryCard(summary, harvestBase);
+      html += await renderSummaryCard(summary, harvestBase);  // ★ await に変更
     }
 
     html += `</div></details>`;
@@ -60,7 +61,7 @@ function getRateClass(rate) {
 /* ===============================
    summary.json → カードHTML
 =============================== */
-function renderSummaryCard(s, harvestBase) {
+async function renderSummaryCard(s, harvestBase) {
 
   /* -------------------------------
      日付の安全処理
@@ -111,8 +112,8 @@ function renderSummaryCard(s, harvestBase) {
   /* -------------------------------
      目標反収（harvestBase.json）
   --------------------------------*/
-  const ym = s.planting.harvestPlanYM; // "2026-11"
-  const month = ym?.slice(5); // "11"
+  const ym = s.planting.harvestPlanYM;
+  const month = ym?.slice(5);
 
   const targetPerTan = month && harvestBase.monthly[month]
     ? harvestBase.monthly[month].yieldPerTan
@@ -145,6 +146,21 @@ function renderSummaryCard(s, harvestBase) {
         ? `${firstMD}（1日）`
         : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
   }
+
+  /* -------------------------------
+     ★ 現場メモ（notes.js）
+  --------------------------------*/
+  const notes = await loadNotesForPlantingRef(s.planting.plantingRef);
+
+  const notesHTML =
+    notes.length > 0
+      ? `
+      <div class="info-block">
+        <div class="info-block-title">【現場メモ】</div>
+        ${notes.map(n => `<div class="info-line">・${n}</div>`).join("")}
+      </div>
+      `
+      : "";
 
   /* -------------------------------
      HTML 出力
@@ -187,6 +203,8 @@ function renderSummaryCard(s, harvestBase) {
           </span>
         </div>
       </div>
+
+      ${notesHTML}
 
       <div class="info-line" style="font-size:12px; color:#666;">
         最終更新：${updatedJST}
