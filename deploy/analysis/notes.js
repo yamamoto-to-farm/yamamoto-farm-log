@@ -39,7 +39,7 @@ export async function loadNotesForPlantingRef(plantingRef) {
     // { file: "logs/pesticide/all.csv",   tag: "【防除】" },
 
     { file: "logs/harvest/all.csv",  tag: "【収穫】" },
-    { file: "logs/shipping/all.csv", tag: "【出荷】" }
+    { file: "logs/weight/all.csv", tag: "【出荷】" }
   ];
 
   let notes = [];
