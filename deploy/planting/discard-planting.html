@@ -59,7 +59,21 @@
     <button id="saveBtn" class="primary-btn">破棄ログを保存</button>
   </div>
 
-  <!-- JS 読み込み -->
+  <!-- ★★★★★ 保存モーダル（必ず save/index.js より前） ★★★★★ -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
+
+  <!-- Papaparse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- discard-planting.js -->
   <script type="module">
     import { initDiscardPage, saveDiscard } from "./discard-planting.js";
 
@@ -71,6 +85,9 @@
       saveDiscard();
     });
   </script>
+
+  <!-- ★ save/index.js（← save-modal.html の後で OK） -->
+  <script type="module" src="../common/save/index.js"></script>
 
 </body>
 </html>

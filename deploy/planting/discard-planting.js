@@ -9,6 +9,12 @@ let plantingRow = null;
 // ===============================
 import { loadCSV } from "../common/csv.js";
 import { saveLog } from "../common/save/index.js";
+import {
+  showSaveModal,
+  updateSaveModal,
+  completeSaveModal
+} from "../common/save-modal.js";
+import { enqueueSummaryUpdate } from "../common/summary.js";
 
 // ===============================
 // 初期化（plantingRef 取得 → 定植データ読み込み）
@@ -70,7 +76,7 @@ function setupAutoCalc() {
 }
 
 // ===============================
-// 保存処理（saveLog 方式）
+// 保存処理（planting.js と完全統一）
 // ===============================
 export async function saveDiscard() {
   const discardDate = document.getElementById("discardDate").value;
@@ -87,24 +93,76 @@ export async function saveDiscard() {
     return;
   }
 
+  const notesClean = notes.replace(/[\r\n,]/g, " ");
   const dateStr = discardDate.replace(/-/g, "");
 
-  const csvLine = [
+  // ★ 保存前確認（planting.js と同じ UX）
+  const confirmMsg =
+    `以下の内容で保存します。\n\n` +
+    `破棄日: ${discardDate}\n` +
+    `定植日: ${plantingRow.plantDate}\n` +
+    `圃場: ${plantingRow.field}\n` +
+    `品種: ${plantingRow.variety}\n` +
+    `破棄株数: ${discardQty}\n` +
+    `備考: ${notesClean || "なし"}\n\n` +
+    `よろしいですか？`;
+
+  if (!confirm(confirmMsg)) return;
+
+  // ★ 保存モーダル開始
+  showSaveModal("保存しています…");
+
+  // ===============================
+  // ★ discard-planting/all.csv を replace 保存
+  // ===============================
+  const url = "../logs/discard-planting/all.csv?ts=" + Date.now();
+  const res = await fetch(url);
+  const text = await res.text();
+
+  let rows = [];
+  if (text.trim()) {
+    rows = Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true
+    }).data;
+  }
+
+  rows.push({
     discardDate,
     plantingRef,
     discardQty,
-    notes.replace(/[\r\n,]/g, " "),
-    window.currentMachine ?? "",
-    window.currentHuman ?? ""
-  ].join(",");
+    notes: notesClean,
+    machine: window.currentMachine ?? "",
+    human: window.currentHuman ?? ""
+  });
 
-  await saveLog(
-    "discard-planting",
-    dateStr,
-    { plantingRef },
-    csvLine + "\n"
+  const csvText = Papa.unparse(rows);
+
+  await saveLog("discard-planting", "all", {}, "", csvText, "csv-replace");
+
+  // ===============================
+  // ★ サマリー更新（planting.js と同じ）
+  // ===============================
+  updateSaveModal("サマリーを更新しています…");
+  enqueueSummaryUpdate(plantingRef);
+
+  window.addEventListener(
+    "summaryQueueEmpty",
+    () => {
+      completeSaveModal("保存が完了しました");
+
+      alert(
+        `破棄ログを保存しました\n\n` +
+          `破棄日: ${discardDate}\n` +
+          `定植日: ${plantingRow.plantDate}\n` +
+          `圃場: ${plantingRow.field}\n` +
+          `品種: ${plantingRow.variety}\n` +
+          `破棄株数: ${discardQty}\n` +
+          `備考: ${notesClean || "なし"}`
+      );
+
+      setTimeout(() => (location.href = "../index.html"), 500);
+    },
+    { once: true }
   );
-
-  alert("破棄ログを保存しました");
-  location.href = "../index.html";
 }
