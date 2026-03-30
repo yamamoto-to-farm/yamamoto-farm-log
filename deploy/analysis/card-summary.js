@@ -9,7 +9,6 @@ const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 export async function renderSummaryCards(rawFieldName) {
   const fieldName = safeFieldName(rawFieldName);
 
-  // ★ CloudFront の最新 index を読む
   const index = await fetch(`${CF_BASE}/data/summary-index.json?ts=${Date.now()}`)
     .then(r => r.json())
     .catch(() => ({}));
@@ -30,8 +29,6 @@ export async function renderSummaryCards(rawFieldName) {
     const files = index[fieldName][year];
 
     for (const file of files) {
-
-      // ★ CloudFront の最新 summary.json を読む
       const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
       const summary = await fetch(url).then(r => r.json());
 
@@ -49,13 +46,22 @@ export async function renderSummaryCards(rawFieldName) {
 =============================== */
 function renderSummaryCard(s) {
 
+  /* -------------------------------
+     日付の安全処理
+  --------------------------------*/
   const plantDate = new Date(s.planting.plantDate);
-  const firstHarvest = new Date(s.harvest.firstDate);
-  const lastHarvest = new Date(s.harvest.lastDate);
+  const firstHarvest = s.harvest.firstDate ? new Date(s.harvest.firstDate) : null;
+  const lastHarvest = s.harvest.lastDate ? new Date(s.harvest.lastDate) : null;
 
-  const daysToHarvest =
-    Math.floor((firstHarvest - plantDate) / (1000 * 60 * 60 * 24));
+  const hasHarvest = !!firstHarvest && !!lastHarvest && s.harvest.count > 0;
 
+  const daysToHarvest = hasHarvest
+    ? Math.floor((firstHarvest - plantDate) / (1000 * 60 * 60 * 24))
+    : null;
+
+  /* -------------------------------
+     面積計算
+  --------------------------------*/
   const areaM2 =
     Number(s.planting.quantity) *
     (Number(s.planting.spacing.row) / 100) *
@@ -72,36 +78,52 @@ function renderSummaryCard(s) {
   const totalAmount = s.harvest.totalAmount;
   const totalWeight = s.shipping.totalWeight;
 
-  const avgPerUnit = totalAmount > 0
+  /* -------------------------------
+     分析指標（未収穫時は "—"）
+  --------------------------------*/
+  const avgPerUnit = hasHarvest
     ? (totalWeight / totalAmount).toFixed(2)
-    : "-";
+    : "—";
 
-  const avgPerPlant = s.planting.quantity > 0
+  const avgPerPlant = hasHarvest
     ? (totalWeight / s.planting.quantity).toFixed(3)
-    : "-";
+    : "—";
 
-  const yieldPer10a =
-    areaM2 > 0 ? (totalWeight / (areaM2 / 1000)).toFixed(1) : "-";
+  const yieldPer10a = hasHarvest
+    ? (totalWeight / (areaM2 / 1000)).toFixed(1)
+    : "—";
 
-  const yieldPerTan =
-    areaTan > 0 ? (totalWeight / areaTan).toFixed(1) : "-";
+  const yieldPerTan = hasHarvest
+    ? (totalWeight / areaTan).toFixed(1)
+    : "—";
 
-  const yieldPerM2 =
-    areaM2 > 0 ? (totalWeight / areaM2).toFixed(2) : "-";
+  const yieldPerM2 = hasHarvest
+    ? (totalWeight / areaM2).toFixed(2)
+    : "—";
 
-  const harvestDays =
-    Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1;
+  const harvestDays = hasHarvest
+    ? Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1
+    : null;
 
-  const firstMD = s.harvest.firstDate?.slice(5).replace("-", "/");
-  const lastMD = s.harvest.lastDate?.slice(5).replace("-", "/");
+  /* -------------------------------
+     収穫期間の表示改善
+  --------------------------------*/
+  let harvestPeriod = "未収穫";
 
-  const harvestPeriod =
-    firstMD === lastMD
-      ? `${firstMD}（1日）`
-      : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
+  if (hasHarvest) {
+    const firstMD = s.harvest.firstDate.slice(5).replace("-", "/");
+    const lastMD = s.harvest.lastDate.slice(5).replace("-", "/");
+
+    harvestPeriod =
+      firstMD === lastMD
+        ? `${firstMD}（1日）`
+        : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
+  }
 
   const harvestEfficiency =
-    harvestDays > 0 ? (s.harvest.count / harvestDays).toFixed(2) : "-";
+    hasHarvest && harvestDays > 0
+      ? (s.harvest.count / harvestDays).toFixed(2)
+      : "—";
 
   return `
     <div class="card">
@@ -122,7 +144,7 @@ function renderSummaryCard(s) {
         <div class="info-line">収穫期間：${harvestPeriod}</div>
         <div class="info-line">収穫回数：${s.harvest.count} 回</div>
         <div class="info-line">収穫合計：${totalAmount} 基（${totalWeight.toFixed(1)} kg）</div>
-        <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
+        <div class="info-line">定植 → 初回収穫：${daysToHarvest !== null ? daysToHarvest + " 日" : "—"}</div>
       </div>
 
       <div class="info-block">
