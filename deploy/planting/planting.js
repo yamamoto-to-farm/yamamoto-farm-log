@@ -307,7 +307,24 @@ async function savePlantingInner() {
     return;
   }
 
-  // ★ 保存モーダル開始
+  // ★ 先に確認アラートを出す（OK → 保存開始）
+  const notes = data.notes ? data.notes.replace(/[\r\n,]/g, " ") : "";
+  const confirmMsg =
+    `以下の内容で保存します。\n\n` +
+    `定植日: ${data.plantDate}\n` +
+    `圃場: ${data.field}\n` +
+    `品種: ${data.variety}\n` +
+    `播種ロット: ${data.seedRef}\n` +
+    `株数: ${data.quantity}\n` +
+    `作業者: ${data.worker}\n` +
+    `備考: ${notes || "なし"}\n\n` +
+    `よろしいですか？`;
+
+  if (!confirm(confirmMsg)) {
+    return; // キャンセルされたら保存しない
+  }
+
+  // ★ OK が押されたので保存モーダル開始
   showSaveModal("保存しています…");
 
   // ★ seedRows はキャッシュを使う（403対策）
@@ -377,10 +394,6 @@ async function savePlantingInner() {
   const machine = getMachineParam();
   const human = window.currentHuman || "";
 
-  const notes = data.notes
-    ? data.notes.replace(/[\r\n,]/g, " ")
-    : "";
-
   // ★ 新しい行を rows に追加
   rows.push({
     plantDate: data.plantDate,
@@ -413,8 +426,23 @@ async function savePlantingInner() {
 
   // ★ summaryQueueEmpty → flushSummaryPool → completeSaveModal が呼ばれる
   window.addEventListener("summaryQueueEmpty", () => {
+
     completeSaveModal("保存が完了しました");
+
+    // ★ 完了後に最終確認 alert（harvest と同じ UX）
+    alert(
+      `定植ログを保存しました\n\n` +
+      `定植日: ${data.plantDate}\n` +
+      `圃場: ${data.field}\n` +
+      `品種: ${data.variety}\n` +
+      `播種ロット: ${data.seedRef}\n` +
+      `株数: ${data.quantity}\n` +
+      `作業者: ${data.worker}\n` +
+      `備考: ${notes || "なし"}`
+    );
+
     setTimeout(() => location.reload(), 500);
+
   }, { once: true });
 }
 
