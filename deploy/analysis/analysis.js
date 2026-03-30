@@ -1,7 +1,10 @@
-// analysis.js（CloudFront 統一版）
+// analysis.js（CloudFront 統一版 + デバッグ切替）
 import { loadJSON } from "/common/json.js";
 import { renderSummaryCards } from "./card-summary.js";
 import { renderFieldDetailCard } from "./card-field-detail.js";
+
+// ★ デバッグフラグ（true でログ出る）
+const DEBUG = false;
 
 export async function initAnalysisPage() {
 
@@ -16,31 +19,36 @@ export async function initAnalysisPage() {
   /* ===============================
      ★ 基本データカード
   =============================== */
-  console.log("=== field-detail.json 読み込み開始 ===");
+  if (DEBUG) console.log("=== field-detail.json 読み込み開始 ===");
 
   const detail = await loadJSON("/data/field-detail.json");
 
-  console.log("=== 読み込んだ detail ===", detail);
-  console.log("=== detail keys ===", Object.keys(detail || {}));
-  console.log("=== TEMPLATE_FIELD ===", detail?.TEMPLATE_FIELD);
+  if (DEBUG) {
+    console.log("=== 読み込んだ detail ===", detail);
+    console.log("=== detail keys ===", Object.keys(detail || {}));
+    console.log("=== TEMPLATE_FIELD ===", detail?.TEMPLATE_FIELD);
+  }
 
-  if (!detail) {
+  if (DEBUG && !detail) {
     console.error("❌ detail が null/undefined。JSON が読み込めていない可能性");
   }
 
-  if (!detail?.TEMPLATE_FIELD) {
+  if (DEBUG && !detail?.TEMPLATE_FIELD) {
     console.error("❌ TEMPLATE_FIELD が undefined。JSON に存在しないか、キャッシュの可能性");
   }
 
-  if (!detail?.[rawFieldName]) {
+  if (DEBUG && !detail?.[rawFieldName]) {
     console.warn(`⚠️ 圃場データ '${rawFieldName}' は存在しない → テンプレートを使う`);
   }
 
-  // ★ ここが抜けていた：基本データカードを描画する
+  // ★ 「読み込み中…」を消す
+  container.innerHTML = "";
+
+  // ★ 基本データカードを追加
   container.insertAdjacentHTML(
     "beforeend",
     renderFieldDetailCard(
-      detail[rawFieldName],        // 圃場データ（undefined ならテンプレート扱い）
+      detail[rawFieldName],        // 圃場データ
       rawFieldName,                // 圃場名
       detail["TEMPLATE_FIELD"]     // テンプレート
     )
@@ -49,8 +57,12 @@ export async function initAnalysisPage() {
   /* ===============================
      ★ サマリーカード
   =============================== */
+  if (DEBUG) console.log("=== summary カード生成開始 ===");
+
   const summaryHTML = await renderSummaryCards(rawFieldName);
   container.insertAdjacentHTML("beforeend", summaryHTML);
+
+  if (DEBUG) console.log("=== summary カード生成完了 ===");
 
   /* ===============================
      ★ 基本データカードの開閉イベント
@@ -63,4 +75,6 @@ export async function initAnalysisPage() {
       body.style.display = isOpen ? "none" : "block";
     });
   });
+
+  if (DEBUG) console.log("=== initAnalysisPage 完了 ===");
 }
