@@ -155,10 +155,12 @@ async function renderSummaryCard(s, harvestBase) {
   const notesHTML =
     notes.length > 0
       ? `
-      <div class="info-block">
-        <div class="info-block-title">【現場メモ】</div>
-        ${notes.map(n => `<div class="info-line">・${n}</div>`).join("")}
-      </div>
+      <details class="notes-toggle">
+        <summary>【現場メモ】（${notes.length}件）</summary>
+        <ul class="notes-list">
+          ${notes.map(n => `<li>${n}</li>`).join("")}
+        </ul>
+      </details>
       `
       : "";
 

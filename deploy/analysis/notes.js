@@ -1,8 +1,8 @@
-// notes.js（完全修正版・デバッグ切替付き）
+// notes.js（完全版：折りたたみ + 日付 + 安全CSV + デバッグ切替）
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
 // ★ デバッグフラグ（true でログ出る）
-const DEBUG = true;
+const DEBUG = false;
 
 /* ===============================
    安全な CSV 1行パース（カンマ対応）
@@ -71,6 +71,30 @@ async function fetchCSV(path) {
 }
 
 /* ===============================
+   日付抽出（CSV によってカラム名が違う）
+=============================== */
+function extractDate(row) {
+  return (
+    row.plantDate ||
+    row.harvestDate ||
+    row.shippingDate ||
+    ""
+  );
+}
+
+/* ===============================
+   MM/DD 形式に変換
+=============================== */
+function formatMMDD(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${m}/${day}`;
+}
+
+/* ===============================
    note 抽出ロジック（メイン）
 =============================== */
 export async function loadNotesForPlantingRef(plantingRef) {
@@ -81,13 +105,8 @@ export async function loadNotesForPlantingRef(plantingRef) {
 
   const sources = [
     { file: "logs/planting/all.csv", tag: "【定植】" },
-
-    // { file: "logs/cultivation/all.csv", tag: "【中耕】" },
-    // { file: "logs/fertilizer/all.csv",  tag: "【施肥】" },
-    // { file: "logs/pesticide/all.csv",   tag: "【防除】" },
-
-    { file: "logs/harvest/all.csv", tag: "【収穫】" },
-    { file: "logs/weight/all.csv",  tag: "【出荷】" }
+    { file: "logs/harvest/all.csv",  tag: "【収穫】" },
+    { file: "logs/weight/all.csv",   tag: "【出荷】" }
   ];
 
   let notes = [];
@@ -101,11 +120,6 @@ export async function loadNotesForPlantingRef(plantingRef) {
       for (const row of rows) {
         const rowRef = row.plantingRef?.trim();
 
-        // plantingRef が一致する行だけログ
-        if (DEBUG && rowRef === plantingRef) {
-          console.log("MATCH FOUND:", row);
-        }
-
         // note カラム名の候補
         const noteValue =
           row.note ??
@@ -114,9 +128,17 @@ export async function loadNotesForPlantingRef(plantingRef) {
           row.comment ??
           "";
 
+        // 日付抽出
+        const rawDate = extractDate(row);
+        const mmdd = formatMMDD(rawDate);
+
+        if (DEBUG && rowRef === plantingRef) {
+          console.log("MATCH FOUND:", row);
+        }
+
         if (rowRef === plantingRef && noteValue.trim() !== "") {
-          if (DEBUG) console.log("NOTE FOUND:", noteValue);
-          notes.push(`${src.tag}${noteValue.trim()}`);
+          const datePrefix = mmdd ? `${mmdd} ` : "";
+          notes.push(`${src.tag}${datePrefix}${noteValue.trim()}`);
         }
       }
 

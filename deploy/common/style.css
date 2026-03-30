@@ -361,6 +361,34 @@ tbody tr:nth-child(odd) {
 }
 
 /* ===============================
+   現場メモ（折りたたみ）
+=============================== */
+.notes-toggle {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.notes-toggle summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 4px 0;
+    color: #333;
+}
+
+.notes-list {
+    margin: 6px 0 0 16px;
+    padding: 0;
+    list-style: disc;
+}
+
+.notes-list li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+    font-size: 15px;
+}
+
+/* ===============================
    スマホ最適化（追加済み）
 =============================== */
 @media (max-width: 600px) {
