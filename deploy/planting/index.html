@@ -133,31 +133,22 @@
     <a href="list.html" class="menu-card" style="display:block; margin-top:20px; padding:12px; text-align:center;">
       ← 定植記録一覧へ
     </a>
+
     <!-- ▼ 必須ライブラリ（順番が重要） -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    
+
   </div>
 
-  <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js";
-    import { initPlantingPage } from "./planting.js";
+  <!-- ★ summary.js を先に読み込む（必須） -->
+  <script type="module" src="../common/summary.js"></script>
 
-    window.addEventListener("DOMContentLoaded", async () => {
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
+  <!-- ★ planting.js を後で読み込む（import が有効になる） -->
+  <script type="module" src="./planting.js"></script>
 
-      document.getElementById("form-area").style.display = "block";
-
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("plantDate").value = today;
-
-      initPlantingPage();
-    });
-  </script>
-
+  <!-- ★ save/index.js（順番は planting.js の後でOK） -->
   <script type="module" src="../common/save/index.js"></script>
 
-  <!-- ★★★★★ 追加：共通保存モーダルの読み込み ★★★★★ -->
+  <!-- ★★★★★ 共通保存モーダルの読み込み ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")

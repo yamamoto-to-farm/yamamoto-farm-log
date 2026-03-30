@@ -12,6 +12,7 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 import { loadCSV } from "../common/csv.js";
+import { showSaveModal, updateSaveModal, completeSaveModal } from "../common/save-modal.js";
 import { enqueueSummaryUpdate } from "../common/summary.js";
 
 let VARIETY_LIST = [];
@@ -289,7 +290,7 @@ function collectPlantingData() {
 
 
 // ===============================
-// ★ planting/all.csv を replace 方式で保存
+// ★ planting/all.csv を replace 方式で保存（save-modal 対応版）
 // ===============================
 async function savePlantingInner() {
   console.log("💾 savePlantingInner()");
@@ -305,6 +306,9 @@ async function savePlantingInner() {
     alert("播種ロット（seedRef）を選択してください");
     return;
   }
+
+  // ★ 保存モーダル開始
+  showSaveModal("保存しています…");
 
   // ★ seedRows はキャッシュを使う（403対策）
   const seedRows = GLOBAL_SEED_ROWS;
@@ -322,7 +326,7 @@ async function savePlantingInner() {
     }).data;
   }
 
-  // ★ 播種ロットの残数チェック（既存ロジックそのまま）
+  // ★ 播種ロットの残数チェック
   const planted = rows
     .filter(p => p.seedRef === data.seedRef)
     .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
@@ -401,21 +405,17 @@ async function savePlantingInner() {
   // ★ replace 保存
   await saveLog("planting", "all", {}, "", csvText, "csv-replace");
 
+  // ★ サマリー更新モードへ
+  updateSaveModal("サマリーを更新しています…");
+
   // ★ summaryUpdate（plantingRef を渡す）
   enqueueSummaryUpdate(plantingRef);
 
-  alert(
-    `定植ログを保存しました\n\n` +
-    `定植日: ${data.plantDate}\n` +
-    `圃場: ${data.field}\n` +
-    `品種: ${data.variety}\n` +
-    `播種ロット: ${data.seedRef}\n` +
-    `株数: ${data.quantity}\n` +
-    `作業者: ${data.worker}\n` +
-    `備考: ${notes || "なし"}`
-  );
-
-  setTimeout(() => location.reload(), 300);
+  // ★ summaryQueueEmpty → flushSummaryPool → completeSaveModal が呼ばれる
+  window.addEventListener("summaryQueueEmpty", () => {
+    completeSaveModal("保存が完了しました");
+    setTimeout(() => location.reload(), 500);
+  }, { once: true });
 }
 
 window.savePlanting = savePlantingInner;
