@@ -1,11 +1,35 @@
-// notes.js（デバッグ切り替え対応版）
+// notes.js（完全修正版・デバッグ切替付き）
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
 // ★ デバッグフラグ（true でログ出る）
-const DEBUG = true;
+const DEBUG = false;
 
 /* ===============================
-   CSV を読み込んで配列に変換
+   安全な CSV 1行パース（カンマ対応）
+=============================== */
+function parseCSVLine(line) {
+  const result = [];
+  let current = "";
+  let insideQuote = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+
+    if (c === '"') {
+      insideQuote = !insideQuote;
+    } else if (c === "," && !insideQuote) {
+      result.push(current);
+      current = "";
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+/* ===============================
+   CSV 全体を読み込んで配列に変換
 =============================== */
 async function fetchCSV(path) {
   const url = `${CF_BASE}/${path}?ts=${Date.now()}`;
@@ -22,14 +46,16 @@ async function fetchCSV(path) {
   }
 
   const lines = text.trim().split("\n");
-  const headers = lines[0].split(",");
+
+  // ★ ヘッダーを安全にパース & trim() で \r を除去
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
 
   if (DEBUG) {
     console.log("HEADERS:", headers);
   }
 
   const rows = lines.slice(1).map(line => {
-    const cols = line.split(",");
+    const cols = parseCSVLine(line);
     const obj = {};
     headers.forEach((h, i) => {
       obj[h] = cols[i] ?? "";
@@ -73,8 +99,10 @@ export async function loadNotesForPlantingRef(plantingRef) {
       const rows = await fetchCSV(src.file);
 
       for (const row of rows) {
-        // plantingRef が一致するか
-        if (DEBUG && row.plantingRef === plantingRef) {
+        const rowRef = row.plantingRef?.trim();
+
+        // plantingRef が一致する行だけログ
+        if (DEBUG && rowRef === plantingRef) {
           console.log("MATCH FOUND:", row);
         }
 
@@ -86,7 +114,7 @@ export async function loadNotesForPlantingRef(plantingRef) {
           row.comment ??
           "";
 
-        if (row.plantingRef === plantingRef && noteValue.trim() !== "") {
+        if (rowRef === plantingRef && noteValue.trim() !== "") {
           if (DEBUG) console.log("NOTE FOUND:", noteValue);
           notes.push(`${src.tag}${noteValue.trim()}`);
         }
