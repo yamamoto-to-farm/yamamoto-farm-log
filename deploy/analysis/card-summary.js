@@ -150,7 +150,7 @@ async function renderSummaryCard(s, harvestBase) {
   /* -------------------------------
      ★ 現場メモ（notes.js）
   --------------------------------*/
-  const notes = await loadNotesForPlantingRef(s.planting.plantingRef);
+  const notes = await loadNotesForPlantingRef(s.plantingRef);
 
   const notesHTML =
     notes.length > 0
