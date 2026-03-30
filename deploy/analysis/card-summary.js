@@ -47,6 +47,17 @@ export async function renderSummaryCards(rawFieldName) {
 }
 
 /* ===============================
+   達成率の色クラス判定
+=============================== */
+function getRateClass(rate) {
+  if (rate === "—") return "";
+  const r = Number(rate);
+  if (r >= 100) return "rate-good";
+  if (r >= 80) return "rate-ok";
+  return "rate-bad";
+}
+
+/* ===============================
    summary.json → カードHTML
 =============================== */
 function renderSummaryCard(s, harvestBase) {
@@ -115,6 +126,8 @@ function renderSummaryCard(s, harvestBase) {
       ? ((yieldPerTan / targetPerTan) * 100).toFixed(1)
       : "—";
 
+  const rateClass = getRateClass(achieveRate);
+
   /* -------------------------------
      収穫期間
   --------------------------------*/
@@ -167,7 +180,12 @@ function renderSummaryCard(s, harvestBase) {
       <div class="info-block">
         <div class="info-block-title">【目標比較】</div>
         <div class="info-line">目標反収：${targetPerTan ? targetPerTan + " kg/反" : "—"}</div>
-        <div class="info-line">達成率：${achieveRate !== "—" ? achieveRate + "%" : "—"}</div>
+        <div class="info-line">
+          達成率：
+          <span class="${rateClass}">
+            ${achieveRate !== "—" ? achieveRate + "%" : "—"}
+          </span>
+        </div>
       </div>
 
       <div class="info-line" style="font-size:12px; color:#666;">

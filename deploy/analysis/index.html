@@ -21,7 +21,7 @@
   <h1 id="field-name"></h1>
 
   <!-- ★ 分析カード or 圃場一覧 -->
-  <div id="analysis-container"></div>
+  <div id="analysis-container">読み込み中…</div>
 
   <!-- 地図に戻る -->
   <button class="primary-btn" onclick="location.href='/map/index.html'">
@@ -53,8 +53,12 @@
 
       // ★ 分岐
       if (field) {
+        // 圃場名をタイトルに反映
+        document.getElementById("field-name").textContent = `${field}（圃場分析）`;
+
         // 圃場別分析
-        initAnalysisPage();
+        initAnalysisPage(field);
+
       } else {
         // 圃場一覧
         document.getElementById("field-name").textContent = "圃場を選択してください";
