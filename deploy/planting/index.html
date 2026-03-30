@@ -134,21 +134,12 @@
       ← 定植記録一覧へ
     </a>
 
-    <!-- ▼ 必須ライブラリ（順番が重要） -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
   </div>
 
-  <!-- ★ summary.js を先に読み込む（必須） -->
-  <script type="module" src="../common/summary.js"></script>
+  <!-- ▼ Papaparse（form-area の外で安全に読み込む） -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ★ planting.js を後で読み込む（import が有効になる） -->
-  <script type="module" src="./planting.js"></script>
-
-  <!-- ★ save/index.js（順番は planting.js の後でOK） -->
-  <script type="module" src="../common/save/index.js"></script>
-
-  <!-- ★★★★★ 共通保存モーダルの読み込み ★★★★★ -->
+  <!-- ★★★★★ 共通保存モーダル（先に DOM に挿入する） ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -158,6 +149,33 @@
       });
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->
+
+  <!-- ★ summary.js を先に読み込む（必須） -->
+  <script type="module" src="../common/summary.js"></script>
+
+  <!-- ★ planting.js を後で読み込む（import が有効になる） -->
+  <script type="module" src="./planting.js"></script>
+
+  <!-- ★ save/index.js（save-modal.html が DOM に入った後で読み込む） -->
+  <script type="module" src="../common/save/index.js"></script>
+
+  <!-- ★ initPlantingPage（最後で OK） -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { initPlantingPage } from "./planting.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      document.getElementById("form-area").style.display = "block";
+
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("plantDate").value = today;
+
+      initPlantingPage();
+    });
+  </script>
 
 </body>
 
