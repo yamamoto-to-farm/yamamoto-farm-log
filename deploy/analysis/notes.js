@@ -1,6 +1,6 @@
 // notes.js
 // ---------------------------------------------
-// すべての all.csv から plantingRef に紐づく note を抽出する
+// すべての logs/◯◯/all.csv から plantingRef に紐づく note を抽出する
 // ---------------------------------------------
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
@@ -30,17 +30,16 @@ async function fetchCSV(path) {
 =============================== */
 export async function loadNotesForPlantingRef(plantingRef) {
 
-  // ★ 今後 CSV が増えてもここに1行追加するだけで対応
-  // ★ 中耕・施肥・防除はまだ未実装なので封印（コメントアウト）
+  // ★ logs/◯◯/all.csv に修正済み
   const sources = [
-    { file: "planting/all.csv",   tag: "【定植】" },
+    { file: "logs/planting/all.csv", tag: "【定植】" },
 
-    // { file: "cultivation/all.csv", tag: "【中耕】" },
-    // { file: "fertilizer/all.csv",  tag: "【施肥】" },
-    // { file: "pesticide/all.csv",   tag: "【防除】" },
+    // { file: "logs/cultivation/all.csv", tag: "【中耕】" },
+    // { file: "logs/fertilizer/all.csv",  tag: "【施肥】" },
+    // { file: "logs/pesticide/all.csv",   tag: "【防除】" },
 
-    { file: "harvest/all.csv",     tag: "【収穫】" },
-    { file: "shipping/all.csv",    tag: "【出荷】" }
+    { file: "logs/harvest/all.csv",  tag: "【収穫】" },
+    { file: "logs/shipping/all.csv", tag: "【出荷】" }
   ];
 
   let notes = [];
@@ -50,7 +49,6 @@ export async function loadNotesForPlantingRef(plantingRef) {
       const rows = await fetchCSV(src.file);
 
       for (const row of rows) {
-        // ★ plantingRef が一致 & note が空でない
         if (row.plantingRef === plantingRef && row.note && row.note.trim() !== "") {
           notes.push(`${src.tag}${row.note.trim()}`);
         }
