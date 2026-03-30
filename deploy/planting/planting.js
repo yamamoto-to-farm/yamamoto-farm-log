@@ -80,9 +80,9 @@ async function updateSeedRefSelector() {
   const variety = document.getElementById("variety").value;
   const sel = document.getElementById("seedRef");
 
-  const remainSpan     = document.getElementById("remainingCount");
-  const trayCountSpan  = document.getElementById("seedTrayCount");
-  const trayTypeSpan   = document.getElementById("seedTrayType");
+  const remainSpan = document.getElementById("remainingCount");
+  const trayCountSpan = document.getElementById("seedTrayCount");
+  const trayTypeSpan = document.getElementById("seedTrayType");
 
   // 初期化
   sel.innerHTML = "<option value=''>選択してください</option>";
@@ -97,7 +97,7 @@ async function updateSeedRefSelector() {
 
   // 最新の残数計算のため毎回読み込む
   const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
-  const nurseryRows  = await loadCSV("logs/nursery/all.csv").catch(() => []);
+  const nurseryRows = await loadCSV("logs/nursery/all.csv").catch(() => []);
 
   // 品種一致の seedRef を抽出
   const list = seedRows.filter(r => r.varietyName === variety);
@@ -150,7 +150,7 @@ async function updateSeedRefSelector() {
 
     // 最新の残数を再計算
     const plantingRows2 = await loadCSV("logs/planting/all.csv").catch(() => []);
-    const nurseryRows2  = await loadCSV("logs/nursery/all.csv").catch(() => []);
+    const nurseryRows2 = await loadCSV("logs/nursery/all.csv").catch(() => []);
 
     const seedCount = Number(seedRow.seedCount);
 
@@ -167,7 +167,7 @@ async function updateSeedRefSelector() {
     // ★ 表示更新
     remainSpan.textContent = remaining;
     trayCountSpan.textContent = seedRow.trayCount || "-";
-    trayTypeSpan.textContent  = seedRow.trayType  || "-";
+    trayTypeSpan.textContent = seedRow.trayType || "-";
   });
 }
 
@@ -259,9 +259,9 @@ function collectPlantingData() {
 
   const harvestPlanYM = variety
     ? calcHarvestPlanYM(
-        document.getElementById("plantDate").value,
-        variety.harvestMonth
-      )
+      document.getElementById("plantDate").value,
+      variety.harvestMonth
+    )
     : "";
 
   return {
@@ -288,9 +288,11 @@ function collectPlantingData() {
 
 
 // ===============================
-// 保存処理
+// ★ planting/all.csv を replace 方式で保存
 // ===============================
 async function savePlantingInner() {
+  console.log("💾 savePlantingInner()");
+
   const data = collectPlantingData();
 
   if (!data.plantDate) {
@@ -306,7 +308,23 @@ async function savePlantingInner() {
   // ★ seedRows はキャッシュを使う（403対策）
   const seedRows = GLOBAL_SEED_ROWS;
 
-  const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
+  // ★ planting/all.csv を読み込む
+  const url = "../logs/planting/all.csv?ts=" + Date.now();
+  const res = await fetch(url);
+  const text = await res.text();
+
+  let rows = [];
+  if (text.trim()) {
+    rows = Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true
+    }).data;
+  }
+
+  // ★ 播種ロットの残数チェック（既存ロジックそのまま）
+  const planted = rows
+    .filter(p => p.seedRef === data.seedRef)
+    .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
 
   let nurseryRows = [];
   try {
@@ -322,11 +340,6 @@ async function savePlantingInner() {
   }
 
   const seedCount = Number(seedRow.seedCount);
-
-  const planted = plantingRows
-    .filter(p => p.seedRef === data.seedRef)
-    .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-
   const discarded = nurseryRows
     .filter(n => n.seedRef === data.seedRef)
     .reduce((sum, n) => sum + Number(n.discard || 0), 0);
@@ -341,6 +354,7 @@ async function savePlantingInner() {
     return;
   }
 
+  // ★ 重複チェック
   const dup = await checkDuplicate("planting", {
     date: data.plantDate,
     field: data.field,
@@ -353,38 +367,54 @@ async function savePlantingInner() {
     return;
   }
 
+  // ★ plantingRef 生成
   const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
   const machine = getMachineParam();
   const human = window.currentHuman || "";
-  const dateStr = data.plantDate.replace(/-/g, "");
 
   const notes = data.notes
     ? data.notes.replace(/[\r\n,]/g, " ")
     : "";
 
-  const csvLine = [
-    data.plantDate,
-    data.worker.replace(/,/g, "／"),
-    data.field,
-    data.variety,
-    data.seedRef,
-    data.quantity,
-    data.trayType,
-    data.spacingRow,
-    data.spacingBed,
-    data.harvestPlanYM,
+  // ★ 新しい行を rows に追加
+  rows.push({
+    plantDate: data.plantDate,
+    worker: data.worker.replace(/,/g, "／"),
+    field: data.field,
+    variety: data.variety,
+    seedRef: data.seedRef,
+    quantity: data.quantity,
+    trayType: data.trayType,
+    spacingRow: data.spacingRow,
+    spacingBed: data.spacingBed,
+    harvestPlanYM: data.harvestPlanYM,
     notes,
     machine,
     human,
     plantingRef
-  ].join(",");
+  });
 
-  await saveLog("planting", dateStr, { plantingRef }, csvLine + "\n");
+  // ★ CSV 再生成
+  const csvText = Papa.unparse(rows);
 
-  alert("保存");
+  // ★ replace 保存
+  await saveLog("planting", "all", {}, "", csvText, "csv-replace");
+
+  // ★ summaryUpdate（plantingRef を渡す）
+  enqueueSummaryUpdate(plantingRef);
+
+  alert(
+    `定植ログを保存しました\n\n` +
+    `定植日: ${data.plantDate}\n` +
+    `圃場: ${data.field}\n` +
+    `品種: ${data.variety}\n` +
+    `播種ロット: ${data.seedRef}\n` +
+    `株数: ${data.quantity}\n` +
+    `作業者: ${data.worker}\n` +
+    `備考: ${notes || "なし"}`
+  );
 
   setTimeout(() => location.reload(), 300);
-
 }
 
 window.savePlanting = savePlantingInner;
