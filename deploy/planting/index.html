@@ -70,17 +70,10 @@
       </select>
     </div>
 
-    <!-- 播種ロット -->
-    <h2>播種ロット（seedRef）</h2>
-    <div class="card">
-      <label>選択</label>
-      <select id="seedRef" class="form-input">
-        <option value="">品名を選択してください</option>
-      </select>
-
-      <p>播種枚数：<span id="seedTrayCount">-</span></p>
-      <p>トレイ種別：<span id="seedTrayType">-</span></p>
-      <p>残り株数：<span id="remainingCount">-</span></p>
+    <!-- ★★★ 播種ロット（複数選択・順位付け） ★★★ -->
+    <h2>播種ロット（複数選択・順位付け）</h2>
+    <div class="card" id="seedRefArea">
+      <!-- JS がチェックボックス＋順番ラベルを生成 -->
     </div>
 
     <!-- 植え付け量 -->
@@ -136,10 +129,10 @@
 
   </div>
 
-  <!-- ▼ Papaparse（form-area の外で安全に読み込む） -->
+  <!-- ▼ Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ★★★★★ 共通保存モーダル（先に DOM に挿入する） ★★★★★ -->
+  <!-- ★ 保存モーダル -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -148,18 +141,17 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
-  <!-- ★ summary.js を先に読み込む（必須） -->
+  <!-- summary.js -->
   <script type="module" src="../common/summary.js"></script>
 
-  <!-- ★ planting.js を後で読み込む（import が有効になる） -->
+  <!-- planting.js -->
   <script type="module" src="./planting.js"></script>
 
-  <!-- ★ save/index.js（save-modal.html が DOM に入った後で読み込む） -->
+  <!-- save/index.js -->
   <script type="module" src="../common/save/index.js"></script>
 
-  <!-- ★ initPlantingPage（最後で OK） -->
+  <!-- init -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { initPlantingPage } from "./planting.js";
