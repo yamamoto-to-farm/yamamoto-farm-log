@@ -12,6 +12,7 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 import { loadCSV } from "../common/csv.js";
+import { enqueueSummaryUpdate } from "../common/summary.js";
 
 let VARIETY_LIST = [];
 let GLOBAL_SEED_ROWS = null;   // ★ seed/all.csv を1回だけ読み込むキャッシュ
