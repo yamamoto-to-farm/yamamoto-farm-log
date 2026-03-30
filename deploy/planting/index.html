@@ -132,7 +132,7 @@
   <!-- ▼ Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ★ 保存モーダル -->
+  <!-- ★★★★★ 保存モーダル（必ず save/index.js より前） ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -141,6 +141,7 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
 
   <!-- summary.js -->
   <script type="module" src="../common/summary.js"></script>
@@ -148,7 +149,7 @@
   <!-- planting.js -->
   <script type="module" src="./planting.js"></script>
 
-  <!-- save/index.js -->
+  <!-- ★ save/index.js（← save-modal.html の後で OK） -->
   <script type="module" src="../common/save/index.js"></script>
 
   <!-- init -->
