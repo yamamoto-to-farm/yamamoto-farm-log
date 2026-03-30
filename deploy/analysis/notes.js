@@ -1,21 +1,34 @@
-// notes.js
-// ---------------------------------------------
-// すべての logs/◯◯/all.csv から plantingRef に紐づく note を抽出する
-// ---------------------------------------------
-
+// notes.js（デバッグ切り替え対応版）
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+
+// ★ デバッグフラグ（true でログ出る）
+const DEBUG = true;
 
 /* ===============================
    CSV を読み込んで配列に変換
 =============================== */
 async function fetchCSV(path) {
   const url = `${CF_BASE}/${path}?ts=${Date.now()}`;
+
+  if (DEBUG) {
+    console.log("=== fetchCSV ===");
+    console.log("URL:", url);
+  }
+
   const text = await fetch(url).then(r => r.text());
+
+  if (DEBUG) {
+    console.log("RAW CSV (first 200 chars):", text.slice(0, 200));
+  }
 
   const lines = text.trim().split("\n");
   const headers = lines[0].split(",");
 
-  return lines.slice(1).map(line => {
+  if (DEBUG) {
+    console.log("HEADERS:", headers);
+  }
+
+  const rows = lines.slice(1).map(line => {
     const cols = line.split(",");
     const obj = {};
     headers.forEach((h, i) => {
@@ -23,14 +36,23 @@ async function fetchCSV(path) {
     });
     return obj;
   });
+
+  if (DEBUG) {
+    console.log("ROWS LOADED:", rows.length);
+  }
+
+  return rows;
 }
 
 /* ===============================
    note 抽出ロジック（メイン）
 =============================== */
 export async function loadNotesForPlantingRef(plantingRef) {
+  if (DEBUG) {
+    console.log("=== loadNotesForPlantingRef START ===");
+    console.log("TARGET plantingRef:", plantingRef);
+  }
 
-  // ★ logs/◯◯/all.csv に修正済み
   const sources = [
     { file: "logs/planting/all.csv", tag: "【定植】" },
 
@@ -38,25 +60,45 @@ export async function loadNotesForPlantingRef(plantingRef) {
     // { file: "logs/fertilizer/all.csv",  tag: "【施肥】" },
     // { file: "logs/pesticide/all.csv",   tag: "【防除】" },
 
-    { file: "logs/harvest/all.csv",  tag: "【収穫】" },
-    { file: "logs/weight/all.csv", tag: "【出荷】" }
+    { file: "logs/harvest/all.csv", tag: "【収穫】" },
+    { file: "logs/weight/all.csv",  tag: "【出荷】" }
   ];
 
   let notes = [];
 
   for (const src of sources) {
+    if (DEBUG) console.log("---- Checking:", src.file);
+
     try {
       const rows = await fetchCSV(src.file);
 
       for (const row of rows) {
-        if (row.plantingRef === plantingRef && row.note && row.note.trim() !== "") {
-          notes.push(`${src.tag}${row.note.trim()}`);
+        // plantingRef が一致するか
+        if (DEBUG && row.plantingRef === plantingRef) {
+          console.log("MATCH FOUND:", row);
+        }
+
+        // note カラム名の候補
+        const noteValue =
+          row.note ??
+          row.notes ??
+          row.memo ??
+          row.comment ??
+          "";
+
+        if (row.plantingRef === plantingRef && noteValue.trim() !== "") {
+          if (DEBUG) console.log("NOTE FOUND:", noteValue);
+          notes.push(`${src.tag}${noteValue.trim()}`);
         }
       }
 
     } catch (e) {
-      console.warn(`note 読み込み失敗: ${src.file}`, e);
+      console.warn(`ERROR reading ${src.file}:`, e);
     }
+  }
+
+  if (DEBUG) {
+    console.log("=== FINAL NOTES ===", notes);
   }
 
   return notes;

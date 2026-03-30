@@ -4,7 +4,7 @@ import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
 import { safeFileName } from "/common/utils.js?v=1.1";
 
-const DEBUG = true;
+const DEBUG = false;
 const log = (...a) => DEBUG && console.log("[KPI]", ...a);
 const logError = (...a) => DEBUG && console.error("[KPI-ERROR]", ...a);
 
