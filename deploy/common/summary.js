@@ -1,5 +1,5 @@
 // =========================================================
-// common/summary.js — CloudFront + S3 最適化版（ALL(*) 対応版）
+// common/summary.js — CloudFront + S3 最適化版（ALL(*) ＋ retry 対応版）
 // =========================================================
 
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
@@ -7,8 +7,11 @@ import { saveLog } from "./save/index.js?v=2026031418";
 import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 
 // ★ 保存モーダル
-import { showSaveModal, updateSaveModal, completeSaveModal }
-  from "./save-modal.js?v=2026031418";
+import {
+  showSaveModal,
+  updateSaveModal,
+  completeSaveModal
+} from "./save-modal.js?v=2026031418";
 
 /* ---------------------------------------------------------
    0. デバッグ
@@ -82,6 +85,19 @@ async function loadCsvNoCache(path, type) {
   return data;
 }
 
+// ★ S3 反映遅延・CloudFront キャッシュ遅延に備えた retry 付きローダ
+async function loadCsvWithRetry(path, type, retry = 3, delayMs = 300) {
+  for (let i = 0; i < retry; i++) {
+    const rows = await loadCsvNoCache(path, type);
+    if (rows.length > 0) {
+      return rows;
+    }
+    slog(`RETRY ${i + 1}/${retry} for`, type);
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return [];
+}
+
 async function loadIndexCached() {
   if (indexCache) return indexCache;
 
@@ -153,7 +169,7 @@ async function processSummaryQueue() {
 }
 
 /* ---------------------------------------------------------
-   5. summaryUpdate（★ "*" 対応 & normalize 対応）
+   5. summaryUpdate（★ "*" 対応 & normalize ＋ retry 対応）
 --------------------------------------------------------- */
 
 // ★ plantingRef の正規化
@@ -170,9 +186,10 @@ export async function summaryUpdate(plantingRef) {
   // ★ "*" の場合は全 plantingRef を再計算
   if (plantingRef === "*") {
     slog(">>> summaryUpdate: FULL REBUILD");
-    const planting = await loadCsvNoCache("logs/planting/all.csv", "planting");
+    const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
 
     for (const p of planting) {
+      if (!p.plantingRef) continue;
       await summaryUpdate(p.plantingRef);
     }
     return;
@@ -181,9 +198,10 @@ export async function summaryUpdate(plantingRef) {
   invalidateSummaryCache("harvest");
   invalidateSummaryCache("weight");
 
-  const planting = await loadCsvNoCache("logs/planting/all.csv", "planting");
-  const harvest = await loadCsvNoCache("logs/harvest/all.csv", "harvest");
-  const shipping = await loadCsvNoCache("logs/weight/all.csv", "weight");
+  // ★ retry 付きで最新 CSV を読む
+  const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
+  const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
+  const shipping = await loadCsvWithRetry("logs/weight/all.csv", "weight");
 
   const p = planting.find(
     x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
@@ -204,8 +222,15 @@ export async function summaryUpdate(plantingRef) {
     x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
   );
 
-  const harvestDates = harvestRows.map(x => x.harvestDate).filter(Boolean).sort();
-  const shippingDates = shippingRows.map(x => x.shippingDate).filter(Boolean).sort();
+  const harvestDates = harvestRows
+    .map(x => x.harvestDate)
+    .filter(Boolean)
+    .sort();
+
+  const shippingDates = shippingRows
+    .map(x => x.shippingDate)
+    .filter(Boolean)
+    .sort();
 
   const harvestTotalAmount = harvestRows.reduce(
     (s, x) => s + Number(x.amount || 0),
