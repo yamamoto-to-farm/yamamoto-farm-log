@@ -21,7 +21,6 @@ async function setupYearSelector() {
   const index = await loadJSON("/data/summary-index.json");
   const years = new Set();
 
-  // summary-index.json から年度一覧を抽出
   for (const field in index) {
     for (const y in index[field]) {
       years.add(Number(y));
@@ -53,7 +52,7 @@ async function loadForSelectedYear() {
   console.log("=== plantingRef rows ===");
   console.table(rows);
 
-  // 次のステップで scatter plot やテーブル描画をここに追加する
+  renderTable(rows);   // ← ★ここでテーブルに表示
 }
 
 /* ===============================
@@ -73,12 +72,35 @@ async function loadPlantingRefList(year) {
         list.push({
           plantingRef: summary.plantingRef,
           field: summary.planting.field,
-          variety: summary.planting.variety,
-          // 面積・収量・反収は次のステップで追加
+          variety: summary.planting.variety
         });
       }
     }
   }
 
   return list;
+}
+
+/* ===============================
+   テーブル描画
+=============================== */
+function renderTable(rows) {
+  const tbody = document.getElementById("field-table-body");
+  tbody.innerHTML = "";
+
+  rows.forEach(r => {
+    tbody.insertAdjacentHTML("beforeend", `
+      <tr>
+        <td>${r.plantingRef}</td>
+        <td>${r.field}</td>
+        <td>${r.variety}</td>
+        <td>-</td>   <!-- 面積は後で計算 -->
+        <td>-</td>   <!-- 収量は後で計算 -->
+        <td>-</td>   <!-- 反収は後で計算 -->
+        <td>
+          <a href="/analysis/index.html?ref=${encodeURIComponent(r.plantingRef)}">詳細</a>
+        </td>
+      </tr>
+    `);
+  });
 }
