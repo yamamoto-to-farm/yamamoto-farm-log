@@ -104,16 +104,16 @@
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->
 
-  <!-- summary.js（モーダル制御に必須） -->
+  <!-- summary.js（モーダル制御） -->
   <script type="module" src="../common/summary.js"></script>
 
-  <!-- harvest.js -->
+  <!-- harvest.js（保存ロジック） -->
   <script type="module" src="./harvest.js"></script>
 
   <!-- save/index.js（S3 書き込み） -->
   <script type="module" src="../common/save/index.js"></script>
 
-  <!-- init -->
+  <!-- init（最後に実行） -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { initHarvestPage } from "./harvest.js";
