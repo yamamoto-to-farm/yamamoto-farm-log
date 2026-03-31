@@ -7,6 +7,17 @@ import { getMachineParam } from "../common/utils.js";
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
 
+// ★ alert-utils（共通アラート）
+import { showSaveAlert } from "../common/alert-utils.js";
+
+// ★ 保存モーダル
+import {
+  showSaveModal,
+  updateSaveModal,
+  completeSaveModal
+} from "../common/save-modal.js";
+
+
 // ===============================
 // ★ デバッグ：shipping.js が読み込まれたか確認
 // ===============================

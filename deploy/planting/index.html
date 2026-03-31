@@ -70,11 +70,9 @@
       </select>
     </div>
 
-    <!-- ★★★ 播種ロット（複数選択・順位付け） ★★★ -->
+    <!-- 播種ロット -->
     <h2>播種ロット（複数選択・順位付け）</h2>
-    <div class="card" id="seedRefArea">
-      <!-- JS がチェックボックス＋順番ラベルを生成 -->
-    </div>
+    <div class="card" id="seedRefArea"></div>
 
     <!-- 植え付け量 -->
     <h2>植え付け量</h2>
@@ -122,7 +120,7 @@
     <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="savePlanting()">保存</button>
 
-    <!-- ★ 定植記録一覧へ -->
+    <!-- 一覧へ -->
     <a href="list.html" class="menu-card" style="display:block; margin-top:20px; padding:12px; text-align:center;">
       ← 定植記録一覧へ
     </a>
@@ -143,13 +141,16 @@
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->
 
+  <!-- save-modal.js（OK ボタンの reload） -->
+  <script type="module" src="/common/save-modal.js"></script>
+
   <!-- summary.js -->
   <script type="module" src="../common/summary.js"></script>
 
   <!-- planting.js -->
   <script type="module" src="./planting.js"></script>
 
-  <!-- ★ save/index.js（← save-modal.html の後で OK） -->
+  <!-- save/index.js -->
   <script type="module" src="../common/save/index.js"></script>
 
   <!-- init -->
