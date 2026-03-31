@@ -5,19 +5,15 @@
   <meta charset="UTF-8">
   <title>収穫ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 </head>
 
 <body>
 
-  <!-- ▼ harvest は PIN UI を持たない。未認証端末は index に戻す -->
   <div id="form-area" style="display:none;">
 
     <h1>収穫ログ</h1>
 
-    <!-- 日付 -->
     <div class="form-field">
       <label for="harvestDate">収穫日</label>
       <input type="date" id="harvestDate" class="form-input">
@@ -28,7 +24,6 @@
       <input type="date" id="shippingDate" class="form-input">
     </div>
 
-    <!-- 作業者 -->
     <h2>作業者</h2>
     <div class="card" id="workers_box"></div>
 
@@ -37,10 +32,8 @@
       <input id="temp_workers" class="form-input" placeholder="例：佐藤さん, 田中さん">
     </div>
 
-    <!-- 圃場 -->
     <h2>圃場</h2>
     <div class="card">
-
       <label>自動判定（推定）</label>
       <input id="field_auto" class="form-input" readonly style="background:#fff3b0; font-weight:bold;">
 
@@ -62,7 +55,6 @@
       </select>
     </div>
 
-    <!-- 紐づける定植記録 -->
     <h2>紐づける定植記録</h2>
     <div class="card">
       <label for="plantingRef">定植記録（収穫予定 ±1ヶ月）</label>
@@ -71,7 +63,6 @@
       </select>
     </div>
 
-    <!-- 収穫量・特記事項 -->
     <h2>収穫量・特記事項</h2>
     <div class="card">
       <div class="form-field">
@@ -84,16 +75,12 @@
       </div>
     </div>
 
-    <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="saveHarvest()">保存</button>
 
-  </div><!-- /form-area -->
+  </div>
 
-
-  <!-- ▼ Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ★★★★★ 保存モーダル（必ず save/index.js より前） ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -102,21 +89,13 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
-  <!-- summary.js（モーダル制御） -->
+  <!-- summary.js を先にロード -->
   <script type="module" src="../common/summary.js"></script>
 
-  <!-- harvest.js（保存ロジック） -->
-  <script type="module" src="./harvest.js"></script>
-
-  <!-- save/index.js（S3 書き込み） -->
-  <script type="module" src="../common/save/index.js"></script>
-
-  <!-- init（最後に実行） -->
+  <!-- ★ harvest.js はここで import する（順番を保証） -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
-    import { initHarvestPage } from "./harvest.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -128,9 +107,13 @@
       document.getElementById("harvestDate").value = today;
       document.getElementById("shippingDate").value = today;
 
-      initHarvestPage();
+      // ★ summary.js の後に harvest.js を確実にロード
+      const module = await import("./harvest.js");
+      module.initHarvestPage();
     });
   </script>
+
+  <script type="module" src="../common/save/index.js"></script>
 
 </body>
 </html>
