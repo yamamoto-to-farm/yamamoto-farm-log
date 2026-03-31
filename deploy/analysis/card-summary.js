@@ -177,6 +177,8 @@ async function renderSummaryCard(s, harvestBase) {
      ★ 育苗概要（analysis-utils.js）
   --------------------------------*/
   const seedlingSummary = getSeedlingSummary(s.seedRef, s.planting.plantDate);
+   // ★ デバッグ：育苗概要の中身
+  console.log("[seedlingSummary] seedRef:", s.seedRef, "plantDate:", s.planting.plantDate, "result:", seedlingSummary);
 
   /* -------------------------------
      ★ 栽培管理概要（施肥・防除・その他）
