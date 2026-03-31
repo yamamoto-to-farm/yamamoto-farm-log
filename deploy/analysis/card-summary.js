@@ -173,6 +173,15 @@ async function renderSummaryCard(s, harvestBase) {
       : "";
 
   /* -------------------------------
+     ★ 育苗・施肥・防除の概要（まだ空の受け皿）
+     ※ analysis-utils.js で後から実装
+  --------------------------------*/
+  const seedlingSummary = {};   // { sowDate, days }
+  const fertSummary = {};       // { count, lastDate }
+  const pestSummary = {};       // { count, lastDate }
+  const workSummary = {};       // { count }
+
+  /* -------------------------------
      HTML 出力
   --------------------------------*/
   return `
@@ -197,10 +206,44 @@ async function renderSummaryCard(s, harvestBase) {
         <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
       </div>
 
+      <!-- ★ 育苗概要 -->
+      <div class="info-block">
+        <div class="info-block-title">【育苗概要】</div>
+        <div class="info-line">
+          播種：${seedlingSummary.sowDate || "—"}　
+          育苗期間：${seedlingSummary.days || "—"}日
+        </div>
+        <div class="info-line link">
+          ▶ <a href="/seedling/detail.html?seedRef=${s.seedRef}">育苗記録を見る</a>
+        </div>
+      </div>
+
+      <!-- ★ 栽培管理概要 -->
+      <div class="info-block">
+        <div class="info-block-title">【栽培管理概要】</div>
+
+        <div class="info-line">
+          施肥：${fertSummary.count || 0}回
+          （最終 ${fertSummary.lastDate || "—"}）
+        </div>
+
+        <div class="info-line">
+          防除：${pestSummary.count || 0}回
+          （最終 ${pestSummary.lastDate || "—"}）
+        </div>
+
+        <div class="info-line">
+          その他作業：${workSummary.count || 0}回
+        </div>
+
+        <div class="info-line link">
+          ▶ <a href="/work/detail.html?plantingRef=${s.plantingRef}">栽培管理記録を見る</a>
+        </div>
+      </div>
+
       <div class="info-block">
         <div class="info-block-title">【分析指標】</div>
 
-        <!-- ★ 横並びで kg/反 ＋ 基/反 -->
         <div class="info-line">
           反当たり収量：${yieldPerTan} kg/反　
           ${unitsPerTan} 基/反
