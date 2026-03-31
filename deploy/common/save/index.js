@@ -1,17 +1,39 @@
 // common/save/index.js
 
-import { showSaveModal, updateSaveModal, completeSaveModal }
-  from "../save-modal.js?v=2026031418";
+import {
+  showSaveModal,
+  updateSaveModal,
+  completeSaveModal
+} from "../save-modal.js?v=2026031418";
 
-const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
-const APPEND_URL  = "https://kv4z4gjnq9.execute-api.ap-northeast-1.amazonaws.com/prod/append";
+const PRESIGN_URL =
+  "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
+const APPEND_URL =
+  "https://kv4z4gjnq9.execute-api.ap-northeast-1.amazonaws.com/prod/append";
 
-const DEBUG_SAVELOG = true;
-function dbg(...args) {
-  if (DEBUG_SAVELOG) console.log("[saveLog]", ...args);
+/* ---------------------------------------------------------
+   デバッグ切り替え（localStorage）
+   localStorage.setItem("debugSaveLog", "1") → ON
+   localStorage.removeItem("debugSaveLog") → OFF
+--------------------------------------------------------- */
+function isDebug() {
+  return localStorage.getItem("debugSaveLog") === "1";
 }
 
-export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replaceCsv = "") {
+function dbg(...args) {
+  if (isDebug()) console.log("[saveLog]", ...args);
+}
+
+/* ---------------------------------------------------------
+   saveLog（append / multi / json / replaceCsv）
+--------------------------------------------------------- */
+export async function saveLog(
+  payloadOrType,
+  dateStr,
+  jsonData,
+  csvLine,
+  replaceCsv = ""
+) {
   let payload;
 
   if (typeof payloadOrType === "object") {
@@ -29,16 +51,21 @@ export async function saveLog(payloadOrType, dateStr, jsonData, csvLine, replace
   dbg("=== saveLog START ===");
   dbg("payload:", payload);
 
-  // ★ 保存開始モーダル
+  // 保存開始モーダル
   showSaveModal("保存しています…");
 
   return saveToS3(payload);
 }
 
+/* ---------------------------------------------------------
+   saveToS3（append / multi / json / replaceCsv）
+--------------------------------------------------------- */
 async function saveToS3(payload) {
   dbg("=== saveToS3 START ===");
 
-  // append モード
+  /* ------------------------------
+     append モード（CSV 1 行追加）
+  ------------------------------ */
   if (payload.csv && payload.replaceCsv === "") {
     dbg("mode: append");
 
@@ -58,15 +85,15 @@ async function saveToS3(payload) {
 
     dbg("=== saveToS3 END (append) ===");
 
-    // ★ 保存完了モーダル
     completeSaveModal("保存が完了しました");
-
     return;
   }
 
+  /* ------------------------------
+     multi モード（複数ファイル保存）
+  ------------------------------ */
   const files = [];
 
-  // multi モード
   if (payload.type === "multi") {
     dbg("mode: multi");
 
@@ -112,7 +139,9 @@ async function saveToS3(payload) {
 
   dbg("files to upload:", files);
 
-  // presign → PUT
+  /* ------------------------------
+     presign → PUT アップロード
+  ------------------------------ */
   for (const file of files) {
     dbg("---- presign request ----");
     dbg("key:", file.key);
@@ -149,10 +178,12 @@ async function saveToS3(payload) {
 
   dbg("=== saveToS3 END ===");
 
-  // ★ 保存完了モーダル
   completeSaveModal("保存が完了しました");
 }
 
+/* ---------------------------------------------------------
+   Content-Type 推定
+--------------------------------------------------------- */
 function guessType(path) {
   if (path.endsWith(".json")) return "application/json";
   if (path.endsWith(".csv")) return "application/octet-stream";

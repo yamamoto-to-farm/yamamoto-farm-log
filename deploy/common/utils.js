@@ -20,12 +20,12 @@ export function formatDate(date) {
 --------------------------------------------------------- */
 export function safeFileName(name) {
   const before = name;
-
+  /* //デバッグコード
   if (!name) {
     console.warn("[safeFileName] name is empty/undefined → 'unknown'");
     return "unknown";
   }
-
+  */
   const after = String(name)
     .normalize("NFKC")                 // 全角→半角
     .replace(/[()（）]/g, "")          // 括弧削除
