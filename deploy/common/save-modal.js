@@ -17,7 +17,12 @@ export function closeSaveModal() {
   document.getElementById("saveModal").style.display = "none";
 }
 
-document.getElementById("saveModalCloseBtn").addEventListener("click", () => {
-  closeSaveModal();
-  location.reload();
+window.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("saveModalCloseBtn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      closeSaveModal();
+      location.reload();   // ← ここでリロード（planting/harvest共通）
+    });
+  }
 });
