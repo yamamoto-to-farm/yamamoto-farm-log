@@ -173,7 +173,7 @@ async function renderSummaryCard(s, harvestBase) {
       : "";
 
   /* -------------------------------
-     ★ 育苗・施肥・防除の概要（まだ空の受け皿）
+     ★ 育苗・施肥・防除の概要（受け皿）
      ※ analysis-utils.js で後から実装
   --------------------------------*/
   const seedlingSummary = {};   // { sowDate, days }
@@ -214,7 +214,7 @@ async function renderSummaryCard(s, harvestBase) {
           育苗期間：${seedlingSummary.days || "—"}日
         </div>
         <div class="info-line link">
-          ▶ <a href="/seedling/detail.html?seedRef=${s.seedRef}">育苗記録を見る</a>
+          ↳ <a href="/seedling/detail.html?seedRef=${s.seedRef}">育苗記録を見る</a>
         </div>
       </div>
 
@@ -237,7 +237,7 @@ async function renderSummaryCard(s, harvestBase) {
         </div>
 
         <div class="info-line link">
-          ▶ <a href="/work/detail.html?plantingRef=${s.plantingRef}">栽培管理記録を見る</a>
+          ↳ <a href="/work/detail.html?plantingRef=${s.plantingRef}">栽培管理記録を見る</a>
         </div>
       </div>
 
