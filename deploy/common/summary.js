@@ -2,7 +2,7 @@
 // common/summary.js — CloudFront + S3 最適化版（ALL(*) ＋ retry 対応版）
 // =========================================================
 
-import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026031418";
+import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026033123";
 import { saveLog } from "./save/index.js?v=2026031418";
 import { loadJSON, saveJSON } from "./json.js?v=2026031418";
 
