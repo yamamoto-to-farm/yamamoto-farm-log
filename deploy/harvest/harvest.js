@@ -10,11 +10,18 @@ import {
 } from "../common/ui.js";
 
 import { saveLog } from "../common/save/index.js";
-import { getMachineParam, safeFileName } from "../common/utils.js";
+import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
+
+// ★ 保存モーダル
+import {
+  showSaveModal,
+  updateSaveModal,
+  completeSaveModal
+} from "../common/save-modal.js";
 
 
 // ===============================
@@ -188,7 +195,7 @@ function collectHarvestData() {
 
 
 // ===============================
-// ★ harvest/all.csv を replace 方式で保存
+// ★ harvest/all.csv を replace 方式で保存（モーダル対応版）
 // ===============================
 async function saveHarvestInner() {
   console.log("💾 saveHarvestInner()");
@@ -219,7 +226,10 @@ async function saveHarvestInner() {
   const machine = getMachineParam();
   const human = window.currentHuman || "";
 
-  // ★ まず harvest/all.csv を読み込む
+  // ★ モーダル開始
+  showSaveModal("保存しています…");
+
+  // ★ harvest/all.csv を読み込む
   const url = "../logs/harvest/all.csv?ts=" + Date.now();
   const res = await fetch(url);
   const text = await res.text();
@@ -245,28 +255,38 @@ async function saveHarvestInner() {
     human
   });
 
-  // ★ CSV 再生成
-  const csvText = Papa.unparse(rows);
+  // ★ CSV 再生成（列順固定）
+  const csvText = Papa.unparse(rows, {
+    columns: [
+      "harvestDate",
+      "shippingDate",
+      "worker",
+      "field",
+      "amount",
+      "issue",
+      "plantingRef",
+      "machine",
+      "human"
+    ]
+  });
 
   // ★ replace 保存
   await saveLog("harvest", "all", {}, "", csvText, "csv-replace");
 
-  // ★ summaryUpdate（plantingRef を渡す）
+  // ★ summaryUpdate
+  updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(data.plantingRef);
 
-  alert(
-    `収穫ログを保存しました\n\n` +
-    `定植: ${data.plantingRef}\n` +
-    `収穫日: ${data.harvestDate}\n` +
-    `出荷日: ${data.shippingDate}\n` +
-    `畑: ${data.field}\n` +
-    `収穫量: ${data.amount}\n` +
-    `作業者: ${data.worker}\n` +
-    `備考: ${data.issue || "なし"}`
-  );
-  
-  setTimeout(() => location.reload(), 300);
+  // ★ 完了待ち
+  window.addEventListener(
+    "summaryQueueEmpty",
+    () => {
+      completeSaveModal("保存が完了しました");
 
+      setTimeout(() => location.reload(), 500);
+    },
+    { once: true }
+  );
 }
 
 window.saveHarvest = saveHarvestInner;

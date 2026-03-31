@@ -5,7 +5,7 @@
   <title>収穫ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ▼ OS 全体の CSS を読み込む -->
+  <!-- ▼ OS 全体の CSS -->
   <link rel="stylesheet" href="../common/style.css">
 </head>
 
@@ -88,7 +88,8 @@
 
   </div><!-- /form-area -->
 
-  <!-- ▼ 必須ライブラリ（順番が重要） -->
+
+  <!-- ▼ 必須ライブラリ -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <!-- ▼ harvest.js -->
@@ -105,12 +106,12 @@
       // 認証OK → harvest フォームを表示
       document.getElementById("form-area").style.display = "block";
 
-      // ★ harvest.js の初期化を呼ぶ
+      // ★ harvest.js の初期化
       initHarvestPage();
     });
   </script>
 
-  <!-- ★★★★★ 追加：共通保存モーダルの読み込み ★★★★★ -->
+  <!-- ★★★★★ 保存モーダルの読み込み（必須） ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
