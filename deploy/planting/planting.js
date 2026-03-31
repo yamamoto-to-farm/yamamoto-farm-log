@@ -18,6 +18,9 @@ import {
   completeSaveModal
 } from "../common/save-modal.js";
 import { enqueueSummaryUpdate } from "../common/summary.js";
+import { showSaveAlert } from "../common/alert-utils.js";
+
+
 
 let VARIETY_LIST = [];
 let GLOBAL_SEED_ROWS = null;
@@ -437,16 +440,17 @@ async function savePlantingInner() {
     () => {
       completeSaveModal("保存が完了しました");
 
-      alert(
-        `定植ログを保存しました\n\n` +
-          `定植日: ${data.plantDate}\n` +
-          `圃場: ${data.field}\n` +
-          `品種: ${data.variety}\n` +
-          `播種ロット:\n  ${data.seedRefs.join(" → ")}\n` +
-          `株数: ${data.quantity}\n` +
-          `作業者: ${data.worker}\n` +
-          `備考: ${notes || "なし"}`
-      );
+      // ★ 保存内容のアラート（共通関数）
+      showSaveAlert("定植ログを保存しました", [
+        { label: "定植日", value: data.plantDate },
+        { label: "圃場", value: data.field },
+        { label: "品種", value: data.variety },
+        { label: "播種ロット", value: data.seedRefs.join(" → ") },
+        { label: "株数", value: data.quantity },
+        { label: "作業者", value: data.worker },
+        { label: "備考", value: notes || "なし" }
+      ]);
+
 
     },
     { once: true }

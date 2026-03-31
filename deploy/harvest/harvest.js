@@ -22,6 +22,8 @@ import {
   updateSaveModal,
   completeSaveModal
 } from "../common/save-modal.js";
+import { showSaveAlert } from "../common/alert-utils.js";
+
 
 
 // ===============================
@@ -283,6 +285,15 @@ async function saveHarvestInner() {
     () => {
       completeSaveModal("保存が完了しました");
 
+      // ★ 保存内容のアラート（共通関数）
+      showSaveAlert("収穫ログを保存しました", [
+        { label: "収穫日", value: data.harvestDate },
+        { label: "出荷日", value: data.shippingDate },
+        { label: "圃場", value: data.field },
+        { label: "収穫量", value: data.amount },
+        { label: "作業者", value: data.worker },
+        { label: "備考", value: data.issue || "なし" }
+      ]);
     },
     { once: true }
   );
