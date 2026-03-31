@@ -79,8 +79,10 @@
 
   </div>
 
+  <!-- Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
+  <!-- 保存モーダル -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -90,10 +92,10 @@
       });
   </script>
 
-  <!-- summary.js を先にロード -->
+  <!-- summary.js（モーダル制御） -->
   <script type="module" src="../common/summary.js"></script>
 
-  <!-- ★ harvest.js はここで import する（順番を保証） -->
+  <!-- harvest.js を import して順番を保証 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
 
@@ -107,12 +109,12 @@
       document.getElementById("harvestDate").value = today;
       document.getElementById("shippingDate").value = today;
 
-      // ★ summary.js の後に harvest.js を確実にロード
       const module = await import("./harvest.js");
       module.initHarvestPage();
     });
   </script>
 
+  <!-- save/index.js（S3 書き込み） -->
   <script type="module" src="../common/save/index.js"></script>
 
 </body>

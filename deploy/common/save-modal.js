@@ -19,4 +19,5 @@ export function closeSaveModal() {
 
 document.getElementById("saveModalCloseBtn").addEventListener("click", () => {
   closeSaveModal();
+  location.reload();
 });

@@ -448,7 +448,6 @@ async function savePlantingInner() {
           `備考: ${notes || "なし"}`
       );
 
-      setTimeout(() => location.reload(), 500);
     },
     { once: true }
   );
