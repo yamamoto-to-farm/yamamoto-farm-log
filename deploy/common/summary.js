@@ -16,7 +16,7 @@ import {
 /* ---------------------------------------------------------
    0. デバッグ
 --------------------------------------------------------- */
-const SUMMARY_DEBUG = true;
+const SUMMARY_DEBUG = false;
 function slog(...args) {
   if (SUMMARY_DEBUG) console.log("[summary-debug]", ...args);
 }
