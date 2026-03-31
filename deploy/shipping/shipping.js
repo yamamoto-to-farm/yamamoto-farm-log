@@ -263,6 +263,9 @@ async function saveShipping() {
     return;
   }
 
+  // ★ 保存モーダル（保存中…）
+  showSaveModal("保存中です…");
+
   const harvest = await loadCSV("../logs/harvest/all.csv");
   const weight = await loadCSV("../logs/weight/all.csv");
 
@@ -323,11 +326,10 @@ async function saveShipping() {
       notes: notes.replace(/[\r\n,]/g, " "),
       plantingRef: t.plantingRef,
       machine,
-      human: cleanHuman   // ← ★ human を完全正規化して保存
+      human: cleanHuman
     });
   });
 
-  // ★ ヘッダーを強制指定（壊れたヘッダーを完全修正）
   const csvText = Papa.unparse(rows, {
     columns: [
       "shippingDate",
@@ -343,28 +345,41 @@ async function saveShipping() {
 
   await saveLog("weight", "all", {}, "", csvText, "csv-replace");
 
+  // ★ サマリー更新
   targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
 
-let msg = "出荷ログを保存しました\n\n";
+  // ★ モーダルを「サマリー更新中…」に
+  updateSaveModal("サマリー更新中…");
 
-targets.forEach(t => {
-  const shippedBins = t.originalRemain - t.remainBins;
+  // ===============================
+  // ★ summaryQueueEmpty → 完了モーダル + alert-utils
+  // ===============================
+  window.addEventListener(
+    "summaryQueueEmpty",
+    () => {
+      completeSaveModal("保存が完了しました");
 
-  msg +=
-    `定植: ${t.plantingRef}\n` +
-    `出荷日: ${shippingDate}\n` +
-    `圃場: ${t.field}\n` +
-    `出荷基数: ${shippedBins} 基\n` +
-    `重量: ${t.totalWeight.toFixed(1)} kg\n` +
-    `作業者: ${cleanHuman}\n` +
-    `備考: ${notes || "なし"}\n\n`;
-});
+      // ★ 共通アラート（alert-utils）
+      const items = [];
+      targets.forEach(t => {
+        const shippedBins = t.originalRemain - t.remainBins;
 
-alert(msg);
+        items.push(
+          { label: "定植", value: t.plantingRef },
+          { label: "出荷日", value: shippingDate },
+          { label: "圃場", value: t.field },
+          { label: "出荷基数", value: `${shippedBins} 基` },
+          { label: "重量", value: `${t.totalWeight.toFixed(1)} kg` },
+          { label: "作業者", value: cleanHuman },
+          { label: "備考", value: notes || "なし" },
+          { label: "", value: "" } // 空行
+        );
+      });
 
-  console.log("=== saveShipping: replace 保存完了 ===");
-  setTimeout(() => location.reload(), 300);
-
+      showSaveAlert("出荷ログを保存しました", items);
+    },
+    { once: true }
+  );
 }
 
 window.saveShipping = saveShipping;
