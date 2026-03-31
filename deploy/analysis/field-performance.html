@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ロット別生産性分析（作付面積 × 反収）</title>
+
+  <!-- 共通スタイル -->
+  <link rel="stylesheet" href="/common/style.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { padding: 20px; }
+
+    #chart-container {
+      width: 100%;
+      max-width: 900px;
+      margin: 30px auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ナビバー -->
+  <script type="module">
+    import { renderNavbar } from "/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
+
+  <h1>ロット別生産性分析（作付面積 × 反収）</h1>
+
+  <!-- 年度選択 -->
+  <label>年度：</label>
+  <select id="year-select"></select>
+
+  <!-- 散布図 -->
+  <div id="chart-container">
+    <canvas id="fieldChart"></canvas>
+  </div>
+
+  <!-- ロット一覧 -->
+  <h2>ロット一覧（plantingRef）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>plantingRef</th>
+        <th>圃場</th>
+        <th>品種</th>
+        <th>面積(反)</th>
+        <th>収量(kg)</th>
+        <th>反収(kg/反)</th>
+        <th>詳細</th>
+      </tr>
+    </thead>
+    <tbody id="field-table-body"></tbody>
+  </table>
+
+  <!-- JS -->
+  <script type="module" src="/analysis/field-performance.js?v=1.0"></script>
+
+</body>
+</html>

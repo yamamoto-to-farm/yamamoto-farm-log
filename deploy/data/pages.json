@@ -106,6 +106,17 @@
       "icon": "assets/icons/analysis.png"
     },
     {
+      "id": "field-performance",
+      "name": "ロット別生産性分析",
+      "path": "analysis/field-performance.html",
+      "category": "圃場",
+      "roles": [
+        "family",
+        "admin"
+      ],
+      "icon": "assets/icons/analysis.png"
+    },
+    {
       "id": "admin",
       "name": "管理ページ",
       "path": "admin/index.html",
