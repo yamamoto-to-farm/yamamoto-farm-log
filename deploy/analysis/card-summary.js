@@ -2,14 +2,15 @@
 import { safeFieldName } from "/common/utils.js";
 import { loadNotesForPlantingRef } from "./notes.js";
 
-// ★ 指標計算を utils に集約
+// ★ 指標計算 & 育苗概要ロジック
 import {
   calcAreaM2,
   calcAreaTan,
   calcYieldPerTan,
   calcUnitsPerTan,
   calcAvgWeight,
-  calcDaysToHarvest
+  calcDaysToHarvest,
+  getSeedlingSummary
 } from "./analysis-utils.js";
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
@@ -173,13 +174,17 @@ async function renderSummaryCard(s, harvestBase) {
       : "";
 
   /* -------------------------------
-     ★ 育苗・施肥・防除の概要（受け皿）
-     ※ analysis-utils.js で後から実装
+     ★ 育苗概要（analysis-utils.js）
   --------------------------------*/
-  const seedlingSummary = {};   // { sowDate, days }
-  const fertSummary = {};       // { count, lastDate }
-  const pestSummary = {};       // { count, lastDate }
-  const workSummary = {};       // { count }
+  const seedlingSummary = getSeedlingSummary(s.seedRef, s.planting.plantDate);
+
+  /* -------------------------------
+     ★ 栽培管理概要（施肥・防除・その他）
+     ※ まだ空。後で utils に追加
+  --------------------------------*/
+  const fertSummary = {};
+  const pestSummary = {};
+  const workSummary = {};
 
   /* -------------------------------
      HTML 出力
