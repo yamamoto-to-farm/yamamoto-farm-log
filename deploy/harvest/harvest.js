@@ -283,7 +283,6 @@ async function saveHarvestInner() {
     () => {
       completeSaveModal("保存が完了しました");
 
-      setTimeout(() => location.reload(), 500);
     },
     { once: true }
   );
