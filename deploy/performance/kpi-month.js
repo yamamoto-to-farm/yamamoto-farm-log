@@ -1,4 +1,4 @@
-// kpi-month.js（CloudFront 対応・完全版）
+// kpi-month.js（CloudFront 対応・反収削除版）
 
 import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
@@ -57,7 +57,7 @@ async function renderMonthPage() {
   // タイトル更新
   document.getElementById("month-title").textContent = `${year}年${month}月`;
 
-  // CSV 読み込み（CloudFront 絶対パス）
+  // CSV 読み込み
   const weightRows = await loadCSV("/logs/weight/all.csv");
 
   // shippingDate で該当月を抽出
@@ -99,7 +99,6 @@ async function renderMonthPage() {
   // plantingRef ごとに summary を読み込みつつ行を作る
   for (const ref of Object.keys(map)) {
     const summary = await loadSummaryByRef(ref);
-
     if (!summary) continue;
 
     const planting = summary.planting;
@@ -110,8 +109,6 @@ async function renderMonthPage() {
     const area = calcAreaTan(planting);
     const kg = map[ref].kg;
     const units = map[ref].units;
-
-    const ratio = area > 0 ? (kg / area).toFixed(1) : "-";
 
     // 収穫期間
     const dates = map[ref].dates.map(d => new Date(d)).sort((a, b) => a - b);
@@ -124,27 +121,25 @@ async function renderMonthPage() {
     totalKg += kg;
     totalUnits += units;
 
-    // 行追加（★ analysis も絶対パスに修正）
+    // 行追加（反収・分析列なし）
     tbody.insertAdjacentHTML("beforeend", `
-  <tr>
-    <td class="left">${ref}</td>
-    <td class="left">${variety}</td>
-    <td class="left">
-      <a href="/analysis/index.html?field=${encodeURIComponent(field)}">
-        ${field}
-      </a>
-    </td>
-    <td>${area.toFixed(2)}</td>
-    <td>${kg.toLocaleString()}</td>
-    <td>${units.toLocaleString()}</td>
-    <td>${ratio}</td>
-    <td class="left">${period}</td>
-    <td></td>
-  </tr>
-`);
+      <tr>
+        <td class="left">${ref}</td>
+        <td class="left">${variety}</td>
+        <td class="left">
+          <a href="/analysis/index.html?field=${encodeURIComponent(field)}">
+            ${field}
+          </a>
+        </td>
+        <td>${area.toFixed(2)}</td>
+        <td>${kg.toLocaleString()}</td>
+        <td>${units.toLocaleString()}</td>
+        <td class="left">${period}</td>
+      </tr>
+    `);
   }
 
-  // 合計行
+  // 合計行（7列に統一）
   document.getElementById("kpi-month-total").innerHTML = `
     <td class="left">合計</td>
     <td></td>
@@ -152,9 +147,7 @@ async function renderMonthPage() {
     <td>${totalArea.toFixed(2)}</td>
     <td>${totalKg.toLocaleString()}</td>
     <td>${totalUnits.toLocaleString()}</td>
-    <td>${totalArea > 0 ? (totalKg / totalArea).toFixed(1) : "-"}</td>
     <td class="left">-</td>
-    <td></td>
   `;
 }
 
