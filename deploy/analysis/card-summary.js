@@ -1,6 +1,16 @@
 // card-summary.js（CloudFront 統一版）
 import { safeFieldName } from "/common/utils.js";
-import { loadNotesForPlantingRef } from "./notes.js";   // ★ 追加
+import { loadNotesForPlantingRef } from "./notes.js";
+
+// ★ 指標計算を utils に集約
+import {
+  calcAreaM2,
+  calcAreaTan,
+  calcYieldPerTan,
+  calcUnitsPerTan,
+  calcAvgWeight,
+  calcDaysToHarvest
+} from "./analysis-utils.js";
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
@@ -18,7 +28,7 @@ export async function renderSummaryCards(rawFieldName) {
     return `<p>サマリーがありません</p>`;
   }
 
-  // ★ 目標値（harvestBase.json）を先に読み込む
+  // ★ 目標値（harvestBase.json）
   const harvestBase = await fetch(`${CF_BASE}/data/harvestBase.json?ts=${Date.now()}`)
     .then(r => r.json())
     .catch(() => ({ monthly: {} }));
@@ -38,7 +48,7 @@ export async function renderSummaryCards(rawFieldName) {
       const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
       const summary = await fetch(url).then(r => r.json());
 
-      html += await renderSummaryCard(summary, harvestBase);  // ★ await に変更
+      html += await renderSummaryCard(summary, harvestBase);
     }
 
     html += `</div></details>`;
@@ -64,27 +74,24 @@ function getRateClass(rate) {
 async function renderSummaryCard(s, harvestBase) {
 
   /* -------------------------------
-     日付の安全処理
+     日付処理
   --------------------------------*/
-  const plantDate = new Date(s.planting.plantDate);
-  const firstHarvest = s.harvest.firstDate ? new Date(s.harvest.firstDate) : null;
-  const lastHarvest = s.harvest.lastDate ? new Date(s.harvest.lastDate) : null;
-
-  const hasHarvest = !!firstHarvest && !!lastHarvest && s.harvest.count > 0;
+  const hasHarvest = !!s.harvest.firstDate && !!s.harvest.lastDate && s.harvest.count > 0;
 
   const daysToHarvest = hasHarvest
-    ? Math.floor((firstHarvest - plantDate) / (1000 * 60 * 60 * 24))
-    : null;
+    ? calcDaysToHarvest(s.planting.plantDate, s.harvest.firstDate)
+    : "—";
 
   /* -------------------------------
-     面積計算
+     面積計算（utils）
   --------------------------------*/
-  const areaM2 =
-    Number(s.planting.quantity) *
-    (Number(s.planting.spacing.row) / 100) *
-    (Number(s.planting.spacing.bed) / 100);
+  const areaM2 = calcAreaM2(
+    s.planting.quantity,
+    s.planting.spacing.row,
+    s.planting.spacing.bed
+  );
 
-  const areaTan = areaM2 / 990;
+  const areaTan = calcAreaTan(areaM2);
 
   const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
 
@@ -96,21 +103,22 @@ async function renderSummaryCard(s, harvestBase) {
   const totalWeight = s.shipping.totalWeight;
 
   /* -------------------------------
-     主指標：反収（kg/反）
+     指標計算（utils）
   --------------------------------*/
   const yieldPerTan = hasHarvest
-    ? (totalWeight / areaTan).toFixed(1)
+    ? calcYieldPerTan(totalWeight, areaTan)
     : "—";
 
-  /* -------------------------------
-     主指標：1基あたり平均重量（kg/基）
-  --------------------------------*/
+  const unitsPerTan = hasHarvest
+    ? calcUnitsPerTan(totalAmount, areaTan)
+    : "—";
+
   const avgPerUnit = hasHarvest
-    ? (totalWeight / totalAmount).toFixed(2)
+    ? calcAvgWeight(totalWeight, totalAmount)
     : "—";
 
   /* -------------------------------
-     目標反収（harvestBase.json）
+     目標反収
   --------------------------------*/
   const ym = s.planting.harvestPlanYM;
   const month = ym?.slice(5);
@@ -119,9 +127,6 @@ async function renderSummaryCard(s, harvestBase) {
     ? harvestBase.monthly[month].yieldPerTan
     : null;
 
-  /* -------------------------------
-     達成率（%）
-  --------------------------------*/
   const achieveRate =
     hasHarvest && targetPerTan
       ? ((yieldPerTan / targetPerTan) * 100).toFixed(1)
@@ -139,7 +144,10 @@ async function renderSummaryCard(s, harvestBase) {
     const lastMD = s.harvest.lastDate.slice(5).replace("-", "/");
 
     const harvestDays =
-      Math.floor((lastHarvest - firstHarvest) / (1000 * 60 * 60 * 24)) + 1;
+      Math.floor(
+        (new Date(s.harvest.lastDate) - new Date(s.harvest.firstDate))
+        / (1000 * 60 * 60 * 24)
+      ) + 1;
 
     harvestPeriod =
       firstMD === lastMD
@@ -148,7 +156,7 @@ async function renderSummaryCard(s, harvestBase) {
   }
 
   /* -------------------------------
-     ★ 現場メモ（notes.js）
+     ★ 現場メモ
   --------------------------------*/
   const notes = await loadNotesForPlantingRef(s.plantingRef);
 
@@ -186,12 +194,18 @@ async function renderSummaryCard(s, harvestBase) {
         <div class="info-line">収穫期間：${harvestPeriod}</div>
         <div class="info-line">収穫回数：${s.harvest.count} 回</div>
         <div class="info-line">収穫合計：${totalAmount} 基（${totalWeight.toFixed(1)} kg）</div>
-        <div class="info-line">定植 → 初回収穫：${daysToHarvest !== null ? daysToHarvest + " 日" : "—"}</div>
+        <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
       </div>
 
       <div class="info-block">
         <div class="info-block-title">【分析指標】</div>
-        <div class="info-line">反当たり収量：${yieldPerTan} kg/反</div>
+
+        <!-- ★ 横並びで kg/反 ＋ 基/反 -->
+        <div class="info-line">
+          反当たり収量：${yieldPerTan} kg/反　
+          ${unitsPerTan} 基/反
+        </div>
+
         <div class="info-line">1基あたり平均重量：${avgPerUnit} kg/基</div>
       </div>
 
