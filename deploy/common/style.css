@@ -10,14 +10,14 @@ body {
 }
 
 h1 {
-    font-size: 20px; /* ← 控えめに調整 */
+    font-size: 20px;
     margin-bottom: 22px;
     text-align: center;
     font-weight: 600;
 }
 
 h2 {
-    font-size: 18px; /* ← 少し控えめに */
+    font-size: 18px;
     font-weight: 600;
     margin: 24px 0 10px;
     color: #333;
@@ -127,7 +127,6 @@ details[open] {
 
 .field-group a:hover {
     background: #eef5ff;
-    text-decoration: none;
 }
 
 /* ===============================
@@ -222,8 +221,6 @@ select {
 /* ===============================
    JSON 編集（parcels / contracts）
 =============================== */
-
-/* ラベル行（ヘッダー） */
 .parcel-header,
 .contract-header {
     display: grid;
@@ -235,7 +232,6 @@ select {
     color: #444;
 }
 
-/* 入力行 */
 .parcel-row,
 .contract-row {
     display: grid;
@@ -327,6 +323,12 @@ tbody tr:nth-child(odd) {
     background: #fafafa;
 }
 
+/* ★ 合計行を太字にする */
+#kpi-month-total td {
+    font-weight: 700;
+    background: #f7f7f7;
+}
+
 /* 差分色 */
 .diff-positive {
     color: #2e8b57;
@@ -346,17 +348,17 @@ tbody tr:nth-child(odd) {
    達成率の色分け（analysis/card-summary）
 =============================== */
 .rate-good {
-    color: #0a8a0a;      /* 濃い緑 */
+    color: #0a8a0a;
     font-weight: 700;
 }
 
 .rate-ok {
-    color: #c7a600;      /* 黄 */
+    color: #c7a600;
     font-weight: 700;
 }
 
 .rate-bad {
-    color: #d11a1a;      /* 赤 */
+    color: #d11a1a;
     font-weight: 700;
 }
 
@@ -397,7 +399,7 @@ tbody tr:nth-child(odd) {
     }
 
     h1 {
-        font-size: 18px; /* ← さらに控えめ */
+        font-size: 18px;
     }
 
     .card {

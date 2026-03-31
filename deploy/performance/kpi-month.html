@@ -5,17 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KPI 月別分析</title>
 
-  <!-- CSS -->
+  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css">
-
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 6px 8px; }
-    th { background: #f0f0f0; }
-    .left { text-align: left; }
-    .total-row { font-weight: bold; background: #fafafa; }
-  </style>
 </head>
 
 <body>
@@ -39,7 +30,6 @@
         <th>出荷量(基)</th>
         <th>反当たり収量</th>
         <th>収穫期間</th>
-        <th>分析</th>
       </tr>
     </thead>
 
@@ -50,7 +40,7 @@
     </tfoot>
   </table>
 
-  <!-- JS 読み込み（★ performance 配下に修正） -->
+  <!-- JS 読み込み -->
   <script type="module" src="/performance/kpi-month.js?v=1.1"></script>
 
 </body>
