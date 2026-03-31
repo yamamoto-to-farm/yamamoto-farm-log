@@ -16,27 +16,7 @@ export function formatDate(date) {
 }
 
 /* ---------------------------------------------------------
-   safeFieldName（デバッグログ付き・安全版）
---------------------------------------------------------- */
-export function safeFieldName(field) {
-  const before = field;
-
-  // ★ undefined / null / 空欄でも落ちないようにする
-  if (!field) {
-    console.warn("[safeFieldName] field is empty/undefined → 'unknown'");
-    return "unknown";
-  }
-
-  const after = String(field)
-    .replace(/[()（）]/g, "_")
-    .replace(/_+$/g, "");
-
-  console.log("[safeFieldName] before =", before, "after =", after);
-  return after;
-}
-
-/* ---------------------------------------------------------
-   safeFileName（デバッグログ付き・安全版）
+   safeFileName（フィールド名・ロット名共通の正規化）
 --------------------------------------------------------- */
 export function safeFileName(name) {
   const before = name;
@@ -47,13 +27,22 @@ export function safeFileName(name) {
   }
 
   const after = String(name)
-    .replace(/[()（）]/g, "_")
-    .replace(/[^\w\u3040-\u30FF\u4E00-\u9FFF-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
+    .normalize("NFKC")                 // 全角→半角
+    .replace(/[()（）]/g, "")          // 括弧削除
+    .replace(/・/g, "_")               // 中黒は区切り
+    .replace(/[^\p{L}\p{N}_-]/gu, "_") // 日本語・英数字・_・- 以外は _
+    .replace(/_+/g, "_")               // _ の連続を1つに
+    .replace(/^_+|_+$/g, "");          // 先頭・末尾の _ 削除
 
   console.log("[safeFileName] before =", before, "after =", after);
   return after;
+}
+
+/* ---------------------------------------------------------
+   safeFieldName（safeFileName と完全統一）
+--------------------------------------------------------- */
+export function safeFieldName(field) {
+  return safeFileName(field);
 }
 
 /* ---------------------------------------------------------
