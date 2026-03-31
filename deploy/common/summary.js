@@ -269,7 +269,7 @@ export async function summaryUpdate(plantingRef) {
       firstDate: shippingDates[0] || null,
       lastDate: shippingDates[shippingDates.length - 1] || null
     },
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString()
   };
 
   window._summaryPool[plantingRef] = summary;
