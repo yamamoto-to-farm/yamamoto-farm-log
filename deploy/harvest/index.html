@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>収穫ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ▼ OS 全体の CSS -->
-  <link rel="stylesheet" href="../common/style.css">
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
 </head>
 
 <body>
@@ -83,35 +84,16 @@
       </div>
     </div>
 
-    <!-- 保存ボタン -->
+    <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="saveHarvest()">保存</button>
 
   </div><!-- /form-area -->
 
 
-  <!-- ▼ 必須ライブラリ -->
+  <!-- ▼ Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ▼ harvest.js -->
-  <script type="module">
-    import { verifyLocalAuth } from "../common/ui.js";
-    import { initHarvestPage } from "./harvest.js";
-
-    window.addEventListener("DOMContentLoaded", async () => {
-
-      // ★ localStorage の認証情報が有効かチェック
-      const ok = await verifyLocalAuth();
-      if (!ok) return;   // 無効なら index.html に戻される
-
-      // 認証OK → harvest フォームを表示
-      document.getElementById("form-area").style.display = "block";
-
-      // ★ harvest.js の初期化
-      initHarvestPage();
-    });
-  </script>
-
-  <!-- ★★★★★ 保存モーダルの読み込み（必須） ★★★★★ -->
+  <!-- ★★★★★ 保存モーダル（必ず save/index.js より前） ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -121,6 +103,34 @@
       });
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->
+
+  <!-- summary.js（モーダル制御に必須） -->
+  <script type="module" src="../common/summary.js"></script>
+
+  <!-- harvest.js -->
+  <script type="module" src="./harvest.js"></script>
+
+  <!-- save/index.js（S3 書き込み） -->
+  <script type="module" src="../common/save/index.js"></script>
+
+  <!-- init -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { initHarvestPage } from "./harvest.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      document.getElementById("form-area").style.display = "block";
+
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("harvestDate").value = today;
+      document.getElementById("shippingDate").value = today;
+
+      initHarvestPage();
+    });
+  </script>
 
 </body>
 </html>
