@@ -126,22 +126,22 @@ async function renderMonthPage() {
 
     // 行追加（★ analysis も絶対パスに修正）
     tbody.insertAdjacentHTML("beforeend", `
-      <tr>
-        <td class="left">${ref}</td>
-        <td class="left">${variety}</td>
-        <td class="left">${field}</td>
-        <td>${area.toFixed(2)}</td>
-        <td>${kg.toLocaleString()}</td>
-        <td>${units.toLocaleString()}</td>
-        <td>${ratio}</td>
-        <td class="left">${period}</td>
-        <td class="left">
-          <a href="/analysis/index.html?field=${encodeURIComponent(field)}">
-            分析
-          </a>
-        </td>
-      </tr>
-    `);
+  <tr>
+    <td class="left">${ref}</td>
+    <td class="left">${variety}</td>
+    <td class="left">
+      <a href="/analysis/index.html?field=${encodeURIComponent(field)}">
+        ${field}
+      </a>
+    </td>
+    <td>${area.toFixed(2)}</td>
+    <td>${kg.toLocaleString()}</td>
+    <td>${units.toLocaleString()}</td>
+    <td>${ratio}</td>
+    <td class="left">${period}</td>
+    <td></td>
+  </tr>
+`);
   }
 
   // 合計行
