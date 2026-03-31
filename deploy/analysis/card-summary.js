@@ -75,6 +75,14 @@ function getRateClass(rate) {
 async function renderSummaryCard(s, harvestBase) {
 
   /* -------------------------------
+     ★ 育苗概要（正しい seedRef 参照）
+  --------------------------------*/
+  const seedRef = s.planting.seedRef;   // ← これが正しい
+  const seedlingSummary = getSeedlingSummary(seedRef, s.planting.plantDate);
+
+  console.log("[seedlingSummary] seedRef:", seedRef, "result:", seedlingSummary);
+
+  /* -------------------------------
      日付処理
   --------------------------------*/
   const hasHarvest = !!s.harvest.firstDate && !!s.harvest.lastDate && s.harvest.count > 0;
@@ -174,15 +182,7 @@ async function renderSummaryCard(s, harvestBase) {
       : "";
 
   /* -------------------------------
-     ★ 育苗概要（analysis-utils.js）
-  --------------------------------*/
-  const seedlingSummary = getSeedlingSummary(s.seedRef, s.planting.plantDate);
-   // ★ デバッグ：育苗概要の中身
-  console.log("[seedlingSummary] seedRef:", s.seedRef, "plantDate:", s.planting.plantDate, "result:", seedlingSummary);
-
-  /* -------------------------------
-     ★ 栽培管理概要（施肥・防除・その他）
-     ※ まだ空。後で utils に追加
+     ★ 栽培管理概要（まだ空）
   --------------------------------*/
   const fertSummary = {};
   const pestSummary = {};
@@ -221,7 +221,7 @@ async function renderSummaryCard(s, harvestBase) {
           育苗期間：${seedlingSummary.days || "—"}日
         </div>
         <div class="info-line link">
-          ↳ <a href="/seedling/detail.html?seedRef=${s.seedRef}">育苗記録を見る</a>
+          ↳ <a href="/seedling/detail.html?seedRef=${seedRef || ""}">育苗記録を見る</a>
         </div>
       </div>
 
