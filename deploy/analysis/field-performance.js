@@ -1,6 +1,11 @@
 // analysis/field-performance.js
 
 import { loadJSON } from "/common/json.js?v=1.1";
+import { 
+  calcAreaM2,
+  calcAreaTan,
+  calcYieldPerTan
+} from "/analysis/analysis-utils.js?v=1.1";
 
 /* ===============================
    初期化
@@ -52,7 +57,7 @@ async function loadForSelectedYear() {
   console.log("=== plantingRef rows ===");
   console.table(rows);
 
-  renderTable(rows);   // ← ★ここでテーブルに表示
+  renderTable(rows);
 }
 
 /* ===============================
@@ -69,10 +74,31 @@ async function loadPlantingRefList(year) {
       for (const file of index[field][y]) {
         const summary = await loadJSON(`/logs/summary/${field}/${y}/${file}`);
 
+        const planting = summary.planting;
+        const shipping = summary.shipping;
+
+        // --- 面積（㎡ → 反） ---
+        const areaM2 = calcAreaM2(
+          Number(planting.quantity || 0),
+          Number(planting.spacing.row || 0),
+          Number(planting.spacing.bed || 0)
+        );
+
+        const areaTan = calcAreaTan(areaM2); // 反（小数）
+
+        // --- 収量（kg） ---
+        const weight = Number(shipping.totalWeight || 0);
+
+        // --- 反収（kg/反） ---
+        const yieldPerTan = Number(calcYieldPerTan(weight, areaTan));
+
         list.push({
           plantingRef: summary.plantingRef,
-          field: summary.planting.field,
-          variety: summary.planting.variety
+          field: planting.field,
+          variety: planting.variety,
+          areaTan,
+          weight,
+          yieldPerTan
         });
       }
     }
@@ -94,9 +120,9 @@ function renderTable(rows) {
         <td>${r.plantingRef}</td>
         <td>${r.field}</td>
         <td>${r.variety}</td>
-        <td>-</td>   <!-- 面積は後で計算 -->
-        <td>-</td>   <!-- 収量は後で計算 -->
-        <td>-</td>   <!-- 反収は後で計算 -->
+        <td>${r.areaTan.toFixed(2)}</td>
+        <td>${r.weight.toLocaleString()}</td>
+        <td>${r.yieldPerTan.toFixed(1)}</td>
         <td>
           <a href="/analysis/index.html?ref=${encodeURIComponent(r.plantingRef)}">詳細</a>
         </td>
