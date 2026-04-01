@@ -7,14 +7,14 @@ import {
   calcYieldPerTan
 } from "/analysis/analysis-utils.js?v=1.1";
 
+let chart = null;
+
 /* ===============================
    初期化
 =============================== */
 init();
 
 async function init() {
-  console.log("=== field-performance init ===");
-
   await setupYearSelector();
   await loadForSelectedYear();
 }
@@ -46,18 +46,15 @@ async function setupYearSelector() {
 }
 
 /* ===============================
-   年度変更 → plantingRef 読み込み
+   年度変更 → データ読み込み
 =============================== */
 async function loadForSelectedYear() {
   const year = Number(document.getElementById("year-select").value);
-  console.log("=== loadForSelectedYear:", year);
 
   const rows = await loadPlantingRefList(year);
 
-  console.log("=== plantingRef rows ===");
-  console.table(rows);
-
   renderTable(rows);
+  renderScatter(rows);
 }
 
 /* ===============================
@@ -77,19 +74,18 @@ async function loadPlantingRefList(year) {
         const planting = summary.planting;
         const shipping = summary.shipping;
 
-        // --- 面積（㎡ → 反） ---
+        // 面積（㎡ → 反）
         const areaM2 = calcAreaM2(
           Number(planting.quantity || 0),
           Number(planting.spacing.row || 0),
           Number(planting.spacing.bed || 0)
         );
+        const areaTan = calcAreaTan(areaM2);
 
-        const areaTan = calcAreaTan(areaM2); // 反（小数）
-
-        // --- 収量（kg） ---
+        // 収量（kg）
         const weight = Number(shipping.totalWeight || 0);
 
-        // --- 反収（kg/反） ---
+        // 反収（kg/反）
         const yieldPerTan = Number(calcYieldPerTan(weight, areaTan));
 
         list.push({
@@ -128,5 +124,56 @@ function renderTable(rows) {
         </td>
       </tr>
     `);
+  });
+}
+
+/* ===============================
+   散布図描画（Chart.js）
+=============================== */
+function renderScatter(rows) {
+  const canvas = document.getElementById("fieldChart");
+  const ctx = canvas.getContext("2d");   // ← ★これが重要！
+
+  // 既存チャートがあれば破棄
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: [{
+        label: "ロット別生産性",
+        data: rows.map(r => ({
+          x: r.areaTan,
+          y: r.yieldPerTan,
+          label: r.plantingRef
+        })),
+        backgroundColor: "rgba(54, 162, 235, 0.7)"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const r = rows[ctx.dataIndex];
+              return [
+                `plantingRef: ${r.plantingRef}`,
+                `面積: ${r.areaTan.toFixed(2)}反`,
+                `反収: ${r.yieldPerTan.toFixed(1)}kg/反`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: "作付面積（反）" }
+        },
+        y: {
+          title: { display: true, text: "反収（kg/反）" }
+        }
+      }
+    }
   });
 }
