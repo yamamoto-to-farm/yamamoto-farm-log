@@ -2,162 +2,61 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>定植ログ一覧 - 山本農園</title>
+  <title>定植記録一覧</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン -->
+  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 
+  <!-- ナビバー -->
   <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js";
-    import { loadCSV } from "../common/csv.js";
-
-    let canDiscard = false;
-    let plantingRows = [];
-
-    // -----------------------------
-    // 初期化（認証 → 表示 → データ読み込み）
-    // -----------------------------
-    window.addEventListener("DOMContentLoaded", async () => {
-
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
-
-      if (window.currentRole === "admin" || window.currentRole === "family") {
-        canDiscard = true;
-      }
-
-      document.getElementById("main-area").style.display = "block";
-
-      await loadPlantingList();
-    });
-
-    // -----------------------------
-    // 定植ログの読み込み
-    // -----------------------------
-    async function loadPlantingList() {
-      plantingRows = await loadCSV("logs/planting/all.csv");
-
-      populateYearFilter();
-      populateFieldFilter();
-      populateVarietyFilter();
-
-      renderTable(plantingRows);
-    }
-
-    // -----------------------------
-    // フィルタ生成
-    // -----------------------------
-    function populateYearFilter() {
-      const yearSet = new Set();
-      plantingRows.forEach(r => {
-        if (r.plantDate) yearSet.add(r.plantDate.slice(0, 4));
-      });
-
-      const sel = document.getElementById("filterYear");
-      yearSet.forEach(y => {
-        const opt = document.createElement("option");
-        opt.value = y;
-        opt.textContent = y;
-        sel.appendChild(opt);
-      });
-    }
-
-    function populateFieldFilter() {
-      const fieldSet = new Set();
-      plantingRows.forEach(r => {
-        if (r.field) fieldSet.add(r.field);
-      });
-
-      const sel = document.getElementById("filterField");
-      fieldSet.forEach(f => {
-        const opt = document.createElement("option");
-        opt.value = f;
-        opt.textContent = f;
-        sel.appendChild(opt);
-      });
-    }
-
-    function populateVarietyFilter() {
-      const set = new Set();
-      plantingRows.forEach(r => {
-        if (r.variety) set.add(r.variety);
-      });
-
-      const sel = document.getElementById("filterVariety");
-      set.forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v;
-        sel.appendChild(opt);
-      });
-    }
-
-    // -----------------------------
-    // フィルタ適用
-    // -----------------------------
-    function applyFilter() {
-      const year = document.getElementById("filterYear").value;
-      const month = document.getElementById("filterMonth").value;
-      const field = document.getElementById("filterField").value;
-      const variety = document.getElementById("filterVariety").value;
-
-      const filtered = plantingRows.filter(r => {
-        const y = r.plantDate.slice(0, 4);
-        const m = r.plantDate.slice(5, 7);
-
-        if (year && y !== year) return false;
-        if (month && m !== month) return false;
-        if (field && r.field !== field) return false;
-        if (variety && r.variety !== variety) return false;
-
-        return true;
-      });
-
-      renderTable(filtered);
-    }
-
-    window.applyFilter = applyFilter;
-
-    // -----------------------------
-    // テーブル描画
-    // -----------------------------
-    function renderTable(rows) {
-      const tbody = document.querySelector("#plantingTable tbody");
-      tbody.innerHTML = "";
-
-      rows.forEach(r => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${r.plantDate}</td>
-          <td>${r.field}</td>
-          <td>${r.variety}</td>
-          <td>${r.quantity}</td>
-          <td>${r.seedRef}</td>
-          <td>
-            ${canDiscard ? `<button class="primary-btn" style="padding:6px 10px; font-size:14px;" onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">破棄</button>` : ""}
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    }
+    import { renderNavbar } from "/common/header.js?v=1.1";
+    renderNavbar();
   </script>
 
+  <style>
+    /* フィルタカード */
+    #filter-card {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #filter-body {
+      margin-top: 12px;
+      display: none;
+    }
+    #filter-card.open #filter-body {
+      display: block;
+    }
+
+    /* 印刷時はフィルタ非表示 */
+    @media print {
+      #filter-card,
+      .primary-btn {
+        display: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-  <div id="main-area" style="display:none;">
+  <h1>定植ログ一覧</h1>
 
-    <h1>定植ログ一覧</h1>
+  <a href="index.html" class="primary-btn" style="text-align:center; display:block;">
+    ＋ 新しい定植ログを追加
+  </a>
 
-    <a href="index.html" class="primary-btn" style="text-align:center; display:block;">
-      ＋ 新しい定植ログを追加
-    </a>
+  <!-- フィルタカード -->
+  <div id="filter-card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <strong>フィルタ</strong>
+      <button class="primary-btn" style="padding:4px 10px;" onclick="toggleFilter()">開く / 閉じる</button>
+    </div>
 
-    <div class="card" style="margin-top:20px;">
+    <div id="filter-body">
       <label>年</label>
       <select id="filterYear" class="form-input"><option value="">すべて</option></select>
 
@@ -186,22 +85,26 @@
 
       <button class="primary-btn" style="margin-top:14px;" onclick="applyFilter()">フィルタ適用</button>
     </div>
-
-    <table id="plantingTable">
-      <thead>
-        <tr>
-          <th>定植日</th>
-          <th>圃場</th>
-          <th>品名</th>
-          <th>株数</th>
-          <th>播種ID</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
   </div>
+
+  <div id="countArea" style="margin-top:10px; font-weight:bold;"></div>
+
+  <table id="plantingTable">
+    <thead>
+      <tr>
+        <th>定植日</th>
+        <th>圃場</th>
+        <th>品名</th>
+        <th>面積（反）</th>
+        <th>播種日</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- メイン処理 -->
+  <script type="module" src="./list.js?v=1.0"></script>
 
 </body>
 </html>
