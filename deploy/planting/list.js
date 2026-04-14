@@ -108,9 +108,12 @@ window.applyFilter = function () {
 function getSeedDates(seedRef) {
   if (!seedRef) return "";
 
-  const refs = seedRef.split(",").map(s => s.trim());
+  const clean = s => (s ?? "").replace(/\s+/g, "").trim();
+
+  const refs = seedRef.split(",").map(s => clean(s));
+
   const dates = refs.map(ref => {
-    const row = seedRows.find(s => s.seedRef === ref);
+    const row = seedRows.find(s => clean(s.seedRef) === ref);
     return row?.seedDate ?? "";
   });
 
