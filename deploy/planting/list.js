@@ -129,7 +129,13 @@ function renderTable(rows) {
   const frag = document.createDocumentFragment();
 
   rows.forEach(r => {
-    const areaM2 = calcAreaM2(r.quantity, r.spacing.row, r.spacing.bed);
+    // spacing オブジェクトを生成
+    const spacing = {
+      row: Number(r.spacingRow || 0),
+      bed: Number(r.spacingBed || 0)
+    };
+
+    const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
     const areaTan = calcAreaTan(areaM2);
 
     const tr = document.createElement("tr");
