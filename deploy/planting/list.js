@@ -21,7 +21,6 @@ export async function initPlantingListPage() {
   seedRows = await loadCSV("/logs/seed/all.csv");
 
   populateYearFilter();
-  populateMonthFilter();
   populateFieldFilter();
   populateVarietyFilter();
 
@@ -36,69 +35,146 @@ window.toggleFilter = function () {
 };
 
 /* ===============================
-   チェックボックス生成
+   親 → 子 開閉
 =============================== */
-function createCheckboxGroup(containerId, values) {
-  const container = document.getElementById(containerId);
+window.toggleChild = function (key) {
+  const el = document.getElementById("child-" + key);
+  el.style.display = (el.style.display === "block") ? "none" : "block";
+};
+
+/* ===============================
+   年 → 月
+=============================== */
+function populateYearFilter() {
+  const map = {}; // {2024: ["01","02"], ...}
+
+  plantingRows.forEach(r => {
+    if (!r.plantDate) return;
+    const y = r.plantDate.slice(0,4);
+    const m = r.plantDate.slice(5,7);
+
+    if (!map[y]) map[y] = new Set();
+    map[y].add(m);
+  });
+
+  const container = document.getElementById("child-year");
   container.innerHTML = "";
 
-  values.forEach(v => {
-    const id = `${containerId}_${v}`;
+  Object.keys(map).sort().forEach(year => {
     container.insertAdjacentHTML("beforeend", `
-      <label>
-        <input type="checkbox" value="${v}" id="${id}">
-        ${v}
-      </label>
+      <label><input type="checkbox" value="${year}" class="year-parent"> ${year}</label>
     `);
+
+    const childDiv = document.createElement("div");
+    childDiv.style.marginLeft = "20px";
+
+    [...map[year]].sort().forEach(m => {
+      childDiv.insertAdjacentHTML("beforeend", `
+        <label><input type="checkbox" value="${m}" class="month-child"> ${m}月</label>
+      `);
+    });
+
+    container.appendChild(childDiv);
   });
 }
 
 /* ===============================
-   フィルタ生成
+   圃場 → 区画
 =============================== */
-function populateYearFilter() {
-  const set = new Set();
-  plantingRows.forEach(r => {
-    if (r.plantDate) set.add(r.plantDate.slice(0, 4));
-  });
-  createCheckboxGroup("filterYear", [...set].sort());
-}
-
-function populateMonthFilter() {
-  createCheckboxGroup("filterMonth", [
-    "01","02","03","04","05","06",
-    "07","08","09","10","11","12"
-  ]);
-}
-
 function populateFieldFilter() {
-  const set = new Set();
-  plantingRows.forEach(r => r.field && set.add(r.field));
-  createCheckboxGroup("filterField", [...set].sort());
+  const map = {}; // {A圃場:["A-1","A-2"], ...}
+
+  plantingRows.forEach(r => {
+    if (!r.field) return;
+
+    const parts = r.field.split("-");
+    const parent = parts[0];
+    const child = parts[1];
+
+    if (!map[parent]) map[parent] = new Set();
+    if (child) map[parent].add(r.field);
+  });
+
+  const container = document.getElementById("child-field");
+  container.innerHTML = "";
+
+  Object.keys(map).sort().forEach(field => {
+    container.insertAdjacentHTML("beforeend", `
+      <label><input type="checkbox" value="${field}" class="field-parent"> ${field}</label>
+    `);
+
+    const childDiv = document.createElement("div");
+    childDiv.style.marginLeft = "20px";
+
+    [...map[field]].sort().forEach(f => {
+      childDiv.insertAdjacentHTML("beforeend", `
+        <label><input type="checkbox" value="${f}" class="field-child"> ${f}</label>
+      `);
+    });
+
+    container.appendChild(childDiv);
+  });
 }
 
+/* ===============================
+   品名 → 詳細（例：系統）
+=============================== */
 function populateVarietyFilter() {
-  const set = new Set();
-  plantingRows.forEach(r => r.variety && set.add(r.variety));
-  createCheckboxGroup("filterVariety", [...set].sort());
+  const map = {}; // {コシヒカリ:["早生","晩生"], ...}
+
+  plantingRows.forEach(r => {
+    if (!r.variety) return;
+
+    const parts = r.variety.split(" ");
+    const parent = parts[0];
+    const child = parts[1];
+
+    if (!map[parent]) map[parent] = new Set();
+    if (child) map[parent].add(child);
+  });
+
+  const container = document.getElementById("child-variety");
+  container.innerHTML = "";
+
+  Object.keys(map).sort().forEach(v => {
+    container.insertAdjacentHTML("beforeend", `
+      <label><input type="checkbox" value="${v}" class="variety-parent"> ${v}</label>
+    `);
+
+    const childDiv = document.createElement("div");
+    childDiv.style.marginLeft = "20px";
+
+    [...map[v]].sort().forEach(c => {
+      childDiv.insertAdjacentHTML("beforeend", `
+        <label><input type="checkbox" value="${v} ${c}" class="variety-child"> ${c}</label>
+      `);
+    });
+
+    container.appendChild(childDiv);
+  });
 }
 
 /* ===============================
    チェックされた値を取得
 =============================== */
-function getCheckedValues(containerId) {
-  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)]
-    .map(cb => cb.value);
+function getCheckedValues(selector) {
+  return [...document.querySelectorAll(selector + ":checked")].map(cb => cb.value);
 }
 
 /* ===============================
    フィルタ適用
 =============================== */
 window.applyFilter = function () {
-  const years = getCheckedValues("filterYear");
-  const months = getCheckedValues("filterMonth");
-  const fields = getCheckedValues("filterField");
-  const varieties = getCheckedValues("filterVariety");
+  const years = getCheckedValues(".year-parent");
+  const months = getCheckedValues(".month-child");
+  const fields = [
+    ...getCheckedValues(".field-parent"),
+    ...getCheckedValues(".field-child")
+  ];
+  const varieties = [
+    ...getCheckedValues(".variety-parent"),
+    ...getCheckedValues(".variety-child")
+  ];
 
   const filtered = plantingRows.filter(r => {
     const y = r.plantDate?.slice(0,4);
@@ -106,6 +182,7 @@ window.applyFilter = function () {
 
     if (years.length && !years.includes(y)) return false;
     if (months.length && !months.includes(m)) return false;
+
     if (fields.length && !fields.includes(r.field)) return false;
     if (varieties.length && !varieties.includes(r.variety)) return false;
 
