@@ -21,6 +21,7 @@ export async function initPlantingListPage() {
   seedRows = await loadCSV("/logs/seed/all.csv");
 
   populateYearFilter();
+  populateMonthFilter();
   populateFieldFilter();
   populateVarietyFilter();
 
@@ -35,66 +36,78 @@ window.toggleFilter = function () {
 };
 
 /* ===============================
+   チェックボックス生成
+=============================== */
+function createCheckboxGroup(containerId, values) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+
+  values.forEach(v => {
+    const id = `${containerId}_${v}`;
+    container.insertAdjacentHTML("beforeend", `
+      <label>
+        <input type="checkbox" value="${v}" id="${id}">
+        ${v}
+      </label>
+    `);
+  });
+}
+
+/* ===============================
    フィルタ生成
 =============================== */
 function populateYearFilter() {
-  const yearSet = new Set();
+  const set = new Set();
   plantingRows.forEach(r => {
-    if (r.plantDate) yearSet.add(r.plantDate.slice(0, 4));
+    if (r.plantDate) set.add(r.plantDate.slice(0, 4));
   });
+  createCheckboxGroup("filterYear", [...set].sort());
+}
 
-  const sel = document.getElementById("filterYear");
-  [...yearSet].sort().forEach(y => {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = y;
-    sel.appendChild(opt);
-  });
+function populateMonthFilter() {
+  createCheckboxGroup("filterMonth", [
+    "01","02","03","04","05","06",
+    "07","08","09","10","11","12"
+  ]);
 }
 
 function populateFieldFilter() {
   const set = new Set();
   plantingRows.forEach(r => r.field && set.add(r.field));
-
-  const sel = document.getElementById("filterField");
-  [...set].sort().forEach(f => {
-    const opt = document.createElement("option");
-    opt.value = f;
-    opt.textContent = f;
-    sel.appendChild(opt);
-  });
+  createCheckboxGroup("filterField", [...set].sort());
 }
 
 function populateVarietyFilter() {
   const set = new Set();
   plantingRows.forEach(r => r.variety && set.add(r.variety));
+  createCheckboxGroup("filterVariety", [...set].sort());
+}
 
-  const sel = document.getElementById("filterVariety");
-  [...set].sort().forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    sel.appendChild(opt);
-  });
+/* ===============================
+   チェックされた値を取得
+=============================== */
+function getCheckedValues(containerId) {
+  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)]
+    .map(cb => cb.value);
 }
 
 /* ===============================
    フィルタ適用
 =============================== */
 window.applyFilter = function () {
-  const year = document.getElementById("filterYear").value;
-  const month = document.getElementById("filterMonth").value;
-  const field = document.getElementById("filterField").value;
-  const variety = document.getElementById("filterVariety").value;
+  const years = getCheckedValues("filterYear");
+  const months = getCheckedValues("filterMonth");
+  const fields = getCheckedValues("filterField");
+  const varieties = getCheckedValues("filterVariety");
 
   const filtered = plantingRows.filter(r => {
-    const y = r.plantDate?.slice(0, 4) ?? "";
-    const m = r.plantDate?.slice(5, 7) ?? "";
+    const y = r.plantDate?.slice(0,4);
+    const m = r.plantDate?.slice(5,7);
 
-    if (year && y !== year) return false;
-    if (month && m !== month) return false;
-    if (field && r.field !== field) return false;
-    if (variety && r.variety !== variety) return false;
+    if (years.length && !years.includes(y)) return false;
+    if (months.length && !months.includes(m)) return false;
+    if (fields.length && !fields.includes(r.field)) return false;
+    if (varieties.length && !varieties.includes(r.variety)) return false;
 
     return true;
   });
@@ -132,7 +145,6 @@ function renderTable(rows) {
   const frag = document.createDocumentFragment();
 
   rows.forEach(r => {
-    // spacing オブジェクトを生成
     const spacing = {
       row: Number(r.spacingRow || 0),
       bed: Number(r.spacingBed || 0)

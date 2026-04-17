@@ -31,7 +31,11 @@
       display: block;
     }
 
-    /* 印刷時はフィルタ非表示 */
+    .checkbox-group label {
+      display: block;
+      margin: 2px 0;
+    }
+
     @media print {
       #filter-card,
       .primary-btn {
@@ -57,31 +61,18 @@
     </div>
 
     <div id="filter-body">
-      <label>年</label>
-      <select id="filterYear" class="form-input"><option value="">すべて</option></select>
+
+      <label style="margin-top:10px;">年</label>
+      <div id="filterYear" class="checkbox-group"></div>
 
       <label style="margin-top:10px;">月</label>
-      <select id="filterMonth" class="form-input">
-        <option value="">すべて</option>
-        <option value="01">1月</option>
-        <option value="02">2月</option>
-        <option value="03">3月</option>
-        <option value="04">4月</option>
-        <option value="05">5月</option>
-        <option value="06">6月</option>
-        <option value="07">7月</option>
-        <option value="08">8月</option>
-        <option value="09">9月</option>
-        <option value="10">10月</option>
-        <option value="11">11月</option>
-        <option value="12">12月</option>
-      </select>
+      <div id="filterMonth" class="checkbox-group"></div>
 
       <label style="margin-top:10px;">圃場</label>
-      <select id="filterField" class="form-input"><option value="">すべて</option></select>
+      <div id="filterField" class="checkbox-group"></div>
 
       <label style="margin-top:10px;">品名</label>
-      <select id="filterVariety" class="form-input"><option value="">すべて</option></select>
+      <div id="filterVariety" class="checkbox-group"></div>
 
       <button class="primary-btn" style="margin-top:14px;" onclick="applyFilter()">フィルタ適用</button>
     </div>
@@ -104,7 +95,7 @@
   </table>
 
   <!-- メイン処理 -->
-  <script type="module" src="./list.js?v=1.0"></script>
+  <script type="module" src="./list.js?v=1.1"></script>
 
 </body>
 </html>
