@@ -1,6 +1,8 @@
 import { verifyLocalAuth } from "/common/ui.js";
-import { loadCSV, loadJSON } from "/common/csv.js";
+import { loadCSV } from "/common/csv.js";
+import { loadJSON } from "/common/json.js";   // ← これが正しい
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
+
 
 let plantingRows = [];
 let seedRows = [];
