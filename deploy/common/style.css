@@ -316,6 +316,12 @@ select {
     opacity: 0.85;
 }
 
+/* primary と secondary の間に余白を追加 */
+.primary-btn + .secondary-btn {
+    margin-top: 14px; /* 好みで 10〜16px に調整可 */
+}
+
+
 @media (max-width: 600px) {
     .secondary-btn {
         width: 100%;
