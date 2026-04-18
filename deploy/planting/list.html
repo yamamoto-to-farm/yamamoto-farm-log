@@ -13,26 +13,25 @@
 
 <div class="card" id="filter-card">
 
-  <h2 onclick="toggleFilter()" style="cursor:pointer;">フィルタ ▼</h2>
+  <!-- ▼ フィルタ見出し（クリックで開閉） -->
+  <h2 id="filter-title" style="cursor:pointer; user-select:none;">
+    フィルタ ▼
+  </h2>
 
-  <div id="filter-body">
+  <!-- ▼ フィルタ本体 -->
+  <div id="filter-body" style="display:none;">
 
     <!-- 年月フィルタ -->
-    <div class="filter-root-block" id="filterYearMonthRoot">
-      <!-- JS がここに 3 階層ツリーを生成 -->
-    </div>
+    <div class="filter-root-block" id="filterYearMonthRoot"></div>
 
     <!-- 圃場フィルタ -->
-    <div class="filter-root-block" id="filterFieldRoot">
-      <!-- JS がここに 3 階層ツリーを生成 -->
-    </div>
+    <div class="filter-root-block" id="filterFieldRoot"></div>
 
     <!-- 品種フィルタ -->
-    <div class="filter-root-block" id="filterVarietyRoot">
-      <!-- JS がここに 3 階層ツリーを生成 -->
-    </div>
+    <div class="filter-root-block" id="filterVarietyRoot"></div>
 
     <button class="primary-btn" onclick="applyFilter()">フィルタ適用</button>
+    <button class="secondary-btn" onclick="clearFilter()">フィルタクリア</button>
 
   </div>
 </div>

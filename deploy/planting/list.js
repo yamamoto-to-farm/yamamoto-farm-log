@@ -23,6 +23,7 @@ export async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
+  setupFilterToggle();
   populateYearMonthFilter();
   populateFieldFilter();
   populateVarietyFilter();
@@ -31,10 +32,28 @@ export async function initPlantingListPage() {
 }
 
 /* ===============================
-   フィルタ折りたたみ
+   フィルタ見出しの開閉
 =============================== */
-window.toggleFilter = function () {
-  document.getElementById("filter-card").classList.toggle("open");
+function setupFilterToggle() {
+  const title = document.getElementById("filter-title");
+  const body = document.getElementById("filter-body");
+
+  title.addEventListener("click", () => {
+    const isOpen = body.style.display === "block";
+    body.style.display = isOpen ? "none" : "block";
+    title.textContent = isOpen ? "フィルタ ▼" : "フィルタ ▲";
+  });
+}
+
+/* ===============================
+   フィルタクリア
+=============================== */
+window.clearFilter = function () {
+  document.querySelectorAll("#filter-card input[type=checkbox]").forEach(cb => {
+    cb.checked = false;
+  });
+
+  renderTable(plantingRows);
 };
 
 /* ===============================
@@ -90,16 +109,12 @@ function populateYearMonthFilter() {
 
     document.querySelector(`.filter-toggle[data-year="${year}"]`)
       .addEventListener("click", () => {
-        const div = document.getElementById(`ym_month_children_${year}`);
-        div.classList.toggle("open");
+        monthDiv.classList.toggle("open");
       });
 
     document.getElementById(yearId).addEventListener("change", e => {
       const checked = e.target.checked;
-      [...ymMap[year]].forEach(month => {
-        const cb = monthDiv.querySelector(`input[value="${year}-${month}"]`);
-        if (cb) cb.checked = checked;
-      });
+      monthDiv.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
     });
   });
 
@@ -110,14 +125,7 @@ function populateYearMonthFilter() {
 
   document.getElementById("ym_root").addEventListener("change", e => {
     const checked = e.target.checked;
-    Object.keys(ymMap).forEach(year => {
-      const ycb = document.getElementById(`ym_year_${year}`);
-      if (ycb) ycb.checked = checked;
-      [...ymMap[year]].forEach(month => {
-        const cb = document.querySelector(`input[value="${year}-${month}"]`);
-        if (cb) cb.checked = checked;
-      });
-    });
+    yearContainer.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
   });
 }
 
