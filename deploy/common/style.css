@@ -1,11 +1,11 @@
 /* ===============================
-   全体レイアウト（全ページ共通）
+   全体レイアウト
 =============================== */
 body {
     font-family: "Helvetica", "Yu Gothic", "Hiragino Sans", sans-serif;
     background: #f5f5f5;
     margin: 0;
-    padding: 80px 20px 20px; /* ← ヘッダー分の余白 */
+    padding: 80px 20px 20px; /* ヘッダー分の余白 */
     color: #333;
 }
 
@@ -14,9 +14,7 @@ body {
 =============================== */
 .app-header {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 60px;
     background: #fafafa;
     border-bottom: 1px solid #ddd;
@@ -45,31 +43,48 @@ body {
 .logout-btn {
     padding: 6px 12px;
     background: #d9534f;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
-.logout-btn:hover {
-    background: #c9302c;
-}
+.logout-btn:hover { background: #c9302c; }
+
+/* h1（旧タイトル）非表示 */
+h1:not(.app-title) { display: none; }
 
 /* ===============================
-   h1（旧タイトル） → 非表示
+   セクションタイトル（共通）
 =============================== */
-h1 {
-    display: none;
-}
-
-/* ===============================
-   h2（セクションタイトル）
-=============================== */
-h2.menu-section-title {
+.section-title,
+h2.menu-section-title,
+.group-title {
     font-size: 20px;
     font-weight: 600;
     margin: 30px 0 12px;
     color: #333;
-    cursor: pointer; /* ← 開閉可能に */
+    cursor: pointer;
+}
+
+/* ===============================
+   カード（共通）
+=============================== */
+.card,
+.menu-card,
+details {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+}
+
+.menu-card a {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2b6cb0;
+    text-decoration: none;
 }
 
 /* ===============================
@@ -80,34 +95,13 @@ h2.menu-section-title {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 12px;
     margin-top: 10px;
-
-    /* 折りたたみ用 */
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.25s ease-out;
 }
-
 .menu-grid.open {
     max-height: 500px;
     transition: max-height 0.25s ease-in;
-}
-
-/* ===============================
-   メニューカード
-=============================== */
-.menu-card {
-    background: #fff;
-    padding: 14px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.menu-card a {
-    font-size: 16px;
-    font-weight: bold;
-    color: #2b6cb0;
-    text-decoration: none;
 }
 
 /* ===============================
@@ -121,24 +115,173 @@ h2.menu-section-title {
     margin-bottom: 20px;
 }
 
-.pin-input {
-    font-size: 18px;
-    padding: 6px;
-    margin-top: 8px;
-}
-
+.pin-input,
 .pin-submit {
     font-size: 18px;
     padding: 6px 12px;
-}
-
-#login-user {
-    font-size: 15px;
-    color: #333;
+    margin-top: 8px;
 }
 
 /* ===============================
-   以下、既存のフォーム・表・フィルタなどはそのまま
+   情報行・ブロック
 =============================== */
+.info-line { font-size: 16px; margin: 6px 0; line-height: 1.6; }
+.info-block { margin: 14px 0; }
+.info-block-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
 
-/* （あなたの元の style.css の残り部分をそのまま維持） */
+/* ===============================
+   details（年度サマリー）
+=============================== */
+details summary {
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 600;
+}
+details[open] {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* ===============================
+   フォーム（共通）
+=============================== */
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    box-sizing: border-box;
+}
+textarea { resize: vertical; }
+
+.form-field { margin-bottom: 16px; }
+.form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* ===============================
+   JSON 編集（parcels / contracts）
+=============================== */
+.parcel-header,
+.contract-header,
+.parcel-row,
+.contract-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    font-size: 14px;
+}
+.parcel-header,
+.contract-header { font-weight: bold; margin-bottom: 6px; }
+.parcel-row input,
+.contract-row input { padding: 8px; }
+
+/* ===============================
+   ボタン
+=============================== */
+.primary-btn,
+.secondary-btn {
+    padding: 12px 18px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: #2f855a;
+    color: #fff;
+    border: none;
+    margin-top: 20px;
+}
+.secondary-btn {
+    background: #e2e8f0;
+    color: #333;
+    border: 1px solid #cbd5e0;
+}
+.primary-btn + .secondary-btn { margin-top: 14px; }
+
+/* ===============================
+   テーブル（KPI）
+=============================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+}
+th { background: #f0f0f0; text-align: center; }
+td { text-align: right; }
+tbody tr:nth-child(odd) { background: #fafafa; }
+#kpi-month-total td { font-weight: 700; background: #f7f7f7; }
+
+/* 差分色 */
+.diff-positive { color: #2e8b57; font-weight: bold; }
+.diff-negative { color: #c0392b; font-weight: bold; }
+.diff-zero { color: #555; }
+
+/* ===============================
+   達成率
+=============================== */
+.rate-good { color: #0a8a0a; font-weight: 700; }
+.rate-ok   { color: #c7a600; font-weight: 700; }
+.rate-bad  { color: #d11a1a; font-weight: 700; }
+
+/* ===============================
+   現場メモ
+=============================== */
+.notes-toggle summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+}
+.notes-list { margin: 6px 0 0 16px; }
+
+/* ===============================
+   3階層ツリーフィルタ
+=============================== */
+.filter-root-block {
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 14px;
+}
+
+.filter-root-block label,
+.filter-mid-block label,
+.filter-leaf-block label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-root-block label { font-size: 17px; font-weight: 600; }
+.filter-mid-block label  { font-size: 16px; font-weight: 600; }
+.filter-leaf-block label { font-size: 15px; }
+
+.filter-mid-block { margin-left: 18px; margin-top: 6px; }
+.filter-leaf-block { margin-left: 26px; margin-top: 4px; }
+
+.filter-children { display: none; }
+.filter-children.open { display: block; }
+
+/* ===============================
+   スマホ最適化
+=============================== */
+@media (max-width: 600px) {
+    body { padding: 70px 14px 14px; }
+    h2.menu-section-title { font-size: 18px; }
+    table { overflow-x: auto; white-space: nowrap; display: block; }
+    th, td { font-size: 13px; padding: 6px 8px; }
+}
