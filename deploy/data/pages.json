@@ -50,10 +50,18 @@
     },
 
     {
+      "id": "diary",
+      "name": "作業日誌",
+      "path": "diary/index.html",
+      "category": "作業日誌・記録一覧",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/diary.png"
+    },
+    {
       "id": "planting-list",
       "name": "播種・定植一覧",
       "path": "planting/list.html",
-      "category": "記録一覧",
+      "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/planting.png"
     },
@@ -61,7 +69,7 @@
       "id": "harvest-kpi",
       "name": "収穫KPI",
       "path": "performance/harvest-kpi.html",
-      "category": "記録一覧",
+      "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/harvest-kpi.png"
     },
@@ -69,17 +77,43 @@
       "id": "shipping-list",
       "name": "出荷一覧（カレンダー）",
       "path": "shipping/list.html",
-      "category": "記録一覧",
+      "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/kpi-month.png"
     },
+
     {
-      "id": "diary",
-      "name": "作業日誌一覧",
-      "path": "diary/index.html",
-      "category": "記録一覧",
+      "id": "nursery-house",
+      "name": "育苗ハウス管理",
+      "path": "nursery/house.html",
+      "category": "育苗",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/nursery.png"
+    },
+    {
+      "id": "nursery-variety",
+      "name": "品種詳細",
+      "path": "nursery/variety.html",
+      "category": "育苗",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/variety.png"
+    },
+
+    {
+      "id": "map",
+      "name": "圃場マップ",
+      "path": "map/index.html",
+      "category": "圃場",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/diary.png"
+      "icon": "assets/icons/map.png"
+    },
+    {
+      "id": "field-detail",
+      "name": "圃場詳細",
+      "path": "analysis/index.html",
+      "category": "圃場",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/analysis.png"
     },
 
     {
@@ -105,40 +139,6 @@
       "category": "分析",
       "roles": ["family", "admin"],
       "icon": "assets/icons/year.png"
-    },
-
-    {
-      "id": "map",
-      "name": "圃場マップ",
-      "path": "map/index.html",
-      "category": "圃場",
-      "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/map.png"
-    },
-    {
-      "id": "field-detail",
-      "name": "圃場詳細",
-      "path": "analysis/index.html",
-      "category": "圃場",
-      "roles": ["family", "admin"],
-      "icon": "assets/icons/analysis.png"
-    },
-
-    {
-      "id": "nursery-house",
-      "name": "育苗ハウス管理",
-      "path": "nursery/house.html",
-      "category": "育苗",
-      "roles": ["family", "admin"],
-      "icon": "assets/icons/nursery.png"
-    },
-    {
-      "id": "nursery-variety",
-      "name": "品種詳細（育苗）",
-      "path": "nursery/variety.html",
-      "category": "育苗",
-      "roles": ["family", "admin"],
-      "icon": "assets/icons/variety.png"
     },
 
     {
