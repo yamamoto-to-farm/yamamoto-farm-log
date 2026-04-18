@@ -285,16 +285,16 @@ select {
     cursor: pointer;
 }
 
+.primary-btn:active {
+    opacity: 0.85;
+}
+
 @media (max-width: 600px) {
     .primary-btn {
         width: 100%;
         display: block;
         text-align: center;
     }
-}
-
-.primary-btn:active {
-    opacity: 0.85;
 }
 
 /* ===============================
@@ -304,11 +304,11 @@ select {
     width: auto;
     padding: 12px 18px;
     font-size: 16px;
-    background: #e2e8f0; /* 薄いグレー */
+    background: #e2e8f0;
     color: #333;
     border: 1px solid #cbd5e0;
     border-radius: 6px;
-    margin-top: 12px;
+    margin-top: 0; /* ← ここを最適化 */
     cursor: pointer;
 }
 
@@ -316,11 +316,10 @@ select {
     opacity: 0.85;
 }
 
-/* primary と secondary の間に余白を追加 */
+/* primary の直後だけ余白を付ける */
 .primary-btn + .secondary-btn {
-    margin-top: 14px; /* 好みで 10〜16px に調整可 */
+    margin-top: 14px;
 }
-
 
 @media (max-width: 600px) {
     .secondary-btn {
@@ -425,12 +424,7 @@ tbody tr:nth-child(odd) {
 
 /* ===============================
    3階層ツリーフィルタ（list.html 用）
-   圃場 → エリア → 圃場名
-   年月 → 年 → 月
-   品種 → type → 品種名
 =============================== */
-
-/* 親（圃場 / 年月 / 品種） */
 .filter-root-block {
     margin-bottom: 14px;
     padding: 10px 12px;
@@ -448,7 +442,6 @@ tbody tr:nth-child(odd) {
     gap: 6px;
 }
 
-/* ▶ トグル */
 .filter-toggle {
     cursor: pointer;
     font-weight: 600;
@@ -456,7 +449,6 @@ tbody tr:nth-child(odd) {
     user-select: none;
 }
 
-/* 中分類（エリア / 年 / type） */
 .filter-mid-block {
     margin-left: 18px;
     margin-top: 6px;
@@ -472,7 +464,6 @@ tbody tr:nth-child(odd) {
     gap: 6px;
 }
 
-/* 子要素（圃場名 / 月 / 品種名） */
 .filter-leaf-block {
     margin-left: 26px;
     margin-top: 4px;
@@ -485,14 +476,12 @@ tbody tr:nth-child(odd) {
     cursor: pointer;
 }
 
-/* チェックボックスの揃え */
 .filter-root-block input[type="checkbox"],
 .filter-mid-block input[type="checkbox"],
 .filter-leaf-block input[type="checkbox"] {
     transform: scale(1.1);
 }
 
-/* 開閉時のアニメーション（自然な動き） */
 .filter-children {
     display: none;
     margin-top: 6px;
@@ -500,19 +489,6 @@ tbody tr:nth-child(odd) {
 
 .filter-children.open {
     display: block;
-}
-
-/* スマホ最適化 */
-@media (max-width: 600px) {
-    .filter-root-block label {
-        font-size: 16px;
-    }
-    .filter-mid-block label {
-        font-size: 15px;
-    }
-    .filter-leaf-block label {
-        font-size: 14px;
-    }
 }
 
 /* ===============================
