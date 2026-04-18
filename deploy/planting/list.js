@@ -21,7 +21,7 @@ export async function initPlantingListPage() {
 
   plantingRows = await loadCSV("/logs/planting/all.csv");
   seedRows = await loadCSV("/logs/seed/all.csv");
-  fieldData = await loadJSON("/data/field.json");
+  fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
   populateYearFilter();
