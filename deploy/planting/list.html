@@ -5,17 +5,14 @@
   <title>定植ログ一覧</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 
-  <!-- ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
     renderNavbar();
   </script>
 
   <style>
-    /* 必要なら後で追加 */
     #filter-card {
       margin-top: 20px;
       padding: 16px;
@@ -31,25 +28,15 @@
       display: block;
     }
 
-    .filter-parent {
-      padding: 10px;
-      background: #f3f3f3;
-      margin-top: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .filter-child {
-      display: none;
-      padding: 8px 12px;
-      background: #fff;
-      border-left: 3px solid #4CAF50;
-      margin-bottom: 8px;
-    }
-
-    .filter-child label {
+    .checkbox-group label {
       display: block;
-      margin: 4px 0;
+      margin: 2px 0;
+    }
+
+    .area-toggle, .type-toggle {
+      cursor: pointer;
+      margin-left: 6px;
+      color: #333;
     }
 
     @media print {
@@ -69,7 +56,7 @@
     ＋ 新しい定植ログを追加
   </a>
 
-  <!-- ▼ 階層フィルター -->
+  <!-- フィルタカード -->
   <div id="filter-card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <strong>フィルタ</strong>
@@ -78,20 +65,30 @@
 
     <div id="filter-body">
 
-      <div class="filter-parent" onclick="toggleChild('year')">年</div>
-      <div id="child-year" class="filter-child"></div>
+      <label style="margin-top:10px;">年</label>
+      <div id="filterYear" class="checkbox-group"></div>
 
-      <div class="filter-parent" onclick="toggleChild('field')">圃場</div>
-      <div id="child-field" class="filter-child"></div>
+      <label style="margin-top:10px;">月</label>
+      <div id="filterMonth" class="checkbox-group"></div>
 
-      <div class="filter-parent" onclick="toggleChild('variety')">品名</div>
-      <div id="child-variety" class="filter-child"></div>
+      <label style="margin-top:10px;">圃場（エリア）</label>
+      <div id="filterFieldArea"></div>
+
+      <label style="margin-top:10px;">圃場（個別）</label>
+      <div id="filterField" class="checkbox-group"></div>
+
+      <label style="margin-top:10px;">品名（タイプ）</label>
+      <div id="filterVarietyType"></div>
+
+      <label style="margin-top:10px;">品名（個別）</label>
+      <div id="filterVariety" class="checkbox-group"></div>
 
       <button class="primary-btn" style="margin-top:14px;" onclick="applyFilter()">フィルタ適用</button>
     </div>
   </div>
 
   <div id="countArea" style="margin-top:10px; font-weight:bold;"></div>
+  <div id="summaryArea" style="margin-top:6px; font-weight:bold;"></div>
 
   <table id="plantingTable">
     <thead>
@@ -107,8 +104,7 @@
     <tbody></tbody>
   </table>
 
-  <!-- メイン処理 -->
-  <script type="module" src="./list.js?v=1.1"></script>
+  <script type="module" src="./list.js?v=2.0"></script>
 
 </body>
 </html>
