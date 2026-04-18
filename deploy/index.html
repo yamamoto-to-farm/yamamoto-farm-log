@@ -2,23 +2,31 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>山本農園ログ - 目次</title>
+  <title>山本農園 OS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ キャッシュ対策 -->
+  <!-- キャッシュ対策 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <!-- ★ 共通スタイル -->
+  <!-- 共通スタイル -->
   <link rel="stylesheet" href="common/style.css?v=1">
 
-  <!-- ★ メインスクリプト（ui.js は import で読み込む） -->
   <script type="module">
     import { showPinGate } from "./common/ui.js?v=1";
 
+    /* カテゴリの表示順を固定 */
+    const CATEGORY_ORDER = [
+      "作業ログ",
+      "作業日誌・記録一覧",
+      "育苗",
+      "圃場",
+      "分析",
+      "管理"
+    ];
+
     async function loadPages() {
-      // pages.json は index.html と同じ階層からの相対パスで OK
       const res = await fetch(`data/pages.json?v=${Date.now()}`);
       const json = await res.json();
       return json.pages;
@@ -32,23 +40,24 @@
     }
 
     function ensureSection(category) {
-      let section = document.querySelector(`[data-category="${category}"]`);
+      let section = document.querySelector(`section[data-category="${category}"]`);
       if (!section) {
-        const title = document.createElement("div");
-        title.className = "menu-section-title";
-        title.textContent = category;
+        section = document.createElement("section");
+        section.dataset.category = category;
+
+        const h2 = document.createElement("h2");
+        h2.className = "menu-section-title";
+        h2.textContent = category;
 
         const grid = document.createElement("div");
         grid.className = "menu-grid";
-        grid.dataset.category = category;
 
-        const menu = document.getElementById("menu-area");
-        menu.appendChild(title);
-        menu.appendChild(grid);
+        section.appendChild(h2);
+        section.appendChild(grid);
 
-        return grid;
+        document.getElementById("menu-area").appendChild(section);
       }
-      return section;
+      return section.querySelector(".menu-grid");
     }
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -62,13 +71,27 @@
         const role = window.currentRole;
         const pages = await loadPages();
 
+        /* カテゴリ順でソート */
+        pages.sort((a, b) =>
+          CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category)
+        );
+
         pages.forEach(page => {
           if (!page.roles.includes(role)) return;
-          if (page.category.startsWith("管理/")) return;
+          if (page.category.startsWith("管理/")) return; // 管理/ツールは非表示
 
           const grid = ensureSection(page.category);
           grid.appendChild(createCard(page));
         });
+      });
+
+      /* ▼ カテゴリ見出しクリックで開閉 */
+      document.addEventListener("click", (e) => {
+        if (e.target.classList.contains("menu-section-title")) {
+          const section = e.target.parentElement;
+          const grid = section.querySelector(".menu-grid");
+          grid.classList.toggle("open");
+        }
       });
 
       document.getElementById("logout-btn").addEventListener("click", () => {
@@ -81,17 +104,32 @@
 </head>
 
 <body>
-  <h1>山本農園ログ - 目次</h1>
 
-  <div id="login-user"></div>
-  <button id="logout-btn" style="display:none;">ログアウト</button>
+  <!-- ===============================
+       固定ヘッダー
+  =============================== -->
+  <header class="app-header">
+    <h1 class="app-title">山本農園 OS</h1>
 
+    <div class="header-right">
+      <span id="login-user"></span>
+      <button id="logout-btn" class="logout-btn" style="display:none;">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- ===============================
+       PIN 入力
+  =============================== -->
   <div id="pin-area">
     <div>アクセスキーを入力してください</div>
     <input id="pin-input" type="password" class="pin-input">
     <button id="pin-submit" class="pin-submit">OK</button>
   </div>
 
+  <!-- ===============================
+       メニュー
+  =============================== -->
   <div id="menu-area" style="display:none"></div>
+
 </body>
 </html>
