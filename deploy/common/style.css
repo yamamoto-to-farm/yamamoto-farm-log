@@ -298,6 +298,33 @@ select {
 }
 
 /* ===============================
+   セカンダリーボタン（フィルタクリアなど）
+=============================== */
+.secondary-btn {
+    width: auto;
+    padding: 12px 18px;
+    font-size: 16px;
+    background: #e2e8f0; /* 薄いグレー */
+    color: #333;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    margin-top: 12px;
+    cursor: pointer;
+}
+
+.secondary-btn:active {
+    opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+    .secondary-btn {
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
+}
+
+/* ===============================
    テーブル（KPI）
 =============================== */
 table {
