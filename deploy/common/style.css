@@ -391,6 +391,98 @@ tbody tr:nth-child(odd) {
 }
 
 /* ===============================
+   3階層ツリーフィルタ（list.html 用）
+   圃場 → エリア → 圃場名
+   年月 → 年 → 月
+   品種 → type → 品種名
+=============================== */
+
+/* 親（圃場 / 年月 / 品種） */
+.filter-root-block {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.filter-root-block label {
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ▶ トグル */
+.filter-toggle {
+    cursor: pointer;
+    font-weight: 600;
+    color: #333;
+    user-select: none;
+}
+
+/* 中分類（エリア / 年 / type） */
+.filter-mid-block {
+    margin-left: 18px;
+    margin-top: 6px;
+    padding: 6px 0;
+}
+
+.filter-mid-block label {
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 子要素（圃場名 / 月 / 品種名） */
+.filter-leaf-block {
+    margin-left: 26px;
+    margin-top: 4px;
+}
+
+.filter-leaf-block label {
+    display: block;
+    font-size: 15px;
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+/* チェックボックスの揃え */
+.filter-root-block input[type="checkbox"],
+.filter-mid-block input[type="checkbox"],
+.filter-leaf-block input[type="checkbox"] {
+    transform: scale(1.1);
+}
+
+/* 開閉時のアニメーション（自然な動き） */
+.filter-children {
+    display: none;
+    margin-top: 6px;
+}
+
+.filter-children.open {
+    display: block;
+}
+
+/* スマホ最適化 */
+@media (max-width: 600px) {
+    .filter-root-block label {
+        font-size: 16px;
+    }
+    .filter-mid-block label {
+        font-size: 15px;
+    }
+    .filter-leaf-block label {
+        font-size: 14px;
+    }
+}
+
+/* ===============================
    スマホ最適化（追加済み）
 =============================== */
 @media (max-width: 600px) {
