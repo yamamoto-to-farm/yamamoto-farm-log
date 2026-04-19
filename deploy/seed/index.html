@@ -14,6 +14,7 @@
 
   <div id="form-area" style="display:none;">
 
+    <!-- ★ ページタイトル（統一） -->
     <h1 class="page-title">播種ログ</h1>
 
     <!-- 日付 -->
@@ -22,9 +23,8 @@
       <input type="date" id="seedDate" class="form-input">
     </div>
 
-
     <!-- 品種 -->
-    <h2>品種</h2>
+    <h2 class="section-title">品種</h2>
     <div class="card">
       <label>種別</label>
       <select id="varietyType" class="form-input">
@@ -38,7 +38,7 @@
     </div>
 
     <!-- セルトレイ -->
-    <h2>セルトレイ</h2>
+    <h2 class="section-title">セルトレイ</h2>
     <div class="card">
       <label>セルトレイ種別</label>
       <label><input type="radio" name="trayType" value="128" checked>128穴</label>
@@ -53,7 +53,7 @@
     </div>
 
     <!-- 播種区分 -->
-    <h2>播種区分</h2>
+    <h2 class="section-title">播種区分</h2>
     <div class="card">
       <label><input type="radio" name="source" value="自家播種" checked> 自家播種</label>
       <label><input type="radio" name="source" value="中神種苗"> 中神種苗</label>
@@ -62,13 +62,13 @@
     </div>
 
     <!-- seedRef -->
-    <h2>管理ID（自動生成）</h2>
+    <h2 class="section-title">管理ID（自動生成）</h2>
     <div class="card">
       <input id="seedRef" class="form-input" readonly style="background:#fff3b0; font-weight:bold;">
     </div>
 
     <!-- 備考 -->
-    <h2>備考</h2>
+    <h2 class="section-title">備考</h2>
     <div class="card">
       <textarea id="memo" rows="3" class="form-textarea" placeholder="メモ（任意）"></textarea>
     </div>
@@ -98,7 +98,7 @@
   <!-- 保存処理 -->
   <script type="module" src="../common/save/index.js"></script>
 
-  <!-- ★★★★★ 追加：共通保存モーダルの読み込み ★★★★★ -->
+  <!-- ★★★★★ 共通保存モーダル ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -107,7 +107,6 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
 </body>
 
