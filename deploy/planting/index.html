@@ -14,16 +14,17 @@
 
   <div id="form-area" style="display:none;">
 
-    <h1>定植ログ</h1>
+    <!-- ★ ページタイトル（統一） -->
+    <h1 class="page-title">定植ログ</h1>
 
     <!-- 日付 -->
+    <h2 class="section-title">定植日</h2>
     <div class="form-field">
-      <label for="plantDate">定植日</label>
       <input type="date" id="plantDate" class="form-input">
     </div>
 
     <!-- 作業者 -->
-    <h2>作業者</h2>
+    <h2 class="section-title">作業者</h2>
     <div class="card" id="workers_box"></div>
 
     <div class="card">
@@ -32,7 +33,7 @@
     </div>
 
     <!-- 圃場 -->
-    <h2>圃場</h2>
+    <h2 class="section-title">圃場</h2>
     <div class="card">
 
       <label>自動判定（推定）</label>
@@ -57,7 +58,7 @@
     </div>
 
     <!-- 品種 -->
-    <h2>品種</h2>
+    <h2 class="section-title">品種</h2>
     <div class="card">
       <label>種別</label>
       <select id="varietyType" class="form-input">
@@ -71,11 +72,11 @@
     </div>
 
     <!-- 播種ロット -->
-    <h2>播種ロット（複数選択・順位付け）</h2>
+    <h2 class="section-title">播種ロット（複数選択・順位付け）</h2>
     <div class="card" id="seedRefArea"></div>
 
     <!-- 植え付け量 -->
-    <h2>植え付け量</h2>
+    <h2 class="section-title">植え付け量</h2>
     <div class="card">
 
       <label>セルトレイ種別</label>
@@ -102,7 +103,7 @@
     </div>
 
     <!-- 株間・畝間 -->
-    <h2>株間・畝間</h2>
+    <h2 class="section-title">株間・畝間</h2>
     <div class="card">
       <label>株間（cm）</label>
       <input type="number" id="spacingRow" class="form-input" value="34">
@@ -112,7 +113,7 @@
     </div>
 
     <!-- 備考 -->
-    <h2>備考</h2>
+    <h2 class="section-title">備考</h2>
     <div class="card">
       <textarea id="notes" rows="3" class="form-textarea" placeholder="欠株・病害虫など"></textarea>
     </div>
@@ -130,7 +131,7 @@
   <!-- ▼ Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ★★★★★ 保存モーダル（必ず save/index.js より前） ★★★★★ -->
+  <!-- ★★★★★ 保存モーダル ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -139,9 +140,8 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
-  <!-- save-modal.js（OK ボタンの reload） -->
+  <!-- save-modal.js -->
   <script type="module" src="/common/save-modal.js"></script>
 
   <!-- summary.js -->
