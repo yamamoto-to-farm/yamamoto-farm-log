@@ -16,7 +16,7 @@ export function renderNavbar() {
     ">
       <a href="/" style="margin-right: 15px;">🏠 トップ</a>
       <a href="/performance/harvest-kpi.html" style="margin-right: 15px;">📊 収穫KPI</a>
-      <a href="/analysis/index.html">🗺 圃場分析</a>
+      <a href="/analysis/index.html">🗺 圃場詳細</a>
     </nav>
   `;
   document.body.insertAdjacentHTML("afterbegin", html);
