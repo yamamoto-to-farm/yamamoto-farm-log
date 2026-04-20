@@ -2,6 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
+import { initFilterUI, getFilterState } from "/common/filter.js";
 
 let plantingRows = [];
 let seedRows = [];
@@ -9,9 +10,9 @@ let fieldData = [];
 let varietyData = [];
 let canDiscard = false;
 
-/* ===============================
+/* ============================================================
    初期化
-=============================== */
+============================================================ */
 export async function initPlantingListPage() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -23,294 +24,69 @@ export async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
-  setupFilterToggle();
-  populateYearMonthFilter();
-  populateFieldFilter();
-  populateVarietyFilter();
-
-  renderTable(plantingRows);
-}
-
-/* ===============================
-   フィルタ見出しの開閉
-=============================== */
-function setupFilterToggle() {
-  const title = document.getElementById("filter-title");
-  const body = document.getElementById("filter-body");
-
-  title.addEventListener("click", () => {
-    const isOpen = body.style.display === "block";
-    body.style.display = isOpen ? "none" : "block";
-    title.textContent = isOpen ? "フィルタ ▼" : "フィルタ ▲";
-  });
-}
-
-/* ===============================
-   フィルタクリア
-=============================== */
-window.clearFilter = function () {
-  document.querySelectorAll("#filter-card input[type=checkbox]").forEach(cb => {
-    cb.checked = false;
+  // ▼ フィルタ UI 初期化
+  initFilterUI({
+    years: extractYears(plantingRows),
+    months: extractMonths(plantingRows),
+    fields: extractFields(fieldData),
+    varieties: extractVarieties(varietyData),
+    onApply: (state) => {
+      const filtered = applyFilter(plantingRows, state);
+      renderTable(filtered);
+    }
   });
 
   renderTable(plantingRows);
-};
-
-/* ===============================
-   年月フィルタ（年月 → 年 → 月）
-=============================== */
-function populateYearMonthFilter() {
-  const root = document.getElementById("filterYearMonthRoot");
-  root.innerHTML = "";
-
-  root.insertAdjacentHTML("beforeend", `
-    <label>
-      <input type="checkbox" id="ym_root" value="__ALL_YM__">
-      <span class="filter-toggle" data-root="ym">▶ 年月</span>
-    </label>
-    <div class="filter-children" id="ym_year_children"></div>
-  `);
-
-  const ymMap = {};
-  plantingRows.forEach(r => {
-    if (!r.plantDate) return;
-    const y = r.plantDate.slice(0, 4);
-    const m = r.plantDate.slice(5, 7);
-    if (!ymMap[y]) ymMap[y] = new Set();
-    ymMap[y].add(m);
-  });
-
-  const yearContainer = document.getElementById("ym_year_children");
-
-  Object.keys(ymMap).sort().forEach(year => {
-    const yearId = `ym_year_${year}`;
-
-    yearContainer.insertAdjacentHTML("beforeend", `
-      <div class="filter-mid-block">
-        <label>
-          <input type="checkbox" id="${yearId}" value="${year}">
-          <span class="filter-toggle" data-year="${year}">▶ ${year}年</span>
-        </label>
-        <div class="filter-children" id="ym_month_children_${year}"></div>
-      </div>
-    `);
-
-    const monthDiv = document.getElementById(`ym_month_children_${year}`);
-    [...ymMap[year]].sort().forEach(month => {
-      monthDiv.insertAdjacentHTML("beforeend", `
-        <div class="filter-leaf-block">
-          <label>
-            <input type="checkbox" value="${year}-${month}">
-            ${month}月
-          </label>
-        </div>
-      `);
-    });
-
-    document.querySelector(`.filter-toggle[data-year="${year}"]`)
-      .addEventListener("click", () => {
-        monthDiv.classList.toggle("open");
-      });
-
-    document.getElementById(yearId).addEventListener("change", e => {
-      const checked = e.target.checked;
-      monthDiv.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
-    });
-  });
-
-  document.querySelector(`.filter-toggle[data-root="ym"]`)
-    .addEventListener("click", () => {
-      document.getElementById("ym_year_children").classList.toggle("open");
-    });
-
-  document.getElementById("ym_root").addEventListener("change", e => {
-    const checked = e.target.checked;
-    yearContainer.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
-  });
 }
 
-/* ===============================
-   圃場フィルタ（圃場 → エリア → 圃場名）
-=============================== */
-function populateFieldFilter() {
-  const root = document.getElementById("filterFieldRoot");
-  root.innerHTML = "";
-
-  root.insertAdjacentHTML("beforeend", `
-    <label>
-      <input type="checkbox" id="field_root" value="__ALL_FIELD__">
-      <span class="filter-toggle" data-root="field">▶ 圃場</span>
-    </label>
-    <div class="filter-children" id="field_area_children"></div>
-  `);
-
-  const areaMap = {};
-  fieldData.forEach(f => {
-    if (!areaMap[f.area]) areaMap[f.area] = [];
-    areaMap[f.area].push(f.name);
+/* ============================================================
+   フィルタ用データ抽出
+============================================================ */
+function extractYears(rows) {
+  const set = new Set();
+  rows.forEach(r => {
+    if (r.plantDate) set.add(r.plantDate.slice(0, 4));
   });
-
-  const areaContainer = document.getElementById("field_area_children");
-
-  Object.keys(areaMap).sort().forEach(area => {
-    const areaId = `field_area_${area}`;
-
-    areaContainer.insertAdjacentHTML("beforeend", `
-      <div class="filter-mid-block">
-        <label>
-          <input type="checkbox" id="${areaId}" value="${area}">
-          <span class="filter-toggle" data-area="${area}">▶ ${area}</span>
-        </label>
-        <div class="filter-children" id="children_${area}"></div>
-      </div>
-    `);
-
-    const childDiv = document.getElementById(`children_${area}`);
-    areaMap[area].forEach(fieldName => {
-      childDiv.insertAdjacentHTML("beforeend", `
-        <div class="filter-leaf-block">
-          <label>
-            <input type="checkbox" value="${fieldName}">
-            ${fieldName}
-          </label>
-        </div>
-      `);
-    });
-
-    document.querySelector(`.filter-toggle[data-area="${area}"]`)
-      .addEventListener("click", () => {
-        childDiv.classList.toggle("open");
-      });
-
-    document.getElementById(areaId).addEventListener("change", e => {
-      const checked = e.target.checked;
-      childDiv.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
-    });
-  });
-
-  document.querySelector(`.filter-toggle[data-root="field"]`)
-    .addEventListener("click", () => {
-      document.getElementById("field_area_children").classList.toggle("open");
-    });
-
-  document.getElementById("field_root").addEventListener("change", e => {
-    const checked = e.target.checked;
-    areaContainer.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
-  });
+  return [...set].sort();
 }
 
-/* ===============================
-   品種フィルタ（品種 → type → 品種名）
-=============================== */
-function populateVarietyFilter() {
-  const root = document.getElementById("filterVarietyRoot");
-  root.innerHTML = "";
-
-  root.insertAdjacentHTML("beforeend", `
-    <label>
-      <input type="checkbox" id="variety_root" value="__ALL_VAR__">
-      <span class="filter-toggle" data-root="variety">▶ 品種</span>
-    </label>
-    <div class="filter-children" id="variety_type_children"></div>
-  `);
-
-  const typeMap = {};
-  varietyData.forEach(v => {
-    if (!typeMap[v.type]) typeMap[v.type] = [];
-    typeMap[v.type].push(v.name);
+function extractMonths(rows) {
+  const set = new Set();
+  rows.forEach(r => {
+    if (r.plantDate) set.add(r.plantDate.slice(5, 7));
   });
-
-  const typeContainer = document.getElementById("variety_type_children");
-
-  Object.keys(typeMap).sort().forEach(type => {
-    const typeId = `variety_type_${type}`;
-
-    typeContainer.insertAdjacentHTML("beforeend", `
-      <div class="filter-mid-block">
-        <label>
-          <input type="checkbox" id="${typeId}" value="${type}">
-          <span class="filter-toggle" data-type="${type}">▶ ${type}</span>
-        </label>
-        <div class="filter-children" id="children_type_${type}"></div>
-      </div>
-    `);
-
-    const childDiv = document.getElementById(`children_type_${type}`);
-    typeMap[type].forEach(varName => {
-      childDiv.insertAdjacentHTML("beforeend", `
-        <div class="filter-leaf-block">
-          <label>
-            <input type="checkbox" value="${varName}">
-            ${varName}
-          </label>
-        </div>
-      `);
-    });
-
-    document.querySelector(`.filter-toggle[data-type="${type}"]`)
-      .addEventListener("click", () => {
-        childDiv.classList.toggle("open");
-      });
-
-    document.getElementById(typeId).addEventListener("change", e => {
-      const checked = e.target.checked;
-      childDiv.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
-    });
-  });
-
-  document.querySelector(`.filter-toggle[data-root="variety"]`)
-    .addEventListener("click", () => {
-      document.getElementById("variety_type_children").classList.toggle("open");
-    });
-
-  document.getElementById("variety_root").addEventListener("change", e => {
-    const checked = e.target.checked;
-    typeContainer.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = checked);
-  });
+  return [...set].sort();
 }
 
-/* ===============================
-   フィルタ適用
-=============================== */
-window.applyFilter = function () {
-  const ymValues = [...document.querySelectorAll("#filterYearMonthRoot input[type=checkbox]:checked")]
-    .map(cb => cb.value)
-    .filter(v => v.includes("-"));
+function extractFields(fieldData) {
+  return [...new Set(fieldData.map(f => f.name))].sort();
+}
 
-  const fields = [...document.querySelectorAll("#filterFieldRoot input[type=checkbox]:checked")]
-    .map(cb => cb.value)
-    .filter(v => !v.startsWith("__"));
+function extractVarieties(varietyData) {
+  return [...new Set(varietyData.map(v => v.name))].sort();
+}
 
-  const varieties = [...document.querySelectorAll("#filterVarietyRoot input[type=checkbox]:checked")]
-    .map(cb => cb.value)
-    .filter(v => !v.startsWith("__"));
-
-  const filtered = plantingRows.filter(r => {
+/* ============================================================
+   フィルタ適用（filter.js から state を受け取る）
+============================================================ */
+function applyFilter(rows, state) {
+  return rows.filter(r => {
     const y = r.plantDate?.slice(0, 4);
     const m = r.plantDate?.slice(5, 7);
-    const ym = (y && m) ? `${y}-${m}` : null;
 
-    if (ymValues.length && (!ym || !ymValues.includes(ym))) return false;
+    if (state.years.length && !state.years.includes(y)) return false;
+    if (state.months.length && !state.months.includes(m)) return false;
 
-    if (fields.length && !fields.includes(r.field)) {
-      const fInfo = fieldData.find(f => f.name === r.field);
-      if (!fInfo || !fields.includes(fInfo.area)) return false;
-    }
-
-    if (varieties.length && !varieties.includes(r.variety)) {
-      const vInfo = varietyData.find(v => v.name === r.variety);
-      if (!vInfo || !varieties.includes(vInfo.type)) return false;
-    }
+    if (state.fields.length && !state.fields.includes(r.field)) return false;
+    if (state.varieties.length && !state.varieties.includes(r.variety)) return false;
 
     return true;
   });
+}
 
-  renderTable(filtered);
-};
-
-/* ===============================
+/* ============================================================
    播種日（複数対応）
-=============================== */
+============================================================ */
 function getSeedDates(seedRef) {
   if (!seedRef) return "";
 
@@ -325,9 +101,9 @@ function getSeedDates(seedRef) {
   return dates.filter(d => d).join("<br>");
 }
 
-/* ===============================
+/* ============================================================
    テーブル描画 + 集計
-=============================== */
+============================================================ */
 function renderTable(rows) {
   document.getElementById("countArea").textContent = `${rows.length} 件`;
 
@@ -402,7 +178,7 @@ function renderTable(rows) {
   tbody.appendChild(frag);
 }
 
-/* ===============================
+/* ============================================================
    ページ起動
-=============================== */
+============================================================ */
 initPlantingListPage();
