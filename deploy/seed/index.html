@@ -6,23 +6,19 @@
   <title>播種ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン（相対パス） -->
+  <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="../common/style.css?v=1">
 </head>
 
 <body>
 
   <!-- ===============================
-       固定ヘッダー（共通）
+       ★ ヘッダー（header.js が自動挿入）
   =============================== -->
-  <header class="app-header">
-    <h1 class="app-title">山本農園 OS</h1>
-
-    <div class="header-right">
-      <span id="login-user"></span>
-      <button id="logout-btn" class="logout-btn" style="display:none;">ログアウト</button>
-    </div>
-  </header>
+  <script type="module">
+    import { renderHeader } from "/common/header.js";
+    renderHeader(); // ← これだけでOK
+  </script>
 
   <div id="form-area" style="display:none;">
 
@@ -88,8 +84,10 @@
     <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="saveSeed()">保存</button>
 
+    <!-- ★ worker の場合は header.js がここに「作業完了」ボタンを追加する -->
   </div>
 
+  <!-- ▼ 認証 & 初期化 -->
   <script type="module">
     import { verifyLocalAuth } from "../common/ui.js";
     import { initSeedPage } from "./seed.js";
@@ -97,26 +95,6 @@
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
       if (!ok) return;
-
-      const role = window.currentRole;
-
-      /* ▼ ロール別ヘッダー制御 */
-      if (role === "worker") {
-        // worker はヘッダー最小化（ログアウトなし）
-        document.getElementById("login-user").style.display = "none";
-        document.getElementById("logout-btn").style.display = "none";
-      } else {
-        // family / admin はログアウト可能
-        document.getElementById("login-user").textContent =
-          `ログイン中：${window.currentHuman}（${window.currentRole}）`;
-        document.getElementById("logout-btn").style.display = "inline-block";
-
-        document.getElementById("logout-btn").addEventListener("click", () => {
-          localStorage.removeItem("human");
-          localStorage.removeItem("role");
-          location.href = "/index.html";
-        });
-      }
 
       document.getElementById("form-area").style.display = "block";
 
