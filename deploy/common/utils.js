@@ -20,12 +20,7 @@ export function formatDate(date) {
 --------------------------------------------------------- */
 export function safeFileName(name) {
   const before = name;
-  /* //デバッグコード
-  if (!name) {
-    console.warn("[safeFileName] name is empty/undefined → 'unknown'");
-    return "unknown";
-  }
-  */
+
   const after = String(name)
     .normalize("NFKC")                 // 全角→半角
     .replace(/[()（）]/g, "")          // 括弧削除
@@ -53,4 +48,24 @@ export function cb(url) {
   const out = url.includes("?") ? `${url}&v=${v}` : `${url}?v=${v}`;
   console.log("[cb] in =", url, "out =", out);
   return out;
+}
+
+/* ---------------------------------------------------------
+   作業完了ボタン（作業ページ専用）
+--------------------------------------------------------- */
+import { completeAndCloseModal } from "./save-modal.js";
+
+export function attachWorkDoneButton() {
+  const formArea = document.getElementById("form-area");
+  if (!formArea) return; // 分析ページなど form-area がないページはスキップ
+
+  const btn = document.createElement("button");
+  btn.textContent = "作業完了";
+  btn.className = "primary-btn";
+
+  btn.addEventListener("click", () => {
+    completeAndCloseModal("作業が完了しました。ページを閉じます。");
+  });
+
+  formArea.appendChild(btn);
 }

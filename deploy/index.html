@@ -15,6 +15,7 @@
 
   <script type="module">
     import { showPinGate } from "./common/ui.js?v=1";
+    import { renderHeader } from "./common/header.js?v=1";
 
     /* カテゴリの表示順を固定 */
     const CATEGORY_ORDER = [
@@ -45,7 +46,6 @@
         section = document.createElement("section");
         section.dataset.category = category;
 
-        /* ▼ OS 標準の開閉見出し（▶なし・クリックで開閉） */
         const h2 = document.createElement("h2");
         h2.className = "menu-section-title";
         h2.textContent = category;
@@ -63,10 +63,11 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       showPinGate("pin-area", async () => {
-        document.getElementById("login-user").textContent =
-          `ログイン中：${window.currentHuman}（${window.currentRole}）`;
 
-        document.getElementById("logout-btn").style.display = "inline-block";
+        // ▼ PIN 認証成功 → ヘッダー描画
+        renderHeader();
+
+        // ▼ メニュー表示
         document.getElementById("menu-area").style.display = "block";
 
         const role = window.currentRole;
@@ -94,29 +95,11 @@
           grid.classList.toggle("open");
         }
       });
-
-      document.getElementById("logout-btn").addEventListener("click", () => {
-        localStorage.removeItem("human");
-        localStorage.removeItem("role");
-        location.reload();
-      });
     });
   </script>
 </head>
 
 <body>
-
-  <!-- ===============================
-       固定ヘッダー
-  =============================== -->
-  <header class="app-header">
-    <h1 class="app-title">山本農園 OS</h1>
-
-    <div class="header-right">
-      <span id="login-user"></span>
-      <button id="logout-btn" class="logout-btn" style="display:none;">ログアウト</button>
-    </div>
-  </header>
 
   <!-- ===============================
        PIN 入力

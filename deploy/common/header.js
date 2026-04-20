@@ -27,23 +27,10 @@ export function renderHeader(options = {}) {
     // ===============================
     // worker：ナビバーなし・ログアウトなし
     // ===============================
-    // ナビバーは絶対に出さない（何もしない）
     document.getElementById("logout-btn").style.display = "none";
 
-    // ▼ 作業完了ボタンを自動追加
-    const formArea = document.getElementById("form-area");
-    if (formArea) {
-      const doneBtn = document.createElement("button");
-      doneBtn.textContent = "作業完了";
-      doneBtn.className = "primary-btn";
-      doneBtn.style.marginTop = "20px";
-
-      doneBtn.addEventListener("click", () => {
-        window.close();
-      });
-
-      formArea.appendChild(doneBtn);
-    }
+    // ※ 作業完了ボタンは utils.js 側で attachWorkDoneButton() を呼ぶ
+    //   → header.js では一切扱わない
 
   } else if (role === "family") {
     // ===============================
