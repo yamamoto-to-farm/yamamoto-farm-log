@@ -14,9 +14,11 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
   return `
     <div class="card basic-card">
-      <!-- ★ OS 標準の h2 に統一 -->
+
+      <!-- ★ analysis/index.html と同じカードタイトル方式 -->
       <h2 class="section-title basic-toggle">基本データ</h2>
 
+      <!-- ★ デフォルト非表示（クリックで展開） -->
       <div class="basic-body" style="display:none;">
 
         <!-- ★ 基本情報 -->

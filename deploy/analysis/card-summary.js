@@ -36,23 +36,27 @@ export async function renderSummaryCards(rawFieldName) {
 
   let html = "";
 
+  // ★ 年度ごとに「カードタイトル + 展開ボディ」方式に統一
   for (const year of Object.keys(index[fieldName]).sort()) {
-    html += `
-      <details>
-        <summary>${year} 年</summary>
-        <div class="year-block">
-    `;
 
+    let yearInner = "";
     const files = index[fieldName][year];
 
     for (const file of files) {
       const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
       const summary = await fetch(url).then(r => r.json());
-
-      html += await renderSummaryCard(summary, harvestBase);
+      yearInner += await renderSummaryCard(summary, harvestBase);
     }
 
-    html += `</div></details>`;
+    // ★ analysis/index.html と同じ UI パターン
+    html += `
+      <div class="card year-card">
+        <h2 class="section-title year-toggle">${year}年</h2>
+        <div class="year-body" style="display:none;">
+          ${yearInner}
+        </div>
+      </div>
+    `;
   }
 
   return html;
@@ -187,12 +191,11 @@ async function renderSummaryCard(s, harvestBase) {
   const workSummary = {};
 
   /* -------------------------------
-     HTML 出力
+     HTML 出力（1つの作付けカード）
   --------------------------------*/
   return `
     <div class="card">
 
-      <!-- ★ OS 標準の h2 に統一 -->
       <h2 class="section-title">
         作付け別・定植〜出荷データ（${s.planting.plantDate.slice(0,4)}年）
       </h2>
