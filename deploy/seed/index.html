@@ -98,17 +98,25 @@
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      /* ▼ ログインユーザー表示 */
-      document.getElementById("login-user").textContent =
-        `ログイン中：${window.currentHuman}（${window.currentRole}）`;
-      document.getElementById("logout-btn").style.display = "inline-block";
+      const role = window.currentRole;
 
-      /* ▼ ログアウト処理 */
-      document.getElementById("logout-btn").addEventListener("click", () => {
-        localStorage.removeItem("human");
-        localStorage.removeItem("role");
-        location.href = "/index.html";
-      });
+      /* ▼ ロール別ヘッダー制御 */
+      if (role === "worker") {
+        // worker はヘッダー最小化（ログアウトなし）
+        document.getElementById("login-user").style.display = "none";
+        document.getElementById("logout-btn").style.display = "none";
+      } else {
+        // family / admin はログアウト可能
+        document.getElementById("login-user").textContent =
+          `ログイン中：${window.currentHuman}（${window.currentRole}）`;
+        document.getElementById("logout-btn").style.display = "inline-block";
+
+        document.getElementById("logout-btn").addEventListener("click", () => {
+          localStorage.removeItem("human");
+          localStorage.removeItem("role");
+          location.href = "/index.html";
+        });
+      }
 
       document.getElementById("form-area").style.display = "block";
 
