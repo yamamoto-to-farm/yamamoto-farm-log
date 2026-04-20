@@ -5,14 +5,23 @@
   <meta charset="UTF-8">
   <title>収穫ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- Papaparse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body>
 
+  <!-- ===============================
+       ★ ヘッダー（header.js が自動挿入）
+  =============================== -->
+
   <div id="form-area" style="display:none;">
 
-    <!-- ★ ページタイトル（統一） -->
+    <!-- ページタイトル -->
     <h1 class="page-title">収穫ログ</h1>
 
     <!-- 収穫日 -->
@@ -87,10 +96,8 @@
     <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="saveHarvest()">保存</button>
 
+    <!-- ★ 作業完了ボタンは utils.js が追加する -->
   </div>
-
-  <!-- Papaparse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <!-- 保存モーダル -->
   <div id="modal-container"></div>
@@ -105,27 +112,40 @@
   <!-- summary.js（モーダル制御） -->
   <script type="module" src="../common/summary.js"></script>
 
-  <!-- harvest.js を import して順番を保証 -->
+  <!-- save/index.js（S3 書き込み） -->
+  <script type="module" src="../common/save/index.js"></script>
+
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { attachWorkDoneButton } from "/common/utils.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
+      // ヘッダー描画
+      renderHeader();
+
+      // ページ表示
       document.getElementById("form-area").style.display = "block";
 
+      // 日付初期値
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("harvestDate").value = today;
       document.getElementById("shippingDate").value = today;
 
+      // 作業完了ボタン
+      attachWorkDoneButton();
+
+      // harvest.js をロードして初期化
       const module = await import("./harvest.js");
       module.initHarvestPage();
     });
   </script>
-
-  <!-- save/index.js（S3 書き込み） -->
-  <script type="module" src="../common/save/index.js"></script>
 
 </body>
 </html>
