@@ -26,7 +26,7 @@
 
       // ★ localStorage の認証情報が有効かチェック
       const ok = await verifyLocalAuth();
-      if (!ok) return;   // 無効なら index.html に戻される
+      if (!ok) return;
 
       // 認証済み → UI 表示
       document.getElementById("form-area").style.display = "block";
@@ -46,11 +46,12 @@
 
   <div id="form-area" style="display:none;">
 
-    <h1>出荷ログ</h1>
+    <!-- ★ ページタイトル（統一） -->
+    <h1 class="page-title">出荷ログ</h1>
 
     <!-- 出荷日 -->
+    <h2 class="section-title">出荷日</h2>
     <div class="form-field">
-      <label for="shippingDate">出荷日</label>
       <input type="date" id="shippingDate" class="form-input">
     </div>
 
@@ -61,7 +62,8 @@
     <!-- 重量入力 -->
     <h2 class="section-title">重量入力（改行 or カンマ区切り）</h2>
     <div class="card">
-      <textarea id="weights" rows="5" class="form-textarea" placeholder="例：500 650 600 550 650"></textarea>
+      <textarea id="weights" rows="5" class="form-textarea"
+        placeholder="例：500 650 600 550 650"></textarea>
     </div>
 
     <!-- メモ -->
@@ -76,7 +78,7 @@
   </div><!-- /form-area -->
 
 
-  <!-- ★★★★★ 共通保存モーダルの読み込み（必ず shipping.js より前） ★★★★★ -->
+  <!-- ★★★★★ 共通保存モーダル（shipping.js より前） ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -85,9 +87,8 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
-  <!-- shipping.js を ES module として読み込む -->
+  <!-- shipping.js（ES module） -->
   <script type="module" src="./shipping.js"></script>
 
 </body>
