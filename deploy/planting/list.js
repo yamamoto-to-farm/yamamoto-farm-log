@@ -24,12 +24,26 @@ export async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
+  // 圃場エリア → 圃場名 のマップ生成
+  const fieldMap = {};
+  fieldData.forEach(f => {
+    if (!fieldMap[f.area]) fieldMap[f.area] = [];
+    fieldMap[f.area].push(f.name);
+  });
+
+  // 品種タイプ → 品種名 のマップ生成
+  const varietyMap = {};
+  varietyData.forEach(v => {
+    if (!varietyMap[v.type]) varietyMap[v.type] = [];
+    varietyMap[v.type].push(v.name);
+  });
+
   // ▼ フィルタ UI 初期化
   initFilterUI({
     years: extractYears(plantingRows),
     months: extractMonths(plantingRows),
-    fields: extractFields(fieldData),
-    varieties: extractVarieties(varietyData),
+    fields: fieldMap,
+    varieties: varietyMap,
     onApply: (state) => {
       const filtered = applyFilter(plantingRows, state);
       renderTable(filtered);
@@ -58,16 +72,8 @@ function extractMonths(rows) {
   return [...set].sort();
 }
 
-function extractFields(fieldData) {
-  return [...new Set(fieldData.map(f => f.name))].sort();
-}
-
-function extractVarieties(varietyData) {
-  return [...new Set(varietyData.map(v => v.name))].sort();
-}
-
 /* ============================================================
-   フィルタ適用（filter.js から state を受け取る）
+   フィルタ適用
 ============================================================ */
 function applyFilter(rows, state) {
   return rows.filter(r => {

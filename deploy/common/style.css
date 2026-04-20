@@ -283,6 +283,27 @@ textarea { resize: vertical; }
 .primary-btn + .secondary-btn { margin-top: 14px; }
 
 /* ===============================
+   階層フィルタ用タグ
+=============================== */
+.filter-tag {
+  padding: 6px 12px;
+  background: #eee;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+  margin: 4px;
+  border: 1px solid #ccc;
+}
+
+.filter-tag.active {
+  background: #2f855a;
+  color: #fff;
+  border: 2px solid #276749;
+  font-weight: 600;
+}
+
+/* ===============================
    テーブル（KPI）
 =============================== */
 table {
