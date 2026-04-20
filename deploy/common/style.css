@@ -62,11 +62,32 @@ body {
 }
 
 /* ===============================
-   セクションタイトル（カードタイトル統一）
+   見出し（開閉しない h2）
 =============================== */
-.section-title,
-h2.menu-section-title,
-.basic-toggle,
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 20px 0 12px;
+    color: #333;
+    cursor: default; /* ← 修正ポイント */
+    user-select: none;
+}
+
+/* ===============================
+   開閉するタイトル（基本データ）
+=============================== */
+.basic-toggle {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 20px 0 12px;
+    color: #333;
+    cursor: pointer; /* ← 開閉するので pointer */
+    user-select: none;
+}
+
+/* ===============================
+   開閉するタイトル（年度カード）
+=============================== */
 details summary {
     font-size: 20px;
     font-weight: 600;
@@ -74,6 +95,11 @@ details summary {
     color: #333;
     cursor: pointer;
     user-select: none;
+    list-style: none;
+}
+
+details[open] {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* ===============================
@@ -90,17 +116,7 @@ details summary {
 }
 
 /* ===============================
-   details（年度サマリー）
-=============================== */
-details summary {
-    list-style: none;
-}
-details[open] {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* ===============================
-   情報行・ブロック（カード内をコンパクトに）
+   情報行・ブロック
 =============================== */
 .info-line {
     font-size: 16px;
@@ -116,6 +132,12 @@ details[open] {
     font-size: 17px;
     font-weight: 600;
     margin-bottom: 4px;
+}
+
+.info-line.link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* ===============================
@@ -164,7 +186,7 @@ details[open] {
 }
 
 /* ===============================
-   フォーム（共通）
+   フォーム
 =============================== */
 input,
 textarea,
@@ -269,7 +291,7 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 .notes-list { margin: 6px 0 0 16px; }
 
 /* ===============================
-   圃場一覧（analysis/index.js）
+   圃場一覧
 =============================== */
 #analysis-container a {
     font-size: 18px;
