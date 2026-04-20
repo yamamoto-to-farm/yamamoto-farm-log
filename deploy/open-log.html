@@ -3,34 +3,48 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>ログページを開いています…</title>
+  <title>作業ページを開く</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
+      padding: 30px;
       text-align: center;
+    }
+    button {
+      padding: 14px 26px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      background: #2a7ae2;
+      color: white;
+      cursor: pointer;
+    }
+    button:active {
+      opacity: 0.8;
     }
   </style>
 </head>
 
 <body>
 
-  <h2>ページを開いています…</h2>
-  <p>数秒経っても移動しない場合は、もう一度QRコードを読み取ってください。</p>
+  <h2>作業ページを開く</h2>
+  <p>下のボタンを押してください。</p>
+
+  <button id="open-btn">作業ページを開く</button>
 
   <script>
     // URLパラメータ取得
     const url = new URL(location.href);
-    const id = url.searchParams.get("id");       // ← seed / planting / harvest / shipping / ...
-    const machine = url.searchParams.get("machine"); // 任意
+    const id = url.searchParams.get("id");       // seed / planting / harvest / ...
+    const machine = url.searchParams.get("machine");
 
     if (!id) {
       document.body.innerHTML = "<h2>エラー：id が指定されていません</h2>";
       throw new Error("id is required");
     }
 
-    // id → 実際のログページのパスに変換（/logs は付けない）
+    // id → 実際のログページのパス（/logs は使わない）
     const idToPath = {
       "seed": "/seed/index.html",
       "nursery-log": "/nursery/index.html",
@@ -53,22 +67,11 @@
       target += `?machine=${encodeURIComponent(machine)}`;
     }
 
-    // ★ JS が新しいタブとして開く（→ window.close() が許可される）
-    window.open(target, "_blank");
-
-    // ★ 自分自身（open-log.html）は閉じる
-    window.close();
-
-    // ★ もし閉じられなかった場合のフォールバック
-    setTimeout(() => {
-      if (!document.hidden) {
-        document.body.innerHTML = `
-          <h2>ページを開きました</h2>
-          <p>このページを閉じてください。</p>
-          <p><a href="${target}">→ 開けない場合はこちら</a></p>
-        `;
-      }
-    }, 500);
+    // ★ ボタンを押したら window.open()（ユーザー操作扱い → ブロックされない）
+    document.getElementById("open-btn").onclick = () => {
+      window.open(target, "_blank");  // ← これが許可される
+      window.close();                 // ← open-log.html は閉じられる（許可される）
+    };
   </script>
 
 </body>
