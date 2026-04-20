@@ -255,6 +255,18 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 .notes-list { margin: 6px 0 0 16px; }
 
 /* ===============================
+   圃場一覧（analysis/index.js）
+=============================== */
+#analysis-container a {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2b6cb0;
+    text-decoration: none;
+    display: block;
+    padding: 6px 0;
+}
+
+/* ===============================
    3階層ツリーフィルタ
 =============================== */
 .filter-root-block {
