@@ -33,7 +33,6 @@
         return;
       }
 
-      // family / admin → ヘッダー表示
       renderHeader();
     });
   </script>
@@ -44,22 +43,22 @@
   <h1 class="page-title">播種・定植一覧</h1>
 
   <!-- ===============================
-       選択中フィルタ表示（filter.js が制御）
+       選択中フィルタ（filter.js が制御）
   =============================== -->
   <div id="activeFilters" style="display:none;"></div>
 
   <!-- ===============================
-       フィルタカード（中身は filter.js が生成）
+       フィルタカード
   =============================== -->
   <div class="card" id="filter-card">
 
-    <!-- ▼ 見出し（OS 標準） -->
+    <!-- ▼ 見出し（クリックで開閉） -->
     <h2 class="section-title accordion-title" id="filter-title">
       フィルタ
     </h2>
 
-    <!-- ▼ フィルタ本体（filter.js が中身を生成） -->
-    <div id="filter-body" class="accordion-body">
+    <!-- ▼ フィルタ本体（filter.js が中身を制御） -->
+    <div id="filter-body" class="accordion-body" style="display:none;">
 
       <!-- 年月フィルタ -->
       <h3 class="section-title accordion-title">年月</h3>
@@ -113,20 +112,6 @@
     </thead>
     <tbody></tbody>
   </table>
-
-  <!-- ===============================
-       アコーディオン制御（filter.js と連携）
-  =============================== -->
-  <script>
-    document.addEventListener("click", (e) => {
-      if (e.target.classList.contains("accordion-title")) {
-        const body = e.target.nextElementSibling;
-        if (body) {
-          body.style.display = body.style.display === "block" ? "none" : "block";
-        }
-      }
-    });
-  </script>
 
 </body>
 </html>
