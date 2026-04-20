@@ -1,24 +1,15 @@
 // card-field-detail.js
 export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
-  console.log("=== card-field-detail.js: f ===", f);
-  console.log("=== card-field-detail.js: fieldName ===", fieldName);
-  console.log("=== card-field-detail.js: TEMPLATE_FIELD ===", TEMPLATE_FIELD);
-
-  // ★ データが無い場合はテンプレートを使う
   const data = f ? f : { ...TEMPLATE_FIELD, __empty: true, field: fieldName };
-
-  console.log("=== card-field-detail.js: 最終 data ===", data);
-
   const isEmpty = data.__empty;
 
   return `
-    <div class="card basic-card">
+    <!-- ★ 基本データを年度カードと同じ階層にする -->
+    <details class="basic-card">
+      <summary>基本データ</summary>
 
-      <!-- ★ ▶ を付けて OS 標準の section-title に統一 -->
-      <h2 class="section-title basic-toggle">▶ 基本データ</h2>
-
-      <div class="basic-body" style="display:none;">
+      <div class="card" style="margin-top:12px;">
 
         <!-- ★ 基本情報 -->
         <div class="info-line">実耕作面積：${data.size} a</div>
@@ -88,6 +79,6 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
         }
 
       </div>
-    </div>
+    </details>
   `;
 }
