@@ -15,10 +15,6 @@
   <!-- ===============================
        ★ ヘッダー（header.js が自動挿入）
   =============================== -->
-  <script type="module">
-    import { renderHeader } from "/common/header.js";
-    renderHeader(); // ← これだけでOK
-  </script>
 
   <div id="form-area" style="display:none;">
 
@@ -87,20 +83,30 @@
     <!-- ★ worker の場合は header.js がここに「作業完了」ボタンを追加する -->
   </div>
 
-  <!-- ▼ 認証 & 初期化 -->
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
   <script type="module">
     import { verifyLocalAuth } from "../common/ui.js";
+    import { renderHeader } from "/common/header.js";
     import { initSeedPage } from "./seed.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
+      // 1) 認証 → currentHuman/currentRole がセットされる
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
+      // 2) 認証後にヘッダーを描画（undefined にならない）
+      renderHeader();
+
+      // 3) ページ表示
       document.getElementById("form-area").style.display = "block";
 
+      // 4) 初期値セット
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("seedDate").value = today;
 
+      // 5) ページ固有の初期化
       initSeedPage();
     });
   </script>
