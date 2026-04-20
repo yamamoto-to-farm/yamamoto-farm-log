@@ -16,33 +16,13 @@
 
   <!-- CSV パーサー -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <!-- JS（認証 & 初期化） -->
-  <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js";
-    import { initShippingPage } from "./shipping.js";
-
-    window.addEventListener("DOMContentLoaded", async () => {
-
-      // ★ localStorage の認証情報が有効かチェック
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
-
-      // 認証済み → UI 表示
-      document.getElementById("form-area").style.display = "block";
-
-      // 日付初期値
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("shippingDate").value = today;
-
-      // ★ 出荷ページ初期化
-      initShippingPage();
-    });
-  </script>
-
 </head>
 
 <body>
+
+  <!-- ===============================
+       ★ ヘッダー（header.js が自動挿入）
+  =============================== -->
 
   <div id="form-area" style="display:none;">
 
@@ -75,10 +55,47 @@
     <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="saveShipping()">保存</button>
 
+    <!-- ★ 作業完了ボタンは utils.js が追加する -->
   </div><!-- /form-area -->
 
 
-  <!-- ★★★★★ 共通保存モーダル（shipping.js より前） ★★★★★ -->
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { attachWorkDoneButton } from "/common/utils.js";
+    import { initShippingPage } from "./shipping.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+
+      // 1) 認証
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // 2) ヘッダー描画
+      renderHeader();
+
+      // 3) ページ表示
+      document.getElementById("form-area").style.display = "block";
+
+      // 4) 日付初期値
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("shippingDate").value = today;
+
+      // 5) 作業完了ボタン（worker/family/admin 全員使える）
+      attachWorkDoneButton();
+
+      // 6) 出荷ページ初期化
+      initShippingPage();
+    });
+  </script>
+
+  <!-- 保存処理 -->
+  <script type="module" src="/common/save/index.js"></script>
+
+  <!-- ★★★★★ 共通保存モーダル ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -87,9 +104,6 @@
         document.getElementById("modal-container").innerHTML = html;
       });
   </script>
-
-  <!-- shipping.js（ES module） -->
-  <script type="module" src="./shipping.js"></script>
 
 </body>
 
