@@ -62,22 +62,23 @@ body {
 }
 
 /* ===============================
-   セクションタイトル（カードタイトル）
+   セクションタイトル（共通）
 =============================== */
-.section-title {
+.section-title,
+h2.menu-section-title,
+.group-title {
     font-size: 20px;
     font-weight: 600;
-    margin: 0 0 12px;
-    padding: 6px 0;
+    margin: 30px 0 12px;
     color: #333;
     cursor: pointer;
-    user-select: none;
 }
 
 /* ===============================
    カード（共通）
 =============================== */
-.card {
+.card,
+.menu-card {
     background: #fff;
     border-radius: 10px;
     border: 1px solid #ddd;
@@ -87,15 +88,19 @@ body {
 }
 
 /* ===============================
-   details は完全削除（analysis/index と統一）
+   details（年度サマリー）
 =============================== */
-details,
 details summary {
-    display: none !important;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 600;
+}
+details[open] {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* ===============================
-   カード内の情報行・ブロック
+   情報行・ブロック（カード内をコンパクトに）
 =============================== */
 .info-line {
     font-size: 16px;
