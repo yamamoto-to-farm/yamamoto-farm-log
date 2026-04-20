@@ -1,6 +1,6 @@
 /* ============================================================
    /common/filter.js
-   展開（▼）と選択（チェックボックス）を分離した階層フィルタ
+   展開（▶/▼）と選択（チェックボックス）を分離した階層フィルタ
 ============================================================ */
 
 let filterState = {
@@ -14,8 +14,14 @@ let expandState = {
   year: false,
   field: false,
   variety: false,
-  children: {} // "2025": false, "赤沢・南大清水": false など
+  children: {}
 };
+
+let filterData = {}; // list.js から受け取る
+
+export function setFilterData(data) {
+  filterData = data;
+}
 
 /* ============================================================
    初期化
@@ -27,20 +33,45 @@ export function initFilterUI({ years, months, fields, varieties, onApply }) {
   Object.keys(fields).forEach(a => expandState.children[a] = false);
   Object.keys(varieties).forEach(t => expandState.children[t] = false);
 
-  renderFilterUI(years, months, fields, varieties);
+  renderFilterUI();
 
   setupApplyButton(onApply);
-  setupClearButton();
   updateActiveFilters();
 }
 
 /* ============================================================
    メイン描画
 ============================================================ */
-function renderFilterUI(years, months, fields, varieties) {
-  renderSection("year", "yearTags", "monthTags", years, months, filterState.years, filterState.months);
-  renderSection("field", "fieldAreaTags", "fieldTags", Object.keys(fields), fields, filterState.fields, filterState.fields);
-  renderSection("variety", "varietyTypeTags", "varietyTags", Object.keys(varieties), varieties, filterState.varieties, filterState.varieties);
+function renderFilterUI() {
+  renderSection(
+    "year",
+    "yearTags",
+    "monthTags",
+    filterData.years,
+    filterData.months,
+    filterState.years,
+    filterState.months
+  );
+
+  renderSection(
+    "field",
+    "fieldAreaTags",
+    "fieldTags",
+    Object.keys(filterData.fields),
+    filterData.fields,
+    filterState.fields,
+    filterState.fields
+  );
+
+  renderSection(
+    "variety",
+    "varietyTypeTags",
+    "varietyTags",
+    Object.keys(filterData.varieties),
+    filterData.varieties,
+    filterState.varieties,
+    filterState.varieties
+  );
 }
 
 /* ============================================================
@@ -60,7 +91,7 @@ function renderSection(sectionKey, parentId, childId, parentItems, childMap, par
 
   title.onclick = () => {
     expandState[sectionKey] = !expandState[sectionKey];
-    renderFilterUI(parentItems, childMap, null, null);
+    renderFilterUI();
   };
 
   /* ▼ 親階層 */
@@ -70,19 +101,12 @@ function renderSection(sectionKey, parentId, childId, parentItems, childMap, par
     const row = document.createElement("div");
     row.className = "filter-row";
 
-    /* 展開トグル（▼） */
-    const toggle = document.createElement("span");
-    toggle.className = "toggle-icon";
-    toggle.textContent = expandState.children[parent] ? "▼" : "▶";
-    toggle.onclick = () => {
-      expandState.children[parent] = !expandState.children[parent];
-      renderFilterUI(parentItems, childMap, null, null);
-    };
-
     /* 親チェックボックス */
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.checked = parentState.includes(parent);
+    cb.className = "filter-checkbox";
+
     cb.onchange = () => {
       if (cb.checked) {
         if (!parentState.includes(parent)) parentState.push(parent);
@@ -98,20 +122,23 @@ function renderSection(sectionKey, parentId, childId, parentItems, childMap, par
         });
       }
       updateActiveFilters();
-      renderFilterUI(parentItems, childMap, null, null);
+      renderFilterUI();
     };
 
-    /* 親ラベル */
+    /* 親ラベル（クリックで子階層展開） */
     const label = document.createElement("span");
     label.textContent = parent;
     label.className = "filter-label";
+    label.onclick = () => {
+      expandState.children[parent] = !expandState.children[parent];
+      renderFilterUI();
+    };
 
-    row.appendChild(toggle);
     row.appendChild(cb);
     row.appendChild(label);
     parentRoot.appendChild(row);
 
-    /* ▼ 子階層 */
+    /* ▼ 子階層（展開アイコンなし） */
     if (expandState.children[parent]) {
       (childMap[parent] || []).forEach(child => {
         const crow = document.createElement("div");
@@ -120,6 +147,8 @@ function renderSection(sectionKey, parentId, childId, parentItems, childMap, par
         const ccb = document.createElement("input");
         ccb.type = "checkbox";
         ccb.checked = childState.includes(child);
+        ccb.className = "filter-checkbox";
+
         ccb.onchange = () => {
           if (ccb.checked) {
             if (!childState.includes(child)) childState.push(child);
@@ -128,13 +157,12 @@ function renderSection(sectionKey, parentId, childId, parentItems, childMap, par
             if (i >= 0) childState.splice(i, 1);
           }
           updateActiveFilters();
-          renderFilterUI(parentItems, childMap, null, null);
+          renderFilterUI();
         };
 
         const clabel = document.createElement("span");
         clabel.textContent = child;
 
-        crow.appendChild(document.createElement("span")); // 空白
         crow.appendChild(ccb);
         crow.appendChild(clabel);
         childRoot.appendChild(crow);
@@ -187,8 +215,9 @@ function clearFilter() {
   filterState.months = [];
   filterState.fields = [];
   filterState.varieties = [];
+
   updateActiveFilters();
-  renderFilterUI([], [], [], []);
+  renderFilterUI();
 }
 
 /* ============================================================
@@ -198,11 +227,6 @@ function setupApplyButton(onApply) {
   document.addEventListener("applyFilter", () => {
     if (typeof onApply === "function") onApply(getFilterState());
   });
-}
-
-function setupClearButton() {
-  const btn = document.querySelector("#filter-actions .secondary-btn");
-  if (btn) btn.onclick = () => clearFilter();
 }
 
 export function getFilterState() {

@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
-import { initFilterUI } from "/common/filter.js";
+import { initFilterUI, setFilterData } from "/common/filter.js";
 
 let plantingRows = [];
 let seedRows = [];
@@ -10,7 +10,7 @@ let fieldData = [];
 let varietyData = [];
 let canDiscard = false;
 
-let filterData = {}; // ★ filter.js が再描画に使う
+let filterData = {};
 
 /* ============================================================
    初期化
@@ -26,7 +26,7 @@ export async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
-  /* ▼ 年 → 月マップ生成（実データ） */
+  /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
   plantingRows.forEach(r => {
     if (!r.plantDate) return;
@@ -51,13 +51,15 @@ export async function initPlantingListPage() {
     varietyMap[v.type].push(v.name);
   });
 
-  /* ★ filter.js が再描画に使うデータを保持 */
+  /* ★ filter.js に渡すデータ */
   filterData = {
     years: Object.keys(ymMap),
     months: ymMap,
     fields: fieldMap,
     varieties: varietyMap
   };
+
+  setFilterData(filterData);
 
   /* ▼ フィルタ UI 初期化 */
   initFilterUI({
