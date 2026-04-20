@@ -62,16 +62,18 @@ body {
 }
 
 /* ===============================
-   セクションタイトル（共通）
+   セクションタイトル（カードタイトル統一）
 =============================== */
 .section-title,
 h2.menu-section-title,
-.group-title {
+.basic-toggle,
+details summary {
     font-size: 20px;
     font-weight: 600;
-    margin: 30px 0 12px;
+    margin: 20px 0 12px;
     color: #333;
     cursor: pointer;
+    user-select: none;
 }
 
 /* ===============================
@@ -91,9 +93,7 @@ h2.menu-section-title,
    details（年度サマリー）
 =============================== */
 details summary {
-    cursor: pointer;
-    font-size: 17px;
-    font-weight: 600;
+    list-style: none;
 }
 details[open] {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
