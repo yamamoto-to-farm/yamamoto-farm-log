@@ -14,7 +14,8 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
   return `
     <div class="card basic-card">
-      <h2 class="basic-toggle">基本データ</h2>
+      <!-- ★ OS 標準の h2 に統一 -->
+      <h2 class="section-title basic-toggle">基本データ</h2>
 
       <div class="basic-body" style="display:none;">
 

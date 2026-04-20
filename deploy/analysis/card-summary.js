@@ -75,12 +75,10 @@ function getRateClass(rate) {
 async function renderSummaryCard(s, harvestBase) {
 
   /* -------------------------------
-     ★ 育苗概要（正しい seedRef 参照）
+     ★ 育苗概要
   --------------------------------*/
-  const seedRef = s.planting.seedRef;   // ← これが正しい
+  const seedRef = s.planting.seedRef;
   const seedlingSummary = getSeedlingSummary(seedRef, s.planting.plantDate);
-
-  console.log("[seedlingSummary] seedRef:", seedRef, "result:", seedlingSummary);
 
   /* -------------------------------
      日付処理
@@ -92,7 +90,7 @@ async function renderSummaryCard(s, harvestBase) {
     : "—";
 
   /* -------------------------------
-     面積計算（utils）
+     面積計算
   --------------------------------*/
   const areaM2 = calcAreaM2(
     s.planting.quantity,
@@ -112,7 +110,7 @@ async function renderSummaryCard(s, harvestBase) {
   const totalWeight = s.shipping.totalWeight;
 
   /* -------------------------------
-     指標計算（utils）
+     指標計算
   --------------------------------*/
   const yieldPerTan = hasHarvest
     ? calcYieldPerTan(totalWeight, areaTan)
@@ -182,7 +180,7 @@ async function renderSummaryCard(s, harvestBase) {
       : "";
 
   /* -------------------------------
-     ★ 栽培管理概要（まだ空）
+     ★ 栽培管理概要（空）
   --------------------------------*/
   const fertSummary = {};
   const pestSummary = {};
@@ -194,7 +192,10 @@ async function renderSummaryCard(s, harvestBase) {
   return `
     <div class="card">
 
-      <h2>作付け別・定植〜出荷データ（${s.planting.plantDate.slice(0,4)}年）</h2>
+      <!-- ★ OS 標準の h2 に統一 -->
+      <h2 class="section-title">
+        作付け別・定植〜出荷データ（${s.planting.plantDate.slice(0,4)}年）
+      </h2>
 
       <div class="info-block">
         <div class="info-block-title">【定植情報】</div>
@@ -213,7 +214,6 @@ async function renderSummaryCard(s, harvestBase) {
         <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
       </div>
 
-      <!-- ★ 育苗概要 -->
       <div class="info-block">
         <div class="info-block-title">【育苗概要】</div>
         <div class="info-line">
@@ -225,7 +225,6 @@ async function renderSummaryCard(s, harvestBase) {
         </div>
       </div>
 
-      <!-- ★ 栽培管理概要 -->
       <div class="info-block">
         <div class="info-block-title">【栽培管理概要】</div>
 
