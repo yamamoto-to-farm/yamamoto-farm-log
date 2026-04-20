@@ -22,18 +22,35 @@
   <script>
     // URLパラメータ取得
     const url = new URL(location.href);
-    const type = url.searchParams.get("type");   // 例: seed / planting / harvest / shipping
-    const field = url.searchParams.get("field"); // 任意（圃場自動入力用）
+    const id = url.searchParams.get("id");       // ← seed / planting / harvest / shipping / ...
+    const machine = url.searchParams.get("machine"); // 任意
 
-    if (!type) {
-      document.body.innerHTML = "<h2>エラー：type が指定されていません</h2>";
-      throw new Error("type is required");
+    if (!id) {
+      document.body.innerHTML = "<h2>エラー：id が指定されていません</h2>";
+      throw new Error("id is required");
     }
 
-    // 開くログページのURLを生成
-    let target = `/logs/${type}/index.html`;
-    if (field) {
-      target += `?field=${encodeURIComponent(field)}`;
+    // id → 実際のログページのパスに変換（/logs は付けない）
+    const idToPath = {
+      "seed": "/seed/index.html",
+      "nursery-log": "/nursery/index.html",
+      "planting": "/planting/index.html",
+      "cultivation-log": "/cultivation/index.html",
+      "harvest": "/harvest/index.html",
+      "shipping": "/shipping/index.html"
+    };
+
+    const targetBase = idToPath[id];
+
+    if (!targetBase) {
+      document.body.innerHTML = `<h2>エラー：不明な id (${id}) です</h2>`;
+      throw new Error("Unknown id: " + id);
+    }
+
+    // パラメータ付与
+    let target = targetBase;
+    if (machine) {
+      target += `?machine=${encodeURIComponent(machine)}`;
     }
 
     // ★ JS が新しいタブとして開く（→ window.close() が許可される）

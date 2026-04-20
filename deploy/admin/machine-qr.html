@@ -58,10 +58,9 @@
       // ページ一覧（管理/ツール含む全て）
       pages.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.path;      // 例: /logs/seed/index.html
+        opt.value = p.id;              // ← id を使う（seed / planting / harvest）
         opt.textContent = p.name;
         opt.dataset.icon = p.icon || "";
-        opt.dataset.type = p.type || ""; // 例: seed / planting / harvest / shipping
         pageSel.appendChild(opt);
       });
 
@@ -74,14 +73,13 @@
       });
 
       document.getElementById("generate-btn").onclick = () => {
-        const pagePath = pageSel.value;
+        const pageId = pageSel.value;          // ← id を取得
         const machineId = machineSel.value;
-        const type = pageSel.selectedOptions[0].dataset.type; // ← ログ種別
 
         const siteRoot = "https://d3sscxnlo0qnhe.cloudfront.net/";
 
         // ★ open-log.html 経由 URL を生成
-        let absUrl = `${siteRoot}open-log.html?type=${type}`;
+        let absUrl = `${siteRoot}open-log.html?id=${pageId}`;
         if (machineId) absUrl += `&machine=${machineId}`;
 
         // アイコン
