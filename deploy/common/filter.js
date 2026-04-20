@@ -52,12 +52,12 @@ function createParentChildTags(parentId, childId, parentItems, childMap, parentS
         parentState.splice(parentState.indexOf(parent), 1);
 
         // 子も全部クリア
-        childMap[parent].forEach(c => {
+        (childMap[parent] || []).forEach(c => {
           const idx = childState.indexOf(c);
           if (idx >= 0) childState.splice(idx, 1);
         });
 
-        updateChildTags(childRoot, childState);
+        updateChildTags(childRoot, childMap, parentState, childState);
         updateActiveFilters();
         return;
       }
@@ -67,49 +67,53 @@ function createParentChildTags(parentId, childId, parentItems, childMap, parentS
       parentState.push(parent);
 
       // 子を全部選択
-      childMap[parent].forEach(c => {
+      (childMap[parent] || []).forEach(c => {
         if (!childState.includes(c)) childState.push(c);
       });
 
-      updateChildTags(childRoot, childState);
+      updateChildTags(childRoot, childMap, parentState, childState);
       updateActiveFilters();
     });
 
     parentRoot.appendChild(tag);
   });
 
-  // 子タグ生成
-  updateChildTags(childRoot, childState);
+  updateChildTags(childRoot, childMap, parentState, childState);
 }
 
 /* ============================================================
    子タグの更新
 ============================================================ */
-function updateChildTags(root, stateArray) {
+function updateChildTags(root, childMap, parentState, childState) {
   root.innerHTML = "";
 
-  const allChildren = Object.values(stateArray).flat();
+  // 親が選択されているものだけ子を表示
+  const activeParents = parentState;
 
-  allChildren.forEach(item => {
-    const tag = document.createElement("div");
-    tag.className = "filter-tag";
-    tag.textContent = item;
+  activeParents.forEach(parent => {
+    const children = childMap[parent] || [];
 
-    if (stateArray.includes(item)) tag.classList.add("active");
+    children.forEach(child => {
+      const tag = document.createElement("div");
+      tag.className = "filter-tag";
+      tag.textContent = child;
 
-    tag.addEventListener("click", () => {
-      const idx = stateArray.indexOf(item);
-      if (idx >= 0) {
-        stateArray.splice(idx, 1);
-        tag.classList.remove("active");
-      } else {
-        stateArray.push(item);
-        tag.classList.add("active");
-      }
-      updateActiveFilters();
+      if (childState.includes(child)) tag.classList.add("active");
+
+      tag.addEventListener("click", () => {
+        const idx = childState.indexOf(child);
+        if (idx >= 0) {
+          childState.splice(idx, 1);
+          tag.classList.remove("active");
+        } else {
+          childState.push(child);
+          tag.classList.add("active");
+        }
+        updateActiveFilters();
+      });
+
+      root.appendChild(tag);
     });
-
-    root.appendChild(tag);
   });
 }
 
