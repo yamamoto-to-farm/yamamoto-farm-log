@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>ログページを開いています…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>ページを開いています…</h2>
+  <p>数秒経っても移動しない場合は、もう一度QRコードを読み取ってください。</p>
+
+  <script>
+    // URLパラメータ取得
+    const url = new URL(location.href);
+    const type = url.searchParams.get("type");   // 例: seed / planting / harvest / shipping
+    const field = url.searchParams.get("field"); // 任意（圃場自動入力用）
+
+    if (!type) {
+      document.body.innerHTML = "<h2>エラー：type が指定されていません</h2>";
+      throw new Error("type is required");
+    }
+
+    // 開くログページのURLを生成
+    let target = `/logs/${type}/index.html`;
+    if (field) {
+      target += `?field=${encodeURIComponent(field)}`;
+    }
+
+    // ★ JS が新しいタブとして開く（→ window.close() が許可される）
+    window.open(target, "_blank");
+
+    // ★ 自分自身（open-log.html）は閉じる
+    window.close();
+
+    // ★ もし閉じられなかった場合のフォールバック
+    setTimeout(() => {
+      if (!document.hidden) {
+        document.body.innerHTML = `
+          <h2>ページを開きました</h2>
+          <p>このページを閉じてください。</p>
+          <p><a href="${target}">→ 開けない場合はこちら</a></p>
+        `;
+      }
+    }, 500);
+  </script>
+
+</body>
+
+</html>
