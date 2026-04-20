@@ -1,67 +1,100 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
-  <title>播種・定植一覧</title>
-  <link rel="stylesheet" href="/common/style.css">
+  <title>播種・定植一覧 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 共通デザイン -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- 一覧ページ JS -->
   <script type="module" src="list.js"></script>
 </head>
 
 <body>
 
-<!-- ★ ナビバー（family/admin 共通） -->
-<script type="module">
-  import { renderNavbar } from "/common/header.js?v=1.1";
-  renderNavbar();
-</script>
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入
+  =============================== -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
 
-<h1>播種・定植一覧</h1>
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
 
-<div class="card" id="filter-card">
+      // worker は一覧ページに入れない
+      if (window.currentRole === "worker") {
+        alert("このページにはアクセスできません。");
+        location.href = "/";
+        return;
+      }
 
-  <!-- ▼ フィルタ見出し（クリックで開閉） -->
-  <h2 id="filter-title" style="cursor:pointer; user-select:none;">
-    フィルタ ▼
-  </h2>
+      // family / admin → ヘッダー表示
+      renderHeader();
+    });
+  </script>
 
-  <!-- ▼ フィルタ本体 -->
-  <div id="filter-body" style="display:none;">
+  <!-- ===============================
+       ページタイトル
+  =============================== -->
+  <h1 class="page-title">播種・定植一覧</h1>
 
-    <!-- 年月フィルタ -->
-    <div class="filter-root-block" id="filterYearMonthRoot"></div>
+  <!-- ===============================
+       フィルタカード
+  =============================== -->
+  <div class="card" id="filter-card">
 
-    <!-- 圃場フィルタ -->
-    <div class="filter-root-block" id="filterFieldRoot"></div>
+    <!-- ▼ 見出し（OS 標準） -->
+    <h2 class="section-title" id="filter-title" style="cursor:pointer; user-select:none;">
+      フィルタ
+    </h2>
 
-    <!-- 品種フィルタ -->
-    <div class="filter-root-block" id="filterVarietyRoot"></div>
+    <!-- ▼ フィルタ本体 -->
+    <div id="filter-body" style="display:none;">
 
-    <button class="primary-btn" onclick="applyFilter()">フィルタ適用</button>
-    <button class="secondary-btn" onclick="clearFilter()">フィルタクリア</button>
+      <!-- 年月フィルタ -->
+      <div class="filter-root-block" id="filterYearMonthRoot"></div>
 
+      <!-- 圃場フィルタ -->
+      <div class="filter-root-block" id="filterFieldRoot"></div>
+
+      <!-- 品種フィルタ -->
+      <div class="filter-root-block" id="filterVarietyRoot"></div>
+
+      <button class="primary-btn" onclick="applyFilter()">フィルタ適用</button>
+      <button class="secondary-btn" onclick="clearFilter()">フィルタクリア</button>
+
+    </div>
   </div>
-</div>
 
-<!-- 件数 + 集計 -->
-<div class="card">
-  <div id="countArea">0 件</div>
-  <div id="summaryArea" style="margin-top:10px;"></div>
-</div>
+  <!-- ===============================
+       件数 + 集計
+  =============================== -->
+  <div class="card">
+    <div id="countArea">0 件</div>
+    <div id="summaryArea" style="margin-top:10px;"></div>
+  </div>
 
-<!-- テーブル -->
-<table id="plantingTable">
-  <thead>
-    <tr>
-      <th>定植日</th>
-      <th>圃場</th>
-      <th>品種</th>
-      <th>面積(反)</th>
-      <th>播種日</th>
-      <th>操作</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <!-- ===============================
+       テーブル
+  =============================== -->
+  <table id="plantingTable">
+    <thead>
+      <tr>
+        <th>定植日</th>
+        <th>圃場</th>
+        <th>品種</th>
+        <th>面積(反)</th>
+        <th>播種日</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
 </body>
 </html>
