@@ -39,35 +39,26 @@
   <!-- フィルタカード -->
   <div class="card" id="filter-card">
 
-    <h2 class="section-title accordion-title">フィルタ</h2>
+    <h2 class="section-title">フィルタ</h2>
 
-    <div id="filter-body" class="accordion-body" style="display:none;">
+    <!-- ▼ 年月 -->
+    <h3 class="section-title">年月</h3>
+    <div id="yearTags"></div>
+    <div id="monthTags"></div>
 
-      <!-- 年月 -->
-      <h3 class="section-title accordion-title">年月</h3>
-      <div class="accordion-body">
-        <div id="yearTags"></div>
-        <div id="monthTags"></div>
-      </div>
+    <!-- ▼ 圃場 -->
+    <h3 class="section-title">圃場</h3>
+    <div id="fieldAreaTags"></div>
+    <div id="fieldTags"></div>
 
-      <!-- 圃場 -->
-      <h3 class="section-title accordion-title">圃場</h3>
-      <div class="accordion-body">
-        <div id="fieldAreaTags"></div>
-        <div id="fieldTags"></div>
-      </div>
+    <!-- ▼ 品種 -->
+    <h3 class="section-title">品種</h3>
+    <div id="varietyTypeTags"></div>
+    <div id="varietyTags"></div>
 
-      <!-- 品種 -->
-      <h3 class="section-title accordion-title">品種</h3>
-      <div class="accordion-body">
-        <div id="varietyTypeTags"></div>
-        <div id="varietyTags"></div>
-      </div>
+    <!-- 下部の適用・クリアは削除（filter.js が上部に生成） -->
+    <div id="filter-actions" style="display:none;"></div>
 
-      <!-- 下部の適用・クリアは削除（filter.js が上部に生成） -->
-      <div id="filter-actions" style="display:none;"></div>
-
-    </div>
   </div>
 
   <!-- 件数 + 集計 -->
