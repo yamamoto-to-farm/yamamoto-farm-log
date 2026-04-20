@@ -8,9 +8,16 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- Papaparse（1回だけ） -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body>
+
+  <!-- ===============================
+       ★ ヘッダー（header.js が自動挿入）
+  =============================== -->
 
   <div id="form-area" style="display:none;">
 
@@ -126,10 +133,8 @@
       ← 定植記録一覧へ
     </a>
 
+    <!-- ★ 作業完了ボタンは utils.js が追加する -->
   </div>
-
-  <!-- ▼ Papaparse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <!-- ★★★★★ 保存モーダル ★★★★★ -->
   <div id="modal-container"></div>
@@ -153,20 +158,33 @@
   <!-- save/index.js -->
   <script type="module" src="../common/save/index.js"></script>
 
-  <!-- init -->
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { attachWorkDoneButton } from "/common/utils.js";
     import { initPlantingPage } from "./planting.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
+      // ヘッダー描画
+      renderHeader();
+
+      // ページ表示
       document.getElementById("form-area").style.display = "block";
 
+      // 日付初期値
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("plantDate").value = today;
 
+      // 作業完了ボタン
+      attachWorkDoneButton();
+
+      // ページ固有初期化
       initPlantingPage();
     });
   </script>
