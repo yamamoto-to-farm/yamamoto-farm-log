@@ -80,7 +80,7 @@
     <!-- 保存 -->
     <button type="button" class="primary-btn" onclick="saveSeed()">保存</button>
 
-    <!-- ★ worker の場合は header.js がここに「作業完了」ボタンを追加する -->
+    <!-- ★ 作業完了ボタンは utils.js の attachWorkDoneButton() が追加する -->
   </div>
 
   <!-- ===============================
@@ -88,15 +88,16 @@
   =============================== -->
   <script type="module">
     import { verifyLocalAuth } from "../common/ui.js";
-    import { renderHeader } from "/common/header.js";
+    import { renderHeader } from "../common/header.js";
+    import { attachWorkDoneButton } from "../common/utils.js";
     import { initSeedPage } from "./seed.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
-      // 1) 認証 → currentHuman/currentRole がセットされる
+      // 1) 認証
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // 2) 認証後にヘッダーを描画（undefined にならない）
+      // 2) ヘッダー描画
       renderHeader();
 
       // 3) ページ表示
@@ -106,7 +107,10 @@
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("seedDate").value = today;
 
-      // 5) ページ固有の初期化
+      // 5) 作業完了ボタン（worker/family/admin 全員使える）
+      attachWorkDoneButton();
+
+      // 6) ページ固有の初期化
       initSeedPage();
     });
   </script>
