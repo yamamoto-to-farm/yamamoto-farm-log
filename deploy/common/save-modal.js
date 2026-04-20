@@ -33,10 +33,19 @@ export function completeAndCloseModal(message = "作業が完了しました") {
   const btn = document.getElementById("saveModalCloseBtn");
   btn.style.display = "block";
 
-  // ★ 作業完了モード：閉じたら window.close()
   btn.onclick = () => {
     closeSaveModal();
+
+    // ★ タブを閉じようとする
     window.close();
+
+    // ★ 100ms 後に「閉じられたか」をチェック
+    setTimeout(() => {
+      if (!document.hidden) {
+        // → 閉じられていない（ブラウザで開いている）
+        alert("ページを閉じられませんでした。\n右上のタブを閉じてください。");
+      }
+    }, 100);
   };
 
   document.getElementById("saveModal").style.display = "flex";
