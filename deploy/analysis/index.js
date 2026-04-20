@@ -11,7 +11,7 @@ export async function renderFieldList() {
   // ★ area（エリア）ごとにまとめる
   const groups = {};
   for (const f of fields) {
-    const groupName = f.area || "その他"; // ← group → area に変更
+    const groupName = f.area || "その他";
     if (!groups[groupName]) groups[groupName] = [];
     groups[groupName].push(f);
   }
@@ -24,7 +24,7 @@ export async function renderFieldList() {
     // ▼ エリア名（クリックで開閉）
     const title = document.createElement("h2");
     title.textContent = `▶ ${groupName}`;
-    title.className = "group-title";
+    title.className = "section-title group-title"; // ← OS 標準に統一
 
     // 折りたたみ用の UL
     const ul = document.createElement("ul");
