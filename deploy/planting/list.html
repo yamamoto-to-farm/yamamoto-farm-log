@@ -33,7 +33,7 @@
 
   <h1 class="page-title">播種・定植一覧</h1>
 
-  <!-- 選択中フィルタ -->
+  <!-- 現在のフィルタ（カード化） -->
   <div id="activeFilters" style="display:none;"></div>
 
   <!-- フィルタカード -->
@@ -46,29 +46,26 @@
       <!-- 年月 -->
       <h3 class="section-title accordion-title">年月</h3>
       <div class="accordion-body">
-        <div class="filter-tags" id="yearTags"></div>
-        <div class="filter-tags" id="monthTags"></div>
+        <div id="yearTags"></div>
+        <div id="monthTags"></div>
       </div>
 
       <!-- 圃場 -->
       <h3 class="section-title accordion-title">圃場</h3>
       <div class="accordion-body">
-        <div class="filter-tags" id="fieldAreaTags"></div>
-        <div class="filter-tags" id="fieldTags"></div>
+        <div id="fieldAreaTags"></div>
+        <div id="fieldTags"></div>
       </div>
 
       <!-- 品種 -->
       <h3 class="section-title accordion-title">品種</h3>
       <div class="accordion-body">
-        <div class="filter-tags" id="varietyTypeTags"></div>
-        <div class="filter-tags" id="varietyTags"></div>
+        <div id="varietyTypeTags"></div>
+        <div id="varietyTags"></div>
       </div>
 
-      <!-- 下部ボタン（filter.js が制御） -->
-      <div id="filter-actions" style="margin-top:16px;">
-        <button class="primary-btn">適用</button>
-        <button class="secondary-btn">クリア</button>
-      </div>
+      <!-- 下部の適用・クリアは削除（filter.js が上部に生成） -->
+      <div id="filter-actions" style="display:none;"></div>
 
     </div>
   </div>

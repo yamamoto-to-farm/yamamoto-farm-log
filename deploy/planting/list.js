@@ -10,6 +10,8 @@ let fieldData = [];
 let varietyData = [];
 let canDiscard = false;
 
+let filterData = {}; // ★ filter.js が再描画に使う
+
 /* ============================================================
    初期化
 ============================================================ */
@@ -49,12 +51,20 @@ export async function initPlantingListPage() {
     varietyMap[v.type].push(v.name);
   });
 
-  /* ▼ フィルタ UI 初期化 */
-  initFilterUI({
+  /* ★ filter.js が再描画に使うデータを保持 */
+  filterData = {
     years: Object.keys(ymMap),
     months: ymMap,
     fields: fieldMap,
-    varieties: varietyMap,
+    varieties: varietyMap
+  };
+
+  /* ▼ フィルタ UI 初期化 */
+  initFilterUI({
+    years: filterData.years,
+    months: filterData.months,
+    fields: filterData.fields,
+    varieties: filterData.varieties,
     onApply: (state) => {
       const filtered = applyFilter(plantingRows, state);
       renderTable(filtered);

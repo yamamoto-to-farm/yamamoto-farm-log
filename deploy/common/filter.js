@@ -1,6 +1,6 @@
 /* ============================================================
    /common/filter.js
-   階層フィルタ（年→月、エリア→圃場、タイプ→品種）
+   展開（▼）と選択（チェックボックス）を分離した階層フィルタ
 ============================================================ */
 
 let filterState = {
@@ -10,164 +10,152 @@ let filterState = {
   varieties: []
 };
 
+let expandState = {
+  year: false,
+  field: false,
+  variety: false,
+  children: {} // "2025": false, "赤沢・南大清水": false など
+};
+
 /* ============================================================
-   初期化（list.js から呼ぶ）
+   初期化
 ============================================================ */
 export function initFilterUI({ years, months, fields, varieties, onApply }) {
 
-  // 初期状態は閉じる
-  document.getElementById("filter-body").style.display = "none";
+  // 子階層の展開状態を初期化
+  years.forEach(y => expandState.children[y] = false);
+  Object.keys(fields).forEach(a => expandState.children[a] = false);
+  Object.keys(varieties).forEach(t => expandState.children[t] = false);
 
-  // 年 → 月
-  createParentChildTags(
-    "yearTags",
-    "monthTags",
-    years,
-    months,
-    filterState.years,
-    filterState.months
-  );
+  renderFilterUI(years, months, fields, varieties);
 
-  // 圃場エリア → 圃場名
-  createParentChildTags(
-    "fieldAreaTags",
-    "fieldTags",
-    Object.keys(fields),
-    fields,
-    filterState.fields,
-    filterState.fields
-  );
-
-  // 品種タイプ → 品種名
-  createParentChildTags(
-    "varietyTypeTags",
-    "varietyTags",
-    Object.keys(varieties),
-    varieties,
-    filterState.varieties,
-    filterState.varieties
-  );
-
-  setupAccordion();
   setupApplyButton(onApply);
   setupClearButton();
   updateActiveFilters();
 }
 
 /* ============================================================
-   親 → 子 の階層タグ生成
+   メイン描画
 ============================================================ */
-function createParentChildTags(parentId, childId, parentItems, childMap, parentState, childState) {
+function renderFilterUI(years, months, fields, varieties) {
+  renderSection("year", "yearTags", "monthTags", years, months, filterState.years, filterState.months);
+  renderSection("field", "fieldAreaTags", "fieldTags", Object.keys(fields), fields, filterState.fields, filterState.fields);
+  renderSection("variety", "varietyTypeTags", "varietyTags", Object.keys(varieties), varieties, filterState.varieties, filterState.varieties);
+}
+
+/* ============================================================
+   セクション描画（年月・圃場・品種）
+============================================================ */
+function renderSection(sectionKey, parentId, childId, parentItems, childMap, parentState, childState) {
   const parentRoot = document.getElementById(parentId);
   const childRoot = document.getElementById(childId);
 
   parentRoot.innerHTML = "";
   childRoot.innerHTML = "";
 
+  /* ▼ セクションタイトルの展開トグル */
+  const title = parentRoot.previousElementSibling;
+  title.style.cursor = "pointer";
+  title.textContent = (expandState[sectionKey] ? "▼ " : "▶ ") + title.textContent.replace(/^[▶▼]\s*/, "");
+
+  title.onclick = () => {
+    expandState[sectionKey] = !expandState[sectionKey];
+    renderFilterUI(parentItems, childMap, null, null);
+  };
+
+  /* ▼ 親階層 */
+  if (!expandState[sectionKey]) return;
+
   parentItems.forEach(parent => {
-    const tag = document.createElement("div");
-    tag.className = "filter-tag";
-    tag.textContent = parent;
+    const row = document.createElement("div");
+    row.className = "filter-row";
 
-    tag.addEventListener("click", () => {
-      const active = tag.classList.contains("active");
+    /* 展開トグル（▼） */
+    const toggle = document.createElement("span");
+    toggle.className = "toggle-icon";
+    toggle.textContent = expandState.children[parent] ? "▼" : "▶";
+    toggle.onclick = () => {
+      expandState.children[parent] = !expandState.children[parent];
+      renderFilterUI(parentItems, childMap, null, null);
+    };
 
-      // ▼ 解除
-      if (active) {
-        tag.classList.remove("active");
-        parentState.splice(parentState.indexOf(parent), 1);
-
-        // 子も全部解除
+    /* 親チェックボックス */
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = parentState.includes(parent);
+    cb.onchange = () => {
+      if (cb.checked) {
+        if (!parentState.includes(parent)) parentState.push(parent);
         (childMap[parent] || []).forEach(c => {
-          const idx = childState.indexOf(c);
-          if (idx >= 0) childState.splice(idx, 1);
+          if (!childState.includes(c)) childState.push(c);
         });
-
-        updateChildTags(childRoot, childMap, parentState, childState);
-        updateActiveFilters();
-        return;
+      } else {
+        const idx = parentState.indexOf(parent);
+        if (idx >= 0) parentState.splice(idx, 1);
+        (childMap[parent] || []).forEach(c => {
+          const i = childState.indexOf(c);
+          if (i >= 0) childState.splice(i, 1);
+        });
       }
-
-      // ▼ 選択
-      tag.classList.add("active");
-      parentState.push(parent);
-
-      // 子を全部選択
-      (childMap[parent] || []).forEach(c => {
-        if (!childState.includes(c)) childState.push(c);
-      });
-
-      updateChildTags(childRoot, childMap, parentState, childState);
       updateActiveFilters();
-    });
+      renderFilterUI(parentItems, childMap, null, null);
+    };
 
-    parentRoot.appendChild(tag);
-  });
+    /* 親ラベル */
+    const label = document.createElement("span");
+    label.textContent = parent;
+    label.className = "filter-label";
 
-  updateChildTags(childRoot, childMap, parentState, childState);
-}
+    row.appendChild(toggle);
+    row.appendChild(cb);
+    row.appendChild(label);
+    parentRoot.appendChild(row);
 
-/* ============================================================
-   子タグの更新
-============================================================ */
-function updateChildTags(root, childMap, parentState, childState) {
-  root.innerHTML = "";
+    /* ▼ 子階層 */
+    if (expandState.children[parent]) {
+      (childMap[parent] || []).forEach(child => {
+        const crow = document.createElement("div");
+        crow.className = "filter-row child";
 
-  parentState.forEach(parent => {
-    const children = childMap[parent] || [];
+        const ccb = document.createElement("input");
+        ccb.type = "checkbox";
+        ccb.checked = childState.includes(child);
+        ccb.onchange = () => {
+          if (ccb.checked) {
+            if (!childState.includes(child)) childState.push(child);
+          } else {
+            const i = childState.indexOf(child);
+            if (i >= 0) childState.splice(i, 1);
+          }
+          updateActiveFilters();
+          renderFilterUI(parentItems, childMap, null, null);
+        };
 
-    children.forEach(child => {
-      const tag = document.createElement("div");
-      tag.className = "filter-tag";
-      tag.textContent = child;
+        const clabel = document.createElement("span");
+        clabel.textContent = child;
 
-      if (childState.includes(child)) tag.classList.add("active");
-
-      tag.addEventListener("click", () => {
-        const idx = childState.indexOf(child);
-        if (idx >= 0) {
-          childState.splice(idx, 1);
-          tag.classList.remove("active");
-        } else {
-          childState.push(child);
-          tag.classList.add("active");
-        }
-        updateActiveFilters();
+        crow.appendChild(document.createElement("span")); // 空白
+        crow.appendChild(ccb);
+        crow.appendChild(clabel);
+        childRoot.appendChild(crow);
       });
-
-      root.appendChild(tag);
-    });
-  });
-}
-
-/* ============================================================
-   アコーディオン
-============================================================ */
-function setupAccordion() {
-  document.addEventListener("click", e => {
-    if (e.target.classList.contains("accordion-title")) {
-      const body = e.target.nextElementSibling;
-      if (body) {
-        body.style.display = body.style.display === "block" ? "none" : "block";
-      }
     }
   });
 }
 
 /* ============================================================
-   選択中フィルタ表示
+   現在のフィルタ表示
 ============================================================ */
 function updateActiveFilters() {
   const box = document.getElementById("activeFilters");
 
   const parts = [];
-
   if (filterState.years.length) parts.push(`年：${filterState.years.join(", ")}`);
   if (filterState.months.length) parts.push(`月：${filterState.months.join(", ")}`);
   if (filterState.fields.length) parts.push(`圃場：${filterState.fields.join(", ")}`);
   if (filterState.varieties.length) parts.push(`品種：${filterState.varieties.join(", ")}`);
 
-  if (parts.length === 0) {
+  if (!parts.length) {
     box.style.display = "none";
     box.innerHTML = "";
     return;
@@ -175,57 +163,46 @@ function updateActiveFilters() {
 
   box.style.display = "block";
   box.innerHTML = `
-    <strong>現在のフィルタ：</strong><br>
-    ${parts.join("<br>")}
-    <div style="margin-top:10px;">
-      <button class="primary-btn" id="applyTop">適用</button>
-      <button class="secondary-btn" id="clearTop">クリア</button>
+    <div class="card">
+      <strong>現在のフィルタ</strong><br>
+      ${parts.join("<br>")}
+      <div style="margin-top:10px;">
+        <button class="primary-btn" id="applyTop">適用</button>
+        <button class="secondary-btn" id="clearTop">クリア</button>
+      </div>
     </div>
   `;
 
-  document.getElementById("applyTop").addEventListener("click", () => {
-    const event = new Event("applyFilter");
-    document.dispatchEvent(event);
-  });
-
-  document.getElementById("clearTop").addEventListener("click", () => clearFilter());
+  document.getElementById("applyTop").onclick = () => {
+    document.dispatchEvent(new Event("applyFilter"));
+  };
+  document.getElementById("clearTop").onclick = () => clearFilter();
 }
 
 /* ============================================================
    クリア
 ============================================================ */
-function setupClearButton() {
-  const btn = document.querySelector("#filter-actions .secondary-btn");
-  if (!btn) return;
-
-  btn.addEventListener("click", () => clearFilter());
-}
-
 function clearFilter() {
-  filterState.years.length = 0;
-  filterState.months.length = 0;
-  filterState.fields.length = 0;
-  filterState.varieties.length = 0;
-
-  document.querySelectorAll(".filter-tag").forEach(t => t.classList.remove("active"));
-
+  filterState.years = [];
+  filterState.months = [];
+  filterState.fields = [];
+  filterState.varieties = [];
   updateActiveFilters();
+  renderFilterUI([], [], [], []);
 }
 
 /* ============================================================
    適用
 ============================================================ */
 function setupApplyButton(onApply) {
-  const btn = document.querySelector("#filter-actions .primary-btn");
-  if (!btn) return;
-
-  btn.addEventListener("click", () => {
-    if (typeof onApply === "function") onApply(getFilterState());
-  });
-
   document.addEventListener("applyFilter", () => {
     if (typeof onApply === "function") onApply(getFilterState());
   });
+}
+
+function setupClearButton() {
+  const btn = document.querySelector("#filter-actions .secondary-btn");
+  if (btn) btn.onclick = () => clearFilter();
 }
 
 export function getFilterState() {
