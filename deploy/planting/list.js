@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
-import { initFilterUI, getFilterState } from "/common/filter.js";
+import { initFilterUI } from "/common/filter.js";
 
 let plantingRows = [];
 let seedRows = [];
@@ -24,24 +24,35 @@ export async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
-  // 圃場エリア → 圃場名 のマップ生成
+  /* ▼ 年 → 月マップ生成（実データ） */
+  const ymMap = {};
+  plantingRows.forEach(r => {
+    if (!r.plantDate) return;
+    const y = r.plantDate.slice(0, 4);
+    const m = r.plantDate.slice(5, 7);
+    if (!ymMap[y]) ymMap[y] = [];
+    if (!ymMap[y].includes(m)) ymMap[y].push(m);
+  });
+  Object.keys(ymMap).forEach(y => ymMap[y].sort());
+
+  /* ▼ 圃場エリア → 圃場名 */
   const fieldMap = {};
   fieldData.forEach(f => {
     if (!fieldMap[f.area]) fieldMap[f.area] = [];
     fieldMap[f.area].push(f.name);
   });
 
-  // 品種タイプ → 品種名 のマップ生成
+  /* ▼ 品種タイプ → 品種名 */
   const varietyMap = {};
   varietyData.forEach(v => {
     if (!varietyMap[v.type]) varietyMap[v.type] = [];
     varietyMap[v.type].push(v.name);
   });
 
-  // ▼ フィルタ UI 初期化
+  /* ▼ フィルタ UI 初期化 */
   initFilterUI({
-    years: extractYears(plantingRows),
-    months: extractMonths(plantingRows),
+    years: Object.keys(ymMap),
+    months: ymMap,
     fields: fieldMap,
     varieties: varietyMap,
     onApply: (state) => {
@@ -51,25 +62,6 @@ export async function initPlantingListPage() {
   });
 
   renderTable(plantingRows);
-}
-
-/* ============================================================
-   フィルタ用データ抽出
-============================================================ */
-function extractYears(rows) {
-  const set = new Set();
-  rows.forEach(r => {
-    if (r.plantDate) set.add(r.plantDate.slice(0, 4));
-  });
-  return [...set].sort();
-}
-
-function extractMonths(rows) {
-  const set = new Set();
-  rows.forEach(r => {
-    if (r.plantDate) set.add(r.plantDate.slice(5, 7));
-  });
-  return [...set].sort();
 }
 
 /* ============================================================

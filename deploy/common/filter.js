@@ -1,6 +1,6 @@
 /* ============================================================
    /common/filter.js
-   階層フィルタ UI（年→月、エリア→圃場、type→品種）
+   階層フィルタ（年→月、エリア→圃場、タイプ→品種）
 ============================================================ */
 
 let filterState = {
@@ -18,9 +18,35 @@ export function initFilterUI({ years, months, fields, varieties, onApply }) {
   // 初期状態は閉じる
   document.getElementById("filter-body").style.display = "none";
 
-  createParentChildTags("yearTags", "monthTags", years, months, filterState.years, filterState.months);
-  createParentChildTags("fieldAreaTags", "fieldTags", Object.keys(fields), fields, filterState.fields, filterState.fields);
-  createParentChildTags("varietyTypeTags", "varietyTags", Object.keys(varieties), varieties, filterState.varieties, filterState.varieties);
+  // 年 → 月
+  createParentChildTags(
+    "yearTags",
+    "monthTags",
+    years,
+    months,
+    filterState.years,
+    filterState.months
+  );
+
+  // 圃場エリア → 圃場名
+  createParentChildTags(
+    "fieldAreaTags",
+    "fieldTags",
+    Object.keys(fields),
+    fields,
+    filterState.fields,
+    filterState.fields
+  );
+
+  // 品種タイプ → 品種名
+  createParentChildTags(
+    "varietyTypeTags",
+    "varietyTags",
+    Object.keys(varieties),
+    varieties,
+    filterState.varieties,
+    filterState.varieties
+  );
 
   setupAccordion();
   setupApplyButton(onApply);
@@ -44,14 +70,14 @@ function createParentChildTags(parentId, childId, parentItems, childMap, parentS
     tag.textContent = parent;
 
     tag.addEventListener("click", () => {
-      const isActive = tag.classList.contains("active");
+      const active = tag.classList.contains("active");
 
-      // クリア
-      if (isActive) {
+      // ▼ 解除
+      if (active) {
         tag.classList.remove("active");
         parentState.splice(parentState.indexOf(parent), 1);
 
-        // 子も全部クリア
+        // 子も全部解除
         (childMap[parent] || []).forEach(c => {
           const idx = childState.indexOf(c);
           if (idx >= 0) childState.splice(idx, 1);
@@ -62,7 +88,7 @@ function createParentChildTags(parentId, childId, parentItems, childMap, parentS
         return;
       }
 
-      // 選択
+      // ▼ 選択
       tag.classList.add("active");
       parentState.push(parent);
 
@@ -87,10 +113,7 @@ function createParentChildTags(parentId, childId, parentItems, childMap, parentS
 function updateChildTags(root, childMap, parentState, childState) {
   root.innerHTML = "";
 
-  // 親が選択されているものだけ子を表示
-  const activeParents = parentState;
-
-  activeParents.forEach(parent => {
+  parentState.forEach(parent => {
     const children = childMap[parent] || [];
 
     children.forEach(child => {

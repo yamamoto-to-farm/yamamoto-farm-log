@@ -6,18 +6,13 @@
   <title>播種・定植一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
-
-  <!-- 一覧ページ JS -->
   <script type="module" src="list.js"></script>
 </head>
 
 <body>
 
-  <!-- ===============================
-       ▼ 認証 → ヘッダー挿入
-  =============================== -->
+  <!-- 認証 & ヘッダー -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -36,51 +31,40 @@
     });
   </script>
 
-  <!-- ===============================
-       ページタイトル
-  =============================== -->
   <h1 class="page-title">播種・定植一覧</h1>
 
-  <!-- ===============================
-       選択中フィルタ（filter.js が制御）
-  =============================== -->
+  <!-- 選択中フィルタ -->
   <div id="activeFilters" style="display:none;"></div>
 
-  <!-- ===============================
-       フィルタカード
-  =============================== -->
+  <!-- フィルタカード -->
   <div class="card" id="filter-card">
 
-    <!-- ▼ 見出し（クリックで開閉） -->
-    <h2 class="section-title accordion-title" id="filter-title">
-      フィルタ
-    </h2>
+    <h2 class="section-title accordion-title">フィルタ</h2>
 
-    <!-- ▼ フィルタ本体 -->
     <div id="filter-body" class="accordion-body" style="display:none;">
 
-      <!-- 年月フィルタ -->
+      <!-- 年月 -->
       <h3 class="section-title accordion-title">年月</h3>
       <div class="accordion-body">
         <div class="filter-tags" id="yearTags"></div>
         <div class="filter-tags" id="monthTags"></div>
       </div>
 
-      <!-- 圃場フィルタ（エリア → 圃場名） -->
+      <!-- 圃場 -->
       <h3 class="section-title accordion-title">圃場</h3>
       <div class="accordion-body">
         <div class="filter-tags" id="fieldAreaTags"></div>
         <div class="filter-tags" id="fieldTags"></div>
       </div>
 
-      <!-- 品種フィルタ（type → 品種名） -->
+      <!-- 品種 -->
       <h3 class="section-title accordion-title">品種</h3>
       <div class="accordion-body">
         <div class="filter-tags" id="varietyTypeTags"></div>
         <div class="filter-tags" id="varietyTags"></div>
       </div>
 
-      <!-- ▼ ボタン（filter.js が制御） -->
+      <!-- 下部ボタン（filter.js が制御） -->
       <div id="filter-actions" style="margin-top:16px;">
         <button class="primary-btn">適用</button>
         <button class="secondary-btn">クリア</button>
@@ -89,17 +73,13 @@
     </div>
   </div>
 
-  <!-- ===============================
-       件数 + 集計
-  =============================== -->
+  <!-- 件数 + 集計 -->
   <div class="card">
     <div id="countArea">0 件</div>
     <div id="summaryArea" style="margin-top:10px;"></div>
   </div>
 
-  <!-- ===============================
-       テーブル
-  =============================== -->
+  <!-- テーブル -->
   <table id="plantingTable">
     <thead>
       <tr>
