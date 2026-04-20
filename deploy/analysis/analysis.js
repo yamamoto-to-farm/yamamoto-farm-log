@@ -12,7 +12,7 @@ export async function initAnalysisPage() {
   const rawFieldName = params.get("field");
   if (!rawFieldName) return;
 
-  document.getElementById("field-name").textContent = `圃場詳細＿${rawFieldName}`;
+  document.getElementById("field-name").textContent = `圃場分析＿${rawFieldName}`;
 
   const container = document.getElementById("analysis-container");
 
