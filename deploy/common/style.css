@@ -282,6 +282,15 @@ textarea { resize: vertical; }
 .primary-btn + .secondary-btn { margin-top: 14px; }
 
 /* ===============================
+   ▼ モード切り替え（定植ベース／播種ベース）
+=============================== */
+.mode-btn.active {
+  background: #2f855a !important;
+  color: #fff !important;
+  border-color: #276749 !important;
+}
+
+/* ===============================
    activeFilters
 =============================== */
 #activeFilters {
@@ -430,13 +439,12 @@ tbody tr:nth-child(odd) { background: #fafafa; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer; /* ← 追加 */
+  cursor: pointer;
   font-size: 20px;
   font-weight: 600;
   padding: 6px 0;
 }
 
-/* ★ 子要素すべてに pointer を継承 */
 .filter-header * {
   cursor: pointer;
 }
