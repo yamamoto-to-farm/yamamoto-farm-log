@@ -5,8 +5,6 @@ import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
 import { 
   openYearModal,
-  // openFieldModal,
-  // openVarietyModal,
   setFilterData,
   resetAllFilters
 } from "/common/filter.js";
@@ -41,45 +39,24 @@ export async function initPlantingListPage() {
   });
   Object.keys(ymMap).forEach(y => ymMap[y].sort());
 
-  /* ▼ 圃場エリア → 圃場名 */
-  const fieldMap = {};
-  fieldData.forEach(f => {
-    if (!fieldMap[f.area]) fieldMap[f.area] = [];
-    fieldMap[f.area].push(f.name);
-  });
-
-  /* ▼ 品種タイプ → 品種名 */
-  const varietyMap = {};
-  varietyData.forEach(v => {
-    if (!varietyMap[v.type]) varietyMap[v.type] = [];
-    varietyMap[v.type].push(v.name);
-  });
-
-  /* ★ filter.js に渡すデータ */
   filterData = {
-    years: Object.keys(ymMap),
-    months: ymMap,
-    fields: fieldMap,
-    varieties: varietyMap
+    years: Object.keys(ymMap).sort(),
+    months: ymMap
   };
 
   setFilterData(filterData);
 
   /* ▼ フィルタカードクリック */
   document.querySelector('[data-type="year"]').onclick = () => openYearModal();
-  // document.querySelector('[data-type="field"]').onclick = () => openFieldModal();
-  // document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal();
 
-  /* ▼ 全解除（filter.js の関数を呼ぶ） */
+  /* ▼ 全解除 */
   window.addEventListener("filter:reset", () => {
-    const state = { years: [], months: [], fields: [], varieties: [] };
-    const filtered = applyFilter(plantingRows, state);
-    renderTable(filtered);
+    renderTable(plantingRows);
   });
 
   /* ▼ モーダル適用 */
   window.addEventListener("filter:apply", (e) => {
-    const state = e.detail;
+    const state = e.detail; // { yearMonths: [...] }
     const filtered = applyFilter(plantingRows, state);
     renderTable(filtered);
   });
@@ -88,20 +65,16 @@ export async function initPlantingListPage() {
 }
 
 /* ============================================================
-   フィルタ適用
+   フィルタ適用（年月ペア）
 ============================================================ */
 function applyFilter(rows, state) {
+  if (!state.yearMonths.length) return rows;
+
   return rows.filter(r => {
     const y = r.plantDate?.slice(0, 4);
     const m = r.plantDate?.slice(5, 7);
-
-    if (state.years.length && !state.years.includes(y)) return false;
-    if (state.months.length && !state.months.includes(m)) return false;
-
-    if (state.fields.length && !state.fields.includes(r.field)) return false;
-    if (state.varieties.length && !state.varieties.includes(r.variety)) return false;
-
-    return true;
+    const ym = `${y}-${m}`;
+    return state.yearMonths.includes(ym);
   });
 }
 

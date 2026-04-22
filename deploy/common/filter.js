@@ -1,19 +1,15 @@
 /* ============================================================
-   フィルタモーダル（年月） + activeFilters + 全解除
+   年月フィルタ（折りたたみ式）＋ 年月ペア選択
 ============================================================ */
 
 let filterData = {};
-
-let selectedYears = [];
-let selectedMonths = [];
-let selectedFields = [];
-let selectedVarieties = [];
+let selectedYearMonths = []; // ← "2025-12" のように保持
 
 /* ============================================================
    list.js からデータを受け取る
 ============================================================ */
 export function setFilterData(data) {
-  filterData = data;
+  filterData = data; // { years: [...], months: {2025:[...], ...} }
 }
 
 /* ============================================================
@@ -23,25 +19,17 @@ function renderActiveFilters() {
   const area = document.getElementById("activeFilters");
   area.innerHTML = "";
 
-  const tags = [];
-
-  selectedYears.forEach(y => tags.push({ type: "year", label: y }));
-  selectedMonths.forEach(m => tags.push({ type: "month", label: m }));
-  selectedFields.forEach(f => tags.push({ type: "field", label: f }));
-  selectedVarieties.forEach(v => tags.push({ type: "variety", label: v }));
-
-  tags.forEach(tag => {
+  selectedYearMonths.forEach(ym => {
     const div = document.createElement("div");
     div.className = "filter-tag";
     div.innerHTML = `
-      ${tag.label}
-      <span class="filter-tag-remove" data-type="${tag.type}" data-value="${tag.label}">×</span>
+      ${ym}
+      <span class="filter-tag-remove" data-ym="${ym}">×</span>
     `;
     area.appendChild(div);
   });
 
-  /* 全解除ボタン */
-  if (tags.length > 0) {
+  if (selectedYearMonths.length > 0) {
     const resetBtn = document.createElement("button");
     resetBtn.className = "filter-reset-btn";
     resetBtn.textContent = "全解除";
@@ -49,37 +37,21 @@ function renderActiveFilters() {
     area.appendChild(resetBtn);
   }
 
-  /* 個別解除 */
   document.querySelectorAll(".filter-tag-remove").forEach(el => {
     el.onclick = () => {
-      removeFilter(el.dataset.type, el.dataset.value);
+      const ym = el.dataset.ym;
+      selectedYearMonths = selectedYearMonths.filter(v => v !== ym);
+      applyCurrentFilters();
     };
   });
-}
-
-/* ============================================================
-   個別解除
-============================================================ */
-function removeFilter(type, value) {
-  if (type === "year") selectedYears = selectedYears.filter(v => v !== value);
-  if (type === "month") selectedMonths = selectedMonths.filter(v => v !== value);
-  if (type === "field") selectedFields = selectedFields.filter(v => v !== value);
-  if (type === "variety") selectedVarieties = selectedVarieties.filter(v => v !== value);
-
-  applyCurrentFilters();
 }
 
 /* ============================================================
    全解除
 ============================================================ */
 export function resetAllFilters() {
-  selectedYears = [];
-  selectedMonths = [];
-  selectedFields = [];
-  selectedVarieties = [];
-
+  selectedYearMonths = [];
   applyCurrentFilters();
-
   window.dispatchEvent(new Event("filter:reset"));
 }
 
@@ -87,13 +59,7 @@ export function resetAllFilters() {
    現在のフィルタ状態を list.js に適用
 ============================================================ */
 function applyCurrentFilters() {
-  const state = {
-    years: selectedYears,
-    months: selectedMonths,
-    fields: selectedFields,
-    varieties: selectedVarieties
-  };
-
+  const state = { yearMonths: selectedYearMonths };
   renderActiveFilters();
   window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
 }
@@ -105,12 +71,11 @@ export function openYearModal() {
   const container = document.getElementById("modal-container");
   container.innerHTML = createYearModalHTML();
   container.style.display = "block";
-
   initYearModalEvents();
 }
 
 /* ============================================================
-   モーダルHTML生成
+   モーダルHTML生成（折りたたみ式）
 ============================================================ */
 function createYearModalHTML() {
   const years = filterData.years || [];
@@ -123,15 +88,16 @@ function createYearModalHTML() {
 
         <h3>年月の選択</h3>
 
-        <h4>年</h4>
-        <div id="year-list">
-          ${years.map(y => `<div class="select-item" data-year="${y}">${y}</div>`).join("")}
-        </div>
-
-        <h4 style="margin-top:20px;">月</h4>
-        <div id="month-list">
-          ${Object.values(months).flat().sort().map(m => `
-            <div class="select-item" data-month="${m}">${m}</div>
+        <div id="year-month-block">
+          ${years.map(y => `
+            <details class="year-block" data-year="${y}">
+              <summary>${y}</summary>
+              <div class="month-row">
+                ${(months[y] || []).map(m => `
+                  <div class="select-item" data-ym="${y}-${m}">${m}</div>
+                `).join("")}
+              </div>
+            </details>
           `).join("")}
         </div>
 
@@ -154,17 +120,23 @@ function initYearModalEvents() {
     if (e.target.id === "modal-bg") closeModal();
   };
 
-  document.querySelectorAll("[data-year]").forEach(el => {
-    el.onclick = () => toggleYear(el.dataset.year);
+  // 月クリック → 年月ペアをトグル
+  document.querySelectorAll("[data-ym]").forEach(el => {
+    el.onclick = () => toggleYearMonth(el.dataset.ym);
   });
 
-  document.querySelectorAll("[data-month]").forEach(el => {
-    el.onclick = () => toggleMonth(el.dataset.month);
+  // 年 summary をクリック → その年の月を全選択/解除
+  document.querySelectorAll(".year-block summary").forEach(sum => {
+    sum.onclick = (e) => {
+      const year = sum.parentElement.dataset.year;
+      toggleYearAll(year);
+      e.preventDefault(); // summary のデフォルト開閉を抑制
+      sum.parentElement.open = !sum.parentElement.open;
+    };
   });
 
   document.getElementById("clear").onclick = () => {
-    selectedYears = [];
-    selectedMonths = [];
+    selectedYearMonths = [];
     updateSelections();
   };
 
@@ -172,34 +144,39 @@ function initYearModalEvents() {
     applyCurrentFilters();
     closeModal();
   };
-}
-
-/* ============================================================
-   年クリック
-============================================================ */
-function toggleYear(year) {
-  const isSelected = selectedYears.includes(year);
-
-  if (isSelected) {
-    selectedYears = [];
-    selectedMonths = [];
-  } else {
-    selectedYears = [year];
-    selectedMonths = [...(filterData.months[year] || [])];
-  }
 
   updateSelections();
 }
 
 /* ============================================================
-   月クリック
+   年月ペアクリック
 ============================================================ */
-function toggleMonth(month) {
-  if (selectedMonths.includes(month)) {
-    selectedMonths = selectedMonths.filter(v => v !== month);
+function toggleYearMonth(ym) {
+  if (selectedYearMonths.includes(ym)) {
+    selectedYearMonths = selectedYearMonths.filter(v => v !== ym);
   } else {
-    selectedMonths.push(month);
+    selectedYearMonths.push(ym);
   }
+  updateSelections();
+}
+
+/* ============================================================
+   年クリック（全月トグル）
+============================================================ */
+function toggleYearAll(year) {
+  const months = filterData.months[year] || [];
+  const ymList = months.map(m => `${year}-${m}`);
+
+  const allSelected = ymList.every(ym => selectedYearMonths.includes(ym));
+
+  if (allSelected) {
+    selectedYearMonths = selectedYearMonths.filter(v => !ymList.includes(v));
+  } else {
+    ymList.forEach(ym => {
+      if (!selectedYearMonths.includes(ym)) selectedYearMonths.push(ym);
+    });
+  }
+
   updateSelections();
 }
 
@@ -207,12 +184,8 @@ function toggleMonth(month) {
    UI の再描画
 ============================================================ */
 function updateSelections() {
-  document.querySelectorAll("[data-year]").forEach(el => {
-    el.classList.toggle("selected", selectedYears.includes(el.dataset.year));
-  });
-
-  document.querySelectorAll("[data-month]").forEach(el => {
-    el.classList.toggle("selected", selectedMonths.includes(el.dataset.month));
+  document.querySelectorAll("[data-ym]").forEach(el => {
+    el.classList.toggle("selected", selectedYearMonths.includes(el.dataset.ym));
   });
 }
 
