@@ -5,6 +5,7 @@ import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
 import { 
   openYearModal,
+  openFieldModal,
   setFilterData
 } from "/common/filter.js";
 
@@ -39,22 +40,41 @@ export async function initPlantingListPage() {
   });
   Object.keys(ymMap).forEach(y => ymMap[y].sort());
 
+  /* ▼ 圃場 area → name マップ生成 */
+  const areaMap = {};
+  fieldData.forEach(f => {
+    if (!areaMap[f.area]) areaMap[f.area] = [];
+    areaMap[f.area].push(f.name);
+  });
+  Object.keys(areaMap).forEach(a => areaMap[a].sort());
+
+  /* ▼ filter.js に渡すデータ構造 */
   filterData = {
     years: Object.keys(ymMap).sort(),
-    months: ymMap
+    months: ymMap,
+    fields: {
+      parents: Object.keys(areaMap).sort(),
+      children: areaMap
+    }
   };
 
   setFilterData(filterData);
 
+  /* ▼ フィルタボタン */
   document.querySelector('[data-type="year"]')
     .addEventListener("click", openYearModal);
 
+  document.querySelector('[data-type="field"]')
+    .addEventListener("click", openFieldModal);
+
+  /* ▼ フィルタ適用 */
   window.addEventListener("filter:apply", (e) => {
     const state = e.detail;
-    const filtered = applyFilter(plantingRows, state);
+    const filtered = applyAllFilters(plantingRows, state);
     renderTable(filtered);
   });
 
+  /* ▼ 全解除 */
   window.addEventListener("filter:reset", () => {
     renderTable(plantingRows);
   });
@@ -63,20 +83,27 @@ export async function initPlantingListPage() {
 }
 
 /* ============================================================
-   フィルタ適用（年月ペア方式）
+   フィルタ適用（年＋圃場）
 ============================================================ */
-function applyFilter(rows, state) {
+function applyAllFilters(rows, state) {
 
-  if (!state || !state.yearMonths || state.yearMonths.length === 0) {
-    return rows;
+  let result = rows;
+
+  // 年月フィルタ
+  if (state.yearMonths && state.yearMonths.length > 0) {
+    result = result.filter(r => {
+      const y = r.plantDate?.slice(0, 4);
+      const m = r.plantDate?.slice(5, 7);
+      return state.yearMonths.includes(`${y}-${m}`);
+    });
   }
 
-  return rows.filter(r => {
-    const y = r.plantDate?.slice(0, 4);
-    const m = r.plantDate?.slice(5, 7);
-    const ym = `${y}-${m}`;
-    return state.yearMonths.includes(ym);
-  });
+  // 圃場フィルタ
+  if (state.fields && state.fields.length > 0) {
+    result = result.filter(r => state.fields.includes(r.field));
+  }
+
+  return result;
 }
 
 /* ============================================================
