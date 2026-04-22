@@ -5,6 +5,11 @@ let plantingRef = null;
 let plantingRow = null;
 
 // ===============================
+// デバッグフラグ
+// ===============================
+const DEBUG = false;
+
+// ===============================
 // 必要なモジュール
 // ===============================
 import { loadCSV } from "/common/csv.js";
@@ -40,8 +45,10 @@ export async function initDiscardPage() {
   const params = new URLSearchParams(location.search);
   plantingRef = params.get("ref");
 
-  console.log("🔥 discard page loaded");
-  console.log("受け取った ref =", plantingRef, JSON.stringify(plantingRef));
+  if (DEBUG) {
+    console.log("🔥 discard page loaded");
+    console.log("受け取った ref =", plantingRef, JSON.stringify(plantingRef));
+  }
 
   if (!plantingRef) {
     alert("plantingRef が指定されていません");
@@ -63,18 +70,20 @@ async function loadPlanting() {
   // ★ キー名 + 値を正規化
   const rows = normalizeKeys(rowsRaw);
 
-  console.log("読み込んだ plantingRows =", rows);
-  console.log("plantingRows[0] のキー =", Object.keys(rows[0] || {}));
-
-  // ★ デバッグ：全行の plantingRef を比較
-  rows.forEach(r => {
-    console.log("比較:", r.plantingRef, JSON.stringify(r.plantingRef));
-  });
+  if (DEBUG) {
+    console.log("読み込んだ plantingRows =", rows);
+    console.log("plantingRows[0] のキー =", Object.keys(rows[0] || {}));
+    rows.forEach(r => {
+      console.log("比較:", r.plantingRef, JSON.stringify(r.plantingRef));
+    });
+  }
 
   // ★ 完全一致検索
   plantingRow = rows.find(r => r.plantingRef === plantingRef);
 
-  console.log("検索結果 plantingRow =", plantingRow);
+  if (DEBUG) {
+    console.log("検索結果 plantingRow =", plantingRow);
+  }
 
   if (!plantingRow) {
     alert("該当する定植記録が見つかりません");

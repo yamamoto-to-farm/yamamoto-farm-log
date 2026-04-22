@@ -22,14 +22,23 @@ let canDiscard = false;
 let filterData = {};
 let initialized = false;
 
+// ===============================
+// デバッグフラグ
+// ===============================
+const DEBUG = false;
+
 /* ============================================================
-   ▼ CSV のキー名を正規化（trim）して CRLF/BOM 問題を完全解決
+   ▼ CSV のキー名 + 値を正規化（完全版）
 ============================================================ */
 function normalizeKeys(rows) {
   return rows.map(row => {
     const fixed = {};
     Object.keys(row).forEach(k => {
-      fixed[k.trim()] = row[k];
+      const key = k.trim();
+      const val = (typeof row[k] === "string")
+        ? row[k].trim()
+        : row[k];
+      fixed[key] = val;
     });
     return fixed;
   });
@@ -62,6 +71,11 @@ async function initPlantingListPage() {
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
+
+  if (DEBUG) {
+    console.log("🔥 plantingRows =", plantingRows);
+    console.log("🔥 seedRows =", seedRows);
+  }
 
   /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
@@ -240,24 +254,26 @@ function renderTable(rows) {
   tableArea.innerHTML = html;
 
   /* ============================================================
-     ▼ 破棄ボタンのイベント付与（デバッグ付き）
+     ▼ 破棄ボタンのイベント付与（デバッグフラグ対応）
   ============================================================ */
   document.querySelectorAll(".discard-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ref = btn.dataset.ref;
 
-      console.log("🔥 破棄ボタン押下");
-      console.log("渡された ref =", ref);
-      console.log("行データ =", btn.closest("tr").innerText);
-      console.log("plantingRows[0] のキー =", Object.keys(plantingRows[0]));
+      if (DEBUG) {
+        console.log("🔥 破棄ボタン押下");
+        console.log("渡された ref =", ref);
+        console.log("行データ =", btn.closest("tr").innerText);
+        console.log("plantingRows[0] のキー =", Object.keys(plantingRows[0]));
+      }
 
       if (!ref) {
         alert("❌ ref が空です（undefined）");
         return;
       }
 
-      // ★★★ 修正ポイント：絶対パスで遷移 ★★★
-      location.href = `/planting/discard-planting.html?ref=${ref}`;
+      // ★ encodeURIComponent を適用（安全）
+      location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
     });
   });
 }
