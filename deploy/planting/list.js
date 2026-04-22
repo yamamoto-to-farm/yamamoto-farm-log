@@ -8,6 +8,7 @@ import {
   openYearModal,
   // openFieldModal,
   // openVarietyModal
+  setFilterData
 } from "/common/filter.js";
 
 let plantingRows = [];
@@ -65,14 +66,17 @@ export async function initPlantingListPage() {
     varieties: varietyMap
   };
 
+  /* ★ filter.js にデータを渡す（必須） */
+  setFilterData(filterData);
+
   /* ▼ フィルタカードのクリックイベント */
-  document.querySelector('[data-type="year"]').onclick = () => openYearModal(filterData);
+  document.querySelector('[data-type="year"]').onclick = () => openYearModal();
 
   // ★ 圃場モーダル実装後にコメント解除
-  // document.querySelector('[data-type="field"]').onclick = () => openFieldModal(filterData);
+  // document.querySelector('[data-type="field"]').onclick = () => openFieldModal();
 
   // ★ 品種モーダル実装後にコメント解除
-  // document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal(filterData);
+  // document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal();
 
   /* ▼ モーダルからの適用イベント */
   window.addEventListener("filter:apply", (e) => {

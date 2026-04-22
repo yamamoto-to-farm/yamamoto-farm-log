@@ -110,7 +110,7 @@ function toggleYear(year) {
   const isSelected = selectedYears.includes(year);
 
   if (isSelected) {
-    selectedYears = selectedYears.filter(v => v !== year);
+    selectedYears = [];
     selectedMonths = [];
   } else {
     selectedYears = [year];
@@ -152,4 +152,15 @@ function closeModal() {
   const container = document.getElementById("modal-container");
   container.innerHTML = "";
   container.style.display = "none";
+}
+
+/* ============================================================
+   圃場・品種（後で実装）
+============================================================ */
+export function openFieldModal() {
+  alert("圃場モーダルはまだ未実装です");
+}
+
+export function openVarietyModal() {
+  alert("品種モーダルはまだ未実装です");
 }

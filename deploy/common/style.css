@@ -303,6 +303,106 @@ textarea { resize: vertical; }
   font-weight: 600;
 }
 
+/* ================================
+   モーダル背景
+================================ */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* ================================
+   モーダル本体
+================================ */
+.modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  position: relative;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+/* 開閉アニメーション（任意） */
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ================================
+   閉じるボタン
+================================ */
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 22px;
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+/* ================================
+   選択アイテム
+================================ */
+.select-item {
+  display: inline-block;
+  padding: 8px 14px;
+  margin: 6px;
+  border-radius: 6px;
+  background: #f2f2f2;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.select-item:hover {
+  background: #e3e3e3;
+}
+
+.select-item.selected {
+  background: #4da3ff;
+  color: white;
+  font-weight: bold;
+}
+
+/* ================================
+   フッターボタン
+================================ */
+.modal-footer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.primary-btn {
+  padding: 8px 16px;
+  background: #4da3ff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.secondary-btn {
+  padding: 8px 16px;
+  background: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  margin-left: 10px;
+}
+
 /* ===============================
    テーブル（KPI）
 =============================== */
