@@ -465,9 +465,14 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 
 /* ===============================
    印刷用設定（播種・定植一覧）
-   フィルタ UI を非表示にする
+   フィルタ UI・ヘッダーを非表示にする
 =============================== */
 @media print {
+
+  /* 固定ヘッダー（山本農園 OS）を非表示 */
+  .app-header {
+    display: none !important;
+  }
 
   /* フィルタカードを非表示 */
   #filter-card {
@@ -484,7 +489,7 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     display: none !important;
   }
 
-  /* 背景を白に統一 */
+  /* 背景を白に統一し、余白は @page で管理 */
   body {
     background: #fff !important;
     padding: 0 !important;
@@ -494,6 +499,7 @@ tbody tr:nth-child(odd) { background: #fafafa; }
   table {
     width: 100%;
     font-size: 12pt;
+    border-collapse: collapse;
   }
 
   /* 印刷時の余白 */
