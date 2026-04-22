@@ -9,44 +9,41 @@ let currentMode = "planting";
 
 export function initListPage() {
 
+  // ▼ URL の mode を読む
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");
   if (modeParam === "seed") currentMode = "seed";
 
-  document.getElementById("btn-planting").addEventListener("click", () => switchMode("planting"));
-  document.getElementById("btn-seed").addEventListener("click", () => switchMode("seed"));
+  // ▼ ボタン押下でページ遷移（?mode=xxx）
+  document.getElementById("btn-planting").addEventListener("click", () => {
+    location.href = `${location.pathname}?mode=planting`;
+  });
 
+  document.getElementById("btn-seed").addEventListener("click", () => {
+    location.href = `${location.pathname}?mode=seed`;
+  });
+
+  // ▼ UI の active を反映
   applyModeUI();
+
+  // ▼ 現在のモードの一覧を描画
   renderCurrentMode();
 }
 
-function switchMode(mode) {
-  if (currentMode === mode) return;
-
-  currentMode = mode;
-
-  const newUrl = `${location.pathname}?mode=${mode}`;
-  history.replaceState(null, "", newUrl);
-
-  applyModeUI();
-  renderCurrentMode();
-}
-
+// ===============================
+// active クラスで UI を切り替え
+// ===============================
 function applyModeUI() {
   const btnPlanting = document.getElementById("btn-planting");
   const btnSeed = document.getElementById("btn-seed");
 
-  if (currentMode === "planting") {
-    btnPlanting.classList.add("primary-btn");
-    btnSeed.classList.remove("primary-btn");
-    btnSeed.classList.add("secondary-btn");
-  } else {
-    btnSeed.classList.add("primary-btn");
-    btnPlanting.classList.remove("primary-btn");
-    btnPlanting.classList.add("secondary-btn");
-  }
+  btnPlanting.classList.toggle("active", currentMode === "planting");
+  btnSeed.classList.toggle("active", currentMode === "seed");
 }
 
+// ===============================
+// モードに応じて一覧を描画
+// ===============================
 function renderCurrentMode() {
   const tableArea = document.getElementById("table-area");
   tableArea.innerHTML = "";
@@ -58,5 +55,8 @@ function renderCurrentMode() {
   }
 }
 
+// ===============================
+// フィルタ適用時も現在モードを再描画
+// ===============================
 window.addEventListener("filter:apply", () => renderCurrentMode());
 window.addEventListener("filter:reset", () => renderCurrentMode());
