@@ -6,90 +6,85 @@
   <title>播種・定植一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
-  <script type="module" src="list.js"></script>
-
-  <style>
-    .filter-open {
-      cursor: pointer;
-      margin-top: 12px;
-      user-select: none;
-    }
-
-    /* activeFilters */
-    #activeFilters {
-      margin: 10px 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .filter-tag {
-      background: #e8f2ff;
-      border: 1px solid #4da3ff;
-      padding: 4px 10px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .filter-tag-remove {
-      cursor: pointer;
-      font-weight: bold;
-      color: #4da3ff;
-    }
-
-    .filter-reset-btn {
-      margin-left: 10px;
-      padding: 4px 10px;
-      background: #ddd;
-      border-radius: 6px;
-      cursor: pointer;
-      border: none;
-    }
-  </style>
 </head>
 
 <body>
 
-  <h1 class="page-title">播種・定植一覧</h1>
+  <!-- ===============================
+       ★ ヘッダー（header.js が自動挿入）
+  =============================== -->
 
-  <!-- 現在のフィルタ（filter.js が描画） -->
-  <div id="activeFilters"></div>
+  <div id="page-area" style="display:none;">
 
-  <!-- フィルタカード -->
-  <div class="card" id="filter-card">
-    <h2 class="section-title">フィルタ</h2>
+    <!-- ★ ページタイトル（統一） -->
+    <h1 class="page-title">播種・定植一覧</h1>
 
-    <h3 class="section-title filter-open" data-type="year">▶ 年月</h3>
-    <h3 class="section-title filter-open" data-type="field">▶ 圃場</h3>
-    <h3 class="section-title filter-open" data-type="variety">▶ 品種</h3>
+    <!-- ★ 現在のフィルタ（filter.js が描画） -->
+    <div id="activeFilters"></div>
+
+    <!-- ★ フィルタカード -->
+    <div class="card" id="filter-card">
+      <h2 class="section-title">フィルタ</h2>
+
+      <h3 class="section-title filter-open" data-type="year">▶ 年月</h3>
+      <h3 class="section-title filter-open" data-type="field">▶ 圃場</h3>
+      <h3 class="section-title filter-open" data-type="variety">▶ 品種</h3>
+    </div>
+
+    <!-- 件数 + 集計 -->
+    <div class="card">
+      <div id="countArea">0 件</div>
+      <div id="summaryArea" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- テーブル -->
+    <table id="plantingTable">
+      <thead>
+        <tr>
+          <th>定植日</th>
+          <th>圃場</th>
+          <th>品種</th>
+          <th>面積(反)</th>
+          <th>播種日</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
   </div>
 
-  <!-- 件数 + 集計 -->
-  <div class="card">
-    <div id="countArea">0 件</div>
-    <div id="summaryArea" style="margin-top:10px;"></div>
-  </div>
-
-  <!-- テーブル -->
-  <table id="plantingTable">
-    <thead>
-      <tr>
-        <th>定植日</th>
-        <th>圃場</th>
-        <th>品種</th>
-        <th>面積(反)</th>
-        <th>播種日</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- モーダル挿入領域 -->
+  <!-- ★ モーダル挿入領域（filter.js が使用） -->
   <div id="modal-container"></div>
 
+  <!-- list.js -->
+  <script type="module" src="./list.js"></script>
+
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { initPlantingListPage } from "./list.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // ヘッダー描画
+      renderHeader();
+
+      // ページ表示
+      document.getElementById("page-area").style.display = "block";
+
+      // ページ固有初期化
+      initPlantingListPage();
+    });
+  </script>
+
 </body>
+
 </html>
