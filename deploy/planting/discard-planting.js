@@ -17,12 +17,18 @@ import {
 import { enqueueSummaryUpdate } from "/common/summary.js";
 
 // ===============================
-// ▼ CSV のキー名を正規化（plantingList.js と統一）
+// ▼ CSV のキー名 + 値を正規化（完全版）
 // ===============================
 function normalizeKeys(rows) {
   return rows.map(row => {
     const fixed = {};
-    Object.keys(row).forEach(k => fixed[k.trim()] = row[k]);
+    Object.keys(row).forEach(k => {
+      const key = k.trim();
+      const val = (typeof row[k] === "string")
+        ? row[k].trim()          // ← ★ 値も trim（重要）
+        : row[k];
+      fixed[key] = val;
+    });
     return fixed;
   });
 }
@@ -35,7 +41,7 @@ export async function initDiscardPage() {
   plantingRef = params.get("ref");
 
   console.log("🔥 discard page loaded");
-  console.log("受け取った ref =", plantingRef);
+  console.log("受け取った ref =", plantingRef, JSON.stringify(plantingRef));
 
   if (!plantingRef) {
     alert("plantingRef が指定されていません");
@@ -51,17 +57,24 @@ export async function initDiscardPage() {
 // ===============================
 async function loadPlanting() {
 
-  // ★ 絶対パスに修正（これが最重要）
+  // ★ 絶対パスで読み込む
   const rowsRaw = await loadCSV("/logs/planting/all.csv").catch(() => []);
 
-  // ★ キー正規化（plantingRef\r 問題を完全解決）
+  // ★ キー名 + 値を正規化
   const rows = normalizeKeys(rowsRaw);
 
   console.log("読み込んだ plantingRows =", rows);
   console.log("plantingRows[0] のキー =", Object.keys(rows[0] || {}));
 
-  // ★ plantingRef で検索
+  // ★ デバッグ：全行の plantingRef を比較
+  rows.forEach(r => {
+    console.log("比較:", r.plantingRef, JSON.stringify(r.plantingRef));
+  });
+
+  // ★ 完全一致検索
   plantingRow = rows.find(r => r.plantingRef === plantingRef);
+
+  console.log("検索結果 plantingRow =", plantingRow);
 
   if (!plantingRow) {
     alert("該当する定植記録が見つかりません");
