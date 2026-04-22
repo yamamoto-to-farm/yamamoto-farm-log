@@ -3,39 +3,68 @@
 // ===============================
 
 // URL パラメータ取得
-const params = new URLSearchParams(window.location.search);
-const mode = params.get("mode") || "planting";
+export const params = new URLSearchParams(window.location.search);
+export let mode = params.get("mode") || "planting";
 
+// -------------------------------
 // モード切り替えボタンの active 表示
+// -------------------------------
 function updateModeButtons() {
-  document.getElementById("btn-planting").classList.remove("active");
-  document.getElementById("btn-seed").classList.remove("active");
+  const btnPlanting = document.getElementById("btn-planting");
+  const btnSeed = document.getElementById("btn-seed");
+
+  if (!btnPlanting || !btnSeed) return;
+
+  btnPlanting.classList.remove("active");
+  btnSeed.classList.remove("active");
 
   if (mode === "seed") {
-    document.getElementById("btn-seed").classList.add("active");
+    btnSeed.classList.add("active");
   } else {
-    document.getElementById("btn-planting").classList.add("active");
+    btnPlanting.classList.add("active");
   }
 }
 
+// -------------------------------
 // モード切り替えイベント
-document.getElementById("btn-planting").addEventListener("click", () => {
-  window.location.search = "?mode=planting";
-});
+// -------------------------------
+function attachModeSwitchEvents() {
+  const btnPlanting = document.getElementById("btn-planting");
+  const btnSeed = document.getElementById("btn-seed");
 
-document.getElementById("btn-seed").addEventListener("click", () => {
-  window.location.search = "?mode=seed";
-});
+  if (!btnPlanting || !btnSeed) return;
 
-// 初期化
-function initListPage() {
+  btnPlanting.addEventListener("click", () => {
+    window.location.search = "?mode=planting";
+  });
+
+  btnSeed.addEventListener("click", () => {
+    window.location.search = "?mode=seed";
+  });
+}
+
+// -------------------------------
+// 初期化（認証後に list.html から呼ばれる）
+// -------------------------------
+export function initListPage() {
+  // ボタン状態
   updateModeButtons();
 
+  // イベント付与
+  attachModeSwitchEvents();
+
+  // モードに応じて描画
   if (mode === "seed") {
-    renderSeedingList();
+    if (typeof renderSeedingList === "function") {
+      renderSeedingList();
+    } else {
+      console.error("renderSeedingList が見つかりません");
+    }
   } else {
-    renderPlantingList();
+    if (typeof renderPlantingList === "function") {
+      renderPlantingList();
+    } else {
+      console.error("renderPlantingList が見つかりません");
+    }
   }
 }
-
-initListPage();
