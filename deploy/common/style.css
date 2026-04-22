@@ -258,7 +258,7 @@ textarea { resize: vertical; }
 .contract-row input { padding: 8px; }
 
 /* ===============================
-   ボタン
+   ボタン（既存）
 =============================== */
 .primary-btn,
 .secondary-btn {
@@ -284,6 +284,17 @@ textarea { resize: vertical; }
 /* ===============================
    ▼ モード切り替え（定植ベース／播種ベース）
 =============================== */
+.mode-btn {
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #e2e8f0;
+  color: #333;
+  border: 1px solid #cbd5e0;
+  margin-right: 8px;
+}
+
 .mode-btn.active {
   background: #2f855a !important;
   color: #fff !important;
