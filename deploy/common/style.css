@@ -430,10 +430,15 @@ tbody tr:nth-child(odd) { background: #fafafa; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
+  cursor: pointer; /* ← 追加 */
   font-size: 20px;
   font-weight: 600;
   padding: 6px 0;
+}
+
+/* ★ 子要素すべてに pointer を継承 */
+.filter-header * {
+  cursor: pointer;
 }
 
 .filter-label {
@@ -465,76 +470,66 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 
 /* ===============================
    印刷用設定（播種・定植一覧）
-   フィルタ UI・ヘッダー・操作列を非表示
-   ＋ 列幅最適化
 =============================== */
 @media print {
 
-  /* 固定ヘッダー（山本農園 OS）を非表示 */
   .app-header {
     display: none !important;
   }
 
-  /* モード切り替えカード（定植ベース／播種ベース）を非表示 */
   #mode-switch-card {
     display: none !important;
   }
 
-  /* フィルタ UI を非表示 */
   #filter-card,
   #activeFilters,
   #modal-container {
     display: none !important;
   }
 
-  /* 背景を白に統一し、余白は @page で管理 */
   body {
     background: #fff !important;
     padding: 0 !important;
   }
 
-  /* ▼ plantingList.js / seedList.js が生成するテーブルを対象にする */
   #table-area table th:last-child,
   #table-area table td:last-child {
-    display: none !important; /* 操作列を非表示 */
+    display: none !important;
   }
 
-  /* テーブル全体の最適化 */
   #table-area table {
     width: 100%;
     font-size: 12pt;
     border-collapse: collapse;
-    table-layout: fixed; /* ← 列幅を安定させる */
+    table-layout: fixed;
   }
 
-  /* 列幅の最適化（印刷時のみ） */
   #table-area table th:nth-child(1),
   #table-area table td:nth-child(1) {
-    width: 90px; /* 定植日 */
+    width: 90px;
   }
 
   #table-area table th:nth-child(2),
   #table-area table td:nth-child(2) {
-    width: 140px; /* 圃場 */
+    width: 140px;
   }
 
   #table-area table th:nth-child(3),
   #table-area table td:nth-child(3) {
-    width: 140px; /* 品種 */
+    width: 140px;
   }
 
   #table-area table th:nth-child(4),
   #table-area table td:nth-child(4) {
-    width: 70px; /* 面積(反) */
+    width: 70px;
     text-align: right;
   }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 90px; /* 播種日 */
+    width: 90px;
   }
 
-  /* 印刷時の余白 */
   @page {
     margin: 12mm;
   }
