@@ -23,6 +23,19 @@ let filterData = {};
 let initialized = false;
 
 /* ============================================================
+   ▼ CSV のキー名を正規化（trim）して CRLF/BOM 問題を完全解決
+============================================================ */
+function normalizeKeys(rows) {
+  return rows.map(row => {
+    const fixed = {};
+    Object.keys(row).forEach(k => {
+      fixed[k.trim()] = row[k];
+    });
+    return fixed;
+  });
+}
+
+/* ============================================================
    外部から呼ばれるエントリポイント
 ============================================================ */
 export async function renderPlantingList() {
@@ -46,8 +59,10 @@ async function initPlantingListPage() {
 
   if (window.currentRole === "admin") canDiscard = true;
 
-  plantingRows = await loadCSV("/logs/planting/all.csv");
-  seedRows = await loadCSV("/logs/seed/all.csv");
+  // ▼ CSV 読み込み → キー正規化
+  plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
+  seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
+
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
@@ -103,14 +118,9 @@ async function initPlantingListPage() {
   setFilterData(filterData);
 
   /* ▼ フィルタボタン */
-  document.querySelector('[data-type="year"]')
-    .addEventListener("click", openYearModal);
-
-  document.querySelector('[data-type="field"]')
-    .addEventListener("click", openFieldModal);
-
-  document.querySelector('[data-type="variety"]')
-    .addEventListener("click", openVarietyModal);
+  document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
+  document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
+  document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
 
   /* ▼ フィルタ適用 */
   window.addEventListener("filter:apply", (e) => {
@@ -179,7 +189,6 @@ function renderTable(rows) {
 
   const tableArea = document.getElementById("table-area");
 
-  // テーブル全体を生成
   let html = `
     <table>
       <thead>
@@ -210,6 +219,8 @@ function renderTable(rows) {
     totalQuantity += Number(r.quantity || 0);
     totalAreaTan += areaTan;
 
+    const ref = r.plantingRef ?? "";  // ← undefined 対策
+
     html += `
       <tr>
         <td>${r.plantDate ?? ""}</td>
@@ -231,9 +242,9 @@ function renderTable(rows) {
         <td>${getSeedDates(r.seedRef)}</td>
 
         <td>
-          ${canDiscard
+          ${canDiscard && ref
             ? `<button class="primary-btn" style="padding:6px 10px; font-size:14px;"
-                 onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">
+                 onclick="location.href='discard-planting.html?ref=${ref}'">
                  破棄
                </button>`
             : ""
@@ -248,12 +259,10 @@ function renderTable(rows) {
     </table>
   `;
 
-  // 集計更新
   document.getElementById("countArea").textContent = `${rows.length} 件`;
   document.getElementById("summaryArea").innerHTML =
     `株数合計：${totalQuantity.toLocaleString()} 株　
      面積合計：${totalAreaTan.toFixed(2)} 反`;
 
-  // 描画
   tableArea.innerHTML = html;
 }
