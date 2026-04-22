@@ -5,11 +5,10 @@
 import { renderPlantingList } from "./plantingList.js";
 import { renderSeedList } from "./seedList.js";
 
-// 現在のモード（planting / seed）
 let currentMode = "planting";
 
 /* ============================================================
-   初期化（list.html → initListPage()）
+   初期化（list.html → initListPage）
 ============================================================ */
 export function initListPage() {
 
@@ -18,11 +17,11 @@ export function initListPage() {
   const modeParam = params.get("mode");
   if (modeParam === "seed") currentMode = "seed";
 
-  // ▼ ボタンのイベント設定
+  // ▼ ボタンイベント
   document.getElementById("btn-planting").addEventListener("click", () => switchMode("planting"));
   document.getElementById("btn-seed").addEventListener("click", () => switchMode("seed"));
 
-  // ▼ 初期モードの描画
+  // ▼ 初期モード描画
   applyModeUI();
   renderCurrentMode();
 }
@@ -44,7 +43,7 @@ function switchMode(mode) {
 }
 
 /* ============================================================
-   モードに応じて UI を更新
+   ボタンの UI 切り替え
 ============================================================ */
 function applyModeUI() {
   const btnPlanting = document.getElementById("btn-planting");
@@ -66,17 +65,17 @@ function applyModeUI() {
 ============================================================ */
 function renderCurrentMode() {
   const tableArea = document.getElementById("table-area");
-  tableArea.innerHTML = ""; // いったんクリア
+  tableArea.innerHTML = ""; // クリア
 
   if (currentMode === "planting") {
-    renderPlantingList();   // plantingList.js が table-area に描画
+    renderPlantingList();
   } else {
-    renderSeedList();       // seedList.js が table-area に描画
+    renderSeedList();
   }
 }
 
 /* ============================================================
-   フィルタ適用イベント（filter.js → dispatch）
+   フィルタ適用イベント
 ============================================================ */
 window.addEventListener("filter:apply", () => {
   renderCurrentMode();
