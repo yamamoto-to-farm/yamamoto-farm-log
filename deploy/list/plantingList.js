@@ -12,17 +12,15 @@ async function loadPlantingCSV() {
 }
 
 // -------------------------------
-// フィルタ UI の生成
+// フィルタ UI の生成（折りたたみ式）
 // -------------------------------
 function initPlantingFilters(data) {
   const filterCard = document.getElementById("filter-card");
   const activeFilters = document.getElementById("activeFilters");
 
-  // 年月一覧
+  // 年月・圃場・品種のセット
   const ymSet = new Set();
-  // 圃場一覧
   const fieldSet = new Set();
-  // 品種一覧
   const varietySet = new Set();
 
   data.forEach(row => {
@@ -35,50 +33,77 @@ function initPlantingFilters(data) {
   const fieldList = [...fieldSet].sort();
   const varietyList = [...varietySet].sort();
 
+  // 折りたたみ式フィルタ生成
   filterCard.innerHTML = `
-    <div class="filter-group">
-      <label>年月</label>
-      <select id="filterYM" class="form-input">
-        <option value="">すべて</option>
-        ${ymList.map(v => `<option value="${v}">${v}</option>`).join("")}
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label>圃場</label>
-      <select id="filterField" class="form-input">
-        <option value="">すべて</option>
-        ${fieldList.map(v => `<option value="${v}">${v}</option>`).join("")}
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label>品種</label>
-      <select id="filterVariety" class="form-input">
-        <option value="">すべて</option>
-        ${varietyList.map(v => `<option value="${v}">${v}</option>`).join("")}
-      </select>
-    </div>
+    ${createFilterBlock("年月", "ym", ymList)}
+    ${createFilterBlock("圃場", "field", fieldList)}
+    ${createFilterBlock("品種", "variety", varietyList)}
   `;
 
-  // フィルタ変更イベント
-  ["filterYM", "filterField", "filterVariety"].forEach(id => {
-    document.getElementById(id).addEventListener("change", () => {
-      applyPlantingFilters(data);
-    });
-  });
+  // イベント付与
+  attachFilterEvents(data);
 
   // 初期表示
   activeFilters.innerHTML = "";
 }
 
 // -------------------------------
+// フィルタブロック生成
+// -------------------------------
+function createFilterBlock(label, key, items) {
+  return `
+    <div class="filter-block" data-key="${key}">
+      <div class="filter-header">
+        <span class="filter-label">${label}</span>
+        <span class="filter-toggle-btn">▼</span>
+      </div>
+      <div class="filter-children">
+        ${items.map(v => `<div class="select-item" data-value="${v}">${v}</div>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// -------------------------------
+// フィルタイベント付与
+// -------------------------------
+function attachFilterEvents(data) {
+  // 折りたたみ
+  document.querySelectorAll(".filter-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.parentElement.classList.toggle("open");
+    });
+  });
+
+  // select-item クリック
+  document.querySelectorAll(".select-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const key = item.closest(".filter-block").dataset.key;
+      const value = item.dataset.value;
+
+      // 選択状態トグル
+      if (item.classList.contains("selected")) {
+        item.classList.remove("selected");
+      } else {
+        // 同じカテゴリは単一選択
+        item.closest(".filter-children")
+            .querySelectorAll(".select-item")
+            .forEach(i => i.classList.remove("selected"));
+        item.classList.add("selected");
+      }
+
+      applyPlantingFilters(data);
+    });
+  });
+}
+
+// -------------------------------
 // フィルタ適用
 // -------------------------------
 function applyPlantingFilters(data) {
-  const ym = document.getElementById("filterYM").value;
-  const field = document.getElementById("filterField").value;
-  const variety = document.getElementById("filterVariety").value;
+  const ym = getSelectedValue("ym");
+  const field = getSelectedValue("field");
+  const variety = getSelectedValue("variety");
 
   let filtered = data;
 
@@ -88,6 +113,16 @@ function applyPlantingFilters(data) {
 
   updateActiveFilters({ ym, field, variety });
   renderPlantingTable(filtered);
+}
+
+// -------------------------------
+// 選択中フィルタ取得
+// -------------------------------
+function getSelectedValue(key) {
+  const block = document.querySelector(`.filter-block[data-key="${key}"]`);
+  if (!block) return "";
+  const selected = block.querySelector(".select-item.selected");
+  return selected ? selected.dataset.value : "";
 }
 
 // -------------------------------
