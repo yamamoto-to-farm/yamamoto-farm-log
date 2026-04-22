@@ -1,234 +1,155 @@
 /* ============================================================
-   /common/filter.js
-   展開（▶/▼）と選択（チェックボックス）を分離した階層フィルタ
+   フィルタモーダル（年月） - 完全新規
 ============================================================ */
-
-let filterState = {
-  years: [],
-  months: [],
-  fields: [],
-  varieties: []
-};
-
-let expandState = {
-  year: false,
-  field: false,
-  variety: false,
-  children: {}
-};
 
 let filterData = {}; // list.js から受け取る
 
+// 選択状態
+let selectedYears = [];
+let selectedMonths = [];
+
+/* ============================================================
+   list.js からデータを受け取る
+============================================================ */
 export function setFilterData(data) {
   filterData = data;
 }
 
 /* ============================================================
-   初期化
+   年月モーダルを開く
 ============================================================ */
-export function initFilterUI({ years, months, fields, varieties, onApply }) {
+export function openYearModal() {
+  const container = document.getElementById("modal-container");
+  container.innerHTML = createYearModalHTML();
+  container.style.display = "block";
 
-  // 子階層の展開状態を初期化
-  years.forEach(y => expandState.children[y] = false);
-  Object.keys(fields).forEach(a => expandState.children[a] = false);
-  Object.keys(varieties).forEach(t => expandState.children[t] = false);
-
-  renderFilterUI();
-
-  setupApplyButton(onApply);
-  updateActiveFilters();
+  initYearModalEvents();
 }
 
 /* ============================================================
-   メイン描画
+   モーダルHTML生成
 ============================================================ */
-function renderFilterUI() {
-  renderSection(
-    "year",
-    "yearTags",
-    "monthTags",
-    filterData.years,
-    filterData.months,
-    filterState.years,
-    filterState.months
-  );
+function createYearModalHTML() {
+  const years = filterData.years || [];
+  const months = filterData.months || {};
 
-  renderSection(
-    "field",
-    "fieldAreaTags",
-    "fieldTags",
-    Object.keys(filterData.fields),
-    filterData.fields,
-    filterState.fields,
-    filterState.fields
-  );
+  return `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-close" id="modal-close">×</div>
 
-  renderSection(
-    "variety",
-    "varietyTypeTags",
-    "varietyTags",
-    Object.keys(filterData.varieties),
-    filterData.varieties,
-    filterState.varieties,
-    filterState.varieties
-  );
-}
+        <h3>年月の選択</h3>
 
-/* ============================================================
-   セクション描画（年月・圃場・品種）
-============================================================ */
-function renderSection(sectionKey, parentId, childId, parentItems, childMap, parentState, childState) {
-  const parentRoot = document.getElementById(parentId);
-  const childRoot = document.getElementById(childId);
+        <h4>年</h4>
+        <div id="year-list">
+          ${years.map(y => `<div class="select-item" data-year="${y}">${y}</div>`).join("")}
+        </div>
 
-  parentRoot.innerHTML = "";
-  childRoot.innerHTML = "";
+        <h4 style="margin-top:20px;">月</h4>
+        <div id="month-list">
+          ${Object.values(months).flat().sort().map(m => `
+            <div class="select-item" data-month="${m}">${m}</div>
+          `).join("")}
+        </div>
 
-  /* ▼ セクションタイトルの展開トグル */
-  const title = parentRoot.previousElementSibling;
-  title.style.cursor = "pointer";
-  title.textContent = (expandState[sectionKey] ? "▼ " : "▶ ") + title.textContent.replace(/^[▶▼]\s*/, "");
-
-  title.onclick = () => {
-    expandState[sectionKey] = !expandState[sectionKey];
-    renderFilterUI();
-  };
-
-  /* ▼ 親階層 */
-  if (!expandState[sectionKey]) return;
-
-  parentItems.forEach(parent => {
-    const row = document.createElement("div");
-    row.className = "filter-row";
-
-    /* 親チェックボックス */
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = parentState.includes(parent);
-    cb.className = "filter-checkbox";
-
-    cb.onchange = () => {
-      if (cb.checked) {
-        if (!parentState.includes(parent)) parentState.push(parent);
-        (childMap[parent] || []).forEach(c => {
-          if (!childState.includes(c)) childState.push(c);
-        });
-      } else {
-        const idx = parentState.indexOf(parent);
-        if (idx >= 0) parentState.splice(idx, 1);
-        (childMap[parent] || []).forEach(c => {
-          const i = childState.indexOf(c);
-          if (i >= 0) childState.splice(i, 1);
-        });
-      }
-      updateActiveFilters();
-      renderFilterUI();
-    };
-
-    /* 親ラベル（クリックで子階層展開） */
-    const label = document.createElement("span");
-    label.textContent = parent;
-    label.className = "filter-label";
-    label.onclick = () => {
-      expandState.children[parent] = !expandState.children[parent];
-      renderFilterUI();
-    };
-
-    row.appendChild(cb);
-    row.appendChild(label);
-    parentRoot.appendChild(row);
-
-    /* ▼ 子階層（展開アイコンなし） */
-    if (expandState.children[parent]) {
-      (childMap[parent] || []).forEach(child => {
-        const crow = document.createElement("div");
-        crow.className = "filter-row child";
-
-        const ccb = document.createElement("input");
-        ccb.type = "checkbox";
-        ccb.checked = childState.includes(child);
-        ccb.className = "filter-checkbox";
-
-        ccb.onchange = () => {
-          if (ccb.checked) {
-            if (!childState.includes(child)) childState.push(child);
-          } else {
-            const i = childState.indexOf(child);
-            if (i >= 0) childState.splice(i, 1);
-          }
-          updateActiveFilters();
-          renderFilterUI();
-        };
-
-        const clabel = document.createElement("span");
-        clabel.textContent = child;
-
-        crow.appendChild(ccb);
-        crow.appendChild(clabel);
-        childRoot.appendChild(crow);
-      });
-    }
-  });
-}
-
-/* ============================================================
-   現在のフィルタ表示
-============================================================ */
-function updateActiveFilters() {
-  const box = document.getElementById("activeFilters");
-
-  const parts = [];
-  if (filterState.years.length) parts.push(`年：${filterState.years.join(", ")}`);
-  if (filterState.months.length) parts.push(`月：${filterState.months.join(", ")}`);
-  if (filterState.fields.length) parts.push(`圃場：${filterState.fields.join(", ")}`);
-  if (filterState.varieties.length) parts.push(`品種：${filterState.varieties.join(", ")}`);
-
-  if (!parts.length) {
-    box.style.display = "none";
-    box.innerHTML = "";
-    return;
-  }
-
-  box.style.display = "block";
-  box.innerHTML = `
-    <div class="card">
-      <strong>現在のフィルタ</strong><br>
-      ${parts.join("<br>")}
-      <div style="margin-top:10px;">
-        <button class="primary-btn" id="applyTop">適用</button>
-        <button class="secondary-btn" id="clearTop">クリア</button>
+        <div class="modal-footer">
+          <button class="primary-btn" id="apply">適用</button>
+          <button class="secondary-btn" id="clear">クリア</button>
+        </div>
       </div>
     </div>
   `;
+}
 
-  document.getElementById("applyTop").onclick = () => {
-    document.dispatchEvent(new Event("applyFilter"));
+/* ============================================================
+   イベント初期化
+============================================================ */
+function initYearModalEvents() {
+
+  // 閉じる
+  document.getElementById("modal-close").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = (e) => {
+    if (e.target.id === "modal-bg") closeModal();
   };
-  document.getElementById("clearTop").onclick = () => clearFilter();
+
+  // 年クリック
+  document.querySelectorAll("[data-year]").forEach(el => {
+    el.onclick = () => toggleYear(el.dataset.year);
+  });
+
+  // 月クリック
+  document.querySelectorAll("[data-month]").forEach(el => {
+    el.onclick = () => toggleMonth(el.dataset.month);
+  });
+
+  // クリア
+  document.getElementById("clear").onclick = () => {
+    selectedYears = [];
+    selectedMonths = [];
+    updateSelections();
+  };
+
+  // 適用
+  document.getElementById("apply").onclick = () => {
+    const state = {
+      years: selectedYears,
+      months: selectedMonths,
+      fields: [],
+      varieties: []
+    };
+
+    window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
+    closeModal();
+  };
 }
 
 /* ============================================================
-   クリア
+   年クリック → 全月選択 or 全解除
 ============================================================ */
-function clearFilter() {
-  filterState.years = [];
-  filterState.months = [];
-  filterState.fields = [];
-  filterState.varieties = [];
+function toggleYear(year) {
+  const isSelected = selectedYears.includes(year);
 
-  updateActiveFilters();
-  renderFilterUI();
+  if (isSelected) {
+    selectedYears = selectedYears.filter(v => v !== year);
+    selectedMonths = [];
+  } else {
+    selectedYears = [year];
+    selectedMonths = [...(filterData.months[year] || [])];
+  }
+
+  updateSelections();
 }
 
 /* ============================================================
-   適用
+   月クリック → 個別選択
 ============================================================ */
-function setupApplyButton(onApply) {
-  document.addEventListener("applyFilter", () => {
-    if (typeof onApply === "function") onApply(getFilterState());
+function toggleMonth(month) {
+  if (selectedMonths.includes(month)) {
+    selectedMonths = selectedMonths.filter(v => v !== month);
+  } else {
+    selectedMonths.push(month);
+  }
+  updateSelections();
+}
+
+/* ============================================================
+   UI の再描画（色変更）
+============================================================ */
+function updateSelections() {
+  document.querySelectorAll("[data-year]").forEach(el => {
+    el.classList.toggle("selected", selectedYears.includes(el.dataset.year));
+  });
+
+  document.querySelectorAll("[data-month]").forEach(el => {
+    el.classList.toggle("selected", selectedMonths.includes(el.dataset.month));
   });
 }
 
-export function getFilterState() {
-  return structuredClone(filterState);
+/* ============================================================
+   モーダルを閉じる
+============================================================ */
+function closeModal() {
+  const container = document.getElementById("modal-container");
+  container.innerHTML = "";
+  container.style.display = "none";
 }

@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
-import { initFilterUI, setFilterData } from "/common/filter.js";
+import { openYearModal, openFieldModal, openVarietyModal } from "/common/filter.js";
 
 let plantingRows = [];
 let seedRows = [];
@@ -51,7 +51,7 @@ export async function initPlantingListPage() {
     varietyMap[v.type].push(v.name);
   });
 
-  /* ★ filter.js に渡すデータ */
+  /* ★ モーダルに渡すデータ */
   filterData = {
     years: Object.keys(ymMap),
     months: ymMap,
@@ -59,25 +59,23 @@ export async function initPlantingListPage() {
     varieties: varietyMap
   };
 
-  setFilterData(filterData);
+  /* ▼ フィルタカードのクリックイベント */
+  document.querySelector('[data-type="year"]').onclick = () => openYearModal(filterData);
+  document.querySelector('[data-type="field"]').onclick = () => openFieldModal(filterData);
+  document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal(filterData);
 
-  /* ▼ フィルタ UI 初期化 */
-  initFilterUI({
-    years: filterData.years,
-    months: filterData.months,
-    fields: filterData.fields,
-    varieties: filterData.varieties,
-    onApply: (state) => {
-      const filtered = applyFilter(plantingRows, state);
-      renderTable(filtered);
-    }
+  /* ▼ モーダルからの適用イベント */
+  window.addEventListener("filter:apply", (e) => {
+    const state = e.detail;
+    const filtered = applyFilter(plantingRows, state);
+    renderTable(filtered);
   });
 
   renderTable(plantingRows);
 }
 
 /* ============================================================
-   フィルタ適用
+   フィルタ適用（既存ロジックをそのまま活かす）
 ============================================================ */
 function applyFilter(rows, state) {
   return rows.filter(r => {
@@ -112,7 +110,7 @@ function getSeedDates(seedRef) {
 }
 
 /* ============================================================
-   テーブル描画 + 集計
+   テーブル描画 + 集計（既存ロジックそのまま）
 ============================================================ */
 function renderTable(rows) {
   document.getElementById("countArea").textContent = `${rows.length} 件`;

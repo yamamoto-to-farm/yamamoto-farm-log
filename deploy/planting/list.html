@@ -9,23 +9,11 @@
   <link rel="stylesheet" href="/common/style.css?v=1">
   <script type="module" src="list.js"></script>
 
-  <!-- フィルタUIの調整CSS -->
   <style>
-    .filter-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-left: 4px;
-      margin-top: 4px;
-    }
-
-    .filter-row.child {
-      margin-left: 20px;
-    }
-
-    .filter-checkbox {
-      margin: 0;
-      transform: scale(1.1);
+    .filter-open {
+      cursor: pointer;
+      margin-top: 12px;
+      user-select: none;
     }
   </style>
 </head>
@@ -61,23 +49,14 @@
 
     <h2 class="section-title">フィルタ</h2>
 
-    <!-- ▼ 年月 -->
-    <h3 class="section-title">年月</h3>
-    <div id="yearTags"></div>
-    <div id="monthTags"></div>
+    <!-- ▼ 年月（モーダルを開く） -->
+    <h3 class="section-title filter-open" data-type="year">▶ 年月</h3>
 
     <!-- ▼ 圃場 -->
-    <h3 class="section-title">圃場</h3>
-    <div id="fieldAreaTags"></div>
-    <div id="fieldTags"></div>
+    <h3 class="section-title filter-open" data-type="field">▶ 圃場</h3>
 
     <!-- ▼ 品種 -->
-    <h3 class="section-title">品種</h3>
-    <div id="varietyTypeTags"></div>
-    <div id="varietyTags"></div>
-
-    <!-- 下部の適用・クリアは削除（filter.js が上部に生成） -->
-    <div id="filter-actions" style="display:none;"></div>
+    <h3 class="section-title filter-open" data-type="variety">▶ 品種</h3>
 
   </div>
 
@@ -101,6 +80,9 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <!-- モーダルを動的に挿入する領域 -->
+  <div id="modal-container"></div>
 
 </body>
 </html>
