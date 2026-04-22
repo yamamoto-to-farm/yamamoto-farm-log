@@ -1,5 +1,5 @@
 /* ============================================================
-   年月フィルタ（折りたたみ式）＋ 年月ペア選択
+   年月フィルタ（折りたたみ式・スマホ対応・年月ペア方式）
 ============================================================ */
 
 let filterData = {};
@@ -65,7 +65,7 @@ function applyCurrentFilters() {
 }
 
 /* ============================================================
-   年月モーダルを開く
+   モーダルを開く
 ============================================================ */
 export function openYearModal() {
   const container = document.getElementById("modal-container");
@@ -90,14 +90,17 @@ function createYearModalHTML() {
 
         <div id="year-month-block">
           ${years.map(y => `
-            <details class="year-block" data-year="${y}">
-              <summary>${y}</summary>
+            <div class="year-block" data-year="${y}">
+              <div class="year-header">
+                <span class="year-label" data-year="${y}">${y}</span>
+                <span class="toggle-btn" data-year="${y}">▼</span>
+              </div>
               <div class="month-row">
                 ${(months[y] || []).map(m => `
                   <div class="select-item" data-ym="${y}-${m}">${m}</div>
                 `).join("")}
               </div>
-            </details>
+            </div>
           `).join("")}
         </div>
 
@@ -111,39 +114,50 @@ function createYearModalHTML() {
 }
 
 /* ============================================================
-   イベント初期化
+   イベント初期化（スマホ対応）
 ============================================================ */
 function initYearModalEvents() {
 
-  document.getElementById("modal-close").onclick = closeModal;
-  document.getElementById("modal-bg").onclick = (e) => {
-    if (e.target.id === "modal-bg") closeModal();
-  };
+  // 閉じる
+  document.getElementById("modal-close").addEventListener("click", closeModal);
+
+  // 背景クリック（スマホ対応）
+  document.getElementById("modal-bg").addEventListener("click", (e) => {
+    if (e.target.classList.contains("modal-bg")) closeModal();
+  });
+
+  // ▼ ボタン → 展開/折りたたみ
+  document.querySelectorAll(".toggle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const block = btn.closest(".year-block");
+      block.classList.toggle("open");
+    });
+  });
+
+  // 年ラベル → 全月選択/解除
+  document.querySelectorAll(".year-label").forEach(label => {
+    label.addEventListener("click", () => {
+      const year = label.dataset.year;
+      toggleYearAll(year);
+    });
+  });
 
   // 月クリック → 年月ペアをトグル
   document.querySelectorAll("[data-ym]").forEach(el => {
-    el.onclick = () => toggleYearMonth(el.dataset.ym);
+    el.addEventListener("click", () => toggleYearMonth(el.dataset.ym));
   });
 
-  // 年 summary をクリック → その年の月を全選択/解除
-  document.querySelectorAll(".year-block summary").forEach(sum => {
-    sum.onclick = (e) => {
-      const year = sum.parentElement.dataset.year;
-      toggleYearAll(year);
-      e.preventDefault(); // summary のデフォルト開閉を抑制
-      sum.parentElement.open = !sum.parentElement.open;
-    };
-  });
-
-  document.getElementById("clear").onclick = () => {
+  // クリア
+  document.getElementById("clear").addEventListener("click", () => {
     selectedYearMonths = [];
     updateSelections();
-  };
+  });
 
-  document.getElementById("apply").onclick = () => {
+  // 適用
+  document.getElementById("apply").addEventListener("click", () => {
     applyCurrentFilters();
     closeModal();
-  };
+  });
 
   updateSelections();
 }

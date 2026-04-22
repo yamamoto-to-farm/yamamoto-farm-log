@@ -8,6 +8,16 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <style>
+    .filter-open-btn {
+      padding: 14px 0;
+      font-size: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+  </style>
 </head>
 
 <body>
@@ -28,9 +38,7 @@
     <div class="card" id="filter-card">
       <h2 class="section-title">フィルタ</h2>
 
-      <h3 class="section-title filter-open" data-type="year">▶ 年月</h3>
-      <h3 class="section-title filter-open" data-type="field">▶ 圃場</h3>
-      <h3 class="section-title filter-open" data-type="variety">▶ 品種</h3>
+      <div class="filter-open-btn" data-type="year">▶ 年月</div>
     </div>
 
     <!-- 件数 + 集計 -->
@@ -56,7 +64,7 @@
 
   </div>
 
-  <!-- ★ モーダル挿入領域（filter.js が使用） -->
+  <!-- ★ モーダル挿入領域 -->
   <div id="modal-container"></div>
 
   <!-- list.js -->
@@ -74,13 +82,9 @@
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ヘッダー描画
       renderHeader();
-
-      // ページ表示
       document.getElementById("page-area").style.display = "block";
 
-      // ページ固有初期化
       initPlantingListPage();
     });
   </script>

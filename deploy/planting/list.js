@@ -5,8 +5,7 @@ import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
 import { 
   openYearModal,
-  setFilterData,
-  resetAllFilters
+  setFilterData
 } from "/common/filter.js";
 
 let plantingRows = [];
@@ -17,12 +16,14 @@ let canDiscard = false;
 
 let filterData = {};
 
+/* ============================================================
+   初期化
+============================================================ */
 export async function initPlantingListPage() {
-  const ok = await verifyLocalAuth();
-  if (!ok) return;
 
   if (window.currentRole === "admin") canDiscard = true;
 
+  // ▼ データ読み込み
   plantingRows = await loadCSV("/logs/planting/all.csv");
   seedRows = await loadCSV("/logs/seed/all.csv");
   fieldData = await loadJSON("/data/fields.json");
@@ -46,29 +47,34 @@ export async function initPlantingListPage() {
 
   setFilterData(filterData);
 
-  /* ▼ フィルタカードクリック */
-  document.querySelector('[data-type="year"]').onclick = () => openYearModal();
+  /* ▼ フィルタボタン（スマホ対応） */
+  document.querySelector('[data-type="year"]')
+    .addEventListener("click", openYearModal);
 
-  /* ▼ 全解除 */
-  window.addEventListener("filter:reset", () => {
-    renderTable(plantingRows);
-  });
-
-  /* ▼ モーダル適用 */
+  /* ▼ フィルタ適用 */
   window.addEventListener("filter:apply", (e) => {
     const state = e.detail; // { yearMonths: [...] }
     const filtered = applyFilter(plantingRows, state);
     renderTable(filtered);
   });
 
+  /* ▼ 全解除 */
+  window.addEventListener("filter:reset", () => {
+    renderTable(plantingRows);
+  });
+
   renderTable(plantingRows);
 }
 
 /* ============================================================
-   フィルタ適用（年月ペア）
+   フィルタ適用（年月ペア方式）
 ============================================================ */
 function applyFilter(rows, state) {
-  if (!state.yearMonths.length) return rows;
+
+  // state が無い or yearMonths が無い → 全件返す
+  if (!state || !state.yearMonths || state.yearMonths.length === 0) {
+    return rows;
+  }
 
   return rows.filter(r => {
     const y = r.plantDate?.slice(0, 4);
