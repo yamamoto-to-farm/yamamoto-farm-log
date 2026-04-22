@@ -23,7 +23,6 @@ export async function initPlantingListPage() {
 
   if (window.currentRole === "admin") canDiscard = true;
 
-  // ▼ データ読み込み
   plantingRows = await loadCSV("/logs/planting/all.csv");
   seedRows = await loadCSV("/logs/seed/all.csv");
   fieldData = await loadJSON("/data/fields.json");
@@ -47,18 +46,15 @@ export async function initPlantingListPage() {
 
   setFilterData(filterData);
 
-  /* ▼ フィルタボタン（スマホ対応） */
   document.querySelector('[data-type="year"]')
     .addEventListener("click", openYearModal);
 
-  /* ▼ フィルタ適用 */
   window.addEventListener("filter:apply", (e) => {
-    const state = e.detail; // { yearMonths: [...] }
+    const state = e.detail;
     const filtered = applyFilter(plantingRows, state);
     renderTable(filtered);
   });
 
-  /* ▼ 全解除 */
   window.addEventListener("filter:reset", () => {
     renderTable(plantingRows);
   });
@@ -71,7 +67,6 @@ export async function initPlantingListPage() {
 ============================================================ */
 function applyFilter(rows, state) {
 
-  // state が無い or yearMonths が無い → 全件返す
   if (!state || !state.yearMonths || state.yearMonths.length === 0) {
     return rows;
   }

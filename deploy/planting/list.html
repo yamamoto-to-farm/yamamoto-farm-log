@@ -6,7 +6,6 @@
   <title>播種・定植一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 
   <style>
@@ -22,32 +21,23 @@
 
 <body>
 
-  <!-- ===============================
-       ★ ヘッダー（header.js が自動挿入）
-  =============================== -->
-
   <div id="page-area" style="display:none;">
 
-    <!-- ★ ページタイトル（統一） -->
     <h1 class="page-title">播種・定植一覧</h1>
 
-    <!-- ★ 現在のフィルタ（filter.js が描画） -->
     <div id="activeFilters"></div>
 
-    <!-- ★ フィルタカード -->
     <div class="card" id="filter-card">
       <h2 class="section-title">フィルタ</h2>
 
       <div class="filter-open-btn" data-type="year">▶ 年月</div>
     </div>
 
-    <!-- 件数 + 集計 -->
     <div class="card">
       <div id="countArea">0 件</div>
       <div id="summaryArea" style="margin-top:10px;"></div>
     </div>
 
-    <!-- テーブル -->
     <table id="plantingTable">
       <thead>
         <tr>
@@ -64,15 +54,10 @@
 
   </div>
 
-  <!-- ★ モーダル挿入領域 -->
   <div id="modal-container"></div>
 
-  <!-- list.js -->
   <script type="module" src="./list.js"></script>
 
-  <!-- ===============================
-       ▼ 認証 → ヘッダー挿入 → 初期化
-  =============================== -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -90,5 +75,4 @@
   </script>
 
 </body>
-
 </html>

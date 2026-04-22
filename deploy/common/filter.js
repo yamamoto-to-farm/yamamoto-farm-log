@@ -3,7 +3,7 @@
 ============================================================ */
 
 let filterData = {};
-let selectedYearMonths = []; // ← "2025-12" のように保持
+let selectedYearMonths = []; // "2025-12" のように保持
 
 /* ============================================================
    list.js からデータを受け取る
@@ -90,12 +90,12 @@ function createYearModalHTML() {
 
         <div id="year-month-block">
           ${years.map(y => `
-            <div class="year-block" data-year="${y}">
-              <div class="year-header">
-                <span class="year-label" data-year="${y}">${y}</span>
-                <span class="toggle-btn" data-year="${y}">▼</span>
+            <div class="filter-block" data-year="${y}">
+              <div class="filter-header">
+                <span class="filter-label" data-year="${y}">${y}</span>
+                <span class="filter-toggle-btn" data-year="${y}">▼</span>
               </div>
-              <div class="month-row">
+              <div class="filter-children">
                 ${(months[y] || []).map(m => `
                   <div class="select-item" data-ym="${y}-${m}">${m}</div>
                 `).join("")}
@@ -118,24 +118,22 @@ function createYearModalHTML() {
 ============================================================ */
 function initYearModalEvents() {
 
-  // 閉じる
   document.getElementById("modal-close").addEventListener("click", closeModal);
 
-  // 背景クリック（スマホ対応）
   document.getElementById("modal-bg").addEventListener("click", (e) => {
     if (e.target.classList.contains("modal-bg")) closeModal();
   });
 
   // ▼ ボタン → 展開/折りたたみ
-  document.querySelectorAll(".toggle-btn").forEach(btn => {
+  document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const block = btn.closest(".year-block");
+      const block = btn.closest(".filter-block");
       block.classList.toggle("open");
     });
   });
 
   // 年ラベル → 全月選択/解除
-  document.querySelectorAll(".year-label").forEach(label => {
+  document.querySelectorAll(".filter-label").forEach(label => {
     label.addEventListener("click", () => {
       const year = label.dataset.year;
       toggleYearAll(year);
@@ -147,13 +145,11 @@ function initYearModalEvents() {
     el.addEventListener("click", () => toggleYearMonth(el.dataset.ym));
   });
 
-  // クリア
   document.getElementById("clear").addEventListener("click", () => {
     selectedYearMonths = [];
     updateSelections();
   });
 
-  // 適用
   document.getElementById("apply").addEventListener("click", () => {
     applyCurrentFilters();
     closeModal();

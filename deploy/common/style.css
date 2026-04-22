@@ -69,7 +69,7 @@ body {
     font-weight: 600;
     margin: 20px 0 12px;
     color: #333;
-    cursor: default; /* ← 修正済み */
+    cursor: default;
     user-select: none;
 }
 
@@ -81,7 +81,7 @@ body {
     font-weight: 600;
     margin: 20px 0 12px;
     color: #333;
-    cursor: pointer;   /* ← 開閉するので pointer */
+    cursor: pointer;
     user-select: none;
 }
 
@@ -98,7 +98,7 @@ body {
 }
 
 /* ===============================
-   開閉するタイトル（年度カード）
+   details summary（旧年度カード）
 =============================== */
 details summary {
     font-size: 20px;
@@ -146,7 +146,6 @@ details[open] {
     margin-bottom: 4px;
 }
 
-/* ↳ とリンクを横並びにする */
 .info-line.link {
     display: flex;
     align-items: center;
@@ -164,7 +163,7 @@ details[open] {
 }
 
 /* ===============================
-   圃場一覧（analysis/index.js）
+   圃場一覧
 =============================== */
 .field-group ul {
     margin: 6px 0 14px 16px;
@@ -242,7 +241,7 @@ textarea { resize: vertical; }
 }
 
 /* ===============================
-   JSON 編集（parcels / contracts）
+   JSON 編集
 =============================== */
 .parcel-header,
 .contract-header,
@@ -283,78 +282,7 @@ textarea { resize: vertical; }
 .primary-btn + .secondary-btn { margin-top: 14px; }
 
 /* ===============================
-   階層フィルタ用タグ
-=============================== */
-.filter-tag {
-  padding: 6px 12px;
-  background: #eee;
-  border-radius: 6px;
-  cursor: pointer;
-  user-select: none;
-  display: inline-block;
-  margin: 4px;
-  border: 1px solid #ccc;
-}
-
-.filter-tag.active {
-  background: #2f855a;
-  color: #fff;
-  border: 2px solid #276749;
-  font-weight: 600;
-}
-
-/* ================================
-   モーダル背景
-================================ */
-.modal-bg {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* ================================
-   モーダル本体
-================================ */
-.modal {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 420px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  position: relative;
-  animation: modalFadeIn 0.15s ease-out;
-}
-
-/* 開閉アニメーション（任意） */
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* ================================
-   閉じるボタン
-================================ */
-.modal-close {
-  position: absolute;
-  right: 12px;
-  top: 10px;
-  font-size: 22px;
-  cursor: pointer;
-  color: #666;
-  user-select: none;
-}
-
-.modal-close:hover {
-  color: #000;
-}
-
-/* ===============================
-   適用中フィルタ（activeFilters）
+   activeFilters
 =============================== */
 #activeFilters {
   margin: 10px 0;
@@ -389,10 +317,9 @@ textarea { resize: vertical; }
   border: none;
 }
 
-
-/* ================================
+/* ===============================
    選択アイテム
-================================ */
+=============================== */
 .select-item {
   display: inline-block;
   padding: 8px 14px;
@@ -414,34 +341,56 @@ textarea { resize: vertical; }
   font-weight: bold;
 }
 
-/* ================================
-   フッターボタン
-================================ */
+/* ===============================
+   モーダル
+=============================== */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  position: relative;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 22px;
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
 .modal-footer {
   margin-top: 20px;
   text-align: center;
 }
 
-.primary-btn {
-  padding: 8px 16px;
-  background: #4da3ff;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  border: none;
-}
-
-.secondary-btn {
-  padding: 8px 16px;
-  background: #ddd;
-  border-radius: 6px;
-  cursor: pointer;
-  border: none;
-  margin-left: 10px;
-}
-
 /* ===============================
-   テーブル（KPI）
+   テーブル
 =============================== */
 table {
     width: 100%;
@@ -456,44 +405,9 @@ th, td {
 th { background: #f0f0f0; text-align: center; }
 td { text-align: right; }
 tbody tr:nth-child(odd) { background: #fafafa; }
-#kpi-month-total td { font-weight: 700; background: #f7f7f7; }
-
-/* 差分色 */
-.diff-positive { color: #2e8b57; font-weight: bold; }
-.diff-negative { color: #c0392b; font-weight: bold; }
-.diff-zero { color: #555; }
 
 /* ===============================
-   達成率
-=============================== */
-.rate-good { color: #0a8a0a; font-weight: 700; }
-.rate-ok   { color: #c7a600; font-weight: 700; }
-.rate-bad  { color: #d11a1a; font-weight: 700; }
-
-/* ===============================
-   現場メモ
-=============================== */
-.notes-toggle summary {
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 16px;
-}
-.notes-list { margin: 6px 0 0 16px; }
-
-/* ===============================
-   圃場一覧リンク
-=============================== */
-#analysis-container a {
-    font-size: 18px;
-    font-weight: 600;
-    color: #2b6cb0;
-    text-decoration: none;
-    display: block;
-    padding: 6px 0;
-}
-
-/* ===============================
-   3階層ツリーフィルタ
+   3階層ツリーフィルタ（既存）
 =============================== */
 .filter-root-block {
     padding: 10px 12px;
@@ -503,24 +417,51 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     margin-bottom: 14px;
 }
 
-.filter-root-block label,
-.filter-mid-block label,
-.filter-leaf-block label {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+/* ===============================
+   ★ 新規：折りたたみフィルタ（年・圃場・品種 共通）
+=============================== */
+.filter-block {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
+  margin-bottom: 10px;
 }
 
-.filter-root-block label { font-size: 17px; font-weight: 600; }
-.filter-mid-block label  { font-size: 16px; font-weight: 600; }
-.filter-leaf-block label { font-size: 15px; }
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 6px 0;
+}
 
-.filter-mid-block { margin-left: 18px; margin-top: 6px; }
-.filter-leaf-block { margin-left: 26px; margin-top: 4px; }
+.filter-label {
+  user-select: none;
+}
 
-.filter-children { display: none; }
-.filter-children.open { display: block; }
+.filter-toggle-btn {
+  font-size: 18px;
+  padding: 4px 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.filter-block.open .filter-toggle-btn {
+  transform: rotate(180deg);
+}
+
+.filter-children {
+  display: none;
+  padding: 8px 0 0 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-block.open .filter-children {
+  display: flex;
+}
 
 /* ===============================
    スマホ最適化
