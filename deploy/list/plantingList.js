@@ -1,195 +1,236 @@
-// =======================================
-// plantingList.js（定植一覧の描画ロジック）
-// =======================================
+import { loadCSV } from "/common/csv.js";
+import { loadJSON } from "/common/json.js";
+import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
-// -------------------------------
-// CSV 読み込み
-// -------------------------------
-async function loadPlantingCSV() {
-  const response = await fetch("../logs/planting/all.csv");
-  const text = await response.text();
-  return Papa.parse(text, { header: true }).data.filter(r => r.id);
-}
+import {
+  openYearModal,
+  openFieldModal,
+  openVarietyModal,
+  setFilterData
+} from "/common/filter.js";
 
-// -------------------------------
-// フィルタ UI の生成（折りたたみ式）
-// -------------------------------
-function initPlantingFilters(data) {
-  const filterCard = document.getElementById("filter-card");
-  const activeFilters = document.getElementById("activeFilters");
+let plantingRows = [];
+let seedRows = [];
+let fieldData = [];
+let varietyData = [];
+let canDiscard = false;
 
-  // 年月・圃場・品種のセット
-  const ymSet = new Set();
-  const fieldSet = new Set();
-  const varietySet = new Set();
+let filterData = {};
 
-  data.forEach(row => {
-    if (row.plantDate) ymSet.add(row.plantDate.slice(0, 7));
-    if (row.field) fieldSet.add(row.field);
-    if (row.variety) varietySet.add(row.variety);
+/* ============================================================
+   初期化（list.html → initListPage() → ここが呼ばれる）
+============================================================ */
+export async function initPlantingListPage() {
+
+  if (window.currentRole === "admin") canDiscard = true;
+
+  plantingRows = await loadCSV("/logs/planting/all.csv");
+  seedRows = await loadCSV("/logs/seed/all.csv");
+  fieldData = await loadJSON("/data/fields.json");
+  varietyData = await loadJSON("/data/varieties.json");
+
+  /* ▼ 年 → 月マップ生成 */
+  const ymMap = {};
+  plantingRows.forEach(r => {
+    if (!r.plantDate) return;
+    const y = r.plantDate.slice(0, 4);
+    const m = r.plantDate.slice(5, 7);
+    if (!ymMap[y]) ymMap[y] = [];
+    if (!ymMap[y].includes(m)) ymMap[y].push(m);
+  });
+  Object.keys(ymMap).forEach(y => ymMap[y].sort());
+
+  /* ▼ 圃場 area → name（fields.json の順番を保持） */
+  const areaMap = {};
+  const areaOrder = [];
+
+  fieldData.forEach(f => {
+    if (!areaMap[f.area]) {
+      areaMap[f.area] = [];
+      areaOrder.push(f.area);
+    }
+    areaMap[f.area].push(f.name);
   });
 
-  const ymList = [...ymSet].sort().reverse();
-  const fieldList = [...fieldSet].sort();
-  const varietyList = [...varietySet].sort();
+  /* ▼ 品種 type → name（varieties.json の順番を保持） */
+  const typeMap = {};
+  const typeOrder = [];
 
-  // 折りたたみ式フィルタ生成
-  filterCard.innerHTML = `
-    ${createFilterBlock("年月", "ym", ymList)}
-    ${createFilterBlock("圃場", "field", fieldList)}
-    ${createFilterBlock("品種", "variety", varietyList)}
-  `;
+  varietyData.forEach(v => {
+    if (!typeMap[v.type]) {
+      typeMap[v.type] = [];
+      typeOrder.push(v.type);
+    }
+    typeMap[v.type].push(v.name);
+  });
 
-  // イベント付与
-  attachFilterEvents(data);
+  /* ▼ filter.js に渡すデータ構造 */
+  filterData = {
+    years: Object.keys(ymMap).sort(),
+    months: ymMap,
+    fields: {
+      parents: areaOrder,
+      children: areaMap
+    },
+    varieties: {
+      parents: typeOrder,
+      children: typeMap
+    }
+  };
 
-  // 初期表示
-  activeFilters.innerHTML = "";
+  setFilterData(filterData);
+
+  /* ▼ フィルタボタン */
+  document.querySelector('[data-type="year"]')
+    .addEventListener("click", openYearModal);
+
+  document.querySelector('[data-type="field"]')
+    .addEventListener("click", openFieldModal);
+
+  document.querySelector('[data-type="variety"]')
+    .addEventListener("click", openVarietyModal);
+
+  /* ▼ フィルタ適用 */
+  window.addEventListener("filter:apply", (e) => {
+    const state = e.detail;
+    const filtered = applyAllFilters(plantingRows, state);
+    renderTable(filtered);
+  });
+
+  /* ▼ 全解除 */
+  window.addEventListener("filter:reset", () => {
+    renderTable(plantingRows);
+  });
+
+  renderTable(plantingRows);
 }
 
-// -------------------------------
-// フィルタブロック生成
-// -------------------------------
-function createFilterBlock(label, key, items) {
-  return `
-    <div class="filter-block" data-key="${key}">
-      <div class="filter-header">
-        <span class="filter-label">${label}</span>
-        <span class="filter-toggle-btn">▼</span>
-      </div>
-      <div class="filter-children">
-        ${items.map(v => `<div class="select-item" data-value="${v}">${v}</div>`).join("")}
-      </div>
-    </div>
-  `;
-}
+/* ============================================================
+   フィルタ適用（年＋圃場＋品種）
+============================================================ */
+function applyAllFilters(rows, state) {
 
-// -------------------------------
-// フィルタイベント付与
-// -------------------------------
-function attachFilterEvents(data) {
-  // 折りたたみ
-  document.querySelectorAll(".filter-header").forEach(header => {
-    header.addEventListener("click", () => {
-      header.parentElement.classList.toggle("open");
+  let result = rows;
+
+  // 年月
+  if (state.yearMonths && state.yearMonths.length > 0) {
+    result = result.filter(r => {
+      const y = r.plantDate?.slice(0, 4);
+      const m = r.plantDate?.slice(5, 7);
+      return state.yearMonths.includes(`${y}-${m}`);
     });
+  }
+
+  // 圃場
+  if (state.fields && state.fields.length > 0) {
+    result = result.filter(r => state.fields.includes(r.field));
+  }
+
+  // 品種
+  if (state.varieties && state.varieties.length > 0) {
+    result = result.filter(r => state.varieties.includes(r.variety));
+  }
+
+  return result;
+}
+
+/* ============================================================
+   播種日（複数対応）
+============================================================ */
+function getSeedDates(seedRef) {
+  if (!seedRef) return "";
+
+  const clean = s => (s ?? "").replace(/\s+/g, "").trim();
+  const refs = seedRef.split(",").map(s => clean(s));
+
+  const dates = refs.map(ref => {
+    const row = seedRows.find(s => clean(s.seedRef) === ref);
+    return row?.seedDate ?? "";
   });
 
-  // select-item クリック
-  document.querySelectorAll(".select-item").forEach(item => {
-    item.addEventListener("click", () => {
-      const key = item.closest(".filter-block").dataset.key;
-      const value = item.dataset.value;
+  return dates.filter(d => d).join("<br>");
+}
 
-      // 選択状態トグル
-      if (item.classList.contains("selected")) {
-        item.classList.remove("selected");
-      } else {
-        // 同じカテゴリは単一選択
-        item.closest(".filter-children")
-            .querySelectorAll(".select-item")
-            .forEach(i => i.classList.remove("selected"));
-        item.classList.add("selected");
-      }
+/* ============================================================
+   テーブル描画
+============================================================ */
+function renderTable(rows) {
+  document.getElementById("countArea").textContent = `${rows.length} 件`;
 
-      applyPlantingFilters(data);
-    });
+  let totalQuantity = 0;
+  let totalAreaTan = 0;
+
+  rows.forEach(r => {
+    const spacing = {
+      row: Number(r.spacingRow || 0),
+      bed: Number(r.spacingBed || 0)
+    };
+
+    const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
+    const areaTan = calcAreaTan(areaM2);
+
+    totalQuantity += Number(r.quantity || 0);
+    totalAreaTan += areaTan;
   });
-}
 
-// -------------------------------
-// フィルタ適用
-// -------------------------------
-function applyPlantingFilters(data) {
-  const ym = getSelectedValue("ym");
-  const field = getSelectedValue("field");
-  const variety = getSelectedValue("variety");
+  document.getElementById("summaryArea").innerHTML =
+    `株数合計：${totalQuantity.toLocaleString()} 株　
+     面積合計：${totalAreaTan.toFixed(2)} 反`;
 
-  let filtered = data;
+  const tbody = document.querySelector("#plantingTable tbody");
+  tbody.innerHTML = "";
+  const frag = document.createDocumentFragment();
 
-  if (ym) filtered = filtered.filter(r => r.plantDate?.startsWith(ym));
-  if (field) filtered = filtered.filter(r => r.field === field);
-  if (variety) filtered = filtered.filter(r => r.variety === variety);
+  rows.forEach(r => {
+    const spacing = {
+      row: Number(r.spacingRow || 0),
+      bed: Number(r.spacingBed || 0)
+    };
 
-  updateActiveFilters({ ym, field, variety });
-  renderPlantingTable(filtered);
-}
+    const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
+    const areaTan = calcAreaTan(areaM2);
 
-// -------------------------------
-// 選択中フィルタ取得
-// -------------------------------
-function getSelectedValue(key) {
-  const block = document.querySelector(`.filter-block[data-key="${key}"]`);
-  if (!block) return "";
-  const selected = block.querySelector(".select-item.selected");
-  return selected ? selected.dataset.value : "";
-}
+    const tr = document.createElement("tr");
 
-// -------------------------------
-// 選択中フィルタ表示
-// -------------------------------
-function updateActiveFilters({ ym, field, variety }) {
-  const box = document.getElementById("activeFilters");
-  const tags = [];
+    tr.innerHTML = `
+      <td>${r.plantDate ?? ""}</td>
 
-  if (ym) tags.push(`<span class="filter-tag">${ym}</span>`);
-  if (field) tags.push(`<span class="filter-tag">${field}</span>`);
-  if (variety) tags.push(`<span class="filter-tag">${variety}</span>`);
+      <td>
+        <a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">
+          ${r.field}
+        </a>
+      </td>
 
-  box.innerHTML = tags.join("");
-}
+      <td>
+        <a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">
+          ${r.variety}
+        </a>
+      </td>
 
-// -------------------------------
-// テーブル描画
-// -------------------------------
-function renderPlantingTable(data) {
-  const table = document.getElementById("plantingTable");
+      <td>${areaTan.toFixed(2)}</td>
 
-  let html = `
-    <tr>
-      <th>定植日</th>
-      <th>圃場</th>
-      <th>品種</th>
-      <th>面積(反)</th>
-      <th>播種日</th>
-      <th class="operation-col">操作</th>
-    </tr>
-  `;
+      <td>${getSeedDates(r.seedRef)}</td>
 
-  data.forEach(row => {
-    html += `
-      <tr>
-        <td>${row.plantDate || ""}</td>
-        <td>${row.field || ""}</td>
-        <td>${row.variety || ""}</td>
-        <td>${row.area || ""}</td>
-        <td>${row.seedDate || ""}</td>
-        <td>
-          <button class="discard-btn" data-id="${row.id}">
-            破棄・植え直し
-          </button>
-        </td>
-      </tr>
+      <td>
+        ${canDiscard
+          ? `<button class="primary-btn" style="padding:6px 10px; font-size:14px;"
+               onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">
+               破棄
+             </button>`
+          : ""
+        }
+      </td>
     `;
+
+    frag.appendChild(tr);
   });
 
-  table.innerHTML = html;
-
-  // 破棄ボタン → discard-planting.html に遷移
-  document.querySelectorAll(".discard-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      window.location.href = `/planting/discard-planting.html?plantingRef=${id}`;
-    });
-  });
+  tbody.appendChild(frag);
 }
 
-// -------------------------------
-// メイン処理
-// -------------------------------
-async function renderPlantingList() {
-  const data = await loadPlantingCSV();
-
-  initPlantingFilters(data);
-  renderPlantingTable(data);
+/* ============================================================
+   list.js から呼ばれる
+============================================================ */
+export function renderPlantingList() {
+  initPlantingListPage();
 }
