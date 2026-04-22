@@ -60,7 +60,7 @@
     {
       "id": "planting-list",
       "name": "播種・定植一覧",
-      "path": "planting/list.html",
+      "path": "list/list.html",
       "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/planting.png"
