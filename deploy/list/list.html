@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>播種・定植一覧</title>
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <link rel="stylesheet" href="list.css">
+</head>
+<body>
+
+  <!-- 固定ヘッダー -->
+  <header class="app-header">
+    <h1 class="page-title">播種・定植一覧</h1>
+  </header>
+
+  <!-- モード切り替え -->
+  <div id="mode-switch" class="mode-switch">
+    <button data-mode="planting" id="btn-planting">定植ベース</button>
+    <button data-mode="seed" id="btn-seed">播種ベース</button>
+  </div>
+
+  <!-- フィルタカード -->
+  <div id="filter-card" class="filter-card"></div>
+
+  <!-- 選択中フィルタ -->
+  <div id="activeFilters" class="active-filters"></div>
+
+  <!-- 一覧テーブル -->
+  <table id="plantingTable" class="list-table"></table>
+
+  <!-- モーダル -->
+  <div id="modal-container"></div>
+
+  <!-- JS 読み込み順が重要 -->
+  <script src="plantingList.js"></script>
+  <script src="seedList.js"></script>
+  <script src="list.js"></script>
+
+</body>
+</html>
