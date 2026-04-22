@@ -1,10 +1,12 @@
 /* ============================================================
-   年月フィルタ ＋ 圃場フィルタ（折りたたみ式・スマホ対応）
+   年月・圃場・品種フィルタ（折りたたみ式・スマホ対応）
 ============================================================ */
 
 let filterData = {};
+
 let selectedYearMonths = [];   // "2025-12"
 let selectedFields = [];       // "赤沢(上)"
+let selectedVarieties = [];    // "CTみかさ"
 
 /* ============================================================
    list.js からデータを受け取る
@@ -36,7 +38,19 @@ function renderActiveFilters() {
     area.appendChild(div);
   });
 
-  if (selectedYearMonths.length > 0 || selectedFields.length > 0) {
+  // 品種
+  selectedVarieties.forEach(v => {
+    const div = document.createElement("div");
+    div.className = "filter-tag";
+    div.innerHTML = `${v}<span class="filter-tag-remove" data-variety="${v}">×</span>`;
+    area.appendChild(div);
+  });
+
+  if (
+    selectedYearMonths.length > 0 ||
+    selectedFields.length > 0 ||
+    selectedVarieties.length > 0
+  ) {
     const resetBtn = document.createElement("button");
     resetBtn.className = "filter-reset-btn";
     resetBtn.textContent = "全解除";
@@ -44,6 +58,7 @@ function renderActiveFilters() {
     area.appendChild(resetBtn);
   }
 
+  // 個別削除
   document.querySelectorAll(".filter-tag-remove").forEach(el => {
     if (el.dataset.ym) {
       el.onclick = () => {
@@ -57,6 +72,12 @@ function renderActiveFilters() {
         applyCurrentFilters();
       };
     }
+    if (el.dataset.variety) {
+      el.onclick = () => {
+        selectedVarieties = selectedVarieties.filter(v => v !== el.dataset.variety);
+        applyCurrentFilters();
+      };
+    }
   });
 }
 
@@ -66,6 +87,7 @@ function renderActiveFilters() {
 export function resetAllFilters() {
   selectedYearMonths = [];
   selectedFields = [];
+  selectedVarieties = [];
   applyCurrentFilters();
   window.dispatchEvent(new Event("filter:reset"));
 }
@@ -76,7 +98,8 @@ export function resetAllFilters() {
 function applyCurrentFilters() {
   const state = {
     yearMonths: selectedYearMonths,
-    fields: selectedFields
+    fields: selectedFields,
+    varieties: selectedVarieties
   };
   renderActiveFilters();
   window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
@@ -293,6 +316,113 @@ function toggleAreaAll(area) {
 function updateFieldSelections() {
   document.querySelectorAll("[data-field]").forEach(el => {
     el.classList.toggle("selected", selectedFields.includes(el.dataset.field));
+  });
+}
+
+/* ============================================================
+   ▼ 品種フィルタモーダル
+============================================================ */
+export function openVarietyModal() {
+  const container = document.getElementById("modal-container");
+  container.innerHTML = createVarietyModalHTML();
+  container.style.display = "block";
+  initVarietyModalEvents();
+}
+
+function createVarietyModalHTML() {
+  const parents = filterData.varieties.parents;
+  const children = filterData.varieties.children;
+
+  return `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-close" id="modal-close">×</div>
+
+        <h3>品種の選択</h3>
+
+        ${parents.map(type => `
+          <div class="filter-block" data-type="${type}">
+            <div class="filter-header">
+              <span class="filter-label" data-type="${type}">${type}</span>
+              <span class="filter-toggle-btn" data-type="${type}">▼</span>
+            </div>
+            <div class="filter-children">
+              ${(children[type] || []).map(name => `
+                <div class="select-item" data-variety="${name}">${name}</div>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+
+        <div class="modal-footer">
+          <button class="primary-btn" id="apply-variety">適用</button>
+          <button class="secondary-btn" id="clear-variety">クリア</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function initVarietyModalEvents() {
+
+  document.getElementById("modal-close").addEventListener("click", closeModal);
+  document.getElementById("modal-bg").addEventListener("click", (e) => {
+    if (e.target.classList.contains("modal-bg")) closeModal();
+  });
+
+  document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.closest(".filter-block").classList.toggle("open");
+    });
+  });
+
+  document.querySelectorAll(".filter-label").forEach(label => {
+    label.addEventListener("click", () => toggleTypeAll(label.dataset.type));
+  });
+
+  document.querySelectorAll("[data-variety]").forEach(el => {
+    el.addEventListener("click", () => toggleVariety(el.dataset.variety));
+  });
+
+  document.getElementById("clear-variety").addEventListener("click", () => {
+    selectedVarieties = [];
+    updateVarietySelections();
+  });
+
+  document.getElementById("apply-variety").addEventListener("click", () => {
+    applyCurrentFilters();
+    closeModal();
+  });
+
+  updateVarietySelections();
+}
+
+function toggleVariety(name) {
+  if (selectedVarieties.includes(name)) {
+    selectedVarieties = selectedVarieties.filter(v => v !== name);
+  } else {
+    selectedVarieties.push(name);
+  }
+  updateVarietySelections();
+}
+
+function toggleTypeAll(type) {
+  const list = filterData.varieties.children[type] || [];
+  const allSelected = list.every(v => selectedVarieties.includes(v));
+
+  if (allSelected) {
+    selectedVarieties = selectedVarieties.filter(v => !list.includes(v));
+  } else {
+    list.forEach(v => {
+      if (!selectedVarieties.includes(v)) selectedVarieties.push(v);
+    });
+  }
+  updateVarietySelections();
+}
+
+function updateVarietySelections() {
+  document.querySelectorAll("[data-variety]").forEach(el => {
+    el.classList.toggle("selected", selectedVarieties.includes(el.dataset.variety));
   });
 }
 

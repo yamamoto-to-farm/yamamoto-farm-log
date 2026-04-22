@@ -6,6 +6,7 @@ import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 import { 
   openYearModal,
   openFieldModal,
+  openVarietyModal,
   setFilterData
 } from "/common/filter.js";
 
@@ -40,16 +41,28 @@ export async function initPlantingListPage() {
   });
   Object.keys(ymMap).forEach(y => ymMap[y].sort());
 
-  /* ▼ 圃場 area → name マップ生成（fields.json の順番を保持） */
+  /* ▼ 圃場 area → name（fields.json の順番を保持） */
   const areaMap = {};
-  const areaOrder = [];   // ★ fields.json の順番でエリアを保持
+  const areaOrder = [];
 
   fieldData.forEach(f => {
     if (!areaMap[f.area]) {
       areaMap[f.area] = [];
-      areaOrder.push(f.area);   // ← fields.json の順番で追加
+      areaOrder.push(f.area);
     }
     areaMap[f.area].push(f.name);
+  });
+
+  /* ▼ 品種 type → name（varieties.json の順番を保持） */
+  const typeMap = {};
+  const typeOrder = [];
+
+  varietyData.forEach(v => {
+    if (!typeMap[v.type]) {
+      typeMap[v.type] = [];
+      typeOrder.push(v.type);
+    }
+    typeMap[v.type].push(v.name);
   });
 
   /* ▼ filter.js に渡すデータ構造 */
@@ -57,8 +70,12 @@ export async function initPlantingListPage() {
     years: Object.keys(ymMap).sort(),
     months: ymMap,
     fields: {
-      parents: areaOrder,   // ★ fields.json の順番でエリアを表示
+      parents: areaOrder,
       children: areaMap
+    },
+    varieties: {
+      parents: typeOrder,
+      children: typeMap
     }
   };
 
@@ -70,6 +87,9 @@ export async function initPlantingListPage() {
 
   document.querySelector('[data-type="field"]')
     .addEventListener("click", openFieldModal);
+
+  document.querySelector('[data-type="variety"]')
+    .addEventListener("click", openVarietyModal);
 
   /* ▼ フィルタ適用 */
   window.addEventListener("filter:apply", (e) => {
@@ -87,13 +107,13 @@ export async function initPlantingListPage() {
 }
 
 /* ============================================================
-   フィルタ適用（年＋圃場）
+   フィルタ適用（年＋圃場＋品種）
 ============================================================ */
 function applyAllFilters(rows, state) {
 
   let result = rows;
 
-  // 年月フィルタ
+  // 年月
   if (state.yearMonths && state.yearMonths.length > 0) {
     result = result.filter(r => {
       const y = r.plantDate?.slice(0, 4);
@@ -102,9 +122,14 @@ function applyAllFilters(rows, state) {
     });
   }
 
-  // 圃場フィルタ
+  // 圃場
   if (state.fields && state.fields.length > 0) {
     result = result.filter(r => state.fields.includes(r.field));
+  }
+
+  // 品種
+  if (state.varieties && state.varieties.length > 0) {
+    result = result.filter(r => state.varieties.includes(r.variety));
   }
 
   return result;
