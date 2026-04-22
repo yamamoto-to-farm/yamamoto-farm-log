@@ -40,20 +40,24 @@ export async function initPlantingListPage() {
   });
   Object.keys(ymMap).forEach(y => ymMap[y].sort());
 
-  /* ▼ 圃場 area → name マップ生成 */
+  /* ▼ 圃場 area → name マップ生成（fields.json の順番を保持） */
   const areaMap = {};
+  const areaOrder = [];   // ★ fields.json の順番でエリアを保持
+
   fieldData.forEach(f => {
-    if (!areaMap[f.area]) areaMap[f.area] = [];
+    if (!areaMap[f.area]) {
+      areaMap[f.area] = [];
+      areaOrder.push(f.area);   // ← fields.json の順番で追加
+    }
     areaMap[f.area].push(f.name);
   });
-  Object.keys(areaMap).forEach(a => areaMap[a].sort());
 
   /* ▼ filter.js に渡すデータ構造 */
   filterData = {
     years: Object.keys(ymMap).sort(),
     months: ymMap,
     fields: {
-      parents: Object.keys(areaMap).sort(),
+      parents: areaOrder,   // ★ fields.json の順番でエリアを表示
       children: areaMap
     }
   };
