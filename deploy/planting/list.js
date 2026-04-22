@@ -2,7 +2,13 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
-import { openYearModal, openFieldModal, openVarietyModal } from "/common/filter.js";
+
+// ★ 年月モーダルだけ先に実装済み
+import { 
+  openYearModal,
+  // openFieldModal,
+  // openVarietyModal
+} from "/common/filter.js";
 
 let plantingRows = [];
 let seedRows = [];
@@ -61,8 +67,12 @@ export async function initPlantingListPage() {
 
   /* ▼ フィルタカードのクリックイベント */
   document.querySelector('[data-type="year"]').onclick = () => openYearModal(filterData);
-  document.querySelector('[data-type="field"]').onclick = () => openFieldModal(filterData);
-  document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal(filterData);
+
+  // ★ 圃場モーダル実装後にコメント解除
+  // document.querySelector('[data-type="field"]').onclick = () => openFieldModal(filterData);
+
+  // ★ 品種モーダル実装後にコメント解除
+  // document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal(filterData);
 
   /* ▼ モーダルからの適用イベント */
   window.addEventListener("filter:apply", (e) => {
@@ -75,7 +85,7 @@ export async function initPlantingListPage() {
 }
 
 /* ============================================================
-   フィルタ適用（既存ロジックをそのまま活かす）
+   フィルタ適用（既存ロジックそのまま）
 ============================================================ */
 function applyFilter(rows, state) {
   return rows.filter(r => {
