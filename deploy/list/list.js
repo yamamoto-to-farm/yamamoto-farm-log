@@ -7,34 +7,24 @@ import { renderSeedList } from "./seedList.js";
 
 let currentMode = "planting";
 
-/* ============================================================
-   初期化（list.html → initListPage）
-============================================================ */
 export function initListPage() {
 
-  // ▼ URL パラメータで mode 指定があれば反映
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");
   if (modeParam === "seed") currentMode = "seed";
 
-  // ▼ ボタンイベント
   document.getElementById("btn-planting").addEventListener("click", () => switchMode("planting"));
   document.getElementById("btn-seed").addEventListener("click", () => switchMode("seed"));
 
-  // ▼ 初期モード描画
   applyModeUI();
   renderCurrentMode();
 }
 
-/* ============================================================
-   モード切り替え
-============================================================ */
 function switchMode(mode) {
   if (currentMode === mode) return;
 
   currentMode = mode;
 
-  // URL を書き換え（履歴は残さない）
   const newUrl = `${location.pathname}?mode=${mode}`;
   history.replaceState(null, "", newUrl);
 
@@ -42,9 +32,6 @@ function switchMode(mode) {
   renderCurrentMode();
 }
 
-/* ============================================================
-   ボタンの UI 切り替え
-============================================================ */
 function applyModeUI() {
   const btnPlanting = document.getElementById("btn-planting");
   const btnSeed = document.getElementById("btn-seed");
@@ -60,12 +47,9 @@ function applyModeUI() {
   }
 }
 
-/* ============================================================
-   モードに応じて一覧を描画
-============================================================ */
 function renderCurrentMode() {
   const tableArea = document.getElementById("table-area");
-  tableArea.innerHTML = ""; // クリア
+  tableArea.innerHTML = "";
 
   if (currentMode === "planting") {
     renderPlantingList();
@@ -74,13 +58,5 @@ function renderCurrentMode() {
   }
 }
 
-/* ============================================================
-   フィルタ適用イベント
-============================================================ */
-window.addEventListener("filter:apply", () => {
-  renderCurrentMode();
-});
-
-window.addEventListener("filter:reset", () => {
-  renderCurrentMode();
-});
+window.addEventListener("filter:apply", () => renderCurrentMode());
+window.addEventListener("filter:reset", () => renderCurrentMode());

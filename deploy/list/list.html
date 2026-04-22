@@ -6,70 +6,44 @@
   <title>播種・定植一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
-
-  <!-- Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body>
 
-  <!-- ===============================
-       ★ ヘッダー（header.js が自動挿入）
-  =============================== -->
-
   <div id="page-area" style="display:none;">
 
-    <!-- ★ ページタイトル -->
     <h1 class="page-title">播種・定植一覧</h1>
 
-    <!-- ★ モード切り替えカード -->
+    <!-- モード切り替えカード（印刷時非表示） -->
     <div class="card" id="mode-switch-card" style="margin-bottom: 16px;">
-      <button id="btn-planting" data-mode="planting" class="primary-btn" style="padding:8px 14px; font-size:15px;">
-        定植ベース
-      </button>
-      <button id="btn-seed" data-mode="seed" class="secondary-btn" style="padding:8px 14px; font-size:15px;">
-        播種ベース
-      </button>
+      <button id="btn-planting" class="primary-btn" data-mode="planting">定植ベース</button>
+      <button id="btn-seed" class="secondary-btn" data-mode="seed">播種ベース</button>
     </div>
 
-    <!-- ★ 選択中フィルタ -->
     <div id="activeFilters"></div>
 
-    <!-- ★ フィルタカード -->
     <div class="card" id="filter-card">
       <h2 class="section-title">フィルタ</h2>
-
       <div class="filter-open-btn" data-type="year">▶ 年月</div>
       <div class="filter-open-btn" data-type="field">▶ 圃場</div>
       <div class="filter-open-btn" data-type="variety">▶ 品種</div>
     </div>
 
-    <!-- ★ 集計カード -->
     <div class="card">
       <div id="countArea">0 件</div>
       <div id="summaryArea" style="margin-top:10px;"></div>
     </div>
 
-    <!-- ★ テーブルの入れ物（JS が生成） -->
     <div id="table-area"></div>
 
   </div>
 
-  <!-- ===============================
-       ★ フィルタモーダル用（filter.js が使用）
-  =============================== -->
   <div id="modal-container"></div>
 
-  <!-- ===============================
-       ★ list.js（モード管理）
-  =============================== -->
   <script type="module" src="./list.js"></script>
 
-  <!-- ===============================
-       ★ 認証 → ヘッダー挿入 → 初期化
-  =============================== -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
