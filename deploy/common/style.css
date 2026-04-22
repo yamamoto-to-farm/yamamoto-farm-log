@@ -464,6 +464,45 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 }
 
 /* ===============================
+   印刷用設定（播種・定植一覧）
+   フィルタ UI を非表示にする
+=============================== */
+@media print {
+
+  /* フィルタカードを非表示 */
+  #filter-card {
+    display: none !important;
+  }
+
+  /* activeFilters を非表示 */
+  #activeFilters {
+    display: none !important;
+  }
+
+  /* モーダルは絶対に印刷しない */
+  #modal-container {
+    display: none !important;
+  }
+
+  /* 背景を白に統一 */
+  body {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  /* テーブルを印刷向けに最適化 */
+  table {
+    width: 100%;
+    font-size: 12pt;
+  }
+
+  /* 印刷時の余白 */
+  @page {
+    margin: 12mm;
+  }
+}
+
+/* ===============================
    スマホ最適化
 =============================== */
 @media (max-width: 600px) {
