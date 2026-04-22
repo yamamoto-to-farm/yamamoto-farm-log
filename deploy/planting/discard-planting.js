@@ -7,14 +7,25 @@ let plantingRow = null;
 // ===============================
 // 必要なモジュール
 // ===============================
-import { loadCSV } from "../common/csv.js";
-import { saveLog } from "../common/save/index.js";
+import { loadCSV } from "/common/csv.js";
+import { saveLog } from "/common/save/index.js";
 import {
   showSaveModal,
   updateSaveModal,
   completeSaveModal
-} from "../common/save-modal.js";
-import { enqueueSummaryUpdate } from "../common/summary.js";
+} from "/common/save-modal.js";
+import { enqueueSummaryUpdate } from "/common/summary.js";
+
+// ===============================
+// ▼ CSV のキー名を正規化（plantingList.js と統一）
+// ===============================
+function normalizeKeys(rows) {
+  return rows.map(row => {
+    const fixed = {};
+    Object.keys(row).forEach(k => fixed[k.trim()] = row[k]);
+    return fixed;
+  });
+}
 
 // ===============================
 // 初期化（plantingRef 取得 → 定植データ読み込み）
@@ -22,6 +33,9 @@ import { enqueueSummaryUpdate } from "../common/summary.js";
 export async function initDiscardPage() {
   const params = new URLSearchParams(location.search);
   plantingRef = params.get("ref");
+
+  console.log("🔥 discard page loaded");
+  console.log("受け取った ref =", plantingRef);
 
   if (!plantingRef) {
     alert("plantingRef が指定されていません");
@@ -36,8 +50,17 @@ export async function initDiscardPage() {
 // 定植データ読み込み
 // ===============================
 async function loadPlanting() {
-  const rows = await loadCSV("logs/planting/all.csv").catch(() => []);
 
+  // ★ 絶対パスに修正（これが最重要）
+  const rowsRaw = await loadCSV("/logs/planting/all.csv").catch(() => []);
+
+  // ★ キー正規化（plantingRef\r 問題を完全解決）
+  const rows = normalizeKeys(rowsRaw);
+
+  console.log("読み込んだ plantingRows =", rows);
+  console.log("plantingRows[0] のキー =", Object.keys(rows[0] || {}));
+
+  // ★ plantingRef で検索
   plantingRow = rows.find(r => r.plantingRef === plantingRef);
 
   if (!plantingRow) {
@@ -96,7 +119,6 @@ export async function saveDiscard() {
   const notesClean = notes.replace(/[\r\n,]/g, " ");
   const dateStr = discardDate.replace(/-/g, "");
 
-  // ★ 保存前確認（planting.js と同じ UX）
   const confirmMsg =
     `以下の内容で保存します。\n\n` +
     `破棄日: ${discardDate}\n` +
@@ -109,13 +131,10 @@ export async function saveDiscard() {
 
   if (!confirm(confirmMsg)) return;
 
-  // ★ 保存モーダル開始
   showSaveModal("保存しています…");
 
-  // ===============================
   // ★ discard-planting/all.csv を replace 保存
-  // ===============================
-  const url = "../logs/discard-planting/all.csv?ts=" + Date.now();
+  const url = "/logs/discard-planting/all.csv?ts=" + Date.now();
   const res = await fetch(url);
   const text = await res.text();
 
@@ -140,9 +159,6 @@ export async function saveDiscard() {
 
   await saveLog("discard-planting", "all", {}, "", csvText, "csv-replace");
 
-  // ===============================
-  // ★ サマリー更新（planting.js と同じ）
-  // ===============================
   updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(plantingRef);
 
