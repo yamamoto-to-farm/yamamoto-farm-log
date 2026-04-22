@@ -465,7 +465,8 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 
 /* ===============================
    印刷用設定（播種・定植一覧）
-   フィルタ UI・ヘッダーを非表示にする
+   フィルタ UI・ヘッダー・操作列を非表示
+   ＋ 列幅最適化
 =============================== */
 @media print {
 
@@ -474,17 +475,9 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     display: none !important;
   }
 
-  /* フィルタカードを非表示 */
-  #filter-card {
-    display: none !important;
-  }
-
-  /* activeFilters を非表示 */
-  #activeFilters {
-    display: none !important;
-  }
-
-  /* モーダルは絶対に印刷しない */
+  /* フィルタ UI を非表示 */
+  #filter-card,
+  #activeFilters,
   #modal-container {
     display: none !important;
   }
@@ -495,11 +488,45 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     padding: 0 !important;
   }
 
-  /* テーブルを印刷向けに最適化 */
-  table {
+  /* 播種・定植一覧の操作列だけ非表示 */
+  #plantingTable th:last-child,
+  #plantingTable td:last-child {
+    display: none !important;
+  }
+
+  /* テーブル全体の最適化 */
+  #plantingTable {
     width: 100%;
     font-size: 12pt;
     border-collapse: collapse;
+    table-layout: fixed; /* ← 列幅を安定させる */
+  }
+
+  /* 列幅の最適化（印刷時のみ） */
+  #plantingTable th:nth-child(1),
+  #plantingTable td:nth-child(1) {
+    width: 90px; /* 定植日 */
+  }
+
+  #plantingTable th:nth-child(2),
+  #plantingTable td:nth-child(2) {
+    width: 140px; /* 圃場 */
+  }
+
+  #plantingTable th:nth-child(3),
+  #plantingTable td:nth-child(3) {
+    width: 140px; /* 品種 */
+  }
+
+  #plantingTable th:nth-child(4),
+  #plantingTable td:nth-child(4) {
+    width: 70px; /* 面積(反) */
+    text-align: right;
+  }
+
+  #plantingTable th:nth-child(5),
+  #plantingTable td:nth-child(5) {
+    width: 90px; /* 播種日 */
   }
 
   /* 印刷時の余白 */
@@ -507,6 +534,7 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     margin: 12mm;
   }
 }
+
 
 /* ===============================
    スマホ最適化
