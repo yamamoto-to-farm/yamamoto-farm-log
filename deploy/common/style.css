@@ -475,6 +475,11 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     display: none !important;
   }
 
+  /* モード切り替えカード（定植ベース／播種ベース）を非表示 */
+  #mode-switch-card {
+    display: none !important;
+  }
+
   /* フィルタ UI を非表示 */
   #filter-card,
   #activeFilters,
@@ -488,14 +493,14 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     padding: 0 !important;
   }
 
-  /* 播種・定植一覧の操作列だけ非表示 */
-  #plantingTable th:last-child,
-  #plantingTable td:last-child {
-    display: none !important;
+  /* ▼ plantingList.js / seedList.js が生成するテーブルを対象にする */
+  #table-area table th:last-child,
+  #table-area table td:last-child {
+    display: none !important; /* 操作列を非表示 */
   }
 
   /* テーブル全体の最適化 */
-  #plantingTable {
+  #table-area table {
     width: 100%;
     font-size: 12pt;
     border-collapse: collapse;
@@ -503,29 +508,29 @@ tbody tr:nth-child(odd) { background: #fafafa; }
   }
 
   /* 列幅の最適化（印刷時のみ） */
-  #plantingTable th:nth-child(1),
-  #plantingTable td:nth-child(1) {
+  #table-area table th:nth-child(1),
+  #table-area table td:nth-child(1) {
     width: 90px; /* 定植日 */
   }
 
-  #plantingTable th:nth-child(2),
-  #plantingTable td:nth-child(2) {
+  #table-area table th:nth-child(2),
+  #table-area table td:nth-child(2) {
     width: 140px; /* 圃場 */
   }
 
-  #plantingTable th:nth-child(3),
-  #plantingTable td:nth-child(3) {
+  #table-area table th:nth-child(3),
+  #table-area table td:nth-child(3) {
     width: 140px; /* 品種 */
   }
 
-  #plantingTable th:nth-child(4),
-  #plantingTable td:nth-child(4) {
+  #table-area table th:nth-child(4),
+  #table-area table td:nth-child(4) {
     width: 70px; /* 面積(反) */
     text-align: right;
   }
 
-  #plantingTable th:nth-child(5),
-  #plantingTable td:nth-child(5) {
+  #table-area table th:nth-child(5),
+  #table-area table td:nth-child(5) {
     width: 90px; /* 播種日 */
   }
 
@@ -534,7 +539,6 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     margin: 12mm;
   }
 }
-
 
 /* ===============================
    スマホ最適化
