@@ -1,3 +1,7 @@
+// ===============================
+// plantingList.js（定植ベース一覧）
+// ===============================
+
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
@@ -16,11 +20,29 @@ let varietyData = [];
 let canDiscard = false;
 
 let filterData = {};
+let initialized = false;
 
 /* ============================================================
-   初期化（list.html → initListPage() → ここが呼ばれる）
+   外部から呼ばれるエントリポイント
 ============================================================ */
-export async function initPlantingListPage() {
+export async function renderPlantingList() {
+
+  // 初回のみデータ読み込み & フィルタ初期化
+  if (!initialized) {
+    await initPlantingListPage();
+    initialized = true;
+  }
+
+  // 現在のフィルタ状態を取得して再描画
+  const state = window.currentFilterState || {};
+  const filtered = applyAllFilters(plantingRows, state);
+  renderTable(filtered);
+}
+
+/* ============================================================
+   初期化（データ読み込み・フィルタ構築）
+============================================================ */
+async function initPlantingListPage() {
 
   if (window.currentRole === "admin") canDiscard = true;
 
@@ -40,7 +62,7 @@ export async function initPlantingListPage() {
   });
   Object.keys(ymMap).forEach(y => ymMap[y].sort());
 
-  /* ▼ 圃場 area → name（fields.json の順番を保持） */
+  /* ▼ 圃場 area → name */
   const areaMap = {};
   const areaOrder = [];
 
@@ -52,7 +74,7 @@ export async function initPlantingListPage() {
     areaMap[f.area].push(f.name);
   });
 
-  /* ▼ 品種 type → name（varieties.json の順番を保持） */
+  /* ▼ 品種 type → name */
   const typeMap = {};
   const typeOrder = [];
 
@@ -92,17 +114,16 @@ export async function initPlantingListPage() {
 
   /* ▼ フィルタ適用 */
   window.addEventListener("filter:apply", (e) => {
-    const state = e.detail;
-    const filtered = applyAllFilters(plantingRows, state);
+    window.currentFilterState = e.detail;
+    const filtered = applyAllFilters(plantingRows, e.detail);
     renderTable(filtered);
   });
 
   /* ▼ 全解除 */
   window.addEventListener("filter:reset", () => {
+    window.currentFilterState = {};
     renderTable(plantingRows);
   });
-
-  renderTable(plantingRows);
 }
 
 /* ============================================================
@@ -152,10 +173,27 @@ function getSeedDates(seedRef) {
 }
 
 /* ============================================================
-   テーブル描画
+   テーブル描画（#table-area に生成）
 ============================================================ */
 function renderTable(rows) {
-  document.getElementById("countArea").textContent = `${rows.length} 件`;
+
+  const tableArea = document.getElementById("table-area");
+
+  // テーブル全体を生成
+  let html = `
+    <table>
+      <thead>
+        <tr>
+          <th>定植日</th>
+          <th>圃場</th>
+          <th>品種</th>
+          <th>面積(反)</th>
+          <th>播種日</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
   let totalQuantity = 0;
   let totalAreaTan = 0;
@@ -171,66 +209,51 @@ function renderTable(rows) {
 
     totalQuantity += Number(r.quantity || 0);
     totalAreaTan += areaTan;
+
+    html += `
+      <tr>
+        <td>${r.plantDate ?? ""}</td>
+
+        <td>
+          <a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">
+            ${r.field}
+          </a>
+        </td>
+
+        <td>
+          <a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">
+            ${r.variety}
+          </a>
+        </td>
+
+        <td>${areaTan.toFixed(2)}</td>
+
+        <td>${getSeedDates(r.seedRef)}</td>
+
+        <td>
+          ${canDiscard
+            ? `<button class="primary-btn" style="padding:6px 10px; font-size:14px;"
+                 onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">
+                 破棄
+               </button>`
+            : ""
+          }
+        </td>
+      </tr>
+    `;
   });
 
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  // 集計更新
+  document.getElementById("countArea").textContent = `${rows.length} 件`;
   document.getElementById("summaryArea").innerHTML =
     `株数合計：${totalQuantity.toLocaleString()} 株　
      面積合計：${totalAreaTan.toFixed(2)} 反`;
 
-  const tbody = document.querySelector("#plantingTable tbody");
-  tbody.innerHTML = "";
-  const frag = document.createDocumentFragment();
-
-  rows.forEach(r => {
-    const spacing = {
-      row: Number(r.spacingRow || 0),
-      bed: Number(r.spacingBed || 0)
-    };
-
-    const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
-    const areaTan = calcAreaTan(areaM2);
-
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td>${r.plantDate ?? ""}</td>
-
-      <td>
-        <a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">
-          ${r.field}
-        </a>
-      </td>
-
-      <td>
-        <a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">
-          ${r.variety}
-        </a>
-      </td>
-
-      <td>${areaTan.toFixed(2)}</td>
-
-      <td>${getSeedDates(r.seedRef)}</td>
-
-      <td>
-        ${canDiscard
-          ? `<button class="primary-btn" style="padding:6px 10px; font-size:14px;"
-               onclick="location.href='discard-planting.html?ref=${r.plantingRef}'">
-               破棄
-             </button>`
-          : ""
-        }
-      </td>
-    `;
-
-    frag.appendChild(tr);
-  });
-
-  tbody.appendChild(frag);
-}
-
-/* ============================================================
-   list.js から呼ばれる
-============================================================ */
-export function renderPlantingList() {
-  initPlantingListPage();
+  // 描画
+  tableArea.innerHTML = html;
 }
