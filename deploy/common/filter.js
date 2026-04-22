@@ -1,18 +1,101 @@
 /* ============================================================
-   フィルタモーダル（年月） - 完全新規
+   フィルタモーダル（年月） + activeFilters + 全解除
 ============================================================ */
 
-let filterData = {}; // list.js から受け取る
+let filterData = {};
 
-// 選択状態
 let selectedYears = [];
 let selectedMonths = [];
+let selectedFields = [];
+let selectedVarieties = [];
 
 /* ============================================================
    list.js からデータを受け取る
 ============================================================ */
 export function setFilterData(data) {
   filterData = data;
+}
+
+/* ============================================================
+   activeFilters の描画
+============================================================ */
+function renderActiveFilters() {
+  const area = document.getElementById("activeFilters");
+  area.innerHTML = "";
+
+  const tags = [];
+
+  selectedYears.forEach(y => tags.push({ type: "year", label: y }));
+  selectedMonths.forEach(m => tags.push({ type: "month", label: m }));
+  selectedFields.forEach(f => tags.push({ type: "field", label: f }));
+  selectedVarieties.forEach(v => tags.push({ type: "variety", label: v }));
+
+  tags.forEach(tag => {
+    const div = document.createElement("div");
+    div.className = "filter-tag";
+    div.innerHTML = `
+      ${tag.label}
+      <span class="filter-tag-remove" data-type="${tag.type}" data-value="${tag.label}">×</span>
+    `;
+    area.appendChild(div);
+  });
+
+  /* 全解除ボタン */
+  if (tags.length > 0) {
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "filter-reset-btn";
+    resetBtn.textContent = "全解除";
+    resetBtn.onclick = () => resetAllFilters();
+    area.appendChild(resetBtn);
+  }
+
+  /* 個別解除 */
+  document.querySelectorAll(".filter-tag-remove").forEach(el => {
+    el.onclick = () => {
+      removeFilter(el.dataset.type, el.dataset.value);
+    };
+  });
+}
+
+/* ============================================================
+   個別解除
+============================================================ */
+function removeFilter(type, value) {
+  if (type === "year") selectedYears = selectedYears.filter(v => v !== value);
+  if (type === "month") selectedMonths = selectedMonths.filter(v => v !== value);
+  if (type === "field") selectedFields = selectedFields.filter(v => v !== value);
+  if (type === "variety") selectedVarieties = selectedVarieties.filter(v => v !== value);
+
+  applyCurrentFilters();
+}
+
+/* ============================================================
+   全解除
+============================================================ */
+export function resetAllFilters() {
+  selectedYears = [];
+  selectedMonths = [];
+  selectedFields = [];
+  selectedVarieties = [];
+
+  applyCurrentFilters();
+
+  window.dispatchEvent(new Event("filter:reset"));
+}
+
+/* ============================================================
+   現在のフィルタ状態を list.js に適用
+============================================================ */
+function applyCurrentFilters() {
+  const state = {
+    years: selectedYears,
+    months: selectedMonths,
+    fields: selectedFields,
+    varieties: selectedVarieties
+  };
+
+  renderActiveFilters();
+  window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
 }
 
 /* ============================================================
@@ -66,45 +149,33 @@ function createYearModalHTML() {
 ============================================================ */
 function initYearModalEvents() {
 
-  // 閉じる
   document.getElementById("modal-close").onclick = closeModal;
   document.getElementById("modal-bg").onclick = (e) => {
     if (e.target.id === "modal-bg") closeModal();
   };
 
-  // 年クリック
   document.querySelectorAll("[data-year]").forEach(el => {
     el.onclick = () => toggleYear(el.dataset.year);
   });
 
-  // 月クリック
   document.querySelectorAll("[data-month]").forEach(el => {
     el.onclick = () => toggleMonth(el.dataset.month);
   });
 
-  // クリア
   document.getElementById("clear").onclick = () => {
     selectedYears = [];
     selectedMonths = [];
     updateSelections();
   };
 
-  // 適用
   document.getElementById("apply").onclick = () => {
-    const state = {
-      years: selectedYears,
-      months: selectedMonths,
-      fields: [],
-      varieties: []
-    };
-
-    window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
+    applyCurrentFilters();
     closeModal();
   };
 }
 
 /* ============================================================
-   年クリック → 全月選択 or 全解除
+   年クリック
 ============================================================ */
 function toggleYear(year) {
   const isSelected = selectedYears.includes(year);
@@ -121,7 +192,7 @@ function toggleYear(year) {
 }
 
 /* ============================================================
-   月クリック → 個別選択
+   月クリック
 ============================================================ */
 function toggleMonth(month) {
   if (selectedMonths.includes(month)) {
@@ -133,7 +204,7 @@ function toggleMonth(month) {
 }
 
 /* ============================================================
-   UI の再描画（色変更）
+   UI の再描画
 ============================================================ */
 function updateSelections() {
   document.querySelectorAll("[data-year]").forEach(el => {
@@ -152,15 +223,4 @@ function closeModal() {
   const container = document.getElementById("modal-container");
   container.innerHTML = "";
   container.style.display = "none";
-}
-
-/* ============================================================
-   圃場・品種（後で実装）
-============================================================ */
-export function openFieldModal() {
-  alert("圃場モーダルはまだ未実装です");
-}
-
-export function openVarietyModal() {
-  alert("品種モーダルはまだ未実装です");
 }

@@ -3,12 +3,12 @@ import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
-// ★ 年月モーダルだけ先に実装済み
 import { 
   openYearModal,
   // openFieldModal,
-  // openVarietyModal
-  setFilterData
+  // openVarietyModal,
+  setFilterData,
+  resetAllFilters
 } from "/common/filter.js";
 
 let plantingRows = [];
@@ -19,9 +19,6 @@ let canDiscard = false;
 
 let filterData = {};
 
-/* ============================================================
-   初期化
-============================================================ */
 export async function initPlantingListPage() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -58,7 +55,7 @@ export async function initPlantingListPage() {
     varietyMap[v.type].push(v.name);
   });
 
-  /* ★ モーダルに渡すデータ */
+  /* ★ filter.js に渡すデータ */
   filterData = {
     years: Object.keys(ymMap),
     months: ymMap,
@@ -66,19 +63,21 @@ export async function initPlantingListPage() {
     varieties: varietyMap
   };
 
-  /* ★ filter.js にデータを渡す（必須） */
   setFilterData(filterData);
 
-  /* ▼ フィルタカードのクリックイベント */
+  /* ▼ フィルタカードクリック */
   document.querySelector('[data-type="year"]').onclick = () => openYearModal();
-
-  // ★ 圃場モーダル実装後にコメント解除
   // document.querySelector('[data-type="field"]').onclick = () => openFieldModal();
-
-  // ★ 品種モーダル実装後にコメント解除
   // document.querySelector('[data-type="variety"]').onclick = () => openVarietyModal();
 
-  /* ▼ モーダルからの適用イベント */
+  /* ▼ 全解除（filter.js の関数を呼ぶ） */
+  window.addEventListener("filter:reset", () => {
+    const state = { years: [], months: [], fields: [], varieties: [] };
+    const filtered = applyFilter(plantingRows, state);
+    renderTable(filtered);
+  });
+
+  /* ▼ モーダル適用 */
   window.addEventListener("filter:apply", (e) => {
     const state = e.detail;
     const filtered = applyFilter(plantingRows, state);
@@ -89,7 +88,7 @@ export async function initPlantingListPage() {
 }
 
 /* ============================================================
-   フィルタ適用（既存ロジックそのまま）
+   フィルタ適用
 ============================================================ */
 function applyFilter(rows, state) {
   return rows.filter(r => {
@@ -124,7 +123,7 @@ function getSeedDates(seedRef) {
 }
 
 /* ============================================================
-   テーブル描画 + 集計（既存ロジックそのまま）
+   テーブル描画
 ============================================================ */
 function renderTable(rows) {
   document.getElementById("countArea").textContent = `${rows.length} 件`;
@@ -200,7 +199,4 @@ function renderTable(rows) {
   tbody.appendChild(frag);
 }
 
-/* ============================================================
-   ページ起動
-============================================================ */
 initPlantingListPage();
