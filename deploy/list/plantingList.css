@@ -20,11 +20,23 @@
   background: #eef7ff;
 }
 
-/* ▼ モード切り替えの active 状態（緑色） */
+/* ===============================
+   モード切り替えボタン（定植ベース／播種ベース）
+=============================== */
+
+/* ▼ 非アクティブ（secondary-btn と同じ） */
+#mode-switch-card button {
+  background: #e2e8f0;
+  color: #333;
+  border: 1px solid #cbd5e0;
+  margin-top: 0 !important; /* primary-btn の margin を無効化 */
+}
+
+/* ▼ アクティブ（primary-btn と同じ緑） */
 #mode-switch-card button.active {
-  background-color: #2ecc71 !important;
-  color: #ffffff !important;
-  border-color: #27ae60 !important;
+  background: #2f855a !important; /* primary-btn と完全一致 */
+  color: #fff !important;
+  border: none !important;
 }
 
 /* ===============================
