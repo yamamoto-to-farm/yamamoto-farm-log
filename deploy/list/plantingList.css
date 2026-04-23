@@ -25,8 +25,15 @@
 =============================== */
 @media print {
 
-  /* ▼ モード切り替えボタン非表示 */
-  .mode-btn {
+  /* ▼ 山本農園 OS のヘッダー非表示 */
+  .app-header {
+    display: none !important;
+  }
+
+  /* ▼ モード切り替え（定植ベース／播種ベース）非表示 */
+  .mode-btn,
+  #mode-switch,
+  #mode-container {
     display: none !important;
   }
 
@@ -37,18 +44,13 @@
     display: none !important;
   }
 
-  /* ▼ ヘッダー非表示（山本農園 OS） */
-  .app-header {
-    display: none !important;
-  }
-
   /* ▼ 操作列（破棄）を非表示 */
   #table-area table th:last-child,
   #table-area table td:last-child {
     display: none !important;
   }
 
-  /* ▼ 印刷時のテーブルレイアウト最適化 */
+  /* ▼ テーブル最適化 */
   #table-area table {
     table-layout: fixed;
     width: 100%;
