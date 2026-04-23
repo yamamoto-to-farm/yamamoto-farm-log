@@ -2,17 +2,17 @@
    定植一覧専用 CSS
 =============================== */
 
+/* ▼ 定植日セルの右寄せを打ち消す（最重要） */
+td.plant-date-cell {
+  text-align: left !important;
+}
+
 /* ▼ 定植日セル内の info アイコン配置 */
 .plant-date-cell {
   display: flex;
   align-items: center;
   gap: 6px;
   line-height: 1;
-  text-align: left !important; /* ← これが最重要 */
-}
-
-/* ▼ td の右寄せを打ち消す */
-.plant-date-cell {
   justify-content: flex-start;
 }
 
@@ -34,19 +34,16 @@
 =============================== */
 @media print {
 
-  /* ▼ info アイコンだけ透明にする */
   .info-icon-wrapper {
     opacity: 0 !important;
     visibility: hidden !important;
   }
 
-  /* ▼ 操作列（破棄）を非表示 */
   #table-area table th:last-child,
   #table-area table td:last-child {
     display: none !important;
   }
 
-  /* ▼ 印刷時の列幅 */
   #table-area table {
     table-layout: fixed;
     width: 100%;
