@@ -1,0 +1,109 @@
+/* ===============================
+   播種一覧専用 CSS
+=============================== */
+
+/* ▼ 播種日セル（クリック可能） */
+.seed-date-cell {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.seed-date-cell:hover {
+  background: #eef7ff;
+}
+
+/* ▼ 列幅（播種一覧専用） */
+#table-area table th:nth-child(1),
+#table-area table td:nth-child(1) {
+  width: 130px;
+  white-space: nowrap;
+}
+
+#table-area table th:nth-child(2),
+#table-area table td:nth-child(2) {
+  width: 160px;
+}
+
+#table-area table th:nth-child(3),
+#table-area table td:nth-child(3) {
+  width: 80px;
+  text-align: right;
+}
+
+#table-area table th:nth-child(4),
+#table-area table td:nth-child(4) {
+  width: 120px;
+  text-align: right;
+}
+
+#table-area table th:nth-child(5),
+#table-area table td:nth-child(5) {
+  width: 150px;
+  white-space: nowrap;
+}
+
+/* ===============================
+   印刷用設定（播種一覧専用）
+=============================== */
+@media print {
+
+  /* ▼ 山本農園 OS のヘッダー非表示 */
+  .app-header {
+    display: none !important;
+  }
+
+  /* ▼ モード切り替えカード非表示（共通UI） */
+  #mode-switch-card {
+    display: none !important;
+  }
+
+  /* ▼ フィルタ UI 非表示 */
+  #filter-card,
+  #activeFilters {
+    display: none !important;
+  }
+
+  /* ▼ モーダル非表示 */
+  #modal-container {
+    display: none !important;
+  }
+
+  /* ▼ 操作列（破棄）を非表示 */
+  #table-area table th:last-child,
+  #table-area table td:last-child {
+    display: none !important;
+  }
+
+  /* ▼ テーブル最適化 */
+  #table-area table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 12pt;
+  }
+
+  /* ▼ 列幅調整（印刷用） */
+  #table-area table th:nth-child(1),
+  #table-area table td:nth-child(1) {
+    width: 100px;
+  }
+
+  #table-area table th:nth-child(2),
+  #table-area table td:nth-child(2) {
+    width: 140px;
+  }
+
+  #table-area table th:nth-child(3),
+  #table-area table td:nth-child(3) {
+    width: 70px;
+  }
+
+  #table-area table th:nth-child(4),
+  #table-area table td:nth-child(4) {
+    width: 120px;
+  }
+
+  #table-area table th:nth-child(5),
+  #table-area table td:nth-child(5) {
+    width: 150px;
+  }
+}

@@ -12,8 +12,11 @@
   <!-- フィルタ UI 共通 CSS -->
   <link rel="stylesheet" href="/common/filter.css?v=1">
 
-  <!-- 定植一覧専用 CSS（必ず style.css/filter.css の後に読み込む） -->
+  <!-- 一覧ページ専用 CSS（定植・播種共通の印刷設定など） -->
   <link rel="stylesheet" href="/list/plantingList.css?v=1">
+
+  <!-- 播種一覧専用 CSS（列幅など） -->
+  <link rel="stylesheet" href="/list/seedList.css?v=1">
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
@@ -30,8 +33,10 @@
       <button id="btn-seed" class="secondary-btn" data-mode="seed">播種ベース</button>
     </div>
 
+    <!-- 適用中フィルタ表示 -->
     <div id="activeFilters"></div>
 
+    <!-- フィルタカード -->
     <div class="card" id="filter-card">
       <h2 class="section-title">フィルタ</h2>
       <div class="filter-open-btn" data-type="year">▶ 年月</div>
@@ -39,15 +44,18 @@
       <div class="filter-open-btn" data-type="variety">▶ 品種</div>
     </div>
 
+    <!-- 件数・サマリー -->
     <div class="card">
       <div id="countArea">0 件</div>
       <div id="summaryArea" style="margin-top:10px;"></div>
     </div>
 
+    <!-- テーブル描画領域 -->
     <div id="table-area"></div>
 
   </div>
 
+  <!-- モーダル -->
   <div id="modal-container"></div>
 
   <!-- 一覧ページのメイン JS -->
