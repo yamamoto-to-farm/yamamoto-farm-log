@@ -13,6 +13,7 @@ import {
   setFilterData
 } from "/common/filter.js";
 
+import { infoIcon } from "/common/infoIcon.js";
 import { showInfoModal } from "/common/showInfoModal.js";
 
 let plantingRows = [];
@@ -23,8 +24,6 @@ let canDiscard = false;
 
 let filterData = {};
 let initialized = false;
-
-const DEBUG = false;
 
 /* ============================================================
    CSV 正規化
@@ -195,7 +194,7 @@ function getPlantDetail(plantingRef) {
 }
 
 /* ============================================================
-   テーブル描画（アイコン完全除去版）
+   テーブル描画（アイコン復活版）
 ============================================================ */
 function renderTable(rows) {
 
@@ -235,7 +234,7 @@ function renderTable(rows) {
     const ref = r.plantingRef ?? "";
 
     html += `<tr>
-      <td>${r.plantDate ?? ""}</td>
+      <td class="plant-date-cell"><span class="info-icon-wrapper" data-id="${ref}">${infoIcon(ref, "planting")}</span><span class="plant-date-text">${r.plantDate ?? ""}</span></td>
       <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
       <td><a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>
@@ -255,6 +254,15 @@ function renderTable(rows) {
      面積合計：${totalAreaTan.toFixed(2)} 反`;
 
   tableArea.innerHTML = html;
+
+  /* ▼ info アイコンイベント */
+  document.querySelectorAll(".info-icon-wrapper").forEach(icon => {
+    icon.addEventListener("click", () => {
+      const ref = icon.dataset.id;
+      const data = getPlantDetail(ref);
+      showInfoModal(data.title, data.html);
+    });
+  });
 
   /* ▼ 破棄ボタン */
   document.querySelectorAll(".discard-btn").forEach(btn => {

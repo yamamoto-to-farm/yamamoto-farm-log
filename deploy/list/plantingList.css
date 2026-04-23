@@ -1,37 +1,50 @@
 /* ===============================
-   定植一覧専用 CSS
+   定植一覧専用 CSS（決定版）
 =============================== */
 
-/* ▼ 定植日セルの幅と折り返し防止（最重要） */
+/* ▼ 定植日列の幅と折り返し防止（最重要） */
 #table-area table th:nth-child(1),
 #table-area table td:nth-child(1) {
   width: 130px;
-  white-space: nowrap; /* ← これが無いと絶対に折り返す */
+  white-space: nowrap;
   text-align: left !important;
 }
 
-/* ▼ 定植日セル内の info アイコン配置 */
+/* ▼ 定植日セル（アイコン＋日付） */
 .plant-date-cell {
   display: flex;
-  align-items: center;
+  align-items: center;   /* ← アイコンと日付の高さを揃える */
   gap: 6px;
   line-height: 1;
-  white-space: nowrap; /* ← これが決定打 */
-  justify-content: flex-start;
+  white-space: nowrap;   /* ← 折り返し禁止 */
 }
 
-/* ▼ info アイコン */
+/* ▼ info アイコン（行の高さを絶対に押し上げない設定） */
 .info-icon-wrapper {
-  display: inline-flex;
+  display: inline-flex;      /* ← baseline 事故を防ぐ */
   align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
   cursor: pointer;
 }
 
-.info-icon-wrapper svg,
+/* ⓘ テキストアイコンの場合 */
 .info-icon {
+  display: block;            /* ← 行の高さを押し上げない */
   width: 16px;
   height: 16px;
-  display: block; /* 余白ゼロ */
+  line-height: 1;
+  color: #2b6cb0;
+  font-weight: bold;
+}
+
+/* SVG アイコンの場合も完全に抑え込む */
+.info-icon-wrapper svg {
+  width: 16px;
+  height: 16px;
+  display: block;            /* ← baseline 余白ゼロ */
   line-height: 1;
 }
 
@@ -41,8 +54,8 @@
 @media print {
 
   /* ▼ info アイコンだけ透明にする */
-  .info-icon-wrapper,
-  .info-icon {
+  .info-icon,
+  .info-icon-wrapper {
     opacity: 0 !important;
     visibility: hidden !important;
   }
