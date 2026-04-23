@@ -7,7 +7,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  line-height: 1; /* ← 行の高さを揃える */
+  line-height: 1;
+  text-align: left !important; /* ← これが最重要 */
+}
+
+/* ▼ td の右寄せを打ち消す */
+.plant-date-cell {
+  justify-content: flex-start;
 }
 
 .info-icon-wrapper {
@@ -16,11 +22,11 @@
   cursor: pointer;
 }
 
-/* ▼ SVG の余白を完全に消す（最重要） */
+/* ▼ SVG の余白を完全に消す */
 .info-icon-wrapper svg {
   width: 16px;
   height: 16px;
-  display: block; /* ← これで定植日が 2 行にならなくなる */
+  display: block;
 }
 
 /* ===============================
@@ -49,28 +55,28 @@
 
   #table-area table th:nth-child(1),
   #table-area table td:nth-child(1) {
-    width: 90px; /* 定植日 */
+    width: 90px;
   }
 
   #table-area table th:nth-child(2),
   #table-area table td:nth-child(2) {
-    width: 140px; /* 圃場 */
+    width: 140px;
   }
 
   #table-area table th:nth-child(3),
   #table-area table td:nth-child(3) {
-    width: 140px; /* 品種 */
+    width: 140px;
   }
 
   #table-area table th:nth-child(4),
   #table-area table td:nth-child(4) {
-    width: 70px; /* 面積 */
+    width: 70px;
     text-align: right;
   }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 150px; /* 播種日 */
+    width: 150px;
     white-space: nowrap;
   }
 }
