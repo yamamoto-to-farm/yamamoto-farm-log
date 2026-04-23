@@ -11,22 +11,11 @@
 
   <!-- 共通UI（認証など） -->
   <script type="module" src="/common/ui.js?v=1"></script>
-
-  <!-- KPI ロジック -->
-  <script type="module">
-    import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
-
-    // ページ描画
-    renderKpiPage();
-
-    // 更新ボタン
-    window.updateYearIndex = updateYearIndex;
-  </script>
 </head>
 
 <body>
 
-  <!-- ★ ナビバー（公開側 family/admin 用） -->
+  <!-- ★ ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
     renderNavbar();
@@ -34,7 +23,7 @@
 
   <h1>収穫KPI（月別 予定 × 実績）</h1>
 
-  <!-- ★ year-index.json 更新ボタン（必要時のみ表示） -->
+  <!-- ★ year-index.json 更新ボタン -->
   <div id="year-index-update-area" style="display:none; margin-bottom:20px;">
     <button id="update-year-index-btn" onclick="updateYearIndex()">
       year-index.json を更新
@@ -42,18 +31,25 @@
     <span id="update-status" style="margin-left:10px; color:#555;"></span>
   </div>
 
-  <!-- ★ 年ごと自動展開版はここに描画される -->
+  <!-- ★ KPI 描画エリア -->
   <div id="kpi-container">読み込み中...</div>
 
-  <!-- ★ 保存モーダル（saveLog 用） -->
+  <!-- ★ 保存モーダル -->
   <div id="save-modal" class="save-modal" style="display:none;">
     <div class="save-modal-content">
       <span id="save-modal-message">保存しています…</span>
     </div>
   </div>
 
-  <!-- 保存モーダルの JS -->
+  <!-- 保存モーダル JS -->
   <script type="module" src="/common/save-modal.js?v=2026031418"></script>
+
+  <!-- ★ harvest-kpi.js を body の最後で読み込む（重要） -->
+  <script type="module">
+    import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
+    window.updateYearIndex = updateYearIndex;
+    renderKpiPage();
+  </script>
 
 </body>
 </html>
