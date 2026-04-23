@@ -13,7 +13,6 @@ import {
   setFilterData
 } from "/common/filter.js";
 
-import { infoIcon } from "/common/infoIcon.js";
 import { showInfoModal } from "/common/showInfoModal.js";
 
 let plantingRows = [];
@@ -194,7 +193,7 @@ function getPlantDetail(plantingRef) {
 }
 
 /* ============================================================
-   テーブル描画（アイコン復活版）
+   テーブル描画（定植日クリック版）
 ============================================================ */
 function renderTable(rows) {
 
@@ -234,7 +233,7 @@ function renderTable(rows) {
     const ref = r.plantingRef ?? "";
 
     html += `<tr>
-      <td class="plant-date-cell"><span class="info-icon-wrapper" data-id="${ref}">${infoIcon(ref, "planting")}</span><span class="plant-date-text">${r.plantDate ?? ""}</span></td>
+      <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
       <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
       <td><a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>
@@ -255,10 +254,10 @@ function renderTable(rows) {
 
   tableArea.innerHTML = html;
 
-  /* ▼ info アイコンイベント */
-  document.querySelectorAll(".info-icon-wrapper").forEach(icon => {
-    icon.addEventListener("click", () => {
-      const ref = icon.dataset.id;
+  /* ▼ 定植日クリックでモーダル */
+  document.querySelectorAll(".plant-date-cell").forEach(cell => {
+    cell.addEventListener("click", () => {
+      const ref = cell.dataset.id;
       const data = getPlantDetail(ref);
       showInfoModal(data.title, data.html);
     });
