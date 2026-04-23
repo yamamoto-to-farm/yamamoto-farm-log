@@ -13,6 +13,9 @@ import {
   setFilterData
 } from "/common/filter.js";
 
+import { infoIcon } from "/common/infoIcon.js";
+import { showInfoModal } from "/common/showInfoModal.js";
+
 let plantingRows = [];
 let seedRows = [];
 let fieldData = [];
@@ -180,6 +183,40 @@ function getSeedDates(seedRef) {
 }
 
 /* ============================================================
+   ▼ モーダル用：定植詳細データ生成
+============================================================ */
+function getPlantDetail(plantingRef) {
+  const row = plantingRows.find(r => r.plantingRef === plantingRef);
+  if (!row) {
+    return {
+      title: "データなし",
+      html: "<p>該当データがありません。</p>"
+    };
+  }
+
+  return {
+    title: `定植情報：${plantingRef}`,
+    html: `
+      <p><b>株数：</b>${row.quantity}</p>
+
+      <p><b>株間（spacingRow）：</b>${row.spacingRow} cm</p>
+      <p><b>畝間（spacingBed）：</b>${row.spacingBed} cm</p>
+
+      <p><b>トレイ種別：</b>${row.trayType}</p>
+
+      <p><b>収穫予定：</b>${row.harvestPlanYM ?? ""}</p>
+
+      <p><b>seedRef：</b>${row.seedRef}</p>
+
+      <p><b>作業者（worker）：</b>${row.worker ?? ""}</p>
+      <p><b>機械：</b>${row.machine ?? ""}</p>
+
+      <p><b>メモ：</b><br>${row.notes ?? ""}</p>
+    `
+  };
+}
+
+/* ============================================================
    テーブル描画（#table-area に生成）
 ============================================================ */
 function renderTable(rows) {
@@ -232,6 +269,7 @@ function renderTable(rows) {
         <td>${getSeedDates(r.seedRef)}</td>
 
         <td>
+          ${infoIcon(ref, "planting")}
           ${canDiscard && ref
             ? `<button class="primary-btn discard-btn" data-ref="${ref}" style="padding:6px 10px; font-size:14px;">破棄</button>`
             : ""
@@ -254,6 +292,17 @@ function renderTable(rows) {
   tableArea.innerHTML = html;
 
   /* ============================================================
+     ▼ info アイコンのイベント付与
+  ============================================================ */
+  document.querySelectorAll(".info-icon").forEach(icon => {
+    icon.addEventListener("click", () => {
+      const ref = icon.dataset.id;
+      const data = getPlantDetail(ref);
+      showInfoModal(data.title, data.html);
+    });
+  });
+
+  /* ============================================================
      ▼ 破棄ボタンのイベント付与（デバッグフラグ対応）
   ============================================================ */
   document.querySelectorAll(".discard-btn").forEach(btn => {
@@ -272,7 +321,6 @@ function renderTable(rows) {
         return;
       }
 
-      // ★ encodeURIComponent を適用（安全）
       location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
     });
   });
