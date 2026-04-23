@@ -6,6 +6,21 @@
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
 // ---------------------------------------------------------
+// normalizeKeys（CSV のキーと値を整形）
+// ---------------------------------------------------------
+export function normalizeKeys(rows) {
+  return rows.map(row => {
+    const fixed = {};
+    Object.keys(row).forEach(k => {
+      const key = k.trim();
+      const val = (typeof row[k] === "string") ? row[k].trim() : row[k];
+      fixed[key] = val;
+    });
+    return fixed;
+  });
+}
+
+// ---------------------------------------------------------
 // CSV 読み込み（CloudFront → S3）
 // ---------------------------------------------------------
 export async function loadCSV(path) {

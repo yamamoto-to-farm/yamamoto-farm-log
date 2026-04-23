@@ -2,7 +2,7 @@
 // plantingList.js（定植ベース一覧）
 // ===============================
 
-import { loadCSV } from "/common/csv.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
@@ -23,21 +23,6 @@ let canDiscard = false;
 
 let filterData = {};
 let initialized = false;
-
-/* ============================================================
-   CSV 正規化
-============================================================ */
-function normalizeKeys(rows) {
-  return rows.map(row => {
-    const fixed = {};
-    Object.keys(row).forEach(k => {
-      const key = k.trim();
-      const val = (typeof row[k] === "string") ? row[k].trim() : row[k];
-      fixed[key] = val;
-    });
-    return fixed;
-  });
-}
 
 /* ============================================================
    外部から呼ばれるエントリポイント
@@ -193,7 +178,7 @@ function getPlantDetail(plantingRef) {
 }
 
 /* ============================================================
-   テーブル描画（定植日クリック版）
+   テーブル描画
 ============================================================ */
 function renderTable(rows) {
 
