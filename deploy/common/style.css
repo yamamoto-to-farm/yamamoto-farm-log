@@ -74,7 +74,7 @@ body {
 }
 
 /* ===============================
-   トップページのカテゴリ見出し（開閉する）
+   トップページのカテゴリ見出し
 =============================== */
 .menu-section-title {
     font-size: 20px;
@@ -182,7 +182,7 @@ details[open] {
 }
 
 /* ===============================
-   アコーディオン（カテゴリ開閉）
+   アコーディオン
 =============================== */
 .menu-grid {
     display: grid;
@@ -258,7 +258,7 @@ textarea { resize: vertical; }
 .contract-row input { padding: 8px; }
 
 /* ===============================
-   ボタン（既存）
+   ボタン
 =============================== */
 .primary-btn,
 .secondary-btn {
@@ -282,7 +282,7 @@ textarea { resize: vertical; }
 .primary-btn + .secondary-btn { margin-top: 14px; }
 
 /* ===============================
-   ▼ モード切り替え（定植ベース／播種ベース）
+   モード切り替え
 =============================== */
 .mode-btn {
   padding: 12px 18px;
@@ -374,7 +374,6 @@ textarea { resize: vertical; }
   z-index: 9999;
 }
 
-/* ▼ スマホで見切れないように最適化 */
 .modal {
   background: #fff;
   padding: 20px;
@@ -384,13 +383,10 @@ textarea { resize: vertical; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   position: relative;
   animation: modalFadeIn 0.15s ease-out;
-
-  /* ★ 追加：画面内に収める */
   max-height: calc(100vh - 40px);
   overflow-y: auto;
 }
 
-/* iPhone の safe-area 対策 */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .modal {
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
@@ -421,14 +417,11 @@ textarea { resize: vertical; }
   text-align: center;
 }
 
-/* ▼ フィルタ項目が長い場合のスクロール */
 .filter-children {
   display: none;
   padding: 8px 0 0 4px;
   flex-wrap: wrap;
   gap: 8px;
-
-  /* ★ 追加：スマホで見切れない */
   max-height: 50vh;
   overflow-y: auto;
 }
@@ -438,7 +431,7 @@ textarea { resize: vertical; }
 }
 
 /* ===============================
-   テーブル
+   テーブル（共通）
 =============================== */
 table {
     width: 100%;
@@ -453,130 +446,6 @@ th, td {
 th { background: #f0f0f0; text-align: center; }
 td { text-align: right; }
 tbody tr:nth-child(odd) { background: #fafafa; }
-
-/* ===============================
-   3階層ツリーフィルタ（既存）
-=============================== */
-.filter-root-block {
-    padding: 10px 12px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    margin-bottom: 14px;
-}
-
-/* ===============================
-   ★ 新規：折りたたみフィルタ（年・圃場・品種 共通）
-=============================== */
-.filter-block {
-  border-bottom: 1px solid #ddd;
-  padding: 10px 0;
-  margin-bottom: 10px;
-}
-
-.filter-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  font-size: 20px;
-  font-weight: 600;
-  padding: 6px 0;
-}
-
-.filter-header * {
-  cursor: pointer;
-}
-
-.filter-label {
-  user-select: none;
-}
-
-.filter-toggle-btn {
-  font-size: 18px;
-  padding: 4px 10px;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.2s ease;
-}
-
-.filter-block.open .filter-toggle-btn {
-  transform: rotate(180deg);
-}
-
-/* ===============================
-   印刷用設定（播種・定植一覧）
-=============================== */
-@media print {
-
-  .app-header,
-  #mode-switch-card,
-  #filter-card,
-  #activeFilters,
-  #modal-container {
-    display: none !important;
-  }
-
-  body {
-    background: #fff !important;
-    padding: 0 !important;
-  }
-
-  /* ▼ info 列（1列目）と操作列（最終列）を完全に消す */
-  #table-area table th:first-child,
-  #table-area table td:first-child,
-  #table-area table th:last-child,
-  #table-area table td:last-child {
-    visibility: collapse !important; /* ← display:none ではなく collapse */
-  }
-
-  /* ▼ 印刷時は fixed を解除して列幅を自動調整 */
-  #table-area table {
-    width: 100%;
-    font-size: 12pt;
-    border-collapse: collapse;
-    table-layout: auto !important; /* ← これが重要 */
-  }
-
-  /* ▼ 列幅（collapse 後の列番号）
-     1: 定植日
-     2: 圃場
-     3: 品種
-     4: 面積(反)
-     5: 播種日
-  */
-
-  #table-area table th:nth-child(1),
-  #table-area table td:nth-child(1) {
-    width: 90px;
-  }
-
-  #table-area table th:nth-child(2),
-  #table-area table td:nth-child(2) {
-    width: 140px;
-  }
-
-  #table-area table th:nth-child(3),
-  #table-area table td:nth-child(3) {
-    width: 140px;
-  }
-
-  #table-area table th:nth-child(4),
-  #table-area table td:nth-child(4) {
-    width: 70px;
-    text-align: right;
-  }
-
-  #table-area table th:nth-child(5),
-  #table-area table td:nth-child(5) {
-    width: 150px;
-    white-space: nowrap; /* 折り返し防止 */
-  }
-
-  @page {
-    margin: 12mm;
-  }
-}
 
 /* ===============================
    スマホ最適化

@@ -6,7 +6,12 @@
   <title>播種・定植一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- 定植一覧専用 CSS（必ず style.css の後に読み込む） -->
+  <link rel="stylesheet" href="/list/plantingList.css?v=1">
+
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
@@ -42,6 +47,7 @@
 
   <div id="modal-container"></div>
 
+  <!-- 一覧ページのメイン JS -->
   <script type="module" src="./list.js"></script>
 
   <script type="module">

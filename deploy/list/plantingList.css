@@ -1,0 +1,73 @@
+/* ===============================
+   定植一覧専用 CSS
+=============================== */
+
+/* ▼ 定植日セル内の info アイコン配置 */
+.plant-date-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.info-icon-wrapper svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===============================
+   印刷用設定（定植一覧専用）
+=============================== */
+@media print {
+
+  /* ▼ info アイコンだけ透明にする */
+  .info-icon-wrapper {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* ▼ 操作列（破棄）を非表示 */
+  #table-area table th:last-child,
+  #table-area table td:last-child {
+    display: none !important;
+  }
+
+  /* ▼ 印刷時の列幅 */
+  #table-area table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 12pt;
+  }
+
+  #table-area table th:nth-child(1),
+  #table-area table td:nth-child(1) {
+    width: 90px; /* 定植日 */
+  }
+
+  #table-area table th:nth-child(2),
+  #table-area table td:nth-child(2) {
+    width: 140px; /* 圃場 */
+  }
+
+  #table-area table th:nth-child(3),
+  #table-area table td:nth-child(3) {
+    width: 140px; /* 品種 */
+  }
+
+  #table-area table th:nth-child(4),
+  #table-area table td:nth-child(4) {
+    width: 70px; /* 面積 */
+    text-align: right;
+  }
+
+  #table-area table th:nth-child(5),
+  #table-area table td:nth-child(5) {
+    width: 150px; /* 播種日 */
+    white-space: nowrap;
+  }
+}

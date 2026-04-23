@@ -25,22 +25,17 @@ let canDiscard = false;
 let filterData = {};
 let initialized = false;
 
-// ===============================
-// デバッグフラグ
-// ===============================
 const DEBUG = false;
 
 /* ============================================================
-   ▼ CSV のキー名 + 値を正規化（完全版）
+   CSV 正規化
 ============================================================ */
 function normalizeKeys(rows) {
   return rows.map(row => {
     const fixed = {};
     Object.keys(row).forEach(k => {
       const key = k.trim();
-      const val = (typeof row[k] === "string")
-        ? row[k].trim()
-        : row[k];
+      const val = (typeof row[k] === "string") ? row[k].trim() : row[k];
       fixed[key] = val;
     });
     return fixed;
@@ -63,7 +58,7 @@ export async function renderPlantingList() {
 }
 
 /* ============================================================
-   初期化（データ読み込み・フィルタ構築）
+   初期化
 ============================================================ */
 async function initPlantingListPage() {
 
@@ -74,11 +69,6 @@ async function initPlantingListPage() {
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
-
-  if (DEBUG) {
-    console.log("🔥 plantingRows =", plantingRows);
-    console.log("🔥 seedRows =", seedRows);
-  }
 
   /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
@@ -94,7 +84,6 @@ async function initPlantingListPage() {
   /* ▼ 圃場 area → name */
   const areaMap = {};
   const areaOrder = [];
-
   fieldData.forEach(f => {
     if (!areaMap[f.area]) {
       areaMap[f.area] = [];
@@ -106,7 +95,6 @@ async function initPlantingListPage() {
   /* ▼ 品種 type → name */
   const typeMap = {};
   const typeOrder = [];
-
   varietyData.forEach(v => {
     if (!typeMap[v.type]) {
       typeMap[v.type] = [];
@@ -140,7 +128,7 @@ async function initPlantingListPage() {
 }
 
 /* ============================================================
-   フィルタ適用（年＋圃場＋品種）
+   フィルタ適用
 ============================================================ */
 function applyAllFilters(rows, state) {
 
@@ -170,7 +158,6 @@ function applyAllFilters(rows, state) {
 ============================================================ */
 function getSeedDates(seedRef) {
   if (!seedRef) return "";
-
   const clean = s => (s ?? "").replace(/\s+/g, "").trim();
   const refs = seedRef.split(",").map(s => clean(s));
 
@@ -183,7 +170,7 @@ function getSeedDates(seedRef) {
 }
 
 /* ============================================================
-   ▼ モーダル用：定植詳細データ生成（日本語ラベル版）
+   モーダル用データ
 ============================================================ */
 function getPlantDetail(plantingRef) {
   const row = plantingRows.find(r => r.plantingRef === plantingRef);
@@ -198,26 +185,20 @@ function getPlantDetail(plantingRef) {
     title: `定植情報：${plantingRef}`,
     html: `
       <p><b>株数：</b>${row.quantity}</p>
-
       <p><b>株間：</b>${row.spacingRow} cm</p>
       <p><b>畝間：</b>${row.spacingBed} cm</p>
-
       <p><b>トレイ種別：</b>${row.trayType}</p>
-
       <p><b>収穫予定：</b>${row.harvestPlanYM ?? ""}</p>
-
       <p><b>播種ID：</b>${row.seedRef}</p>
-
       <p><b>作業者：</b>${row.worker ?? ""}</p>
       <p><b>機械：</b>${row.machine ?? ""}</p>
-
       <p><b>メモ：</b><br>${row.notes ?? ""}</p>
     `
   };
 }
 
 /* ============================================================
-   テーブル描画（#table-area に生成）
+   テーブル描画
 ============================================================ */
 function renderTable(rows) {
 
@@ -227,7 +208,6 @@ function renderTable(rows) {
     <table>
       <thead>
         <tr>
-          <th></th> <!-- info アイコン列 -->
           <th>定植日</th>
           <th>圃場</th>
           <th>品種</th>
@@ -259,9 +239,13 @@ function renderTable(rows) {
 
     html += `
       <tr>
-        <td>${infoIcon(ref, "planting")}</td>
 
-        <td>${r.plantDate ?? ""}</td>
+        <td class="plant-date-cell">
+          <span class="info-icon-wrapper" data-id="${ref}">
+            ${infoIcon(ref, "planting")}
+          </span>
+          <span class="plant-date-text">${r.plantDate ?? ""}</span>
+        </td>
 
         <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
 
@@ -273,10 +257,11 @@ function renderTable(rows) {
 
         <td>
           ${canDiscard && ref
-            ? `<button class="primary-btn discard-btn" data-ref="${ref}" style="padding:6px 10px; font-size:14px;">破棄</button>`
+            ? `<button class="primary-btn discard-btn" data-ref="${ref}">破棄</button>`
             : ""
           }
         </td>
+
       </tr>
     `;
   });
@@ -293,10 +278,8 @@ function renderTable(rows) {
 
   tableArea.innerHTML = html;
 
-  /* ============================================================
-     ▼ info アイコンのイベント付与
-  ============================================================ */
-  document.querySelectorAll(".info-icon").forEach(icon => {
+  /* ▼ info アイコンイベント */
+  document.querySelectorAll(".info-icon-wrapper").forEach(icon => {
     icon.addEventListener("click", () => {
       const ref = icon.dataset.id;
       const data = getPlantDetail(ref);
@@ -304,25 +287,10 @@ function renderTable(rows) {
     });
   });
 
-  /* ============================================================
-     ▼ 破棄ボタンのイベント付与（デバッグフラグ対応）
-  ============================================================ */
+  /* ▼ 破棄ボタン */
   document.querySelectorAll(".discard-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ref = btn.dataset.ref;
-
-      if (DEBUG) {
-        console.log("🔥 破棄ボタン押下");
-        console.log("渡された ref =", ref);
-        console.log("行データ =", btn.closest("tr").innerText);
-        console.log("plantingRows[0] のキー =", Object.keys(plantingRows[0]));
-      }
-
-      if (!ref) {
-        alert("❌ ref が空です（undefined）");
-        return;
-      }
-
       location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
     });
   });
