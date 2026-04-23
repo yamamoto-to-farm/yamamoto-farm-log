@@ -445,6 +445,13 @@ th, td {
 }
 th { background: #f0f0f0; text-align: center; }
 td { text-align: right; }
+
+/* ▼ 定植日セルだけ左寄せに戻す（最重要） */
+td.plant-date-cell {
+    text-align: left !important;
+    white-space: nowrap;
+}
+
 tbody tr:nth-child(odd) { background: #fafafa; }
 
 /* ===============================
