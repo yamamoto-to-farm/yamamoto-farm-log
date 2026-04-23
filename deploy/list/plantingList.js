@@ -90,7 +90,11 @@ async function initPlantingListPage() {
     varieties: { parents: typeOrder, children: typeMap }
   };
 
+  // ▼ フィルタ UI 初期化
   setFilterData(filterData);
+
+  // ▼ list.js がモード切替時に再適用できるよう保存
+  window.plantingFilterData = filterData;
 
   document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
   document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
