@@ -543,7 +543,14 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     table-layout: fixed;
   }
 
-  /* ▼ 列幅（info列が消えるので1つずつ左にずれる） */
+  /* ▼ 印刷時の列番号（info列が消えた後の番号）
+     1: 定植日
+     2: 圃場
+     3: 品種
+     4: 面積(反)
+     5: 播種日
+  */
+
   #table-area table th:nth-child(1),
   #table-area table td:nth-child(1) {
     width: 90px; /* 定植日 */
@@ -567,7 +574,8 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 130px; /* 播種日 */
+    width: 150px; /* 播種日（広げた） */
+    white-space: nowrap; /* ← 折り返し防止 */
   }
 
   @page {
