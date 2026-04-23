@@ -509,14 +509,8 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 =============================== */
 @media print {
 
-  .app-header {
-    display: none !important;
-  }
-
-  #mode-switch-card {
-    display: none !important;
-  }
-
+  .app-header,
+  #mode-switch-card,
   #filter-card,
   #activeFilters,
   #modal-container {
@@ -528,22 +522,23 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     padding: 0 !important;
   }
 
-  /* ▼ 1列目（info）と最終列（操作）を印刷しない */
+  /* ▼ info 列（1列目）と操作列（最終列）を完全に消す */
   #table-area table th:first-child,
   #table-area table td:first-child,
   #table-area table th:last-child,
   #table-area table td:last-child {
-    display: none !important;
+    visibility: collapse !important; /* ← display:none ではなく collapse */
   }
 
+  /* ▼ 印刷時は fixed を解除して列幅を自動調整 */
   #table-area table {
     width: 100%;
     font-size: 12pt;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto !important; /* ← これが重要 */
   }
 
-  /* ▼ 印刷時の列番号（info列が消えた後の番号）
+  /* ▼ 列幅（collapse 後の列番号）
      1: 定植日
      2: 圃場
      3: 品種
@@ -553,29 +548,29 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 
   #table-area table th:nth-child(1),
   #table-area table td:nth-child(1) {
-    width: 90px; /* 定植日 */
+    width: 90px;
   }
 
   #table-area table th:nth-child(2),
   #table-area table td:nth-child(2) {
-    width: 140px; /* 圃場 */
+    width: 140px;
   }
 
   #table-area table th:nth-child(3),
   #table-area table td:nth-child(3) {
-    width: 140px; /* 品種 */
+    width: 140px;
   }
 
   #table-area table th:nth-child(4),
   #table-area table td:nth-child(4) {
-    width: 70px; /* 面積(反) */
+    width: 70px;
     text-align: right;
   }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 150px; /* 播種日（広げた） */
-    white-space: nowrap; /* ← 折り返し防止 */
+    width: 150px;
+    white-space: nowrap; /* 折り返し防止 */
   }
 
   @page {
