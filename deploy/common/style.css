@@ -567,7 +567,7 @@ tbody tr:nth-child(odd) { background: #fafafa; }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 90px; /* 播種日 */
+    width: 130px; /* 播種日 */
   }
 
   @page {
