@@ -138,7 +138,7 @@ function getPlantingRefs(seedRef) {
 }
 
 /* ============================================================
-   モーダル用データ
+   モーダル用データ（備考は削除）
 ============================================================ */
 function getSeedDetail(row) {
   return {
@@ -149,10 +149,6 @@ function getSeedDetail(row) {
       <p><b>トレイ種別：</b>${row.trayType}</p>
       <p><b>メモ：</b><br>${row.memo ?? ""}</p>
       <p><b>種子の種類：</b>${row.source ?? ""}</p>
-
-      <p><b>備考：</b><br>
-        ※予定面積は 株間：34cm / 畝間：60cm を基準に計算しています
-      </p>
     `
   };
 }
@@ -181,7 +177,7 @@ function renderTable(rows) {
           <th>播種日</th>
           <th>品種</th>
           <th>枚数</th>
-          <th>予定面積(反)</th>
+          <th id="th-area">予定面積(反)</th>
           <th>定植ID</th>
           <th>操作</th>
         </tr>
@@ -208,9 +204,15 @@ function renderTable(rows) {
 
     html += `<tr>
       <td class="seed-date-cell" data-id="${r.seedRef}">${r.seedDate ?? ""}</td>
-      <td>${r.varietyName ?? ""}</td>
+
+      <td>
+        <a href="/analysis/variety.html?variety=${encodeURIComponent(r.varietyName)}">
+          ${r.varietyName ?? ""}
+        </a>
+      </td>
+
       <td>${tray}</td>
-      <td>${areaTan.toFixed(3)}</td>
+      <td>${areaTan.toFixed(2)}</td>
       <td>${plantingHtml}</td>
       <td>${canDiscard ? `<button class="primary-btn discard-btn" data-ref="${r.seedRef}">破棄</button>` : ""}</td>
     </tr>`;
@@ -237,6 +239,18 @@ function renderTable(rows) {
       const data = getSeedDetail(row);
       showInfoModal(data.title, data.html);
     });
+  });
+
+  /* ▼ 予定面積(反) ヘッダークリックで備考モーダル */
+  document.getElementById("th-area").addEventListener("click", () => {
+    showInfoModal(
+      "予定面積の計算基準",
+      `
+        <p><b>予定面積は以下の基準で計算しています：</b></p>
+        <p>株間：34cm / 畝間：60cm</p>
+        <p>※播種一覧では実績面積ではなく、播種株数から算出した予定面積を表示します。</p>
+      `
+    );
   });
 
   /* ▼ 破棄ボタン */
