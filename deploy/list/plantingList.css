@@ -30,16 +30,18 @@
     display: none !important;
   }
 
-  /* ▼ モード切り替え（定植ベース／播種ベース）非表示 */
-  .mode-btn,
-  #mode-switch,
-  #mode-container {
+  /* ▼ モード切り替えカード（定植ベース／播種ベース）非表示 */
+  #mode-switch-card {
     display: none !important;
   }
 
   /* ▼ フィルタ UI 非表示 */
   #filter-card,
-  #activeFilters,
+  #activeFilters {
+    display: none !important;
+  }
+
+  /* ▼ モーダル非表示 */
   #modal-container {
     display: none !important;
   }
