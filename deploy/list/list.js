@@ -13,12 +13,21 @@ export function initListPage() {
   const modeParam = params.get("mode");
   if (modeParam === "seed") currentMode = "seed";
 
+  // ▼ ページ再読み込みしない高速モード切り替え
   document.getElementById("btn-planting").addEventListener("click", () => {
-    location.href = `${location.pathname}?mode=planting`;
+    if (currentMode === "planting") return;
+    currentMode = "planting";
+    history.replaceState(null, "", `${location.pathname}?mode=planting`);
+    applyModeUI();
+    renderCurrentMode();
   });
 
   document.getElementById("btn-seed").addEventListener("click", () => {
-    location.href = `${location.pathname}?mode=seed`;
+    if (currentMode === "seed") return;
+    currentMode = "seed";
+    history.replaceState(null, "", `${location.pathname}?mode=seed`);
+    applyModeUI();
+    renderCurrentMode();
   });
 
   applyModeUI();
@@ -44,5 +53,6 @@ function renderCurrentMode() {
   }
 }
 
+// ▼ フィルタ適用時は現在のモードを再描画
 window.addEventListener("filter:apply", () => renderCurrentMode());
 window.addEventListener("filter:reset", () => renderCurrentMode());

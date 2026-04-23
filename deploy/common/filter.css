@@ -1,0 +1,116 @@
+/* ===============================
+   フィルタ UI（filter.js 専用）
+=============================== */
+
+/* ▼ フィルタタグ（現在の選択表示） */
+#activeFilters {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-tag {
+  background: #e8f2ff;
+  border: 1px solid #4da3ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.filter-tag-remove {
+  cursor: pointer;
+  font-weight: bold;
+  color: #4da3ff;
+}
+
+.filter-reset-btn {
+  margin-left: 10px;
+  padding: 4px 10px;
+  background: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+/* ===============================
+   フィルタブロック（年・圃場・品種）
+=============================== */
+.filter-block {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
+  margin-bottom: 10px;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+.filter-header * {
+  cursor: pointer;
+}
+
+.filter-label {
+  user-select: none;
+}
+
+.filter-toggle-btn {
+  font-size: 18px;
+  padding: 4px 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.filter-block.open .filter-toggle-btn {
+  transform: rotate(180deg);
+}
+
+/* ===============================
+   フィルタ子要素（スクロール対応）
+=============================== */
+.filter-children {
+  display: none;
+  padding: 8px 0 0 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.filter-block.open .filter-children {
+  display: flex;
+}
+
+/* ===============================
+   選択アイテム（年・圃場・品種）
+=============================== */
+.select-item {
+  display: inline-block;
+  padding: 8px 14px;
+  margin: 6px;
+  border-radius: 6px;
+  background: #f2f2f2;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.select-item:hover {
+  background: #e3e3e3;
+}
+
+.select-item.selected {
+  background: #4da3ff;
+  color: white;
+  font-weight: bold;
+}
