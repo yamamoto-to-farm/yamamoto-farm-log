@@ -183,7 +183,7 @@ function getSeedDates(seedRef) {
 }
 
 /* ============================================================
-   ▼ モーダル用：定植詳細データ生成
+   ▼ モーダル用：定植詳細データ生成（日本語ラベル版）
 ============================================================ */
 function getPlantDetail(plantingRef) {
   const row = plantingRows.find(r => r.plantingRef === plantingRef);
@@ -199,16 +199,16 @@ function getPlantDetail(plantingRef) {
     html: `
       <p><b>株数：</b>${row.quantity}</p>
 
-      <p><b>株間（spacingRow）：</b>${row.spacingRow} cm</p>
-      <p><b>畝間（spacingBed）：</b>${row.spacingBed} cm</p>
+      <p><b>株間：</b>${row.spacingRow} cm</p>
+      <p><b>畝間：</b>${row.spacingBed} cm</p>
 
       <p><b>トレイ種別：</b>${row.trayType}</p>
 
       <p><b>収穫予定：</b>${row.harvestPlanYM ?? ""}</p>
 
-      <p><b>seedRef：</b>${row.seedRef}</p>
+      <p><b>播種ID：</b>${row.seedRef}</p>
 
-      <p><b>作業者（worker）：</b>${row.worker ?? ""}</p>
+      <p><b>作業者：</b>${row.worker ?? ""}</p>
       <p><b>機械：</b>${row.machine ?? ""}</p>
 
       <p><b>メモ：</b><br>${row.notes ?? ""}</p>
@@ -227,6 +227,7 @@ function renderTable(rows) {
     <table>
       <thead>
         <tr>
+          <th></th> <!-- info アイコン列 -->
           <th>定植日</th>
           <th>圃場</th>
           <th>品種</th>
@@ -258,6 +259,8 @@ function renderTable(rows) {
 
     html += `
       <tr>
+        <td>${infoIcon(ref, "planting")}</td>
+
         <td>${r.plantDate ?? ""}</td>
 
         <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
@@ -269,7 +272,6 @@ function renderTable(rows) {
         <td>${getSeedDates(r.seedRef)}</td>
 
         <td>
-          ${infoIcon(ref, "planting")}
           ${canDiscard && ref
             ? `<button class="primary-btn discard-btn" data-ref="${ref}" style="padding:6px 10px; font-size:14px;">破棄</button>`
             : ""
