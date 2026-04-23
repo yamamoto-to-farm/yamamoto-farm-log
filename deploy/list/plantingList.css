@@ -20,6 +20,13 @@
   background: #eef7ff;
 }
 
+/* ▼ モード切り替えの active 状態（緑色） */
+#mode-switch-card button.active {
+  background-color: #2ecc71 !important;
+  color: #ffffff !important;
+  border-color: #27ae60 !important;
+}
+
 /* ===============================
    印刷用設定（定植一覧専用）
 =============================== */
@@ -32,6 +39,12 @@
 
   /* ▼ モード切り替えカード（定植ベース／播種ベース）非表示 */
   #mode-switch-card {
+    display: none !important;
+  }
+
+  /* ▼ モード切り替えボタンも念のため非表示 */
+  #btn-planting,
+  #btn-seed {
     display: none !important;
   }
 
