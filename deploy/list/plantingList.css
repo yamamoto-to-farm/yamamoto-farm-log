@@ -2,8 +2,11 @@
    定植一覧専用 CSS
 =============================== */
 
-/* ▼ 定植日セルの右寄せを打ち消す（最重要） */
-td.plant-date-cell {
+/* ▼ 定植日セルの幅を確保して折り返しを防ぐ（最重要） */
+#table-area table th:nth-child(1),
+#table-area table td:nth-child(1) {
+  width: 130px;          /* ← 必要なら 140px にしてもOK */
+  white-space: nowrap;   /* ← 折り返し禁止 */
   text-align: left !important;
 }
 
@@ -16,17 +19,17 @@ td.plant-date-cell {
   justify-content: flex-start;
 }
 
+/* ▼ info アイコンの余白を完全に消す */
 .info-icon-wrapper {
   display: inline-flex;
   align-items: center;
   cursor: pointer;
 }
 
-/* ▼ SVG の余白を完全に消す */
 .info-icon-wrapper svg {
   width: 16px;
   height: 16px;
-  display: block;
+  display: block; /* ← 余白ゼロ */
 }
 
 /* ===============================
@@ -34,16 +37,19 @@ td.plant-date-cell {
 =============================== */
 @media print {
 
+  /* ▼ info アイコンだけ透明にする */
   .info-icon-wrapper {
     opacity: 0 !important;
     visibility: hidden !important;
   }
 
+  /* ▼ 操作列（破棄）を非表示 */
   #table-area table th:last-child,
   #table-area table td:last-child {
     display: none !important;
   }
 
+  /* ▼ 印刷時の列幅 */
   #table-area table {
     table-layout: fixed;
     width: 100%;
@@ -52,7 +58,7 @@ td.plant-date-cell {
 
   #table-area table th:nth-child(1),
   #table-area table td:nth-child(1) {
-    width: 90px;
+    width: 100px;
   }
 
   #table-area table th:nth-child(2),
