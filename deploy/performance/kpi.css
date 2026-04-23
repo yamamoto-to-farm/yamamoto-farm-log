@@ -1,0 +1,25 @@
+.kpi-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.kpi-table th,
+.kpi-table td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  text-align: right;
+}
+
+.kpi-table th:first-child,
+.kpi-table td:first-child {
+  text-align: left;
+}
+
+.diff-positive { color: #2f855a; font-weight: bold; }
+.diff-negative { color: #c53030; font-weight: bold; }
+.diff-zero { color: #333; }
+
+.kpi-block {
+  padding: 10px 0;
+}
