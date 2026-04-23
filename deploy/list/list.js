@@ -4,6 +4,7 @@
 
 import { renderPlantingList } from "./plantingList.js";
 import { renderSeedList } from "./seedList.js";
+import { setFilterData } from "/common/filter.js";
 
 let currentMode = "planting";
 
@@ -51,7 +52,7 @@ function renderCurrentMode() {
 
     // ▼ 定植ベース用フィルタを再設定
     if (window.plantingFilterData) {
-      window.setFilterData(window.plantingFilterData);
+      setFilterData(window.plantingFilterData);
     }
 
   } else {
@@ -59,16 +60,11 @@ function renderCurrentMode() {
 
     // ▼ 播種ベース用フィルタを再設定
     if (window.seedFilterData) {
-      window.setFilterData(window.seedFilterData);
+      setFilterData(window.seedFilterData);
     }
   }
 }
 
-// ▼ フィルタ適用時は現在のモードを再描画しつつフィルタ構造も再設定
-window.addEventListener("filter:apply", () => {
-  renderCurrentMode();
-});
-
-window.addEventListener("filter:reset", () => {
-  renderCurrentMode();
-});
+// ▼ フィルタ適用時は現在のモードを再描画
+window.addEventListener("filter:apply", () => renderCurrentMode());
+window.addEventListener("filter:reset", () => renderCurrentMode());
