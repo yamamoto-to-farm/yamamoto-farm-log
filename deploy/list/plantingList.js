@@ -46,12 +46,10 @@ function normalizeKeys(rows) {
    外部から呼ばれるエントリポイント
 ============================================================ */
 export async function renderPlantingList() {
-
   if (!initialized) {
     await initPlantingListPage();
     initialized = true;
   }
-
   const state = window.currentFilterState || {};
   const filtered = applyAllFilters(plantingRows, state);
   renderTable(filtered);
@@ -198,7 +196,7 @@ function getPlantDetail(plantingRef) {
 }
 
 /* ============================================================
-   テーブル描画
+   テーブル描画（改行ゼロ版）
 ============================================================ */
 function renderTable(rows) {
 
@@ -237,33 +235,14 @@ function renderTable(rows) {
 
     const ref = r.plantingRef ?? "";
 
-    html += `
-      <tr>
-
-        <td class="plant-date-cell">
-          <span class="info-icon-wrapper" data-id="${ref}">
-            ${infoIcon(ref, "planting")}
-          </span>
-          <span class="plant-date-text">${r.plantDate ?? ""}</span>
-        </td>
-
-        <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
-
-        <td><a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
-
-        <td>${areaTan.toFixed(2)}</td>
-
-        <td>${getSeedDates(r.seedRef)}</td>
-
-        <td>
-          ${canDiscard && ref
-            ? `<button class="primary-btn discard-btn" data-ref="${ref}">破棄</button>`
-            : ""
-          }
-        </td>
-
-      </tr>
-    `;
+    html += `<tr>
+      <td class="plant-date-cell"><span class="info-icon-wrapper" data-id="${ref}">${infoIcon(ref, "planting")}</span><span class="plant-date-text">${r.plantDate ?? ""}</span></td>
+      <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
+      <td><a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
+      <td>${areaTan.toFixed(2)}</td>
+      <td>${getSeedDates(r.seedRef)}</td>
+      <td>${canDiscard && ref ? `<button class="primary-btn discard-btn" data-ref="${ref}">破棄</button>` : ""}</td>
+    </tr>`;
   });
 
   html += `
