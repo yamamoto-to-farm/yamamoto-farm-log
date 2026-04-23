@@ -43,27 +43,32 @@
 }
 
 /* ===============================
+   操作列（破棄）を細くする（播種一覧専用）
+=============================== */
+
+/* ▼ 操作列の幅固定 */
+#table-area table th:last-child,
+#table-area table td:last-child {
+  width: 60px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ▼ 破棄ボタンをコンパクトに */
+.discard-btn {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* ===============================
    印刷用設定（播種一覧専用）
 =============================== */
 @media print {
 
-  /* ▼ 山本農園 OS のヘッダー非表示 */
-  .app-header {
-    display: none !important;
-  }
-
-  /* ▼ モード切り替えカード非表示（共通UI） */
-  #mode-switch-card {
-    display: none !important;
-  }
-
-  /* ▼ フィルタ UI 非表示 */
+  .app-header,
+  #mode-switch-card,
   #filter-card,
-  #activeFilters {
-    display: none !important;
-  }
-
-  /* ▼ モーダル非表示 */
+  #activeFilters,
   #modal-container {
     display: none !important;
   }

@@ -21,6 +21,24 @@
 }
 
 /* ===============================
+   操作列（破棄）を細くする
+=============================== */
+
+/* ▼ 操作列の幅固定 */
+#table-area table th:last-child,
+#table-area table td:last-child {
+  width: 60px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ▼ 破棄ボタンをコンパクトに */
+.discard-btn {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* ===============================
    モード切り替えボタン（定植ベース／播種ベース）
 =============================== */
 
@@ -29,12 +47,12 @@
   background: #e2e8f0;
   color: #333;
   border: 1px solid #cbd5e0;
-  margin-top: 0 !important; /* primary-btn の margin を無効化 */
+  margin-top: 0 !important;
 }
 
 /* ▼ アクティブ（primary-btn と同じ緑） */
 #mode-switch-card button.active {
-  background: #2f855a !important; /* primary-btn と完全一致 */
+  background: #2f855a !important;
   color: #fff !important;
   border: none !important;
 }
@@ -44,29 +62,12 @@
 =============================== */
 @media print {
 
-  /* ▼ 山本農園 OS のヘッダー非表示 */
-  .app-header {
-    display: none !important;
-  }
-
-  /* ▼ モード切り替えカード（定植ベース／播種ベース）非表示 */
-  #mode-switch-card {
-    display: none !important;
-  }
-
-  /* ▼ モード切り替えボタンも念のため非表示 */
+  .app-header,
+  #mode-switch-card,
   #btn-planting,
-  #btn-seed {
-    display: none !important;
-  }
-
-  /* ▼ フィルタ UI 非表示 */
+  #btn-seed,
   #filter-card,
-  #activeFilters {
-    display: none !important;
-  }
-
-  /* ▼ モーダル非表示 */
+  #activeFilters,
   #modal-container {
     display: none !important;
   }
