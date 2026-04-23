@@ -528,6 +528,9 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     padding: 0 !important;
   }
 
+  /* ▼ 1列目（info）と最終列（操作）を印刷しない */
+  #table-area table th:first-child,
+  #table-area table td:first-child,
   #table-area table th:last-child,
   #table-area table td:last-child {
     display: none !important;
@@ -540,30 +543,31 @@ tbody tr:nth-child(odd) { background: #fafafa; }
     table-layout: fixed;
   }
 
+  /* ▼ 列幅（info列が消えるので1つずつ左にずれる） */
   #table-area table th:nth-child(1),
   #table-area table td:nth-child(1) {
-    width: 90px;
+    width: 90px; /* 定植日 */
   }
 
   #table-area table th:nth-child(2),
   #table-area table td:nth-child(2) {
-    width: 140px;
+    width: 140px; /* 圃場 */
   }
 
   #table-area table th:nth-child(3),
   #table-area table td:nth-child(3) {
-    width: 140px;
+    width: 140px; /* 品種 */
   }
 
   #table-area table th:nth-child(4),
   #table-area table td:nth-child(4) {
-    width: 70px;
+    width: 70px; /* 面積(反) */
     text-align: right;
   }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 90px;
+    width: 90px; /* 播種日 */
   }
 
   @page {
