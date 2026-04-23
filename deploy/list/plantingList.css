@@ -2,11 +2,11 @@
    定植一覧専用 CSS
 =============================== */
 
-/* ▼ 定植日セルの幅を確保して折り返しを防ぐ（最重要） */
+/* ▼ 定植日セルの幅と折り返し防止（最重要） */
 #table-area table th:nth-child(1),
 #table-area table td:nth-child(1) {
-  width: 130px;          /* ← 必要なら 140px にしてもOK */
-  white-space: nowrap;   /* ← 折り返し禁止 */
+  width: 130px;
+  white-space: nowrap; /* ← これが無いと絶対に折り返す */
   text-align: left !important;
 }
 
@@ -16,20 +16,23 @@
   align-items: center;
   gap: 6px;
   line-height: 1;
+  white-space: nowrap; /* ← これが決定打 */
   justify-content: flex-start;
 }
 
-/* ▼ info アイコンの余白を完全に消す */
+/* ▼ info アイコン */
 .info-icon-wrapper {
   display: inline-flex;
   align-items: center;
   cursor: pointer;
 }
 
-.info-icon-wrapper svg {
+.info-icon-wrapper svg,
+.info-icon {
   width: 16px;
   height: 16px;
-  display: block; /* ← 余白ゼロ */
+  display: block; /* 余白ゼロ */
+  line-height: 1;
 }
 
 /* ===============================
@@ -38,7 +41,8 @@
 @media print {
 
   /* ▼ info アイコンだけ透明にする */
-  .info-icon-wrapper {
+  .info-icon-wrapper,
+  .info-icon {
     opacity: 0 !important;
     visibility: hidden !important;
   }
