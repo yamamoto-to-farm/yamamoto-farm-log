@@ -3,7 +3,7 @@
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
-import { saveLog } from "/common/save/index.js";
+import { saveJSON } from "/common/json.js";
 
 /* ===============================
    summary-index.json のハッシュ計算
@@ -54,9 +54,9 @@ export async function generateYearIndex() {
 }
 
 /* ===============================
-   year-index.json を保存（saveLog 統一方式）
+   year-index.json を保存（saveJSON 方式）
 =============================== */
 export async function saveYearIndex(newIndex) {
-  // saveLog(type, dateStr, jsonData, csvLine, replaceCsv)
-  await saveLog("json", "year-index.json", newIndex, "", "");
+  // CloudFront 経由で読み込む固定ファイル
+  await saveJSON("/data/year-index.json", newIndex);
 }
