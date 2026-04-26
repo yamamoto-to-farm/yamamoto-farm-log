@@ -2,53 +2,98 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>収穫KPI（月別 予定 × 実績）</title>
+  <title>kpi-year-index.js 単体テスト（デバッグ強化）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 外部CSS -->
   <link rel="stylesheet" href="/common/style.css">
-  <link rel="stylesheet" href="/performance/kpi.css">
-
-  <!-- 共通UI（認証など） -->
-  <script type="module" src="/common/ui.js?v=1"></script>
 </head>
 
 <body>
 
-  <!-- ★ ナビバー -->
+  <h1>kpi-year-index.js 単体テスト（デバッグ強化）</h1>
+
+  <button id="btn-test-hash">computeSummaryIndexHash()</button>
+  <button id="btn-test-check">checkYearIndexNeedsUpdate()</button>
+  <button id="btn-test-generate">generateYearIndex()</button>
+
+  <h2>出力</h2>
+  <pre id="output" style="margin-top:20px; background:#eee; padding:10px;"></pre>
+
+  <h2>コンソールログ</h2>
+  <p>※ F12 → Console を開いてください</p>
+
   <script type="module">
-    import { renderNavbar } from "/common/header.js?v=1.1";
-    renderNavbar();
-  </script>
+    import {
+      computeSummaryIndexHash,
+      checkYearIndexNeedsUpdate,
+      generateYearIndex
+    } from "/performance/kpi-year-index.js?v=1.1";
 
-  <h1>収穫KPI（月別 予定 × 実績）</h1>
+    import { loadYearIndex, loadSummaryIndex } from "/performance/kpi-data-loader.js";
 
-  <!-- ★ year-index.json 更新ボタン -->
-  <div id="year-index-update-area" style="display:none; margin-bottom:20px;">
-    <button id="update-year-index-btn" onclick="updateYearIndex()">
-      year-index.json を更新
-    </button>
-    <span id="update-status" style="margin-left:10px; color:#555;"></span>
-  </div>
+    const out = document.getElementById("output");
 
-  <!-- ★ KPI 描画エリア -->
-  <div id="kpi-container">読み込み中...</div>
+    function log(obj) {
+      out.textContent = JSON.stringify(obj, null, 2);
+      console.log("▼ 出力:", obj);
+    }
 
-  <!-- ★ 保存モーダル -->
-  <div id="save-modal" class="save-modal" style="display:none;">
-    <div class="save-modal-content">
-      <span id="save-modal-message">保存しています…</span>
-    </div>
-  </div>
+    // ============================
+    // 1. ハッシュ計算テスト
+    // ============================
+    document.getElementById("btn-test-hash").onclick = async () => {
+      console.log("=== TEST: computeSummaryIndexHash() ===");
 
-  <!-- 保存モーダル JS（★ パスは /common/save-modal.js） -->
-  <script type="module" src="/common/save-modal.js?v=2026031418"></script>
+      try {
+        const summaryIndex = await loadSummaryIndex();
+        console.log("summary-index.json 読み込み成功:", summaryIndex);
 
-  <!-- harvest-kpi.js は body の最後で読み込む（★ 重要） -->
-  <script type="module">
-    import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
-    window.updateYearIndex = updateYearIndex;
-    renderKpiPage();
+        const hash = await computeSummaryIndexHash();
+        console.log("計算されたハッシュ:", hash);
+
+        log({ hash, summaryIndex });
+      } catch (e) {
+        console.error("computeSummaryIndexHash エラー:", e);
+        log({ error: e.toString() });
+      }
+    };
+
+    // ============================
+    // 2. 更新チェックテスト
+    // ============================
+    document.getElementById("btn-test-check").onclick = async () => {
+      console.log("=== TEST: checkYearIndexNeedsUpdate() ===");
+
+      try {
+        const yearIndex = await loadYearIndex();
+        console.log("year-index.json 読み込み成功:", yearIndex);
+
+        const needs = await checkYearIndexNeedsUpdate(yearIndex);
+        console.log("更新が必要か:", needs);
+
+        log({ needs, yearIndex });
+      } catch (e) {
+        console.error("checkYearIndexNeedsUpdate エラー:", e);
+        log({ error: e.toString() });
+      }
+    };
+
+    // ============================
+    // 3. year-index.json 生成テスト
+    // ============================
+    document.getElementById("btn-test-generate").onclick = async () => {
+      console.log("=== TEST: generateYearIndex() ===");
+
+      try {
+        const result = await generateYearIndex();
+        console.log("生成された year-index:", result);
+
+        log(result);
+      } catch (e) {
+        console.error("generateYearIndex エラー:", e);
+        log({ error: e.toString() });
+      }
+    };
   </script>
 
 </body>
