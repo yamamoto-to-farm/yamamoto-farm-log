@@ -6,9 +6,9 @@ import { checkYearIndexNeedsUpdate, generateYearIndex, saveYearIndex } from "./k
 import { renderYearBlock, renderKpiTable } from "./kpi-render.js";
 import {
   calcAreaTanFromPlantingRow,
-  calcAreaTanFromSummaryPlanting,
   groupWeightByRef,
-  calcTargets
+  calcTargets,
+  calcHarvestAreaMonthly
 } from "./kpi-utils.js";
 
 // ===============================
@@ -29,17 +29,13 @@ export async function renderKpiPage() {
     .map(Number)
     .sort();
 
-  // <details open> により DOM が確実に構築される
   let html = years.map(y => renderYearBlock(y)).join("");
   document.getElementById("kpi-container").innerHTML = html;
 
   // KPI 描画
   for (const year of years) {
     const container = document.getElementById(`kpi-${year}`);
-    if (!container) {
-      console.error(`kpi-${year} が見つかりません`);
-      continue;
-    }
+    if (!container) continue;
     container.innerHTML = await renderKpiForYear(year, yearIndex[year]);
   }
 }
@@ -63,7 +59,7 @@ export async function updateYearIndex() {
 }
 
 // ===============================
-// 年ごとの KPI 生成（高速版）
+// 年ごとの KPI 生成（A方式）
 // ===============================
 async function renderKpiForYear(year, refList) {
   const plantingRows = await loadPlantingCSV();
@@ -96,9 +92,8 @@ async function renderKpiForYear(year, refList) {
   });
 
   // ------------------------------
-  // 収穫面積（summary.json ベース）
+  // 収穫実績（kg / 基）
   // ------------------------------
-  const areaMonthly = Array(12).fill(0);
   const actuals = { kg: Array(12).fill(0), units: Array(12).fill(0) };
 
   filteredWeightRows.forEach(row => {
@@ -108,7 +103,10 @@ async function renderKpiForYear(year, refList) {
     actuals.units[m] += Number(row.bins || 0);
   });
 
-  // summary.json 読み込み（year-index.json の refList のみ）
+  // ------------------------------
+  // summary.json 読み込み
+  // ------------------------------
+  const summaryMap = {};
   const refDatas = await Promise.all(
     refList.map(item => {
       const path = `/logs/summary/${item.field}/${item.year}/${item.file}`;
@@ -118,20 +116,17 @@ async function renderKpiForYear(year, refList) {
 
   for (let i = 0; i < refList.length; i++) {
     const item = refList[i];
-    const summary = refDatas[i];
-
-    const area = calcAreaTanFromSummaryPlanting(summary.planting);
-    const w = weightMap[item.plantingRef];
-
-    if (w && w.totalKg > 0) {
-      for (let m = 0; m < 12; m++) {
-        const ratio = w.monthlyKg[m] / w.totalKg;
-        areaMonthly[m] += area * ratio;
-      }
-    }
+    summaryMap[item.plantingRef] = refDatas[i];
   }
 
+  // ------------------------------
+  // 収穫面積（A方式：収穫量比率で面積按分）
+  // ------------------------------
+  const areaMonthly = calcHarvestAreaMonthly(refList, summaryMap, weightMap);
+
+  // ------------------------------
   // 目標値
+  // ------------------------------
   const harvestBase = await loadSummaryJSON("/data/harvestBase.json");
   const targets = calcTargets(planArea, harvestBase);
 
