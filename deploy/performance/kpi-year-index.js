@@ -58,5 +58,5 @@ export async function generateYearIndex() {
 =============================== */
 export async function saveYearIndex(newIndex) {
   // CloudFront 経由で読み込む固定ファイル
-  await saveJSON("/data/year-index.json", newIndex);
+  await saveJSON("data/year-index.json", newIndex);
 }
