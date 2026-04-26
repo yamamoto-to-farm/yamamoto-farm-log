@@ -34,7 +34,7 @@
   <!-- ★ KPI 描画エリア -->
   <div id="kpi-container">読み込み中...</div>
 
-  <!-- ★ 保存モーダル（save-modal.js に合わせた ID 名） -->
+  <!-- ★ 保存モーダル（save-modal.js と完全一致） -->
   <div id="saveModal" class="save-modal" style="display:none;">
     <div class="save-modal-content">
       <span id="saveModalMessage">保存しています…</span>
@@ -42,10 +42,10 @@
     </div>
   </div>
 
-  <!-- 保存モーダル JS（パスは /common/save-modal.js） -->
+  <!-- 保存モーダル JS -->
   <script type="module" src="/common/save-modal.js?v=2026031418"></script>
 
-  <!-- harvest-kpi.js は body の最後で読み込む（DOM 構築後に実行） -->
+  <!-- harvest-kpi.js は body の最後で読み込む -->
   <script type="module">
     import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
     window.updateYearIndex = updateYearIndex;

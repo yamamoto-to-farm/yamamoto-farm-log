@@ -58,7 +58,7 @@ export async function updateYearIndex() {
 }
 
 // ===============================
-// 年ごとの KPI 生成
+// 年ごとの KPI 生成（高速版）
 // ===============================
 async function renderKpiForYear(year, refList) {
   const plantingRows = await loadPlantingCSV();
@@ -103,7 +103,7 @@ async function renderKpiForYear(year, refList) {
     actuals.units[m] += Number(row.bins || 0);
   });
 
-  // summary.json 読み込み
+  // summary.json 読み込み（year-index.json の refList のみ）
   const refDatas = await Promise.all(
     refList.map(item => {
       const path = `/logs/summary/${item.field}/${item.year}/${item.file}`;
