@@ -2,14 +2,27 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>収穫KPI（月別 予定 × 実績）</title>
+  <title>【DEBUG】収穫KPI（月別 予定 × 実績）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- 外部CSS -->
   <link rel="stylesheet" href="/common/style.css">
   <link rel="stylesheet" href="/performance/kpi.css">
 
-  <!-- 共通UI（認証など） -->
+  <style>
+    body { padding: 20px; font-family: sans-serif; }
+    .debug-box {
+      border: 2px solid #444;
+      background: #fafafa;
+      padding: 10px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+    .ok { color: green; font-weight: bold; }
+    .ng { color: red; font-weight: bold; }
+  </style>
+
+  <!-- 共通UI -->
   <script type="module" src="/common/ui.js?v=1"></script>
 </head>
 
@@ -21,7 +34,7 @@
     renderNavbar();
   </script>
 
-  <h1>収穫KPI（月別 予定 × 実績）</h1>
+  <h1>【DEBUG】収穫KPI（月別 予定 × 実績）</h1>
 
   <!-- year-index.json 更新ボタン -->
   <div id="year-index-update-area" style="display:none; margin-bottom:20px;">
@@ -32,7 +45,13 @@
   </div>
 
   <!-- ★ harvest-kpi.js が年度ブロックを描画するメインコンテナ -->
-  <div id="kpi-container">読み込み中...</div>
+  <div id="kpi-container" style="border:2px solid blue; padding:10px;">
+    初期状態
+  </div>
+
+  <!-- ★ デバッグログ -->
+  <h2>デバッグログ</h2>
+  <div id="debug-log" class="debug-box"></div>
 
   <!-- 保存モーダル -->
   <div id="saveModal" class="save-modal" style="display:none;">
@@ -45,13 +64,66 @@
   <!-- 保存モーダル JS -->
   <script type="module" src="/common/save-modal.js?v=2026031418"></script>
 
-  <!-- harvest-kpi.js（DOM 構築後に実行） -->
+  <!-- harvest-kpi.js（デバッグ付き実行） -->
   <script type="module">
     import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
 
     window.updateYearIndex = updateYearIndex;
 
-    renderKpiPage();
+    const log = (msg) => {
+      const box = document.getElementById("debug-log");
+      box.innerHTML += msg + "\n";
+      console.log(msg);
+    };
+
+    // 1. kpi-container の存在確認
+    const kc = document.getElementById("kpi-container");
+    if (kc) log("① <span class='ok'>OK</span> kpi-container が存在します");
+    else log("① <span class='ng'>NG</span> kpi-container が存在しません");
+
+    // 2. renderKpiPage 実行
+    log("② renderKpiPage() を実行します…");
+
+    renderKpiPage().then(() => {
+      log("③ <span class='ok'>OK</span> renderKpiPage() 完了");
+
+      // 3. kpi-container の中身確認
+      const html = kc.innerHTML.trim();
+      if (html.length > 0) {
+        log("④ <span class='ok'>OK</span> kpi-container に HTML が挿入されました");
+      } else {
+        log("④ <span class='ng'>NG</span> kpi-container が空のままです");
+      }
+
+      // 4. details の存在確認
+      const details = kc.querySelector("details");
+      if (details) {
+        log("⑤ <span class='ok'>OK</span> details（年度ブロック）が生成されました");
+      } else {
+        log("⑤ <span class='ng'>NG</span> details が生成されていません");
+      }
+
+      // 5. kpi-XXXX の存在確認
+      const divs = kc.querySelectorAll("[id^='kpi-']");
+      if (divs.length > 0) {
+        log(`⑥ <span class='ok'>OK</span> kpi-XXXX ブロックが ${divs.length} 個生成されました`);
+      } else {
+        log("⑥ <span class='ng'>NG</span> kpi-XXXX ブロックが生成されていません");
+      }
+
+      // 6. テーブルの存在確認
+      const tables = kc.querySelectorAll("table.kpi-table");
+      if (tables.length > 0) {
+        log(`⑦ <span class='ok'>OK</span> KPI テーブルが ${tables.length} 個生成されました`);
+      } else {
+        log("⑦ <span class='ng'>NG</span> KPI テーブルが生成されていません");
+      }
+
+    }).catch(err => {
+      log("★ <span class='ng'>NG</span> renderKpiPage() 実行中にエラー");
+      log(err.toString());
+      console.error(err);
+    });
   </script>
 
 </body>
