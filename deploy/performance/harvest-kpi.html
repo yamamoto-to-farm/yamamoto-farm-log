@@ -45,10 +45,14 @@
   <!-- 保存モーダル JS -->
   <script type="module" src="/common/save-modal.js?v=2026031418"></script>
 
-  <!-- harvest-kpi.js は body の最後で読み込む -->
+  <!-- harvest-kpi.js は body の最後で読み込む（DOM 構築後に実行） -->
   <script type="module">
     import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
+
+    // グローバル公開（更新ボタン用）
     window.updateYearIndex = updateYearIndex;
+
+    // KPI ページ描画
     renderKpiPage();
   </script>
 
