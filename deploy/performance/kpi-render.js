@@ -44,9 +44,12 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
   return html;
 }
 
+// ===============================
+// ★ 修正ポイント：<details open> を付ける
+// ===============================
 export function renderYearBlock(year) {
   return `
-    <details>
+    <details open>
       <summary>${year} 年</summary>
       <div id="kpi-${year}" class="kpi-block">読み込み中...</div>
     </details>
