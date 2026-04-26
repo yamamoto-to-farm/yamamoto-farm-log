@@ -41,10 +41,10 @@
     </div>
   </div>
 
-  <!-- 保存モーダル JS -->
+  <!-- 保存モーダル JS（★ パスは /common/save-modal.js） -->
   <script type="module" src="/common/save-modal.js?v=2026031418"></script>
 
-  <!-- ★ harvest-kpi.js を body の最後で読み込む（重要） -->
+  <!-- harvest-kpi.js は body の最後で読み込む（★ 重要） -->
   <script type="module">
     import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
     window.updateYearIndex = updateYearIndex;
