@@ -2,64 +2,58 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>KPI Render 単体テスト</title>
+  <title>収穫KPI（月別 予定 × 実績）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- KPI 専用 CSS（表が見えるように） -->
+  <!-- 外部CSS -->
+  <link rel="stylesheet" href="/common/style.css">
   <link rel="stylesheet" href="/performance/kpi.css">
+
+  <!-- 共通UI（認証など） -->
+  <script type="module" src="/common/ui.js?v=1"></script>
 </head>
 
 <body>
 
-  <h1>KPI Render 単体テスト</h1>
-
-  <!-- 出力確認エリア -->
-  <div id="test-area" style="margin-top:20px; background:#fff; padding:20px;"></div>
-
-  <!-- kpi-render.js のみ読み込む -->
+  <!-- ★ ナビバー -->
   <script type="module">
-    import { renderYearBlock, renderKpiTable } from "/performance/kpi-render.js";
+    import { renderNavbar } from "/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
 
-    // ============================
-    // ★ テストデータ（固定値）
-    // ============================
-    const planArea = Array(12).fill(1.23);        // 予定面積
-    const areaMonthly = Array(12).fill(0.98);     // 収穫面積
-    const actuals = {
-      kg: Array(12).fill(1500),
-      units: Array(12).fill(300)
-    };
-    const targets = {
-      targetKg: Array(12).fill(2000),
-      targetUnits: Array(12).fill(350)
-    };
+  <h1>収穫KPI（月別 予定 × 実績）</h1>
 
-    // ============================
-    // ★ renderYearBlock() のテスト
-    // ============================
-    const yearBlockHTML = renderYearBlock(2025);
+  <!-- ★ year-index.json 更新ボタン -->
+  <div id="year-index-update-area" style="display:none; margin-bottom:20px;">
+    <button id="update-year-index-btn" onclick="updateYearIndex()">
+      year-index.json を更新
+    </button>
+    <span id="update-status" style="margin-left:10px; color:#555;"></span>
+  </div>
 
-    // ============================
-    // ★ renderKpiTable() のテスト
-    // ============================
-    const tableHTML = renderKpiTable(
-      planArea,
-      areaMonthly,
-      actuals,
-      targets,
-      2025
-    );
+  <!-- ★ KPI 描画エリア -->
+  <div id="kpi-container">読み込み中...</div>
 
-    // ============================
-    // ★ DOM に描画
-    // ============================
-    document.getElementById("test-area").innerHTML = `
-      <h2>renderYearBlock(2025) の出力</h2>
-      ${yearBlockHTML}
+  <!-- ★ 保存モーダル -->
+  <div id="saveModal" class="save-modal" style="display:none;">
+    <div class="save-modal-content">
+      <span id="saveModalMessage">保存しています…</span>
+      <button id="saveModalCloseBtn" style="display:none;">OK</button>
+    </div>
+  </div>
 
-      <h2 style="margin-top:40px;">renderKpiTable() の出力</h2>
-      ${tableHTML}
-    `;
+  <!-- 保存モーダル JS -->
+  <script type="module" src="/common/save-modal.js?v=2026031418"></script>
+
+  <!-- harvest-kpi.js（DOM 構築後に実行） -->
+  <script type="module">
+    import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
+
+    // 更新ボタン用に公開
+    window.updateYearIndex = updateYearIndex;
+
+    // KPI ページ描画
+    renderKpiPage();
   </script>
 
 </body>
