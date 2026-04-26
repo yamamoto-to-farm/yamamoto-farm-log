@@ -2,10 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>【DEBUG】収穫KPI（月別 予定 × 実績）</title>
+  <title>収穫KPI（月別 予定 × 実績）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 外部CSS -->
   <link rel="stylesheet" href="/common/style.css">
   <link rel="stylesheet" href="/performance/kpi.css">
 
@@ -20,110 +19,129 @@
     }
     .ok { color: green; font-weight: bold; }
     .ng { color: red; font-weight: bold; }
+    .debug-only { display:none; }
   </style>
 
-  <!-- 共通UI -->
   <script type="module" src="/common/ui.js?v=1"></script>
 </head>
 
 <body>
 
-  <!-- ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
     renderNavbar();
   </script>
 
-  <h1>【DEBUG】収穫KPI（月別 予定 × 実績）</h1>
+  <h1>収穫KPI（月別 予定 × 実績）</h1>
 
-  <!-- year-index.json 更新ボタン -->
-  <div id="year-index-update-area" style="display:none; margin-bottom:20px;">
-    <button id="update-year-index-btn" onclick="updateYearIndex()">
-      year-index.json を更新
-    </button>
-    <span id="update-status" style="margin-left:10px; color:#555;"></span>
+  <!-- ★ デバッグ用ボタン（DEBUG=true のときだけ表示） -->
+  <div id="debug-buttons" class="debug-only" style="margin-bottom:20px;">
+    <button id="btn-generate">year-index.json を再生成（保存テスト）</button>
+    <button id="btn-load">year-index.json を読み込み（確認）</button>
   </div>
 
-  <!-- ★ harvest-kpi.js が年度ブロックを描画するメインコンテナ -->
+  <!-- KPI 描画エリア -->
   <div id="kpi-container" style="border:2px solid blue; padding:10px;">
     初期状態
   </div>
 
-  <!-- ★ デバッグログ -->
-  <h2>デバッグログ</h2>
-  <div id="debug-log" class="debug-box"></div>
+  <!-- デバッグログ（DEBUG=true のときだけ表示） -->
+  <h2 id="debug-title" class="debug-only">デバッグログ</h2>
+  <div id="debug-log" class="debug-box debug-only"></div>
 
-  <!-- 保存モーダル -->
-  <div id="saveModal" class="save-modal" style="display:none;">
-    <div class="save-modal-content">
-      <span id="saveModalMessage">保存しています…</span>
-      <button id="saveModalCloseBtn" style="display:none;">OK</button>
-    </div>
-  </div>
-
-  <!-- 保存モーダル JS -->
-  <script type="module" src="/common/save-modal.js?v=2026031418"></script>
-
-  <!-- harvest-kpi.js（デバッグ付き実行） -->
   <script type="module">
-    import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.1";
+    import { generateYearIndex, saveYearIndex } from "/performance/kpi-year-index.js?v=1.1";
+    import { loadJSON } from "/common/json.js";
 
-    window.updateYearIndex = updateYearIndex;
+    // ------------------------------
+    // ★ デバッグ ON/OFF
+    // ------------------------------
+    const DEBUG = localStorage.getItem("debugKPI") === "1";
+
+    if (DEBUG) {
+      document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
+    }
 
     const log = (msg) => {
+      if (!DEBUG) return;
       const box = document.getElementById("debug-log");
       box.innerHTML += msg + "\n";
       console.log(msg);
     };
 
-    // 1. kpi-container の存在確認
-    const kc = document.getElementById("kpi-container");
-    if (kc) log("① <span class='ok'>OK</span> kpi-container が存在します");
-    else log("① <span class='ng'>NG</span> kpi-container が存在しません");
-
-    // 2. renderKpiPage 実行
+    // ------------------------------
+    // harvest-kpi.js の単体テスト（既存のまま）
+    // ------------------------------
+    log("① <span class='ok'>OK</span> kpi-container が存在します");
     log("② renderKpiPage() を実行します…");
 
     renderKpiPage().then(() => {
       log("③ <span class='ok'>OK</span> renderKpiPage() 完了");
 
-      // 3. kpi-container の中身確認
+      const kc = document.getElementById("kpi-container");
       const html = kc.innerHTML.trim();
-      if (html.length > 0) {
-        log("④ <span class='ok'>OK</span> kpi-container に HTML が挿入されました");
-      } else {
-        log("④ <span class='ng'>NG</span> kpi-container が空のままです");
-      }
 
-      // 4. details の存在確認
+      if (html.length > 0) log("④ <span class='ok'>OK</span> kpi-container に HTML が挿入されました");
+      else log("④ <span class='ng'>NG</span> kpi-container が空のままです");
+
       const details = kc.querySelector("details");
-      if (details) {
-        log("⑤ <span class='ok'>OK</span> details（年度ブロック）が生成されました");
-      } else {
-        log("⑤ <span class='ng'>NG</span> details が生成されていません");
-      }
+      if (details) log("⑤ <span class='ok'>OK</span> details（年度ブロック）が生成されました");
+      else log("⑤ <span class='ng'>NG</span> details が生成されていません");
 
-      // 5. kpi-XXXX の存在確認
       const divs = kc.querySelectorAll("[id^='kpi-']");
-      if (divs.length > 0) {
-        log(`⑥ <span class='ok'>OK</span> kpi-XXXX ブロックが ${divs.length} 個生成されました`);
-      } else {
-        log("⑥ <span class='ng'>NG</span> kpi-XXXX ブロックが生成されていません");
-      }
+      if (divs.length > 0) log(`⑥ <span class='ok'>OK</span> kpi-XXXX ブロックが ${divs.length} 個生成されました`);
+      else log("⑥ <span class='ng'>NG</span> kpi-XXXX ブロックが生成されていません");
 
-      // 6. テーブルの存在確認
       const tables = kc.querySelectorAll("table.kpi-table");
-      if (tables.length > 0) {
-        log(`⑦ <span class='ok'>OK</span> KPI テーブルが ${tables.length} 個生成されました`);
-      } else {
-        log("⑦ <span class='ng'>NG</span> KPI テーブルが生成されていません");
-      }
+      if (tables.length > 0) log(`⑦ <span class='ok'>OK</span> KPI テーブルが ${tables.length} 個生成されました`);
+      else log("⑦ <span class='ng'>NG</span> KPI テーブルが生成されていません");
 
     }).catch(err => {
       log("★ <span class='ng'>NG</span> renderKpiPage() 実行中にエラー");
       log(err.toString());
-      console.error(err);
     });
+
+    // ------------------------------
+    // year-index.json 再生成テスト（DEBUG のときだけ）
+    // ------------------------------
+    if (DEBUG) {
+      document.getElementById("btn-generate").addEventListener("click", async () => {
+        log("\n=== year-index.json 再生成テスト開始 ===");
+
+        try {
+          log("A. generateYearIndex() を実行します…");
+          const newIndex = await generateYearIndex();
+          log("B. 生成結果:");
+          log(JSON.stringify(newIndex, null, 2));
+
+          log("C. saveYearIndex() を実行します…");
+          await saveYearIndex(newIndex);
+
+          log("D. <span class='ok'>OK</span> 保存完了！");
+
+        } catch (e) {
+          log("★ <span class='ng'>NG</span> 保存処理でエラー:");
+          log(e.toString());
+        }
+      });
+
+      // ------------------------------
+      // year-index.json 読み込みテスト
+      // ------------------------------
+      document.getElementById("btn-load").addEventListener("click", async () => {
+        log("\n=== year-index.json 読み込みテスト ===");
+
+        try {
+          const data = await loadJSON("/data/year-index.json");
+          log("読み込み成功:");
+          log(JSON.stringify(data, null, 2));
+        } catch (e) {
+          log("★ <span class='ng'>NG</span> 読み込み失敗:");
+          log(e.toString());
+        }
+      });
+    }
   </script>
 
 </body>
