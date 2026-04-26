@@ -1,25 +1,66 @@
+/* ===============================
+   KPI テーブル（視認性強化）
+=============================== */
+
 .kpi-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
+  background: #fff; /* 表を確実に見えるように白背景 */
 }
 
+/* common/style.css の table/th/td を上書きするために強めの指定 */
 .kpi-table th,
 .kpi-table td {
-  border: 1px solid #ccc;
-  padding: 6px 8px;
-  text-align: right;
+  border: 1px solid #888 !important; /* 濃い線で視認性UP */
+  padding: 6px 8px !important;
+  text-align: right !important;
+  background: #fff;
 }
 
+/* 1列目だけ左寄せ */
 .kpi-table th:first-child,
 .kpi-table td:first-child {
-  text-align: left;
+  text-align: left !important;
 }
 
-.diff-positive { color: #2f855a; font-weight: bold; }
-.diff-negative { color: #c53030; font-weight: bold; }
-.diff-zero { color: #333; }
+/* 偶数行の背景色 */
+.kpi-table tbody tr:nth-child(even) {
+  background: #f7f7f7;
+}
 
+/* 差分の色付け */
+.diff-positive {
+  color: #2f855a;
+  font-weight: bold;
+}
+
+.diff-negative {
+  color: #c53030;
+  font-weight: bold;
+}
+
+.diff-zero {
+  color: #333;
+}
+
+/* KPI ブロックの余白 */
 .kpi-block {
   padding: 10px 0;
+}
+
+/* ===============================
+   年ブロック（<details> の見やすさ）
+=============================== */
+
+details > summary {
+  font-size: 1.2em;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 6px 0;
+  user-select: none;
+}
+
+details[open] {
+  margin-bottom: 10px;
 }
