@@ -2,98 +2,54 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>kpi-year-index.js 単体テスト（デバッグ強化）</title>
+  <title>収穫KPI（月別 予定 × 実績）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- 外部CSS -->
   <link rel="stylesheet" href="/common/style.css">
+  <link rel="stylesheet" href="/performance/kpi.css">
+
+  <!-- 共通UI（認証など） -->
+  <script type="module" src="/common/ui.js?v=1"></script>
 </head>
 
 <body>
 
-  <h1>kpi-year-index.js 単体テスト（デバッグ強化）</h1>
-
-  <button id="btn-test-hash">computeSummaryIndexHash()</button>
-  <button id="btn-test-check">checkYearIndexNeedsUpdate()</button>
-  <button id="btn-test-generate">generateYearIndex()</button>
-
-  <h2>出力</h2>
-  <pre id="output" style="margin-top:20px; background:#eee; padding:10px;"></pre>
-
-  <h2>コンソールログ</h2>
-  <p>※ F12 → Console を開いてください</p>
-
+  <!-- ★ ナビバー -->
   <script type="module">
-    import {
-      computeSummaryIndexHash,
-      checkYearIndexNeedsUpdate,
-      generateYearIndex
-    } from "/performance/kpi-year-index.js?v=1.1";
+    import { renderNavbar } from "/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
 
-    import { loadYearIndex, loadSummaryIndex } from "/performance/kpi-data-loader.js";
+  <h1>収穫KPI（月別 予定 × 実績）</h1>
 
-    const out = document.getElementById("output");
+  <!-- ★ year-index.json 更新ボタン -->
+  <div id="year-index-update-area" style="display:none; margin-bottom:20px;">
+    <button id="update-year-index-btn" onclick="updateYearIndex()">
+      year-index.json を更新
+    </button>
+    <span id="update-status" style="margin-left:10px; color:#555;"></span>
+  </div>
 
-    function log(obj) {
-      out.textContent = JSON.stringify(obj, null, 2);
-      console.log("▼ 出力:", obj);
-    }
+  <!-- ★ KPI 描画エリア -->
+  <div id="kpi-container">読み込み中...</div>
 
-    // ============================
-    // 1. ハッシュ計算テスト
-    // ============================
-    document.getElementById("btn-test-hash").onclick = async () => {
-      console.log("=== TEST: computeSummaryIndexHash() ===");
+  <!-- ★ 保存モーダル（save-modal.js に合わせた ID 名） -->
+  <div id="saveModal" class="save-modal" style="display:none;">
+    <div class="save-modal-content">
+      <span id="saveModalMessage">保存しています…</span>
+      <button id="saveModalCloseBtn" style="display:none;">OK</button>
+    </div>
+  </div>
 
-      try {
-        const summaryIndex = await loadSummaryIndex();
-        console.log("summary-index.json 読み込み成功:", summaryIndex);
+  <!-- 保存モーダル JS（パスは /common/save-modal.js） -->
+  <script type="module" src="/common/save-modal.js?v=2026031418"></script>
 
-        const hash = await computeSummaryIndexHash();
-        console.log("計算されたハッシュ:", hash);
-
-        log({ hash, summaryIndex });
-      } catch (e) {
-        console.error("computeSummaryIndexHash エラー:", e);
-        log({ error: e.toString() });
-      }
-    };
-
-    // ============================
-    // 2. 更新チェックテスト
-    // ============================
-    document.getElementById("btn-test-check").onclick = async () => {
-      console.log("=== TEST: checkYearIndexNeedsUpdate() ===");
-
-      try {
-        const yearIndex = await loadYearIndex();
-        console.log("year-index.json 読み込み成功:", yearIndex);
-
-        const needs = await checkYearIndexNeedsUpdate(yearIndex);
-        console.log("更新が必要か:", needs);
-
-        log({ needs, yearIndex });
-      } catch (e) {
-        console.error("checkYearIndexNeedsUpdate エラー:", e);
-        log({ error: e.toString() });
-      }
-    };
-
-    // ============================
-    // 3. year-index.json 生成テスト
-    // ============================
-    document.getElementById("btn-test-generate").onclick = async () => {
-      console.log("=== TEST: generateYearIndex() ===");
-
-      try {
-        const result = await generateYearIndex();
-        console.log("生成された year-index:", result);
-
-        log(result);
-      } catch (e) {
-        console.error("generateYearIndex エラー:", e);
-        log({ error: e.toString() });
-      }
-    };
+  <!-- harvest-kpi.js は body の最後で読み込む（DOM 構築後に実行） -->
+  <script type="module">
+    import { renderKpiPage, updateYearIndex } from "/performance/harvest-kpi.js?v=1.1";
+    window.updateYearIndex = updateYearIndex;
+    renderKpiPage();
   </script>
 
 </body>
