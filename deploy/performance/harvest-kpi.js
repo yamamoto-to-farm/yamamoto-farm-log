@@ -29,12 +29,17 @@ export async function renderKpiPage() {
     .map(Number)
     .sort();
 
+  // <details open> により DOM が確実に構築される
   let html = years.map(y => renderYearBlock(y)).join("");
   document.getElementById("kpi-container").innerHTML = html;
 
   // KPI 描画
   for (const year of years) {
     const container = document.getElementById(`kpi-${year}`);
+    if (!container) {
+      console.error(`kpi-${year} が見つかりません`);
+      continue;
+    }
     container.innerHTML = await renderKpiForYear(year, yearIndex[year]);
   }
 }
