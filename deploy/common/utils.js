@@ -29,7 +29,7 @@ export function safeFileName(name) {
     .replace(/_+/g, "_")               // _ の連続を1つに
     .replace(/^_+|_+$/g, "");          // 先頭・末尾の _ 削除
 
-  console.log("[safeFileName] before =", before, "after =", after);
+  //console.log("[safeFileName] before =", before, "after =", after);
   return after;
 }
 
