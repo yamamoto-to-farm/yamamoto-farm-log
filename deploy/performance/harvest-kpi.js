@@ -32,11 +32,13 @@ export async function renderKpiPage(filters = null) {
     .map(Number)
     .sort();
 
+  const f = filters || {};
+
   // ------------------------------
-  // 年度フィルタ（filters.years）
+  // 年度フィルタ（f.years）
   // ------------------------------
-  if (filters && filters.years.length > 0) {
-    years = years.filter(y => filters.years.includes(String(y)));
+  if (Array.isArray(f.years) && f.years.length > 0) {
+    years = years.filter(y => f.years.includes(String(y)));
   }
 
   // <details> を描画
@@ -49,20 +51,20 @@ export async function renderKpiPage(filters = null) {
     if (!container) continue;
 
     // refList を取得
-    let refList = yearIndex[year];
+    let refList = Array.isArray(yearIndex[year]) ? [...yearIndex[year]] : [];
 
     // ------------------------------
-    // 圃場フィルタ（filters.fields）
+    // 圃場フィルタ（f.fields）
     // ------------------------------
-    if (filters && filters.fields.length > 0) {
-      refList = refList.filter(ref => filters.fields.includes(ref.field));
+    if (Array.isArray(f.fields) && f.fields.length > 0) {
+      refList = refList.filter(ref => f.fields.includes(ref.field));
     }
 
     // ------------------------------
-    // 品種フィルタ（filters.varieties）
+    // 品種フィルタ（f.varieties）
     // ------------------------------
-    if (filters && filters.varieties.length > 0) {
-      refList = refList.filter(ref => filters.varieties.includes(ref.variety));
+    if (Array.isArray(f.varieties) && f.varieties.length > 0) {
+      refList = refList.filter(ref => f.varieties.includes(ref.variety));
     }
 
     // ------------------------------

@@ -1,14 +1,14 @@
 // kpi-filter.js
-// KPI（年間・月次）共通フィルタエンジン（方式B：refListフィルタ）
+// KPI（年間・月次）共通フィルタエンジン（2階層フィルタ対応）
 
 let selectedYears = [];
-let selectedFields = [];
-let selectedVarieties = [];
+let selectedFields = [];     // 子（field）
+let selectedVarieties = [];  // 子（variety）
 
 let kpiFilterData = {
   years: [],
-  fields: [],
-  varieties: []
+  fields: { parents: [], children: {} },      // { parents: ["三角畑", ...], children: { "三角畑": ["三角畑下", ...] } }
+  varieties: { parents: [], children: {} }    // { parents: ["寒玉キャベツ", ...], children: { "寒玉キャベツ": ["夏ごろも", ...] } }
 };
 
 export function setKpiFilterData(data) {
@@ -101,7 +101,7 @@ function applyKpiFilters() {
 }
 
 /* ============================================================
-   ▼ 年フィルタ
+   ▼ 年フィルタ（単層）
 ============================================================ */
 export function openKpiYearModal() {
   const container = document.getElementById("modal-container");
@@ -166,11 +166,13 @@ function updateYearSelections() {
 }
 
 /* ============================================================
-   ▼ 圃場フィルタ
+   ▼ 圃場フィルタ（2階層：area → field）
 ============================================================ */
 export function openKpiFieldModal() {
   const container = document.getElementById("modal-container");
   container.style.display = "block";
+
+  const { parents, children } = kpiFilterData.fields;
 
   container.innerHTML = `
     <div class="modal-bg" id="modal-bg">
@@ -178,8 +180,13 @@ export function openKpiFieldModal() {
         <div class="modal-close" id="modal-close">×</div>
         <h3>圃場の選択</h3>
 
-        ${kpiFilterData.fields.map(f => `
-          <div class="select-item" data-field="${f}">${f}</div>
+        ${parents.map(area => `
+          <div class="parent-item" data-parent="${area}">${area}</div>
+          <div class="child-box" data-box="${area}">
+            ${children[area].map(f => `
+              <div class="select-item" data-field="${f}">${f}</div>
+            `).join("")}
+          </div>
         `).join("")}
 
         <div class="modal-footer">
@@ -199,6 +206,16 @@ function initKpiFieldModalEvents() {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
+  // 親の開閉
+  document.querySelectorAll(".parent-item").forEach(el => {
+    el.onclick = () => {
+      const area = el.dataset.parent;
+      const box = document.querySelector(`[data-box="${area}"]`);
+      box.classList.toggle("open");
+    };
+  });
+
+  // 子の選択
   document.querySelectorAll("[data-field]").forEach(el => {
     el.onclick = () => {
       const f = el.dataset.field;
@@ -231,11 +248,13 @@ function updateFieldSelections() {
 }
 
 /* ============================================================
-   ▼ 品種フィルタ
+   ▼ 品種フィルタ（2階層：varietyType → variety）
 ============================================================ */
 export function openKpiVarietyModal() {
   const container = document.getElementById("modal-container");
   container.style.display = "block";
+
+  const { parents, children } = kpiFilterData.varieties;
 
   container.innerHTML = `
     <div class="modal-bg" id="modal-bg">
@@ -243,8 +262,13 @@ export function openKpiVarietyModal() {
         <div class="modal-close" id="modal-close">×</div>
         <h3>品種の選択</h3>
 
-        ${kpiFilterData.varieties.map(v => `
-          <div class="select-item" data-variety="${v}">${v}</div>
+        ${parents.map(type => `
+          <div class="parent-item" data-parent="${type}">${type}</div>
+          <div class="child-box" data-box="${type}">
+            ${children[type].map(v => `
+              <div class="select-item" data-variety="${v}">${v}</div>
+            `).join("")}
+          </div>
         `).join("")}
 
         <div class="modal-footer">
@@ -264,6 +288,16 @@ function initKpiVarietyModalEvents() {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
+  // 親の開閉
+  document.querySelectorAll(".parent-item").forEach(el => {
+    el.onclick = () => {
+      const type = el.dataset.parent;
+      const box = document.querySelector(`[data-box="${type}"]`);
+      box.classList.toggle("open");
+    };
+  });
+
+  // 子の選択
   document.querySelectorAll("[data-variety]").forEach(el => {
     el.onclick = () => {
       const v = el.dataset.variety;

@@ -102,17 +102,56 @@
         .map(Number)
         .sort();
 
-      // 圃場一覧
-      const fields = [...new Set(
-        years.flatMap(y => (yearIndex[y] || []).map(ref => ref.field))
-      )];
+      // ===============================
+      // 圃場フィルタ（2階層：area → field）
+      // ===============================
+      const areaMap = {};
+      const areaOrder = [];
 
-      // 品種一覧
-      const varieties = [...new Set(
-        years.flatMap(y => (yearIndex[y] || []).map(ref => ref.variety))
-      )];
+      years.forEach(y => {
+        (yearIndex[y] || []).forEach(ref => {
+          const area = ref.area;
+          const field = ref.field;
 
-      setKpiFilterData({ years, fields, varieties });
+          if (!areaMap[area]) {
+            areaMap[area] = [];
+            areaOrder.push(area);
+          }
+          if (!areaMap[area].includes(field)) {
+            areaMap[area].push(field);
+          }
+        });
+      });
+
+      // ===============================
+      // 品種フィルタ（2階層：varietyType → variety）
+      // ===============================
+      const typeMap = {};
+      const typeOrder = [];
+
+      years.forEach(y => {
+        (yearIndex[y] || []).forEach(ref => {
+          const type = ref.varietyType;
+          const variety = ref.variety;
+
+          if (!typeMap[type]) {
+            typeMap[type] = [];
+            typeOrder.push(type);
+          }
+          if (!typeMap[type].includes(variety)) {
+            typeMap[type].push(variety);
+          }
+        });
+      });
+
+      // ===============================
+      // kpi-filter.js に渡す
+      // ===============================
+      setKpiFilterData({
+        years,
+        fields: { parents: areaOrder, children: areaMap },
+        varieties: { parents: typeOrder, children: typeMap }
+      });
 
       initFilterButtons();
       initKpiPage();
