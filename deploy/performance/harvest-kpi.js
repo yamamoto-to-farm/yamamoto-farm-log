@@ -65,7 +65,9 @@ async function renderKpiForYear(year, refList) {
   const plantingRows = await loadPlantingCSV();
   const weightRows = await loadWeightCSV();
 
+  // ------------------------------
   // weight → 実績
+  // ------------------------------
   const filteredWeightRows = weightRows.filter(row => {
     const d = new Date(row.shippingDate);
     return d.getFullYear() === year;

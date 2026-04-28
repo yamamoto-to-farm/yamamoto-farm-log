@@ -8,6 +8,9 @@ export function calcAreaTanFromPlantingRow(row) {
   const qty = Number(row.quantity || 0);
   const rowSpace = Number(row.spacingRow || row["spacing.row"] || 0);
   const bedSpace = Number(row.spacingBed || row["spacing.bed"] || 0);
+
+  if (!qty || !rowSpace || !bedSpace) return 0;
+
   return (qty * rowSpace * bedSpace) / 10000000;
 }
 
@@ -15,9 +18,14 @@ export function calcAreaTanFromPlantingRow(row) {
    面積（反）計算：summary.json 用
 =============================== */
 export function calcAreaTanFromSummaryPlanting(planting) {
+  if (!planting) return 0;
+
   const qty = Number(planting.quantity || 0);
   const rowSpace = Number(planting.spacing?.row || 0);
   const bedSpace = Number(planting.spacing?.bed || 0);
+
+  if (!qty || !rowSpace || !bedSpace) return 0;
+
   return (qty * rowSpace * bedSpace) / 10000000;
 }
 
@@ -28,7 +36,7 @@ export function groupWeightByRef(weightRows, safeFileName) {
   const map = {};
 
   weightRows.forEach(row => {
-    const ref = safeFileName(row.plantingRef);
+    const ref = safeFileName(row.plantingRef || "");
     if (!ref) return;
 
     if (!map[ref]) {
@@ -40,6 +48,8 @@ export function groupWeightByRef(weightRows, safeFileName) {
     }
 
     const d = new Date(row.shippingDate);
+    if (isNaN(d)) return;
+
     const m = d.getMonth();
     const kg = Number(row.totalWeight || 0);
     const units = Number(row.bins || 0);
@@ -60,6 +70,8 @@ export function calcHarvestAreaMonthly(plantingList, summaryMap, weightMap) {
 
   for (const item of plantingList) {
     const ref = item.plantingRef;
+    if (!ref) continue;
+
     const summary = summaryMap[ref];
     const w = weightMap[ref];
 
@@ -67,10 +79,14 @@ export function calcHarvestAreaMonthly(plantingList, summaryMap, weightMap) {
 
     // 作付面積（反）
     const area = calcAreaTanFromSummaryPlanting(summary.planting);
+    if (!area) continue;
 
     // 月別収穫量比率で按分
     for (let m = 0; m < 12; m++) {
-      const ratio = w.monthlyKg[m] / w.totalKg;
+      const monthlyKg = w.monthlyKg[m] || 0;
+      if (monthlyKg <= 0) continue;
+
+      const ratio = monthlyKg / w.totalKg;
       areaMonthly[m] += area * ratio;
     }
   }
@@ -90,8 +106,11 @@ export function calcTargets(planArea, harvestBase) {
     const base = harvestBase.monthly[key];
     if (!base) continue;
 
-    targetKg[m] = planArea[m] * Number(base.yieldPerTan || 0);
-    targetUnits[m] = planArea[m] * Number(base.unitsPerTan || 0);
+    const yieldPerTan = Number(base.yieldPerTan || 0);
+    const unitsPerTan = Number(base.unitsPerTan || 0);
+
+    targetKg[m] = planArea[m] * yieldPerTan;
+    targetUnits[m] = planArea[m] * unitsPerTan;
   }
 
   return { targetKg, targetUnits };
