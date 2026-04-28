@@ -6,13 +6,13 @@
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
-  background: #fff; /* 白背景で視認性UP */
+  background: #fff;
 }
 
 /* ▼ 表の基本スタイル（強めの指定で common/style.css を上書き） */
 .kpi-table th,
 .kpi-table td {
-  border: 1px solid #888 !important; /* 播種・定植一覧と同じ濃い枠線 */
+  border: 1px solid #888 !important; /* 一覧と同じ濃い枠線 */
   padding: 6px 8px !important;
   background: #fff;
   text-align: right !important;
@@ -93,7 +93,7 @@ details[open] {
     font-size: 12pt;
   }
 
-  /* ▼ 列幅（播種・定植一覧の思想に合わせて固定） */
+  /* ▼ 列幅（一覧の思想に合わせて固定） */
   .kpi-table th:nth-child(1),
   .kpi-table td:nth-child(1) {
     width: 100px;
