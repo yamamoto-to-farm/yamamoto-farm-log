@@ -87,6 +87,9 @@
       openKpiVarietyModal
     } from "/performance/kpi-filter.js?v=1";
 
+    // ★ フィルタデータ読み込みデバッグ用フラグ
+    const DEBUG_FILTER = true; // ← 必要に応じて true / false 切り替え
+
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
       if (!ok) return;
@@ -143,6 +146,27 @@
           }
         });
       });
+
+      // ===============================
+      // デバッグ出力（フィルタデータ）
+      // ===============================
+      if (DEBUG_FILTER) {
+        console.log("[KPI-FILTER] yearIndex:", yearIndex);
+        console.log("[KPI-FILTER] years:", years);
+        console.log("[KPI-FILTER] areaOrder:", areaOrder);
+        console.log("[KPI-FILTER] areaMap:", areaMap);
+        console.log("[KPI-FILTER] typeOrder:", typeOrder);
+        console.log("[KPI-FILTER] typeMap:", typeMap);
+
+        const box = document.getElementById("debug-log");
+        document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
+        box.innerHTML += "[KPI-FILTER] yearIndex 読み込み完了\n";
+        box.innerHTML += "[KPI-FILTER] years: " + JSON.stringify(years) + "\n";
+        box.innerHTML += "[KPI-FILTER] areaOrder: " + JSON.stringify(areaOrder) + "\n";
+        box.innerHTML += "[KPI-FILTER] areaMap: " + JSON.stringify(areaMap, null, 2) + "\n";
+        box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
+        box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
+      }
 
       // ===============================
       // kpi-filter.js に渡す
