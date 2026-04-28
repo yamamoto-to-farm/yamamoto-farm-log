@@ -19,6 +19,9 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
       <tbody>
   `;
 
+  // ===============================
+  // 月別行
+  // ===============================
   for (let m = 0; m < 12; m++) {
     const diff = areaMonthly[m] - planArea[m];
     const diffClass =
@@ -40,12 +43,38 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
     `;
   }
 
+  // ===============================
+  // ★ 年間合計行（kpi-month と同じ思想）
+  // ===============================
+  const totalPlan = planArea.reduce((a, b) => a + b, 0);
+  const totalArea = areaMonthly.reduce((a, b) => a + b, 0);
+  const totalDiff = totalArea - totalPlan;
+
+  const totalTargetKg = targets.targetKg.reduce((a, b) => a + b, 0);
+  const totalActualKg = actuals.kg.reduce((a, b) => a + b, 0);
+
+  const totalTargetUnits = targets.targetUnits.reduce((a, b) => a + b, 0);
+  const totalActualUnits = actuals.units.reduce((a, b) => a + b, 0);
+
+  html += `
+      <tr class="total-row">
+        <td><strong>合計</strong></td>
+        <td><strong>${totalPlan.toFixed(2)}</strong></td>
+        <td><strong>${totalArea.toFixed(2)}</strong></td>
+        <td><strong>${totalDiff > 0 ? "+" : ""}${totalDiff.toFixed(2)}</strong></td>
+        <td><strong>${Math.round(totalTargetKg).toLocaleString()}</strong></td>
+        <td><strong>${Math.round(totalActualKg).toLocaleString()}</strong></td>
+        <td><strong>${Math.round(totalTargetUnits).toLocaleString()}</strong></td>
+        <td><strong>${Math.round(totalActualUnits).toLocaleString()}</strong></td>
+      </tr>
+  `;
+
   html += "</tbody></table>";
   return html;
 }
 
 // ===============================
-// ★ 修正ポイント：<details open> を付ける
+// 年度ブロック（<details open>）
 // ===============================
 export function renderYearBlock(year) {
   return `
