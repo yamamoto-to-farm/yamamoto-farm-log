@@ -1,198 +1,305 @@
-// harvest-kpi.js
-// KPI 年度ページ制御（A方式：収穫量比率で面積按分）
-// フィルタ対応（方式B：refList フィルタ）
+// kpi-filter.js
+// KPI（年間・月次）共通フィルタエンジン（方式B：refListフィルタ）
 
-import { loadYearIndex, loadPlantingCSV, loadWeightCSV, loadSummaryJSON } from "./kpi-data-loader.js";
-import { checkYearIndexNeedsUpdate, generateYearIndex, saveYearIndex } from "./kpi-year-index.js";
-import { renderYearBlock, renderKpiTable } from "./kpi-render.js";
-import {
-  calcAreaTanFromPlantingRow,
-  groupWeightByRef,
-  calcTargets,
-  calcHarvestAreaMonthly
-} from "./kpi-utils.js";
-import { safeFileName } from "/common/utils.js?v=1.1";
+let selectedYears = [];
+let selectedFields = [];
+let selectedVarieties = [];
 
-// ===============================
-// KPI ページ描画（フィルタ対応）
-// ===============================
-export async function renderKpiPage(filters = null) {
-  const yearIndex = await loadYearIndex();
+let kpiFilterData = {
+  years: [],
+  fields: [],
+  varieties: []
+};
 
-  // 更新チェック
-  const needsUpdate = await checkYearIndexNeedsUpdate(yearIndex);
-  if (needsUpdate) {
-    const area = document.getElementById("year-index-update-area");
-    if (area) area.style.display = "block";
-  }
-
-  // 年一覧
-  let years = Object.keys(yearIndex)
-    .filter(y => y !== "lastSummaryIndexHash")
-    .map(Number)
-    .sort();
-
-  // ------------------------------
-  // 年度フィルタ（filters.years）
-  // ------------------------------
-  if (filters && filters.years.length > 0) {
-    years = years.filter(y => filters.years.includes(String(y)));
-  }
-
-  // <details> を描画
-  document.getElementById("kpi-container").innerHTML =
-    years.map(y => renderYearBlock(y)).join("");
-
-  // 各年の KPI を描画
-  for (const year of years) {
-    const container = document.getElementById(`kpi-${year}`);
-    if (!container) continue;
-
-    // refList を取得
-    let refList = yearIndex[year];
-
-    // ------------------------------
-    // 圃場フィルタ（filters.fields）
-    // ------------------------------
-    if (filters && filters.fields.length > 0) {
-      refList = refList.filter(ref => filters.fields.includes(ref.field));
-    }
-
-    // ------------------------------
-    // 品種フィルタ（filters.varieties）
-    // ------------------------------
-    if (filters && filters.varieties.length > 0) {
-      refList = refList.filter(ref => filters.varieties.includes(ref.variety));
-    }
-
-    // ------------------------------
-    // フィルタ後の refList で KPI 再計算
-    // ------------------------------
-    container.innerHTML = await renderKpiForYear(year, refList);
-  }
+export function setKpiFilterData(data) {
+  kpiFilterData = data;
+  renderActiveFilters();
 }
 
-// ===============================
-// year-index.json 更新処理
-// ===============================
-export async function updateYearIndex() {
-  const status = document.getElementById("update-status");
-  status.textContent = "更新中...";
+/* ============================================================
+   activeFilters の描画
+============================================================ */
+function renderActiveFilters() {
+  const area = document.getElementById("activeFilters");
+  if (!area) return;
 
-  try {
-    const newIndex = await generateYearIndex();
-    await saveYearIndex(newIndex);
-    status.textContent = "更新完了！ページを再読み込みしてください。";
-  } catch (e) {
-    console.error(e);
-    status.textContent = "更新に失敗しました。";
-  }
-}
+  area.innerHTML = "";
 
-// ===============================
-// 年ごとの KPI 生成（A方式）
-// ===============================
-async function renderKpiForYear(year, refList) {
-  const plantingRows = await loadPlantingCSV();
-  const weightRows = await loadWeightCSV();
-
-  // ------------------------------
-  // weight → 実績
-  // ------------------------------
-  const filteredWeightRows = weightRows.filter(row => {
-    const d = new Date(row.shippingDate);
-    return d.getFullYear() === year;
+  selectedYears.forEach(y => {
+    const div = document.createElement("div");
+    div.className = "filter-tag";
+    div.innerHTML = `${y}<span class="filter-tag-remove" data-year="${y}">×</span>`;
+    area.appendChild(div);
   });
 
-  // ★ plantingRef を safeFileName で正規化
-  const weightMap = groupWeightByRef(filteredWeightRows, safeFileName);
+  selectedFields.forEach(f => {
+    const div = document.createElement("div");
+    div.className = "filter-tag";
+    div.innerHTML = `${f}<span class="filter-tag-remove" data-field="${f}">×</span>`;
+    area.appendChild(div);
+  });
 
-  // ------------------------------
-  // 予定面積（planting/all.csv ベース）
-  // ------------------------------
-  const planArea = Array(12).fill(0);
+  selectedVarieties.forEach(v => {
+    const div = document.createElement("div");
+    div.className = "filter-tag";
+    div.innerHTML = `${v}<span class="filter-tag-remove" data-variety="${v}">×</span>`;
+    area.appendChild(div);
+  });
 
-  plantingRows.forEach(row => {
-    const ym = row.harvestPlanYM;
-    if (!ym) return;
+  if (selectedYears.length || selectedFields.length || selectedVarieties.length) {
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "filter-reset-btn";
+    resetBtn.textContent = "全解除";
+    resetBtn.onclick = () => resetKpiFilters();
+    area.appendChild(resetBtn);
+  }
 
-    const planYear = Number(ym.split("-")[0]);
-    if (planYear !== year) return;
-
-    const month = Number(ym.split("-")[1]) - 1;
-    const area = calcAreaTanFromPlantingRow(row);
-
-    // ★ refList に含まれる ref のみ加算（方式B）
-    const ref = safeFileName(row.plantingRef);
-    if (refList.some(r => safeFileName(r.plantingRef) === ref)) {
-      planArea[month] += area;
+  document.querySelectorAll(".filter-tag-remove").forEach(el => {
+    if (el.dataset.year) {
+      el.onclick = () => {
+        selectedYears = selectedYears.filter(v => v !== el.dataset.year);
+        applyKpiFilters();
+      };
+    }
+    if (el.dataset.field) {
+      el.onclick = () => {
+        selectedFields = selectedFields.filter(v => v !== el.dataset.field);
+        applyKpiFilters();
+      };
+    }
+    if (el.dataset.variety) {
+      el.onclick = () => {
+        selectedVarieties = selectedVarieties.filter(v => v !== el.dataset.variety);
+        applyKpiFilters();
+      };
     }
   });
-
-  // ------------------------------
-  // 収穫実績（kg / 基）
-  // ------------------------------
-  const actuals = { kg: Array(12).fill(0), units: Array(12).fill(0) };
-
-  filteredWeightRows.forEach(row => {
-    const ref = safeFileName(row.plantingRef);
-
-    // ★ refList に含まれる ref のみ実績に加算（方式B）
-    if (!refList.some(r => safeFileName(r.plantingRef) === ref)) return;
-
-    const d = new Date(row.shippingDate);
-    const m = d.getMonth();
-    actuals.kg[m] += Number(row.totalWeight || 0);
-    actuals.units[m] += Number(row.bins || 0);
-  });
-
-  // ------------------------------
-  // summary.json 読み込み
-  // ------------------------------
-  const summaryMap = {};
-  const refDatas = await Promise.all(
-    refList.map(item => {
-      const path = `/logs/summary/${item.field}/${item.year}/${item.file}`;
-      return loadSummaryJSON(path);
-    })
-  );
-
-  for (let i = 0; i < refList.length; i++) {
-    const item = refList[i];
-    const ref = safeFileName(item.plantingRef);
-    summaryMap[ref] = refDatas[i];
-  }
-
-  // ------------------------------
-  // 収穫面積（A方式：収穫量比率で面積按分）
-  // ------------------------------
-  const normalizedRefList = refList.map(item => ({
-    ...item,
-    plantingRef: safeFileName(item.plantingRef)
-  }));
-
-  const areaMonthly = calcHarvestAreaMonthly(
-    normalizedRefList,
-    summaryMap,
-    weightMap
-  );
-
-  // ------------------------------
-  // 目標値
-  // ------------------------------
-  const harvestBase = await loadSummaryJSON("/data/harvestBase.json");
-  const targets = calcTargets(planArea, harvestBase);
-
-  // ------------------------------
-  // KPI テーブル生成（合計行付き）
-  // ------------------------------
-  return renderKpiTable(planArea, areaMonthly, actuals, targets, year);
 }
 
-// ===============================
-// ▼ KPI フィルタイベントを受け取る
-// ===============================
-window.addEventListener("kpi-filter:apply", (e) => {
-  const filters = e.detail;
-  renderKpiPage(filters);
-});
+/* ============================================================
+   全解除
+============================================================ */
+export function resetKpiFilters() {
+  selectedYears = [];
+  selectedFields = [];
+  selectedVarieties = [];
+  applyKpiFilters();
+  window.dispatchEvent(new Event("kpi-filter:reset"));
+}
+
+/* ============================================================
+   KPI フィルタ適用
+============================================================ */
+function applyKpiFilters() {
+  const state = {
+    years: selectedYears,
+    fields: selectedFields,
+    varieties: selectedVarieties
+  };
+  renderActiveFilters();
+  window.dispatchEvent(new CustomEvent("kpi-filter:apply", { detail: state }));
+}
+
+/* ============================================================
+   ▼ 年フィルタ
+============================================================ */
+export function openKpiYearModal() {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  container.innerHTML = `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-close" id="modal-close">×</div>
+        <h3>年度の選択</h3>
+
+        ${kpiFilterData.years.map(y => `
+          <div class="select-item" data-year="${y}">${y}</div>
+        `).join("")}
+
+        <div class="modal-footer">
+          <button class="primary-btn" id="apply">適用</button>
+          <button class="secondary-btn" id="clear">クリア</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  initKpiYearModalEvents();
+}
+
+function initKpiYearModalEvents() {
+  document.getElementById("modal-close").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = (e) => {
+    if (e.target.classList.contains("modal-bg")) closeModal();
+  };
+
+  document.querySelectorAll("[data-year]").forEach(el => {
+    el.onclick = () => {
+      const y = el.dataset.year;
+      if (selectedYears.includes(y)) {
+        selectedYears = selectedYears.filter(v => v !== y);
+      } else {
+        selectedYears.push(y);
+      }
+      updateYearSelections();
+    };
+  });
+
+  document.getElementById("clear").onclick = () => {
+    selectedYears = [];
+    updateYearSelections();
+  };
+
+  document.getElementById("apply").onclick = () => {
+    applyKpiFilters();
+    closeModal();
+  };
+
+  updateYearSelections();
+}
+
+function updateYearSelections() {
+  document.querySelectorAll("[data-year]").forEach(el => {
+    el.classList.toggle("selected", selectedYears.includes(el.dataset.year));
+  });
+}
+
+/* ============================================================
+   ▼ 圃場フィルタ
+============================================================ */
+export function openKpiFieldModal() {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  container.innerHTML = `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-close" id="modal-close">×</div>
+        <h3>圃場の選択</h3>
+
+        ${kpiFilterData.fields.map(f => `
+          <div class="select-item" data-field="${f}">${f}</div>
+        `).join("")}
+
+        <div class="modal-footer">
+          <button class="primary-btn" id="apply">適用</button>
+          <button class="secondary-btn" id="clear">クリア</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  initKpiFieldModalEvents();
+}
+
+function initKpiFieldModalEvents() {
+  document.getElementById("modal-close").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = (e) => {
+    if (e.target.classList.contains("modal-bg")) closeModal();
+  };
+
+  document.querySelectorAll("[data-field]").forEach(el => {
+    el.onclick = () => {
+      const f = el.dataset.field;
+      if (selectedFields.includes(f)) {
+        selectedFields = selectedFields.filter(v => v !== f);
+      } else {
+        selectedFields.push(f);
+      }
+      updateFieldSelections();
+    };
+  });
+
+  document.getElementById("clear").onclick = () => {
+    selectedFields = [];
+    updateFieldSelections();
+  };
+
+  document.getElementById("apply").onclick = () => {
+    applyKpiFilters();
+    closeModal();
+  };
+
+  updateFieldSelections();
+}
+
+function updateFieldSelections() {
+  document.querySelectorAll("[data-field]").forEach(el => {
+    el.classList.toggle("selected", selectedFields.includes(el.dataset.field));
+  });
+}
+
+/* ============================================================
+   ▼ 品種フィルタ
+============================================================ */
+export function openKpiVarietyModal() {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  container.innerHTML = `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-close" id="modal-close">×</div>
+        <h3>品種の選択</h3>
+
+        ${kpiFilterData.varieties.map(v => `
+          <div class="select-item" data-variety="${v}">${v}</div>
+        `).join("")}
+
+        <div class="modal-footer">
+          <button class="primary-btn" id="apply">適用</button>
+          <button class="secondary-btn" id="clear">クリア</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  initKpiVarietyModalEvents();
+}
+
+function initKpiVarietyModalEvents() {
+  document.getElementById("modal-close").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = (e) => {
+    if (e.target.classList.contains("modal-bg")) closeModal();
+  };
+
+  document.querySelectorAll("[data-variety]").forEach(el => {
+    el.onclick = () => {
+      const v = el.dataset.variety;
+      if (selectedVarieties.includes(v)) {
+        selectedVarieties = selectedVarieties.filter(x => x !== v);
+      } else {
+        selectedVarieties.push(v);
+      }
+      updateVarietySelections();
+    };
+  });
+
+  document.getElementById("clear").onclick = () => {
+    selectedVarieties = [];
+    updateVarietySelections();
+  };
+
+  document.getElementById("apply").onclick = () => {
+    applyKpiFilters();
+    closeModal();
+  };
+
+  updateVarietySelections();
+}
+
+function updateVarietySelections() {
+  document.querySelectorAll("[data-variety]").forEach(el => {
+    el.classList.toggle("selected", selectedVarieties.includes(el.dataset.variety));
+  });
+}
+
+/* ============================================================
+   モーダルを閉じる
+============================================================ */
+function closeModal() {
+  const container = document.getElementById("modal-container");
+  container.innerHTML = "";
+  container.style.display = "none";
+}
