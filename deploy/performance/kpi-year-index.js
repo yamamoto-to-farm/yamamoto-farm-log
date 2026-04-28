@@ -1,9 +1,15 @@
 // kpi-year-index.js
-// year-index.json の生成・更新・ハッシュ管理（area / varietyType 対応）
+// year-index.json の生成・更新・ハッシュ管理（area / varietyType 対応 + デバッグ付き）
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
 import { saveJSON, loadJSON } from "/common/json.js";
+
+/* ===============================
+   デバッグフラグ
+   true にすると fields / varieties / mapping を console に出力
+=============================== */
+const DEBUG_YEAR_INDEX = true;
 
 /* ===============================
    summary-index.json のハッシュ計算
@@ -28,18 +34,34 @@ export async function generateYearIndex() {
   const summaryIndex = await loadSummaryIndex();
 
   // ▼ fields.json / varieties.json を読み込む
-  const fields = await loadJSON("data/fields.json");
-  const varieties = await loadJSON("data/varieties.json");
+  const fields = await loadJSON("/data/fields.json?v=1");
+  const varieties = await loadJSON("/data/varieties.json?v=1");
+
+  if (DEBUG_YEAR_INDEX) {
+    console.log("=== [DEBUG] fields.json ===");
+    console.log(fields);
+
+    console.log("=== [DEBUG] varieties.json ===");
+    console.log(varieties);
+  }
 
   // ▼ field → area マップ
   const fieldMap = Object.fromEntries(
-    fields.map(f => [f.name, f.area])
+    (fields || []).map(f => [f.name, f.area])
   );
 
   // ▼ variety → type マップ
   const varietyMap = Object.fromEntries(
-    varieties.map(v => [v.name, v.type])
+    (varieties || []).map(v => [v.name, v.type])
   );
+
+  if (DEBUG_YEAR_INDEX) {
+    console.log("=== [DEBUG] fieldMap (field → area) ===");
+    console.log(fieldMap);
+
+    console.log("=== [DEBUG] varietyMap (variety → type) ===");
+    console.log(varietyMap);
+  }
 
   const result = {};
   const currentHash = await computeSummaryIndexHash();
@@ -56,8 +78,15 @@ export async function generateYearIndex() {
         const planYear = Number(planYM.split("-")[0]);
 
         const variety = planting.variety ?? "";
-        const area = fieldMap[field] ?? "";
-        const varietyType = varietyMap[variety] ?? "";
+
+        // ★ マッピング
+        const area = fieldMap[field] ?? null;
+        const varietyType = varietyMap[variety] ?? null;
+
+        if (DEBUG_YEAR_INDEX) {
+          console.log(`[DEBUG] field="${field}" → area="${area}"`);
+          console.log(`[DEBUG] variety="${variety}" → varietyType="${varietyType}"`);
+        }
 
         const plantingRef = file.replace(".json", "");
 
@@ -77,6 +106,12 @@ export async function generateYearIndex() {
   }
 
   result.lastSummaryIndexHash = currentHash;
+
+  if (DEBUG_YEAR_INDEX) {
+    console.log("=== [DEBUG] year-index.json (生成結果) ===");
+    console.log(result);
+  }
+
   return result;
 }
 
