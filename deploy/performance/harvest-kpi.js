@@ -1,5 +1,5 @@
 // harvest-kpi.js
-// ページ制御（最小限）
+// KPI 年度ページ制御（A方式：収穫量比率で面積按分）
 
 import { loadYearIndex, loadPlantingCSV, loadWeightCSV, loadSummaryJSON } from "./kpi-data-loader.js";
 import { checkYearIndexNeedsUpdate, generateYearIndex, saveYearIndex } from "./kpi-year-index.js";
@@ -18,19 +18,23 @@ import { safeFileName } from "/common/utils.js?v=1.1";
 export async function renderKpiPage() {
   const yearIndex = await loadYearIndex();
 
+  // 更新チェック
   const needsUpdate = await checkYearIndexNeedsUpdate(yearIndex);
   if (needsUpdate) {
     document.getElementById("year-index-update-area").style.display = "block";
   }
 
+  // 年一覧
   const years = Object.keys(yearIndex)
     .filter(y => y !== "lastSummaryIndexHash")
     .map(Number)
     .sort();
 
-  let html = years.map(y => renderYearBlock(y)).join("");
-  document.getElementById("kpi-container").innerHTML = html;
+  // <details> を描画
+  document.getElementById("kpi-container").innerHTML =
+    years.map(y => renderYearBlock(y)).join("");
 
+  // 各年の KPI を描画
   for (const year of years) {
     const container = document.getElementById(`kpi-${year}`);
     if (!container) continue;
@@ -48,7 +52,6 @@ export async function updateYearIndex() {
   try {
     const newIndex = await generateYearIndex();
     await saveYearIndex(newIndex);
-
     status.textContent = "更新完了！ページを再読み込みしてください。";
   } catch (e) {
     console.error(e);
@@ -117,10 +120,7 @@ async function renderKpiForYear(year, refList) {
 
   for (let i = 0; i < refList.length; i++) {
     const item = refList[i];
-
-    // ★ plantingRef を safeFileName で正規化
     const ref = safeFileName(item.plantingRef);
-
     summaryMap[ref] = refDatas[i];
   }
 
@@ -144,5 +144,8 @@ async function renderKpiForYear(year, refList) {
   const harvestBase = await loadSummaryJSON("/data/harvestBase.json");
   const targets = calcTargets(planArea, harvestBase);
 
+  // ------------------------------
+  // KPI テーブル生成（合計行付き）
+  // ------------------------------
   return renderKpiTable(planArea, areaMonthly, actuals, targets, year);
 }
