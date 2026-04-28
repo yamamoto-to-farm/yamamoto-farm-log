@@ -1,5 +1,6 @@
 // harvest-kpi.js
 // KPI 年度ページ制御（A方式：収穫量比率で面積按分）
+// フィルタ対応（方式B：refList フィルタ）
 
 import { loadYearIndex, loadPlantingCSV, loadWeightCSV, loadSummaryJSON } from "./kpi-data-loader.js";
 import { checkYearIndexNeedsUpdate, generateYearIndex, saveYearIndex } from "./kpi-year-index.js";
@@ -13,22 +14,30 @@ import {
 import { safeFileName } from "/common/utils.js?v=1.1";
 
 // ===============================
-// KPI ページ描画
+// KPI ページ描画（フィルタ対応）
 // ===============================
-export async function renderKpiPage() {
+export async function renderKpiPage(filters = null) {
   const yearIndex = await loadYearIndex();
 
   // 更新チェック
   const needsUpdate = await checkYearIndexNeedsUpdate(yearIndex);
   if (needsUpdate) {
-    document.getElementById("year-index-update-area").style.display = "block";
+    const area = document.getElementById("year-index-update-area");
+    if (area) area.style.display = "block";
   }
 
   // 年一覧
-  const years = Object.keys(yearIndex)
+  let years = Object.keys(yearIndex)
     .filter(y => y !== "lastSummaryIndexHash")
     .map(Number)
     .sort();
+
+  // ------------------------------
+  // 年度フィルタ（filters.years）
+  // ------------------------------
+  if (filters && filters.years.length > 0) {
+    years = years.filter(y => filters.years.includes(String(y)));
+  }
 
   // <details> を描画
   document.getElementById("kpi-container").innerHTML =
@@ -38,7 +47,28 @@ export async function renderKpiPage() {
   for (const year of years) {
     const container = document.getElementById(`kpi-${year}`);
     if (!container) continue;
-    container.innerHTML = await renderKpiForYear(year, yearIndex[year]);
+
+    // refList を取得
+    let refList = yearIndex[year];
+
+    // ------------------------------
+    // 圃場フィルタ（filters.fields）
+    // ------------------------------
+    if (filters && filters.fields.length > 0) {
+      refList = refList.filter(ref => filters.fields.includes(ref.field));
+    }
+
+    // ------------------------------
+    // 品種フィルタ（filters.varieties）
+    // ------------------------------
+    if (filters && filters.varieties.length > 0) {
+      refList = refList.filter(ref => filters.varieties.includes(ref.variety));
+    }
+
+    // ------------------------------
+    // フィルタ後の refList で KPI 再計算
+    // ------------------------------
+    container.innerHTML = await renderKpiForYear(year, refList);
   }
 }
 
@@ -92,7 +122,11 @@ async function renderKpiForYear(year, refList) {
     const month = Number(ym.split("-")[1]) - 1;
     const area = calcAreaTanFromPlantingRow(row);
 
-    planArea[month] += area;
+    // ★ refList に含まれる ref のみ加算（方式B）
+    const ref = safeFileName(row.plantingRef);
+    if (refList.some(r => safeFileName(r.plantingRef) === ref)) {
+      planArea[month] += area;
+    }
   });
 
   // ------------------------------
@@ -101,6 +135,11 @@ async function renderKpiForYear(year, refList) {
   const actuals = { kg: Array(12).fill(0), units: Array(12).fill(0) };
 
   filteredWeightRows.forEach(row => {
+    const ref = safeFileName(row.plantingRef);
+
+    // ★ refList に含まれる ref のみ実績に加算（方式B）
+    if (!refList.some(r => safeFileName(r.plantingRef) === ref)) return;
+
     const d = new Date(row.shippingDate);
     const m = d.getMonth();
     actuals.kg[m] += Number(row.totalWeight || 0);
@@ -149,3 +188,11 @@ async function renderKpiForYear(year, refList) {
   // ------------------------------
   return renderKpiTable(planArea, areaMonthly, actuals, targets, year);
 }
+
+// ===============================
+// ▼ KPI フィルタイベントを受け取る
+// ===============================
+window.addEventListener("kpi-filter:apply", (e) => {
+  const filters = e.detail;
+  renderKpiPage(filters);
+});
