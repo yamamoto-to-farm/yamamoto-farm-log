@@ -28,8 +28,8 @@ export async function generateYearIndex() {
   const summaryIndex = await loadSummaryIndex();
 
   // ▼ fields.json / varieties.json を読み込む
-  const fields = await loadJSON("/data/fields.json");
-  const varieties = await loadJSON("/data/varieties.json");
+  const fields = await loadJSON("data/fields.json");
+  const varieties = await loadJSON("data/varieties.json");
 
   // ▼ field → area マップ
   const fieldMap = Object.fromEntries(
