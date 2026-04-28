@@ -1,83 +1,58 @@
 /* ===============================
-   KPI テーブル（播種・定植一覧と統一）
+   KPI 専用（style.css を継承）
 =============================== */
 
-.kpi-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-  background: #fff;
-}
-
-/* ▼ 表の基本スタイル（強めの指定で common/style.css を上書き） */
-.kpi-table th,
-.kpi-table td {
-  border: 1px solid #888 !important; /* 一覧と同じ濃い枠線 */
-  padding: 6px 8px !important;
-  background: #fff;
-  text-align: right !important;
-  font-size: 14px;
-}
-
-/* ▼ 1列目だけ左寄せ（一覧と統一） */
+/* ▼ 1列目だけ左寄せ（style.css は右寄せなので上書き） */
 .kpi-table th:first-child,
 .kpi-table td:first-child {
   text-align: left !important;
 }
 
-/* ▼ 偶数行の背景色（一覧と統一） */
-.kpi-table tbody tr:nth-child(even) {
-  background: #f7f7f7;
-}
-
-/* ▼ hover 行（一覧と統一） */
-.kpi-table tbody tr:hover {
+/* ▼ hover（style.css には hover がないので追加） */
+.kpi-table tbody tr:hover td {
   background: #eef7ff;
 }
 
-/* ▼ 差分の色付け（既存維持） */
+/* ▼ 差分の色付け（KPI 専用） */
 .diff-positive {
   color: #2f855a;
   font-weight: bold;
 }
-
 .diff-negative {
   color: #c53030;
   font-weight: bold;
 }
-
 .diff-zero {
   color: #333;
 }
 
-/* ▼ 合計行（強調） */
-.kpi-table .total-row {
+/* ▼ 合計行（KPI 専用強調） */
+.kpi-table .total-row td {
   background: #e2e8f0 !important;
   font-weight: bold;
 }
 
 /* ===============================
-   年ブロック（<details> の見やすさ）
+   年ブロック（<details>）
 =============================== */
-
 details > summary {
-  font-size: 1.2em;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 20px 0 12px;
+  color: #333;
   cursor: pointer;
-  padding: 6px 0;
   user-select: none;
 }
 
 details[open] {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   margin-bottom: 10px;
 }
 
 /* ===============================
-   印刷用（播種・定植一覧と統一）
+   印刷用（style.css と整合）
 =============================== */
 @media print {
-
-  /* ▼ ヘッダーなど非表示 */
   .app-header,
   #year-index-update-area,
   #debug-buttons,
@@ -86,52 +61,15 @@ details[open] {
     display: none !important;
   }
 
-  /* ▼ テーブル最適化 */
   .kpi-table {
     table-layout: fixed;
     width: 100%;
     font-size: 12pt;
   }
 
-  /* ▼ 列幅（一覧の思想に合わせて固定） */
-  .kpi-table th:nth-child(1),
-  .kpi-table td:nth-child(1) {
-    width: 100px;
+  .kpi-table th:first-child,
+  .kpi-table td:first-child {
+    width: 90px;
     white-space: nowrap;
-  }
-
-  .kpi-table th:nth-child(2),
-  .kpi-table td:nth-child(2) {
-    width: 120px;
-  }
-
-  .kpi-table th:nth-child(3),
-  .kpi-table td:nth-child(3) {
-    width: 120px;
-  }
-
-  .kpi-table th:nth-child(4),
-  .kpi-table td:nth-child(4) {
-    width: 80px;
-  }
-
-  .kpi-table th:nth-child(5),
-  .kpi-table td:nth-child(5) {
-    width: 120px;
-  }
-
-  .kpi-table th:nth-child(6),
-  .kpi-table td:nth-child(6) {
-    width: 120px;
-  }
-
-  .kpi-table th:nth-child(7),
-  .kpi-table td:nth-child(7) {
-    width: 120px;
-  }
-
-  .kpi-table th:nth-child(8),
-  .kpi-table td:nth-child(8) {
-    width: 120px;
   }
 }
