@@ -10,6 +10,7 @@ import {
   calcTargets,
   calcHarvestAreaMonthly
 } from "./kpi-utils.js";
+import { safeFileName } from "/common/utils.js?v=1.1";
 
 // ===============================
 // KPI ページ描画
@@ -17,13 +18,11 @@ import {
 export async function renderKpiPage() {
   const yearIndex = await loadYearIndex();
 
-  // 更新チェック
   const needsUpdate = await checkYearIndexNeedsUpdate(yearIndex);
   if (needsUpdate) {
     document.getElementById("year-index-update-area").style.display = "block";
   }
 
-  // 年一覧描画
   const years = Object.keys(yearIndex)
     .filter(y => y !== "lastSummaryIndexHash")
     .map(Number)
@@ -32,7 +31,6 @@ export async function renderKpiPage() {
   let html = years.map(y => renderYearBlock(y)).join("");
   document.getElementById("kpi-container").innerHTML = html;
 
-  // KPI 描画
   for (const year of years) {
     const container = document.getElementById(`kpi-${year}`);
     if (!container) continue;
@@ -73,7 +71,8 @@ async function renderKpiForYear(year, refList) {
     return d.getFullYear() === year;
   });
 
-  const weightMap = groupWeightByRef(filteredWeightRows, x => x);
+  // ★ plantingRef を safeFileName で正規化
+  const weightMap = groupWeightByRef(filteredWeightRows, safeFileName);
 
   // ------------------------------
   // 予定面積（planting/all.csv ベース）
@@ -118,13 +117,26 @@ async function renderKpiForYear(year, refList) {
 
   for (let i = 0; i < refList.length; i++) {
     const item = refList[i];
-    summaryMap[item.plantingRef] = refDatas[i];
+
+    // ★ plantingRef を safeFileName で正規化
+    const ref = safeFileName(item.plantingRef);
+
+    summaryMap[ref] = refDatas[i];
   }
 
   // ------------------------------
   // 収穫面積（A方式：収穫量比率で面積按分）
   // ------------------------------
-  const areaMonthly = calcHarvestAreaMonthly(refList, summaryMap, weightMap);
+  const normalizedRefList = refList.map(item => ({
+    ...item,
+    plantingRef: safeFileName(item.plantingRef)
+  }));
+
+  const areaMonthly = calcHarvestAreaMonthly(
+    normalizedRefList,
+    summaryMap,
+    weightMap
+  );
 
   // ------------------------------
   // 目標値
