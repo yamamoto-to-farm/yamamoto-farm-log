@@ -1,35 +1,41 @@
 /* ===============================
-   KPI テーブル（視認性強化）
+   KPI テーブル（播種・定植一覧と統一）
 =============================== */
 
 .kpi-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
-  background: #fff; /* 表を確実に見えるように白背景 */
+  background: #fff; /* 白背景で視認性UP */
 }
 
-/* common/style.css の table/th/td を上書きするために強めの指定 */
+/* ▼ 表の基本スタイル（強めの指定で common/style.css を上書き） */
 .kpi-table th,
 .kpi-table td {
-  border: 1px solid #888 !important; /* 濃い線で視認性UP */
+  border: 1px solid #888 !important; /* 播種・定植一覧と同じ濃い枠線 */
   padding: 6px 8px !important;
-  text-align: right !important;
   background: #fff;
+  text-align: right !important;
+  font-size: 14px;
 }
 
-/* 1列目だけ左寄せ */
+/* ▼ 1列目だけ左寄せ（一覧と統一） */
 .kpi-table th:first-child,
 .kpi-table td:first-child {
   text-align: left !important;
 }
 
-/* 偶数行の背景色 */
+/* ▼ 偶数行の背景色（一覧と統一） */
 .kpi-table tbody tr:nth-child(even) {
   background: #f7f7f7;
 }
 
-/* 差分の色付け */
+/* ▼ hover 行（一覧と統一） */
+.kpi-table tbody tr:hover {
+  background: #eef7ff;
+}
+
+/* ▼ 差分の色付け（既存維持） */
 .diff-positive {
   color: #2f855a;
   font-weight: bold;
@@ -44,9 +50,10 @@
   color: #333;
 }
 
-/* KPI ブロックの余白 */
-.kpi-block {
-  padding: 10px 0;
+/* ▼ 合計行（強調） */
+.kpi-table .total-row {
+  background: #e2e8f0 !important;
+  font-weight: bold;
 }
 
 /* ===============================
@@ -63,4 +70,68 @@ details > summary {
 
 details[open] {
   margin-bottom: 10px;
+}
+
+/* ===============================
+   印刷用（播種・定植一覧と統一）
+=============================== */
+@media print {
+
+  /* ▼ ヘッダーなど非表示 */
+  .app-header,
+  #year-index-update-area,
+  #debug-buttons,
+  #debug-title,
+  #debug-log {
+    display: none !important;
+  }
+
+  /* ▼ テーブル最適化 */
+  .kpi-table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 12pt;
+  }
+
+  /* ▼ 列幅（播種・定植一覧の思想に合わせて固定） */
+  .kpi-table th:nth-child(1),
+  .kpi-table td:nth-child(1) {
+    width: 100px;
+    white-space: nowrap;
+  }
+
+  .kpi-table th:nth-child(2),
+  .kpi-table td:nth-child(2) {
+    width: 120px;
+  }
+
+  .kpi-table th:nth-child(3),
+  .kpi-table td:nth-child(3) {
+    width: 120px;
+  }
+
+  .kpi-table th:nth-child(4),
+  .kpi-table td:nth-child(4) {
+    width: 80px;
+  }
+
+  .kpi-table th:nth-child(5),
+  .kpi-table td:nth-child(5) {
+    width: 120px;
+  }
+
+  .kpi-table th:nth-child(6),
+  .kpi-table td:nth-child(6) {
+    width: 120px;
+  }
+
+  .kpi-table th:nth-child(7),
+  .kpi-table td:nth-child(7) {
+    width: 120px;
+  }
+
+  .kpi-table th:nth-child(8),
+  .kpi-table td:nth-child(8) {
+    width: 120px;
+  }
 }
