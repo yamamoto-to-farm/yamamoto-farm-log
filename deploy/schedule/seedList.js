@@ -41,11 +41,21 @@ async function initRows() {
 /* -----------------------------------------
    面積計算（トレイタイプ対応）
 ----------------------------------------- */
-function calcAreaFromTray(count, trayType) {
-  if (!count || !trayType) return "";
-  const factor = trayType === "128" ? 0.003 : 0.002; // 仮値
-  return (count * factor).toFixed(2);
+function calcAreaFromTray(trayCount, trayType) {
+  if (!trayCount || !trayType) return "";
+
+  const holes = trayType === "128" ? 128 : 200; // 1枚あたりの株数
+  const seedCount = trayCount * holes;
+
+  const spacingRow = 34;
+  const spacingBed = 60;
+
+  const areaM2 = calcAreaM2(seedCount, spacingRow, spacingBed);
+  const areaTan = calcAreaTan(areaM2);
+
+  return areaTan.toFixed(2);
 }
+
 
 /* -----------------------------------------
    定植予定日計算
