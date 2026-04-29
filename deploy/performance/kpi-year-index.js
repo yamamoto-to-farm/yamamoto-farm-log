@@ -1,5 +1,5 @@
 // kpi-year-index.js
-// year-index.json を CSV だけで生成する決定版
+// year-index.json を CSV だけで生成する決定版（揺れ吸収版）
 // ・name = CSV.field（唯一の正）
 // ・area = fields.json.name[name]
 // ・folder = summary のフォルダ名（読み込み用）
@@ -11,6 +11,25 @@ import { saveJSON, loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
 const DEBUG = true;
+
+/* ---------------------------------------------------------
+   plantingRef の揺れを吸収する正規化関数
+   ・全角数字 → 半角
+   ・全角/異体ハイフン → 半角ハイフン
+   ・括弧除去
+   ・空白除去
+   ・CR除去
+--------------------------------------------------------- */
+function normalizeRef(ref) {
+  if (!ref) return "";
+  return ref
+    .replace(/[()（）]/g, "")
+    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[‐‑‒–—―]/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/\r/g, "")
+    .trim();
+}
 
 export async function computeSummaryIndexHash() {
   const summaryIndex = await loadSummaryIndex();
@@ -30,20 +49,18 @@ export async function generateYearIndex() {
 
   // ▼ fields.json（CSV.field と一致する name を持つ）
   const fields = await loadJSON("/data/fields.json");
-  const fieldAreaMap = Object.fromEntries(
-    fields.map(f => [f.name, f.area])
-  );
+  const fieldAreaMap = Object.fromEntries(fields.map(f => [f.name, f.area]));
 
   // ▼ varieties.json
   const varieties = await loadJSON("/data/varieties.json");
-  const varietyTypeMap = Object.fromEntries(
-    varieties.map(v => [v.name, v.type])
-  );
+  const varietyTypeMap = Object.fromEntries(varieties.map(v => [v.name, v.type]));
 
-  // ▼ CSV の plantingRef → CSV 行
-  const csvRefMap = Object.fromEntries(
-    plantingRows.map(r => [r.plantingRef, r])
-  );
+  // ▼ CSV の plantingRef → CSV 行（正規化してマップ化）
+  const csvRefMap = {};
+  for (const r of plantingRows) {
+    const key = normalizeRef(r.plantingRef);
+    csvRefMap[key] = r;
+  }
 
   const result = {};
   const currentHash = await computeSummaryIndexHash();
@@ -56,18 +73,21 @@ export async function generateYearIndex() {
           `/logs/summary/${folderField}/${year}/${file}`
         );
 
-        const plantingRef = summary?.planting?.plantingRef
-          ?? file.replace(".json", "");
+        const rawRef =
+          summary?.planting?.plantingRef ??
+          file.replace(".json", "");
 
-        const csvRow = csvRefMap[plantingRef];
+        const normRef = normalizeRef(rawRef);
+
+        const csvRow = csvRefMap[normRef];
 
         if (!csvRow) {
-          console.warn("[WARN] CSV に存在しない plantingRef:", plantingRef);
+          console.warn("[WARN] CSV に存在しない plantingRef:", rawRef);
           continue;
         }
 
-        const name = csvRow.field;        // ← CSV が唯一の正
-        const area = fieldAreaMap[name];  // ← fields.json から取得
+        const name = csvRow.field;               // CSV が唯一の正
+        const area = fieldAreaMap[name] ?? null; // fields.json から取得
         const variety = csvRow.variety;
         const varietyType = varietyTypeMap[variety] ?? null;
 
@@ -83,7 +103,7 @@ export async function generateYearIndex() {
           year,
           file,
           folder: folderField,  // summary 読み込み用
-          plantingRef
+          plantingRef: rawRef
         });
       }
     }
@@ -97,5 +117,6 @@ export async function generateYearIndex() {
 }
 
 export async function saveYearIndex(newIndex) {
-  await saveJSON("data/year-index.json", newIndex);
+  // ★ 読み込み側と必ず同じパスにする（先頭 / 必須）
+  await saveJSON("/data/year-index.json", newIndex);
 }
