@@ -20,6 +20,8 @@
       white-space: pre-wrap;
     }
     .debug-only { display:none; }
+    #activeFilters { margin-bottom: 12px; font-size: 14px; color: #333; }
+    #activeFilters .chip { display:inline-block; padding:6px 10px; background:#eef; border-radius:16px; margin-right:6px; }
   </style>
 
   <script type="module" src="/common/ui.js?v=1"></script>
@@ -60,7 +62,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.2";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.3";
     import { loadJSON } from "/common/json.js";
     import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {
@@ -83,20 +85,23 @@
       document.getElementById("page-area").style.display = "block";
 
       /* ===============================
-         ▼ planting/all.csv & varieties.json から
-            フィルタ用データを構築
+         ▼ planting/all.csv, weight/all.csv & varieties.json から
+            フィルタ用データを構築（年は shippingDate ベース）
       =============================== */
       const plantingRows = normalizeKeys(
         await loadCSV("/logs/planting/all.csv")
       );
+      const weightRows = normalizeKeys(
+        await loadCSV("/logs/weight/all.csv")
+      );
       const varietiesData = await loadJSON("/data/varieties.json");
 
-      // 年一覧（harvestPlanYM の year）
+      // 年一覧（weightRows の shippingDate の year を基準にする）
       const years = [...new Set(
-        plantingRows
-          .map(r => r.harvestPlanYM)
+        weightRows
+          .map(r => r.shippingDate)
           .filter(Boolean)
-          .map(ym => Number(ym.split("-")[0]))
+          .map(d => new Date(d).getFullYear())
       )].sort();
 
       // 品種タイプマップ（varietyType → varieties）
@@ -130,13 +135,14 @@
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
 
         box.innerHTML += "[KPI-FILTER] plantingRows 読み込み完了\n";
-        box.innerHTML += "[KPI-FILTER] years: " + JSON.stringify(years) + "\n";
+        box.innerHTML += "[KPI-FILTER] weightRows 読み込み完了\n";
+        box.innerHTML += "[KPI-FILTER] years (shippingDate): " + JSON.stringify(years) + "\n";
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(varietyTypeMap, null, 2) + "\n";
       }
 
       /* ===============================
-         ▼ kpi-filter.js に渡す
+         ▼ kpi-filter.js に渡す（年は shippingDate ベース）
       =============================== */
       setKpiFilterData({
         years,
@@ -157,6 +163,22 @@
       });
     }
 
+    function setActiveFiltersUI(filters) {
+      const container = document.getElementById("activeFilters");
+      if (!filters || (Array.isArray(filters.years) && filters.years.length === 0 && (!filters.varieties || filters.varieties.length === 0))) {
+        container.innerHTML = "";
+        return;
+      }
+      const parts = [];
+      if (Array.isArray(filters.years) && filters.years.length > 0) {
+        parts.push(`<span class="chip">年: ${filters.years.join(", ")}</span>`);
+      }
+      if (Array.isArray(filters.varieties) && filters.varieties.length > 0) {
+        parts.push(`<span class="chip">品種: ${filters.varieties.join(", ")}</span>`);
+      }
+      container.innerHTML = parts.join(" ");
+    }
+
     async function initKpiPage() {
       const DEBUG = localStorage.getItem("debugKPI") === "1";
 
@@ -171,15 +193,31 @@
       };
 
       log("① OK kpi-container が存在します");
-      log("② renderKpiPage() を実行します…");
+      log("② renderKpiPage() を実行します（デフォルト: 今年のみ）…");
+
+      // デフォルト年フィルタを今年に設定（renderKpiPage 側でも保険あり）
+      const currentYear = new Date().getFullYear();
+      // ここは UI 側での初期表示。実際の有効年は renderKpiPage が weightRows を見て決める。
+      const defaultFilters = { years: [String(currentYear)] };
+      setActiveFiltersUI(defaultFilters);
 
       try {
-        await renderKpiPage();
+        await renderKpiPage(defaultFilters);
         log("③ OK renderKpiPage() 完了");
       } catch (err) {
         log("★ NG renderKpiPage() エラー\n" + err.toString());
       }
     }
+
+    // kpi-filter.js がフィルタ適用時にカスタムイベントを投げる想定
+    // activeFilters UI を更新して renderKpiPage を呼ぶ
+    window.addEventListener("kpi-filter:apply", (e) => {
+      const detail = e.detail || {};
+      // detail.years / detail.varieties を期待
+      setActiveFiltersUI(detail);
+      // renderKpiPage は harvest-kpi.js 側でキャッシュ制御を行う
+      renderKpiPage(detail);
+    });
   </script>
 
 </body>

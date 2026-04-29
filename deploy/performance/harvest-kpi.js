@@ -1,5 +1,7 @@
 // harvest-kpi.js
 // KPI 年度ページ（CSV 直接集計版 / shippingDate ベース / month-kpi と完全一致）
+// v1.3 - summary-index.json キャッシュ化 + findSummaryPath の逆引きマップ最適化
+// さらに renderKpiPage は filters が未指定の場合に「今年のみ」をデフォルト適用
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
@@ -13,60 +15,106 @@ import {
 } from "./kpi-utils.js";
 
 /* ---------------------------------------------------------
-   summary-index.json から summary.json の場所を探す
+   summary-index.json キャッシュ & 逆引きマップ
+   - ページ内で一度だけ読み込む
+   - ref -> path のマップを作って高速検索
 --------------------------------------------------------- */
-async function findSummaryPath(ref) {
-  const index = await loadJSON("/data/summary-index.json");
+let _summaryIndexCache = null;
+let _summaryRefMap = null;
 
-  for (const fld in index) {
-    for (const y in index[fld]) {
-      for (const f of index[fld][y]) {
+function parseYearFromDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.getFullYear();
+}
+
+/**
+ * summary-index.json を読み込み、ref -> path の逆引きマップを作る
+ */
+async function _ensureSummaryIndex() {
+  if (_summaryRefMap) return;
+
+  // 読み込み
+  _summaryIndexCache = await loadJSON("/data/summary-index.json");
+  _summaryRefMap = {};
+
+  // index の構造: { fld: { year: [file.json, ...], ... }, ... }
+  for (const fld in _summaryIndexCache) {
+    for (const y in _summaryIndexCache[fld]) {
+      for (const f of _summaryIndexCache[fld][y]) {
         const fRef = safeFileName(f.replace(".json", ""));
-        if (fRef === ref) {
-          return `/logs/summary/${fld}/${y}/${f}`;
+        // 先に見つかったものを優先（通常は一意）
+        if (!_summaryRefMap[fRef]) {
+          _summaryRefMap[fRef] = `/logs/summary/${fld}/${y}/${f}`;
         }
       }
     }
   }
-  return null;
+}
+
+/**
+ * findSummaryPath(ref)
+ * - ref は normalizedRef（safeFileName された値）を想定
+ * - summary-index.json を一度だけ読み込み、逆引きマップから高速に返す
+ */
+async function findSummaryPath(ref) {
+  await _ensureSummaryIndex();
+  return _summaryRefMap[ref] || null;
 }
 
 /* ---------------------------------------------------------
    KPI ページ描画（shippingDate ベース）
+   - filters が null の場合は「今年のみ」をデフォルト適用
 --------------------------------------------------------- */
 export async function renderKpiPage(filters = null) {
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   const weightRows   = normalizeKeys(await loadCSV("/logs/weight/all.csv"));
+  const harvestBase  = await loadJSON("/data/harvestBase.json");
 
-  // ▼ shippingDate の年から年度一覧を作る（月次と完全一致）
+  // shippingDate の年から年度一覧を作る（月次と完全一致)
   let years = [...new Set(
-    weightRows.map(r => new Date(r.shippingDate).getFullYear())
+    weightRows
+      .map(r => parseYearFromDate(r.shippingDate))
+      .filter(Number.isInteger)
   )].sort();
 
+  // デフォルトフィルタ: 指定がなければ今年のみを描画
+  const currentYear = new Date().getFullYear();
   const f = filters || {};
+  if (!Array.isArray(f.years) || f.years.length === 0) {
+    if (years.includes(currentYear)) {
+      f.years = [String(currentYear)];
+    } else if (years.length > 0) {
+      f.years = [String(years[years.length - 1])];
+    } else {
+      f.years = [];
+    }
+  }
 
-  // 年フィルタ
   if (Array.isArray(f.years) && f.years.length > 0) {
     years = years.filter(y => f.years.includes(String(y)));
   }
 
-  // <details> を描画
-  document.getElementById("kpi-container").innerHTML =
-    years.map(y => renderYearBlock(y)).join("");
+  const container = document.getElementById("kpi-container");
+  if (!container) return;
 
-  // 各年の KPI を描画
+  container.innerHTML = years.map(y => renderYearBlock(y)).join("");
+
   for (const year of years) {
-    const container = document.getElementById(`kpi-${year}`);
-    if (!container) continue;
+    const yearContainer = document.getElementById(`kpi-${year}`);
+    if (!yearContainer) continue;
 
-    // ▼ shippingDate ベースで refList を作る（月次と完全一致）
     const refsInYear = weightRows
-      .filter(r => new Date(r.shippingDate).getFullYear() === year)
-      .map(r => safeFileName(r.plantingRef));
+      .filter(r => {
+        const yearValue = parseYearFromDate(r.shippingDate);
+        return yearValue === year;
+      })
+      .map(r => safeFileName(r.plantingRef))
+      .filter(Boolean);
 
     const uniqueRefs = [...new Set(refsInYear)];
 
-    // ▼ planting 情報を付与
     let refList = uniqueRefs.map(ref => {
       const row = plantingRows.find(p =>
         safeFileName(p.plantingRef) === ref
@@ -79,29 +127,21 @@ export async function renderKpiPage(filters = null) {
       };
     });
 
-    // 品種フィルタ
     if (Array.isArray(f.varieties) && f.varieties.length > 0) {
       refList = refList.filter(r => f.varieties.includes(r.variety));
     }
 
-    container.innerHTML = await renderKpiForYear(year, refList);
+    yearContainer.innerHTML = await renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase);
   }
 }
 
 /* ---------------------------------------------------------
    年ごとの KPI 生成（shippingDate ベース）
 --------------------------------------------------------- */
-async function renderKpiForYear(year, refList) {
-  const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
-  const weightRows   = normalizeKeys(await loadCSV("/logs/weight/all.csv"));
-
-  /* ------------------------------
-     実績（shippingDate → ref ごと）
-     ※ month-kpi と完全一致
-  ------------------------------ */
+async function renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase) {
   const filteredWeightRows = weightRows.filter(row => {
-    const d = new Date(row.shippingDate);
-    return d.getFullYear() === year;
+    const rowYear = parseYearFromDate(row.shippingDate);
+    return rowYear === year;
   });
 
   const weightMap = groupWeightByRef(filteredWeightRows, (ref) =>
@@ -144,17 +184,27 @@ async function renderKpiForYear(year, refList) {
   });
 
   /* ------------------------------
-     summary.json 読み込み
+     summary.json 読み込み（refList に含まれるもののみ）
+     - findSummaryPath はキャッシュ化済みで高速
   ------------------------------ */
   const summaryMap = {};
 
-  for (const item of refList) {
+  // 並列で path を解決して読み込む（存在しないものはスキップ）
+  await _ensureSummaryIndex();
+
+  const loadPromises = refList.map(async (item) => {
     const ref = item.normalizedRef;
     const path = await findSummaryPath(ref);
-    if (!path) continue;
+    if (!path) return;
+    try {
+      summaryMap[ref] = await loadJSON(path);
+    } catch (err) {
+      // 読み込み失敗は無視して続行（ログが必要なら外部で出す）
+      console.warn(`summary.json load failed for ${path}:`, err);
+    }
+  });
 
-    summaryMap[ref] = await loadJSON(path);
-  }
+  await Promise.all(loadPromises);
 
   /* ------------------------------
      収穫面積（A方式）
@@ -168,7 +218,6 @@ async function renderKpiForYear(year, refList) {
   /* ------------------------------
      目標値
   ------------------------------ */
-  const harvestBase = await loadJSON("/data/harvestBase.json");
   const targets = calcTargets(planArea, harvestBase);
 
   /* ------------------------------
@@ -181,5 +230,12 @@ async function renderKpiForYear(year, refList) {
    フィルタイベント
 --------------------------------------------------------- */
 window.addEventListener("kpi-filter:apply", (e) => {
-  renderKpiPage(e.detail);
+  // フィルタ適用時はキャッシュを再利用するが、必要なら強制再読み込みオプションを受け付ける
+  const detail = e.detail || {};
+  if (detail.forceRefreshSummaryIndex) {
+    // キャッシュをクリアして次回の検索で再読み込みさせる
+    _summaryIndexCache = null;
+    _summaryRefMap = null;
+  }
+  renderKpiPage(detail);
 });
