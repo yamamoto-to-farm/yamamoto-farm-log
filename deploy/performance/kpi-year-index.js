@@ -1,72 +1,49 @@
 // kpi-year-index.js
-// year-index.json の生成・更新・ハッシュ管理
-// ・logs/planting/all.csv の field 列と fields.json.name を突き合わせて area を決定
-// ・year-index.json では "name" を圃場名として使う
+// year-index.json を CSV だけで生成する決定版
+// ・name = CSV.field（唯一の正）
+// ・area = fields.json.name[name]
+// ・folder = summary のフォルダ名（読み込み用）
+// ・summary の field は一切使わない
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
 import { saveJSON, loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
-/* ===============================
-   デバッグフラグ
-=============================== */
-const DEBUG_YEAR_INDEX = true;
+const DEBUG = true;
 
-/* ===============================
-   summary-index.json のハッシュ計算
-=============================== */
 export async function computeSummaryIndexHash() {
   const summaryIndex = await loadSummaryIndex();
   return sha256(JSON.stringify(summaryIndex));
 }
 
-/* ===============================
-   更新が必要かどうか判定
-=============================== */
 export async function checkYearIndexNeedsUpdate(yearIndex) {
   const currentHash = await computeSummaryIndexHash();
   return yearIndex.lastSummaryIndexHash !== currentHash;
 }
 
-/* ===============================
-   year-index.json の生成
-=============================== */
 export async function generateYearIndex() {
   const summaryIndex = await loadSummaryIndex();
 
-  // ▼ fields.json / varieties.json を読み込む
-  const fields = await loadJSON("/data/fields.json");
-  const varieties = await loadJSON("/data/varieties.json");
-
-  // ▼ 播種・定植 CSV を読み込む
+  // ▼ CSV（唯一の正）
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
 
-  // CSV に実際に出てくる圃場名だけを対象にする
-  const csvFieldSet = new Set(
-    plantingRows
-      .map(r => r.field)
-      .filter(f => !!f)
+  // ▼ fields.json（CSV.field と一致する name を持つ）
+  const fields = await loadJSON("/data/fields.json");
+  const fieldAreaMap = Object.fromEntries(
+    fields.map(f => [f.name, f.area])
   );
 
-  // fields.json.name と CSV の field を突き合わせて area を決定
-  const fieldAreaMap = {};
-  (fields || []).forEach(f => {
-    if (csvFieldSet.has(f.name)) {
-      fieldAreaMap[f.name] = f.area;
-    }
-  });
-
-  // varieties.json: variety → type
+  // ▼ varieties.json
+  const varieties = await loadJSON("/data/varieties.json");
   const varietyTypeMap = Object.fromEntries(
-    (varieties || []).map(v => [v.name, v.type])
+    varieties.map(v => [v.name, v.type])
   );
 
-  if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] csvFieldSet ===", Array.from(csvFieldSet));
-    console.log("=== [DEBUG] fieldAreaMap (from CSV field × fields.json.name) ===", fieldAreaMap);
-    console.log("=== [DEBUG] varietyTypeMap ===", varietyTypeMap);
-  }
+  // ▼ CSV の plantingRef → CSV 行
+  const csvRefMap = Object.fromEntries(
+    plantingRows.map(r => [r.plantingRef, r])
+  );
 
   const result = {};
   const currentHash = await computeSummaryIndexHash();
@@ -75,57 +52,37 @@ export async function generateYearIndex() {
     for (const year in summaryIndex[folderField]) {
       for (const file of summaryIndex[folderField][year]) {
 
-        const path = `/logs/summary/${folderField}/${year}/${file}`;
-        const summary = await loadSummaryJSON(path);
+        const summary = await loadSummaryJSON(
+          `/logs/summary/${folderField}/${year}/${file}`
+        );
 
-        const planting = summary?.planting ?? {};
-        const planYM = planting.harvestPlanYM ?? "";
-        const planYear = Number(planYM.split("-")[0]);
+        const plantingRef = summary?.planting?.plantingRef
+          ?? file.replace(".json", "");
 
-        const variety = planting.variety ?? "";
+        const csvRow = csvRefMap[plantingRef];
 
-        // plantingRef は一応保持（今後のため）
-        const plantingRef = planting.plantingRef ?? file.replace(".json", "");
+        if (!csvRow) {
+          console.warn("[WARN] CSV に存在しない plantingRef:", plantingRef);
+          continue;
+        }
 
-        // ===============================
-        // ★ 圃場名 name の決定
-        //   1. summary.planting.field（あれば）
-        //   2. フォルダ名（fallback）
-        // ===============================
-        const name =
-          planting.field ??
-          folderField;
-
-        // ===============================
-        // ★ area の決定
-        //   CSV の field と fields.json.name を突き合わせて作った fieldAreaMap から取得
-        //   （あなたの前提では、ここは null にならない）
-        // ===============================
-        const area = fieldAreaMap[name] ?? null;
-
-        // ===============================
-        // ★ varietyType の決定
-        // ===============================
+        const name = csvRow.field;        // ← CSV が唯一の正
+        const area = fieldAreaMap[name];  // ← fields.json から取得
+        const variety = csvRow.variety;
         const varietyType = varietyTypeMap[variety] ?? null;
 
-        if (DEBUG_YEAR_INDEX) {
-          console.log("========================================");
-          console.log(`[DEBUG] file="${file}" plantingRef="${plantingRef}"`);
-          console.log(`[DEBUG] folderField="${folderField}"`);
-          console.log(`[DEBUG] summary.planting.field="${planting.field ?? ""}"`);
-          console.log(`[DEBUG] name="${name}" → area="${area}"`);
-          console.log(`[DEBUG] variety="${variety}" → varietyType="${varietyType}"`);
-        }
+        const planYear = Number(csvRow.harvestPlanYM.split("-")[0]);
 
         if (!result[planYear]) result[planYear] = [];
 
         result[planYear].push({
-          name,        // 圃場名（CSV / summary ベース）
-          area,        // エリア名（CSV field × fields.json.name から取得）
+          name,          // CSV の field
+          area,          // fields.json.name[name]
           variety,
           varietyType,
           year,
           file,
+          folder: folderField,  // summary 読み込み用
           plantingRef
         });
       }
@@ -134,17 +91,11 @@ export async function generateYearIndex() {
 
   result.lastSummaryIndexHash = currentHash;
 
-  if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] year-index.json (生成結果) ===");
-    console.log(result);
-  }
+  if (DEBUG) console.log("[DEBUG] year-index.json:", result);
 
   return result;
 }
 
-/* ===============================
-   year-index.json を保存
-=============================== */
 export async function saveYearIndex(newIndex) {
   await saveJSON("/data/year-index.json", newIndex);
 }
