@@ -153,7 +153,7 @@ function attachEvents() {
   document.querySelectorAll(".field-row").forEach(row => {
     row.addEventListener("click", () => {
       const name = row.dataset.name;
-      location.href = `/analysis/analysis.html?field=${encodeURIComponent(name)}`;
+      location.href = `/analysis/index.html?field=${encodeURIComponent(name)}`;
     });
   });
 }
