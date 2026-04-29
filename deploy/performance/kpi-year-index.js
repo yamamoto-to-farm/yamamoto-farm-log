@@ -111,5 +111,5 @@ export async function generateYearIndex() {
 
 export async function saveYearIndex(newIndex) {
   // ★ 読み込み側と必ず同じパスにする（先頭 / 必須）
-  await saveJSON("/data/year-index.json", newIndex);
+  await saveJSON("data/year-index.json", newIndex);
 }
