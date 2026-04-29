@@ -1,34 +1,23 @@
 // kpi-year-index.js
-// year-index.json を CSV だけで生成する最小構成版（揺れ吸収＋品種フィルタ対応）
-// ・fields.json は使わない（圃場フィルタ除外）
-// ・varieties.json は使う（品種フィルタ維持）
-// ・CSV の field / variety / harvestPlanYM を唯一の正とする
-// ・folder = summary のフォルダ名
-// ・file = summary のファイル名
-// ・plantingRef は CSV と summary の揺れを normalize して一致させる
+// summary-index.json だけから year-index.json を生成する決定版
+// ・CSV は使わない（揺れゼロ）
+// ・summary-index.json → summary.json から必要情報だけ抽出
+// ・varieties.json で varietyType を付与
+// ・plantingRef は file 名から抽出（揺れなし）
+// ・保存パスは data/year-index.json（先頭 / なし）
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
 import { saveJSON, loadJSON } from "/common/json.js";
-import { loadCSV, normalizeKeys } from "/common/csv.js";
 
 const DEBUG = true;
 
 /* ---------------------------------------------------------
-   plantingRef の揺れを吸収する正規化関数
+   plantingRef を file 名から抽出（揺れゼロ）
 --------------------------------------------------------- */
-function normalizeRef(ref) {
-  if (!ref) return "";
-  return ref
-    .replace(/[()（）]/g, "")
-    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-    .replace(/[‐‑‒–—―]/g, "-")     // ハイフン統一
-    .replace(/[＿﹍﹎ˍ]/g, "_")     // アンダーバー統一 ← ★今回の決定打
-    .replace(/\s+/g, "")
-    .replace(/\r/g, "")
-    .trim();
+function extractRefFromFile(file) {
+  return file.replace(".json", "");
 }
-
 
 export async function computeSummaryIndexHash() {
   const summaryIndex = await loadSummaryIndex();
@@ -43,21 +32,11 @@ export async function checkYearIndexNeedsUpdate(yearIndex) {
 export async function generateYearIndex() {
   const summaryIndex = await loadSummaryIndex();
 
-  // ▼ CSV（唯一の正）
-  const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
-
-  // ▼ varieties.json（品種フィルタ用）
+  // ▼ varieties.json（品種タイプ付与用）
   const varieties = await loadJSON("/data/varieties.json");
   const varietyTypeMap = Object.fromEntries(
     varieties.map(v => [v.name, v.type])
   );
-
-  // ▼ CSV の plantingRef → CSV 行（正規化してマップ化）
-  const csvRefMap = {};
-  for (const r of plantingRows) {
-    const key = normalizeRef(r.plantingRef);
-    csvRefMap[key] = r;
-  }
 
   const result = {};
   const currentHash = await computeSummaryIndexHash();
@@ -70,35 +49,34 @@ export async function generateYearIndex() {
           `/logs/summary/${folderField}/${year}/${file}`
         );
 
-        const rawRef =
-          summary?.planting?.plantingRef ??
-          file.replace(".json", "");
-
-        const normRef = normalizeRef(rawRef);
-
-        const csvRow = csvRefMap[normRef];
-
-        if (!csvRow) {
-          console.warn("[WARN] CSV に存在しない plantingRef:", rawRef);
+        if (!summary) {
+          console.warn("[WARN] summary.json 読み込み失敗:", file);
           continue;
         }
 
-        const variety = csvRow.variety;
+        // plantingRef は file 名から抽出（揺れゼロ）
+        const plantingRef = extractRefFromFile(file);
+
+        const variety = summary?.planting?.variety ?? null;
         const varietyType = varietyTypeMap[variety] ?? null;
+        const harvestPlanYM = summary?.planting?.harvestPlanYM ?? null;
 
-        const planYear = Number(csvRow.harvestPlanYM.split("-")[0]);
+        if (!harvestPlanYM) {
+          console.warn("[WARN] harvestPlanYM が無い:", file);
+          continue;
+        }
 
+        const planYear = Number(harvestPlanYM.split("-")[0]);
         if (!result[planYear]) result[planYear] = [];
 
         result[planYear].push({
-          field: csvRow.field,      // CSV の圃場名（フィルタには使わない）
-          variety,                  // CSV の品名
-          varietyType,              // varieties.json の type
-          harvestPlanYM: csvRow.harvestPlanYM,
-          year,
-          file,
+          plantingRef,
+          variety,
+          varietyType,
+          harvestPlanYM,
           folder: folderField,
-          plantingRef: rawRef
+          year,
+          file
         });
       }
     }
@@ -112,6 +90,6 @@ export async function generateYearIndex() {
 }
 
 export async function saveYearIndex(newIndex) {
-  // ★ 読み込み側と必ず同じパスにする（先頭 / 必須）
+  // ★ saveJSON は先頭 / を付けないのが正しい
   await saveJSON("data/year-index.json", newIndex);
 }
