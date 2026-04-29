@@ -154,7 +154,7 @@ async function renderKpiForYear(year, refList) {
   const summaryMap = {};
   const refDatas = await Promise.all(
     refList.map(item => {
-      const path = `/logs/summary/${item.field}/${item.year}/${item.file}`;
+      const path = `/logs/summary/${item.folder}/${item.year}/${item.file}`;
       return loadSummaryJSON(path);
     })
   );
