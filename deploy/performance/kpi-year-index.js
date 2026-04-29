@@ -2,13 +2,13 @@
 // CSV（planting/all.csv）を唯一の正として year-index.json を生成する完全版
 // ・summary-index.json は folder/year/file の補完にのみ使用
 // ・summary.json は plantingRef の揺れ吸収には使わない
-// ・normalizeRef + safeFileName で plantingRef を完全統一
+// ・normalizeKeys + normalizeRef + safeFileName で plantingRef を完全統一
 // ・month-kpi と harvest-kpi の実績が完全一致する
 
 import { loadSummaryIndex } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
 import { saveJSON, loadJSON } from "/common/json.js";
-import { loadCSV } from "/common/csv.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { safeFileName } from "/common/utils.js?v=1.1";
 
 const DEBUG = true;
@@ -45,9 +45,13 @@ export async function checkYearIndexNeedsUpdate(yearIndex) {
    year-index.json 生成（CSV 方式・欠落ゼロ）
 --------------------------------------------------------- */
 export async function generateYearIndex() {
-  const plantingRows = await loadCSV("/logs/planting/all.csv");
-  const summaryIndex = await loadSummaryIndex();
+  // ★ カラム名を normalizeKeys で揃える（最重要）
+  const plantingRows = normalizeKeys(
+    await loadCSV("/logs/planting/all.csv")
+  );
+
   const varieties = await loadJSON("/data/varieties.json");
+  const summaryIndex = await loadSummaryIndex();
 
   const varietyTypeMap = Object.fromEntries(
     varieties.map(v => [v.name, v.type])
@@ -58,6 +62,13 @@ export async function generateYearIndex() {
 
   for (const row of plantingRows) {
     const rawRef = row.plantingRef;
+
+    // ★ 空欄・undefined の ref を完全除外（ズレの原因を潰す）
+    if (!rawRef || rawRef.trim() === "") {
+      console.warn("[WARN] plantingRef が空の行を除外:", row);
+      continue;
+    }
+
     const normRef = normalizeRef(rawRef);
     const ref = safeFileName(normRef);
 
