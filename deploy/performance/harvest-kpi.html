@@ -8,11 +8,7 @@
 
   <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css?v=1">
-
-  <!-- フィルタ UI 共通 CSS -->
   <link rel="stylesheet" href="/common/filter.css?v=1">
-
-  <!-- KPI 専用 CSS（差分のみ） -->
   <link rel="stylesheet" href="/performance/kpi.css?v=1.3">
 
   <style>
@@ -23,9 +19,6 @@
       margin-top: 20px;
       white-space: pre-wrap;
     }
-    .ok { color: green; font-weight: bold; }
-    .ng { color: red; font-weight: bold; }
-    /* ▼ debug-only はログだけに使う（ボタンには使わない） */
     .debug-only { display:none; }
   </style>
 
@@ -55,7 +48,7 @@
     <!-- ▼ 適用中フィルタ表示 -->
     <div id="activeFilters"></div>
 
-    <!-- ▼ 再生成ボタン（常時表示に変更） -->
+    <!-- ▼ 再生成ボタン（常時表示） -->
     <div id="regen-buttons" style="margin-bottom:20px;">
       <button id="btn-generate">year-index.json を再生成</button>
       <button id="btn-load">year-index.json を読み込み</button>
@@ -64,7 +57,7 @@
     <!-- KPI 描画エリア -->
     <div id="kpi-container"></div>
 
-    <!-- ▼ デバッグログ（必要時のみ表示） -->
+    <!-- ▼ デバッグログ -->
     <h2 id="debug-title" class="debug-only">デバッグログ</h2>
     <div id="debug-log" class="debug-box debug-only"></div>
 
@@ -76,7 +69,7 @@
   <!-- ▼ KPI フィルタ共通エンジン -->
   <script type="module" src="/performance/kpi-filter.js?v=1"></script>
 
-  <!-- 認証処理 & KPI 描画 -->
+  <!-- ▼ 認証処理 & KPI 描画 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.1";
@@ -89,9 +82,13 @@
       openKpiVarietyModal
     } from "/performance/kpi-filter.js?v=1";
 
-    const DEBUG_FILTER = true;
+    const DEBUG_FILTER = false;
 
     window.addEventListener("DOMContentLoaded", async () => {
+
+      /* ============================================================
+         ▼ ここを最初に実行しないと UI が壊れる
+      ============================================================ */
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
@@ -100,7 +97,7 @@
       /* ============================================================
          ▼ 再生成ボタン（常時表示）
       ============================================================ */
-      document.getElementById("btn-generate")?.addEventListener("click", async () => {
+      document.getElementById("btn-generate").addEventListener("click", async () => {
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
 
@@ -112,19 +109,15 @@
 
           box.innerHTML += "✔ 再生成完了\n";
           box.innerHTML += JSON.stringify(newIndex, null, 2) + "\n";
-
-          console.log("[KPI] 再生成完了:", newIndex);
         } catch (err) {
-          box.innerHTML += "✘ エラー発生\n";
-          box.innerHTML += err.toString() + "\n";
-          console.error("[KPI] 再生成エラー:", err);
+          box.innerHTML += "✘ エラー発生\n" + err.toString() + "\n";
         }
       });
 
       /* ============================================================
          ▼ 読み込みボタン
       ============================================================ */
-      document.getElementById("btn-load")?.addEventListener("click", async () => {
+      document.getElementById("btn-load").addEventListener("click", async () => {
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
 
@@ -133,12 +126,8 @@
         try {
           const data = await loadJSON("/data/year-index.json");
           box.innerHTML += JSON.stringify(data, null, 2) + "\n";
-
-          console.log("[KPI] 読み込み:", data);
         } catch (err) {
-          box.innerHTML += "✘ 読み込みエラー\n";
-          box.innerHTML += err.toString() + "\n";
-          console.error("[KPI] 読み込みエラー:", err);
+          box.innerHTML += "✘ 読み込みエラー\n" + err.toString() + "\n";
         }
       });
 
@@ -207,11 +196,6 @@
         box.innerHTML += "[KPI-FILTER] areaMap: " + JSON.stringify(areaMap, null, 2) + "\n";
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
-
-        console.log("[KPI-FILTER] areaOrder:", areaOrder);
-        console.log("[KPI-FILTER] areaMap:", areaMap);
-        console.log("[KPI-FILTER] typeOrder:", typeOrder);
-        console.log("[KPI-FILTER] typeMap:", typeMap);
       }
 
       /* ============================================================
@@ -258,8 +242,7 @@
         await renderKpiPage();
         log("③ OK renderKpiPage() 完了");
       } catch (err) {
-        log("★ NG renderKpiPage() エラー");
-        log(err.toString());
+        log("★ NG renderKpiPage() エラー\n" + err.toString());
       }
     }
   </script>
