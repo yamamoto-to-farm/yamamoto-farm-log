@@ -195,25 +195,30 @@ function initKpiVarietyModalEvents() {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
-  // ▼ 親の開閉（▼クリック）
-  document.querySelectorAll(".parent-toggle").forEach(el => {
-    el.onclick = (e) => {
+  // ▼ だけで開閉（デフォルトは閉じ）
+  document.querySelectorAll(".parent-toggle").forEach(btn => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const type = el.parentElement.dataset.parent;
-      const box = document.querySelector(`[data-box="${type}"]`);
+      const parent = btn.closest(".parent-item");
+      const type = parent.dataset.parent;
+      const box = document.querySelector(`.child-box[data-box="${type}"]`);
+      if (!box) return;
       box.classList.toggle("open");
-    };
+    });
   });
 
-  // ▼ 親名クリックで全選択／全解除
+  // 親名クリックで全選択／全解除（開閉はしない）
   document.querySelectorAll(".parent-label").forEach(el => {
     el.onclick = (e) => {
       e.stopPropagation();
       const type = el.parentElement.dataset.parent;
-      const box = document.querySelector(`[data-box="${type}"]`);
-      const items = box.querySelectorAll("[data-variety]");
+      const box = document.querySelector(`.child-box[data-box="${type}"]`);
+      if (!box) return;
 
-      const allSelected = [...items].every(i => selectedVarieties.includes(i.dataset.variety));
+      const items = box.querySelectorAll("[data-variety]");
+      const allSelected = [...items].every(i =>
+        selectedVarieties.includes(i.dataset.variety)
+      );
 
       items.forEach(i => {
         const v = i.dataset.variety;
@@ -228,7 +233,7 @@ function initKpiVarietyModalEvents() {
     };
   });
 
-  // ▼ 子の選択
+  // 子の選択
   document.querySelectorAll("[data-variety]").forEach(el => {
     el.onclick = () => {
       const v = el.dataset.variety;
@@ -253,6 +258,7 @@ function initKpiVarietyModalEvents() {
 
   updateVarietySelections();
 }
+
 
 function updateVarietySelections() {
   document.querySelectorAll("[data-variety]").forEach(el => {

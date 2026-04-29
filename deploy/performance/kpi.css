@@ -96,6 +96,34 @@
   font-weight: bold;
 }
 
+.parent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.parent-toggle {
+  font-size: 16px;
+  padding: 2px 8px;
+}
+
+/* 子ボックス：デフォルト非表示 */
+.child-box {
+  display: none;
+  padding-left: 12px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* open クラスが付いたときだけ表示 */
+.child-box.open {
+  display: flex;
+}
+
 
 /* ===============================
    年ブロック（<details>）
