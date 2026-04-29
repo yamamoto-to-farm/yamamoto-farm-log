@@ -14,44 +14,44 @@
   padding: 6px 8px;
 }
 
-/* ▼ 列幅（播種計画専用） */
-.schedule-table th:nth-child(1),
-.schedule-table td:nth-child(1) {
+/* ▼ 列幅（播種計画専用・優先度UP） */
+#table-area .schedule-table th:nth-child(1),
+#table-area .schedule-table td:nth-child(1) {
   width: 130px; /* 播種予定日 */
   white-space: nowrap;
 }
 
-.schedule-table th:nth-child(2),
-.schedule-table td:nth-child(2) {
+#table-area .schedule-table th:nth-child(2),
+#table-area .schedule-table td:nth-child(2) {
   width: 160px; /* 品種 */
 }
 
-.schedule-table th:nth-child(3),
-.schedule-table td:nth-child(3) {
+#table-area .schedule-table th:nth-child(3),
+#table-area .schedule-table td:nth-child(3) {
   width: 80px; /* 枚数 */
   text-align: right;
 }
 
-.schedule-table th:nth-child(4),
-.schedule-table td:nth-child(4) {
+#table-area .schedule-table th:nth-child(4),
+#table-area .schedule-table td:nth-child(4) {
   width: 70px; /* トレイタイプ */
   text-align: center;
 }
 
-.schedule-table th:nth-child(5),
-.schedule-table td:nth-child(5) {
+#table-area .schedule-table th:nth-child(5),
+#table-area .schedule-table td:nth-child(5) {
   width: 110px; /* 予定面積 */
   text-align: right;
 }
 
-.schedule-table th:nth-child(6),
-.schedule-table td:nth-child(6) {
+#table-area .schedule-table th:nth-child(6),
+#table-area .schedule-table td:nth-child(6) {
   width: 70px; /* 定植まで日数 */
   text-align: right;
 }
 
-.schedule-table th:nth-child(7),
-.schedule-table td:nth-child(7) {
+#table-area .schedule-table th:nth-child(7),
+#table-area .schedule-table td:nth-child(7) {
   width: 130px; /* 定植予定日 */
   white-space: nowrap;
 }
@@ -80,18 +80,10 @@
 }
 
 /* ▼ 定植まで日数 input の幅固定（伸び防止） */
-.schedule-table td:nth-child(6) input {
-  width: 60px !important;
+#table-area .schedule-table td:nth-child(6) input {
+  width: 60px;
   text-align: right;
 }
-
-/* ▼ 枚数 input も固定したい場合は以下を有効化 */
-/*
-.schedule-table td:nth-child(3) input {
-  width: 60px !important;
-  text-align: right;
-}
-*/
 
 /* ===============================
    印刷用設定（播種計画専用）
@@ -123,38 +115,38 @@
   }
 
   /* ▼ 列幅（印刷用） */
-  .schedule-table th:nth-child(1),
-  .schedule-table td:nth-child(1) {
+  #table-area .schedule-table th:nth-child(1),
+  #table-area .schedule-table td:nth-child(1) {
     width: 100px;
   }
 
-  .schedule-table th:nth-child(2),
-  .schedule-table td:nth-child(2) {
+  #table-area .schedule-table th:nth-child(2),
+  #table-area .schedule-table td:nth-child(2) {
     width: 140px;
   }
 
-  .schedule-table th:nth-child(3),
-  .schedule-table td:nth-child(3) {
+  #table-area .schedule-table th:nth-child(3),
+  #table-area .schedule-table td:nth-child(3) {
     width: 70px;
   }
 
-  .schedule-table th:nth-child(4),
-  .schedule-table td:nth-child(4) {
+  #table-area .schedule-table th:nth-child(4),
+  #table-area .schedule-table td:nth-child(4) {
     width: 70px;
   }
 
-  .schedule-table th:nth-child(5),
-  .schedule-table td:nth-child(5) {
+  #table-area .schedule-table th:nth-child(5),
+  #table-area .schedule-table td:nth-child(5) {
     width: 110px;
   }
 
-  .schedule-table th:nth-child(6),
-  .schedule-table td:nth-child(6) {
+  #table-area .schedule-table th:nth-child(6),
+  #table-area .schedule-table td:nth-child(6) {
     width: 80px;
   }
 
-  .schedule-table th:nth-child(7),
-  .schedule-table td:nth-child(7) {
+  #table-area .schedule-table th:nth-child(7),
+  #table-area .schedule-table td:nth-child(7) {
     width: 120px;
   }
 }
