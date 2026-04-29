@@ -35,7 +35,6 @@
     <div class="card" id="filter-card" style="margin-bottom:16px;">
       <h2 class="section-title">フィルタ</h2>
       <div class="filter-open-btn" data-type="year">▶ 年</div>
-      <div class="filter-open-btn" data-type="field">▶ 圃場</div>
       <div class="filter-open-btn" data-type="variety">▶ 品種</div>
     </div>
 
@@ -68,12 +67,11 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.1";
-    import { generateYearIndex, saveYearIndex } from "/performance/kpi-year-index.js?v=1.1";
+    import { generateYearIndex, saveYearIndex } from "/performance/kpi-year-index.js?v=1.7";
     import { loadJSON } from "/common/json.js";
     import {
       setKpiFilterData,
       openKpiYearModal,
-      openKpiFieldModal,
       openKpiVarietyModal
     } from "/performance/kpi-filter.js?v=1";
 
@@ -138,28 +136,7 @@
         .sort();
 
       /* ===============================
-         ▼ 圃場フィルタ（name / area に統一）
-      =============================== */
-      const areaMap = {};
-      const areaOrder = [];
-
-      years.forEach(y => {
-        (yearIndex[y] || []).forEach(ref => {
-          const area = ref.area;
-          const name = ref.name;   // ← 修正ポイント
-
-          if (!areaMap[area]) {
-            areaMap[area] = [];
-            areaOrder.push(area);
-          }
-          if (!areaMap[area].includes(name)) {
-            areaMap[area].push(name);
-          }
-        });
-      });
-
-      /* ===============================
-         ▼ 品種フィルタ
+         ▼ 品種フィルタ（varietyType → variety）
       =============================== */
       const typeMap = {};
       const typeOrder = [];
@@ -180,7 +157,7 @@
       });
 
       /* ===============================
-         ▼ デバッグ出力（name / area に統一）
+         ▼ デバッグ出力
       =============================== */
       if (DEBUG_FILTER) {
         const box = document.getElementById("debug-log");
@@ -188,14 +165,10 @@
 
         box.innerHTML += "[KPI-FILTER] yearIndex 読み込み完了\n";
         box.innerHTML += "[KPI-FILTER] years: " + JSON.stringify(years) + "\n";
-        box.innerHTML += "[KPI-FILTER] areaOrder: " + JSON.stringify(areaOrder) + "\n";
-        box.innerHTML += "[KPI-FILTER] areaMap: " + JSON.stringify(areaMap, null, 2) + "\n";
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
       }
 
-      console.log("[KPI-FILTER] areaOrder:", areaOrder);
-      console.log("[KPI-FILTER] areaMap:", areaMap);
       console.log("[KPI-FILTER] typeOrder:", typeOrder);
       console.log("[KPI-FILTER] typeMap:", typeMap);
 
@@ -204,7 +177,6 @@
       =============================== */
       setKpiFilterData({
         years,
-        fields: { parents: areaOrder, children: areaMap },
         varieties: { parents: typeOrder, children: typeMap }
       });
 
@@ -217,7 +189,6 @@
         btn.addEventListener("click", () => {
           const type = btn.dataset.type;
           if (type === "year") openKpiYearModal();
-          if (type === "field") openKpiFieldModal();
           if (type === "variety") openKpiVarietyModal();
         });
       });

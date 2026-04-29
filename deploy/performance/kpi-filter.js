@@ -1,14 +1,12 @@
 // kpi-filter.js
-// KPI（年間・月次）共通フィルタエンジン（2階層フィルタ対応）
+// KPI（年間・月次）共通フィルタエンジン（年度 + 品種フィルタのみ）
 
 let selectedYears = [];
-let selectedFields = [];     // 子（field）
 let selectedVarieties = [];  // 子（variety）
 
 let kpiFilterData = {
   years: [],
-  fields: { parents: [], children: {} },      // { parents: ["三角畑", ...], children: { "三角畑": ["三角畑下", ...] } }
-  varieties: { parents: [], children: {} }    // { parents: ["寒玉キャベツ", ...], children: { "寒玉キャベツ": ["夏ごろも", ...] } }
+  varieties: { parents: [], children: {} } // { parents: ["寒玉キャベツ"], children: { "寒玉キャベツ": ["夏ごろも"] } }
 };
 
 export function setKpiFilterData(data) {
@@ -25,6 +23,7 @@ function renderActiveFilters() {
 
   area.innerHTML = "";
 
+  // 年度
   selectedYears.forEach(y => {
     const div = document.createElement("div");
     div.className = "filter-tag";
@@ -32,13 +31,7 @@ function renderActiveFilters() {
     area.appendChild(div);
   });
 
-  selectedFields.forEach(f => {
-    const div = document.createElement("div");
-    div.className = "filter-tag";
-    div.innerHTML = `${f}<span class="filter-tag-remove" data-field="${f}">×</span>`;
-    area.appendChild(div);
-  });
-
+  // 品種
   selectedVarieties.forEach(v => {
     const div = document.createElement("div");
     div.className = "filter-tag";
@@ -46,7 +39,7 @@ function renderActiveFilters() {
     area.appendChild(div);
   });
 
-  if (selectedYears.length || selectedFields.length || selectedVarieties.length) {
+  if (selectedYears.length || selectedVarieties.length) {
     const resetBtn = document.createElement("button");
     resetBtn.className = "filter-reset-btn";
     resetBtn.textContent = "全解除";
@@ -58,12 +51,6 @@ function renderActiveFilters() {
     if (el.dataset.year) {
       el.onclick = () => {
         selectedYears = selectedYears.filter(v => v !== el.dataset.year);
-        applyKpiFilters();
-      };
-    }
-    if (el.dataset.field) {
-      el.onclick = () => {
-        selectedFields = selectedFields.filter(v => v !== el.dataset.field);
         applyKpiFilters();
       };
     }
@@ -81,7 +68,6 @@ function renderActiveFilters() {
 ============================================================ */
 export function resetKpiFilters() {
   selectedYears = [];
-  selectedFields = [];
   selectedVarieties = [];
   applyKpiFilters();
   window.dispatchEvent(new Event("kpi-filter:reset"));
@@ -93,7 +79,6 @@ export function resetKpiFilters() {
 function applyKpiFilters() {
   const state = {
     years: selectedYears,
-    fields: selectedFields,
     varieties: selectedVarieties
   };
   renderActiveFilters();
@@ -162,88 +147,6 @@ function initKpiYearModalEvents() {
 function updateYearSelections() {
   document.querySelectorAll("[data-year]").forEach(el => {
     el.classList.toggle("selected", selectedYears.includes(el.dataset.year));
-  });
-}
-
-/* ============================================================
-   ▼ 圃場フィルタ（2階層：area → name）
-============================================================ */
-export function openKpiFieldModal() {
-  const container = document.getElementById("modal-container");
-  container.style.display = "block";
-
-  const { parents, children } = kpiFilterData.fields;
-
-  container.innerHTML = `
-    <div class="modal-bg" id="modal-bg">
-      <div class="modal">
-        <div class="modal-close" id="modal-close">×</div>
-        <h3>圃場の選択</h3>
-
-        ${parents.map(area => `
-          <div class="parent-item" data-parent="${area}">${area}</div>
-          <div class="child-box" data-box="${area}">
-            ${children[area].map(name => `
-              <div class="select-item" data-name="${name}">${name}</div>
-            `).join("")}
-          </div>
-        `).join("")}
-
-        <div class="modal-footer">
-          <button class="primary-btn" id="apply">適用</button>
-          <button class="secondary-btn" id="clear">クリア</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  initKpiFieldModalEvents();
-}
-
-function initKpiFieldModalEvents() {
-  document.getElementById("modal-close").onclick = closeModal;
-  document.getElementById("modal-bg").onclick = (e) => {
-    if (e.target.classList.contains("modal-bg")) closeModal();
-  };
-
-  // 親の開閉
-  document.querySelectorAll(".parent-item").forEach(el => {
-    el.onclick = () => {
-      const area = el.dataset.parent;
-      const box = document.querySelector(`[data-box="${area}"]`);
-      box.classList.toggle("open");
-    };
-  });
-
-  // 子の選択
-  document.querySelectorAll("[data-field]").forEach(el => {
-    el.onclick = () => {
-      const f = el.dataset.field;
-      if (selectedFields.includes(f)) {
-        selectedFields = selectedFields.filter(v => v !== f);
-      } else {
-        selectedFields.push(f);
-      }
-      updateFieldSelections();
-    };
-  });
-
-  document.getElementById("clear").onclick = () => {
-    selectedFields = [];
-    updateFieldSelections();
-  };
-
-  document.getElementById("apply").onclick = () => {
-    applyKpiFilters();
-    closeModal();
-  };
-
-  updateFieldSelections();
-}
-
-function updateFieldSelections() {
-  document.querySelectorAll("[data-field]").forEach(el => {
-    el.classList.toggle("selected", selectedFields.includes(el.dataset.field));
   });
 }
 

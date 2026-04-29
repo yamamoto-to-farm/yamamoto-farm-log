@@ -1,9 +1,11 @@
 // kpi-year-index.js
-// year-index.json を CSV だけで生成する決定版（揺れ吸収版）
-// ・name = CSV.field（唯一の正）
-// ・area = fields.json.name[name]
-// ・folder = summary のフォルダ名（読み込み用）
-// ・summary の field は一切使わない
+// year-index.json を CSV だけで生成する最小構成版（揺れ吸収＋品種フィルタ対応）
+// ・fields.json は使わない（圃場フィルタ除外）
+// ・varieties.json は使う（品種フィルタ維持）
+// ・CSV の field / variety / harvestPlanYM を唯一の正とする
+// ・folder = summary のフォルダ名
+// ・file = summary のファイル名
+// ・plantingRef は CSV と summary の揺れを normalize して一致させる
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
@@ -14,11 +16,6 @@ const DEBUG = true;
 
 /* ---------------------------------------------------------
    plantingRef の揺れを吸収する正規化関数
-   ・全角数字 → 半角
-   ・全角/異体ハイフン → 半角ハイフン
-   ・括弧除去
-   ・空白除去
-   ・CR除去
 --------------------------------------------------------- */
 function normalizeRef(ref) {
   if (!ref) return "";
@@ -47,13 +44,11 @@ export async function generateYearIndex() {
   // ▼ CSV（唯一の正）
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
 
-  // ▼ fields.json（CSV.field と一致する name を持つ）
-  const fields = await loadJSON("/data/fields.json");
-  const fieldAreaMap = Object.fromEntries(fields.map(f => [f.name, f.area]));
-
-  // ▼ varieties.json
+  // ▼ varieties.json（品種フィルタ用）
   const varieties = await loadJSON("/data/varieties.json");
-  const varietyTypeMap = Object.fromEntries(varieties.map(v => [v.name, v.type]));
+  const varietyTypeMap = Object.fromEntries(
+    varieties.map(v => [v.name, v.type])
+  );
 
   // ▼ CSV の plantingRef → CSV 行（正規化してマップ化）
   const csvRefMap = {};
@@ -86,8 +81,6 @@ export async function generateYearIndex() {
           continue;
         }
 
-        const name = csvRow.field;               // CSV が唯一の正
-        const area = fieldAreaMap[name] ?? null; // fields.json から取得
         const variety = csvRow.variety;
         const varietyType = varietyTypeMap[variety] ?? null;
 
@@ -96,13 +89,13 @@ export async function generateYearIndex() {
         if (!result[planYear]) result[planYear] = [];
 
         result[planYear].push({
-          name,          // CSV の field
-          area,          // fields.json.name[name]
-          variety,
-          varietyType,
+          field: csvRow.field,      // CSV の圃場名（フィルタには使わない）
+          variety,                  // CSV の品名
+          varietyType,              // varieties.json の type
+          harvestPlanYM: csvRow.harvestPlanYM,
           year,
           file,
-          folder: folderField,  // summary 読み込み用
+          folder: folderField,
           plantingRef: rawRef
         });
       }
