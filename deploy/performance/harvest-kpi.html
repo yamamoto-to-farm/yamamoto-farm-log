@@ -41,13 +41,7 @@
     <!-- ▼ 適用中フィルタ表示 -->
     <div id="activeFilters"></div>
 
-    <!-- ▼ 再生成ボタン（常時表示） -->
-    <div id="regen-buttons" style="margin-bottom:20px;">
-      <button id="btn-generate">year-index.json を再生成</button>
-      <button id="btn-load" class="debug-only">year-index.json を読み込み</button>
-    </div>
-
-    <!-- KPI 描画エリア -->
+    <!-- ▼ KPI 描画エリア -->
     <div id="kpi-container"></div>
 
     <!-- ▼ デバッグログ -->
@@ -66,9 +60,9 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.1";
-    import { generateYearIndex, saveYearIndex } from "/performance/kpi-year-index.js?v=1.7";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.2";
     import { loadJSON } from "/common/json.js";
+    import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {
       setKpiFilterData,
       openKpiYearModal,
@@ -89,71 +83,43 @@
       document.getElementById("page-area").style.display = "block";
 
       /* ===============================
-         ▼ 再生成ボタン
+         ▼ planting/all.csv & varieties.json から
+            フィルタ用データを構築
       =============================== */
-      document.getElementById("btn-generate").addEventListener("click", async () => {
-        const box = document.getElementById("debug-log");
-        document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
+      const plantingRows = normalizeKeys(
+        await loadCSV("/logs/planting/all.csv")
+      );
+      const varietiesData = await loadJSON("/data/varieties.json");
 
-        box.innerHTML += "\n=== year-index.json 再生成開始 ===\n";
+      // 年一覧（harvestPlanYM の year）
+      const years = [...new Set(
+        plantingRows
+          .map(r => r.harvestPlanYM)
+          .filter(Boolean)
+          .map(ym => Number(ym.split("-")[0]))
+      )].sort();
 
-        try {
-          const newIndex = await generateYearIndex();
-          await saveYearIndex(newIndex);
-
-          box.innerHTML += "✔ 再生成完了\n";
-          box.innerHTML += JSON.stringify(newIndex, null, 2) + "\n";
-        } catch (err) {
-          box.innerHTML += "✘ エラー発生\n" + err.toString() + "\n";
-        }
-      });
-
-      /* ===============================
-         ▼ 読み込みボタン（デバッグ専用）
-      =============================== */
-      document.getElementById("btn-load").addEventListener("click", async () => {
-        const box = document.getElementById("debug-log");
-        document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
-
-        box.innerHTML += "\n=== year-index.json 読み込み ===\n";
-
-        try {
-          const data = await loadJSON("/data/year-index.json");
-          box.innerHTML += JSON.stringify(data, null, 2) + "\n";
-        } catch (err) {
-          box.innerHTML += "✘ 読み込みエラー\n" + err.toString() + "\n";
-        }
-      });
-
-      /* ===============================
-         ▼ year-index.json 読み込み
-      =============================== */
-      const yearIndex = await loadJSON("/data/year-index.json");
-
-      const years = Object.keys(yearIndex)
-        .filter(y => y !== "lastSummaryIndexHash")
-        .map(Number)
-        .sort();
-
-      /* ===============================
-         ▼ 品種フィルタ（varietyType → variety）
-      =============================== */
-      const typeMap = {};
+      // 品種タイプマップ（varietyType → varieties）
+      const varietyTypeMap = {};
       const typeOrder = [];
 
-      years.forEach(y => {
-        (yearIndex[y] || []).forEach(ref => {
-          const type = ref.varietyType;
-          const variety = ref.variety;
+      const varietyTypeLookup = Object.fromEntries(
+        varietiesData.map(v => [v.name, v.type])
+      );
 
-          if (!typeMap[type]) {
-            typeMap[type] = [];
-            typeOrder.push(type);
-          }
-          if (!typeMap[type].includes(variety)) {
-            typeMap[type].push(variety);
-          }
-        });
+      plantingRows.forEach(r => {
+        const variety = r.variety;
+        if (!variety) return;
+
+        const type = varietyTypeLookup[variety] || "その他";
+
+        if (!varietyTypeMap[type]) {
+          varietyTypeMap[type] = [];
+          typeOrder.push(type);
+        }
+        if (!varietyTypeMap[type].includes(variety)) {
+          varietyTypeMap[type].push(variety);
+        }
       });
 
       /* ===============================
@@ -163,21 +129,22 @@
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
 
-        box.innerHTML += "[KPI-FILTER] yearIndex 読み込み完了\n";
+        box.innerHTML += "[KPI-FILTER] plantingRows 読み込み完了\n";
         box.innerHTML += "[KPI-FILTER] years: " + JSON.stringify(years) + "\n";
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
-        box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
+        box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(varietyTypeMap, null, 2) + "\n";
       }
 
+      console.log("[KPI-FILTER] years:", years);
       console.log("[KPI-FILTER] typeOrder:", typeOrder);
-      console.log("[KPI-FILTER] typeMap:", typeMap);
+      console.log("[KPI-FILTER] typeMap:", varietyTypeMap);
 
       /* ===============================
          ▼ kpi-filter.js に渡す
       =============================== */
       setKpiFilterData({
         years,
-        varieties: { parents: typeOrder, children: typeMap }
+        varieties: { parents: typeOrder, children: varietyTypeMap }
       });
 
       initFilterButtons();
