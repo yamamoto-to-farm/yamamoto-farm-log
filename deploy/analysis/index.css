@@ -1,0 +1,19 @@
+.field-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.field-table th,
+.field-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px 8px;
+}
+
+.field-row {
+  cursor: pointer;
+}
+
+.field-row:hover {
+  background: #eef7ff;
+}
