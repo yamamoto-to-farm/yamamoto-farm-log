@@ -26,22 +26,33 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
     const diff = areaMonthly[m] - planArea[m];
     const diffClass =
       diff > 0 ? "diff-positive" :
-      diff < 0 ? "diff-negative" :
-      "diff-zero";
+        diff < 0 ? "diff-negative" :
+          "diff-zero";
 
     html += `
-      <tr>
-        <td><a href="/performance/kpi-month.html?year=${year}&month=${m + 1}">${m + 1}月</a></td>
-        <td>${planArea[m].toFixed(2)}</td>
-        <td>${areaMonthly[m].toFixed(2)}</td>
-        <td class="${diffClass}">${diff > 0 ? "+" : ""}${diff.toFixed(2)}</td>
-        <td>${Math.round(targets.targetKg[m]).toLocaleString()}</td>
-        <td>${Math.round(actuals.kg[m]).toLocaleString()}</td>
-        <td>${Math.round(targets.targetUnits[m]).toLocaleString()}</td>
-        <td>${Math.round(actuals.units[m]).toLocaleString()}</td>
-      </tr>
-    `;
+    <tr>
+      <td><a href="/performance/kpi-month.html?year=${year}&month=${m + 1}">${m + 1}月</a></td>
+
+      <!-- ★ 予定面積セルをクリック可能に -->
+      <td class="plan-cell"
+          data-year="${year}"
+          data-month="${m}">
+          ${planArea[m].toFixed(2)}
+      </td>
+
+      <td>${areaMonthly[m].toFixed(2)}</td>
+      <td class="${diffClass}">${diff > 0 ? "+" : ""}${diff.toFixed(2)}</td>
+      <td>${Math.round(targets.targetKg[m]).toLocaleString()}</td>
+      <td>${Math.round(actuals.kg[m]).toLocaleString()}</td>
+      <td>${Math.round(targets.targetUnits[m]).toLocaleString()}</td>
+      <td>${Math.round(actuals.units[m]).toLocaleString()}</td>
+    </tr>
+  `;
   }
+
+
+
+
 
   // ===============================
   // ★ 年間合計行（kpi-month と同じ思想）
@@ -71,6 +82,15 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
 
   html += "</tbody></table>";
   return html;
+
+  document.querySelectorAll(".plan-cell").forEach(cell => {
+  cell.addEventListener("click", () => {
+    const year = Number(cell.dataset.year);
+    const month = Number(cell.dataset.month);
+    openPlanRefModal(year, month, refList, plantingRows);
+    });
+  });
+
 }
 
 // ===============================

@@ -132,6 +132,14 @@ export async function renderKpiPage(filters = null) {
     }
 
     yearContainer.innerHTML = await renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase);
+
+    yearContainer.querySelectorAll(".plan-cell").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const yearValue = Number(cell.dataset.year);
+        const month = Number(cell.dataset.month);
+        openPlanRefModal(yearValue, month, refList, plantingRows);
+      });
+    });
   }
 }
 
@@ -231,6 +239,44 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
      KPI テーブル生成
   ------------------------------ */
   return renderKpiTable(planArea, areaMonthly, actuals, targets, year);
+}
+
+function openPlanRefModal(year, month, refList, plantingRows) {
+  const ym = `${year}-${String(month + 1).padStart(2, "0")}`;
+
+  const rows = refList
+    .map(r => plantingRows.find(p =>
+      safeFileName(p.plantingRef) === r.normalizedRef
+    ))
+    .filter(r => r && r.harvestPlanYM === ym);
+
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  container.innerHTML = `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-close" id="modal-close">×</div>
+        <h3>${ym} の予定面積（${rows.length} 件）</h3>
+
+        <div class="ref-list">
+          ${rows.map(r => `
+            <div class="ref-item">${r.plantingRef}</div>
+          `).join("")}
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-btn" id="close-btn">閉じる</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("modal-close").onclick = closeModal;
+  document.getElementById("close-btn").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = (e) => {
+    if (e.target.classList.contains("modal-bg")) closeModal();
+  };
 }
 
 /* ---------------------------------------------------------
