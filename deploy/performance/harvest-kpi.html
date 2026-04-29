@@ -45,8 +45,6 @@
     <!-- ▼ 再生成ボタン（常時表示） -->
     <div id="regen-buttons" style="margin-bottom:20px;">
       <button id="btn-generate">year-index.json を再生成</button>
-
-      <!-- ▼ 読み込みボタンはデバッグ専用に戻す -->
       <button id="btn-load" class="debug-only">year-index.json を読み込み</button>
     </div>
 
@@ -59,7 +57,7 @@
 
   </div>
 
-  <!-- ▼ モーダル（一覧ページと同じ位置） -->
+  <!-- ▼ モーダル -->
   <div id="modal-container"></div>
 
   <!-- ▼ KPI フィルタ共通エンジン -->
@@ -84,16 +82,16 @@
     window.addEventListener("DOMContentLoaded", async () => {
 
       /* ===============================
-         ▼ 一覧ページと同じ順序
+         ▼ 認証 → ヘッダー → ページ表示
       =============================== */
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      renderHeader();  // ← ログイン情報・ログアウトボタンがここで表示される
+      renderHeader();
       document.getElementById("page-area").style.display = "block";
 
       /* ===============================
-         ▼ 再生成ボタン（常時表示）
+         ▼ 再生成ボタン
       =============================== */
       document.getElementById("btn-generate").addEventListener("click", async () => {
         const box = document.getElementById("debug-log");
@@ -140,7 +138,7 @@
         .sort();
 
       /* ===============================
-         ▼ 圃場フィルタ
+         ▼ 圃場フィルタ（name / area に統一）
       =============================== */
       const areaMap = {};
       const areaOrder = [];
@@ -148,14 +146,14 @@
       years.forEach(y => {
         (yearIndex[y] || []).forEach(ref => {
           const area = ref.area;
-          const field = ref.field;
+          const name = ref.name;   // ← 修正ポイント
 
           if (!areaMap[area]) {
             areaMap[area] = [];
             areaOrder.push(area);
           }
-          if (!areaMap[area].includes(field)) {
-            areaMap[area].push(field);
+          if (!areaMap[area].includes(name)) {
+            areaMap[area].push(name);
           }
         });
       });
@@ -182,7 +180,7 @@
       });
 
       /* ===============================
-         ▼ デバッグ出力
+         ▼ デバッグ出力（name / area に統一）
       =============================== */
       if (DEBUG_FILTER) {
         const box = document.getElementById("debug-log");
@@ -195,6 +193,11 @@
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
       }
+
+      console.log("[KPI-FILTER] areaOrder:", areaOrder);
+      console.log("[KPI-FILTER] areaMap:", areaMap);
+      console.log("[KPI-FILTER] typeOrder:", typeOrder);
+      console.log("[KPI-FILTER] typeMap:", typeMap);
 
       /* ===============================
          ▼ kpi-filter.js に渡す

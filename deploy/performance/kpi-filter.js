@@ -166,7 +166,7 @@ function updateYearSelections() {
 }
 
 /* ============================================================
-   ▼ 圃場フィルタ（2階層：area → field）
+   ▼ 圃場フィルタ（2階層：area → name）
 ============================================================ */
 export function openKpiFieldModal() {
   const container = document.getElementById("modal-container");
@@ -183,8 +183,8 @@ export function openKpiFieldModal() {
         ${parents.map(area => `
           <div class="parent-item" data-parent="${area}">${area}</div>
           <div class="child-box" data-box="${area}">
-            ${children[area].map(f => `
-              <div class="select-item" data-field="${f}">${f}</div>
+            ${children[area].map(name => `
+              <div class="select-item" data-name="${name}">${name}</div>
             `).join("")}
           </div>
         `).join("")}
