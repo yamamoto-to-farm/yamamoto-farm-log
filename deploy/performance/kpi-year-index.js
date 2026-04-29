@@ -1,22 +1,23 @@
 // kpi-year-index.js
-// summary-index.json だけから year-index.json を生成する決定版
-// ・CSV は使わない（揺れゼロ）
-// ・summary-index.json → summary.json から必要情報だけ抽出
-// ・varieties.json で varietyType を付与
-// ・plantingRef は file 名から抽出（揺れなし）
-// ・保存パスは data/year-index.json（先頭 / なし）
+// summary-index.json だけから year-index.json を生成（kpi-month.js と同じ方式）
+// ・CSV は使わない
+// ・plantingRef は file 名から抽出
+// ・safeFileName で揺れ吸収（kpi-month.js と同じ）
+// ・summary.json から variety / harvestPlanYM を取得
+// ・varieties.json から varietyType を付与
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
 import { saveJSON, loadJSON } from "/common/json.js";
+import { safeFileName } from "/common/utils.js?v=1.1";
 
 const DEBUG = true;
 
 /* ---------------------------------------------------------
-   plantingRef を file 名から抽出（揺れゼロ）
+   file 名 → plantingRef（揺れゼロ）
 --------------------------------------------------------- */
-function extractRefFromFile(file) {
-  return file.replace(".json", "");
+function extractRef(file) {
+  return safeFileName(file.replace(".json", ""));
 }
 
 export async function computeSummaryIndexHash() {
@@ -54,12 +55,13 @@ export async function generateYearIndex() {
           continue;
         }
 
-        // plantingRef は file 名から抽出（揺れゼロ）
-        const plantingRef = extractRefFromFile(file);
+        // plantingRef（揺れゼロ）
+        const plantingRef = extractRef(file);
 
-        const variety = summary?.planting?.variety ?? null;
-        const varietyType = varietyTypeMap[variety] ?? null;
-        const harvestPlanYM = summary?.planting?.harvestPlanYM ?? null;
+        const planting = summary.planting || {};
+        const variety = planting.variety || null;
+        const varietyType = varietyTypeMap[variety] || null;
+        const harvestPlanYM = planting.harvestPlanYM || null;
 
         if (!harvestPlanYM) {
           console.warn("[WARN] harvestPlanYM が無い:", file);
@@ -90,6 +92,6 @@ export async function generateYearIndex() {
 }
 
 export async function saveYearIndex(newIndex) {
-  // ★ saveJSON は先頭 / を付けないのが正しい
+  // saveJSON は先頭 / を付けない
   await saveJSON("data/year-index.json", newIndex);
 }
