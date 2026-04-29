@@ -1,5 +1,6 @@
 // harvest-kpi.js
 // KPI 年度ページ（CSV 直接集計版 / フィルタ対応 / year-index 廃止）
+// ※ month-kpi と出荷数量（kg / 基数）の計算ロジックを完全一致させた版
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
@@ -13,22 +14,8 @@ import {
 } from "./kpi-utils.js";
 
 /* ---------------------------------------------------------
-   plantingRef 揺れ吸収（最強版）
---------------------------------------------------------- */
-function normalizeRef(ref) {
-  if (!ref) return "";
-  return ref
-    .replace(/[()（）]/g, "")
-    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-    .replace(/[‐‑‒–—―]/g, "-")
-    .replace(/[＿﹍﹎ˍ]/g, "_")
-    .replace(/\s+/g, "")
-    .replace(/\u200B/g, "")
-    .trim();
-}
-
-/* ---------------------------------------------------------
    summary-index.json から summary.json の場所を探す
+   （month-kpi と同じく safeFileName のみで判定）
 --------------------------------------------------------- */
 async function findSummaryPath(ref) {
   const index = await loadJSON("/data/summary-index.json");
@@ -36,7 +23,7 @@ async function findSummaryPath(ref) {
   for (const fld in index) {
     for (const y in index[fld]) {
       for (const f of index[fld][y]) {
-        const fRef = safeFileName(normalizeRef(f.replace(".json", "")));
+        const fRef = safeFileName(f.replace(".json", ""));
         if (fRef === ref) {
           return `/logs/summary/${fld}/${y}/${f}`;
         }
@@ -81,7 +68,8 @@ export async function renderKpiPage(filters = null) {
       .filter(r => Number(r.harvestPlanYM?.split("-")[0]) === year)
       .map(r => ({
         plantingRef: r.plantingRef,
-        normalizedRef: safeFileName(normalizeRef(r.plantingRef)),
+        // ★ month-kpi と同じく safeFileName のみで正規化
+        normalizedRef: safeFileName(r.plantingRef),
         variety: r.variety,
         harvestPlanYM: r.harvestPlanYM
       }));
@@ -104,6 +92,7 @@ async function renderKpiForYear(year, refList) {
 
   /* ------------------------------
      実績（weight → ref ごと）
+     ※ month-kpi と同じく safeFileName のみで集計
   ------------------------------ */
   const filteredWeightRows = weightRows.filter(row => {
     const d = new Date(row.shippingDate);
@@ -111,7 +100,7 @@ async function renderKpiForYear(year, refList) {
   });
 
   const weightMap = groupWeightByRef(filteredWeightRows, (ref) =>
-    safeFileName(normalizeRef(ref))
+    safeFileName(ref)
   );
 
   /* ------------------------------
@@ -129,7 +118,7 @@ async function renderKpiForYear(year, refList) {
     const month = Number(ym.split("-")[1]) - 1;
     const area = calcAreaTanFromPlantingRow(row);
 
-    const ref = safeFileName(normalizeRef(row.plantingRef));
+    const ref = safeFileName(row.plantingRef);
     if (refList.some(r => r.normalizedRef === ref)) {
       planArea[month] += area;
     }
@@ -137,11 +126,12 @@ async function renderKpiForYear(year, refList) {
 
   /* ------------------------------
      実績（kg / 基）
+     ※ month-kpi と完全同一ロジック
   ------------------------------ */
   const actuals = { kg: Array(12).fill(0), units: Array(12).fill(0) };
 
   filteredWeightRows.forEach(row => {
-    const ref = safeFileName(normalizeRef(row.plantingRef));
+    const ref = safeFileName(row.plantingRef);
     if (!refList.some(r => r.normalizedRef === ref)) return;
 
     const d = new Date(row.shippingDate);
