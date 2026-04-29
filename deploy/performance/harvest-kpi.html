@@ -87,8 +87,7 @@
       openKpiVarietyModal
     } from "/performance/kpi-filter.js?v=1";
 
-    // ★ フィルタデータ読み込みデバッグ用フラグ
-    const DEBUG_FILTER = true; // ← 必要に応じて true / false 切り替え
+    const DEBUG_FILTER = true;
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -96,18 +95,64 @@
 
       document.getElementById("page-area").style.display = "block";
 
-      // ▼ KPI フィルタに必要なデータをセット
+      /* ============================================================
+         ▼ 再生成ボタン（ここが今回の追加ポイント）
+      ============================================================ */
+      document.getElementById("btn-generate")?.addEventListener("click", async () => {
+        const box = document.getElementById("debug-log");
+        document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
+
+        box.innerHTML += "\n=== year-index.json 再生成開始 ===\n";
+
+        try {
+          const newIndex = await generateYearIndex();
+          await saveYearIndex(newIndex);
+
+          box.innerHTML += "✔ 再生成完了\n";
+          box.innerHTML += JSON.stringify(newIndex, null, 2) + "\n";
+
+          console.log("[KPI] 再生成完了:", newIndex);
+        } catch (err) {
+          box.innerHTML += "✘ エラー発生\n";
+          box.innerHTML += err.toString() + "\n";
+          console.error("[KPI] 再生成エラー:", err);
+        }
+      });
+
+      /* ============================================================
+         ▼ 読み込みボタン
+      ============================================================ */
+      document.getElementById("btn-load")?.addEventListener("click", async () => {
+        const box = document.getElementById("debug-log");
+        document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
+
+        box.innerHTML += "\n=== year-index.json 読み込み ===\n";
+
+        try {
+          const data = await loadJSON("/data/year-index.json");
+          box.innerHTML += JSON.stringify(data, null, 2) + "\n";
+
+          console.log("[KPI] 読み込み:", data);
+        } catch (err) {
+          box.innerHTML += "✘ 読み込みエラー\n";
+          box.innerHTML += err.toString() + "\n";
+          console.error("[KPI] 読み込みエラー:", err);
+        }
+      });
+
+      /* ============================================================
+         ▼ year-index.json 読み込み
+      ============================================================ */
       const yearIndex = await loadJSON("/data/year-index.json");
 
-      // 年度一覧
       const years = Object.keys(yearIndex)
         .filter(y => y !== "lastSummaryIndexHash")
         .map(Number)
         .sort();
 
-      // ===============================
-      // 圃場フィルタ（2階層：area → field）
-      // ===============================
+      /* ============================================================
+         ▼ 圃場フィルタ（2階層）
+      ============================================================ */
       const areaMap = {};
       const areaOrder = [];
 
@@ -126,9 +171,9 @@
         });
       });
 
-      // ===============================
-      // 品種フィルタ（2階層：varietyType → variety）
-      // ===============================
+      /* ============================================================
+         ▼ 品種フィルタ（2階層）
+      ============================================================ */
       const typeMap = {};
       const typeOrder = [];
 
@@ -147,30 +192,29 @@
         });
       });
 
-      // ===============================
-      // デバッグ出力（フィルタデータ）
-      // ===============================
+      /* ============================================================
+         ▼ デバッグ出力
+      ============================================================ */
       if (DEBUG_FILTER) {
-        console.log("[KPI-FILTER] yearIndex:", yearIndex);
-        console.log("[KPI-FILTER] years:", years);
-        console.log("[KPI-FILTER] areaOrder:", areaOrder);
-        console.log("[KPI-FILTER] areaMap:", areaMap);
-        console.log("[KPI-FILTER] typeOrder:", typeOrder);
-        console.log("[KPI-FILTER] typeMap:", typeMap);
-
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
+
         box.innerHTML += "[KPI-FILTER] yearIndex 読み込み完了\n";
         box.innerHTML += "[KPI-FILTER] years: " + JSON.stringify(years) + "\n";
         box.innerHTML += "[KPI-FILTER] areaOrder: " + JSON.stringify(areaOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] areaMap: " + JSON.stringify(areaMap, null, 2) + "\n";
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
+
+        console.log("[KPI-FILTER] areaOrder:", areaOrder);
+        console.log("[KPI-FILTER] areaMap:", areaMap);
+        console.log("[KPI-FILTER] typeOrder:", typeOrder);
+        console.log("[KPI-FILTER] typeMap:", typeMap);
       }
 
-      // ===============================
-      // kpi-filter.js に渡す
-      // ===============================
+      /* ============================================================
+         ▼ kpi-filter.js に渡す
+      ============================================================ */
       setKpiFilterData({
         years,
         fields: { parents: areaOrder, children: areaMap },
