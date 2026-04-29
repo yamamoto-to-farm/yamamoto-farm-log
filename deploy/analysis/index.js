@@ -81,7 +81,7 @@ export async function renderFieldList() {
 
         if (!isNaN(sizeA)) {
           sizeHan = sizeA / 10; // a → 反
-          display = `${sizeHan.toFixed(2)}反`;
+          display = sizeHan.toFixed(2);
 
           if (DEBUG_FIELD_LIST) {
             console.log("parsed sizeA =", sizeA, "sizeHan =", sizeHan);
