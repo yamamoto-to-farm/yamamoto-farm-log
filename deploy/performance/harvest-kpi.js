@@ -279,6 +279,13 @@ function openPlanRefModal(year, month, refList, plantingRows) {
   };
 }
 
+function closeModal() {
+  const container = document.getElementById("modal-container");
+  if (!container) return;
+  container.innerHTML = "";
+  container.style.display = "none";
+}
+
 /* ---------------------------------------------------------
    フィルタイベント
 --------------------------------------------------------- */
