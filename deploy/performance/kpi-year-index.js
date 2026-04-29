@@ -1,5 +1,5 @@
 // kpi-year-index.js
-// year-index.json の生成・更新・ハッシュ管理（CSV 補完対応 + デバッグ付き）
+// year-index.json の生成・更新・ハッシュ管理（CSV 補完対応 + name 統一 + デバッグ付き）
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
@@ -37,8 +37,10 @@ export async function generateYearIndex() {
   const fields = await loadJSON("/data/fields.json");
   const varieties = await loadJSON("/data/varieties.json");
 
-  // ▼ CSV を読み込んで field → area を補完する
+  // ▼ CSV を読み込んで field → area / type を補完する
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
+
+  // CSV の field → area
   const csvFieldAreaMap = {};
   plantingRows.forEach(r => {
     if (r.field && r.area) {
@@ -46,35 +48,46 @@ export async function generateYearIndex() {
     }
   });
 
+  // CSV の field → 正規化された field 名（name）
+  const csvFieldNameMap = {};
+  plantingRows.forEach(r => {
+    if (r.field) {
+      csvFieldNameMap[r.field] = r.field; // CSV の field をそのまま name とする
+    }
+  });
+
+  // CSV の variety → type
+  const csvVarietyTypeMap = {};
+  plantingRows.forEach(r => {
+    if (r.variety && r.type) {
+      csvVarietyTypeMap[r.variety] = r.type;
+    }
+  });
+
   if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] fields.json ===", fields);
-    console.log("=== [DEBUG] varieties.json ===", varieties);
     console.log("=== [DEBUG] CSV field → area ===", csvFieldAreaMap);
+    console.log("=== [DEBUG] CSV field → name ===", csvFieldNameMap);
+    console.log("=== [DEBUG] CSV variety → type ===", csvVarietyTypeMap);
   }
 
-  // ▼ field → area マップ（fields.json）
-  const fieldMap = Object.fromEntries(
+  // ▼ fields.json の補完マップ
+  const fieldAreaMap = Object.fromEntries(
     (fields || []).map(f => [f.name, f.area])
   );
 
-  // ▼ variety → type マップ
-  const varietyMap = Object.fromEntries(
+  // ▼ varieties.json の補完マップ
+  const varietyTypeMap = Object.fromEntries(
     (varieties || []).map(v => [v.name, v.type])
   );
-
-  if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] fieldMap (fields.json) ===", fieldMap);
-    console.log("=== [DEBUG] varietyMap ===", varietyMap);
-  }
 
   const result = {};
   const currentHash = await computeSummaryIndexHash();
 
-  for (const field in summaryIndex) {
-    for (const year in summaryIndex[field]) {
-      for (const file of summaryIndex[field][year]) {
+  for (const folderField in summaryIndex) {
+    for (const year in summaryIndex[folderField]) {
+      for (const file of summaryIndex[folderField][year]) {
 
-        const path = `/logs/summary/${field}/${year}/${file}`;
+        const path = `/logs/summary/${folderField}/${year}/${file}`;
         const summary = await loadSummaryJSON(path);
 
         const planting = summary?.planting ?? {};
@@ -83,17 +96,41 @@ export async function generateYearIndex() {
 
         const variety = planting.variety ?? "";
 
-        // ★ area 補完ロジック（CSV → fields.json → null）
+        /* ============================================================
+           ★ 圃場名（name）補完ロジック
+           1. CSV の field を最優先
+           2. fields.json の name を次に使う
+           3. 最後にフォルダ名を fallback として使う
+        ============================================================ */
+        const name =
+          csvFieldNameMap[folderField] ??
+          folderField;
+
+        /* ============================================================
+           ★ area 補完ロジック
+           1. CSV の area を最優先
+           2. fields.json の area を次に使う
+           3. 最後に null
+        ============================================================ */
         const area =
-          csvFieldAreaMap[field] ??
-          fieldMap[field] ??
+          csvFieldAreaMap[name] ??
+          fieldAreaMap[name] ??
           null;
 
-        // ★ varietyType 補完
-        const varietyType = varietyMap[variety] ?? null;
+        /* ============================================================
+           ★ varietyType 補完ロジック
+           1. CSV の type を最優先
+           2. varieties.json の type を次に使う
+           3. 最後に null
+        ============================================================ */
+        const varietyType =
+          csvVarietyTypeMap[variety] ??
+          varietyTypeMap[variety] ??
+          null;
 
         if (DEBUG_YEAR_INDEX) {
-          console.log(`[DEBUG] field="${field}" → area="${area}"`);
+          console.log(`[DEBUG] folderField="${folderField}" → name="${name}"`);
+          console.log(`[DEBUG] name="${name}" → area="${area}"`);
           console.log(`[DEBUG] variety="${variety}" → varietyType="${varietyType}"`);
         }
 
@@ -102,7 +139,7 @@ export async function generateYearIndex() {
         if (!result[planYear]) result[planYear] = [];
 
         result[planYear].push({
-          field,
+          name,          // ← field ではなく name に統一
           area,
           variety,
           varietyType,
