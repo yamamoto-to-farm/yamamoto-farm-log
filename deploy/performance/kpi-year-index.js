@@ -22,11 +22,13 @@ function normalizeRef(ref) {
   return ref
     .replace(/[()（）]/g, "")
     .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-    .replace(/[‐‑‒–—―]/g, "-")
+    .replace(/[‐‑‒–—―]/g, "-")     // ハイフン統一
+    .replace(/[＿﹍﹎ˍ]/g, "_")     // アンダーバー統一 ← ★今回の決定打
     .replace(/\s+/g, "")
     .replace(/\r/g, "")
     .trim();
 }
+
 
 export async function computeSummaryIndexHash() {
   const summaryIndex = await loadSummaryIndex();
