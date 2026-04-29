@@ -69,8 +69,8 @@ async function findSummaryPath(ref) {
 --------------------------------------------------------- */
 export async function renderKpiPage(filters = null) {
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
-  const weightRows   = normalizeKeys(await loadCSV("/logs/weight/all.csv"));
-  const harvestBase  = await loadJSON("/data/harvestBase.json");
+  const weightRows = normalizeKeys(await loadCSV("/logs/weight/all.csv"));
+  const harvestBase = await loadJSON("/data/harvestBase.json");
 
   // shippingDate の年から年度一覧を作る（月次と完全一致)
   let years = [...new Set(
@@ -151,6 +151,7 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
   /* ------------------------------
      予定面積（CSV ベース）
      ※ refList に含まれる ref のみ
+     ※ harvestPlanYM の「年」も一致したものだけ使う
   ------------------------------ */
   const planArea = Array(12).fill(0);
 
@@ -161,11 +162,17 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
     const ym = row.harvestPlanYM;
     if (!ym) return;
 
-    const month = Number(ym.split("-")[1]) - 1;
-    const area = calcAreaTanFromPlantingRow(row);
+    const [yStr, mStr] = ym.split("-");
+    const y = Number(yStr);
+    const m = Number(mStr) - 1;
 
-    planArea[month] += area;
+    // ★ KPI の対象年と一致しない場合はスキップ
+    if (y !== year) return;
+
+    const area = calcAreaTanFromPlantingRow(row);
+    planArea[m] += area;
   });
+
 
   /* ------------------------------
      実績（kg / 基）
@@ -179,7 +186,7 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
 
     const d = new Date(row.shippingDate);
     const m = d.getMonth();
-    actuals.kg[m]    += Number(row.totalWeight || 0);
+    actuals.kg[m] += Number(row.totalWeight || 0);
     actuals.units[m] += Number(row.bins || 0);
   });
 
