@@ -34,8 +34,8 @@ export async function generateYearIndex() {
   const summaryIndex = await loadSummaryIndex();
 
   // ▼ fields.json / varieties.json を読み込む
-  const fields = await loadJSON("/data/fields.json?v=1");
-  const varieties = await loadJSON("/data/varieties.json?v=1");
+  const fields = await loadJSON("/data/fields.json");
+  const varieties = await loadJSON("/data/varieties.json");
 
   if (DEBUG_YEAR_INDEX) {
     console.log("=== [DEBUG] fields.json ===");
