@@ -1,70 +1,90 @@
 /* ===============================
-   播種一覧専用 CSS
+   播種計画ページ専用 CSS
 =============================== */
 
-/* ▼ 播種日セル（クリック可能） */
-.seed-date-cell {
-  cursor: pointer;
+/* ▼ テーブル基本 */
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px 8px;
+}
+
+/* ▼ 列幅（播種計画専用） */
+.schedule-table th:nth-child(1),
+.schedule-table td:nth-child(1) {
+  width: 130px; /* 播種予定日 */
   white-space: nowrap;
 }
 
-.seed-date-cell:hover {
-  background: #eef7ff;
+.schedule-table th:nth-child(2),
+.schedule-table td:nth-child(2) {
+  width: 160px; /* 品種 */
 }
 
-/* ▼ 列幅（播種一覧専用） */
-#table-area table th:nth-child(1),
-#table-area table td:nth-child(1) {
-  width: 130px;
-  white-space: nowrap;
-}
-
-#table-area table th:nth-child(2),
-#table-area table td:nth-child(2) {
-  width: 160px;
-}
-
-#table-area table th:nth-child(3),
-#table-area table td:nth-child(3) {
-  width: 80px;
+.schedule-table th:nth-child(3),
+.schedule-table td:nth-child(3) {
+  width: 80px; /* 枚数 */
   text-align: right;
 }
 
-#table-area table th:nth-child(4),
-#table-area table td:nth-child(4) {
-  width: 120px;
-  text-align: right;
-}
-
-#table-area table th:nth-child(5),
-#table-area table td:nth-child(5) {
-  width: 150px;
-  white-space: nowrap;
-}
-
-/* ===============================
-   操作列（破棄）を細くする（播種一覧専用）
-=============================== */
-
-/* ▼ 操作列の幅固定 */
-#table-area table th:last-child,
-#table-area table td:last-child {
-  width: 60px;
-  white-space: nowrap;
+.schedule-table th:nth-child(4),
+.schedule-table td:nth-child(4) {
+  width: 80px; /* トレイタイプ */
   text-align: center;
 }
 
-/* ▼ 破棄ボタンをコンパクトに */
-.discard-btn {
-  padding: 2px 6px;
-  font-size: 12px;
+.schedule-table th:nth-child(5),
+.schedule-table td:nth-child(5) {
+  width: 120px; /* 予定面積 */
+  text-align: right;
+}
+
+.schedule-table th:nth-child(6),
+.schedule-table td:nth-child(6) {
+  width: 110px; /* 定植まで日数 */
+  text-align: right;
+}
+
+.schedule-table th:nth-child(7),
+.schedule-table td:nth-child(7) {
+  width: 130px; /* 定植予定日 */
+  white-space: nowrap;
+}
+
+/* ▼ 品種セル・トレイセルはクリック可能 */
+.variety-cell,
+.tray-type-cell {
+  cursor: pointer;
+}
+
+.variety-cell:hover,
+.tray-type-cell:hover {
+  background: #eef7ff;
 }
 
 /* ===============================
-   印刷用設定（播種一覧専用）
+   入力欄の調整
+=============================== */
+
+.schedule-table input[type="text"],
+.schedule-table input[type="date"] {
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+/* ===============================
+   印刷用設定（播種計画専用）
 =============================== */
 @media print {
 
+  /* ▼ 不要 UI を非表示 */
   .app-header,
   #mode-switch-card,
   #filter-card,
@@ -73,42 +93,54 @@
     display: none !important;
   }
 
-  /* ▼ 操作列（破棄）を非表示 */
-  #table-area table th:last-child,
-  #table-area table td:last-child {
-    display: none !important;
-  }
-
   /* ▼ テーブル最適化 */
-  #table-area table {
+  .schedule-table {
     table-layout: fixed;
     width: 100%;
     font-size: 12pt;
   }
 
-  /* ▼ 列幅調整（印刷用） */
-  #table-area table th:nth-child(1),
-  #table-area table td:nth-child(1) {
+  /* ▼ input をテキスト化 */
+  .schedule-table input {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 12pt;
+  }
+
+  /* ▼ 列幅（印刷用） */
+  .schedule-table th:nth-child(1),
+  .schedule-table td:nth-child(1) {
     width: 100px;
   }
 
-  #table-area table th:nth-child(2),
-  #table-area table td:nth-child(2) {
+  .schedule-table th:nth-child(2),
+  .schedule-table td:nth-child(2) {
     width: 140px;
   }
 
-  #table-area table th:nth-child(3),
-  #table-area table td:nth-child(3) {
+  .schedule-table th:nth-child(3),
+  .schedule-table td:nth-child(3) {
     width: 70px;
   }
 
-  #table-area table th:nth-child(4),
-  #table-area table td:nth-child(4) {
-    width: 120px;
+  .schedule-table th:nth-child(4),
+  .schedule-table td:nth-child(4) {
+    width: 70px;
   }
 
-  #table-area table th:nth-child(5),
-  #table-area table td:nth-child(5) {
-    width: 150px;
+  .schedule-table th:nth-child(5),
+  .schedule-table td:nth-child(5) {
+    width: 110px;
+  }
+
+  .schedule-table th:nth-child(6),
+  .schedule-table td:nth-child(6) {
+    width: 100px;
+  }
+
+  .schedule-table th:nth-child(7),
+  .schedule-table td:nth-child(7) {
+    width: 120px;
   }
 }

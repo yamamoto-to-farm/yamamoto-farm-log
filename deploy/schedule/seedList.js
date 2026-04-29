@@ -3,6 +3,7 @@
 // ===============================
 
 import { loadJSON } from "/common/json.js";
+import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
 
 let rows = [];
 let varietyData = [];
@@ -29,22 +30,24 @@ async function initRows() {
       planSowDate: "",
       variety: "",
       cropType: "",
-      trayCount: "",
+      trayCountRaw: "",
+      trayCount: 0,
       trayType: "",
       planArea: "",
-      daysToPlant: "",
+      daysToPlantRaw: "",
+      daysToPlant: 0,
       planPlantDate: ""
     });
   }
 }
 
 /* -----------------------------------------
-   面積計算（トレイタイプ対応）
+   面積計算（実績ロジックと同じ）
 ----------------------------------------- */
 function calcAreaFromTray(trayCount, trayType) {
   if (!trayCount || !trayType) return "";
 
-  const holes = trayType === "128" ? 128 : 200; // 1枚あたりの株数
+  const holes = trayType === "128" ? 128 : 200;
   const seedCount = trayCount * holes;
 
   const spacingRow = 34;
@@ -55,7 +58,6 @@ function calcAreaFromTray(trayCount, trayType) {
 
   return areaTan.toFixed(2);
 }
-
 
 /* -----------------------------------------
    定植予定日計算
@@ -187,13 +189,13 @@ function renderTable() {
 
         <td class="variety-cell">${r.variety || "選択"}</td>
 
-        <td><input type="number" class="input-tray" value="${r.trayCount}"></td>
+        <td><input type="text" class="input-tray" value="${r.trayCountRaw}"></td>
 
         <td class="tray-type-cell">${r.trayType || "選択"}</td>
 
         <td>${r.planArea || ""}</td>
 
-        <td><input type="number" class="input-days" value="${r.daysToPlant}"></td>
+        <td><input type="text" class="input-days" value="${r.daysToPlantRaw}"></td>
 
         <td>${r.planPlantDate || ""}</td>
       </tr>
@@ -230,9 +232,10 @@ function attachEvents() {
       });
     });
 
-    // 枚数
+    // 枚数（数字だけのテキスト入力）
     tr.querySelector(".input-tray").addEventListener("input", e => {
-      row.trayCount = Number(e.target.value);
+      row.trayCountRaw = e.target.value;
+      row.trayCount = Number(row.trayCountRaw) || 0;
       row.planArea = calcAreaFromTray(row.trayCount, row.trayType);
       renderTable();
     });
@@ -246,9 +249,10 @@ function attachEvents() {
       });
     });
 
-    // 定植まで日数
+    // 定植まで日数（数字だけのテキスト入力）
     tr.querySelector(".input-days").addEventListener("input", e => {
-      row.daysToPlant = Number(e.target.value);
+      row.daysToPlantRaw = e.target.value;
+      row.daysToPlant = Number(row.daysToPlantRaw) || 0;
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
       renderTable();
     });
