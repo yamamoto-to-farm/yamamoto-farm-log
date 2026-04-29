@@ -27,12 +27,6 @@
 
 <body>
 
-  <!-- 共通ヘッダー -->
-  <script type="module">
-    import { renderHeader } from "/common/header.js?v=1.1";
-    renderHeader();
-  </script>
-
   <div id="page-area" style="display:none;">
 
     <h1 class="page-title">収穫KPI（月別 予定 × 実績）</h1>
@@ -51,7 +45,9 @@
     <!-- ▼ 再生成ボタン（常時表示） -->
     <div id="regen-buttons" style="margin-bottom:20px;">
       <button id="btn-generate">year-index.json を再生成</button>
-      <button id="btn-load">year-index.json を読み込み</button>
+
+      <!-- ▼ 読み込みボタンはデバッグ専用に戻す -->
+      <button id="btn-load" class="debug-only">year-index.json を読み込み</button>
     </div>
 
     <!-- KPI 描画エリア -->
@@ -63,7 +59,7 @@
 
   </div>
 
-  <!-- ▼ モーダル -->
+  <!-- ▼ モーダル（一覧ページと同じ位置） -->
   <div id="modal-container"></div>
 
   <!-- ▼ KPI フィルタ共通エンジン -->
@@ -72,6 +68,7 @@
   <!-- ▼ 認証処理 & KPI 描画 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
     import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.1";
     import { generateYearIndex, saveYearIndex } from "/performance/kpi-year-index.js?v=1.1";
     import { loadJSON } from "/common/json.js";
@@ -82,21 +79,22 @@
       openKpiVarietyModal
     } from "/performance/kpi-filter.js?v=1";
 
-    const DEBUG_FILTER = false;
+    const DEBUG_FILTER = true;
 
     window.addEventListener("DOMContentLoaded", async () => {
 
-      /* ============================================================
-         ▼ ここを最初に実行しないと UI が壊れる
-      ============================================================ */
+      /* ===============================
+         ▼ 一覧ページと同じ順序
+      =============================== */
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
+      renderHeader();  // ← ログイン情報・ログアウトボタンがここで表示される
       document.getElementById("page-area").style.display = "block";
 
-      /* ============================================================
+      /* ===============================
          ▼ 再生成ボタン（常時表示）
-      ============================================================ */
+      =============================== */
       document.getElementById("btn-generate").addEventListener("click", async () => {
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
@@ -114,9 +112,9 @@
         }
       });
 
-      /* ============================================================
-         ▼ 読み込みボタン
-      ============================================================ */
+      /* ===============================
+         ▼ 読み込みボタン（デバッグ専用）
+      =============================== */
       document.getElementById("btn-load").addEventListener("click", async () => {
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
@@ -131,9 +129,9 @@
         }
       });
 
-      /* ============================================================
+      /* ===============================
          ▼ year-index.json 読み込み
-      ============================================================ */
+      =============================== */
       const yearIndex = await loadJSON("/data/year-index.json");
 
       const years = Object.keys(yearIndex)
@@ -141,9 +139,9 @@
         .map(Number)
         .sort();
 
-      /* ============================================================
-         ▼ 圃場フィルタ（2階層）
-      ============================================================ */
+      /* ===============================
+         ▼ 圃場フィルタ
+      =============================== */
       const areaMap = {};
       const areaOrder = [];
 
@@ -162,9 +160,9 @@
         });
       });
 
-      /* ============================================================
-         ▼ 品種フィルタ（2階層）
-      ============================================================ */
+      /* ===============================
+         ▼ 品種フィルタ
+      =============================== */
       const typeMap = {};
       const typeOrder = [];
 
@@ -183,9 +181,9 @@
         });
       });
 
-      /* ============================================================
+      /* ===============================
          ▼ デバッグ出力
-      ============================================================ */
+      =============================== */
       if (DEBUG_FILTER) {
         const box = document.getElementById("debug-log");
         document.querySelectorAll(".debug-only").forEach(el => el.style.display = "block");
@@ -198,9 +196,9 @@
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(typeMap, null, 2) + "\n";
       }
 
-      /* ============================================================
+      /* ===============================
          ▼ kpi-filter.js に渡す
-      ============================================================ */
+      =============================== */
       setKpiFilterData({
         years,
         fields: { parents: areaOrder, children: areaMap },
