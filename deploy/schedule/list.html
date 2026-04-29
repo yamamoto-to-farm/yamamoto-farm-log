@@ -9,16 +9,12 @@
   <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css?v=1">
 
-  <!-- フィルタ UI 共通 CSS -->
-  <link rel="stylesheet" href="/common/filter.css?v=1">
+  <!-- 播種計画・定植計画 共通 CSS（印刷設定など） -->
+  <link rel="stylesheet" href="/list/plantingList.css?v=1">
 
-  <!-- 一覧ページ共通 CSS（印刷設定など） -->
-  <link rel="stylesheet" href="/schedule/plantingList.css?v=1">
+  <!-- 播種計画ページ専用 CSS -->
+  <link rel="stylesheet" href="/list/seedList.css?v=1">
 
-  <!-- 播種計画ページ専用 CSS（列幅など） -->
-  <link rel="stylesheet" href="/schedule/seedList.css?v=1">
-
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body>
@@ -27,35 +23,34 @@
 
     <h1 class="page-title">播種・定植計画</h1>
 
-    <!-- モード切り替えカード（印刷時非表示） -->
+    <!-- モード切り替え -->
     <div class="card" id="mode-switch-card" style="margin-bottom: 16px;">
       <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
       <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
     </div>
 
-    <!-- 適用中フィルタ表示 -->
-    <div id="activeFilters"></div>
-
-    <!-- フィルタカード -->
-    <div class="card" id="filter-card">
-      <h2 class="section-title">フィルタ</h2>
-      <div class="filter-open-btn" data-type="year">▶ 年月</div>
-      <div class="filter-open-btn" data-type="field">▶ 圃場</div>
-      <div class="filter-open-btn" data-type="variety">▶ 品種</div>
+    <!-- 育苗ハウス容量 -->
+    <div class="card" id="capacity-card">
+      <label>育苗ハウス容量（トレイ枚数）</label>
+      <input type="number" id="nurseryCapacity" value="200" style="width:120px;">
     </div>
 
-    <!-- 件数・サマリー -->
-    <div class="card">
-      <div id="countArea">0 件</div>
-      <div id="summaryArea" style="margin-top:10px;"></div>
+    <!-- サマリー -->
+    <div class="card" id="summary-card">
+      <div id="summaryArea"></div>
     </div>
 
     <!-- テーブル描画領域 -->
     <div id="table-area"></div>
 
+    <!-- 行追加 -->
+    <div style="margin-top: 16px;">
+      <button id="addRowBtn" class="primary-btn">＋ 行を追加</button>
+    </div>
+
   </div>
 
-  <!-- モーダル（品種選択・トレイタイプ選択など） -->
+  <!-- モーダル -->
   <div id="modal-container"></div>
 
   <!-- メイン JS -->

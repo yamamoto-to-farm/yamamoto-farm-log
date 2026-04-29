@@ -26,19 +26,23 @@ async function initRows() {
   varietyData = await loadJSON("/data/varieties.json");
 
   for (let i = 0; i < INITIAL_ROWS; i++) {
-    rows.push({
-      planSowDate: "",
-      variety: "",
-      cropType: "",
-      trayCountRaw: "",
-      trayCount: 0,
-      trayType: "",
-      planArea: "",
-      daysToPlantRaw: "",
-      daysToPlant: 0,
-      planPlantDate: ""
-    });
+    rows.push(makeEmptyRow());
   }
+}
+
+function makeEmptyRow() {
+  return {
+    planSowDate: "",
+    variety: "",
+    cropType: "",
+    trayCountRaw: "",
+    trayCount: 0,
+    trayType: "",
+    planArea: "",
+    daysToPlantRaw: "",
+    daysToPlant: 0,
+    planPlantDate: ""
+  };
 }
 
 /* -----------------------------------------
@@ -70,41 +74,57 @@ function calcPlanPlantDate(planSowDate, days) {
 }
 
 /* -----------------------------------------
-   トレイタイプ選択モーダル
+   育苗ハウス容量
 ----------------------------------------- */
-function openTrayTypeSelectModal(callback) {
-  const container = document.getElementById("modal-container");
-  container.style.display = "block";
-
-  container.innerHTML = `
-    <div class="modal-bg" id="tray-modal-bg">
-      <div class="modal small-modal">
-        <div class="modal-close" id="tray-modal-close">×</div>
-        <h3>トレイタイプ選択</h3>
-
-        <div class="tray-select-list">
-          <div class="tray-option" data-type="128">128穴（標準）</div>
-          <div class="tray-option" data-type="200">200穴（密植）</div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("tray-modal-close").onclick = closeModal;
-  document.getElementById("tray-modal-bg").onclick = e => {
-    if (e.target.id === "tray-modal-bg") closeModal();
-  };
-
-  document.querySelectorAll(".tray-option").forEach(opt => {
-    opt.addEventListener("click", () => {
-      callback(opt.dataset.type);
-      closeModal();
-    });
-  });
+function getNurseryCapacity() {
+  return Number(document.getElementById("nurseryCapacity").value) || 0;
 }
 
 /* -----------------------------------------
-   品種選択モーダル（計画専用）
+   サマリー計算
+----------------------------------------- */
+function calcSummary() {
+  let totalTray = 0;
+  let totalArea = 0;
+
+  rows.forEach(r => {
+    if (r.trayCount > 0 && r.trayType) {
+      totalTray += r.trayCount;
+      totalArea += Number(r.planArea) || 0;
+    }
+  });
+
+  return { totalTray, totalArea };
+}
+
+/* -----------------------------------------
+   サマリー表示
+----------------------------------------- */
+function renderSummary() {
+  const { totalTray, totalArea } = calcSummary();
+  const cap = getNurseryCapacity();
+
+  let html = `
+    <div>総トレイ枚数：${totalTray} 枚</div>
+    <div>総予定面積：${totalArea.toFixed(2)} 反</div>
+    <div>育苗ハウス容量：${cap} 枚</div>
+  `;
+
+  if (totalTray > cap) {
+    html += `<div style="color:red;font-weight:bold;margin-top:6px;">
+      NG（${totalTray - cap} 枚オーバー）
+    </div>`;
+  } else {
+    html += `<div style="color:green;font-weight:bold;margin-top:6px;">
+      OK（残り ${cap - totalTray} 枚）
+    </div>`;
+  }
+
+  document.getElementById("summaryArea").innerHTML = html;
+}
+
+/* -----------------------------------------
+   モーダル（品種選択）
 ----------------------------------------- */
 function openVarietySelectModal(callback) {
   const container = document.getElementById("modal-container");
@@ -149,6 +169,40 @@ function openVarietySelectModal(callback) {
         name: opt.dataset.name,
         type: opt.dataset.type
       });
+      closeModal();
+    });
+  });
+}
+
+/* -----------------------------------------
+   モーダル（トレイタイプ）
+----------------------------------------- */
+function openTrayTypeSelectModal(callback) {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  container.innerHTML = `
+    <div class="modal-bg" id="tray-modal-bg">
+      <div class="modal small-modal">
+        <div class="modal-close" id="tray-modal-close">×</div>
+        <h3>トレイタイプ選択</h3>
+
+        <div class="tray-select-list">
+          <div class="tray-option" data-type="128">128穴（標準）</div>
+          <div class="tray-option" data-type="200">200穴（密植）</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("tray-modal-close").onclick = closeModal;
+  document.getElementById("tray-modal-bg").onclick = e => {
+    if (e.target.id === "tray-modal-bg") closeModal();
+  };
+
+  document.querySelectorAll(".tray-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      callback(opt.dataset.type);
       closeModal();
     });
   });
@@ -206,6 +260,7 @@ function renderTable() {
   tableArea.innerHTML = html;
 
   attachEvents();
+  renderSummary();
 }
 
 /* -----------------------------------------
@@ -232,7 +287,7 @@ function attachEvents() {
       });
     });
 
-    // 枚数（数字だけのテキスト入力）
+    // 枚数
     tr.querySelector(".input-tray").addEventListener("input", e => {
       row.trayCountRaw = e.target.value;
       row.trayCount = Number(row.trayCountRaw) || 0;
@@ -249,7 +304,7 @@ function attachEvents() {
       });
     });
 
-    // 定植まで日数（数字だけのテキスト入力）
+    // 定植まで日数
     tr.querySelector(".input-days").addEventListener("input", e => {
       row.daysToPlantRaw = e.target.value;
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
@@ -257,4 +312,15 @@ function attachEvents() {
       renderTable();
     });
   });
+
+  // 行追加
+  document.getElementById("addRowBtn").onclick = () => {
+    rows.push(makeEmptyRow());
+    renderTable();
+  };
+
+  // 容量変更時もサマリー更新
+  document.getElementById("nurseryCapacity").oninput = () => {
+    renderSummary();
+  };
 }
