@@ -1,13 +1,13 @@
 // kpi-year-index.js
-// year-index.json の生成・更新・ハッシュ管理（area / varietyType 対応 + デバッグ付き）
+// year-index.json の生成・更新・ハッシュ管理（CSV 補完対応 + デバッグ付き）
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
 import { saveJSON, loadJSON } from "/common/json.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js";
 
 /* ===============================
    デバッグフラグ
-   true にすると fields / varieties / mapping を console に出力
 =============================== */
 const DEBUG_YEAR_INDEX = true;
 
@@ -37,15 +37,22 @@ export async function generateYearIndex() {
   const fields = await loadJSON("/data/fields.json");
   const varieties = await loadJSON("/data/varieties.json");
 
-  if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] fields.json ===");
-    console.log(fields);
+  // ▼ CSV を読み込んで field → area を補完する
+  const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
+  const csvFieldAreaMap = {};
+  plantingRows.forEach(r => {
+    if (r.field && r.area) {
+      csvFieldAreaMap[r.field] = r.area;
+    }
+  });
 
-    console.log("=== [DEBUG] varieties.json ===");
-    console.log(varieties);
+  if (DEBUG_YEAR_INDEX) {
+    console.log("=== [DEBUG] fields.json ===", fields);
+    console.log("=== [DEBUG] varieties.json ===", varieties);
+    console.log("=== [DEBUG] CSV field → area ===", csvFieldAreaMap);
   }
 
-  // ▼ field → area マップ
+  // ▼ field → area マップ（fields.json）
   const fieldMap = Object.fromEntries(
     (fields || []).map(f => [f.name, f.area])
   );
@@ -56,11 +63,8 @@ export async function generateYearIndex() {
   );
 
   if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] fieldMap (field → area) ===");
-    console.log(fieldMap);
-
-    console.log("=== [DEBUG] varietyMap (variety → type) ===");
-    console.log(varietyMap);
+    console.log("=== [DEBUG] fieldMap (fields.json) ===", fieldMap);
+    console.log("=== [DEBUG] varietyMap ===", varietyMap);
   }
 
   const result = {};
@@ -79,8 +83,13 @@ export async function generateYearIndex() {
 
         const variety = planting.variety ?? "";
 
-        // ★ マッピング
-        const area = fieldMap[field] ?? null;
+        // ★ area 補完ロジック（CSV → fields.json → null）
+        const area =
+          csvFieldAreaMap[field] ??
+          fieldMap[field] ??
+          null;
+
+        // ★ varietyType 補完
         const varietyType = varietyMap[variety] ?? null;
 
         if (DEBUG_YEAR_INDEX) {
@@ -116,8 +125,8 @@ export async function generateYearIndex() {
 }
 
 /* ===============================
-   year-index.json を保存（saveJSON 方式）
+   year-index.json を保存
 =============================== */
 export async function saveYearIndex(newIndex) {
-  await saveJSON("data/year-index.json", newIndex);
+  await saveJSON("/data/year-index.json", newIndex);
 }

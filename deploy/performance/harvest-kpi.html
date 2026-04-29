@@ -25,6 +25,7 @@
     }
     .ok { color: green; font-weight: bold; }
     .ng { color: red; font-weight: bold; }
+    /* ▼ debug-only はログだけに使う（ボタンには使わない） */
     .debug-only { display:none; }
   </style>
 
@@ -54,15 +55,16 @@
     <!-- ▼ 適用中フィルタ表示 -->
     <div id="activeFilters"></div>
 
-    <!-- デバッグボタン -->
-    <div id="debug-buttons" class="debug-only" style="margin-bottom:20px;">
-      <button id="btn-generate">year-index.json を再生成（保存テスト）</button>
-      <button id="btn-load">year-index.json を読み込み（確認）</button>
+    <!-- ▼ 再生成ボタン（常時表示に変更） -->
+    <div id="regen-buttons" style="margin-bottom:20px;">
+      <button id="btn-generate">year-index.json を再生成</button>
+      <button id="btn-load">year-index.json を読み込み</button>
     </div>
 
     <!-- KPI 描画エリア -->
     <div id="kpi-container"></div>
 
+    <!-- ▼ デバッグログ（必要時のみ表示） -->
     <h2 id="debug-title" class="debug-only">デバッグログ</h2>
     <div id="debug-log" class="debug-box debug-only"></div>
 
@@ -96,7 +98,7 @@
       document.getElementById("page-area").style.display = "block";
 
       /* ============================================================
-         ▼ 再生成ボタン（ここが今回の追加ポイント）
+         ▼ 再生成ボタン（常時表示）
       ============================================================ */
       document.getElementById("btn-generate")?.addEventListener("click", async () => {
         const box = document.getElementById("debug-log");
