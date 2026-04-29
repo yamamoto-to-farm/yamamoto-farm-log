@@ -41,7 +41,7 @@
     <!-- ▼ 適用中フィルタ表示 -->
     <div id="activeFilters"></div>
 
-    <!-- ▼ KPI 描画エリア -->
+    <!-- KPI 描画エリア -->
     <div id="kpi-container"></div>
 
     <!-- ▼ デバッグログ -->
@@ -134,10 +134,6 @@
         box.innerHTML += "[KPI-FILTER] typeOrder: " + JSON.stringify(typeOrder) + "\n";
         box.innerHTML += "[KPI-FILTER] typeMap: " + JSON.stringify(varietyTypeMap, null, 2) + "\n";
       }
-
-      console.log("[KPI-FILTER] years:", years);
-      console.log("[KPI-FILTER] typeOrder:", typeOrder);
-      console.log("[KPI-FILTER] typeMap:", varietyTypeMap);
 
       /* ===============================
          ▼ kpi-filter.js に渡す
