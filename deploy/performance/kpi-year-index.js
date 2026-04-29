@@ -1,8 +1,7 @@
 // kpi-year-index.js
 // year-index.json の生成・更新・ハッシュ管理
-// ・plantingRef で CSV と summary を紐付け
-// ・CSV の field を fields.json.name に突き合わせて area を取得
-// ・year-index.json では "field" ではなく "name" を使う
+// ・logs/planting/all.csv の field 列と fields.json.name を突き合わせて area を決定
+// ・year-index.json では "name" を圃場名として使う
 
 import { loadSummaryIndex, loadSummaryJSON } from "./kpi-data-loader.js";
 import { sha256 } from "/common/sha256.js";
@@ -40,13 +39,23 @@ export async function generateYearIndex() {
   const fields = await loadJSON("/data/fields.json");
   const varieties = await loadJSON("/data/varieties.json");
 
-  // ▼ 播種・定植 CSV を読み込む（plantingRef で紐付けに使う）
+  // ▼ 播種・定植 CSV を読み込む
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
 
-  // fields.json: name → area
-  const fieldAreaMap = Object.fromEntries(
-    (fields || []).map(f => [f.name, f.area])
+  // CSV に実際に出てくる圃場名だけを対象にする
+  const csvFieldSet = new Set(
+    plantingRows
+      .map(r => r.field)
+      .filter(f => !!f)
   );
+
+  // fields.json.name と CSV の field を突き合わせて area を決定
+  const fieldAreaMap = {};
+  (fields || []).forEach(f => {
+    if (csvFieldSet.has(f.name)) {
+      fieldAreaMap[f.name] = f.area;
+    }
+  });
 
   // varieties.json: variety → type
   const varietyTypeMap = Object.fromEntries(
@@ -54,9 +63,8 @@ export async function generateYearIndex() {
   );
 
   if (DEBUG_YEAR_INDEX) {
-    console.log("=== [DEBUG] fields.json ===", fields);
-    console.log("=== [DEBUG] fieldAreaMap (name → area) ===", fieldAreaMap);
-    console.log("=== [DEBUG] varieties.json ===", varieties);
+    console.log("=== [DEBUG] csvFieldSet ===", Array.from(csvFieldSet));
+    console.log("=== [DEBUG] fieldAreaMap (from CSV field × fields.json.name) ===", fieldAreaMap);
     console.log("=== [DEBUG] varietyTypeMap ===", varietyTypeMap);
   }
 
@@ -76,40 +84,27 @@ export async function generateYearIndex() {
 
         const variety = planting.variety ?? "";
 
-        // plantingRef はファイル名から復元
-        const plantingRef = file.replace(".json", "");
-
-        // ▼ CSV 側の行を plantingRef で特定
-        const plantingRow = plantingRows.find(r => r.plantingRef === plantingRef);
+        // plantingRef は一応保持（今後のため）
+        const plantingRef = planting.plantingRef ?? file.replace(".json", "");
 
         // ===============================
         // ★ 圃場名 name の決定
-        //   1. CSV の field（最優先）
+        //   1. summary.planting.field（あれば）
         //   2. フォルダ名（fallback）
         // ===============================
         const name =
-          plantingRow?.field ??
+          planting.field ??
           folderField;
 
         // ===============================
         // ★ area の決定
-        //   1. CSV の field を fields.json.name に突き合わせて area を取得
-        //   2. それでも無ければ folderField を name とみなして fields.json から area を取得
-        //   3. 最後に null
+        //   CSV の field と fields.json.name を突き合わせて作った fieldAreaMap から取得
+        //   （あなたの前提では、ここは null にならない）
         // ===============================
-        let area = null;
-
-        if (plantingRow?.field && fieldAreaMap[plantingRow.field]) {
-          area = fieldAreaMap[plantingRow.field];
-        } else if (fieldAreaMap[folderField]) {
-          area = fieldAreaMap[folderField];
-        } else {
-          area = null;
-        }
+        const area = fieldAreaMap[name] ?? null;
 
         // ===============================
         // ★ varietyType の決定
-        //   varieties.json から補完（なければ null）
         // ===============================
         const varietyType = varietyTypeMap[variety] ?? null;
 
@@ -117,7 +112,7 @@ export async function generateYearIndex() {
           console.log("========================================");
           console.log(`[DEBUG] file="${file}" plantingRef="${plantingRef}"`);
           console.log(`[DEBUG] folderField="${folderField}"`);
-          console.log(`[DEBUG] CSV plantingRow.field="${plantingRow?.field ?? ""}"`);
+          console.log(`[DEBUG] summary.planting.field="${planting.field ?? ""}"`);
           console.log(`[DEBUG] name="${name}" → area="${area}"`);
           console.log(`[DEBUG] variety="${variety}" → varietyType="${varietyType}"`);
         }
@@ -125,8 +120,8 @@ export async function generateYearIndex() {
         if (!result[planYear]) result[planYear] = [];
 
         result[planYear].push({
-          name,        // ← ここを "field" ではなく "name" に統一
-          area,
+          name,        // 圃場名（CSV / summary ベース）
+          area,        // エリア名（CSV field × fields.json.name から取得）
           variety,
           varietyType,
           year,
