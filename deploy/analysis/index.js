@@ -1,7 +1,7 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
 
-// ▼ デバッグフラグ（true でログ出力 ON）
+// ▼ デバッグフラグ（true でログ ON）
 const DEBUG_FIELD_LIST = true;
 
 export async function renderFieldList() {
@@ -75,15 +75,25 @@ export async function renderFieldList() {
         }
       }
 
-      if (detail && typeof detail.size === "number") {
-        sizeHan = detail.size / 10; // a → 反
-        display = `${sizeHan.toFixed(2)}反`;
-        if (DEBUG_FIELD_LIST) {
-          console.log("numeric size detected, sizeHan =", sizeHan);
+      if (detail && detail.size != null) {
+        // 数値化を試みる（"16" → 16）
+        const sizeA = Number(detail.size);
+
+        if (!isNaN(sizeA)) {
+          sizeHan = sizeA / 10; // a → 反
+          display = `${sizeHan.toFixed(2)}反`;
+
+          if (DEBUG_FIELD_LIST) {
+            console.log("parsed sizeA =", sizeA, "sizeHan =", sizeHan);
+          }
+        } else {
+          if (DEBUG_FIELD_LIST) {
+            console.log("size is string but not numeric → 未入力扱い");
+          }
         }
       } else {
         if (DEBUG_FIELD_LIST) {
-          console.log("size not usable as number, using '未入力'");
+          console.log("detail.size が存在しない → 未入力扱い");
         }
       }
 
