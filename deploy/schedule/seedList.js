@@ -2,29 +2,30 @@
 // schedule/seedList.js（播種計画）
 // ===============================
 
-import { openVarietyModal } from "/common/filter.js";
+import { loadJSON } from "/common/json.js";
 import { showInfoModal } from "/common/showInfoModal.js";
 
-// -----------------------------------------
-// 計画データ（CSV保存なし → メモリ保持）
-// -----------------------------------------
 let rows = [];
-
-// 初期行数（必要なら増減OK）
+let varietyData = [];
 const INITIAL_ROWS = 12;
 
 // -----------------------------------------
 // 外部から呼ばれるエントリポイント
 // -----------------------------------------
-export function renderSeedList() {
-  if (rows.length === 0) initRows();
+export async function renderSeedList() {
+  if (rows.length === 0) {
+    await initRows();
+  }
   renderTable();
 }
 
 // -----------------------------------------
-// 初期行生成
+// 初期行＋品種データ読み込み
 // -----------------------------------------
-function initRows() {
+async function initRows() {
+  // 品種データ読み込み
+  varietyData = await loadJSON("/data/varieties.json");
+
   for (let i = 0; i < INITIAL_ROWS; i++) {
     rows.push({
       scheduleRef: `PLAN-${String(i + 1).padStart(3, "0")}`,
@@ -89,6 +90,59 @@ function openTrayTypeSelectModal(callback) {
   document.querySelectorAll(".tray-option").forEach(opt => {
     opt.addEventListener("click", () => {
       callback(opt.dataset.type);
+      closeModal();
+    });
+  });
+}
+
+// -----------------------------------------
+// 品種選択モーダル（計画ページ専用）
+// -----------------------------------------
+function openVarietySelectModal(callback) {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  // type ごとにグルーピング
+  const typeMap = {};
+  varietyData.forEach(v => {
+    if (!typeMap[v.type]) typeMap[v.type] = [];
+    typeMap[v.type].push(v);
+  });
+
+  let listHtml = "";
+  Object.keys(typeMap).forEach(type => {
+    listHtml += `<h4 class="variety-type-title">${type}</h4>`;
+    typeMap[type].forEach(v => {
+      listHtml += `
+        <div class="variety-option" data-name="${v.name}" data-type="${v.type}">
+          ${v.name}
+        </div>
+      `;
+    });
+  });
+
+  container.innerHTML = `
+    <div class="modal-bg" id="variety-modal-bg">
+      <div class="modal small-modal">
+        <div class="modal-close" id="variety-modal-close">×</div>
+        <h3>品種選択</h3>
+        <div class="variety-select-list">
+          ${listHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("variety-modal-close").onclick = closeModal;
+  document.getElementById("variety-modal-bg").onclick = e => {
+    if (e.target.id === "variety-modal-bg") closeModal();
+  };
+
+  document.querySelectorAll(".variety-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      const name = opt.dataset.name;
+      const type = opt.dataset.type;
+      callback({ name, type });
       closeModal();
     });
   });
@@ -169,9 +223,9 @@ function attachEvents() {
       renderTable();
     });
 
-    // 品種選択
+    // 品種選択（計画専用モーダル）
     tr.querySelector(".variety-cell").addEventListener("click", () => {
-      openVarietyModal(selected => {
+      openVarietySelectModal(selected => {
         row.variety = selected.name;
         row.cropType = selected.type;
         renderTable();
