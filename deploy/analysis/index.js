@@ -1,6 +1,9 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
 
+// ▼ デバッグフラグ（true でログ出力 ON）
+const DEBUG_FIELD_LIST = true;
+
 export async function renderFieldList() {
   const container = document.getElementById("analysis-container");
   container.innerHTML = ""; // 初期化
@@ -10,6 +13,14 @@ export async function renderFieldList() {
 
   // ★ field-detail.json 読み込み（面積）
   const fieldDetail = await loadJSON("data/field-detail.json");
+
+  if (DEBUG_FIELD_LIST) {
+    console.group("[FIELD LIST DEBUG] 初期ロード情報");
+    console.log("fields.length =", fields.length);
+    console.log("fields サンプル =", fields.slice(0, 5));
+    console.log("fieldDetail keys =", Object.keys(fieldDetail));
+    console.groupEnd();
+  }
 
   // ★ area（エリア）ごとにまとめる
   const groups = {};
@@ -24,7 +35,6 @@ export async function renderFieldList() {
   // ★ グループごとに表示（折りたたみ対応）
   for (const [groupName, fieldList] of Object.entries(groups)) {
 
-    // ▼ エリア全体の合計
     let areaTotalHan = 0;
 
     const groupDiv = document.createElement("div");
@@ -35,11 +45,10 @@ export async function renderFieldList() {
     title.textContent = `▶ ${groupName}`;
     title.className = "section-title group-title";
 
-    // ▼ 折りたたみ用の DIV（中に表を入れる）
+    // ▼ 折りたたみ用ラッパー
     const wrap = document.createElement("div");
     wrap.style.display = "none";
 
-    // ▼ 表の HTML を構築
     let tableHtml = `
       <table class="field-table">
         <thead>
@@ -56,9 +65,30 @@ export async function renderFieldList() {
       let sizeHan = 0;
       let display = "未入力";
 
+      if (DEBUG_FIELD_LIST) {
+        console.group(`[FIELD LIST DEBUG] 圃場: ${field.name}`);
+        console.log("field =", field);
+        console.log("detail =", detail);
+        console.log("detail exists? =", !!detail);
+        if (detail) {
+          console.log("typeof detail.size =", typeof detail.size);
+        }
+      }
+
       if (detail && typeof detail.size === "number") {
         sizeHan = detail.size / 10; // a → 反
         display = `${sizeHan.toFixed(2)}反`;
+        if (DEBUG_FIELD_LIST) {
+          console.log("numeric size detected, sizeHan =", sizeHan);
+        }
+      } else {
+        if (DEBUG_FIELD_LIST) {
+          console.log("size not usable as number, using '未入力'");
+        }
+      }
+
+      if (DEBUG_FIELD_LIST) {
+        console.groupEnd();
       }
 
       areaTotalHan += sizeHan;
@@ -113,7 +143,7 @@ function attachEvents() {
   document.querySelectorAll(".field-row").forEach(row => {
     row.addEventListener("click", () => {
       const name = row.dataset.name;
-      location.href = `/analysis/index.html?field=${encodeURIComponent(name)}`;
+      location.href = `/analysis/analysis.html?field=${encodeURIComponent(name)}`;
     });
   });
 }
