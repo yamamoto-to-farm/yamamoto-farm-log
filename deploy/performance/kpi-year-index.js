@@ -97,5 +97,5 @@ export async function generateYearIndex() {
 }
 
 export async function saveYearIndex(newIndex) {
-  await saveJSON("/data/year-index.json", newIndex);
+  await saveJSON("data/year-index.json", newIndex);
 }
