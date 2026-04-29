@@ -79,6 +79,20 @@
   font-size: 14px;
 }
 
+/* ▼ 定植まで日数 input の幅固定（伸び防止） */
+.schedule-table td:nth-child(6) input {
+  width: 60px !important;
+  text-align: right;
+}
+
+/* ▼ 枚数 input も固定したい場合は以下を有効化 */
+/*
+.schedule-table td:nth-child(3) input {
+  width: 60px !important;
+  text-align: right;
+}
+*/
+
 /* ===============================
    印刷用設定（播種計画専用）
 =============================== */
@@ -136,7 +150,7 @@
 
   .schedule-table th:nth-child(6),
   .schedule-table td:nth-child(6) {
-    width: 100px;
+    width: 80px;
   }
 
   .schedule-table th:nth-child(7),
