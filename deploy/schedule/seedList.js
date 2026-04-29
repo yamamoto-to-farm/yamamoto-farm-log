@@ -1,267 +1,209 @@
 // ===============================
-// seedList.js（播種ベース一覧）
+// schedule/seedList.js（播種計画）
 // ===============================
 
-import { loadCSV, normalizeKeys } from "/common/csv.js";
-import { loadJSON } from "/common/json.js";
-import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
-
-import {
-  openYearModal,
-  openFieldModal,
-  openVarietyModal,
-  setFilterData
-} from "/common/filter.js";
-
+import { openVarietyModal } from "/common/filter.js";
 import { showInfoModal } from "/common/showInfoModal.js";
 
-let seedRows = [];
-let plantingRows = [];
-let varietyData = [];
-let canDiscard = false;
+// -----------------------------------------
+// 計画データ（CSV保存なし → メモリ保持）
+// -----------------------------------------
+let rows = [];
 
-let filterData = {};
-let initialized = false;
+// 初期行数（必要なら増減OK）
+const INITIAL_ROWS = 12;
 
-/* ============================================================
-   外部から呼ばれるエントリポイント
-============================================================ */
-export async function renderSeedList() {
-  if (!initialized) {
-    await initSeedListPage();
-    initialized = true;
-  }
-  const state = window.currentFilterState || {};
-  const filtered = applyAllFilters(seedRows, state);
-  renderTable(filtered);
+// -----------------------------------------
+// 外部から呼ばれるエントリポイント
+// -----------------------------------------
+export function renderSeedList() {
+  if (rows.length === 0) initRows();
+  renderTable();
 }
 
-/* ============================================================
-   初期化
-============================================================ */
-async function initSeedListPage() {
-
-  if (window.currentRole === "admin") canDiscard = true;
-
-  seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
-  plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
-  varietyData = await loadJSON("/data/varieties.json");
-
-  /* ▼ 年 → 月マップ生成 */
-  const ymMap = {};
-  seedRows.forEach(r => {
-    if (!r.seedDate) return;
-    const y = r.seedDate.slice(0, 4);
-    const m = r.seedDate.slice(5, 7);
-    if (!ymMap[y]) ymMap[y] = [];
-    if (!ymMap[y].includes(m)) ymMap[y].push(m);
-  });
-  Object.keys(ymMap).forEach(y => ymMap[y].sort());
-
-  /* ▼ 品種 type → name */
-  const typeMap = {};
-  const typeOrder = [];
-  varietyData.forEach(v => {
-    if (!typeMap[v.type]) {
-      typeMap[v.type] = [];
-      typeOrder.push(v.type);
-    }
-    typeMap[v.type].push(v.name);
-  });
-
-  filterData = {
-    years: Object.keys(ymMap).sort(),
-    months: ymMap,
-    fields: { parents: [], children: {} }, // 播種一覧は圃場なし
-    varieties: { parents: typeOrder, children: typeMap }
-  };
-
-  // ▼ フィルタ UI 初期化
-  setFilterData(filterData);
-
-  // ▼ list.js がモード切替時に再適用できるよう保存（重要）
-  window.seedFilterData = filterData;
-
-  document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
-  document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
-  document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
-
-  window.addEventListener("filter:apply", (e) => {
-    window.currentFilterState = e.detail;
-    renderTable(applyAllFilters(seedRows, e.detail));
-  });
-
-  window.addEventListener("filter:reset", () => {
-    window.currentFilterState = {};
-    renderTable(seedRows);
-  });
-}
-
-/* ============================================================
-   フィルタ適用
-============================================================ */
-function applyAllFilters(rows, state) {
-
-  let result = rows;
-
-  if (state.yearMonths?.length) {
-    result = result.filter(r => {
-      const y = r.seedDate?.slice(0, 4);
-      const m = r.seedDate?.slice(5, 7);
-      return state.yearMonths.includes(`${y}-${m}`);
+// -----------------------------------------
+// 初期行生成
+// -----------------------------------------
+function initRows() {
+  for (let i = 0; i < INITIAL_ROWS; i++) {
+    rows.push({
+      scheduleRef: `PLAN-${String(i + 1).padStart(3, "0")}`,
+      planSowDate: "",
+      variety: "",
+      cropType: "",
+      trayCount: "",
+      trayType: "",
+      planArea: "",
+      daysToPlant: "",
+      planPlantDate: "",
+      notes: ""
     });
   }
-
-  if (state.varieties?.length) {
-    result = result.filter(r => state.varieties.includes(r.varietyName));
-  }
-
-  return result;
 }
 
-/* ============================================================
-   定植ID（seedRef → plantingRef[]）
-============================================================ */
-function getPlantingRefs(seedRef) {
-  if (!seedRef) return [];
-
-  const clean = s => (s ?? "").replace(/\s+/g, "").trim();
-  const refs = seedRef.split(",").map(s => clean(s));
-
-  const plantingRefs = [];
-
-  plantingRows.forEach(r => {
-    if (!r.seedRef) return;
-    const srefs = r.seedRef.split(",").map(s => clean(s));
-    if (srefs.some(s => refs.includes(s))) {
-      plantingRefs.push(r.plantingRef);
-    }
-  });
-
-  return plantingRefs;
+// -----------------------------------------
+// 面積計算（トレイタイプ対応）
+// -----------------------------------------
+function calcAreaFromTray(count, trayType) {
+  if (!count || !trayType) return "";
+  const factor = trayType === "128" ? 0.003 : 0.002; // 仮値
+  return (count * factor).toFixed(2);
 }
 
-/* ============================================================
-   モーダル用データ（備考は削除）
-============================================================ */
-function getSeedDetail(row) {
-  return {
-    title: `播種情報：${row.seedRef}`,
-    html: `
-      <p><b>播種ID：</b>${row.seedRef}</p>
-      <p><b>株数：</b>${row.seedCount}</p>
-      <p><b>トレイ種別：</b>${row.trayType}</p>
-      <p><b>メモ：</b><br>${row.memo ?? ""}</p>
-      <p><b>種子の種類：</b>${row.source ?? ""}</p>
-    `
+// -----------------------------------------
+// 定植予定日計算
+// -----------------------------------------
+function calcPlanPlantDate(planSowDate, days) {
+  if (!planSowDate || !days) return "";
+  const d = new Date(planSowDate);
+  d.setDate(d.getDate() + Number(days));
+  return d.toISOString().slice(0, 10);
+}
+
+// -----------------------------------------
+// トレイタイプ選択モーダル
+// -----------------------------------------
+function openTrayTypeSelectModal(callback) {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  container.innerHTML = `
+    <div class="modal-bg" id="tray-modal-bg">
+      <div class="modal small-modal">
+        <div class="modal-close" id="tray-modal-close">×</div>
+        <h3>トレイタイプ選択</h3>
+
+        <div class="tray-select-list">
+          <div class="tray-option" data-type="128">128穴（標準）</div>
+          <div class="tray-option" data-type="200">200穴（密植）</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("tray-modal-close").onclick = closeModal;
+  document.getElementById("tray-modal-bg").onclick = e => {
+    if (e.target.id === "tray-modal-bg") closeModal();
   };
+
+  document.querySelectorAll(".tray-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      callback(opt.dataset.type);
+      closeModal();
+    });
+  });
 }
 
-/* ============================================================
-   予定面積(反)（株間34cm / 畝間60cm）
-============================================================ */
-function calcSeedAreaTan(seedCount) {
-  const spacingRow = 34;
-  const spacingBed = 60;
-  const areaM2 = calcAreaM2(seedCount, spacingRow, spacingBed);
-  return calcAreaTan(areaM2);
+function closeModal() {
+  const container = document.getElementById("modal-container");
+  container.style.display = "none";
+  container.innerHTML = "";
 }
 
-/* ============================================================
-   テーブル描画
-============================================================ */
-function renderTable(rows) {
-
+// -----------------------------------------
+// テーブル描画
+// -----------------------------------------
+function renderTable() {
   const tableArea = document.getElementById("table-area");
 
   let html = `
-    <table>
+    <table class="schedule-table">
       <thead>
         <tr>
-          <th>播種日</th>
+          <th>播種予定日</th>
           <th>品種</th>
           <th>枚数</th>
-          <th id="th-area">予定面積(反)</th>
-          <th>定植ID</th>
-          <th>操作</th>
+          <th>トレイ</th>
+          <th>予定面積(反)</th>
+          <th>定植まで日数</th>
+          <th>定植予定日</th>
+          <th>メモ</th>
+          <th>ID</th>
         </tr>
       </thead>
       <tbody>
   `;
 
-  let totalTray = 0;
-  let totalSeed = 0;
-  let totalAreaTan = 0;
+  rows.forEach((r, i) => {
+    html += `
+      <tr data-index="${i}">
+        <td><input type="date" class="input-sow" value="${r.planSowDate}"></td>
 
-  rows.forEach(r => {
+        <td class="variety-cell">${r.variety || "選択"}</td>
 
-    const tray = Number(r.trayCount || 0);
-    const seedCount = Number(r.seedCount || 0);
-    const areaTan = calcSeedAreaTan(seedCount);
+        <td><input type="number" class="input-tray" value="${r.trayCount}"></td>
 
-    totalTray += tray;
-    totalSeed += seedCount;
-    totalAreaTan += areaTan;
+        <td class="tray-type-cell">${r.trayType || "選択"}</td>
 
-    const plantingRefs = getPlantingRefs(r.seedRef);
-    const plantingHtml = plantingRefs.length ? plantingRefs.join("<br>") : "-";
+        <td>${r.planArea || ""}</td>
 
-    html += `<tr>
-      <td class="seed-date-cell" data-id="${r.seedRef}">${r.seedDate ?? ""}</td>
+        <td><input type="number" class="input-days" value="${r.daysToPlant}"></td>
 
-      <td>
-        <a href="/analysis/variety.html?variety=${encodeURIComponent(r.varietyName)}">
-          ${r.varietyName ?? ""}
-        </a>
-      </td>
+        <td>${r.planPlantDate || ""}</td>
 
-      <td>${tray}</td>
-      <td>${areaTan.toFixed(2)}</td>
-      <td>${plantingHtml}</td>
-      <td>${canDiscard ? `<button class="primary-btn discard-btn" data-ref="${r.seedRef}">破棄</button>` : ""}</td>
-    </tr>`;
+        <td><input type="text" class="input-notes" value="${r.notes}"></td>
+
+        <td>${r.scheduleRef}</td>
+      </tr>
+    `;
   });
 
-  html += `
-      </tbody>
-    </table>
-  `;
-
-  document.getElementById("countArea").textContent = `${rows.length} 件`;
-  document.getElementById("summaryArea").innerHTML =
-    `総枚数：${totalTray} 枚　
-     総株数：${totalSeed.toLocaleString()} 株　
-     予定面積合計：${totalAreaTan.toFixed(2)} 反`;
-
+  html += `</tbody></table>`;
   tableArea.innerHTML = html;
 
-  /* ▼ 播種日クリックでモーダル */
-  document.querySelectorAll(".seed-date-cell").forEach(cell => {
-    cell.addEventListener("click", () => {
-      const ref = cell.dataset.id;
-      const row = seedRows.find(s => s.seedRef === ref);
-      const data = getSeedDetail(row);
-      showInfoModal(data.title, data.html);
+  attachEvents();
+}
+
+// -----------------------------------------
+// イベント付与
+// -----------------------------------------
+function attachEvents() {
+  document.querySelectorAll("tr[data-index]").forEach(tr => {
+    const idx = Number(tr.dataset.index);
+    const row = rows[idx];
+
+    // 播種予定日
+    tr.querySelector(".input-sow").addEventListener("change", e => {
+      row.planSowDate = e.target.value;
+      row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
+      renderTable();
     });
-  });
 
-  /* ▼ 予定面積(反) ヘッダークリックで備考モーダル */
-  document.getElementById("th-area").addEventListener("click", () => {
-    showInfoModal(
-      "予定面積の計算基準",
-      `
-        <p><b>予定面積は以下の基準で計算しています：</b></p>
-        <p>株間：34cm / 畝間：60cm</p>
-        <p>※播種一覧では実績面積ではなく、播種株数から算出した予定面積を表示します。</p>
-      `
-    );
-  });
+    // 品種選択
+    tr.querySelector(".variety-cell").addEventListener("click", () => {
+      openVarietyModal(selected => {
+        row.variety = selected.name;
+        row.cropType = selected.type;
+        renderTable();
+      });
+    });
 
-  /* ▼ 破棄ボタン */
-  document.querySelectorAll(".discard-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const ref = btn.dataset.ref;
-      location.href = `/seed/discard-seed.html?ref=${encodeURIComponent(ref)}`;
+    // 枚数
+    tr.querySelector(".input-tray").addEventListener("input", e => {
+      row.trayCount = Number(e.target.value);
+      row.planArea = calcAreaFromTray(row.trayCount, row.trayType);
+      renderTable();
+    });
+
+    // トレイタイプ
+    tr.querySelector(".tray-type-cell").addEventListener("click", () => {
+      openTrayTypeSelectModal(type => {
+        row.trayType = type;
+        row.planArea = calcAreaFromTray(row.trayCount, row.trayType);
+        renderTable();
+      });
+    });
+
+    // 定植まで日数
+    tr.querySelector(".input-days").addEventListener("input", e => {
+      row.daysToPlant = Number(e.target.value);
+      row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
+      renderTable();
+    });
+
+    // メモ
+    tr.querySelector(".input-notes").addEventListener("input", e => {
+      row.notes = e.target.value;
     });
   });
 }

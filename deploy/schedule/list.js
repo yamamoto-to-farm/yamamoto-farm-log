@@ -6,7 +6,7 @@ import { renderPlantingList } from "./plantingList.js";
 import { renderSeedList } from "./seedList.js";
 import { setFilterData } from "/common/filter.js";
 
-let currentMode = "planting";
+let currentMode = "seed";
 
 export function initListPage() {
 

@@ -12,10 +12,10 @@
   <!-- フィルタ UI 共通 CSS -->
   <link rel="stylesheet" href="/common/filter.css?v=1">
 
-  <!-- 一覧ページ専用 CSS（定植・播種共通の印刷設定など） -->
+  <!-- 一覧ページ共通 CSS（印刷設定など） -->
   <link rel="stylesheet" href="/list/plantingList.css?v=1">
 
-  <!-- 播種一覧専用 CSS（列幅など） -->
+  <!-- 播種計画ページ専用 CSS（列幅など） -->
   <link rel="stylesheet" href="/list/seedList.css?v=1">
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -29,9 +29,8 @@
 
     <!-- モード切り替えカード（印刷時非表示） -->
     <div class="card" id="mode-switch-card" style="margin-bottom: 16px;">
-      <button id="btn-seed" class="secondary-btn" data-mode="seed">播種計画</button>
-      <button id="btn-planting" class="primary-btn" data-mode="planting">定植計画</button>
-      
+      <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
+      <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
     </div>
 
     <!-- 適用中フィルタ表示 -->
@@ -56,10 +55,10 @@
 
   </div>
 
-  <!-- モーダル -->
+  <!-- モーダル（品種選択・トレイタイプ選択など） -->
   <div id="modal-container"></div>
 
-  <!-- 一覧ページのメイン JS -->
+  <!-- メイン JS -->
   <script type="module" src="./list.js"></script>
 
   <script type="module">
