@@ -3,15 +3,14 @@
 // ===============================
 
 import { loadJSON } from "/common/json.js";
-import { showInfoModal } from "/common/showInfoModal.js";
 
 let rows = [];
 let varietyData = [];
 const INITIAL_ROWS = 12;
 
-// -----------------------------------------
-// 外部から呼ばれるエントリポイント
-// -----------------------------------------
+/* -----------------------------------------
+   外部から呼ばれるエントリポイント
+----------------------------------------- */
 export async function renderSeedList() {
   if (rows.length === 0) {
     await initRows();
@@ -19,16 +18,14 @@ export async function renderSeedList() {
   renderTable();
 }
 
-// -----------------------------------------
-// 初期行＋品種データ読み込み
-// -----------------------------------------
+/* -----------------------------------------
+   初期行＋品種データ読み込み
+----------------------------------------- */
 async function initRows() {
-  // 品種データ読み込み
   varietyData = await loadJSON("/data/varieties.json");
 
   for (let i = 0; i < INITIAL_ROWS; i++) {
     rows.push({
-      scheduleRef: `PLAN-${String(i + 1).padStart(3, "0")}`,
       planSowDate: "",
       variety: "",
       cropType: "",
@@ -36,24 +33,23 @@ async function initRows() {
       trayType: "",
       planArea: "",
       daysToPlant: "",
-      planPlantDate: "",
-      notes: ""
+      planPlantDate: ""
     });
   }
 }
 
-// -----------------------------------------
-// 面積計算（トレイタイプ対応）
-// -----------------------------------------
+/* -----------------------------------------
+   面積計算（トレイタイプ対応）
+----------------------------------------- */
 function calcAreaFromTray(count, trayType) {
   if (!count || !trayType) return "";
   const factor = trayType === "128" ? 0.003 : 0.002; // 仮値
   return (count * factor).toFixed(2);
 }
 
-// -----------------------------------------
-// 定植予定日計算
-// -----------------------------------------
+/* -----------------------------------------
+   定植予定日計算
+----------------------------------------- */
 function calcPlanPlantDate(planSowDate, days) {
   if (!planSowDate || !days) return "";
   const d = new Date(planSowDate);
@@ -61,9 +57,9 @@ function calcPlanPlantDate(planSowDate, days) {
   return d.toISOString().slice(0, 10);
 }
 
-// -----------------------------------------
-// トレイタイプ選択モーダル
-// -----------------------------------------
+/* -----------------------------------------
+   トレイタイプ選択モーダル
+----------------------------------------- */
 function openTrayTypeSelectModal(callback) {
   const container = document.getElementById("modal-container");
   container.style.display = "block";
@@ -95,14 +91,13 @@ function openTrayTypeSelectModal(callback) {
   });
 }
 
-// -----------------------------------------
-// 品種選択モーダル（計画ページ専用）
-// -----------------------------------------
+/* -----------------------------------------
+   品種選択モーダル（計画専用）
+----------------------------------------- */
 function openVarietySelectModal(callback) {
   const container = document.getElementById("modal-container");
   container.style.display = "block";
 
-  // type ごとにグルーピング
   const typeMap = {};
   varietyData.forEach(v => {
     if (!typeMap[v.type]) typeMap[v.type] = [];
@@ -126,9 +121,7 @@ function openVarietySelectModal(callback) {
       <div class="modal small-modal">
         <div class="modal-close" id="variety-modal-close">×</div>
         <h3>品種選択</h3>
-        <div class="variety-select-list">
-          ${listHtml}
-        </div>
+        <div class="variety-select-list">${listHtml}</div>
       </div>
     </div>
   `;
@@ -140,9 +133,10 @@ function openVarietySelectModal(callback) {
 
   document.querySelectorAll(".variety-option").forEach(opt => {
     opt.addEventListener("click", () => {
-      const name = opt.dataset.name;
-      const type = opt.dataset.type;
-      callback({ name, type });
+      callback({
+        name: opt.dataset.name,
+        type: opt.dataset.type
+      });
       closeModal();
     });
   });
@@ -154,9 +148,9 @@ function closeModal() {
   container.innerHTML = "";
 }
 
-// -----------------------------------------
-// テーブル描画
-// -----------------------------------------
+/* -----------------------------------------
+   テーブル描画
+----------------------------------------- */
 function renderTable() {
   const tableArea = document.getElementById("table-area");
 
@@ -171,8 +165,6 @@ function renderTable() {
           <th>予定面積(反)</th>
           <th>定植まで日数</th>
           <th>定植予定日</th>
-          <th>メモ</th>
-          <th>ID</th>
         </tr>
       </thead>
       <tbody>
@@ -194,10 +186,6 @@ function renderTable() {
         <td><input type="number" class="input-days" value="${r.daysToPlant}"></td>
 
         <td>${r.planPlantDate || ""}</td>
-
-        <td><input type="text" class="input-notes" value="${r.notes}"></td>
-
-        <td>${r.scheduleRef}</td>
       </tr>
     `;
   });
@@ -208,9 +196,9 @@ function renderTable() {
   attachEvents();
 }
 
-// -----------------------------------------
-// イベント付与
-// -----------------------------------------
+/* -----------------------------------------
+   イベント付与
+----------------------------------------- */
 function attachEvents() {
   document.querySelectorAll("tr[data-index]").forEach(tr => {
     const idx = Number(tr.dataset.index);
@@ -223,7 +211,7 @@ function attachEvents() {
       renderTable();
     });
 
-    // 品種選択（計画専用モーダル）
+    // 品種選択
     tr.querySelector(".variety-cell").addEventListener("click", () => {
       openVarietySelectModal(selected => {
         row.variety = selected.name;
@@ -253,11 +241,6 @@ function attachEvents() {
       row.daysToPlant = Number(e.target.value);
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
       renderTable();
-    });
-
-    // メモ
-    tr.querySelector(".input-notes").addEventListener("input", e => {
-      row.notes = e.target.value;
     });
   });
 }
