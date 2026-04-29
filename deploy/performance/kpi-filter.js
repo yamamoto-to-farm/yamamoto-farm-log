@@ -1,12 +1,12 @@
 // kpi-filter.js
-// KPI（年間・月次）共通フィルタエンジン（年度 + 品種フィルタのみ）
+// KPI（年間・月次）共通フィルタエンジン（年度 + 品種フィルタ）
 
 let selectedYears = [];
 let selectedVarieties = [];  // 子（variety）
 
 let kpiFilterData = {
   years: [],
-  varieties: { parents: [], children: {} } // { parents: ["寒玉キャベツ"], children: { "寒玉キャベツ": ["夏ごろも"] } }
+  varieties: { parents: [], children: {} }
 };
 
 export function setKpiFilterData(data) {
@@ -166,7 +166,11 @@ export function openKpiVarietyModal() {
         <h3>品種の選択</h3>
 
         ${parents.map(type => `
-          <div class="parent-item" data-parent="${type}">${type}</div>
+          <div class="parent-item" data-parent="${type}">
+            <span class="parent-label">${type}</span>
+            <span class="parent-toggle">▼</span>
+          </div>
+
           <div class="child-box" data-box="${type}">
             ${children[type].map(v => `
               <div class="select-item" data-variety="${v}">${v}</div>
@@ -191,16 +195,40 @@ function initKpiVarietyModalEvents() {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
-  // 親の開閉
-  document.querySelectorAll(".parent-item").forEach(el => {
-    el.onclick = () => {
-      const type = el.dataset.parent;
+  // ▼ 親の開閉（▼クリック）
+  document.querySelectorAll(".parent-toggle").forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      const type = el.parentElement.dataset.parent;
       const box = document.querySelector(`[data-box="${type}"]`);
       box.classList.toggle("open");
     };
   });
 
-  // 子の選択
+  // ▼ 親名クリックで全選択／全解除
+  document.querySelectorAll(".parent-label").forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      const type = el.parentElement.dataset.parent;
+      const box = document.querySelector(`[data-box="${type}"]`);
+      const items = box.querySelectorAll("[data-variety]");
+
+      const allSelected = [...items].every(i => selectedVarieties.includes(i.dataset.variety));
+
+      items.forEach(i => {
+        const v = i.dataset.variety;
+        if (allSelected) {
+          selectedVarieties = selectedVarieties.filter(x => x !== v);
+        } else {
+          if (!selectedVarieties.includes(v)) selectedVarieties.push(v);
+        }
+      });
+
+      updateVarietySelections();
+    };
+  });
+
+  // ▼ 子の選択
   document.querySelectorAll("[data-variety]").forEach(el => {
     el.onclick = () => {
       const v = el.dataset.variety;
