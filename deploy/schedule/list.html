@@ -29,7 +29,7 @@
       <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
     </div>
 
-    <!-- フィルタカード -->
+    <!-- フィルタカード（seed モードでは非表示） -->
     <div class="card" id="filter-card">
       <h2 class="section-title">フィルタ</h2>
       <div class="filter-open-btn" data-type="year">▶ 年</div>
@@ -60,20 +60,16 @@
 
   </div>
 
-  <!-- モーダル（品種選択・保存モーダルなど） -->
+  <!-- ▼ 品種選択モーダルなどを入れる領域 -->
   <div id="modal-container"></div>
 
-  <!-- ★★★★★ 保存モーダルの読み込み（最速で実行） ★★★★★ -->
-  <script>
-    fetch("/common/save-modal.html")
-      .then(r => r.text())
-      .then(html => {
-        document.getElementById("modal-container")
-          .insertAdjacentHTML("beforeend", html);
-      })
-      .catch(err => console.error("❌ save-modal load error:", err));
-  </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
+  <!-- ▼ 保存モーダル（直接埋め込み・最も安全） -->
+  <div id="saveModal" class="save-modal" style="display:none;">
+    <div class="save-modal-content">
+      <span id="saveModalMessage">保存しています…</span>
+      <button id="saveModalCloseBtn" style="display:none;">OK</button>
+    </div>
+  </div>
 
   <!-- メイン JS -->
   <script type="module" src="./list.js"></script>
