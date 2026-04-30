@@ -60,17 +60,19 @@
 
   </div>
 
-  <!-- モーダル（品種選択・トレイ選択など） -->
+  <!-- モーダル（品種選択・保存モーダルなど） -->
   <div id="modal-container"></div>
 
-  <!-- ★★★★★ 保存モーダルの読み込みを追加 ★★★★★ -->
+  <!-- ★★★★★ 保存モーダルの読み込み（modal-container の直後） ★★★★★ -->
   <script>
-    fetch("/common/save-modal.html")
-      .then(r => r.text())
-      .then(html => {
-        // 既存の modal-container に追加
-        document.getElementById("modal-container").insertAdjacentHTML("beforeend", html);
-      });
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch("/common/save-modal.html")
+        .then(r => r.text())
+        .then(html => {
+          document.getElementById("modal-container")
+            .insertAdjacentHTML("beforeend", html);
+        });
+    });
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->
 
