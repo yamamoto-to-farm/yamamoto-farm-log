@@ -60,11 +60,21 @@
 
   </div>
 
-  <!-- モーダル -->
+  <!-- モーダル（品種選択・トレイ選択など） -->
   <div id="modal-container"></div>
 
+  <!-- ★★★★★ 保存モーダルの読み込みを追加 ★★★★★ -->
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        // 既存の modal-container に追加
+        document.getElementById("modal-container").insertAdjacentHTML("beforeend", html);
+      });
+  </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
+
   <!-- メイン JS -->
-  <!-- ★ ここは変更不要。list.js 内で seed/index.js を import するように修正済み -->
   <script type="module" src="./list.js"></script>
 
   <script type="module">
