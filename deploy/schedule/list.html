@@ -63,23 +63,10 @@
   <!-- モーダル（品種選択・保存モーダルなど） -->
   <div id="modal-container"></div>
 
-  <!-- ★★★★★ 保存モーダルの読み込み（DOMContentLoaded 後に実行） ★★★★★ -->
-  <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      fetch("/common/save-modal.html")
-        .then(r => r.text())
-        .then(html => {
-          document.getElementById("modal-container")
-            .insertAdjacentHTML("beforeend", html);
-        })
-        .catch(err => console.error("❌ save-modal load error:", err));
-    });
-  </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
-
-  <!-- メイン JS -->
+  <!-- メイン JS（list.js を先に読み込む） -->
   <script type="module" src="./list.js"></script>
 
+  <!-- 認証・ヘッダー・初期化 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -95,6 +82,20 @@
       initListPage();
     });
   </script>
+
+  <!-- ★★★★★ 保存モーダルの読み込み（最後に移動） ★★★★★ -->
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch("/common/save-modal.html")
+        .then(r => r.text())
+        .then(html => {
+          document.getElementById("modal-container")
+            .insertAdjacentHTML("beforeend", html);
+        })
+        .catch(err => console.error("❌ save-modal load error:", err));
+    });
+  </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
 
 </body>
 </html>
