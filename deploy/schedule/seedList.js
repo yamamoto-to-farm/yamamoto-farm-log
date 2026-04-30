@@ -41,7 +41,8 @@ function makeEmptyRow() {
     planArea: "",
     daysToPlantRaw: "",
     daysToPlant: 0,
-    planPlantDate: ""
+    planPlantDate: "",
+    harvestPlanYM: "" // ← 収穫予定（YYYY-MM）
   };
 }
 
@@ -74,6 +75,25 @@ function calcPlanPlantDate(planSowDate, days) {
 }
 
 /* -----------------------------------------
+   収穫予定（YYYY-MM）を決定
+----------------------------------------- */
+function resolveHarvestYM(planPlantDate, planSowDate, mm) {
+  const today = new Date();
+  const fallbackYear = today.getFullYear();
+
+  const base = planPlantDate || planSowDate;
+  if (!base) return `${fallbackYear}-${mm}`;
+
+  const y = Number(base.slice(0, 4));
+  const plantMonth = Number(base.slice(5, 7));
+  const harvestMonth = Number(mm);
+
+  const harvestYear = harvestMonth < plantMonth ? y + 1 : y;
+
+  return `${harvestYear}-${mm}`;
+}
+
+/* -----------------------------------------
    育苗ハウス容量
 ----------------------------------------- */
 function getNurseryCapacity() {
@@ -81,42 +101,54 @@ function getNurseryCapacity() {
 }
 
 /* -----------------------------------------
-   サマリー計算
+   在庫推移方式の容量チェック
 ----------------------------------------- */
-function calcSummary() {
-  let totalTray = 0;
-  let totalArea = 0;
+function calcNurseryStockTimeline() {
+  const events = [];
 
   rows.forEach(r => {
-    if (r.trayCount > 0 && r.trayType) {
-      totalTray += r.trayCount;
-      totalArea += Number(r.planArea) || 0;
+    if (r.trayCount > 0) {
+      if (r.planSowDate) {
+        events.push({ date: r.planSowDate, change: r.trayCount });
+      }
+      if (r.planPlantDate) {
+        events.push({ date: r.planPlantDate, change: -r.trayCount });
+      }
     }
   });
 
-  return { totalTray, totalArea };
+  events.sort((a, b) => a.date.localeCompare(b.date));
+
+  let current = 0;
+  let maxStock = 0;
+
+  events.forEach(ev => {
+    current += ev.change;
+    if (current > maxStock) maxStock = current;
+  });
+
+  return { maxStock, events };
 }
 
 /* -----------------------------------------
    サマリー表示
 ----------------------------------------- */
 function renderSummary() {
-  const { totalTray, totalArea } = calcSummary();
   const cap = getNurseryCapacity();
+  const { maxStock } = calcNurseryStockTimeline();
 
   let html = `
-    <div>総トレイ枚数：${totalTray} 枚</div>
-    <div>総予定面積：${totalArea.toFixed(2)} 反</div>
+    <div>最大在庫：${maxStock} 枚</div>
     <div>育苗ハウス容量：${cap} 枚</div>
   `;
 
-  if (totalTray > cap) {
+  if (maxStock > cap) {
     html += `<div style="color:red;font-weight:bold;margin-top:6px;">
-      NG（${totalTray - cap} 枚オーバー）
+      NG（${maxStock - cap} 枚オーバー）
     </div>`;
   } else {
     html += `<div style="color:green;font-weight:bold;margin-top:6px;">
-      OK（残り ${cap - totalTray} 枚）
+      OK（残り ${cap - maxStock} 枚）
     </div>`;
   }
 
@@ -208,6 +240,42 @@ function openTrayTypeSelectModal(callback) {
   });
 }
 
+/* -----------------------------------------
+   モーダル（収穫予定月）
+----------------------------------------- */
+function openHarvestMonthModal(callback) {
+  const container = document.getElementById("modal-container");
+  container.style.display = "block";
+
+  let listHtml = "";
+  for (let m = 1; m <= 12; m++) {
+    const mm = String(m).padStart(2, "0");
+    listHtml += `<div class="month-option" data-mm="${mm}">${m}月</div>`;
+  }
+
+  container.innerHTML = `
+    <div class="modal-bg" id="month-modal-bg">
+      <div class="modal small-modal">
+        <div class="modal-close" id="month-modal-close">×</div>
+        <h3>収穫予定月</h3>
+        <div class="month-select-list">${listHtml}</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("month-modal-close").onclick = closeModal;
+  document.getElementById("month-modal-bg").onclick = e => {
+    if (e.target.id === "month-modal-bg") closeModal();
+  };
+
+  document.querySelectorAll(".month-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      callback(opt.dataset.mm);
+      closeModal();
+    });
+  });
+}
+
 function closeModal() {
   const container = document.getElementById("modal-container");
   container.style.display = "none";
@@ -231,6 +299,7 @@ function renderTable() {
           <th>予定面積(反)</th>
           <th>定植まで日数</th>
           <th>定植予定日</th>
+          <th>収穫予定</th>
         </tr>
       </thead>
       <tbody>
@@ -243,15 +312,17 @@ function renderTable() {
 
         <td class="variety-cell">${r.variety || "選択"}</td>
 
-        <td><input type="text" class="input-tray" value="${r.trayCountRaw}"></td>
+        <td><input type="text" inputmode="numeric" class="input-tray" value="${r.trayCountRaw}"></td>
 
         <td class="tray-type-cell">${r.trayType || "選択"}</td>
 
         <td>${r.planArea || ""}</td>
 
-        <td><input type="text" class="input-days" value="${r.daysToPlantRaw}"></td>
+        <td><input type="text" inputmode="numeric" class="input-days" value="${r.daysToPlantRaw}"></td>
 
         <td>${r.planPlantDate || ""}</td>
+
+        <td class="harvest-cell">${r.harvestPlanYM || "選択"}</td>
       </tr>
     `;
   });
@@ -310,6 +381,14 @@ function attachEvents() {
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
       renderTable();
+    });
+
+    // 収穫予定月
+    tr.querySelector(".harvest-cell").addEventListener("click", () => {
+      openHarvestMonthModal(mm => {
+        row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, mm);
+        renderTable();
+      });
     });
   });
 
