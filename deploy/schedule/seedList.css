@@ -14,56 +14,84 @@
   padding: 6px 8px;
 }
 
-/* ▼ 列幅（播種計画専用・優先度UP） */
+/* ===============================
+   列幅（播種計画専用・優先度UP）
+=============================== */
+
+/* 1: 播種予定日 */
 #table-area .schedule-table th:nth-child(1),
 #table-area .schedule-table td:nth-child(1) {
-  width: 130px; /* 播種予定日 */
+  width: 130px;
   white-space: nowrap;
 }
 
+/* 2: 品種 */
 #table-area .schedule-table th:nth-child(2),
 #table-area .schedule-table td:nth-child(2) {
-  width: 160px; /* 品種 */
+  width: 160px;
 }
 
+/* 3: 枚数 */
 #table-area .schedule-table th:nth-child(3),
 #table-area .schedule-table td:nth-child(3) {
-  width: 80px; /* 枚数 */
+  width: 80px;
   text-align: right;
 }
 
+/* 4: トレイタイプ */
 #table-area .schedule-table th:nth-child(4),
 #table-area .schedule-table td:nth-child(4) {
-  width: 70px; /* トレイタイプ */
+  width: 70px;
   text-align: center;
 }
 
+/* 5: 予定面積 */
 #table-area .schedule-table th:nth-child(5),
 #table-area .schedule-table td:nth-child(5) {
-  width: 110px; /* 予定面積 */
+  width: 110px;
   text-align: right;
 }
 
+/* 6: 定植まで日数 */
 #table-area .schedule-table th:nth-child(6),
 #table-area .schedule-table td:nth-child(6) {
-  width: 70px; /* 定植まで日数 */
+  width: 70px;
   text-align: right;
 }
 
+/* 7: 定植予定日 */
 #table-area .schedule-table th:nth-child(7),
 #table-area .schedule-table td:nth-child(7) {
-  width: 130px; /* 定植予定日 */
+  width: 130px;
   white-space: nowrap;
 }
 
-/* ▼ 品種セル・トレイセルはクリック可能 */
+/* 8: 収穫予定 ← ★ 新規追加 */
+#table-area .schedule-table th:nth-child(8),
+#table-area .schedule-table td:nth-child(8) {
+  width: 120px;
+  white-space: nowrap;
+}
+
+/* 9: 備考 ← ★ 新規追加 */
+#table-area .schedule-table th:nth-child(9),
+#table-area .schedule-table td:nth-child(9) {
+  width: 240px;
+}
+
+/* ===============================
+   クリック可能セル
+=============================== */
+
 .variety-cell,
-.tray-type-cell {
+.tray-type-cell,
+.harvest-cell {
   cursor: pointer;
 }
 
 .variety-cell:hover,
-.tray-type-cell:hover {
+.tray-type-cell:hover,
+.harvest-cell:hover {
   background: #eef7ff;
 }
 
@@ -148,5 +176,17 @@
   #table-area .schedule-table th:nth-child(7),
   #table-area .schedule-table td:nth-child(7) {
     width: 120px;
+  }
+
+  /* 8: 収穫予定（印刷用） */
+  #table-area .schedule-table th:nth-child(8),
+  #table-area .schedule-table td:nth-child(8) {
+    width: 120px;
+  }
+
+  /* 9: 備考（印刷用） */
+  #table-area .schedule-table th:nth-child(9),
+  #table-area .schedule-table td:nth-child(9) {
+    width: 200px;
   }
 }
