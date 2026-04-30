@@ -3,8 +3,25 @@
 // ★ キャッシュは使わない（常に最新を取得）
 window._csvCache = {};
 
-export async function loadCSV(url) {
+/**
+ * CSV を読み込む
+ * @param {string} csvType - planting / harvest / seed / seedList など
+ * @param {string} csvFile - all.csv など
+ */
+export async function loadCSV(csvType, csvFile) {
   try {
+    let url;
+
+    // ==========================================================
+    // ★ seedList.csv だけ特別パス
+    // ==========================================================
+    if (csvType === "seedList") {
+      url = `/schedule/seedList.csv`;
+    } else {
+      // 通常の CSV は CloudFront 経由
+      url = `https://d3sscxnlo0qnhe.cloudfront.net/logs/${csvType}/${csvFile}`;
+    }
+
     // ★ 毎回キャッシュ破棄（編集画面は常に最新を読む）
     delete window._csvCache[url];
 

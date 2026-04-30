@@ -21,6 +21,9 @@
       <option value="seed">seed</option>
       <option value="nursery">nursery</option>
       <option value="discard-planting">discard-planting</option>
+
+      <!-- ★ 追加：播種計画（seedList.csv 用） -->
+      <option value="seedList">seedList</option>
     </select>
 
     <label>ファイル名：</label>
@@ -55,8 +58,7 @@
   <script type="module" src="./saver.js?v=20260323"></script>
   <script type="module" src="./edit-csv.js?v=20260323"></script>
 
-
-  <!-- ★★★★★ 追加：共通保存モーダルの読み込み ★★★★★ -->
+  <!-- ★★★★★ 共通保存モーダルの読み込み ★★★★★ -->
   <div id="modal-container"></div>
   <script>
     fetch("/common/save-modal.html")

@@ -12,7 +12,11 @@ import {
   openTrayTypeSelectModal,
   openHarvestMonthModal
 } from "./seedList-modal.js";
+import { saveSeedList } from "./seedList-save.js";   // ★ 保存機能を追加
 
+/* ===============================
+   テーブル描画
+=============================== */
 export function renderTable() {
   const rows = getRows();
   const tableArea = document.getElementById("table-area");
@@ -52,12 +56,23 @@ export function renderTable() {
   });
 
   html += `</tbody></table>`;
+
+  // ▼ 保存ボタンを下に追加
+  html += `
+    <div style="margin-top: 16px;">
+      <button id="saveCsvBtn" class="primary-btn">CSV に追加してクリア</button>
+    </div>
+  `;
+
   tableArea.innerHTML = html;
 
   attachEvents();
   renderSummary();
 }
 
+/* ===============================
+   イベント付与
+=============================== */
 function attachEvents() {
   const rows = getRows();
 
@@ -65,14 +80,14 @@ function attachEvents() {
     const idx = Number(tr.dataset.index);
     const row = rows[idx];
 
-    // 播種予定日
+    /* ▼ 播種予定日 */
     tr.querySelector(".input-sow").addEventListener("change", e => {
       row.planSowDate = e.target.value;
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
       renderTable();
     });
 
-    // 品種
+    /* ▼ 品種（モーダル） */
     tr.querySelector(".variety-cell").addEventListener("click", () => {
       openVarietySelectModal(selected => {
         row.variety = selected.name;
@@ -81,7 +96,7 @@ function attachEvents() {
       });
     });
 
-    // 枚数（再描画しない）
+    /* ▼ 枚数（再描画しない） */
     tr.querySelector(".input-tray").addEventListener("input", e => {
       row.trayCountRaw = e.target.value;
       row.trayCount = Number(row.trayCountRaw) || 0;
@@ -91,7 +106,7 @@ function attachEvents() {
       renderSummary();
     });
 
-    // トレイ
+    /* ▼ トレイタイプ（モーダル） */
     tr.querySelector(".tray-type-cell").addEventListener("click", () => {
       openTrayTypeSelectModal(type => {
         row.trayType = type;
@@ -100,7 +115,7 @@ function attachEvents() {
       });
     });
 
-    // 日数（再描画しない）
+    /* ▼ 日数（再描画しない） */
     tr.querySelector(".input-days").addEventListener("input", e => {
       row.daysToPlantRaw = e.target.value;
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
@@ -110,7 +125,7 @@ function attachEvents() {
       renderSummary();
     });
 
-    // 収穫予定月
+    /* ▼ 収穫予定（モーダル） */
     tr.querySelector(".harvest-cell").addEventListener("click", () => {
       openHarvestMonthModal(mm => {
         row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, mm);
@@ -118,21 +133,28 @@ function attachEvents() {
       });
     });
 
-    // 備考（source） ← ★ 追加
+    /* ▼ 備考（source） */
     tr.querySelector(".input-source").addEventListener("input", e => {
       row.source = e.target.value;
-      // 再描画不要
     });
   });
 
-  // 行追加
+  /* ▼ 行追加 */
   document.getElementById("addRowBtn").onclick = () => {
     rows.push(makeEmptyRow());
     renderTable();
   };
 
-  // 容量変更
+  /* ▼ 容量変更 */
   document.getElementById("nurseryCapacity").oninput = () => {
     renderSummary();
   };
+
+  /* ▼ CSV 保存ボタン */
+  const saveBtn = document.getElementById("saveCsvBtn");
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      saveSeedList();   // ★ 保存機能呼び出し
+    };
+  }
 }
