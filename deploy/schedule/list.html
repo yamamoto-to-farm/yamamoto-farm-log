@@ -63,7 +63,7 @@
   <!-- モーダル（品種選択・保存モーダルなど） -->
   <div id="modal-container"></div>
 
-  <!-- ★★★★★ 保存モーダルの読み込み（modal-container の直後） ★★★★★ -->
+  <!-- ★★★★★ 保存モーダルの読み込み（DOMContentLoaded 後に実行） ★★★★★ -->
   <script>
     window.addEventListener("DOMContentLoaded", () => {
       fetch("/common/save-modal.html")
@@ -71,7 +71,8 @@
         .then(html => {
           document.getElementById("modal-container")
             .insertAdjacentHTML("beforeend", html);
-        });
+        })
+        .catch(err => console.error("❌ save-modal load error:", err));
     });
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->

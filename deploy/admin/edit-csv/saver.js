@@ -72,28 +72,7 @@ export async function saveCsvFile(csvType, csvFile) {
   dbg("=== FINAL CSV TEXT (Papa.unparse) ===\n" + csvText);
 
   // ==========================================================
-  // ★ 4. seedList.csv だけはローカル保存（S3 保存しない）
-  // ==========================================================
-  if (csvType === "seedList") {
-    dbg("=== seedList: local download mode ===");
-
-    const blob = new Blob([csvText], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "seedList.csv";
-    a.click();
-
-    URL.revokeObjectURL(url);
-
-    updateSaveModal("seedList.csv をダウンロードしました（ローカル保存）");
-    dbg("=== saveCsvFile END (seedList local) ===");
-    return;
-  }
-
-  // ==========================================================
-  // ★ 5. 通常の CSV は saveLog → S3 に保存
+  // ★ 4. すべての CSV を saveLog → S3 保存（特別分岐なし）
   // ==========================================================
   try {
     await saveLog(csvType, "all", {}, "", csvText, "csv-replace");
@@ -108,7 +87,7 @@ export async function saveCsvFile(csvType, csvFile) {
     updateSaveModal("CSV の保存が完了しました。サマリー更新を待っています…");
 
     // ------------------------------
-    // 6. サマリー更新（本丸）
+    // 5. サマリー更新（本丸）
     // ------------------------------
     dbg("=== summary update START ===");
 
