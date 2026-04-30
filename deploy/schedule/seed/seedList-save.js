@@ -108,8 +108,8 @@ export async function saveSeedList() {
 
     dbg("saveLog completed");
 
-    clearForm();
-    alert("播種計画を保存しました（logs/schedule-seed/all.csv に追記）");
+    //clearForm();
+    //alert("播種計画を保存しました（logs/schedule-seed/all.csv に追記）");
 
   } catch (e) {
     console.error("❌ saveSeedList error:", e);
