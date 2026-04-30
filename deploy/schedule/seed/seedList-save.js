@@ -2,6 +2,7 @@
 
 import { getRows, makeEmptyRow } from "./seedList-state.js";
 import { renderTable } from "./seedList-render.js";
+import { saveLog } from "../../common/save/index.js";
 
 /* ===============================
    1. 入力済み行だけ抽出
@@ -23,61 +24,34 @@ function extractFilledRows() {
 }
 
 /* ===============================
-   2. CSV 文字列に変換
+   2. CSV（ヘッダなし）に変換
 =============================== */
-function convertToCsv(rows) {
-  const header = [
-    "planSowDate",
-    "variety",
-    "cropType",
-    "trayCount",
-    "trayType",
-    "planArea",
-    "daysToPlant",
-    "planPlantDate",
-    "harvestPlanYM",
-    "source"
-  ].join(",");
-
-  const lines = rows.map(r => [
-    r.planSowDate || "",
-    r.variety || "",
-    r.cropType || "",
-    r.trayCount || 0,
-    r.trayType || "",
-    r.planArea || "",
-    r.daysToPlant || 0,
-    r.planPlantDate || "",
-    r.harvestPlanYM || "",
-    r.source || ""
-  ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
-
-  return header + "\n" + lines.join("\n");
+function convertToCsvLines(rows) {
+  return rows
+    .map(r => [
+      r.planSowDate || "",
+      r.variety || "",
+      r.cropType || "",
+      r.trayCount || 0,
+      r.trayType || "",
+      r.planArea || "",
+      r.daysToPlant || 0,
+      r.planPlantDate || "",
+      r.harvestPlanYM || "",
+      r.source || ""
+    ]
+    .map(v => `"${String(v).replace(/"/g, '""')}"`)
+    .join(","))
+    .join("\n");
 }
 
 /* ===============================
-   3. CSV をダウンロード（append 方式）
-=============================== */
-function downloadCsvAppend(csvText) {
-  const blob = new Blob([csvText], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "seedList_append.csv"; // append 用
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
-
-/* ===============================
-   4. 入力フォームをクリア
+   3. 入力フォームをクリア
 =============================== */
 function clearForm() {
   const rows = getRows();
   rows.length = 0;
 
-  // 12 行の空行を再生成
   for (let i = 0; i < 12; i++) {
     rows.push(makeEmptyRow());
   }
@@ -86,22 +60,31 @@ function clearForm() {
 }
 
 /* ===============================
-   5. メイン処理
+   4. メイン処理（saveLog append）
 =============================== */
-export function saveSeedList() {
+export async function saveSeedList() {
   const filled = extractFilledRows();
   if (filled.length === 0) {
     alert("入力されている行がありません。");
     return;
   }
 
-  const csv = convertToCsv(filled);
+  const csvLines = convertToCsvLines(filled);
 
-  // CSV を append 用としてダウンロード
-  downloadCsvAppend(csv);
+  try {
+    await saveLog(
+      "schedule-seed",   // logs/schedule-seed/
+      "all",             // all.csv
+      {},                // JSON なし
+      csvLines,          // append 内容
+      ""                 // replaceCsv 空 → append モード
+    );
 
-  // 入力フォームをクリア
-  clearForm();
+    clearForm();
+    alert("播種計画を保存しました（logs/schedule-seed/all.csv に追記）");
 
-  alert("CSV に追加しました（append 用ファイルをダウンロードしました）");
+  } catch (e) {
+    console.error("❌ saveSeedList error:", e);
+    alert("保存に失敗しました（Console を確認してください）");
+  }
 }
