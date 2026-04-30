@@ -33,6 +33,7 @@ export function makeEmptyRow() {
     daysToPlantRaw: "",
     daysToPlant: 0,
     planPlantDate: "",
-    harvestPlanYM: ""
+    harvestPlanYM: "",
+    source: "" 
   };
 }

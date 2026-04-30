@@ -29,6 +29,7 @@ export function renderTable() {
           <th>定植まで日数</th>
           <th>定植予定日</th>
           <th>収穫予定</th>
+          <th>備考</th>
         </tr>
       </thead>
       <tbody>
@@ -45,6 +46,7 @@ export function renderTable() {
         <td><input type="text" inputmode="numeric" class="input-days" value="${r.daysToPlantRaw}"></td>
         <td>${r.planPlantDate || ""}</td>
         <td class="harvest-cell">${r.harvestPlanYM || "選択"}</td>
+        <td><input type="text" class="input-source" value="${r.source || ""}"></td>
       </tr>
     `;
   });
@@ -114,6 +116,12 @@ function attachEvents() {
         row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, mm);
         renderTable();
       });
+    });
+
+    // 備考（source） ← ★ 追加
+    tr.querySelector(".input-source").addEventListener("input", e => {
+      row.source = e.target.value;
+      // 再描画不要
     });
   });
 
