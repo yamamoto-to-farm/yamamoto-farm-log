@@ -17,11 +17,10 @@ document.getElementById("loadCsvBtn").addEventListener("click", async () => {
   currentType = document.getElementById("csvType").value;
   currentFile = document.getElementById("csvFile").value;
 
-  // ★ CloudFront の最新 CSV を読む（キャッシュバスターは loader.js 側で付与）
-  const url = `https://d3sscxnlo0qnhe.cloudfront.net/logs/${currentType}/${currentFile}`;
-  console.log("[admin] CSV 読み込み:", url);
+  console.log("[admin] CSV 読み込み:", currentType, currentFile);
 
-  const rows = await loadCSV(url);
+  // ★ 正しい呼び出し（URL を渡さない）
+  const rows = await loadCSV(currentType, currentFile);
 
   // テーブル描画
   renderCsvTable(rows);
