@@ -3,7 +3,7 @@
 // ===============================
 
 import { renderPlantingList } from "./plantingList.js";
-import { renderSeedList } from "./seed/index.js";   // ← 修正ポイント
+import { renderSeedList } from "./seedList.js";
 import { setFilterData } from "/common/filter.js";
 
 let currentMode = "seed";
@@ -12,8 +12,7 @@ export function initListPage() {
 
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");
-  if (modeParam === "planting") currentMode = "planting";
-  else currentMode = "seed";
+  if (modeParam === "seed") currentMode = "seed";
 
   // ▼ ページ再読み込みしない高速モード切り替え
   document.getElementById("btn-planting").addEventListener("click", () => {
@@ -42,18 +41,6 @@ function applyModeUI() {
 
   btnPlanting.classList.toggle("active", currentMode === "planting");
   btnSeed.classList.toggle("active", currentMode === "seed");
-
-  // ▼ seed モードではフィルタ UI を非表示（seedList はフィルタ未実装）
-  const filterCard = document.getElementById("filter-card");
-  const activeFilters = document.getElementById("activeFilters");
-
-  if (currentMode === "seed") {
-    filterCard.style.display = "none";
-    activeFilters.style.display = "none";
-  } else {
-    filterCard.style.display = "";
-    activeFilters.style.display = "";
-  }
 }
 
 function renderCurrentMode() {
@@ -71,15 +58,13 @@ function renderCurrentMode() {
   } else {
     renderSeedList();
 
-    // ▼ seed モードはフィルタ未実装なので何もしない
-    // （将来 seedFilterData を作るならここで setFilterData を呼ぶ）
+    // ▼ 播種ベース用フィルタを再設定
+    if (window.seedFilterData) {
+      setFilterData(window.seedFilterData);
+    }
   }
 }
 
-// ▼ フィルタ適用時は現在のモードを再描画（planting のみ有効）
-window.addEventListener("filter:apply", () => {
-  if (currentMode === "planting") renderCurrentMode();
-});
-window.addEventListener("filter:reset", () => {
-  if (currentMode === "planting") renderCurrentMode();
-});
+// ▼ フィルタ適用時は現在のモードを再描画
+window.addEventListener("filter:apply", () => renderCurrentMode());
+window.addEventListener("filter:reset", () => renderCurrentMode());

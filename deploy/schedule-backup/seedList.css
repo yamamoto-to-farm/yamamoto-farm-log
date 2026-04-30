@@ -1,0 +1,152 @@
+/* ===============================
+   播種計画ページ専用 CSS
+=============================== */
+
+/* ▼ テーブル基本 */
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px 8px;
+}
+
+/* ▼ 列幅（播種計画専用・優先度UP） */
+#table-area .schedule-table th:nth-child(1),
+#table-area .schedule-table td:nth-child(1) {
+  width: 130px; /* 播種予定日 */
+  white-space: nowrap;
+}
+
+#table-area .schedule-table th:nth-child(2),
+#table-area .schedule-table td:nth-child(2) {
+  width: 160px; /* 品種 */
+}
+
+#table-area .schedule-table th:nth-child(3),
+#table-area .schedule-table td:nth-child(3) {
+  width: 80px; /* 枚数 */
+  text-align: right;
+}
+
+#table-area .schedule-table th:nth-child(4),
+#table-area .schedule-table td:nth-child(4) {
+  width: 70px; /* トレイタイプ */
+  text-align: center;
+}
+
+#table-area .schedule-table th:nth-child(5),
+#table-area .schedule-table td:nth-child(5) {
+  width: 110px; /* 予定面積 */
+  text-align: right;
+}
+
+#table-area .schedule-table th:nth-child(6),
+#table-area .schedule-table td:nth-child(6) {
+  width: 70px; /* 定植まで日数 */
+  text-align: right;
+}
+
+#table-area .schedule-table th:nth-child(7),
+#table-area .schedule-table td:nth-child(7) {
+  width: 130px; /* 定植予定日 */
+  white-space: nowrap;
+}
+
+/* ▼ 品種セル・トレイセルはクリック可能 */
+.variety-cell,
+.tray-type-cell {
+  cursor: pointer;
+}
+
+.variety-cell:hover,
+.tray-type-cell:hover {
+  background: #eef7ff;
+}
+
+/* ===============================
+   入力欄の調整
+=============================== */
+
+.schedule-table input[type="text"],
+.schedule-table input[type="date"] {
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+/* ▼ 定植まで日数 input の幅固定（伸び防止） */
+#table-area .schedule-table td:nth-child(6) input {
+  width: 60px;
+  text-align: right;
+}
+
+/* ===============================
+   印刷用設定（播種計画専用）
+=============================== */
+@media print {
+
+  /* ▼ 不要 UI を非表示 */
+  .app-header,
+  #mode-switch-card,
+  #filter-card,
+  #activeFilters,
+  #modal-container {
+    display: none !important;
+  }
+
+  /* ▼ テーブル最適化 */
+  .schedule-table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 12pt;
+  }
+
+  /* ▼ input をテキスト化 */
+  .schedule-table input {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 12pt;
+  }
+
+  /* ▼ 列幅（印刷用） */
+  #table-area .schedule-table th:nth-child(1),
+  #table-area .schedule-table td:nth-child(1) {
+    width: 100px;
+  }
+
+  #table-area .schedule-table th:nth-child(2),
+  #table-area .schedule-table td:nth-child(2) {
+    width: 140px;
+  }
+
+  #table-area .schedule-table th:nth-child(3),
+  #table-area .schedule-table td:nth-child(3) {
+    width: 70px;
+  }
+
+  #table-area .schedule-table th:nth-child(4),
+  #table-area .schedule-table td:nth-child(4) {
+    width: 70px;
+  }
+
+  #table-area .schedule-table th:nth-child(5),
+  #table-area .schedule-table td:nth-child(5) {
+    width: 110px;
+  }
+
+  #table-area .schedule-table th:nth-child(6),
+  #table-area .schedule-table td:nth-child(6) {
+    width: 80px;
+  }
+
+  #table-area .schedule-table th:nth-child(7),
+  #table-area .schedule-table td:nth-child(7) {
+    width: 120px;
+  }
+}
