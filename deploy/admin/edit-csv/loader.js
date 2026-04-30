@@ -5,22 +5,15 @@ window._csvCache = {};
 
 /**
  * CSV を読み込む
- * @param {string} csvType - planting / harvest / seed / seedList など
+ * @param {string} csvType - planting / harvest / weight / schedule-seed など
  * @param {string} csvFile - all.csv など
  */
 export async function loadCSV(csvType, csvFile) {
   try {
-    let url;
-
     // ==========================================================
-    // ★ seedList.csv だけ特別パス
+    // ★ すべての CSV を CloudFront 経由で統一
     // ==========================================================
-    if (csvType === "seedList") {
-      url = `/schedule/seedList.csv`;
-    } else {
-      // 通常の CSV は CloudFront 経由
-      url = `https://d3sscxnlo0qnhe.cloudfront.net/logs/${csvType}/${csvFile}`;
-    }
+    const url = `https://d3sscxnlo0qnhe.cloudfront.net/logs/${csvType}/${csvFile}`;
 
     // ★ 毎回キャッシュ破棄（編集画面は常に最新を読む）
     delete window._csvCache[url];
