@@ -29,7 +29,7 @@
       <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
     </div>
 
-    <!-- フィルタカード（seed モードでは list.js が自動で非表示にする） -->
+    <!-- フィルタカード -->
     <div class="card" id="filter-card">
       <h2 class="section-title">フィルタ</h2>
       <div class="filter-open-btn" data-type="year">▶ 年</div>
@@ -63,7 +63,19 @@
   <!-- モーダル（品種選択・保存モーダルなど） -->
   <div id="modal-container"></div>
 
-  <!-- メイン JS（list.js を先に読み込む） -->
+  <!-- ★★★★★ 保存モーダルの読み込み（最速で実行） ★★★★★ -->
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container")
+          .insertAdjacentHTML("beforeend", html);
+      })
+      .catch(err => console.error("❌ save-modal load error:", err));
+  </script>
+  <!-- ★★★★★ ここまで ★★★★★ -->
+
+  <!-- メイン JS -->
   <script type="module" src="./list.js"></script>
 
   <!-- 認証・ヘッダー・初期化 -->
@@ -82,20 +94,6 @@
       initListPage();
     });
   </script>
-
-  <!-- ★★★★★ 保存モーダルの読み込み（最後に移動） ★★★★★ -->
-  <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      fetch("/common/save-modal.html")
-        .then(r => r.text())
-        .then(html => {
-          document.getElementById("modal-container")
-            .insertAdjacentHTML("beforeend", html);
-        })
-        .catch(err => console.error("❌ save-modal load error:", err));
-    });
-  </script>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
 </body>
 </html>
