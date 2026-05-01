@@ -8,12 +8,6 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/style.css?v=1">
-
-  <!-- ★ ヘッダー -->
-  <script type="module">
-    import { renderHeader } from "/common/header.js?v=1.1";
-    renderHeader();
-  </script>
 </head>
 
 <body>
@@ -32,6 +26,7 @@
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
     import { initAnalysisPage } from "./analysis.js";   // 圃場別分析
     import { renderFieldList } from "./index.js";        // 圃場一覧
 
@@ -40,6 +35,9 @@
       // 認証チェック
       const ok = await verifyLocalAuth();
       if (!ok) return;
+
+      // ヘッダー表示（認証済み状態で currentRole/currentHuman が使える）
+      renderHeader();
 
       // worker → 閲覧禁止
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
