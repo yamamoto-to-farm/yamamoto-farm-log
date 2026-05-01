@@ -131,7 +131,7 @@
     {
       "id": "nursery-variety",
       "name": "品種詳細",
-      "path": "nursery/variety.html",
+      "path": "varieties/index.html",
       "category": "育苗",
       "roles": [
         "family",
