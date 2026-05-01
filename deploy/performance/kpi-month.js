@@ -125,7 +125,9 @@ async function renderMonthPage() {
     tbody.insertAdjacentHTML("beforeend", `
       <tr>
         <td class="left">${ref}</td>
-        <td class="left">${variety}</td>
+        <td class="left"><a href="/varieties/index.html?variety=${encodeURIComponent(variety)}">
+            ${variety}
+          </a></td>
         <td class="left">
           <a href="/fields/index.html?field=${encodeURIComponent(field)}">
             ${field}
