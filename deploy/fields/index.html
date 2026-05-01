@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>圃場分析 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- ★ ナビバー -->
+  <script type="module">
+    import { renderNavbar } from "/common/header.js?v=1.1";
+    renderNavbar();
+  </script>
+</head>
+
+<body>
+
+  <!-- ★ ページタイトル（動的に変更される） -->
+  <h1 id="field-name" class="page-title"></h1>
+
+  <!-- ★ 分析カード or 圃場一覧 -->
+  <div id="analysis-container">読み込み中…</div>
+
+  <!-- 地図に戻る -->
+  <button class="primary-btn" onclick="location.href='/map/index.html'">
+    地図に戻る
+  </button>
+
+  <!-- 認証チェック & メイン処理 -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { initAnalysisPage } from "./analysis.js";   // 圃場別分析
+    import { renderFieldList } from "./index.js";        // 圃場一覧
+
+    window.addEventListener("DOMContentLoaded", async () => {
+
+      // 認証チェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // worker → 閲覧禁止
+      if (window.currentRole !== "family" && window.currentRole !== "admin") {
+        alert("このページは家族のみ閲覧できます");
+        location.href = "/map/index.html";
+        return;
+      }
+
+      // ★ URL パラメータ取得
+      const params = new URLSearchParams(location.search);
+      const field = params.get("field");
+
+      // ★ 分岐
+      if (field) {
+        // 圃場名をタイトルに反映
+        document.getElementById("field-name").textContent = `${field}（圃場詳細）`;
+
+        // 圃場別詳細
+        initAnalysisPage(field);
+
+      } else {
+        // 圃場一覧
+        document.getElementById("field-name").textContent = "圃場を選択してください";
+        renderFieldList();
+      }
+    });
+  </script>
+
+</body>
+</html>

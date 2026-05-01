@@ -1,6 +1,6 @@
 // schedule/seed/seedList-calc.js
 
-import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
+import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 import { getRows } from "./seedList-state.js";
 
 export function calcAreaFromTray(trayCount, trayType) {

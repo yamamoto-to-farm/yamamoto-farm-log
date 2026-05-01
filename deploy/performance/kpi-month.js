@@ -127,7 +127,7 @@ async function renderMonthPage() {
         <td class="left">${ref}</td>
         <td class="left">${variety}</td>
         <td class="left">
-          <a href="/analysis/index.html?field=${encodeURIComponent(field)}">
+          <a href="/fields/index.html?field=${encodeURIComponent(field)}">
             ${field}
           </a>
         </td>

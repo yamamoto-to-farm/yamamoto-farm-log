@@ -4,7 +4,7 @@
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
-import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
+import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 
 import {
   openYearModal,
@@ -223,8 +223,8 @@ function renderTable(rows) {
 
     html += `<tr>
       <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
-      <td><a href="/analysis/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
-      <td><a href="/analysis/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
+      <td><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
+      <td><a href="/fields/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>
       <td>${getSeedDates(r.seedRef)}</td>
       <td>${canDiscard && ref ? `<button class="primary-btn discard-btn" data-ref="${ref}">破棄</button>` : ""}</td>

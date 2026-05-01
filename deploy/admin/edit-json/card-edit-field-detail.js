@@ -206,6 +206,6 @@ async function saveFieldDetail(dataName, fieldName) {
   completeSaveModal("保存が完了しました");
 
   setTimeout(() => {
-    location.href = `/analysis/?field=${encodeURIComponent(fieldName)}`;
+    location.href = `/fields/?field=${encodeURIComponent(fieldName)}`;
   }, 800);
 }

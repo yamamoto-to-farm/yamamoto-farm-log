@@ -4,7 +4,7 @@
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
-import { calcAreaM2, calcAreaTan } from "/analysis/analysis-utils.js";
+import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 
 import {
   openYearModal,
@@ -210,7 +210,7 @@ function renderTable(rows) {
       <td class="seed-date-cell" data-id="${r.seedRef}">${r.seedDate ?? ""}</td>
 
       <td>
-        <a href="/analysis/variety.html?variety=${encodeURIComponent(r.varietyName)}">
+        <a href="/fields/variety.html?variety=${encodeURIComponent(r.varietyName)}">
           ${r.varietyName ?? ""}
         </a>
       </td>

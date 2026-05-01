@@ -154,7 +154,7 @@
     {
       "id": "field-detail",
       "name": "圃場詳細",
-      "path": "analysis/index.html",
+      "path": "fields/index.html",
       "category": "圃場",
       "roles": [
         "family",
@@ -165,7 +165,7 @@
     {
       "id": "lot-analysis",
       "name": "ロット分析",
-      "path": "analysis/field-performance.html",
+      "path": "fields/field-performance.html",
       "category": "分析",
       "roles": [
         "family",
@@ -176,7 +176,7 @@
     {
       "id": "variety-analysis",
       "name": "品種分析",
-      "path": "analysis/variety.html",
+      "path": "fields/variety.html",
       "category": "分析",
       "roles": [
         "family",
@@ -187,7 +187,7 @@
     {
       "id": "year-compare",
       "name": "年次比較",
-      "path": "analysis/year-compare.html",
+      "path": "fields/year-compare.html",
       "category": "分析",
       "roles": [
         "family",
