@@ -96,7 +96,7 @@ export function initMap() {
 
             <button id="analysis-${safeId}"
               style="margin:4px; padding:4px 10px;">
-              圃場分析ページへ
+              圃場詳細ページへ
             </button>
           </div>
         `;
