@@ -210,7 +210,7 @@ function renderTable(rows) {
       <td class="seed-date-cell" data-id="${r.seedRef}">${r.seedDate ?? ""}</td>
 
       <td>
-        <a href="/fields/variety.html?variety=${encodeURIComponent(r.varietyName)}">
+        <a href="/varieties/index.html?variety=${encodeURIComponent(r.varietyName)}">
           ${r.varietyName ?? ""}
         </a>
       </td>

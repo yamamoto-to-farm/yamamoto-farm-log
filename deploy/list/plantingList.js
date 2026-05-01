@@ -224,7 +224,7 @@ function renderTable(rows) {
     html += `<tr>
       <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
       <td><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
-      <td><a href="/fields/variety.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
+      <td><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>
       <td>${getSeedDates(r.seedRef)}</td>
       <td>${canDiscard && ref ? `<button class="primary-btn discard-btn" data-ref="${ref}">破棄</button>` : ""}</td>
