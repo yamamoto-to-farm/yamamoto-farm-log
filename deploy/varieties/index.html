@@ -18,7 +18,7 @@
   <!-- ★ 品種一覧 or 品種詳細 -->
   <div id="variety-container">読み込み中…</div>
 
-  <!-- 戻るボタン（必要なら） -->
+  <!-- 戻るボタン（fields と同じ位置） -->
   <button class="primary-btn" onclick="location.href='/varieties/index.html'">
     品種一覧に戻る
   </button>
@@ -28,9 +28,8 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
 
-    // 品種一覧・詳細の JS（あなたが作るファイル）
     import { renderVarietyList } from "./index.js";      // 品種一覧
-    //import { initVarietyDetail } from "./detail.js";     // 品種詳細
+    import { initVarietyDetail } from "./detail.js";     // 品種詳細
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -41,7 +40,7 @@
       // ヘッダー表示
       renderHeader();
 
-      // worker → 閲覧禁止
+      // worker → 閲覧禁止（fields と同じ）
       if (window.currentRole !== "family" && window.currentRole !== "admin") {
         alert("このページは家族のみ閲覧できます");
         location.href = "/index.html";
