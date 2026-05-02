@@ -42,11 +42,13 @@ export async function renderVarietySummaryCards(varietyName) {
         const row = seedRows.find(r => r.seedRef === ref);
 
         html += `
-          <div class="seed-card">
-            <div class="info-line">播種日：${row?.seedDate || "-"}</div>
-            <div class="info-line">数量：${row?.quantity || "-"}</div>
-            <div class="info-line">seedRef：${ref}</div>
-          </div>
+            <div class="seed-card">
+              <div class="info-line">播種日：${row?.seedDate || "-"}</div>
+              <div class="info-line">
+                数量：${row?.trayType || "-"}穴 × ${row?.trayCount || "-"}枚
+              </div>
+              <div class="info-line">seedRef：${ref}</div>
+            </div>
         `;
       });
     }
