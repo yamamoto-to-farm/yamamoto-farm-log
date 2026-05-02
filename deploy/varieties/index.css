@@ -17,3 +17,14 @@
 .field-row:hover {
   background: #eef7ff;
 }
+
+/* 播種（seedRef）1件ごとの余白 */
+.seed-card {
+  margin-bottom: 12px;
+}
+
+/* 定植（plantingRef）1件ごとの余白 */
+.planting-card {
+  margin-bottom: 16px;
+}
+
