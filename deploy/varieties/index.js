@@ -2,7 +2,7 @@
 import { loadJSON } from "/common/json.js";
 
 // ▼ デバッグフラグ
-const DEBUG_VARIETY_LIST = true;
+const DEBUG_VARIETY_LIST = false;
 
 export async function renderVarietyList() {
   const container = document.getElementById("variety-container");
