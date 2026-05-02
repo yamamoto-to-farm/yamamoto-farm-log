@@ -1,4 +1,4 @@
-// card-variety-summary.js
+// card-variety-summary.js（圃場 card-summary.js と完全一致版）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
@@ -24,22 +24,23 @@ export async function renderVarietySummaryCards(varietyName) {
   for (const year of Object.keys(years).sort()) {
 
     const { seed = [], planting = [] } = years[year];
-    const bodyId = `year-${year}-body`;
 
-    // ▼なし見出し
     html += `
-      <h2 class="section-title toggle-title" data-target="${bodyId}" data-open="false">
-        ${year}年の実績
-      </h2>
-
-      <div id="${bodyId}" class="toggle-body" style="display:none;">
+      <details>
+        <summary>${year} 年</summary>
+        <div class="year-block">
+          <div class="card">
     `;
 
-    // 播種
+    /* -------------------------
+       ★ 播種（seedRef）
+    ------------------------- */
     if (seed.length > 0) {
-      html += `<div class="card"><h3>播種（seedRef）</h3>`;
+      html += `<h3>播種（seedRef）</h3>`;
+
       seed.forEach(ref => {
         const row = seedRows.find(r => r.seedRef === ref);
+
         html += `
           <div class="seed-card">
             <div class="info-line">播種日：${row?.seedDate || "-"}</div>
@@ -48,12 +49,14 @@ export async function renderVarietySummaryCards(varietyName) {
           </div>
         `;
       });
-      html += `</div>`;
     }
 
-    // 定植
+    /* -------------------------
+       ★ 定植（plantingRef）
+    ------------------------- */
     if (planting.length > 0) {
-      html += `<div class="card"><h3>定植（plantingRef）</h3>`;
+      html += `<h3 style="margin-top:16px;">定植（plantingRef）</h3>`;
+
       for (const p of planting) {
         const plantingRef = p.plantingRef;
         const fileName = p.fileName;
@@ -80,15 +83,21 @@ export async function renderVarietySummaryCards(varietyName) {
 
         html += renderSummaryCard(summaryData);
       }
-      html += `</div>`;
     }
 
-    html += `</div>`;
+    html += `
+          </div> <!-- card end -->
+        </div> <!-- year-block end -->
+      </details>
+    `;
   }
 
   return html;
 }
 
+/* ===============================
+   summary.json → カードHTML
+=============================== */
 function renderSummaryCard(s) {
 
   const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
