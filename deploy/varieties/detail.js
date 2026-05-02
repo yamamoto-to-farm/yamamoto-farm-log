@@ -63,6 +63,5 @@ document.querySelectorAll(".toggle-title").forEach(title => {
 
     body.style.display = isOpen ? "none" : "block";
     title.dataset.open = isOpen ? "false" : "true";
-    title.textContent = `${isOpen ? "▶" : "▼"} ${title.textContent.replace(/^[▶▼]\s*/, "")}`;
   });
 });

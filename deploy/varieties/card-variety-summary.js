@@ -24,18 +24,18 @@ export async function renderVarietySummaryCards(varietyName) {
   for (const year of Object.keys(years).sort()) {
 
     const { seed = [], planting = [] } = years[year];
-
     const bodyId = `year-${year}-body`;
 
-    // ▼ 年見出し（クリックで開閉）
+    // ▼なし見出し
     html += `
       <h2 class="section-title toggle-title" data-target="${bodyId}" data-open="false">
-        ▶ ${year}年の実績
+        ${year}年の実績
       </h2>
+
       <div id="${bodyId}" class="toggle-body" style="display:none;">
     `;
 
-    // ▼ 播種カード
+    // 播種
     if (seed.length > 0) {
       html += `<div class="card"><h3>播種（seedRef）</h3>`;
       seed.forEach(ref => {
@@ -51,7 +51,7 @@ export async function renderVarietySummaryCards(varietyName) {
       html += `</div>`;
     }
 
-    // ▼ 定植カード
+    // 定植
     if (planting.length > 0) {
       html += `<div class="card"><h3>定植（plantingRef）</h3>`;
       for (const p of planting) {
@@ -83,7 +83,7 @@ export async function renderVarietySummaryCards(varietyName) {
       html += `</div>`;
     }
 
-    html += `</div>`; // toggle-body end
+    html += `</div>`;
   }
 
   return html;
