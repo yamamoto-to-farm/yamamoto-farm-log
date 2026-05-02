@@ -12,19 +12,14 @@ export function renderEditCard({ dataName, variety, json, container }) {
     return;
   }
 
-  // ★ タイトル変更（field-detail と同じ）
+  // ★ タイトル変更
   const title = document.getElementById("page-title");
   if (title) {
     title.textContent = `品種データ編集（${variety}）`;
   }
 
   // ★ データ取得（なければテンプレート）
-  const TEMPLATE = json["TEMPLATE_VARIETY"] || {
-    growthDays: "",
-    yieldPer10a: "",
-    memo: ""
-  };
-
+  const TEMPLATE = json["TEMPLATE_VARIETY"];
   const data = json[variety] ? json[variety] : { ...TEMPLATE };
 
   // ============================
@@ -32,21 +27,41 @@ export function renderEditCard({ dataName, variety, json, container }) {
   // ============================
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <h2>基本情報</h2>
+      <h2>基本データ</h2>
 
       <div class="edit-line">
-        <label>生育日数（日）</label>
-        <input id="growthDays" type="number" value="${data.growthDays || ""}">
+        <label>メーカー</label>
+        <input id="maker" value="${data.maker}">
       </div>
 
       <div class="edit-line">
-        <label>反収（kg/10a）</label>
-        <input id="yieldPer10a" type="number" value="${data.yieldPer10a || ""}">
+        <label>播種期</label>
+        <input id="sowingPeriod" value="${data.sowingPeriod}">
+      </div>
+
+      <div class="edit-line">
+        <label>収穫期</label>
+        <input id="harvestPeriod" value="${data.harvestPeriod}">
+      </div>
+
+      <div class="edit-line">
+        <label>適した生育</label>
+        <input id="bestGrowth" value="${data.bestGrowth}">
+      </div>
+
+      <div class="edit-line">
+        <label>耐寒性</label>
+        <input id="coldTolerance" value="${data.coldTolerance}">
+      </div>
+
+      <div class="edit-line">
+        <label>特徴</label>
+        <textarea id="features" rows="3">${data.features}</textarea>
       </div>
 
       <div class="edit-line">
         <label>メモ</label>
-        <textarea id="memo" rows="4">${data.memo || ""}</textarea>
+        <textarea id="memo" rows="4">${data.memo}</textarea>
       </div>
     </div>
   `);
@@ -66,14 +81,18 @@ export function renderEditCard({ dataName, variety, json, container }) {
 }
 
 /* ============================
-   保存処理（全文更新＋保存モーダル）
+   保存処理
 ============================ */
 async function saveVarietyDetail(dataName, variety) {
 
   const newData = {
-    growthDays: Number(document.getElementById("growthDays").value) || "",
-    yieldPer10a: Number(document.getElementById("yieldPer10a").value) || "",
-    memo: document.getElementById("memo").value || ""
+    maker: document.getElementById("maker").value,
+    sowingPeriod: document.getElementById("sowingPeriod").value,
+    harvestPeriod: document.getElementById("harvestPeriod").value,
+    bestGrowth: document.getElementById("bestGrowth").value,
+    coldTolerance: document.getElementById("coldTolerance").value,
+    features: document.getElementById("features").value,
+    memo: document.getElementById("memo").value
   };
 
   showSaveModal("保存しています…");
