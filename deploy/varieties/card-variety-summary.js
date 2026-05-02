@@ -2,15 +2,8 @@
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
-/* ===============================
-   品種別サマリーカード生成（detail.js から呼ばれる）
-   ★ 圃場詳細と完全一致のUI構造
-=============================== */
 export async function renderVarietySummaryCards(varietyName) {
 
-  /* -------------------------
-     ★ variety-index.json を読む
-  ------------------------- */
   let vIndex = {};
   try {
     vIndex = await loadJSON("/data/variety-index.json");
@@ -19,72 +12,52 @@ export async function renderVarietySummaryCards(varietyName) {
   }
 
   const years = vIndex[varietyName];
-  if (!years) {
-    return `<p>この品種の実績データはありません</p>`;
-  }
+  if (!years) return `<p>この品種の実績データはありません</p>`;
 
-  /* -------------------------
-     ★ seed/all.csv（seedRef の詳細用）
-  ------------------------- */
   let seedRows = [];
   try {
     seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
-  } catch {
-    console.warn("seed/all.csv が読み込めませんでした");
-  }
+  } catch {}
 
   let html = "";
 
-  /* -------------------------
-     ★ 年ごとのカード生成（details を廃止）
-  ------------------------- */
   for (const year of Object.keys(years).sort()) {
 
     const { seed = [], planting = [] } = years[year];
 
-    // 年見出し（圃場と同じ）
-    html += `<h2 class="section-title">${year}年の実績</h2>`;
+    const bodyId = `year-${year}-body`;
 
-    /* -------------------------
-       ★ 播種（seedRef）カード
-    ------------------------- */
+    // ▼ 年見出し（クリックで開閉）
+    html += `
+      <h2 class="section-title toggle-title" data-target="${bodyId}" data-open="false">
+        ▶ ${year}年の実績
+      </h2>
+      <div id="${bodyId}" class="toggle-body" style="display:none;">
+    `;
+
+    // ▼ 播種カード
     if (seed.length > 0) {
       html += `<div class="card"><h3>播種（seedRef）</h3>`;
-
       seed.forEach(ref => {
         const row = seedRows.find(r => r.seedRef === ref);
-
-        if (row) {
-          html += `
-            <div class="seed-card">
-              <div class="info-line">播種日：${row.seedDate}</div>
-              <div class="info-line">数量：${row.quantity || "-"}</div>
-              <div class="info-line">seedRef：${ref}</div>
-            </div>
-          `;
-        } else {
-          html += `
-            <div class="seed-card">
-              <div class="info-line">seedRef：${ref}</div>
-            </div>
-          `;
-        }
+        html += `
+          <div class="seed-card">
+            <div class="info-line">播種日：${row?.seedDate || "-"}</div>
+            <div class="info-line">数量：${row?.quantity || "-"}</div>
+            <div class="info-line">seedRef：${ref}</div>
+          </div>
+        `;
       });
-
-      html += `</div>`; // card end
+      html += `</div>`;
     }
 
-    /* -------------------------
-       ★ 定植（plantingRef）カード
-    ------------------------- */
+    // ▼ 定植カード
     if (planting.length > 0) {
       html += `<div class="card"><h3>定植（plantingRef）</h3>`;
-
       for (const p of planting) {
         const plantingRef = p.plantingRef;
         const fileName = p.fileName;
 
-        // plantingRef から year / field を抽出
         const yearFromRef = plantingRef.substring(0, 4);
         const firstDash = plantingRef.indexOf("-");
         const lastDash = plantingRef.lastIndexOf("-");
@@ -107,25 +80,19 @@ export async function renderVarietySummaryCards(varietyName) {
 
         html += renderSummaryCard(summaryData);
       }
-
-      html += `</div>`; // card end
+      html += `</div>`;
     }
+
+    html += `</div>`; // toggle-body end
   }
 
   return html;
 }
 
-/* ===============================
-   summary.json → カードHTML
-   ★ 圃場と同じ info-line 構造
-=============================== */
 function renderSummaryCard(s) {
 
   const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
-
-  const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", {
-    timeZone: "Asia/Tokyo"
-  });
+  const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
   return `
     <div class="planting-card">

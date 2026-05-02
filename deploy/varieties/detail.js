@@ -39,16 +39,6 @@ export async function initVarietyDetail(varietyName) {
     </div>
   `);
 
-  /* ===============================
-     ★ メモ（カード化）
-  =============================== */
-  const memoText = detail[varietyName]?.memo || "";
-  container.insertAdjacentHTML("beforeend", `
-    <h2>メモ</h2>
-    <div class="card">
-      ${memoText ? memoText : "メモは登録されていません。"}
-    </div>
-  `);
 
   /* ===============================
      ★ 年ごとのサマリーカード（variety-index.json）
@@ -63,3 +53,16 @@ export async function initVarietyDetail(varietyName) {
 
   if (DEBUG) console.log("=== initVarietyDetail 完了 ===");
 }
+
+// ▼ 開閉イベント（圃場と同じ）
+document.querySelectorAll(".toggle-title").forEach(title => {
+  title.addEventListener("click", () => {
+    const targetId = title.dataset.target;
+    const body = document.getElementById(targetId);
+    const isOpen = title.dataset.open === "true";
+
+    body.style.display = isOpen ? "none" : "block";
+    title.dataset.open = isOpen ? "false" : "true";
+    title.textContent = `${isOpen ? "▶" : "▼"} ${title.textContent.replace(/^[▶▼]\s*/, "")}`;
+  });
+});
