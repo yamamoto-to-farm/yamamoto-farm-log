@@ -108,11 +108,10 @@ function renderSummaryCard(s) {
     return `
     <div class="planting-card">
       <div class="info-line">
-  圃場：<a href="/fields/detail.html?field=${encodeURIComponent(s.planting.field)}">
-    ${s.planting.field}
-  </a>
-</div>
-
+        圃場：<a href="/fields/index.html?field=${encodeURIComponent(s.planting.field)}">
+        ${s.planting.field}
+        </a>
+      </div>
       <div class="info-line">定植日：${s.planting.plantDate}</div>
       <div class="info-line">定植株数：${s.planting.quantity} 株（${s.planting.trayType || "-"}穴）</div>
       <div class="info-line">株間 × 条間：${spacingText}</div>
