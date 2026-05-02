@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>品種データ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ★ 共通デザイン -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
+</head>
+
+<body>
+
+  <!-- ★ ページタイトル（動的に変更される） -->
+  <h1 id="variety-name" class="page-title"></h1>
+
+  <!-- ★ 品種一覧 or 品種詳細 -->
+  <div id="variety-container">読み込み中…</div>
+
+  <!-- 戻るボタン（必要なら） -->
+  <button class="primary-btn" onclick="location.href='/varieties/index.html'">
+    品種一覧に戻る
+  </button>
+
+  <!-- 認証チェック & メイン処理 -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
+
+    // 品種一覧・詳細の JS（あなたが作るファイル）
+    import { renderVarietyList } from "./index.js";      // 品種一覧
+    import { initVarietyDetail } from "./detail.js";     // 品種詳細
+
+    window.addEventListener("DOMContentLoaded", async () => {
+
+      // 認証チェック
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // ヘッダー表示
+      renderHeader();
+
+      // worker → 閲覧禁止
+      if (window.currentRole !== "family" && window.currentRole !== "admin") {
+        alert("このページは家族のみ閲覧できます");
+        location.href = "/index.html";
+        return;
+      }
+
+      // ★ URL パラメータ取得
+      const params = new URLSearchParams(location.search);
+      const variety = params.get("variety");
+
+      // ★ 分岐
+      if (variety) {
+        // 品種名をタイトルに反映
+        document.getElementById("variety-name").textContent = `${variety}（品種詳細）`;
+
+        // 品種詳細ページ
+        initVarietyDetail(variety);
+
+      } else {
+        // 品種一覧
+        document.getElementById("variety-name").textContent = "品種を選択してください";
+        renderVarietyList();
+      }
+    });
+  </script>
+
+</body>
+</html>
