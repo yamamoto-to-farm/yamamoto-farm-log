@@ -36,7 +36,7 @@ export async function renderVarietySummaryCards(varietyName) {
        ★ 播種（seedRef）
     ------------------------- */
     if (seed.length > 0) {
-      html += `<h3>播種（seedRef）</h3>`;
+      html += `<h3>播種</h3>`;
 
       seed.forEach(ref => {
         const row = seedRows.find(r => r.seedRef === ref);
@@ -57,7 +57,7 @@ export async function renderVarietySummaryCards(varietyName) {
        ★ 定植（plantingRef）
     ------------------------- */
     if (planting.length > 0) {
-      html += `<h3 style="margin-top:16px;">定植（plantingRef）</h3>`;
+      html += `<h3 style="margin-top:16px;">定植</h3>`;
 
       for (const p of planting) {
         const plantingRef = p.plantingRef;
