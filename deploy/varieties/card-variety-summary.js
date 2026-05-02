@@ -1,4 +1,4 @@
-// card-variety-summary.js（圃場 card-summary.js と完全一致版）
+// card-variety-summary.js（圃場 summary と完全一致 UI）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
@@ -36,28 +36,27 @@ export async function renderVarietySummaryCards(varietyName) {
        ★ 播種（seedRef）
     ------------------------- */
     if (seed.length > 0) {
-      html += `<h3>播種（seedRef）</h3>`;
+      html += `<h2 class="section-title">播種</h2><div class="info-block">`;
 
       seed.forEach(ref => {
         const row = seedRows.find(r => r.seedRef === ref);
 
         html += `
-            <div class="seed-card">
-              <div class="info-line">播種日：${row?.seedDate || "-"}</div>
-              <div class="info-line">
-                数量：${row?.trayType || "-"}穴 × ${row?.trayCount || "-"}枚
-              </div>
-              <div class="info-line">seedRef：${ref}</div>
-            </div>
+          <div class="info-line">播種日：${row?.seedDate || "-"}</div>
+          <div class="info-line">数量：${row?.trayType || "-"}穴 × ${row?.trayCount || "-"}枚</div>
+          <div class="info-line">seedRef：${ref}</div>
+          <hr>
         `;
       });
+
+      html += `</div>`;
     }
 
     /* -------------------------
        ★ 定植（plantingRef）
     ------------------------- */
     if (planting.length > 0) {
-      html += `<h3 style="margin-top:16px;">定植（plantingRef）</h3>`;
+      html += `<h2 class="section-title" style="margin-top:16px;">定植</h2>`;
 
       for (const p of planting) {
         const plantingRef = p.plantingRef;
@@ -75,7 +74,7 @@ export async function renderVarietySummaryCards(varietyName) {
           summaryData = await loadJSON(summaryPath);
         } catch {
           html += `
-            <div class="planting-card">
+            <div class="info-block">
               <div class="info-line">plantingRef：${plantingRef}</div>
               <div class="info-line" style="color:#c00;">summary.json が見つかりません</div>
             </div>
@@ -88,8 +87,8 @@ export async function renderVarietySummaryCards(varietyName) {
     }
 
     html += `
-          </div> <!-- card end -->
-        </div> <!-- year-block end -->
+          </div> <!-- card -->
+        </div> <!-- year-block -->
       </details>
     `;
   }
@@ -106,13 +105,13 @@ function renderSummaryCard(s) {
   const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
   return `
-    <div class="planting-card">
+    <div class="info-block">
       <div class="info-line">圃場：${s.planting.field}</div>
       <div class="info-line">定植日：${s.planting.plantDate}</div>
       <div class="info-line">定植株数：${s.planting.quantity} 株（${s.planting.trayType || "-"}穴）</div>
       <div class="info-line">株間 × 条間：${spacingText}</div>
       <div class="info-line">収穫回数：${s.harvest.count}</div>
-      <div class="info-line">収穫合計：${s.harvest.totalAmount} 基（${s.shipping.totalWeight.toFixed(1)} kg）</div>
+      <div class="info-line">収穫合計：${s.harvest.totalAmount} 重（${s.shipping.totalWeight.toFixed(1)} kg）</div>
       <div class="info-line">plantingRef：${s.plantingRef}</div>
       <div class="info-line" style="font-size:12px; color:#666;">最終更新：${updatedJST}</div>
     </div>
