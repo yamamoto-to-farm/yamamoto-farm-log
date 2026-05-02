@@ -1,46 +1,106 @@
 // card-variety-summary.js
-import { loadNotesForPlantingRef } from "./notes.js";
-import {
-  calcAreaM2,
-  calcAreaTan,
-  calcYieldPerTan,
-  calcUnitsPerTan,
-  calcAvgWeight,
-  calcDaysToHarvest,
-  getSeedlingSummary
-} from "./analysis-utils.js";
-
-const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+import { loadJSON } from "/common/json.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js";
 
 /* ===============================
-   メインエントリ：品種別サマリー生成
+   品種別サマリーカード生成（detail.js から呼ばれる）
 =============================== */
 export async function renderVarietySummaryCards(varietyName) {
 
-  const index = await fetch(`${CF_BASE}/data/variety-index.json?ts=${Date.now()}`)
-    .then(r => r.json())
-    .catch(() => ({}));
+  /* -------------------------
+     ★ variety-index.json を読む
+  ------------------------- */
+  let vIndex = {};
+  try {
+    vIndex = await loadJSON("/data/variety-index.json");
+  } catch {
+    return `<p>variety-index.json が読み込めませんでした</p>`;
+  }
 
-  if (!index[varietyName]) {
-    return `<p>この品種のサマリーはありません</p>`;
+  const years = vIndex[varietyName];
+  if (!years) {
+    return `<p>この品種の実績データはありません</p>`;
+  }
+
+  /* -------------------------
+     ★ seed/all.csv（seedRef の詳細用）
+  ------------------------- */
+  let seedRows = [];
+  try {
+    seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
+  } catch {
+    console.warn("seed/all.csv が読み込めませんでした");
   }
 
   let html = "";
 
-  for (const year of Object.keys(index[varietyName]).sort()) {
+  /* -------------------------
+     ★ 年ごとのカード生成
+  ------------------------- */
+  for (const year of Object.keys(years).sort()) {
+
+    const { seed = [], planting = [] } = years[year];
+
     html += `
-      <details>
-        <summary>${year} 年</summary>
-        <div class="year-block">
+      <details class="year-card" open>
+        <summary>${year}年の実績</summary>
+        <div class="year-content">
     `;
 
-    const files = index[varietyName][year];
+    /* -------------------------
+       ★ seedRef のカード
+    ------------------------- */
+    if (seed.length > 0) {
+      html += `<h3>播種（seedRef）</h3>`;
 
-    for (const file of files) {
-      const url = `${CF_BASE}/logs/summary/byVariety/${varietyName}/${year}/${file}?ts=${Date.now()}`;
-      const summary = await fetch(url).then(r => r.json());
+      seed.forEach(ref => {
+        const row = seedRows.find(r => r.seedRef === ref);
 
-      html += await renderVarietySummaryCard(summary);
+        if (row) {
+          html += `
+            <div class="seed-card">
+              <div>播種日：${row.seedDate}</div>
+              <div>数量：${row.quantity || "-"}</div>
+              <div>seedRef：${ref}</div>
+            </div>
+          `;
+        } else {
+          html += `<div class="seed-card"><div>seedRef：${ref}</div></div>`;
+        }
+      });
+    }
+
+    /* -------------------------
+       ★ plantingRef のカード
+    ------------------------- */
+    if (planting.length > 0) {
+      html += `<h3>定植（plantingRef）</h3>`;
+
+      for (const p of planting) {
+        const plantingRef = p.plantingRef;
+        const fileName = p.fileName;
+
+        // plantingRef から field / year を抽出
+        const [refDate, field] = plantingRef.split("-");
+        const y = refDate.substring(0, 4);
+
+        const summaryPath = `/logs/summary/${field}/${y}/${fileName}`;
+
+        let summaryData = null;
+        try {
+          summaryData = await loadJSON(summaryPath);
+        } catch {
+          html += `
+            <div class="planting-card">
+              <div>plantingRef：${plantingRef}</div>
+              <div style="color:#c00;">summary.json が見つかりません</div>
+            </div>
+          `;
+          continue;
+        }
+
+        html += renderSummaryCard(summaryData);
+      }
     }
 
     html += `</div></details>`;
@@ -52,126 +112,25 @@ export async function renderVarietySummaryCards(varietyName) {
 /* ===============================
    summary.json → カードHTML
 =============================== */
-async function renderVarietySummaryCard(s) {
+function renderSummaryCard(s) {
 
   const seedRef = s.planting.seedRef;
-  const seedlingSummary = getSeedlingSummary(seedRef, s.planting.plantDate);
-
-  const hasHarvest =
-    !!s.harvest.firstDate &&
-    !!s.harvest.lastDate &&
-    s.harvest.count > 0;
-
-  const daysToHarvest = hasHarvest
-    ? calcDaysToHarvest(s.planting.plantDate, s.harvest.firstDate)
-    : "—";
-
-  const areaM2 = calcAreaM2(
-    s.planting.quantity,
-    s.planting.spacing.row,
-    s.planting.spacing.bed
-  );
-
-  const areaTan = calcAreaTan(areaM2);
   const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
 
   const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", {
     timeZone: "Asia/Tokyo"
   });
 
-  const totalAmount = s.harvest.totalAmount;
-  const totalWeight = s.shipping.totalWeight;
-
-  const yieldPerTan = hasHarvest
-    ? calcYieldPerTan(totalWeight, areaTan)
-    : "—";
-
-  const unitsPerTan = hasHarvest
-    ? calcUnitsPerTan(totalAmount, areaTan)
-    : "—";
-
-  const avgPerUnit = hasHarvest
-    ? calcAvgWeight(totalWeight, totalAmount)
-    : "—";
-
-  let harvestPeriod = "未収穫";
-
-  if (hasHarvest) {
-    const firstMD = s.harvest.firstDate.slice(5).replace("-", "/");
-    const lastMD = s.harvest.lastDate.slice(5).replace("-", "/");
-
-    const harvestDays =
-      Math.floor(
-        (new Date(s.harvest.lastDate) - new Date(s.harvest.firstDate))
-        / (1000 * 60 * 60 * 24)
-      ) + 1;
-
-    harvestPeriod =
-      firstMD === lastMD
-        ? `${firstMD}（1日）`
-        : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
-  }
-
-  const notes = await loadNotesForPlantingRef(s.plantingRef);
-
-  const notesHTML =
-    notes.length > 0
-      ? `
-      <details class="notes-toggle">
-        <summary>【現場メモ】（${notes.length}件）</summary>
-        <ul class="notes-list">
-          ${notes.map(n => `<li>${n}</li>`).join("")}
-        </ul>
-      </details>
-      `
-      : "";
-
   return `
-    <div class="card">
-
-      <h2 class="section-title">定植情報</h2>
-      <div class="info-block">
-        <div class="info-line">圃場：${s.field}</div>
-        <div class="info-line">定植日：${s.planting.plantDate}</div>
-        <div class="info-line">定植株数：${s.planting.quantity} 株（${s.planting.trayType || "-"}穴）</div>
-        <div class="info-line">株間 × 条間：${spacingText}</div>
-        <div class="info-line">作付け面積：${areaTan.toFixed(2)} 反（${areaM2.toFixed(1)} ㎡）</div>
-      </div>
-
-      <h2 class="section-title">収穫情報</h2>
-      <div class="info-block">
-        <div class="info-line">収穫期間：${harvestPeriod}</div>
-        <div class="info-line">収穫回数：${s.harvest.count} 回</div>
-        <div class="info-line">収穫合計：${totalAmount} 基（${totalWeight.toFixed(1)} kg）</div>
-        <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
-      </div>
-
-      <h2 class="section-title">育苗概要</h2>
-      <div class="info-block">
-        <div class="info-line">
-          播種：${seedlingSummary.sowDate || "—"}　
-          育苗期間：${seedlingSummary.days || "—"}日
-        </div>
-        <div class="info-line link">
-          ↳ <a href="/seedling/detail.html?seedRef=${seedRef || ""}">育苗記録を見る</a>
-        </div>
-      </div>
-
-      <h2 class="section-title">分析指標</h2>
-      <div class="info-block">
-        <div class="info-line">
-          反当たり収量：${yieldPerTan} kg/反　
-          ${unitsPerTan} 基/反
-        </div>
-        <div class="info-line">1基あたり平均重量：${avgPerUnit} kg/基</div>
-      </div>
-
-      ${notesHTML}
-
-      <div class="info-line" style="font-size:12px; color:#666;">
-        最終更新：${updatedJST}
-      </div>
-
+    <div class="planting-card">
+      <div>圃場：${s.field}</div>
+      <div>定植日：${s.planting.plantDate}</div>
+      <div>定植株数：${s.planting.quantity} 株（${s.planting.trayType || "-"}穴）</div>
+      <div>株間 × 条間：${spacingText}</div>
+      <div>収穫回数：${s.harvest.count}</div>
+      <div>収穫合計：${s.harvest.totalAmount} 基（${s.shipping.totalWeight.toFixed(1)} kg）</div>
+      <div>plantingRef：${s.plantingRef}</div>
+      <div style="font-size:12px; color:#666;">最終更新：${updatedJST}</div>
     </div>
   `;
 }

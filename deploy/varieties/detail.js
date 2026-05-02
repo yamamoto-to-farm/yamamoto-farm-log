@@ -1,7 +1,7 @@
 // varieties/detail.js
 import { loadJSON } from "/common/json.js";
-import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { renderVarietyDetailCard } from "./card-variety-detail.js";
+import { renderVarietySummaryCards } from "./card-variety-summary.js";
 
 // デバッグフラグ
 const DEBUG = false;
@@ -12,7 +12,7 @@ export async function initVarietyDetail(varietyName) {
   container.innerHTML = "読み込み中…";
 
   /* ===============================
-     ★ 基本データカード（variety-detail.json）
+     ★ 基本データ（variety-detail.json）
   =============================== */
   let detail = {};
   try {
@@ -22,8 +22,10 @@ export async function initVarietyDetail(varietyName) {
     return;
   }
 
+  // 初期化
   container.innerHTML = "";
 
+  // 基本データカードを追加
   container.insertAdjacentHTML(
     "beforeend",
     renderVarietyDetailCard(
@@ -34,120 +36,14 @@ export async function initVarietyDetail(varietyName) {
   );
 
   /* ===============================
-     ★ variety-index.json を読み込む
+     ★ 年ごとのサマリーカード（variety-index.json）
   =============================== */
-  let vIndex = {};
-  try {
-    vIndex = await loadJSON("/data/variety-index.json");
-  } catch {
-    container.insertAdjacentHTML("beforeend", "<p>variety-index.json が読み込めませんでした。</p>");
-    return;
-  }
+  if (DEBUG) console.log("=== summary カード生成開始 ===");
 
-  const years = vIndex[varietyName];
-  if (!years) {
-    container.insertAdjacentHTML("beforeend", "<p>この品種の実績データはありません。</p>");
-    return;
-  }
+  const summaryHTML = await renderVarietySummaryCards(varietyName);
+  container.insertAdjacentHTML("beforeend", summaryHTML);
 
-  /* ===============================
-     ★ seed/all.csv（seedRef の詳細用）
-  =============================== */
-  let seedRows = [];
-  try {
-    seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
-  } catch {
-    console.warn("seed/all.csv が読み込めませんでした");
-  }
-
-  /* ===============================
-     ★ 年ごとのカード生成
-  =============================== */
-  for (const year of Object.keys(years).sort()) {
-
-    const { seed = [], planting = [] } = years[year];
-
-    const yearCard = document.createElement("details");
-    yearCard.className = "year-card";
-    yearCard.open = true;
-
-    const summary = document.createElement("summary");
-    summary.textContent = `${year}年の実績`;
-    yearCard.appendChild(summary);
-
-    const wrap = document.createElement("div");
-    wrap.className = "year-content";
-
-    /* -------------------------
-       ★ seedRef のカード
-    ------------------------- */
-    if (seed.length > 0) {
-      const seedTitle = document.createElement("h3");
-      seedTitle.textContent = "播種（seedRef）";
-      wrap.appendChild(seedTitle);
-
-      seed.forEach(ref => {
-        const row = seedRows.find(r => r.seedRef === ref);
-
-        const div = document.createElement("div");
-        div.className = "seed-card";
-
-        if (row) {
-          div.innerHTML = `
-            <div>播種日：${row.seedDate}</div>
-            <div>数量：${row.quantity || "-"}</div>
-            <div>seedRef：${ref}</div>
-          `;
-        } else {
-          div.innerHTML = `<div>seedRef：${ref}</div>`;
-        }
-
-        wrap.appendChild(div);
-      });
-    }
-
-    /* -------------------------
-       ★ plantingRef のカード
-    ------------------------- */
-    if (planting.length > 0) {
-      const plantTitle = document.createElement("h3");
-      plantTitle.textContent = "定植（plantingRef）";
-      wrap.appendChild(plantTitle);
-
-      for (const ref of planting) {
-
-        // summary.json のパスは variety-index.json に fileName を入れるのが理想だが
-        // 今は plantingRef.json として簡易に読む
-        const summaryPath = `/logs/summary/${ref}.json`;
-
-        let summaryData = null;
-        try {
-          summaryData = await loadJSON(summaryPath);
-        } catch {
-          console.warn("summary 読み込み失敗:", summaryPath);
-        }
-
-        const div = document.createElement("div");
-        div.className = "planting-card";
-
-        if (summaryData) {
-          div.innerHTML = `
-            <div>定植日：${summaryData.planting.plantDate}</div>
-            <div>圃場：${summaryData.planting.field}</div>
-            <div>収穫回数：${summaryData.harvest.count}</div>
-            <div>plantingRef：${ref}</div>
-          `;
-        } else {
-          div.innerHTML = `<div>plantingRef：${ref}</div>`;
-        }
-
-        wrap.appendChild(div);
-      }
-    }
-
-    yearCard.appendChild(wrap);
-    container.appendChild(yearCard);
-  }
+  if (DEBUG) console.log("=== summary カード生成完了 ===");
 
   /* ===============================
      ★ 基本データカードの開閉イベント

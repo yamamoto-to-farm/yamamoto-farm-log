@@ -32,17 +32,31 @@ export async function regenerateVarietyIndex() {
 
     if (!plantingRef) continue;
 
+    // 品種 → 年 の初期化
     if (!varietyIndex[variety]) varietyIndex[variety] = {};
     if (!varietyIndex[variety][year]) {
       varietyIndex[variety][year] = { planting: [], seed: [] };
     }
 
-    // plantingRef
-    if (!varietyIndex[variety][year].planting.includes(plantingRef)) {
-      varietyIndex[variety][year].planting.push(plantingRef);
+    /* -------------------------
+       ★ plantingRef（fileName 付き）
+    ------------------------- */
+    const fileName = `${plantingRef}.json`;
+
+    // すでに同じ plantingRef が入っていないか確認
+    const exists = varietyIndex[variety][year].planting
+      .some(p => p.plantingRef === plantingRef);
+
+    if (!exists) {
+      varietyIndex[variety][year].planting.push({
+        plantingRef,
+        fileName
+      });
     }
 
-    // seedRef（あれば）
+    /* -------------------------
+       ★ seedRef（あれば）
+    ------------------------- */
     if (seedRef && !varietyIndex[variety][year].seed.includes(seedRef)) {
       varietyIndex[variety][year].seed.push(seedRef);
     }
