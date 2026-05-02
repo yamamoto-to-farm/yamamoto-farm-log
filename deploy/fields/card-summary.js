@@ -165,7 +165,11 @@ async function renderSummaryCard(s, harvestBase) {
       <!-- ★ style.css の h2.section-title に完全対応 -->
       <h2 class="section-title">定植情報</h2>
       <div class="info-block">
-        <div class="info-line">品種：${s.planting.variety}</div>
+        <div class="info-line">
+          品種：<a href="/varieties/index.html?field=${encodeURIComponent(s.planting.field)}">
+          ${s.planting.variety}
+          </a>
+        </div>
         <div class="info-line">定植日：${s.planting.plantDate}</div>
         <div class="info-line">定植株数：${s.planting.quantity} 株（セルトレイ：${s.planting.trayType || "-"}穴）</div>
         <div class="info-line">株間 × 条間：${spacingText}</div>
