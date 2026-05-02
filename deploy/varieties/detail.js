@@ -26,23 +26,19 @@ export async function initVarietyDetail(varietyName) {
   container.innerHTML = "";
 
   /* ===============================
-     ★ 基本データカード（圃場と同じ構造）
+     ★ 基本データカード（analysis.js と同じ構造）
   =============================== */
-  container.insertAdjacentHTML("beforeend", `
-    <h2>基本データ</h2>
-    <div class="card">
-      ${renderVarietyDetailCard(
-        detail[varietyName],
-        varietyName,
-        detail["TEMPLATE_VARIETY"]
-      )}
-    </div>
-  `);
-
+  container.insertAdjacentHTML(
+    "beforeend",
+    renderVarietyDetailCard(
+      detail[varietyName],
+      varietyName,
+      detail["TEMPLATE_VARIETY"]
+    )
+  );
 
   /* ===============================
-     ★ 年ごとのサマリーカード（variety-index.json）
-        → card-variety-summary.js 側でカード化済み
+     ★ 年ごとのサマリーカード
   =============================== */
   if (DEBUG) console.log("=== summary カード生成開始 ===");
 
@@ -51,17 +47,16 @@ export async function initVarietyDetail(varietyName) {
 
   if (DEBUG) console.log("=== summary カード生成完了 ===");
 
+  /* ===============================
+     ★ 開閉イベント（analysis.js と完全一致）
+  =============================== */
+  document.querySelectorAll(".basic-toggle").forEach(title => {
+    title.addEventListener("click", () => {
+      const body = title.nextElementSibling;
+      const isOpen = body.style.display !== "none";
+      body.style.display = isOpen ? "none" : "block";
+    });
+  });
+
   if (DEBUG) console.log("=== initVarietyDetail 完了 ===");
 }
-
-// ▼ 開閉イベント（圃場と同じ）
-document.querySelectorAll(".toggle-title").forEach(title => {
-  title.addEventListener("click", () => {
-    const targetId = title.dataset.target;
-    const body = document.getElementById(targetId);
-    const isOpen = title.dataset.open === "true";
-
-    body.style.display = isOpen ? "none" : "block";
-    title.dataset.open = isOpen ? "false" : "true";
-  });
-});
