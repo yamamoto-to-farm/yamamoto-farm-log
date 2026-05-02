@@ -4,11 +4,14 @@ import { loadJSON } from "/common/json.js?v=2026031418";
 export async function initEditJson() {
 
   const params = new URLSearchParams(location.search);
-  const dataName = params.get("data");
-  const fieldName = params.get("field");
+
+  // ★ URL パラメータ取得（field-detail / variety-detail 両対応）
+  const dataName = params.get("data");      // field-detail / variety-detail
+  const fieldName = params.get("field");    // 圃場名
+  const variety = params.get("variety");    // 品種名 ← 追加
 
   const container = document.getElementById("edit-container");
-  container.innerHTML = "";   // ★ 二重描画防止の最重要ポイント
+  container.innerHTML = "";   // ★ 二重描画防止
 
   // -----------------------------
   // ハブページ（data パラメータなし）
@@ -23,10 +26,14 @@ export async function initEditJson() {
   // -----------------------------
   const json = await loadJSON(`/data/${dataName}.json`);
 
+  // ★ dataName に応じて card-edit-◯◯ を読み込む
   const module = await import(`./card-edit-${dataName}.js`);
+
+  // ★ fieldName と variety の両方を渡す（どちらか片方を使う）
   module.renderEditCard({
     dataName,
     fieldName,
+    variety,
     json,
     container
   });
@@ -51,6 +58,14 @@ function renderJsonList(container) {
       <h2>アクセス権限（access.json）</h2>
       <button class="primary-btn"
         onclick="location.href='?data=access'">
+        編集する
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>品種基本情報（variety-detail.json）</h2>
+      <button class="primary-btn"
+        onclick="location.href='?data=variety-detail'">
         編集する
       </button>
     </div>
