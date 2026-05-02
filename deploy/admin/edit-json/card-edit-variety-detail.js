@@ -45,7 +45,7 @@ export function renderEditCard({ dataName, variety, json, container }) {
       </div>
 
       <div class="edit-line">
-        <label>適した生育</label>
+        <label>適した土壌</label>
         <input id="bestGrowth" value="${data.bestGrowth}">
       </div>
 
