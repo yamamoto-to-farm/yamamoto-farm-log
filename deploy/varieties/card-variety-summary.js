@@ -80,11 +80,21 @@ export async function renderVarietySummaryCards(varietyName) {
         const plantingRef = p.plantingRef;
         const fileName = p.fileName;
 
-        // plantingRef から field / year を抽出
-        const [refDate, field] = plantingRef.split("-");
-        const y = refDate.substring(0, 4);
+        /* -------------------------
+           ★ plantingRef から year / field を安全に抽出
+           例：20250822-明輝(南・40a)-YR888
+           → year = 2025
+           → field = 明輝(南・40a)
+        ------------------------- */
 
-        const summaryPath = `/logs/summary/${field}/${y}/${fileName}`;
+        const yearFromRef = plantingRef.substring(0, 4);
+
+        const firstDash = plantingRef.indexOf("-");
+        const lastDash = plantingRef.lastIndexOf("-");
+
+        const field = plantingRef.substring(firstDash + 1, lastDash);
+
+        const summaryPath = `/logs/summary/${field}/${yearFromRef}/${fileName}`;
 
         let summaryData = null;
         try {
