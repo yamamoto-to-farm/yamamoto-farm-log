@@ -166,7 +166,7 @@ async function renderSummaryCard(s, harvestBase) {
       <h2 class="section-title">定植情報</h2>
       <div class="info-block">
         <div class="info-line">
-          品種：<a href="/varieties/index.html?field=${encodeURIComponent(s.planting.variety)}">
+          品種：<a href="/varieties/index.html?variety=${encodeURIComponent(s.planting.variety)}">
           ${s.planting.variety}
           </a>
         </div>
