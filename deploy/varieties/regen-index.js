@@ -1,6 +1,6 @@
 // varieties/regen-index.js
 import { loadCSV, normalizeKeys } from "/common/csv.js";
-import { saveJSON } from "/common/json.js";
+import { loadJSON, saveJSON } from "/common/json.js";   // ← loadJSON を追加
 
 // ★ デバッグフラグ（true にするとログが出る）
 const DEBUG = true;
