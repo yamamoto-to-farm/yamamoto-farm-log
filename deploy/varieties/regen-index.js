@@ -2,17 +2,22 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { saveJSON } from "/common/json.js";
 
+// ★ デバッグフラグ（true にするとログが出る）
+const DEBUG = true;
+
 /* ---------------------------------------------------------
    品種インデックス（variety-index.json）再生成
-   ※ planting/all.csv を CSV として読み込む
 --------------------------------------------------------- */
 export async function regenerateVarietyIndex() {
+
+  if (DEBUG) console.log("=== regenerateVarietyIndex() 開始 ===");
 
   // 1. 定植ログ（CSV）
   let plantingRows = [];
   try {
     const raw = await loadCSV("/logs/planting/all.csv");
     plantingRows = normalizeKeys(raw);
+    if (DEBUG) console.log("[DEBUG] plantingRows:", plantingRows);
   } catch (e) {
     console.error("[regen] planting/all.csv 読み込み失敗:", e);
     alert("planting/all.csv が読み込めませんでした");
@@ -20,9 +25,10 @@ export async function regenerateVarietyIndex() {
   }
 
   // 2. 新しい variety-index を構築
-  const varietyIndex = {
-    timestamp: new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString()
-  };
+  const timestamp = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString();
+  const varietyIndex = { timestamp };
+
+  if (DEBUG) console.log("[DEBUG] timestamp:", timestamp);
 
   for (const row of plantingRows) {
     const variety = row.variety || "不明品種";
@@ -32,18 +38,13 @@ export async function regenerateVarietyIndex() {
 
     if (!plantingRef) continue;
 
-    // 品種 → 年 の初期化
     if (!varietyIndex[variety]) varietyIndex[variety] = {};
     if (!varietyIndex[variety][year]) {
       varietyIndex[variety][year] = { planting: [], seed: [] };
     }
 
-    /* -------------------------
-       ★ plantingRef（fileName 付き）
-    ------------------------- */
     const fileName = `${plantingRef}.json`;
 
-    // すでに同じ plantingRef が入っていないか確認
     const exists = varietyIndex[variety][year].planting
       .some(p => p.plantingRef === plantingRef);
 
@@ -54,22 +55,24 @@ export async function regenerateVarietyIndex() {
       });
     }
 
-    /* -------------------------
-       ★ seedRef（あれば）
-    ------------------------- */
     if (seedRef && !varietyIndex[variety][year].seed.includes(seedRef)) {
       varietyIndex[variety][year].seed.push(seedRef);
     }
   }
 
+  if (DEBUG) console.log("[DEBUG] 生成された varietyIndex:", varietyIndex);
+
   // 3. 保存（saveJSON API）
   try {
     await saveJSON("data/variety-index.json", varietyIndex);
+    if (DEBUG) console.log("[DEBUG] saveJSON 完了: data/variety-index.json");
     alert("variety-index.json を更新しました");
   } catch (e) {
     console.error("[regen] saveJSON 失敗:", e);
     alert("variety-index.json の保存に失敗しました");
   }
+
+  if (DEBUG) console.log("=== regenerateVarietyIndex() 完了 ===");
 }
 
 /* ---------------------------------------------------------
@@ -93,12 +96,19 @@ export function setupRegenVarietyIndexButton() {
 export async function showVarietyIndexTimestamp() {
   try {
     const json = await loadJSON("/data/variety-index.json");
+
+    if (DEBUG) {
+      console.log("[DEBUG] 読み込んだ variety-index.json:", json);
+      console.log("[DEBUG] timestamp:", json.timestamp);
+    }
+
     const ts = json.timestamp
       ? new Date(json.timestamp).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })
       : "未生成";
 
     document.getElementById("variety-index-ts").textContent = ts;
-  } catch {
+  } catch (e) {
+    console.error("[DEBUG] timestamp 読み込み失敗:", e);
     document.getElementById("variety-index-ts").textContent = "取得失敗";
   }
 }

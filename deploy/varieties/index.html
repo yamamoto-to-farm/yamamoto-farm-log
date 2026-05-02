@@ -15,8 +15,8 @@
   <!-- ★ ページタイトル（動的に変更される） -->
   <h1 id="variety-name" class="page-title"></h1>
 
-  <!-- ★ インデックス再生成ボタン + 最終更新 -->
-  <div style="margin: 10px 0;">
+  <!-- ★ インデックス再生成ボタン + 最終更新（一覧ページのみ表示） -->
+  <div id="index-tools" style="margin: 10px 0; display:none;">
     <button class="secondary-btn" id="regen-variety-index">
       品種インデックスを再生成
     </button>
@@ -63,22 +63,26 @@
         return;
       }
 
-      // ★ 最終更新表示 & ボタンセットアップ
-      showVarietyIndexTimestamp();
-      setupRegenVarietyIndexButton();
-
       // ★ URL パラメータ取得
       const params = new URLSearchParams(location.search);
       const variety = params.get("variety");
 
-      // ★ 分岐
-      if (variety) {
-        document.getElementById("variety-name").textContent = `${variety}（品種詳細）`;
-        initVarietyDetail(variety);
-      } else {
+      // ★ 一覧ページ（variety なし） → 生成ボタンを表示
+      if (!variety) {
+        document.getElementById("index-tools").style.display = "block";
+        showVarietyIndexTimestamp();
+        setupRegenVarietyIndexButton();
+
         document.getElementById("variety-name").textContent = "品種を選択してください";
         renderVarietyList();
+        return;
       }
+
+      // ★ 詳細ページ（variety あり） → 生成ボタン非表示
+      document.getElementById("index-tools").style.display = "none";
+
+      document.getElementById("variety-name").textContent = `${variety}（品種詳細）`;
+      initVarietyDetail(variety);
     });
   </script>
 
