@@ -1,4 +1,4 @@
-// card-variety-summary.js（analysis-utils.js 対応・圃場詳細と整合版・完全安定版）
+// card-variety-summary.js（fieldページと完全統一・壊れない最終版）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
@@ -54,29 +54,21 @@ export async function renderVarietySummaryCards(varietyName) {
         }
 
         /* -------------------------
-           ★ 定植（plantingRef）
+           ★ 定植（plantingRef → summary.json）
         ------------------------- */
         if (planting.length > 0) {
             html += `<h3 style="margin-top:16px;">定植</h3>`;
 
             for (const p of planting) {
-                const plantingRef = p.plantingRef;
                 const fileName = p.fileName;
 
-                const parts = plantingRef.split("-");
+                // ★ 年フォルダは fileName の先頭8桁から取得
+                const date8 = fileName.slice(0, 8); // 20250908
+                const yearFromRef = date8.slice(0, 4); // 2025
 
-                // 日付8桁 → 年フォルダ
-                const date8 = parts[0];
-                const yearFromRef = date8.slice(0, 4);
-
-                // 圃場名は必ず 1 パーツ目（圃場名に - は入らない）
-                const field = parts[1];
-
-                // 品種名は 2 パーツ目以降全部（- や () が入る）
-                const variety = parts.slice(2).join("-");
-
+                // ★ summary.json のパス（field は summary.json 内の値を使う）
                 const summaryPath =
-                    `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
+                    `/logs/summary/${encodeURIComponent(p.field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
 
                 let summaryData = null;
                 try {
@@ -150,6 +142,8 @@ function renderSummaryCard(s) {
           ${s.planting.field}
         </a>
       </div>
+
+      <div class="info-line">品種：${s.planting.variety}</div>
 
       <div class="info-line">定植日：${s.planting.plantDate}</div>
       <div class="info-line">定植株数：${s.planting.quantity} 株（${s.planting.trayType || "-"}穴）</div>
