@@ -69,9 +69,12 @@ export async function renderVarietySummaryCards(varietyName) {
                 const date8 = fileName.slice(0, 8);
                 const yearFromRef = date8.slice(0, 4);
 
-                // ★ summary.json のパス（field はまだ undefined）
-                const summaryPath =
-                    `/logs/summary/${encodeURIComponent(p.field || "undefined")}/${yearFromRef}/${encodeURIComponent(fileName)}`;
+                /* ----------------------------------------------------
+                   ★ 1st: field を使わずに summary.json を読む
+                   /logs/summary/{year}/{fileName}
+                   ---------------------------------------------------- */
+                const tempSummaryPath =
+                    `/logs/summary/${yearFromRef}/${encodeURIComponent(fileName)}`;
 
                 if (debugMode) {
                     console.log("---- DEBUG planting item ----");
@@ -79,15 +82,15 @@ export async function renderVarietySummaryCards(varietyName) {
                     console.log("fileName:", fileName);
                     console.log("date8:", date8);
                     console.log("yearFromRef:", yearFromRef);
-                    console.log("summaryPath(before load):", summaryPath);
+                    console.log("tempSummaryPath:", tempSummaryPath);
                 }
 
                 let summaryData = null;
                 try {
-                    summaryData = await loadJSON(summaryPath);
+                    summaryData = await loadJSON(tempSummaryPath);
                 } catch {
                     if (debugMode) {
-                        console.error("[summary load failed]", summaryPath);
+                        console.error("[summary load failed]", tempSummaryPath);
                     }
                     html += `
             <div class="planting-card">
@@ -97,15 +100,20 @@ export async function renderVarietySummaryCards(varietyName) {
                     continue;
                 }
 
-                if (debugMode) {
-                    console.log("summaryData:", summaryData);
-                    console.log("summaryData.planting.field:", summaryData?.planting?.field);
-                }
-
-                // ★ 正しい圃場名は summary.json の中にある
+                /* ----------------------------------------------------
+                   ★ 正しい圃場名は summary.json の中にある
+                   ---------------------------------------------------- */
                 const field = summaryData.planting.field;
 
-                // ★ 正しい summary.json のパスを再構築（undefined 問題を完全解決）
+                if (debugMode) {
+                    console.log("summaryData:", summaryData);
+                    console.log("field(from summary):", field);
+                }
+
+                /* ----------------------------------------------------
+                   ★ 2nd: 正しい field を使って正式パスを再構築
+                   /logs/summary/{field}/{year}/{fileName}
+                   ---------------------------------------------------- */
                 const correctSummaryPath =
                     `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
 
