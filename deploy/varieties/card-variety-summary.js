@@ -1,7 +1,10 @@
-// card-variety-summary.js（fieldページと完全統一・壊れない最終版）
+// card-variety-summary.js（fieldページと完全統一・壊れない最終版 + デバッグフラグ）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
+
+// ★ デバッグフラグ（必要に応じて true/false 切り替え）
+const debugMode = false;
 
 export async function renderVarietySummaryCards(varietyName) {
 
@@ -54,7 +57,7 @@ export async function renderVarietySummaryCards(varietyName) {
         }
 
         /* -------------------------
-           ★ 定植（plantingRef → summary.json）
+           ★ 定植（summary.json を使う）
         ------------------------- */
         if (planting.length > 0) {
             html += `<h3 style="margin-top:16px;">定植</h3>`;
@@ -63,20 +66,63 @@ export async function renderVarietySummaryCards(varietyName) {
                 const fileName = p.fileName;
 
                 // ★ 年フォルダは fileName の先頭8桁から取得
-                const date8 = fileName.slice(0, 8); // 20250908
-                const yearFromRef = date8.slice(0, 4); // 2025
+                const date8 = fileName.slice(0, 8);
+                const yearFromRef = date8.slice(0, 4);
 
-                // ★ summary.json のパス（field は summary.json 内の値を使う）
+                // ★ summary.json のパス（field はまだ undefined）
                 const summaryPath =
-                    `/logs/summary/${encodeURIComponent(p.field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
+                    `/logs/summary/${encodeURIComponent(p.field || "undefined")}/${yearFromRef}/${encodeURIComponent(fileName)}`;
+
+                if (debugMode) {
+                    console.log("---- DEBUG planting item ----");
+                    console.log("planting item:", p);
+                    console.log("fileName:", fileName);
+                    console.log("date8:", date8);
+                    console.log("yearFromRef:", yearFromRef);
+                    console.log("summaryPath(before load):", summaryPath);
+                }
 
                 let summaryData = null;
                 try {
                     summaryData = await loadJSON(summaryPath);
                 } catch {
+                    if (debugMode) {
+                        console.error("[summary load failed]", summaryPath);
+                    }
                     html += `
             <div class="planting-card">
               <div class="info-line" style="color:#c00;">summary.json が見つかりません</div>
+            </div>
+          `;
+                    continue;
+                }
+
+                if (debugMode) {
+                    console.log("summaryData:", summaryData);
+                    console.log("summaryData.planting.field:", summaryData?.planting?.field);
+                }
+
+                // ★ 正しい圃場名は summary.json の中にある
+                const field = summaryData.planting.field;
+
+                // ★ 正しい summary.json のパスを再構築（undefined 問題を完全解決）
+                const correctSummaryPath =
+                    `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
+
+                if (debugMode) {
+                    console.log("correctSummaryPath:", correctSummaryPath);
+                }
+
+                // ★ 正しいパスで読み直す
+                try {
+                    summaryData = await loadJSON(correctSummaryPath);
+                } catch {
+                    if (debugMode) {
+                        console.error("[summary reload failed]", correctSummaryPath);
+                    }
+                    html += `
+            <div class="planting-card">
+              <div class="info-line" style="color:#c00;">summary.json が見つかりません（再読み込み失敗）</div>
             </div>
           `;
                     continue;
@@ -104,9 +150,6 @@ function renderSummaryCard(s) {
     const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
     const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
-    /* -------------------------
-       ★ 作付面積（utils 使用）
-    ------------------------- */
     const areaM2 =
         s.planting.areaM2 ??
         calcAreaM2(
@@ -119,9 +162,6 @@ function renderSummaryCard(s) {
         s.planting.areaTan ??
         calcAreaTan(areaM2);
 
-    /* -------------------------
-       ★ 収穫期間
-    ------------------------- */
     const first = s.harvest.firstDate;
     const last = s.harvest.lastDate;
 
