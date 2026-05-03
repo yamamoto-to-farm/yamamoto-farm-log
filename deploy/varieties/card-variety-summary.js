@@ -1,4 +1,4 @@
-// card-variety-summary.js（analysis-utils.js 対応・圃場詳細と整合版）
+// card-variety-summary.js（analysis-utils.js 対応・圃場詳細と整合版・完全安定版）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
@@ -70,7 +70,8 @@ export async function renderVarietySummaryCards(varietyName) {
                 const field = parts[1];               // 三角畑
                 const variety = parts.slice(2).join("-"); // ロイド(C-147)
 
-                const summaryPath = `/logs/summary/${field}/${yearFromRef}/${fileName}`;
+                // ★ URL エンコード対応（日本語・()・- すべて安全に）
+                const summaryPath = `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
 
                 let summaryData = null;
                 try {
