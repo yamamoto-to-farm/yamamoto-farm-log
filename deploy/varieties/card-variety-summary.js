@@ -4,7 +4,7 @@ import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
 
 // ★ デバッグフラグ（必要に応じて true/false 切り替え）
-const debugMode = false;
+const debugMode = true;
 
 export async function renderVarietySummaryCards(varietyName) {
 
