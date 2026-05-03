@@ -1,6 +1,7 @@
-// card-variety-summary.js（元の構造に戻した版）
+// card-variety-summary.js（analysis-utils.js 対応・圃場詳細と整合版）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
+import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
 
 export async function renderVarietySummaryCards(varietyName) {
 
@@ -45,9 +46,8 @@ export async function renderVarietySummaryCards(varietyName) {
           <div class="seed-card">
             <div class="info-line">播種日：${row?.seedDate || "-"}</div>
             <div class="info-line">
-              数量：${row?.trayType || "-"}穴 × ${row?.trayCount || "-"}枚
+              数量：${row?.trayCount || "-"}枚（${row?.trayType || "-"}穴）
             </div>
-            <div class="info-line">seedRef：${ref}</div>
           </div>
         `;
             });
@@ -63,10 +63,10 @@ export async function renderVarietySummaryCards(varietyName) {
                 const plantingRef = p.plantingRef;
                 const fileName = p.fileName;
 
-                const yearFromRef = plantingRef.substring(0, 4);
-                const firstDash = plantingRef.indexOf("-");
-                const lastDash = plantingRef.lastIndexOf("-");
-                const field = plantingRef.substring(firstDash + 1, lastDash);
+                // ★ split で安全に抽出
+                const parts = plantingRef.split("-");
+                const yearFromRef = parts[0];
+                const field = parts[1];
 
                 const summaryPath = `/logs/summary/${field}/${yearFromRef}/${fileName}`;
 
@@ -76,7 +76,6 @@ export async function renderVarietySummaryCards(varietyName) {
                 } catch {
                     html += `
             <div class="planting-card">
-              <div class="info-line">plantingRef：${plantingRef}</div>
               <div class="info-line" style="color:#c00;">summary.json が見つかりません</div>
             </div>
           `;
@@ -88,8 +87,8 @@ export async function renderVarietySummaryCards(varietyName) {
         }
 
         html += `
-          </div> <!-- card end -->
-        </div> <!-- year-block end -->
+          </div>
+        </div>
       </details>
     `;
     }
@@ -105,19 +104,55 @@ function renderSummaryCard(s) {
     const spacingText = `${s.planting.spacing.row}cm × ${s.planting.spacing.bed}cm`;
     const updatedJST = new Date(s.lastUpdated).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
+    /* -------------------------
+       ★ 作付面積（utils 使用）
+    ------------------------- */
+    const areaM2 =
+        s.planting.areaM2 ??
+        calcAreaM2(
+            s.planting.quantity,
+            s.planting.spacing.row,
+            s.planting.spacing.bed
+        );
+
+    const areaTan =
+        s.planting.areaTan ??
+        calcAreaTan(areaM2);
+
+    /* -------------------------
+       ★ 収穫期間
+    ------------------------- */
+    const first = s.harvest.firstDate;
+    const last = s.harvest.lastDate;
+
+    let harvestPeriod = "—";
+    if (first && last) {
+        const d1 = new Date(first);
+        const d2 = new Date(last);
+        const diff = Math.round((d2 - d1) / 86400000) + 1;
+        harvestPeriod = `${first.slice(5)}〜${last.slice(5)}（${diff}日）`;
+    }
+
     return `
     <div class="planting-card">
+
       <div class="info-line">
-        圃場：<a href="/fields/index.html?field=${encodeURIComponent(s.planting.field)}">
-        ${s.planting.field}
+        圃場：
+        <a href="/fields/index.html?field=${encodeURIComponent(s.planting.field)}">
+          ${s.planting.field}
         </a>
       </div>
+
       <div class="info-line">定植日：${s.planting.plantDate}</div>
       <div class="info-line">定植株数：${s.planting.quantity} 株（${s.planting.trayType || "-"}穴）</div>
       <div class="info-line">株間 × 条間：${spacingText}</div>
+
+      <div class="info-line">作付面積：${areaTan.toFixed(2)}反（${areaM2.toFixed(1)}㎡）</div>
+
+      <div class="info-line">収穫期間：${harvestPeriod}</div>
       <div class="info-line">収穫回数：${s.harvest.count}</div>
-      <div class="info-line">収穫合計：${s.harvest.totalAmount} 基（${s.shipping.totalWeight.toFixed(1)} kg）</div>
-      <div class="info-line">plantingRef：${s.plantingRef}</div>
+      <div class="info-line">収穫合計：${s.harvest.totalAmount} 重（${s.shipping.totalWeight.toFixed(1)} kg）</div>
+
       <div class="info-line" style="font-size:12px; color:#666;">最終更新：${updatedJST}</div>
     </div>
   `;
