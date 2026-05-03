@@ -63,21 +63,20 @@ export async function renderVarietySummaryCards(varietyName) {
                 const plantingRef = p.plantingRef;
                 const fileName = p.fileName;
 
-                // ★ plantingRef の安全な分解（ハイフン複数対応）
                 const parts = plantingRef.split("-");
 
-                // 日付（YYYYMMDD）
+                // 日付8桁 → 年フォルダ
                 const date8 = parts[0];
                 const yearFromRef = date8.slice(0, 4);
 
-                // 圃場名：parts[1]〜parts[n-2] を結合
-                const field = parts.slice(1, parts.length - 1).join("-");
+                // 圃場名は必ず 1 パーツ目（圃場名に - は入らない）
+                const field = parts[1];
 
-                // 品種名：最後のパーツ
-                const variety = parts.slice(parts.length - 1).join("");
+                // 品種名は 2 パーツ目以降全部（- や () が入る）
+                const variety = parts.slice(2).join("-");
 
-                // ★ URL エンコード（日本語・()・- すべて安全に）
-                const summaryPath = `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
+                const summaryPath =
+                    `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
 
                 let summaryData = null;
                 try {
