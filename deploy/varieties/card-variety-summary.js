@@ -18,7 +18,7 @@ export async function renderVarietySummaryCards(varietyName) {
     let seedRows = [];
     try {
         seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
-    } catch { }
+    } catch {}
 
     let html = "";
 
@@ -63,10 +63,12 @@ export async function renderVarietySummaryCards(varietyName) {
                 const plantingRef = p.plantingRef;
                 const fileName = p.fileName;
 
-                // ★ split で安全に抽出
+                // ★ ハイフン対応：最初の2つだけ固定
                 const parts = plantingRef.split("-");
-                const yearFromRef = parts[0];
-                const field = parts[1];
+                const date8 = parts[0];               // 20250818
+                const yearFromRef = date8.slice(0, 4); // 2025
+                const field = parts[1];               // 三角畑
+                const variety = parts.slice(2).join("-"); // ロイド(C-147)
 
                 const summaryPath = `/logs/summary/${field}/${yearFromRef}/${fileName}`;
 
