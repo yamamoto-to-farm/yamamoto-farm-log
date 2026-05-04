@@ -1,9 +1,10 @@
-// card-variety-summary.js（fieldページと完全統一・壊れない最終版 + デバッグフラグ）
+// card-variety-summary.js（resolveFieldFromFileName 対応・最終安定版）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
+import { resolveFieldFromFileName } from "/common/utils.js";
 
-// ★ デバッグフラグ（必要に応じて true/false 切り替え）
+// ★ デバッグフラグ
 const debugMode = true;
 
 export async function renderVarietySummaryCards(varietyName) {
@@ -70,67 +71,51 @@ export async function renderVarietySummaryCards(varietyName) {
                 const yearFromRef = date8.slice(0, 4);
 
                 /* ----------------------------------------------------
-                   ★ 1st: field を使わずに summary.json を読む
-                   /logs/summary/{year}/{fileName}
-                   ---------------------------------------------------- */
-                const tempSummaryPath =
-                    `/logs/summary/${yearFromRef}/${encodeURIComponent(fileName)}`;
+                   ★ 1st: fileName → field を逆引き
+                   （safeFileName + summary-index.json）
+                ---------------------------------------------------- */
+                const field = await resolveFieldFromFileName(fileName);
 
                 if (debugMode) {
                     console.log("---- DEBUG planting item ----");
-                    console.log("planting item:", p);
                     console.log("fileName:", fileName);
                     console.log("date8:", date8);
                     console.log("yearFromRef:", yearFromRef);
-                    console.log("tempSummaryPath:", tempSummaryPath);
+                    console.log("resolved field:", field);
                 }
 
-                let summaryData = null;
-                try {
-                    summaryData = await loadJSON(tempSummaryPath);
-                } catch {
-                    if (debugMode) {
-                        console.error("[summary load failed]", tempSummaryPath);
-                    }
+                if (!field) {
                     html += `
             <div class="planting-card">
-              <div class="info-line" style="color:#c00;">summary.json が見つかりません</div>
+              <div class="info-line" style="color:#c00;">圃場名が特定できません（summary-index.json 未登録）</div>
             </div>
           `;
                     continue;
                 }
 
                 /* ----------------------------------------------------
-                   ★ 正しい圃場名は summary.json の中にある
-                   ---------------------------------------------------- */
-                const field = summaryData.planting.field;
-
-                if (debugMode) {
-                    console.log("summaryData:", summaryData);
-                    console.log("field(from summary):", field);
-                }
-
-                /* ----------------------------------------------------
-                   ★ 2nd: 正しい field を使って正式パスを再構築
-                   /logs/summary/{field}/{year}/{fileName}
-                   ---------------------------------------------------- */
-                const correctSummaryPath =
+                   ★ 正しい summary.json のパスを構築
+                ---------------------------------------------------- */
+                const summaryPath =
                     `/logs/summary/${encodeURIComponent(field)}/${yearFromRef}/${encodeURIComponent(fileName)}`;
 
                 if (debugMode) {
-                    console.log("correctSummaryPath:", correctSummaryPath);
+                    console.log("summaryPath:", summaryPath);
                 }
 
-                // ★ 正しいパスで読み直す
+                /* ----------------------------------------------------
+                   ★ summary.json を読み込む
+                ---------------------------------------------------- */
+                let summaryData = null;
                 try {
-                    summaryData = await loadJSON(correctSummaryPath);
+                    summaryData = await loadJSON(summaryPath);
                 } catch {
                     if (debugMode) {
-                        console.error("[summary reload failed]", correctSummaryPath);
+                        console.error("[summary load failed]", summaryPath);
                     }
                     html += `
             <div class="planting-card">
-              <div class="info-line" style="color:#c00;">summary.json が見つかりません（再読み込み失敗）</div>
+              <div class="info-line" style="color:#c00;">summary.json が見つかりません</div>
             </div>
           `;
                     continue;
