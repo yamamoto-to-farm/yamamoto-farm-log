@@ -59,9 +59,9 @@
     },
 
     {
-      "id": "plan",
-      "name": "播種・定植計画",
-      "path": "schedule/plan.html",
+      "id": "list",
+      "name": "播種・定植一覧",
+      "path": "list/list.html",
       "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/planting.png"
@@ -152,9 +152,9 @@
       "icon": "assets/icons/schedule.png"
     },
     {
-      "id": "annual",
-      "name": "年間作付計画（編集）",
-      "path": "schedule/annual/index.html",
+      "id": "plan",
+      "name": "播種・定植計画",
+      "path": "schedule/plan.html",
       "category": "計画",
       "roles": ["family", "admin"],
       "icon": "assets/icons/schedule.png"
