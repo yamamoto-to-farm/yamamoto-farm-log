@@ -1,86 +1,52 @@
-// common/filter/filter-active.js
-// 旧 filter.js の「現在のフィルタ表示」を新フィルタに追加する
+// common/filter/filter-core.js
+// 旧 filter.js と互換の state を管理するコア
 
-import { getFilter, resetFilter } from "./filter-core.js";
+import { updateActiveFilterUI } from "./filter-active.js";
 
-export function initActiveFilterUI() {
+export const filterState = {
+  yearMonths: [],
+  fields: [],
+  varieties: []
+};
+
+let filterData = {}; // setFilterData で受け取る
+
+/* ============================================================
+   フィルタデータのセット / 取得
+============================================================ */
+export function setFilterData(data) {
+  filterData = data;
+}
+
+export function getFilterData() {
+  return filterData;
+}
+
+/* ============================================================
+   ★ これが無いと annual-list.js が動かない
+============================================================ */
+export function getFilter() {
+  return JSON.parse(JSON.stringify(filterState));
+}
+
+/* ============================================================
+   フィルタ適用（旧 filter.js と同じイベント名）
+============================================================ */
+export function applyFilter() {
+  window.dispatchEvent(new CustomEvent("filter:apply", {
+    detail: JSON.parse(JSON.stringify(filterState))
+  }));
   updateActiveFilterUI();
-
-  // filter:apply / filter:reset のたびに更新
-  window.addEventListener("filter:apply", updateActiveFilterUI);
-  window.addEventListener("filter:reset", updateActiveFilterUI);
 }
 
-export function updateActiveFilterUI() {
-  const box = document.getElementById("activeFilters");
-  if (!box) return;
+/* ============================================================
+   フィルタリセット
+============================================================ */
+export function resetFilter() {
+  filterState.yearMonths = [];
+  filterState.fields = [];
+  filterState.varieties = [];
 
-  const state = getFilter();
-  let html = "";
-
-  // 年月
-  state.yearMonths.forEach(ym => {
-    html += createTag(ym, () => removeYM(ym));
-  });
-
-  // 圃場
-  state.fields.forEach(f => {
-    html += createTag(f, () => removeField(f));
-  });
-
-  // 品種
-  state.varieties.forEach(v => {
-    html += createTag(v, () => removeVariety(v));
-  });
-
-  // 全解除ボタン
-  if (state.yearMonths.length || state.fields.length || state.varieties.length) {
-    html += `
-      <button id="activeFilterReset" class="filter-reset-btn">全解除</button>
-    `;
-  }
-
-  box.innerHTML = html;
-
-  const resetBtn = document.getElementById("activeFilterReset");
-  if (resetBtn) resetBtn.onclick = resetFilter;
-}
-
-/* ------------------------------------------------------------
-   タグ生成
------------------------------------------------------------- */
-function createTag(label, onRemove) {
-  const id = "tag-" + Math.random().toString(36).slice(2);
-  setTimeout(() => {
-    const el = document.getElementById(id);
-    if (el) el.onclick = onRemove;
-  });
-
-  return `
-    <span class="filter-tag">
-      ${label}
-      <span id="${id}" class="filter-tag-remove">×</span>
-    </span>
-  `;
-}
-
-/* ------------------------------------------------------------
-   個別削除
------------------------------------------------------------- */
-function removeYM(ym) {
-  const state = getFilter();
-  state.yearMonths = state.yearMonths.filter(v => v !== ym);
-  window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
-}
-
-function removeField(f) {
-  const state = getFilter();
-  state.fields = state.fields.filter(v => v !== f);
-  window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
-}
-
-function removeVariety(v) {
-  const state = getFilter();
-  state.varieties = state.varieties.filter(v2 => v2 !== v);
-  window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
+  window.dispatchEvent(new Event("filter:reset"));
+  updateActiveFilterUI();
 }
