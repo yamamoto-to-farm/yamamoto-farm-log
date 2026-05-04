@@ -1,49 +1,94 @@
 // annual-list.js（フィルタ単体テスト用）
 
-import { getFilter } from "/common/filter/filter-core.js";
-import { initYearFilter } from "/common/filter/filter-year.js";
+import { getFilter, setFilterData } from "/common/filter/filter-core.js";
+import { openYearModal } from "/common/filter/filter-year.js";
 import { openFieldModal } from "/common/filter/filter-field.js";
 import { openVarietyModal } from "/common/filter/filter-variety.js";
+import { loadJSON } from "/common/json.js";
 
 /* ============================================================
    初期化
 ============================================================ */
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
 
-  /* ▼ 年フィルタのテスト */
-  initYearFilter({
-    targetId: "yearFilter",
-    years: ["2024", "2025", "2026", "2027"]
+  /* ------------------------------------------------------------
+     ▼ 圃場データ（fields.json）
+     ------------------------------------------------------------ */
+  const fields = await loadJSON("/data/fields.json");
+
+  const areaMap = {};
+  const areaOrder = [];
+
+  fields.forEach(f => {
+    if (!areaMap[f.area]) {
+      areaMap[f.area] = [];
+      areaOrder.push(f.area);
+    }
+    areaMap[f.area].push(f.name);
   });
 
-  /* ▼ 圃場フィルタのテスト */
-  document.getElementById("openField").addEventListener("click", () => {
-    openFieldModal({
-      parents: ["赤沢", "西畑"],
-      children: {
-        "赤沢": ["赤沢(上)", "赤沢(中)", "赤沢(下)"],
-        "西畑": ["西畑(北)", "西畑(南)"]
-      }
-    });
+  /* ------------------------------------------------------------
+     ▼ 品種データ（varieties.json）
+     ------------------------------------------------------------ */
+  const varieties = await loadJSON("/data/varieties.json");
+
+  const typeMap = {};
+  const typeOrder = [];
+
+  varieties.forEach(v => {
+    if (!typeMap[v.type]) {
+      typeMap[v.type] = [];
+      typeOrder.push(v.type);
+    }
+    typeMap[v.type].push(v.name);
   });
 
-  /* ▼ 品種フィルタのテスト */
-  document.getElementById("openVariety").addEventListener("click", () => {
-    openVarietyModal({
-      parents: ["葉物", "果菜"],
-      children: {
-        "葉物": ["ほうれん草", "小松菜"],
-        "果菜": ["トマト", "ナス", "ピーマン"]
-      }
-    });
+  /* ------------------------------------------------------------
+     ▼ 年・月（テスト用）
+     ※ annual-list 本番では logs から生成する
+     ------------------------------------------------------------ */
+  const years = ["2024", "2025", "2026", "2027"];
+  const months = {
+    "2024": ["01","02","03"],
+    "2025": ["04","05"],
+    "2026": ["06","07"],
+    "2027": ["08","09"]
+  };
+
+  /* ------------------------------------------------------------
+     ▼ 旧 filter.js と同じ構造でセット
+     ------------------------------------------------------------ */
+  setFilterData({
+    years,
+    months,
+    fields: { parents: areaOrder, children: areaMap },
+    varieties: { parents: typeOrder, children: typeMap }
   });
 
-  /* ▼ フィルタ変更イベントを監視 */
-  window.addEventListener("filter2:change", (e) => {
+  /* ------------------------------------------------------------
+     ▼ UI イベント
+     ------------------------------------------------------------ */
+
+  // 年フィルタ
+  document.getElementById("yearFilter").innerHTML = `
+    <button class="primary-btn" id="openYear">年フィルタを開く</button>
+  `;
+  document.getElementById("openYear").addEventListener("click", openYearModal);
+
+  // 圃場フィルタ
+  document.getElementById("openField").addEventListener("click", openFieldModal);
+
+  // 品種フィルタ
+  document.getElementById("openVariety").addEventListener("click", openVarietyModal);
+
+  /* ------------------------------------------------------------
+     ▼ フィルタ変更イベント（旧API互換）
+     ------------------------------------------------------------ */
+  window.addEventListener("filter:apply", (e) => {
     updateStateBox(e.detail);
   });
 
-  window.addEventListener("filter2:reset", () => {
+  window.addEventListener("filter:reset", () => {
     updateStateBox(getFilter());
   });
 

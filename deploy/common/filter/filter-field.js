@@ -1,26 +1,14 @@
 // common/filter/filter-field.js
-import { addFilterValue, removeFilterValue, getFilter } from "./filter-core.js";
-import { closeModal } from "./filter-ui.js";
 
-/* ============================================================
-   圃場フィルタモーダルを開く
-============================================================ */
-export function openFieldModal(fieldData) {
-  const container = document.getElementById("modal-container");
-  container.innerHTML = createFieldModalHTML(fieldData);
-  container.style.display = "block";
+import { filterState, getFilterData, applyFilter } from "./filter-core.js";
+import { openModal, closeModal } from "./filter-ui.js";
 
-  initFieldModalEvents(fieldData);
-}
+export function openFieldModal() {
+  const data = getFilterData().fields;
+  const parents = data.parents;
+  const children = data.children;
 
-/* ============================================================
-   HTML 生成
-============================================================ */
-function createFieldModalHTML(fieldData) {
-  const parents = fieldData.parents;
-  const children = fieldData.children;
-
-  return `
+  const html = `
     <div class="modal-bg" id="modal-bg">
       <div class="modal">
         <div class="modal-close" id="modal-close">×</div>
@@ -48,87 +36,50 @@ function createFieldModalHTML(fieldData) {
       </div>
     </div>
   `;
+
+  openModal(html);
+  initFieldEvents(children);
 }
 
-/* ============================================================
-   イベント設定
-============================================================ */
-function initFieldModalEvents(fieldData) {
+function initFieldEvents(children) {
 
-  document.getElementById("modal-close").addEventListener("click", closeModal);
-  document.getElementById("modal-bg").addEventListener("click", (e) => {
+  document.getElementById("modal-close").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = e => {
     if (e.target.classList.contains("modal-bg")) closeModal();
-  });
+  };
 
-  // 親（エリア）折りたたみ
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      btn.closest(".filter-block").classList.toggle("open");
-    });
+    btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
   });
 
-  // 親（エリア）全選択
-  document.querySelectorAll(".filter-label").forEach(label => {
-    label.addEventListener("click", () => toggleAreaAll(label.dataset.area, fieldData));
-  });
-
-  // 個別選択
   document.querySelectorAll("[data-field]").forEach(el => {
-    el.addEventListener("click", () => toggleField(el.dataset.field));
+    el.onclick = () => toggleField(el.dataset.field);
   });
 
-  // クリア
-  document.getElementById("clear-field").addEventListener("click", () => {
-    const state = getFilter();
-    state.fields = [];
+  document.getElementById("clear-field").onclick = () => {
+    filterState.fields = [];
     updateFieldSelections();
-  });
+  };
 
-  // 適用
-  document.getElementById("apply-field").addEventListener("click", () => {
+  document.getElementById("apply-field").onclick = () => {
+    applyFilter();
     closeModal();
-  });
+  };
 
   updateFieldSelections();
 }
 
-/* ============================================================
-   個別選択
-============================================================ */
 function toggleField(name) {
-  const state = getFilter();
-
-  if (state.fields.includes(name)) {
-    removeFilterValue("fields", name);
+  if (filterState.fields.includes(name)) {
+    filterState.fields = filterState.fields.filter(v => v !== name);
   } else {
-    addFilterValue("fields", name);
+    filterState.fields.push(name);
   }
   updateFieldSelections();
 }
 
-/* ============================================================
-   親（エリア）全選択
-============================================================ */
-function toggleAreaAll(area, fieldData) {
-  const list = fieldData.children[area] || [];
-  const state = getFilter();
-  const allSelected = list.every(f => state.fields.includes(f));
-
-  if (allSelected) {
-    list.forEach(f => removeFilterValue("fields", f));
-  } else {
-    list.forEach(f => addFilterValue("fields", f));
-  }
-
-  updateFieldSelections();
-}
-
-/* ============================================================
-   UI 更新
-============================================================ */
 function updateFieldSelections() {
-  const state = getFilter();
   document.querySelectorAll("[data-field]").forEach(el => {
-    el.classList.toggle("selected", state.fields.includes(el.dataset.field));
+    el.classList.toggle("selected", filterState.fields.includes(el.dataset.field));
   });
 }
