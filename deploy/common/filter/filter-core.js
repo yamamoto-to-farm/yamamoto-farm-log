@@ -1,5 +1,4 @@
 // common/filter/filter-core.js
-// 旧 filter.js と互換の state を管理するコア
 
 export const filterState = {
   yearMonths: [],
@@ -15,6 +14,11 @@ export function setFilterData(data) {
 
 export function getFilterData() {
   return filterData;
+}
+
+/* ▼ これを追加！ */
+export function getFilter() {
+  return JSON.parse(JSON.stringify(filterState));
 }
 
 export function applyFilter() {
