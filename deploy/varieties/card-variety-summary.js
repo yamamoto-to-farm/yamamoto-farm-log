@@ -186,9 +186,16 @@ function renderSummaryCard(s) {
 
       <div class="info-line">作付面積：${areaTan.toFixed(2)}反（${areaM2.toFixed(1)}㎡）</div>
 
-      <div class="info-line">収穫期間：${harvestPeriod}</div>
-      <div class="info-line">収穫回数：${s.harvest.count}</div>
-      <div class="info-line">収穫合計：${s.harvest.totalAmount} 基（${s.shipping.totalWeight.toFixed(1)} kg）</div>
+      <!-- ★ 収穫期間 + 回数を同じ行に -->
+      <div class="info-line">
+        収穫：${harvestPeriod} ／ ${s.harvest.count}回
+      </div>
+
+      <!-- ★ 収穫合計（基） + 反収（基/反） -->
+      <div class="info-line">
+        収穫合計：${s.harvest.totalAmount} 基（${s.shipping.totalWeight.toFixed(1)} kg）
+        ／ 反収：${(s.harvest.totalAmount / areaTan).toFixed(1)} 基/反
+      </div>
 
       <div class="info-line" style="font-size:12px; color:#666;">最終更新：${updatedJST}</div>
     </div>
