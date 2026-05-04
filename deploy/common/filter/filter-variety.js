@@ -3,6 +3,9 @@
 import { filterState, getFilterData, applyFilter } from "./filter-core.js";
 import { openModal, closeModal } from "./filter-ui.js";
 
+/* ============================================================
+   品種フィルタモーダル
+============================================================ */
 export function openVarietyModal() {
   const data = getFilterData().varieties;
   const parents = data.parents;
@@ -41,6 +44,9 @@ export function openVarietyModal() {
   initVarietyEvents(children);
 }
 
+/* ============================================================
+   イベント
+============================================================ */
 function initVarietyEvents(children) {
 
   document.getElementById("modal-close").onclick = closeModal;
@@ -48,19 +54,28 @@ function initVarietyEvents(children) {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
+  // ▼ 親折りたたみ
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
     btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
   });
 
+  // ▼ 親クリック → 子全選択／全解除
+  document.querySelectorAll(".filter-label").forEach(label => {
+    label.onclick = () => toggleTypeAll(label.dataset.type, children);
+  });
+
+  // ▼ 子クリック
   document.querySelectorAll("[data-variety]").forEach(el => {
     el.onclick = () => toggleVariety(el.dataset.variety);
   });
 
+  // ▼ クリア
   document.getElementById("clear-variety").onclick = () => {
     filterState.varieties = [];
     updateVarietySelections();
   };
 
+  // ▼ 適用
   document.getElementById("apply-variety").onclick = () => {
     applyFilter();
     closeModal();
@@ -69,6 +84,9 @@ function initVarietyEvents(children) {
   updateVarietySelections();
 }
 
+/* ============================================================
+   子の個別選択
+============================================================ */
 function toggleVariety(name) {
   if (filterState.varieties.includes(name)) {
     filterState.varieties = filterState.varieties.filter(v => v !== name);
@@ -78,6 +96,29 @@ function toggleVariety(name) {
   updateVarietySelections();
 }
 
+/* ============================================================
+   親クリック → 子全選択／全解除
+============================================================ */
+function toggleTypeAll(type, childrenMap) {
+  const list = childrenMap[type] || [];
+  const allSelected = list.every(v => filterState.varieties.includes(v));
+
+  if (allSelected) {
+    filterState.varieties = filterState.varieties.filter(v => !list.includes(v));
+  } else {
+    list.forEach(v => {
+      if (!filterState.varieties.includes(v)) {
+        filterState.varieties.push(v);
+      }
+    });
+  }
+
+  updateVarietySelections();
+}
+
+/* ============================================================
+   UI 更新
+============================================================ */
 function updateVarietySelections() {
   document.querySelectorAll("[data-variety]").forEach(el => {
     el.classList.toggle("selected", filterState.varieties.includes(el.dataset.variety));

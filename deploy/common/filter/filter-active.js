@@ -6,7 +6,6 @@ import { getFilter, resetFilter } from "./filter-core.js";
 export function initActiveFilterUI() {
   updateActiveFilterUI();
 
-  // filter:apply / filter:reset のたびに更新
   window.addEventListener("filter:apply", updateActiveFilterUI);
   window.addEventListener("filter:reset", updateActiveFilterUI);
 }
@@ -33,11 +32,8 @@ export function updateActiveFilterUI() {
     html += createTag(v, () => removeVariety(v));
   });
 
-  // 全解除ボタン
   if (state.yearMonths.length || state.fields.length || state.varieties.length) {
-    html += `
-      <button id="activeFilterReset" class="filter-reset-btn">全解除</button>
-    `;
+    html += `<button id="activeFilterReset" class="filter-reset-btn">全解除</button>`;
   }
 
   box.innerHTML = html;

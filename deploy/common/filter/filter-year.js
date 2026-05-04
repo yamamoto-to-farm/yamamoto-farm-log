@@ -1,10 +1,12 @@
 // common/filter/filter-year.js
+// 年 + 月フィルタ（旧 filter.js と互換）
+// 親クリックで月を全選択／全解除に対応
 
-import { filterState, getFilterData, applyFilter, resetFilter } from "./filter-core.js";
+import { filterState, getFilterData, applyFilter } from "./filter-core.js";
 import { openModal, closeModal } from "./filter-ui.js";
 
 /* ============================================================
-   年フィルタ（旧 API と互換）
+   年フィルタモーダル
 ============================================================ */
 export function openYearModal() {
   const data = getFilterData();
@@ -33,38 +35,50 @@ export function openYearModal() {
         `).join("")}
 
         <div class="modal-footer">
-          <button class="primary-btn" id="apply">適用</button>
-          <button class="secondary-btn" id="clear">クリア</button>
+          <button class="primary-btn" id="apply-year">適用</button>
+          <button class="secondary-btn" id="clear-year">クリア</button>
         </div>
       </div>
     </div>
   `;
 
   openModal(html);
-  initYearEvents();
+  initYearEvents(months);
 }
 
-function initYearEvents() {
+/* ============================================================
+   イベント
+============================================================ */
+function initYearEvents(months) {
 
   document.getElementById("modal-close").onclick = closeModal;
   document.getElementById("modal-bg").onclick = e => {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
+  // ▼ 親（年）折りたたみ
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
     btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
   });
 
+  // ▼ 親クリック → 月を全選択／全解除
+  document.querySelectorAll(".filter-label").forEach(label => {
+    label.onclick = () => toggleYearAll(label.dataset.year, months);
+  });
+
+  // ▼ 月クリック
   document.querySelectorAll("[data-ym]").forEach(el => {
     el.onclick = () => toggleYM(el.dataset.ym);
   });
 
-  document.getElementById("clear").onclick = () => {
+  // ▼ クリア
+  document.getElementById("clear-year").onclick = () => {
     filterState.yearMonths = [];
     updateYMSelections();
   };
 
-  document.getElementById("apply").onclick = () => {
+  // ▼ 適用
+  document.getElementById("apply-year").onclick = () => {
     applyFilter();
     closeModal();
   };
@@ -72,6 +86,9 @@ function initYearEvents() {
   updateYMSelections();
 }
 
+/* ============================================================
+   月の個別選択
+============================================================ */
 function toggleYM(ym) {
   if (filterState.yearMonths.includes(ym)) {
     filterState.yearMonths = filterState.yearMonths.filter(v => v !== ym);
@@ -81,6 +98,31 @@ function toggleYM(ym) {
   updateYMSelections();
 }
 
+/* ============================================================
+   親クリック → 月を全選択／全解除
+============================================================ */
+function toggleYearAll(year, monthsMap) {
+  const list = (monthsMap[year] || []).map(m => `${year}-${m}`);
+  const allSelected = list.every(ym => filterState.yearMonths.includes(ym));
+
+  if (allSelected) {
+    // 全解除
+    filterState.yearMonths = filterState.yearMonths.filter(ym => !list.includes(ym));
+  } else {
+    // 全選択
+    list.forEach(ym => {
+      if (!filterState.yearMonths.includes(ym)) {
+        filterState.yearMonths.push(ym);
+      }
+    });
+  }
+
+  updateYMSelections();
+}
+
+/* ============================================================
+   UI 更新
+============================================================ */
 function updateYMSelections() {
   document.querySelectorAll("[data-ym]").forEach(el => {
     el.classList.toggle("selected", filterState.yearMonths.includes(el.dataset.ym));

@@ -5,23 +5,12 @@
   <title>フィルタ単体テスト - annual-list</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通CSS -->
   <link rel="stylesheet" href="/common/style.css">
   <link rel="stylesheet" href="/common/filter/filter.css">
 
   <style>
-    body {
-      padding: 20px;
-    }
-    h1 {
-      margin-bottom: 20px;
-    }
-    .test-section {
-      margin-bottom: 30px;
-      padding: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
+    body { padding: 20px; }
+    .section { margin-bottom: 24px; }
   </style>
 </head>
 
@@ -29,34 +18,38 @@
 
   <h1>フィルタ単体テスト（annual-list）</h1>
 
+  <!-- ▼ 選択中フィルタ表示（旧 filter.js の再現） -->
+  <div id="activeFilters" class="section"></div>
+
   <!-- ▼ 年フィルタ -->
-  <div class="test-section">
+  <div class="section">
     <h2>年フィルタ</h2>
     <div id="yearFilter"></div>
   </div>
 
   <!-- ▼ 圃場フィルタ -->
-  <div class="test-section">
+  <div class="section">
     <h2>圃場フィルタ</h2>
     <button id="openField" class="primary-btn">圃場フィルタを開く</button>
   </div>
 
   <!-- ▼ 品種フィルタ -->
-  <div class="test-section">
+  <div class="section">
     <h2>品種フィルタ</h2>
     <button id="openVariety" class="primary-btn">品種フィルタを開く</button>
   </div>
 
   <!-- ▼ 現在のフィルタ状態 -->
-  <div class="test-section">
+  <div class="section">
     <h2>現在のフィルタ状態</h2>
-    <pre id="filterStateBox" style="background:#f7f7f7; padding:12px; border-radius:6px;"></pre>
+    <pre id="filterStateBox"></pre>
   </div>
 
   <!-- ▼ モーダル -->
   <div id="modal-container"></div>
 
   <!-- JS -->
+  <script type="module" src="/common/filter/filter-active.js"></script>
   <script type="module" src="./annual-list.js"></script>
 
 </body>

@@ -3,6 +3,9 @@
 import { filterState, getFilterData, applyFilter } from "./filter-core.js";
 import { openModal, closeModal } from "./filter-ui.js";
 
+/* ============================================================
+   圃場フィルタモーダル
+============================================================ */
 export function openFieldModal() {
   const data = getFilterData().fields;
   const parents = data.parents;
@@ -41,6 +44,9 @@ export function openFieldModal() {
   initFieldEvents(children);
 }
 
+/* ============================================================
+   イベント
+============================================================ */
 function initFieldEvents(children) {
 
   document.getElementById("modal-close").onclick = closeModal;
@@ -48,19 +54,28 @@ function initFieldEvents(children) {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
 
+  // ▼ 親（area）折りたたみ
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
     btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
   });
 
+  // ▼ 親クリック → 子を全選択／全解除
+  document.querySelectorAll(".filter-label").forEach(label => {
+    label.onclick = () => toggleAreaAll(label.dataset.area, children);
+  });
+
+  // ▼ 子クリック
   document.querySelectorAll("[data-field]").forEach(el => {
     el.onclick = () => toggleField(el.dataset.field);
   });
 
+  // ▼ クリア
   document.getElementById("clear-field").onclick = () => {
     filterState.fields = [];
     updateFieldSelections();
   };
 
+  // ▼ 適用
   document.getElementById("apply-field").onclick = () => {
     applyFilter();
     closeModal();
@@ -69,6 +84,9 @@ function initFieldEvents(children) {
   updateFieldSelections();
 }
 
+/* ============================================================
+   子の個別選択
+============================================================ */
 function toggleField(name) {
   if (filterState.fields.includes(name)) {
     filterState.fields = filterState.fields.filter(v => v !== name);
@@ -78,6 +96,29 @@ function toggleField(name) {
   updateFieldSelections();
 }
 
+/* ============================================================
+   親クリック → 子を全選択／全解除
+============================================================ */
+function toggleAreaAll(area, childrenMap) {
+  const list = childrenMap[area] || [];
+  const allSelected = list.every(f => filterState.fields.includes(f));
+
+  if (allSelected) {
+    filterState.fields = filterState.fields.filter(f => !list.includes(f));
+  } else {
+    list.forEach(f => {
+      if (!filterState.fields.includes(f)) {
+        filterState.fields.push(f);
+      }
+    });
+  }
+
+  updateFieldSelections();
+}
+
+/* ============================================================
+   UI 更新
+============================================================ */
 function updateFieldSelections() {
   document.querySelectorAll("[data-field]").forEach(el => {
     el.classList.toggle("selected", filterState.fields.includes(el.dataset.field));
