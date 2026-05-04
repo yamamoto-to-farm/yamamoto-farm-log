@@ -11,7 +11,7 @@ export async function renderVarietyList() {
   // ★ varieties.json 読み込み
   const varieties = await loadJSON("/data/varieties.json");
 
-  // ★ variety-detail.json 読み込み（生育日数・反収など）
+  // ★ variety-detail.json 読み込み（播種時期・収穫時期）
   const varietyDetail = await loadJSON("/data/variety-detail.json");
 
   if (DEBUG_VARIETY_LIST) {
@@ -45,29 +45,35 @@ export async function renderVarietyList() {
     const wrap = document.createElement("div");
     wrap.style.display = "none";
 
+    /* ---------------------------------------------------------
+       ★ テーブルヘッダーを「播種時期」「収穫時期」に変更
+    --------------------------------------------------------- */
     let tableHtml = `
       <table class="variety-table">
         <thead>
           <tr>
             <th>品種名</th>
-            <th style="text-align:right;">生育日数</th>
-            <th style="text-align:right;">反収</th>
+            <th style="text-align:right;">播種時期</th>
+            <th style="text-align:right;">収穫時期</th>
           </tr>
         </thead>
         <tbody>
     `;
 
+    /* ---------------------------------------------------------
+       ★ 各品種の sowingPeriod / harvestPeriod を表示
+    --------------------------------------------------------- */
     varietyList.forEach(v => {
       const detail = varietyDetail[v.name] || {};
 
-      const growDays = detail.growDays ?? "未入力";
-      const yieldPer10a = detail.yieldPer10a ?? "未入力";
+      const sowingPeriod = detail.sowingPeriod ?? "未入力";
+      const harvestPeriod = detail.harvestPeriod ?? "未入力";
 
       tableHtml += `
         <tr class="variety-row" data-name="${v.name}">
           <td>${v.name}</td>
-          <td style="text-align:right;">${growDays}</td>
-          <td style="text-align:right;">${yieldPer10a}</td>
+          <td style="text-align:right;">${sowingPeriod}</td>
+          <td style="text-align:right;">${harvestPeriod}</td>
         </tr>
       `;
     });
