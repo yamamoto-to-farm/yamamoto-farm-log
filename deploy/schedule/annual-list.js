@@ -1,74 +1,60 @@
-// annual-list.js
-import { loadFilterUI, getActiveFilters } from "/common/filter.js";
+// annual-list.js（フィルタ単体テスト用）
 
-export function initAnnualListPage() {
-  setupYearFilter();
-}
+import { getFilter } from "/common/filter/filter-core.js";
+import { initYearFilter } from "/common/filter/filter-year.js";
+import { openFieldModal } from "/common/filter/filter-field.js";
+import { openVarietyModal } from "/common/filter/filter-variety.js";
 
-function setupYearFilter() {
-  loadFilterUI({
-    types: ["year"],
-    onChange: handleYearChange
+/* ============================================================
+   初期化
+============================================================ */
+window.addEventListener("DOMContentLoaded", () => {
+
+  /* ▼ 年フィルタのテスト */
+  initYearFilter({
+    targetId: "yearFilter",
+    years: ["2024", "2025", "2026", "2027"]
   });
-}
 
-async function handleYearChange() {
-  const filters = getActiveFilters();
-  const year = filters.year;
+  /* ▼ 圃場フィルタのテスト */
+  document.getElementById("openField").addEventListener("click", () => {
+    openFieldModal({
+      parents: ["赤沢", "西畑"],
+      children: {
+        "赤沢": ["赤沢(上)", "赤沢(中)", "赤沢(下)"],
+        "西畑": ["西畑(北)", "西畑(南)"]
+      }
+    });
+  });
 
-  if (!year) {
-    document.getElementById("summary-card").style.display = "none";
-    return;
-  }
+  /* ▼ 品種フィルタのテスト */
+  document.getElementById("openVariety").addEventListener("click", () => {
+    openVarietyModal({
+      parents: ["葉物", "果菜"],
+      children: {
+        "葉物": ["ほうれん草", "小松菜"],
+        "果菜": ["トマト", "ナス", "ピーマン"]
+      }
+    });
+  });
 
-  const filePath = `/logs/schedule/annual/${year}/${year}-作付計画.json`;
+  /* ▼ フィルタ変更イベントを監視 */
+  window.addEventListener("filter2:change", (e) => {
+    updateStateBox(e.detail);
+  });
 
-  try {
-    const res = await fetch(filePath);
-    if (!res.ok) {
-      showNoData(year);
-      return;
-    }
+  window.addEventListener("filter2:reset", () => {
+    updateStateBox(getFilter());
+  });
 
-    const data = await res.json();
-    showSummary(year, data);
+  // 初期表示
+  updateStateBox(getFilter());
+});
 
-  } catch (e) {
-    console.error(e);
-    showNoData(year);
-  }
-}
-
-function showNoData(year) {
-  const card = document.getElementById("summary-card");
-  card.style.display = "block";
-
-  document.getElementById("summary-title").textContent = `${year}年の作付計画はありません`;
-  document.getElementById("summary-content").innerHTML = `
-    <p>この年の作付計画ファイル（${year}-作付計画.json）は存在しません。</p>
-  `;
-
-  document.getElementById("editLink").href = `/schedule/annual/index.html?year=${year}`;
-  document.getElementById("planLink").href = `/schedule/plan.html?year=${year}`;
-}
-
-function showSummary(year, data) {
-  const card = document.getElementById("summary-card");
-  card.style.display = "block";
-
-  document.getElementById("summary-title").textContent = `${year}年 作付計画`;
-
-  const step1 = data.step1 || {};
-  const step2 = data.step2 || [];
-
-  const totalArea = step1.totalArea ?? "-";
-  const lotCount = step2.length;
-
-  document.getElementById("summary-content").innerHTML = `
-    <p><strong>必要反数：</strong> ${totalArea}</p>
-    <p><strong>週別ロット数：</strong> ${lotCount} ロット</p>
-  `;
-
-  document.getElementById("editLink").href = `/schedule/annual/index.html?year=${year}`;
-  document.getElementById("planLink").href = `/schedule/plan.html?year=${year}`;
+/* ============================================================
+   現在のフィルタ状態を表示
+============================================================ */
+function updateStateBox(state) {
+  document.getElementById("filterStateBox").textContent =
+    JSON.stringify(state, null, 2);
 }

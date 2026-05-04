@@ -1,69 +1,35 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
   <meta charset="UTF-8">
-  <title>年間作付計画 - 山本農園</title>
+  <title>年間作付計画（フィルタ単体テスト）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通 CSS -->
-  <link rel="stylesheet" href="/common/style.css?v=1">
-
-  <!-- 年間作付計画一覧専用 CSS -->
-  <link rel="stylesheet" href="./annual-list.css?v=1">
+  <link rel="stylesheet" href="/common/style.css">
+  <link rel="stylesheet" href="/common/filter/filter.css">
 </head>
 
 <body>
 
-  <div id="page-area" style="display:none;">
+  <h1>年間作付計画（フィルタ単体テスト）</h1>
 
-    <h1 class="page-title">年間作付計画</h1>
+  <!-- ▼ 年フィルタ -->
+  <div id="yearFilter"></div>
 
-    <!-- 年選択フィルタ -->
-    <div class="card">
-      <h2 class="section-title">年を選択</h2>
-      <div id="yearFilter" class="filter-open-btn" data-type="year">▶ 年</div>
-    </div>
+  <!-- ▼ 圃場フィルタ -->
+  <button id="openField">圃場フィルタを開く</button>
 
-    <!-- 適用中フィルタ -->
-    <div id="activeFilters"></div>
+  <!-- ▼ 品種フィルタ -->
+  <button id="openVariety">品種フィルタを開く</button>
 
-    <!-- 年間作付計画の概要 -->
-    <div id="summary-card" class="card" style="display:none;">
-      <h2 class="section-title" id="summary-title"></h2>
+  <!-- ▼ 現在のフィルタ状態 -->
+  <h2>現在のフィルタ状態</h2>
+  <pre id="filterStateBox"></pre>
 
-      <div id="summary-content"></div>
+  <!-- ▼ モーダル -->
+  <div id="modal-container"></div>
 
-      <div style="margin-top: 16px;">
-        <a id="editLink" class="primary-btn" href="#">年間作付計画を編集する</a>
-      </div>
-
-      <div style="margin-top: 8px;">
-        <a id="planLink" class="secondary-btn" href="#">播種・定植計画を見る</a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- JS -->
   <script type="module" src="./annual-list.js"></script>
-
-  <!-- 認証・ヘッダー -->
-  <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js";
-    import { renderHeader } from "/common/header.js";
-    import { initAnnualListPage } from "./annual-list.js";
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
-
-      renderHeader();
-      document.getElementById("page-area").style.display = "block";
-
-      initAnnualListPage();
-    });
-  </script>
 
 </body>
 </html>
