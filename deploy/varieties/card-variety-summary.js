@@ -5,7 +5,7 @@ import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
 import { resolveFieldFromFileName, safeFileName } from "/common/utils.js";
 
 // ★ デバッグフラグ
-const debugMode = true;
+const debugMode = false;
 
 export async function renderVarietySummaryCards(varietyName) {
 

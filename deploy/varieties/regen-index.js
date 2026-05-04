@@ -4,7 +4,7 @@ import { loadJSON, saveJSON } from "/common/json.js";
 import { safeFileName } from "/common/utils.js";   // ★ 追加
 
 // ★ デバッグフラグ（true にするとログが出る）
-const DEBUG = true;
+const DEBUG = false;
 
 /* ---------------------------------------------------------
    品種インデックス（variety-index.json）再生成
