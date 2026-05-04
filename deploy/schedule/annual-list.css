@@ -1,0 +1,24 @@
+/* annual-list.css */
+
+#summary-card p {
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.primary-btn, .secondary-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.primary-btn {
+  background: #2a7ae2;
+  color: white;
+}
+
+.secondary-btn {
+  background: #ddd;
+  color: #333;
+}
