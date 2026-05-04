@@ -1,4 +1,6 @@
 // utils.js
+import { loadJSON } from "/common/json.js";
+
 
 // URL から machine を取得（なければ machine1）
 export function getMachineParam() {
