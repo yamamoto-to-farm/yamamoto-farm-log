@@ -1,6 +1,7 @@
 // varieties/regen-index.js
 import { loadCSV, normalizeKeys } from "/common/csv.js";
-import { loadJSON, saveJSON } from "/common/json.js";   // ← loadJSON を追加
+import { loadJSON, saveJSON } from "/common/json.js";
+import { safeFileName } from "/common/utils.js";   // ★ 追加
 
 // ★ デバッグフラグ（true にするとログが出る）
 const DEBUG = true;
@@ -46,7 +47,8 @@ export async function regenerateVarietyIndex() {
             varietyIndex[variety][year] = { planting: [], seed: [] };
         }
 
-        const fileName = `${plantingRef}.json`;
+        // ★★★ ここを safeFileName 化 ★★★
+        const fileName = safeFileName(plantingRef) + ".json";
 
         const exists = varietyIndex[variety][year].planting
             .some(p => p.plantingRef === plantingRef);

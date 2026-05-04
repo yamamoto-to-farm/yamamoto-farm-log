@@ -1,8 +1,8 @@
-// card-variety-summary.js（resolveFieldFromFileName 対応・最終安定版）
+// card-variety-summary.js（safeFileName + resolveFieldFromFileName 対応・最終安定版）
 import { loadJSON } from "/common/json.js";
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { calcAreaM2, calcAreaTan } from "/varieties/analysis-utils.js";
-import { resolveFieldFromFileName } from "/common/utils.js";
+import { resolveFieldFromFileName, safeFileName } from "/common/utils.js";
 
 // ★ デバッグフラグ
 const debugMode = true;
@@ -64,7 +64,8 @@ export async function renderVarietySummaryCards(varietyName) {
             html += `<h3 style="margin-top:16px;">定植</h3>`;
 
             for (const p of planting) {
-                const fileName = p.fileName;
+                const fileNameRaw = p.fileName; // variety-index.json の fileName（safeFileName 済み）
+                const fileName = safeFileName(fileNameRaw.replace(".json", "")) + ".json";
 
                 // ★ 年フォルダは fileName の先頭8桁から取得
                 const date8 = fileName.slice(0, 8);
@@ -78,7 +79,8 @@ export async function renderVarietySummaryCards(varietyName) {
 
                 if (debugMode) {
                     console.log("---- DEBUG planting item ----");
-                    console.log("fileName:", fileName);
+                    console.log("fileNameRaw:", fileNameRaw);
+                    console.log("normalized fileName:", fileName);
                     console.log("date8:", date8);
                     console.log("yearFromRef:", yearFromRef);
                     console.log("resolved field:", field);
@@ -186,7 +188,7 @@ function renderSummaryCard(s) {
 
       <div class="info-line">収穫期間：${harvestPeriod}</div>
       <div class="info-line">収穫回数：${s.harvest.count}</div>
-      <div class="info-line">収穫合計：${s.harvest.totalAmount} 重（${s.shipping.totalWeight.toFixed(1)} kg）</div>
+      <div class="info-line">収穫合計：${s.harvest.totalAmount} 基（${s.shipping.totalWeight.toFixed(1)} kg）</div>
 
       <div class="info-line" style="font-size:12px; color:#666;">最終更新：${updatedJST}</div>
     </div>
