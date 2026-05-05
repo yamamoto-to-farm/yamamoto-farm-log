@@ -1,4 +1,4 @@
-// annual-list.js（フィルタ単体テスト用）
+// annual-list.js（本番仕様）
 
 import { getFilter, setFilterData } from "/common/filter/filter-core.js";
 import { openYearModal } from "/common/filter/filter-year.js";
@@ -12,10 +12,14 @@ import { loadJSON } from "/common/json.js";
 window.addEventListener("DOMContentLoaded", async () => {
 
   /* ------------------------------------------------------------
+     ▼ 年一覧を annual フォルダから取得
+     ------------------------------------------------------------ */
+  const yearList = await loadYearList();
+
+  /* ------------------------------------------------------------
      ▼ 圃場データ（fields.json）
      ------------------------------------------------------------ */
   const fields = await loadJSON("/data/fields.json");
-
   const areaMap = {};
   const areaOrder = [];
 
@@ -31,7 +35,6 @@ window.addEventListener("DOMContentLoaded", async () => {
      ▼ 品種データ（varieties.json）
      ------------------------------------------------------------ */
   const varieties = await loadJSON("/data/varieties.json");
-
   const typeMap = {};
   const typeOrder = [];
 
@@ -44,62 +47,85 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   /* ------------------------------------------------------------
-     ▼ 年・月（テスト用）
-     ※ annual-list 本番では logs から生成する
-     ------------------------------------------------------------ */
-  const years = ["2024", "2025", "2026", "2027"];
-  const months = {
-    "2024": ["01","02","03"],
-    "2025": ["04","05"],
-    "2026": ["06","07"],
-    "2027": ["08","09"]
-  };
-
-  /* ------------------------------------------------------------
-     ▼ 旧 filter.js と同じ構造でセット
+     ▼ フィルタデータセット
      ------------------------------------------------------------ */
   setFilterData({
-    years,
-    months,
+    years: yearList,
+    months: {}, // 年間作付計画は月フィルタ不要
     fields: { parents: areaOrder, children: areaMap },
     varieties: { parents: typeOrder, children: typeMap }
   });
 
   /* ------------------------------------------------------------
-     ▼ UI イベント
+     ▼ フィルタボタン
      ------------------------------------------------------------ */
-
-  // 年フィルタ
-  document.getElementById("yearFilter").innerHTML = `
-    <button class="primary-btn" id="openYear">年フィルタを開く</button>
-  `;
-  document.getElementById("openYear").addEventListener("click", openYearModal);
-
-  // 圃場フィルタ
-  document.getElementById("openField").addEventListener("click", openFieldModal);
-
-  // 品種フィルタ
-  document.getElementById("openVariety").addEventListener("click", openVarietyModal);
+  document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
+  document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
+  document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
 
   /* ------------------------------------------------------------
-     ▼ フィルタ変更イベント（旧API互換）
+     ▼ フィルタイベント
      ------------------------------------------------------------ */
   window.addEventListener("filter:apply", (e) => {
-    updateStateBox(e.detail);
+    renderTable(e.detail);
   });
 
   window.addEventListener("filter:reset", () => {
-    updateStateBox(getFilter());
+    renderTable(getFilter());
   });
 
-  // 初期表示
-  updateStateBox(getFilter());
+  /* ------------------------------------------------------------
+     ▼ 初期表示
+     ------------------------------------------------------------ */
+  renderTable(getFilter());
 });
 
 /* ============================================================
-   現在のフィルタ状態を表示
+   年一覧を annual フォルダから取得
 ============================================================ */
-function updateStateBox(state) {
-  document.getElementById("filterStateBox").textContent =
-    JSON.stringify(state, null, 2);
+async function loadYearList() {
+  const index = await loadJSON("/annual/year-index.json");
+  return index.years || [];
+}
+
+/* ============================================================
+   テーブル描画
+============================================================ */
+async function renderTable(state) {
+
+  const years = state.yearMonths.length
+    ? state.yearMonths.map(ym => ym.slice(0, 4))
+    : (await loadYearList());
+
+  const uniqueYears = [...new Set(years)].sort();
+
+  let html = `
+    <table>
+      <thead>
+        <tr>
+          <th>年</th>
+          <th>作付計画</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  uniqueYears.forEach(y => {
+    html += `
+      <tr>
+        <td>${y}</td>
+        <td>${y}-作付計画.json</td>
+        <td class="action-links">
+          <a href="/schedule/annual/index.html?year=${y}">編集</a>
+          <a href="/schedule/plan.html?year=${y}">播種・定植計画へ</a>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+
+  document.getElementById("countArea").textContent = `${uniqueYears.length} 件`;
+  document.getElementById("table-area").innerHTML = html;
 }

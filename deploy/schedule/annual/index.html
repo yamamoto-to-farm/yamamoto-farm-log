@@ -2,18 +2,18 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>年間作付計画一覧</title>
+  <title>年間作付計画 編集</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="/common/style.css">
   <link rel="stylesheet" href="/common/filter/filter.css">
-  <link rel="stylesheet" href="./annual-list.css">
+  <link rel="stylesheet" href="./annual.css">
 </head>
 
 <body>
 
   <header>
-    <h1>年間作付計画一覧</h1>
+    <h1 id="pageTitle">年間作付計画</h1>
   </header>
 
   <!-- ▼ 選択中フィルタ -->
@@ -21,13 +21,15 @@
 
   <!-- ▼ フィルタボタン -->
   <div id="filterButtons">
-    <button class="primary-btn" data-type="year">年フィルタ</button>
     <button class="primary-btn" data-type="field">圃場フィルタ</button>
     <button class="primary-btn" data-type="variety">品種フィルタ</button>
   </div>
 
-  <!-- ▼ 件数 -->
-  <div id="countArea"></div>
+  <!-- ▼ 操作ボタン -->
+  <div id="toolbar">
+    <button id="addRow" class="primary-btn">行を追加</button>
+    <button id="save" class="accent-btn">保存</button>
+  </div>
 
   <!-- ▼ テーブル -->
   <div id="table-area"></div>
@@ -36,7 +38,7 @@
   <div id="modal-container"></div>
 
   <script type="module" src="/common/filter/filter-active.js"></script>
-  <script type="module" src="./annual-list.js"></script>
+  <script type="module" src="./annual.js"></script>
 
 </body>
 </html>

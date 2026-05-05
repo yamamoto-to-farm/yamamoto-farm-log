@@ -4,9 +4,10 @@
   gap: 12px;
 }
 
-#countArea {
-  margin: 12px 0;
-  font-weight: bold;
+#toolbar {
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
 }
 
 table {
@@ -24,6 +25,13 @@ th {
   background: #f0f0f0;
 }
 
-.action-links a {
-  margin-right: 12px;
+input, select {
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+}
+
+.delete-btn {
+  color: #d33;
+  cursor: pointer;
 }
