@@ -1,9 +1,11 @@
-// annual.js（saveLog 方式・年階層構造対応・デバッグフラグ付き）
+// annual.js（saveLog 方式・年階層構造対応・フィルタ初期化付き）
 
 import { loadJSON } from "/common/json.js";
-import { saveLog } from "/common/save/index.js";   // ★ summary.js と同じ保存方式
+import { saveLog } from "/common/save/index.js";
 import { initStep1 } from "./annual-step1.js";
 import { initStep2 } from "./annual-step2.js";
+
+import { setFilterData } from "/common/filter/filter-core.js";   // ★ 追加（必須）
 
 const DEBUG = true;
 const log = (...a) => DEBUG && console.log(...a);
@@ -16,7 +18,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // annual.json（固定ファイル）
   const loadPath = `/logs/schedule/annual/annual.json`;
-  const savePath = `logs/schedule/annual/annual.json`;  // ★ saveLog 用の S3 Key
+  const savePath = `logs/schedule/annual/annual.json`;  // saveLog 用の S3 Key
 
   log("=== Annual Init ===");
   log("[INFO] year =", year);
@@ -24,6 +26,47 @@ window.addEventListener("DOMContentLoaded", async () => {
   log("[INFO] savePath =", savePath);
 
   document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
+
+  // ---------------------------------------------------------
+  // ★ フィルタ用データを読み込む（STEP2 の品種選択に必須）
+  // ---------------------------------------------------------
+  try {
+    const fields = await loadJSON("/data/fields.json");
+    const varieties = await loadJSON("/data/varieties.json");
+
+    const areaMap = {};
+    const areaOrder = [];
+    fields.forEach(f => {
+      if (!areaMap[f.area]) {
+        areaMap[f.area] = [];
+        areaOrder.push(f.area);
+      }
+      areaMap[f.area].push(f.name);
+    });
+
+    const typeMap = {};
+    const typeOrder = [];
+    varieties.forEach(v => {
+      if (!typeMap[v.type]) {
+        typeMap[v.type] = [];
+        typeOrder.push(v.type);
+      }
+      typeMap[v.type].push(v.name);
+    });
+
+    // ★ フィルタデータをセット（select モードで使用）
+    setFilterData({
+      years: [],
+      months: {},
+      fields: { parents: areaOrder, children: areaMap },
+      varieties: { parents: typeOrder, children: typeMap }
+    });
+
+    log("[INFO] setFilterData 完了");
+
+  } catch (e) {
+    error("[ERROR] フィルタデータ読み込み失敗:", e);
+  }
 
   // ---------------------------------------------------------
   // annual.json 読み込み
@@ -66,7 +109,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         type: "multi",
         files: [
           {
-            path: savePath,   // ★ logs/schedule/annual/annual.json
+            path: savePath,
             content: JSON.stringify(annualAll, null, 2)
           }
         ]

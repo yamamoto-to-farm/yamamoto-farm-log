@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="/common/style.css">
+  <link rel="stylesheet" href="/common/filter/filter.css">
   <link rel="stylesheet" href="./annual.css">
 </head>
 
@@ -42,7 +43,8 @@
           <th>収穫週</th>
           <th>品種</th>
           <th>目標基数</th>
-          <th>必要面積</th>
+          <th>基/反</th>
+          <th>必要面積(反)</th>
           <th>播種日</th>
           <th>定植日</th>
         </tr>
@@ -60,6 +62,9 @@
     <span id="saveStatus"></span>
   </div>
 
+  <!-- ★ フィルタモーダル（品種選択に必要） -->
+  <div id="modal-root"></div>
+
   <!-- ★ save-modal 読み込み（saveLog に必須） -->
   <div id="save-modal-container"></div>
   <script>
@@ -70,6 +75,7 @@
       });
   </script>
 
+  <!-- 年間作付計画ロジック -->
   <script type="module" src="./annual.js"></script>
 
 </body>
