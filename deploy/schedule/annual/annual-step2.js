@@ -1,4 +1,4 @@
-// annual-step2.js（STEP1連動・月選択式UI・差分チェック・行削除対応）
+// annual-step2.js（STEP1連動・月選択式UI・差分チェック・行削除対応・テンキー最適化）
 
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
@@ -107,11 +107,29 @@ function buildUI(annual) {
                value="${r.variety}" readonly>
       </td>
 
-      <td><input data-i="${idx}" data-k="targetUnits" value="${r.targetUnits}"></td>
-      <td><input data-i="${idx}" data-k="per10a" value="${r.per10a}"></td>
-      <td><input data-i="${idx}" data-k="needArea" value="${r.needArea}" readonly></td>
-      <td><input data-i="${idx}" data-k="sowDate" value="${r.sowDate}"></td>
-      <td><input data-i="${idx}" data-k="plantDate" value="${r.plantDate}"></td>
+      <!-- ★ テンキー最適化 -->
+      <td>
+        <input type="text" inputmode="numeric" pattern="[0-9]*"
+               data-i="${idx}" data-k="targetUnits" value="${r.targetUnits}">
+      </td>
+
+      <td>
+        <input type="text" inputmode="numeric" pattern="[0-9]*"
+               data-i="${idx}" data-k="per10a" value="${r.per10a}">
+      </td>
+
+      <td>
+        <input type="text" inputmode="numeric" pattern="[0-9]*"
+               data-i="${idx}" data-k="needArea" value="${r.needArea}" readonly>
+      </td>
+
+      <td>
+        <input type="date" data-i="${idx}" data-k="sowDate" value="${r.sowDate}">
+      </td>
+
+      <td>
+        <input type="date" data-i="${idx}" data-k="plantDate" value="${r.plantDate}">
+      </td>
 
       <td><button class="delete-row" data-i="${idx}">削除</button></td>
     `;
@@ -158,7 +176,6 @@ function buildUI(annual) {
       const rowsAll = annual.step2.rows.filter(r => r.month === currentMonth);
       const targetRow = rowsAll[i];
 
-      // annual.step2.rows から削除
       const indexInAll = annual.step2.rows.indexOf(targetRow);
       annual.step2.rows.splice(indexInAll, 1);
 

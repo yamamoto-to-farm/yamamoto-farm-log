@@ -13,7 +13,6 @@ const warn = (...a) => DEBUG && console.warn(...a);
 const error = (...a) => DEBUG && console.error(...a);
 
 window.addEventListener("DOMContentLoaded", async () => {
-
   const year = new URLSearchParams(location.search).get("year");
 
   // annual.json（固定ファイル）
@@ -63,7 +62,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     log("[INFO] setFilterData 完了");
-
   } catch (e) {
     error("[ERROR] フィルタデータ読み込み失敗:", e);
   }
@@ -100,7 +98,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------------------------------------
   // 保存（saveLog 方式）
   // ---------------------------------------------------------
-  document.getElementById("save").addEventListener("click", async () => {
+  const saveButton = document.getElementById("save");
+  saveButton.addEventListener("click", async () => {
     log("=== SAVE BUTTON CLICKED ===");
     log("[saveLog] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
 
@@ -117,12 +116,21 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       log("[saveLog] 保存成功:", savePath);
       document.getElementById("saveStatus").textContent = "保存しました";
-
     } catch (e) {
       error("[saveLog] 保存失敗:", e);
       document.getElementById("saveStatus").textContent = "保存に失敗（コンソール参照）";
     }
   });
+
+  // ---------------------------------------------------------
+  // STEP1 専用の保存ボタン（ヘッダー横） → 共通保存を呼ぶ
+  // ---------------------------------------------------------
+  const saveStep1Button = document.getElementById("saveStep1");
+  if (saveStep1Button) {
+    saveStep1Button.addEventListener("click", () => {
+      saveButton.click();
+    });
+  }
 });
 
 // ---------------------------------------------------------
@@ -135,7 +143,7 @@ function createEmptyAnnual(year) {
     year,
     step1: {
       months: [
-        "11","12","01","02","03","04","05","06"
+        "11", "12", "01", "02", "03", "04", "05", "06"
       ].map(m => ({
         month: m,
         targetUnits: "",

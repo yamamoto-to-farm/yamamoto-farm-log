@@ -18,7 +18,12 @@
 
   <!-- STEP1 -->
   <section id="step1">
-    <h2>STEP1：月別目標</h2>
+    <h2>
+      STEP1：月別目標
+      <button id="recalcStep1" class="primary-btn" style="margin-left:10px;">再計算</button>
+      <button id="saveStep1" class="secondary-btn" style="margin-left:6px;">保存</button>
+    </h2>
+
     <table>
       <thead>
         <tr>
@@ -31,12 +36,14 @@
       </thead>
       <tbody id="step1Body"></tbody>
     </table>
-    <button id="recalcStep1" class="primary-btn">再計算</button>
   </section>
 
   <!-- STEP2 -->
   <section id="step2">
     <h2>STEP2：品種別計画</h2>
+
+    <!-- 月選択セレクタは annual-step2.js が挿入 -->
+
     <table>
       <thead>
         <tr>
@@ -47,6 +54,7 @@
           <th>必要面積(反)</th>
           <th>播種日</th>
           <th>定植日</th>
+          <th>削除</th>
         </tr>
       </thead>
       <tbody id="step2Body"></tbody>
@@ -62,10 +70,10 @@
     <span id="saveStatus"></span>
   </div>
 
-  <!-- ★ フィルタモーダル（品種・圃場選択に必須） -->
+  <!-- ★ フィルタモーダル -->
   <div id="modal-root"></div>
 
-  <!-- ★ save-modal 読み込み（saveLog に必須） -->
+  <!-- ★ save-modal 読み込み -->
   <div id="save-modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
@@ -77,6 +85,18 @@
 
   <!-- 年間作付計画ロジック -->
   <script type="module" src="./annual.js"></script>
+
+  <!-- STEP1 保存ボタン → 既存の保存処理を呼ぶ -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("saveStep1");
+      if (btn) {
+        btn.addEventListener("click", () => {
+          document.getElementById("save").click();
+        });
+      }
+    });
+  </script>
 
 </body>
 </html>
