@@ -1,37 +1,45 @@
-#filterButtons {
-  margin: 16px 0;
+main {
+  padding: 16px;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 24px;
 }
 
-#toolbar {
-  margin: 16px 0;
-  display: flex;
-  gap: 12px;
+.card {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 16px;
+  background: #fff;
 }
 
-table {
+.card h2 {
+  margin-top: 0;
+}
+
+.step-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
-th, td {
+.step-table th,
+.step-table td {
   border: 1px solid #ccc;
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
-th {
+.step-table th {
   background: #f0f0f0;
 }
 
-input, select {
-  width: 100%;
-  padding: 4px 6px;
-  box-sizing: border-box;
+.card-footer {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
 }
 
-.delete-btn {
-  color: #d33;
-  cursor: pointer;
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
 }

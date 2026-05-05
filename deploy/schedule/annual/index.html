@@ -2,11 +2,10 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>年間作付計画 編集</title>
+  <title>年間作付計画（STEP1 & STEP2）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="/common/style.css">
-  <link rel="stylesheet" href="/common/filter/filter.css">
   <link rel="stylesheet" href="./annual.css">
 </head>
 
@@ -16,29 +15,67 @@
     <h1 id="pageTitle">年間作付計画</h1>
   </header>
 
-  <!-- ▼ 選択中フィルタ -->
-  <div id="activeFilters"></div>
+  <main>
 
-  <!-- ▼ フィルタボタン -->
-  <div id="filterButtons">
-    <button class="primary-btn" data-type="field">圃場フィルタ</button>
-    <button class="primary-btn" data-type="variety">品種フィルタ</button>
-  </div>
+    <!-- STEP1：月別収穫目標 -->
+    <section class="card">
+      <h2>STEP1：月別の収穫目標 → 必要反数</h2>
 
-  <!-- ▼ 操作ボタン -->
-  <div id="toolbar">
-    <button id="addRow" class="primary-btn">行を追加</button>
-    <button id="save" class="accent-btn">保存</button>
-  </div>
+      <table class="step-table">
+        <thead>
+          <tr>
+            <th>月</th>
+            <th>目標出荷基数</th>
+            <th>1反あたり基数</th>
+            <th>目標反収(kg/10a)</th>
+            <th>必要反数</th>
+          </tr>
+        </thead>
+        <tbody id="step1Body">
+          <!-- JS で 11〜翌6 月を生成 -->
+        </tbody>
+      </table>
 
-  <!-- ▼ テーブル -->
-  <div id="table-area"></div>
+      <div class="card-footer">
+        <button id="recalcStep1" class="primary-btn">STEP1 再計算</button>
+      </div>
+    </section>
 
-  <!-- ▼ モーダル -->
-  <div id="modal-container"></div>
+    <!-- STEP2：週別ロット設計 -->
+    <section class="card">
+      <h2>STEP2：週別ロット設計（品種 × 基数）</h2>
 
-  <script type="module" src="/common/filter/filter-active.js"></script>
+      <table class="step-table">
+        <thead>
+          <tr>
+            <th>収穫週</th>
+            <th>品種</th>
+            <th>目標基数</th>
+            <th>必要反数</th>
+            <th>播種日</th>
+            <th>定植日</th>
+          </tr>
+        </thead>
+        <tbody id="step2Body">
+          <!-- JS で行を追加 -->
+        </tbody>
+      </table>
+
+      <div class="card-footer">
+        <button id="addStep2Row" class="primary-btn">行を追加</button>
+        <button id="recalcStep2" class="primary-btn">STEP2 再計算</button>
+      </div>
+    </section>
+
+    <!-- 保存 -->
+    <section class="card">
+      <h2>保存</h2>
+      <button id="save" class="accent-btn">年間作付計画を保存</button>
+      <div id="saveStatus"></div>
+    </section>
+
+  </main>
+
   <script type="module" src="./annual.js"></script>
-
 </body>
 </html>
