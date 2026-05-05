@@ -1,6 +1,6 @@
 // annual-step1.js（反で計算・テンキー最適化・年間サマリー付き）
 
-const DEBUG = true;
+const DEBUG = false;
 const log = (...a) => DEBUG && console.log(...a);
 
 export function initStep1(annual) {

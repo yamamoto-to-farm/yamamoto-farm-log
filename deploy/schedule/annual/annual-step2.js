@@ -2,7 +2,7 @@
 
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
-const DEBUG = true;
+const DEBUG = false;
 const log = (...a) => DEBUG && console.log(...a);
 
 // ★ filter-ui.js が使う #modal-container を自動生成

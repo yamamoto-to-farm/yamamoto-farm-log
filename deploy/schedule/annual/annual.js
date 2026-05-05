@@ -7,7 +7,7 @@ import { initStep2 } from "./annual-step2.js";
 
 import { setFilterData } from "/common/filter/filter-core.js";   // ★ 品種選択モーダルに必須
 
-const DEBUG = true;
+const DEBUG = false;
 const log = (...a) => DEBUG && console.log(...a);
 const warn = (...a) => DEBUG && console.warn(...a);
 const error = (...a) => DEBUG && console.error(...a);
