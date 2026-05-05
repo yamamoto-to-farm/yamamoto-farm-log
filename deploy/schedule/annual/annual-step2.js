@@ -1,9 +1,18 @@
-// annual-step2.js（反計算 + 品種モーダル対応）
+// annual-step2.js（反計算 + 品種モーダル対応 + modal-container 自動生成）
 
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
 const DEBUG = true;
 const log = (...a) => DEBUG && console.log(...a);
+
+// ★ filter-ui.js が使う #modal-container を自動生成（最重要）
+(function ensureModalContainer() {
+  if (!document.getElementById("modal-container")) {
+    const div = document.createElement("div");
+    div.id = "modal-container";
+    document.body.appendChild(div);
+  }
+})();
 
 export function initStep2(annual) {
   log("[STEP2] init");
