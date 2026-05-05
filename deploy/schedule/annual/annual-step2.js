@@ -1,6 +1,10 @@
-// annual-step2.js
+// annual-step2.js（年階層構造対応）
+
+const DEBUG = true;
+const log = (...a) => DEBUG && console.log(...a);
 
 export function initStep2(annual) {
+  log("[STEP2] init");
   buildUI(annual);
 
   document.getElementById("addStep2Row").addEventListener("click", () => {
@@ -47,6 +51,7 @@ function buildUI(annual) {
 }
 
 function recalc(annual) {
+  log("[STEP2] recalc");
   annual.step2.rows.forEach(r => {
     const target = Number(r.targetUnits || 0);
     const per10a = 5000; // 仮ロジック

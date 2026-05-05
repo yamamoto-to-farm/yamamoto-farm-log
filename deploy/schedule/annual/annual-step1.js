@@ -1,6 +1,10 @@
-// annual-step1.js
+// annual-step1.js（年階層構造対応）
+
+const DEBUG = true;
+const log = (...a) => DEBUG && console.log(...a);
 
 export function initStep1(annual) {
+  log("[STEP1] init");
   buildUI(annual);
   document.getElementById("recalcStep1").addEventListener("click", () => {
     recalc(annual);
@@ -34,6 +38,7 @@ function buildUI(annual) {
 }
 
 function recalc(annual) {
+  log("[STEP1] recalc");
   annual.step1.months.forEach(m => {
     const target = Number(m.targetUnits || 0);
     const per10a = Number(m.unitsPer10a || 0);

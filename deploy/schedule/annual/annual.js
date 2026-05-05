@@ -1,32 +1,21 @@
-// annual.js（メイン制御・デバッグフラグ付き）
+// annual.js（年階層構造対応・デバッグフラグ付き）
 
 import { loadJSON, saveJSON } from "/common/json.js";
 import { initStep1 } from "./annual-step1.js";
 import { initStep2 } from "./annual-step2.js";
 
-// ★ デバッグフラグ（必要なときだけ true にする）
 const DEBUG = true;
-
-// ログ出力ヘルパー
-function log(...args) {
-  if (DEBUG) console.log(...args);
-}
-function warn(...args) {
-  if (DEBUG) console.warn(...args);
-}
-function error(...args) {
-  if (DEBUG) console.error(...args);
-}
+const log = (...a) => DEBUG && console.log(...a);
+const warn = (...a) => DEBUG && console.warn(...a);
+const error = (...a) => DEBUG && console.error(...a);
 
 window.addEventListener("DOMContentLoaded", async () => {
 
   const year = new URLSearchParams(location.search).get("year");
 
-  // 読み込みは CloudFront → "/" 必須
-  const loadPath = `/logs/schedule/annual/${year}-作付計画.json`;
-
-  // 保存は Lambda → S3 → "/" なし
-  const savePath = `logs/schedule/annual/${year}-作付計画.json`;
+  // annual.json を読み込む（固定ファイル）
+  const loadPath = `/logs/schedule/annual/annual.json`;
+  const savePath = `logs/schedule/annual/annual.json`;
 
   log("=== Annual Init ===");
   log("[INFO] year =", year);
@@ -36,46 +25,45 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
 
   // ---------------------------------------------------------
-  // JSON 読み込み（既存 or 新規）
+  // annual.json 読み込み
   // ---------------------------------------------------------
-  let annual;
+  let annualAll;
   try {
     log("[loadJSON] 読み込み開始:", loadPath);
-    annual = await loadJSON(loadPath);
-    log("[loadJSON] 読み込み成功:", JSON.parse(JSON.stringify(annual)));
+    annualAll = await loadJSON(loadPath);
+    log("[loadJSON] 読み込み成功:", JSON.parse(JSON.stringify(annualAll)));
   } catch (e) {
-    warn("[loadJSON] 読み込み失敗 → 新規作成モード:", e);
-    annual = createEmptyAnnual(year);
-    log("[createEmptyAnnual] annual =", JSON.parse(JSON.stringify(annual)));
+    warn("[loadJSON] 読み込み失敗 → 空オブジェクトで開始:", e);
+    annualAll = {};
   }
 
   // ---------------------------------------------------------
-  // STEP1 初期化
+  // 年データが無ければ新規作成
   // ---------------------------------------------------------
-  log("[initStep1] 初期化開始");
+  if (!annualAll[year]) {
+    log(`[INFO] ${year} のデータが無いため新規作成`);
+    annualAll[year] = createEmptyAnnual(year);
+  }
+
+  const annual = annualAll[year];
+
+  // ---------------------------------------------------------
+  // STEP1 / STEP2 初期化
+  // ---------------------------------------------------------
   initStep1(annual);
-  log("[initStep1] 初期化完了");
-
-  // ---------------------------------------------------------
-  // STEP2 初期化
-  // ---------------------------------------------------------
-  log("[initStep2] 初期化開始");
   initStep2(annual);
-  log("[initStep2] 初期化完了");
 
   // ---------------------------------------------------------
-  // 保存ボタン
+  // 保存
   // ---------------------------------------------------------
   document.getElementById("save").addEventListener("click", async () => {
     log("=== SAVE BUTTON CLICKED ===");
-    log("[saveJSON] 保存開始:", savePath);
-    log("[saveJSON] 保存データ annual =", JSON.parse(JSON.stringify(annual)));
+    log("[saveJSON] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
 
     try {
-      const result = await saveJSON(savePath, annual);
+      const result = await saveJSON(savePath, annualAll);
       log("[saveJSON] 戻り値 =", result);
       log("[saveJSON] 保存成功:", savePath);
-
       document.getElementById("saveStatus").textContent = "保存しました";
     } catch (e) {
       error("[saveJSON] 保存失敗:", e);
@@ -85,7 +73,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ---------------------------------------------------------
-// 新規作成 annual の構造
+// 年データの初期構造
 // ---------------------------------------------------------
 function createEmptyAnnual(year) {
   log("[createEmptyAnnual] 新規作成 year =", year);
