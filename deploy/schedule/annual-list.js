@@ -84,7 +84,7 @@ window.addEventListener("DOMContentLoaded", async () => {
    年一覧を annual フォルダから取得
 ============================================================ */
 async function loadYearList() {
-  const index = await loadJSON("/annual/year-index.json");
+  const index = await loadJSON("/logs/schedule/annual/year-index.json");
   return index.years || [];
 }
 
