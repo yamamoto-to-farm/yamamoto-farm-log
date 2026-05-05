@@ -4,9 +4,14 @@ import { filterState, getFilterData, applyFilter } from "./filter-core.js";
 import { openModal, closeModal } from "./filter-ui.js";
 
 /* ============================================================
-   圃場フィルタモーダル
+   圃場フィルタモーダル（フィルタ／選択モード両対応）
 ============================================================ */
-export function openFieldModal() {
+export function openFieldModal(options = {}) {
+  const {
+    mode = "filter",     // "filter"（従来） or "select"（STEP2 用）
+    onSelect = null      // 選択モード時のコールバック
+  } = options;
+
   const data = getFilterData().fields;
   const parents = data.parents;
   const children = data.children;
@@ -32,22 +37,28 @@ export function openFieldModal() {
           </div>
         `).join("")}
 
-        <div class="modal-footer">
-          <button class="primary-btn" id="apply-field">適用</button>
-          <button class="secondary-btn" id="clear-field">クリア</button>
-        </div>
+        ${
+          mode === "filter"
+            ? `
+              <div class="modal-footer">
+                <button class="primary-btn" id="apply-field">適用</button>
+                <button class="secondary-btn" id="clear-field">クリア</button>
+              </div>
+            `
+            : ""
+        }
       </div>
     </div>
   `;
 
   openModal(html);
-  initFieldEvents(children);
+  initFieldEvents(children, mode, onSelect);
 }
 
 /* ============================================================
    イベント
 ============================================================ */
-function initFieldEvents(children) {
+function initFieldEvents(children, mode, onSelect) {
 
   document.getElementById("modal-close").onclick = closeModal;
   document.getElementById("modal-bg").onclick = e => {
@@ -59,33 +70,48 @@ function initFieldEvents(children) {
     btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
   });
 
-  // ▼ 親クリック → 子を全選択／全解除
-  document.querySelectorAll(".filter-label").forEach(label => {
-    label.onclick = () => toggleAreaAll(label.dataset.area, children);
-  });
+  // ▼ 親クリック → 子全選択／全解除（フィルタモードのみ）
+  if (mode === "filter") {
+    document.querySelectorAll(".filter-label").forEach(label => {
+      label.onclick = () => toggleAreaAll(label.dataset.area, children);
+    });
+  }
 
   // ▼ 子クリック
   document.querySelectorAll("[data-field]").forEach(el => {
-    el.onclick = () => toggleField(el.dataset.field);
+    el.onclick = () => {
+      const name = el.dataset.field;
+
+      if (mode === "select") {
+        // ★ 選択モード：即決定して閉じる
+        if (onSelect) onSelect(name);
+        closeModal();
+        return;
+      }
+
+      // ★ フィルタモード：選択トグル
+      toggleField(name);
+    };
   });
 
-  // ▼ クリア
-  document.getElementById("clear-field").onclick = () => {
-    filterState.fields = [];
+  // ▼ フィルタモードのボタン
+  if (mode === "filter") {
+    document.getElementById("clear-field").onclick = () => {
+      filterState.fields = [];
+      updateFieldSelections();
+    };
+
+    document.getElementById("apply-field").onclick = () => {
+      applyFilter();
+      closeModal();
+    };
+
     updateFieldSelections();
-  };
-
-  // ▼ 適用
-  document.getElementById("apply-field").onclick = () => {
-    applyFilter();
-    closeModal();
-  };
-
-  updateFieldSelections();
+  }
 }
 
 /* ============================================================
-   子の個別選択
+   子の個別選択（フィルタモード）
 ============================================================ */
 function toggleField(name) {
   if (filterState.fields.includes(name)) {
@@ -97,7 +123,7 @@ function toggleField(name) {
 }
 
 /* ============================================================
-   親クリック → 子を全選択／全解除
+   親クリック → 子全選択／全解除（フィルタモード）
 ============================================================ */
 function toggleAreaAll(area, childrenMap) {
   const list = childrenMap[area] || [];
@@ -117,7 +143,7 @@ function toggleAreaAll(area, childrenMap) {
 }
 
 /* ============================================================
-   UI 更新
+   UI 更新（フィルタモード）
 ============================================================ */
 function updateFieldSelections() {
   document.querySelectorAll("[data-field]").forEach(el => {

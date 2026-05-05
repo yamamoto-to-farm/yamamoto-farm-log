@@ -1,4 +1,4 @@
-// annual-step1.js（年階層構造対応）
+// annual-step1.js（反で計算する版）
 
 const DEBUG = true;
 const log = (...a) => DEBUG && console.log(...a);
@@ -6,6 +6,7 @@ const log = (...a) => DEBUG && console.log(...a);
 export function initStep1(annual) {
   log("[STEP1] init");
   buildUI(annual);
+
   document.getElementById("recalcStep1").addEventListener("click", () => {
     recalc(annual);
   });
@@ -39,12 +40,16 @@ function buildUI(annual) {
 
 function recalc(annual) {
   log("[STEP1] recalc");
+
   annual.step1.months.forEach(m => {
-    const target = Number(m.targetUnits || 0);
-    const per10a = Number(m.unitsPer10a || 0);
+    const target = Number(m.targetUnits || 0);   // 目標基数
+    const per10a = Number(m.unitsPer10a || 0);  // 基/反
+
+    // ★ 必要面積(反) = 目標基数 ÷ 基/反
     m.needArea = (target > 0 && per10a > 0)
       ? (target / per10a).toFixed(2)
       : "";
   });
+
   buildUI(annual);
 }
