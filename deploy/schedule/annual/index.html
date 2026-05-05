@@ -2,111 +2,120 @@
 <html lang="ja">
 
 <head>
-    <meta charset="UTF-8">
-    <title>年間作付計画</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>年間作付計画 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/common/style.css">
-    <link rel="stylesheet" href="/common/filter/filter.css">
-    <link rel="stylesheet" href="./annual.css">
+  <!-- 共通 CSS -->
+  <link rel="stylesheet" href="/common/style.css?v=1">
+
+  <!-- フィルタ UI 共通 CSS（品種選択モーダル用） -->
+  <link rel="stylesheet" href="/common/filter/filter.css?v=1">
+
+  <!-- 年間作付計画専用 CSS -->
+  <link rel="stylesheet" href="./annual.css?v=1">
 </head>
 
 <body>
 
-    <header>
-        <h1 id="pageTitle">年間作付計画</h1>
-    </header>
+  <!-- ページ全体（ログイン後に表示） -->
+  <div id="page-area" style="display:none;">
+
+    <h1 class="page-title" id="pageTitle">年間作付計画</h1>
 
     <!-- STEP1 -->
     <section id="step1">
-        <h2>STEP1：月別目標</h2>
+      <h2>STEP1：月別目標</h2>
 
-        <div id="step1-summary"></div>
+      <!-- 年間サマリー（JSで挿入） -->
+      <div id="step1-summary"></div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>月</th>
-                    <th>目標基数</th>
-                    <th>基/反</th>
-                    <th>目標反収</th>
-                    <th>必要面積(反)</th>
-                </tr>
-            </thead>
-            <tbody id="step1Body"></tbody>
-        </table>
+      <table>
+        <thead>
+          <tr>
+            <th>月</th>
+            <th>目標基数</th>
+            <th>基/反</th>
+            <th>目標反収</th>
+            <th>必要面積(反)</th>
+          </tr>
+        </thead>
+        <tbody id="step1Body"></tbody>
+      </table>
 
-        <div class="step-footer">
-            <button id="recalcStep1" class="primary-btn">再計算</button>
-            <button id="saveStep1" class="secondary-btn">保存</button>
-        </div>
+      <div class="step-footer">
+        <button id="recalcStep1" class="primary-btn">再計算</button>
+        <button id="saveStep1" class="secondary-btn">保存</button>
+      </div>
     </section>
-
 
     <!-- STEP2 -->
     <section id="step2">
-        <h2>STEP2：品種別計画</h2>
+      <h2>STEP2：品種別計画</h2>
 
-        <div id="step2-summary"></div>
+      <!-- 月選択セレクタ（JSで挿入） -->
+      <!-- サマリー（JSで挿入） -->
 
-        <table>
-            <thead>
-                <tr>
-                    <th>収穫週</th>
-                    <th>品種</th>
-                    <th>目標基数</th>
-                    <th>基/反</th>
-                    <th>必要面積(反)</th>
-                    <th>播種日</th>
-                    <th>定植日</th>
-                    <th>削除</th>
-                </tr>
-            </thead>
-            <tbody id="step2Body"></tbody>
-        </table>
+      <table>
+        <thead>
+          <tr>
+            <th>収穫週</th>
+            <th>品種</th>
+            <th>目標基数</th>
+            <th>基/反</th>
+            <th>必要面積(反)</th>
+            <th>播種日</th>
+            <th>定植日</th>
+            <th>削除</th>
+          </tr>
+        </thead>
+        <tbody id="step2Body"></tbody>
+      </table>
 
-        <div class="step-footer">
-            <button id="addStep2Row" class="primary-btn">行を追加</button>
-            <button id="recalcStep2" class="primary-btn">再計算</button>
-            <button id="saveStep2" class="secondary-btn">保存</button>
-        </div>
+      <div class="step-footer">
+        <button id="addStep2Row" class="primary-btn">行を追加</button>
+        <button id="recalcStep2" class="primary-btn">再計算</button>
+        <button id="saveStep2" class="secondary-btn">保存</button>
+      </div>
     </section>
 
-
-    <!-- 保存 -->
+    <!-- 共通保存ボタン（saveLog 用） -->
     <div id="saveArea">
-        <button id="save" class="primary-btn">保存</button>
-        <span id="saveStatus"></span>
+      <button id="save" class="primary-btn">保存</button>
+      <span id="saveStatus"></span>
     </div>
 
-    <!-- ★ フィルタモーダル -->
-    <div id="modal-root"></div>
+  </div>
 
-    <!-- ★ save-modal 読み込み -->
-    <div id="save-modal-container"></div>
-    <script>
-        fetch("/common/save-modal.html")
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById("save-modal-container").innerHTML = html;
-            });
-    </script>
+  <!-- モーダル（品種選択など） -->
+  <div id="modal-container"></div>
 
-    <!-- 年間作付計画ロジック -->
-    <script type="module" src="./annual.js"></script>
+  <!-- save-modal 読み込み（saveLog に必須） -->
+  <div id="save-modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("save-modal-container").innerHTML = html;
+      });
+  </script>
 
-    <!-- STEP1 保存ボタン → 既存の保存処理を呼ぶ -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const btn = document.getElementById("saveStep1");
-            if (btn) {
-                btn.addEventListener("click", () => {
-                    document.getElementById("save").click();
-                });
-            }
-        });
-    </script>
+  <!-- 年間作付計画メイン JS -->
+  <script type="module" src="./annual.js"></script>
+
+  <!-- ログインチェック & ヘッダー -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      renderHeader();
+      document.getElementById("page-area").style.display = "block";
+    });
+  </script>
 
 </body>
-
 </html>
