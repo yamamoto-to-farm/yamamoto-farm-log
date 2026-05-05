@@ -1,6 +1,7 @@
-// annual.js（年階層構造対応・デバッグフラグ付き）
+// annual.js（saveLog 方式・年階層構造対応・デバッグフラグ付き）
 
-import { loadJSON, saveJSON } from "/common/json.js";
+import { loadJSON } from "/common/json.js";
+import { saveLog } from "/common/save/index.js";   // ★ 追加：summary.js と同じ保存方式
 import { initStep1 } from "./annual-step1.js";
 import { initStep2 } from "./annual-step2.js";
 
@@ -13,9 +14,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const year = new URLSearchParams(location.search).get("year");
 
-  // annual.json を読み込む（固定ファイル）
+  // annual.json（固定ファイル）
   const loadPath = `/logs/schedule/annual/annual.json`;
-  const savePath = `logs/schedule/annual/annual.json`;
+  const savePath = `logs/schedule/annual/annual.json`;  // ★ saveLog 用の S3 Key
 
   log("=== Annual Init ===");
   log("[INFO] year =", year);
@@ -33,7 +34,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     annualAll = await loadJSON(loadPath);
     log("[loadJSON] 読み込み成功:", JSON.parse(JSON.stringify(annualAll)));
   } catch (e) {
-    warn("[loadJSON] 読み込み失敗 → 空オブジェクトで開始:", e);
+    warn("[loadJSON] 読み込み失敗 → 空で開始:", e);
     annualAll = {};
   }
 
@@ -54,19 +55,28 @@ window.addEventListener("DOMContentLoaded", async () => {
   initStep2(annual);
 
   // ---------------------------------------------------------
-  // 保存
+  // 保存（saveLog 方式）
   // ---------------------------------------------------------
   document.getElementById("save").addEventListener("click", async () => {
     log("=== SAVE BUTTON CLICKED ===");
-    log("[saveJSON] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
+    log("[saveLog] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
 
     try {
-      const result = await saveJSON(savePath, annualAll);
-      log("[saveJSON] 戻り値 =", result);
-      log("[saveJSON] 保存成功:", savePath);
+      await saveLog({
+        type: "multi",
+        files: [
+          {
+            path: savePath,   // ★ logs/schedule/annual/annual.json
+            content: JSON.stringify(annualAll, null, 2)
+          }
+        ]
+      });
+
+      log("[saveLog] 保存成功:", savePath);
       document.getElementById("saveStatus").textContent = "保存しました";
+
     } catch (e) {
-      error("[saveJSON] 保存失敗:", e);
+      error("[saveLog] 保存失敗:", e);
       document.getElementById("saveStatus").textContent = "保存に失敗（コンソール参照）";
     }
   });
