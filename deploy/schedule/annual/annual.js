@@ -14,15 +14,21 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
 
   /* ------------------------------------------------------------
-     ▼ データ読み込み
+     ▼ 年間作付計画ファイル読み込み（404 → 新規作成）
      ------------------------------------------------------------ */
-  const fields = await loadJSON("/data/fields.json");
-  const varieties = await loadJSON("/data/varieties.json");
-  const annual = await loadJSON(`/annual/${year}-作付計画.json`);
+  let annual;
+
+  try {
+    annual = await loadJSON(`/logs/schedule/annual/${year}-作付計画.json`);
+  } catch (e) {
+    console.warn("作付計画ファイルが存在しません → 新規作成モード");
+    annual = { year, rows: [] };
+  }
 
   /* ------------------------------------------------------------
-     ▼ 圃場（area → name）
+     ▼ 圃場データ
      ------------------------------------------------------------ */
+  const fields = await loadJSON("/data/fields.json");
   const areaMap = {};
   const areaOrder = [];
 
@@ -35,8 +41,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   /* ------------------------------------------------------------
-     ▼ 品種（type → name）
+     ▼ 品種データ
      ------------------------------------------------------------ */
+  const varieties = await loadJSON("/data/varieties.json");
   const typeMap = {};
   const typeOrder = [];
 
@@ -95,7 +102,10 @@ window.addEventListener("DOMContentLoaded", async () => {
      ▼ 保存
      ------------------------------------------------------------ */
   document.getElementById("save").addEventListener("click", async () => {
-    await saveJSON(`/annual/${year}-作付計画.json`, annual);
+
+    await saveJSON(`/logs/schedule/annual/${year}-作付計画.json`, annual);
+    await updateYearIndex(year);
+
     alert("保存しました");
   });
 
@@ -106,16 +116,33 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* ============================================================
+   year-index.json を自動更新
+============================================================ */
+async function updateYearIndex(year) {
+  let index;
+
+  try {
+    index = await loadJSON("/logs/schedule/annual/year-index.json");
+  } catch {
+    index = { years: [] };
+  }
+
+  if (!index.years.includes(year)) {
+    index.years.push(year);
+    index.years.sort();
+  }
+
+  await saveJSON("/logs/schedule/annual/year-index.json", index);
+}
+
+/* ============================================================
    テーブル描画
 ============================================================ */
 function renderTable(annual, state) {
 
   const rows = annual.rows.filter(r => {
 
-    // 圃場フィルタ
     if (state.fields.length && !state.fields.includes(r.field)) return false;
-
-    // 品種フィルタ
     if (state.varieties.length && !state.varieties.includes(r.variety)) return false;
 
     return true;
@@ -157,9 +184,6 @@ function renderTable(annual, state) {
 
   document.getElementById("table-area").innerHTML = html;
 
-  /* ------------------------------------------------------------
-     ▼ 入力イベント
-     ------------------------------------------------------------ */
   document.querySelectorAll("input").forEach(inp => {
     inp.addEventListener("input", () => {
       const i = inp.dataset.i;
@@ -168,9 +192,6 @@ function renderTable(annual, state) {
     });
   });
 
-  /* ------------------------------------------------------------
-     ▼ 削除
-     ------------------------------------------------------------ */
   document.querySelectorAll("[data-del]").forEach(btn => {
     btn.addEventListener("click", () => {
       const i = btn.dataset.del;

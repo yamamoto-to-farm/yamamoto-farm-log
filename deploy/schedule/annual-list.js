@@ -11,14 +11,8 @@ import { loadJSON } from "/common/json.js";
 ============================================================ */
 window.addEventListener("DOMContentLoaded", async () => {
 
-  /* ------------------------------------------------------------
-     ▼ 年一覧を annual フォルダから取得
-     ------------------------------------------------------------ */
   const yearList = await loadYearList();
 
-  /* ------------------------------------------------------------
-     ▼ 圃場データ（fields.json）
-     ------------------------------------------------------------ */
   const fields = await loadJSON("/data/fields.json");
   const areaMap = {};
   const areaOrder = [];
@@ -31,9 +25,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     areaMap[f.area].push(f.name);
   });
 
-  /* ------------------------------------------------------------
-     ▼ 品種データ（varieties.json）
-     ------------------------------------------------------------ */
   const varieties = await loadJSON("/data/varieties.json");
   const typeMap = {};
   const typeOrder = [];
@@ -46,26 +37,17 @@ window.addEventListener("DOMContentLoaded", async () => {
     typeMap[v.type].push(v.name);
   });
 
-  /* ------------------------------------------------------------
-     ▼ フィルタデータセット
-     ------------------------------------------------------------ */
   setFilterData({
     years: yearList,
-    months: {}, // 年間作付計画は月フィルタ不要
+    months: {},
     fields: { parents: areaOrder, children: areaMap },
     varieties: { parents: typeOrder, children: typeMap }
   });
 
-  /* ------------------------------------------------------------
-     ▼ フィルタボタン
-     ------------------------------------------------------------ */
   document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
   document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
   document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
 
-  /* ------------------------------------------------------------
-     ▼ フィルタイベント
-     ------------------------------------------------------------ */
   window.addEventListener("filter:apply", (e) => {
     renderTable(e.detail);
   });
@@ -74,18 +56,20 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderTable(getFilter());
   });
 
-  /* ------------------------------------------------------------
-     ▼ 初期表示
-     ------------------------------------------------------------ */
   renderTable(getFilter());
 });
 
 /* ============================================================
-   年一覧を annual フォルダから取得
+   年一覧読み込み（404 → 空配列）
 ============================================================ */
 async function loadYearList() {
-  const index = await loadJSON("/logs/schedule/annual/year-index.json");
-  return index.years || [];
+  try {
+    const index = await loadJSON("/logs/schedule/annual/year-index.json");
+    return index.years || [];
+  } catch {
+    console.warn("year-index.json が存在しません → 空の一覧");
+    return [];
+  }
 }
 
 /* ============================================================
@@ -104,25 +88,34 @@ async function renderTable(state) {
       <thead>
         <tr>
           <th>年</th>
-          <th>作付計画</th>
+          <th>状態</th>
           <th>操作</th>
         </tr>
       </thead>
       <tbody>
   `;
 
-  uniqueYears.forEach(y => {
+  for (const y of uniqueYears) {
+
+    let exists = true;
+
+    try {
+      await loadJSON(`/logs/schedule/annual/${y}-作付計画.json`);
+    } catch {
+      exists = false;
+    }
+
     html += `
       <tr>
         <td>${y}</td>
-        <td>${y}-作付計画.json</td>
+        <td>${exists ? "作成済み" : "未作成"}</td>
         <td class="action-links">
           <a href="/schedule/annual/index.html?year=${y}">編集</a>
           <a href="/schedule/plan.html?year=${y}">播種・定植計画へ</a>
         </td>
       </tr>
     `;
-  });
+  }
 
   html += `</tbody></table>`;
 
