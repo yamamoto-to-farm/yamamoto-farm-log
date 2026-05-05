@@ -1,82 +1,151 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>年間作付計画</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+// annual.js（saveLog 方式・年階層構造対応・フィルタ初期化付き）
 
-  <link rel="stylesheet" href="/common/style.css">
-  <link rel="stylesheet" href="/common/filter/filter.css">
-  <link rel="stylesheet" href="./annual.css">
-</head>
+import { loadJSON } from "/common/json.js";
+import { saveLog } from "/common/save/index.js";
+import { initStep1 } from "./annual-step1.js";
+import { initStep2 } from "./annual-step2.js";
 
-<body>
+import { setFilterData } from "/common/filter/filter-core.js";   // ★ 品種選択モーダルに必須
 
-  <header>
-    <h1 id="pageTitle">年間作付計画</h1>
-  </header>
+const DEBUG = true;
+const log = (...a) => DEBUG && console.log(...a);
+const warn = (...a) => DEBUG && console.warn(...a);
+const error = (...a) => DEBUG && console.error(...a);
 
-  <!-- STEP1 -->
-  <section id="step1">
-    <h2>STEP1：月別目標</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>月</th>
-          <th>目標基数</th>
-          <th>基/反</th>
-          <th>目標反収</th>
-          <th>必要面積(反)</th>
-        </tr>
-      </thead>
-      <tbody id="step1Body"></tbody>
-    </table>
-    <button id="recalcStep1" class="primary-btn">再計算</button>
-  </section>
+window.addEventListener("DOMContentLoaded", async () => {
 
-  <!-- STEP2 -->
-  <section id="step2">
-    <h2>STEP2：品種別計画</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>収穫週</th>
-          <th>品種</th>
-          <th>目標基数</th>
-          <th>基/反</th>
-          <th>必要面積(反)</th>
-          <th>播種日</th>
-          <th>定植日</th>
-        </tr>
-      </thead>
-      <tbody id="step2Body"></tbody>
-    </table>
+  const year = new URLSearchParams(location.search).get("year");
 
-    <button id="addStep2Row" class="primary-btn">行を追加</button>
-    <button id="recalcStep2" class="primary-btn">再計算</button>
-  </section>
+  // annual.json（固定ファイル）
+  const loadPath = `/logs/schedule/annual/annual.json`;
+  const savePath = `logs/schedule/annual/annual.json`;  // saveLog 用の S3 Key
 
-  <!-- 保存 -->
-  <div id="saveArea">
-    <button id="save" class="primary-btn">保存</button>
-    <span id="saveStatus"></span>
-  </div>
+  log("=== Annual Init ===");
+  log("[INFO] year =", year);
+  log("[INFO] loadPath =", loadPath);
+  log("[INFO] savePath =", savePath);
 
-  <!-- ★ フィルタモーダル（品種・圃場選択に必須） -->
-  <div id="modal-root"></div>
+  document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
 
-  <!-- ★ save-modal 読み込み（saveLog に必須） -->
-  <div id="save-modal-container"></div>
-  <script>
-    fetch("/common/save-modal.html")
-      .then(r => r.text())
-      .then(html => {
-        document.getElementById("save-modal-container").innerHTML = html;
+  // ---------------------------------------------------------
+  // ★ フィルタ用データを読み込む（STEP2 の品種選択に必須）
+  // ---------------------------------------------------------
+  try {
+    const fields = await loadJSON("/data/fields.json");
+    const varieties = await loadJSON("/data/varieties.json");
+
+    const areaMap = {};
+    const areaOrder = [];
+    fields.forEach(f => {
+      if (!areaMap[f.area]) {
+        areaMap[f.area] = [];
+        areaOrder.push(f.area);
+      }
+      areaMap[f.area].push(f.name);
+    });
+
+    const typeMap = {};
+    const typeOrder = [];
+    varieties.forEach(v => {
+      if (!typeMap[v.type]) {
+        typeMap[v.type] = [];
+        typeOrder.push(v.type);
+      }
+      typeMap[v.type].push(v.name);
+    });
+
+    // ★ フィルタデータをセット（select モードで使用）
+    setFilterData({
+      years: [],
+      months: {},
+      fields: { parents: areaOrder, children: areaMap },
+      varieties: { parents: typeOrder, children: typeMap }
+    });
+
+    log("[INFO] setFilterData 完了");
+
+  } catch (e) {
+    error("[ERROR] フィルタデータ読み込み失敗:", e);
+  }
+
+  // ---------------------------------------------------------
+  // annual.json 読み込み
+  // ---------------------------------------------------------
+  let annualAll;
+  try {
+    log("[loadJSON] 読み込み開始:", loadPath);
+    annualAll = await loadJSON(loadPath);
+    log("[loadJSON] 読み込み成功:", JSON.parse(JSON.stringify(annualAll)));
+  } catch (e) {
+    warn("[loadJSON] 読み込み失敗 → 空で開始:", e);
+    annualAll = {};
+  }
+
+  // ---------------------------------------------------------
+  // 年データが無ければ新規作成
+  // ---------------------------------------------------------
+  if (!annualAll[year]) {
+    log(`[INFO] ${year} のデータが無いため新規作成`);
+    annualAll[year] = createEmptyAnnual(year);
+  }
+
+  const annual = annualAll[year];
+
+  // ---------------------------------------------------------
+  // STEP1 / STEP2 初期化
+  // ---------------------------------------------------------
+  initStep1(annual);
+  initStep2(annual);
+
+  // ---------------------------------------------------------
+  // 保存（saveLog 方式）
+  // ---------------------------------------------------------
+  document.getElementById("save").addEventListener("click", async () => {
+    log("=== SAVE BUTTON CLICKED ===");
+    log("[saveLog] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
+
+    try {
+      await saveLog({
+        type: "multi",
+        files: [
+          {
+            path: savePath,
+            content: JSON.stringify(annualAll, null, 2)
+          }
+        ]
       });
-  </script>
 
-  <!-- 年間作付計画ロジック -->
-  <script type="module" src="./annual.js"></script>
+      log("[saveLog] 保存成功:", savePath);
+      document.getElementById("saveStatus").textContent = "保存しました";
 
-</body>
-</html>
+    } catch (e) {
+      error("[saveLog] 保存失敗:", e);
+      document.getElementById("saveStatus").textContent = "保存に失敗（コンソール参照）";
+    }
+  });
+});
+
+// ---------------------------------------------------------
+// 年データの初期構造
+// ---------------------------------------------------------
+function createEmptyAnnual(year) {
+  log("[createEmptyAnnual] 新規作成 year =", year);
+
+  return {
+    year,
+    step1: {
+      months: [
+        "11","12","01","02","03","04","05","06"
+      ].map(m => ({
+        month: m,
+        targetUnits: "",
+        unitsPer10a: "",
+        yieldPer10a: "",
+        needArea: ""
+      }))
+    },
+    step2: {
+      rows: []
+    }
+  };
+}
