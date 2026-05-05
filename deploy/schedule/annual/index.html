@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>年間作付計画（STEP1 & STEP2）</title>
+  <title>年間作付計画</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="/common/style.css">
@@ -15,67 +15,62 @@
     <h1 id="pageTitle">年間作付計画</h1>
   </header>
 
-  <main>
+  <!-- STEP1 -->
+  <section id="step1">
+    <h2>STEP1：月別目標</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>月</th>
+          <th>目標株数</th>
+          <th>10a当たり株数</th>
+          <th>10a当たり収量</th>
+          <th>必要面積</th>
+        </tr>
+      </thead>
+      <tbody id="step1Body"></tbody>
+    </table>
+    <button id="recalcStep1" class="primary-btn">再計算</button>
+  </section>
 
-    <!-- STEP1：月別収穫目標 -->
-    <section class="card">
-      <h2>STEP1：月別の収穫目標 → 必要反数</h2>
+  <!-- STEP2 -->
+  <section id="step2">
+    <h2>STEP2：品種別計画</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>収穫週</th>
+          <th>品種</th>
+          <th>目標株数</th>
+          <th>必要面積</th>
+          <th>播種日</th>
+          <th>定植日</th>
+        </tr>
+      </thead>
+      <tbody id="step2Body"></tbody>
+    </table>
 
-      <table class="step-table">
-        <thead>
-          <tr>
-            <th>月</th>
-            <th>目標出荷基数</th>
-            <th>1反あたり基数</th>
-            <th>目標反収(kg/10a)</th>
-            <th>必要反数</th>
-          </tr>
-        </thead>
-        <tbody id="step1Body">
-          <!-- JS で 11〜翌6 月を生成 -->
-        </tbody>
-      </table>
+    <button id="addStep2Row" class="primary-btn">行を追加</button>
+    <button id="recalcStep2" class="primary-btn">再計算</button>
+  </section>
 
-      <div class="card-footer">
-        <button id="recalcStep1" class="primary-btn">STEP1 再計算</button>
-      </div>
-    </section>
+  <!-- 保存 -->
+  <div id="saveArea">
+    <button id="save" class="primary-btn">保存</button>
+    <span id="saveStatus"></span>
+  </div>
 
-    <!-- STEP2：週別ロット設計 -->
-    <section class="card">
-      <h2>STEP2：週別ロット設計（品種 × 基数）</h2>
-
-      <table class="step-table">
-        <thead>
-          <tr>
-            <th>収穫週</th>
-            <th>品種</th>
-            <th>目標基数</th>
-            <th>必要反数</th>
-            <th>播種日</th>
-            <th>定植日</th>
-          </tr>
-        </thead>
-        <tbody id="step2Body">
-          <!-- JS で行を追加 -->
-        </tbody>
-      </table>
-
-      <div class="card-footer">
-        <button id="addStep2Row" class="primary-btn">行を追加</button>
-        <button id="recalcStep2" class="primary-btn">STEP2 再計算</button>
-      </div>
-    </section>
-
-    <!-- 保存 -->
-    <section class="card">
-      <h2>保存</h2>
-      <button id="save" class="accent-btn">年間作付計画を保存</button>
-      <div id="saveStatus"></div>
-    </section>
-
-  </main>
+  <!-- ★ save-modal 読み込み（saveLog に必須） -->
+  <div id="save-modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("save-modal-container").innerHTML = html;
+      });
+  </script>
 
   <script type="module" src="./annual.js"></script>
+
 </body>
 </html>

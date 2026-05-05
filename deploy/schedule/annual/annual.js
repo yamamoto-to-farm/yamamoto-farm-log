@@ -1,7 +1,7 @@
 // annual.js（saveLog 方式・年階層構造対応・デバッグフラグ付き）
 
 import { loadJSON } from "/common/json.js";
-import { saveLog } from "/common/save/index.js";   // ★ 追加：summary.js と同じ保存方式
+import { saveLog } from "/common/save/index.js";   // ★ summary.js と同じ保存方式
 import { initStep1 } from "./annual-step1.js";
 import { initStep2 } from "./annual-step2.js";
 
