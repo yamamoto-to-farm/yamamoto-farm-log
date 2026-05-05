@@ -16,21 +16,29 @@
     <h1>年間作付計画一覧</h1>
   </header>
 
+  <!-- アクティブフィルタ表示 -->
   <div id="activeFilters"></div>
 
+  <!-- フィルタボタン -->
   <div id="filterButtons">
     <button class="primary-btn" data-type="year">年フィルタ</button>
     <button class="primary-btn" data-type="field">圃場フィルタ</button>
     <button class="primary-btn" data-type="variety">品種フィルタ</button>
   </div>
 
+  <!-- 件数表示 -->
   <div id="countArea"></div>
 
+  <!-- 一覧テーブル -->
   <div id="table-area"></div>
 
-  <div id="modal-container"></div>
+  <!-- ★ フィルタモーダル描画先（filter-ui.js が使用） -->
+  <div id="modal-root"></div>
 
+  <!-- フィルタのアクティブタグ -->
   <script type="module" src="/common/filter/filter-active.js"></script>
+
+  <!-- 年間一覧ロジック -->
   <script type="module" src="./annual-list.js"></script>
 
 </body>
