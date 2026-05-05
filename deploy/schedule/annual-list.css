@@ -1,7 +1,7 @@
-#filterButtons {
-  margin: 16px 0;
-  display: flex;
-  gap: 12px;
+/* annual-list.css（フィルタ削除版） */
+
+#loadArea {
+  margin: 20px 0;
 }
 
 #countArea {
@@ -26,4 +26,24 @@ th {
 
 .action-links a {
   margin-right: 12px;
+}
+
+/* 印刷用 */
+@media print {
+  header, #loadArea {
+    display: none;
+  }
+  #printArea table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  #printArea th, #printArea td {
+    border: 1px solid #333;
+    padding: 4px;
+  }
+  h2 {
+    margin-top: 40px;
+    page-break-before: always;
+  }
 }
