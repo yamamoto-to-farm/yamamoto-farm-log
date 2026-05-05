@@ -1,4 +1,4 @@
-// annual-step2.js（STEP1連動・月選択式UI・差分チェック・行削除対応・テンキー最適化）
+// annual-step2.js（STEP1連動・月選択式UI・差分チェック・行削除対応・テンキー最適化・入力体験統一）
 
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
@@ -38,6 +38,7 @@ export function initStep2(annual) {
 
   document.getElementById("recalcStep2").addEventListener("click", () => {
     recalc(annual);
+    buildUI(annual); // ← 再描画はここだけ
   });
 }
 
@@ -79,10 +80,8 @@ function buildUI(annual) {
   const targetUnitsMonth = Number(monthData.targetUnits || 0);
   const needAreaMonth = Number(monthData.needArea || 0);
 
-  // ★ 月内の行だけ抽出
   const rows = annual.step2.rows.filter(r => r.month === currentMonth);
 
-  // ★ 月内合計
   let sumUnits = 0;
   let sumArea = 0;
 
@@ -107,20 +106,26 @@ function buildUI(annual) {
                value="${r.variety}" readonly>
       </td>
 
-      <!-- ★ テンキー最適化 -->
+      <!-- ★ STEP1 と完全統一したテンキー入力 -->
       <td>
-        <input type="text" inputmode="numeric" pattern="[0-9]*"
-               data-i="${idx}" data-k="targetUnits" value="${r.targetUnits}">
+        <input 
+          type="text" inputmode="numeric" pattern="[0-9]*"
+          data-i="${idx}" data-k="targetUnits"
+          value="${r.targetUnits}">
       </td>
 
       <td>
-        <input type="text" inputmode="numeric" pattern="[0-9]*"
-               data-i="${idx}" data-k="per10a" value="${r.per10a}">
+        <input 
+          type="text" inputmode="numeric" pattern="[0-9]*"
+          data-i="${idx}" data-k="per10a"
+          value="${r.per10a}">
       </td>
 
       <td>
-        <input type="text" inputmode="numeric" pattern="[0-9]*"
-               data-i="${idx}" data-k="needArea" value="${r.needArea}" readonly>
+        <input 
+          type="text" inputmode="numeric" pattern="[0-9]*"
+          data-i="${idx}" data-k="needArea"
+          value="${r.needArea}" readonly>
       </td>
 
       <td>
@@ -136,10 +141,9 @@ function buildUI(annual) {
     tbody.appendChild(tr);
   });
 
-  // ★ 差分表示
   updateSummary(targetUnitsMonth, needAreaMonth, sumUnits, sumArea);
 
-  // ★ 入力イベント
+  // ★ 入力イベント（buildUI を呼ばない）
   tbody.querySelectorAll("input, select").forEach(inp => {
     const i = inp.dataset.i;
     const k = inp.dataset.k;
@@ -149,7 +153,15 @@ function buildUI(annual) {
     inp.addEventListener("input", () => {
       const row = annual.step2.rows.filter(r => r.month === currentMonth)[i];
       row[k] = inp.value;
-      recalc(annual);
+
+      recalc(annual); // 計算のみ（UI再描画なし）
+
+      updateSummary(
+        targetUnitsMonth,
+        needAreaMonth,
+        calcSumUnits(annual),
+        calcSumArea(annual)
+      );
     });
   });
 
@@ -185,6 +197,21 @@ function buildUI(annual) {
 }
 
 /* ============================================================
+   合計計算（UI再描画なし）
+============================================================ */
+function calcSumUnits(annual) {
+  return annual.step2.rows
+    .filter(r => r.month === currentMonth)
+    .reduce((a, b) => a + Number(b.targetUnits || 0), 0);
+}
+
+function calcSumArea(annual) {
+  return annual.step2.rows
+    .filter(r => r.month === currentMonth)
+    .reduce((a, b) => a + Number(b.needArea || 0), 0);
+}
+
+/* ============================================================
    月内合計の差分表示
 ============================================================ */
 function updateSummary(targetUnits, needArea, sumUnits, sumArea) {
@@ -213,7 +240,7 @@ function updateSummary(targetUnits, needArea, sumUnits, sumArea) {
 }
 
 /* ============================================================
-   再計算
+   再計算（UI再描画しない）
 ============================================================ */
 function recalc(annual) {
   const rows = annual.step2.rows.filter(r => r.month === currentMonth);
@@ -226,6 +253,4 @@ function recalc(annual) {
       ? (target / per10a).toFixed(2)
       : "";
   });
-
-  buildUI(annual);
 }

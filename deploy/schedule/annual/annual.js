@@ -99,7 +99,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   // 保存（saveLog 方式）
   // ---------------------------------------------------------
   const saveButton = document.getElementById("save");
-  saveButton.addEventListener("click", async () => {
+
+  const doSave = async () => {
     log("=== SAVE BUTTON CLICKED ===");
     log("[saveLog] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
 
@@ -120,16 +121,21 @@ window.addEventListener("DOMContentLoaded", async () => {
       error("[saveLog] 保存失敗:", e);
       document.getElementById("saveStatus").textContent = "保存に失敗（コンソール参照）";
     }
-  });
+  };
+
+  saveButton.addEventListener("click", doSave);
 
   // ---------------------------------------------------------
-  // STEP1 専用の保存ボタン（ヘッダー横） → 共通保存を呼ぶ
+  // STEP1 / STEP2 の保存ボタン → 共通保存を呼ぶ
   // ---------------------------------------------------------
   const saveStep1Button = document.getElementById("saveStep1");
   if (saveStep1Button) {
-    saveStep1Button.addEventListener("click", () => {
-      saveButton.click();
-    });
+    saveStep1Button.addEventListener("click", () => saveButton.click());
+  }
+
+  const saveStep2Button = document.getElementById("saveStep2");
+  if (saveStep2Button) {
+    saveStep2Button.addEventListener("click", () => saveButton.click());
   }
 });
 

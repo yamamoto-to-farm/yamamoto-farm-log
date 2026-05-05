@@ -1,102 +1,112 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>年間作付計画</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="/common/style.css">
-  <link rel="stylesheet" href="/common/filter/filter.css">
-  <link rel="stylesheet" href="./annual.css">
+<head>
+    <meta charset="UTF-8">
+    <title>年間作付計画</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/common/style.css">
+    <link rel="stylesheet" href="/common/filter/filter.css">
+    <link rel="stylesheet" href="./annual.css">
 </head>
 
 <body>
 
-  <header>
-    <h1 id="pageTitle">年間作付計画</h1>
-  </header>
+    <header>
+        <h1 id="pageTitle">年間作付計画</h1>
+    </header>
 
-  <!-- STEP1 -->
-  <section id="step1">
-    <h2>
-      STEP1：月別目標
-      <button id="recalcStep1" class="primary-btn" style="margin-left:10px;">再計算</button>
-      <button id="saveStep1" class="secondary-btn" style="margin-left:6px;">保存</button>
-    </h2>
+    <!-- STEP1 -->
+    <section id="step1">
+        <h2>STEP1：月別目標</h2>
 
-    <table>
-      <thead>
-        <tr>
-          <th>月</th>
-          <th>目標基数</th>
-          <th>基/反</th>
-          <th>目標反収</th>
-          <th>必要面積(反)</th>
-        </tr>
-      </thead>
-      <tbody id="step1Body"></tbody>
-    </table>
-  </section>
+        <div id="step1-summary"></div>
 
-  <!-- STEP2 -->
-  <section id="step2">
-    <h2>STEP2：品種別計画</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>月</th>
+                    <th>目標基数</th>
+                    <th>基/反</th>
+                    <th>目標反収</th>
+                    <th>必要面積(反)</th>
+                </tr>
+            </thead>
+            <tbody id="step1Body"></tbody>
+        </table>
 
-    <!-- 月選択セレクタは annual-step2.js が挿入 -->
+        <div class="step-footer">
+            <button id="recalcStep1" class="primary-btn">再計算</button>
+            <button id="saveStep1" class="secondary-btn">保存</button>
+        </div>
+    </section>
 
-    <table>
-      <thead>
-        <tr>
-          <th>収穫週</th>
-          <th>品種</th>
-          <th>目標基数</th>
-          <th>基/反</th>
-          <th>必要面積(反)</th>
-          <th>播種日</th>
-          <th>定植日</th>
-          <th>削除</th>
-        </tr>
-      </thead>
-      <tbody id="step2Body"></tbody>
-    </table>
 
-    <button id="addStep2Row" class="primary-btn">行を追加</button>
-    <button id="recalcStep2" class="primary-btn">再計算</button>
-  </section>
+    <!-- STEP2 -->
+    <section id="step2">
+        <h2>STEP2：品種別計画</h2>
 
-  <!-- 保存 -->
-  <div id="saveArea">
-    <button id="save" class="primary-btn">保存</button>
-    <span id="saveStatus"></span>
-  </div>
+        <div id="step2-summary"></div>
 
-  <!-- ★ フィルタモーダル -->
-  <div id="modal-root"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>収穫週</th>
+                    <th>品種</th>
+                    <th>目標基数</th>
+                    <th>基/反</th>
+                    <th>必要面積(反)</th>
+                    <th>播種日</th>
+                    <th>定植日</th>
+                    <th>削除</th>
+                </tr>
+            </thead>
+            <tbody id="step2Body"></tbody>
+        </table>
 
-  <!-- ★ save-modal 読み込み -->
-  <div id="save-modal-container"></div>
-  <script>
-    fetch("/common/save-modal.html")
-      .then(r => r.text())
-      .then(html => {
-        document.getElementById("save-modal-container").innerHTML = html;
-      });
-  </script>
+        <div class="step-footer">
+            <button id="addStep2Row" class="primary-btn">行を追加</button>
+            <button id="recalcStep2" class="primary-btn">再計算</button>
+            <button id="saveStep2" class="secondary-btn">保存</button>
+        </div>
+    </section>
 
-  <!-- 年間作付計画ロジック -->
-  <script type="module" src="./annual.js"></script>
 
-  <!-- STEP1 保存ボタン → 既存の保存処理を呼ぶ -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("saveStep1");
-      if (btn) {
-        btn.addEventListener("click", () => {
-          document.getElementById("save").click();
+    <!-- 保存 -->
+    <div id="saveArea">
+        <button id="save" class="primary-btn">保存</button>
+        <span id="saveStatus"></span>
+    </div>
+
+    <!-- ★ フィルタモーダル -->
+    <div id="modal-root"></div>
+
+    <!-- ★ save-modal 読み込み -->
+    <div id="save-modal-container"></div>
+    <script>
+        fetch("/common/save-modal.html")
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("save-modal-container").innerHTML = html;
+            });
+    </script>
+
+    <!-- 年間作付計画ロジック -->
+    <script type="module" src="./annual.js"></script>
+
+    <!-- STEP1 保存ボタン → 既存の保存処理を呼ぶ -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById("saveStep1");
+            if (btn) {
+                btn.addEventListener("click", () => {
+                    document.getElementById("save").click();
+                });
+            }
         });
-      }
-    });
-  </script>
+    </script>
 
 </body>
+
 </html>

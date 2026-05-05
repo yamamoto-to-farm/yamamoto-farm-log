@@ -43,3 +43,18 @@ input {
   box-sizing: border-box;
   padding: 4px 6px;
 }
+/* ▼ STEP1・STEP2 共通のボタン行 */
+.step-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ▼ ボタンの統一（既存の primary-btn / secondary-btn を活かす） */
+.step-footer .primary-btn,
+.step-footer .secondary-btn {
+  min-width: 90px;
+  height: 36px;
+  font-size: 14px;
+}
