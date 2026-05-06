@@ -9,83 +9,115 @@ let annualAll = null;
 
 const DEBUG = true;
 
+/* HTMLエスケープ（JSONをそのまま表示する用） */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /* ============================================================
    「年度を選択」ボタン → モーダルで年を選ぶ
 ============================================================ */
 loadBtn.addEventListener("click", async () => {
-    try {
-        annualAll = await loadJSON("/logs/schedule/annual/annual.json");
+  try {
+    annualAll = await loadJSON("/logs/schedule/annual/annual.json");
 
-        if (DEBUG) console.log("[DEBUG] annual.json 読み込み成功:", annualAll);
+    if (DEBUG) console.log("[DEBUG] annual.json 読み込み成功:", annualAll);
 
-        const years = Object.keys(annualAll).sort();
+    const years = Object.keys(annualAll).sort();
 
-        openYearSelectModal({
-            years,
-            onSelect: (y) => {
-                if (DEBUG) console.log("[DEBUG] モーダルで選択された年:", y);
+    openYearSelectModal({
+      years,
+      onSelect: (y) => {
+        if (DEBUG) console.log("[DEBUG] モーダルで選択された年:", y);
 
-                // ▼ ここを追加（重要）
-                yearSelector.innerHTML = `<option value="${y}">${y}</option>`;
-                yearSelector.value = y;
+        yearSelector.innerHTML = `<option value="${y}">${y}</option>`;
+        yearSelector.value = y;
 
-                if (DEBUG) console.log("[DEBUG] yearSelector.value 設定後:", yearSelector.value);
+        if (DEBUG) console.log("[DEBUG] yearSelector.value 設定後:", yearSelector.value);
 
-                renderSelectedYear();
-            }
-        });
+        renderSelectedYear();
+      }
+    });
 
-    } catch (e) {
-        tableArea.innerHTML = `<p>annual.json の読み込みに失敗しました</p>`;
-        console.error("[DEBUG] annual.json 読み込み失敗:", e);
-    }
+  } catch (e) {
+    tableArea.innerHTML = `<p>annual.json の読み込みに失敗しました</p>`;
+    console.error("[DEBUG] annual.json 読み込み失敗:", e);
+  }
 });
 
 /* ============================================================
-   選択された年だけ表示
+   選択された年だけ表示（カード＋annual.jsonの中身を表で表示）
 ============================================================ */
 function renderSelectedYear() {
-    if (!annualAll) return;
+  if (!annualAll) return;
 
-    const y = yearSelector.value;
+  const y = yearSelector.value;
 
-    if (DEBUG) {
-        console.log("[DEBUG] renderSelectedYear() 呼び出し");
-        console.log("[DEBUG] yearSelector.value =", y);
-    }
+  if (DEBUG) {
+    console.log("[DEBUG] renderSelectedYear() 呼び出し");
+    console.log("[DEBUG] yearSelector.value =", y);
+  }
 
-    if (!y) {
-        if (DEBUG) console.log("[DEBUG] 年が空のため描画スキップ");
-        return;
-    }
+  if (!y) {
+    if (DEBUG) console.log("[DEBUG] 年が空のため描画スキップ");
+    return;
+  }
 
-    const data = annualAll[y];
+  const data = annualAll[y];
 
-    if (DEBUG) console.log("[DEBUG] 年データ:", data);
+  if (DEBUG) console.log("[DEBUG] 年データ:", data);
 
-    const isAdmin = window.currentRole === "admin";
+  const isAdmin = window.currentRole === "admin";
 
-    if (!data) {
-        tableArea.innerHTML = `
+  // データがない場合
+  if (!data) {
+    tableArea.innerHTML = `
       <div class="card">
         <h2>${y} 年の作付計画</h2>
         <p>この年度のデータはまだありません（新規作成）。</p>
         ${isAdmin
-                ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">新規作成（編集画面へ）</a>`
-                : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
-            }
+          ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">新規作成（編集画面へ）</a>`
+          : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
+        }
       </div>
     `;
-        return;
-    }
+    return;
+  }
 
-    tableArea.innerHTML = `
+  // annual.json の中身を「キーごとの表」で表示する
+  const rows = Object.entries(data).map(([key, value]) => {
+    return `
+      <tr>
+        <th>${key}</th>
+        <td><pre>${escapeHtml(JSON.stringify(value, null, 2))}</pre></td>
+      </tr>
+    `;
+  }).join("");
+
+  tableArea.innerHTML = `
     <div class="card">
       <h2>${y} 年の作付計画</h2>
       ${isAdmin
-            ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">編集する</a>`
-            : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
-        }
+        ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">編集する</a>`
+        : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
+      }
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 160px;">キー</th>
+          <th>値（annual.json より）</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
   `;
 }
