@@ -25,7 +25,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
 
     /* ---------------------------------------------------------
-       ★ ロールチェック（admin 以外は編集不可）
+       ★ ロールチェック（最重要）
+       admin → 編集OK
+       family → 閲覧のみ（readonly）
+       worker → アクセス禁止
     --------------------------------------------------------- */
     if (window.currentRole === "worker") {
         alert("このページは管理者のみ利用できます");
@@ -104,6 +107,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     /* ---------------------------------------------------------
        保存（saveLog）
+       family は readonly-mode なので保存ボタンは押せない
     --------------------------------------------------------- */
     const saveButton = document.getElementById("save");
 
