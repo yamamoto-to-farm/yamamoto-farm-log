@@ -1,5 +1,8 @@
-/* annual-list.css（フィルタ削除版） */
+/* ============================================================
+   annual-list.css（一覧ページ用）
+============================================================ */
 
+/* 読み込みエリア */
 #loadArea {
     margin: 20px 0;
 }
@@ -9,6 +12,7 @@
     font-weight: bold;
 }
 
+/* テーブル基本 */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -29,7 +33,11 @@ th {
     margin-right: 12px;
 }
 
-/* STEP1 表の横スクロール（必要なら） */
+/* ============================================================
+   STEP1：年間フレーム
+============================================================ */
+
+/* 横スクロール（スマホ対応） */
 .step1-wrapper {
     overflow-x: auto;
 }
@@ -58,56 +66,41 @@ th {
     font-weight: bold;
 }
 
-/* 行タイトルの色分け（編集ページと統一） */
-.row-targetUnits th {
-    color: #1e88e5;
-}
-
-/* 青 */
-.row-unitsPer10a th {
-    color: #43a047;
-}
-
-/* 緑 */
-.row-yieldPer10a th {
-    color: #fb8c00;
-}
-
-/* オレンジ */
-.row-needArea th {
-    color: #e53935;
-}
-
-/* 赤 */
-
-
-/* 印刷用 */
+/* ============================================================
+   印刷用（カードだけ印刷）
+============================================================ */
 @media print {
 
-    header,
-    #loadArea {
-        display: none;
+    /* すべて非表示 */
+    body * {
+        visibility: hidden !important;
     }
 
-    #printArea table {
+    /* カードだけ印刷対象 */
+    .card,
+    .card * {
+        visibility: visible !important;
+    }
+
+    /* カードをページ左上に固定 */
+    .card {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
     }
 
-    #printArea th,
-    #printArea td {
-        border: 1px solid #333;
-        padding: 4px;
-    }
-
-    h2 {
-        margin-top: 40px;
-        page-break-before: always;
+    /* 印刷不要なボタン類 */
+    .primary-btn,
+    .secondary-btn,
+    #loadArea {
+        display: none !important;
     }
 }
 
-/* ▼ ボタンの統一（既存の primary-btn / secondary-btn を活かす） */
+/* ============================================================
+   ボタンの統一
+============================================================ */
 .step-footer .primary-btn,
 .step-footer .secondary-btn {
     min-width: 90px;
@@ -115,10 +108,9 @@ th {
     font-size: 14px;
 }
 
-/* ---------------------------------------------------------
-   family（閲覧のみ）モードの解除（annual-list ページ限定）
-   annual-list は「年度選択ページ」なので family も操作可能にする
---------------------------------------------------------- */
+/* ============================================================
+   family（閲覧のみ）モードの解除（annual-list 限定）
+============================================================ */
 body.readonly-mode #page-area * {
     pointer-events: auto !important;
     opacity: 1 !important;
