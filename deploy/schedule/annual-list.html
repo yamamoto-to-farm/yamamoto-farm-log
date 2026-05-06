@@ -1,57 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>年間作付計画一覧 - 山本農園</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="/common/style.css?v=1">
-  <link rel="stylesheet" href="./annual-list.css?v=1">
-  <link rel="stylesheet" href="/common/filter/filter.css?v=1">
+<head>
+    <meta charset="UTF-8">
+    <title>年間作付計画一覧 - 山本農園</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/common/style.css?v=1">
+    <link rel="stylesheet" href="./annual-list.css?v=1">
+    <link rel="stylesheet" href="/common/filter/filter.css?v=1">
+
+    <style>
+        /* annual-list ページでは family も操作できるようにする */
+        body.readonly-mode #page-area * {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+        }
+    </style>
 </head>
 
 <body>
 
-  <div id="page-area" style="display:none;">
+    <div id="page-area" style="display:none;">
 
-    <h1 class="page-title">年間作付計画一覧</h1>
+        <h1 class="page-title">年間作付計画一覧</h1>
 
-    <div id="loadArea" style="margin-bottom: 16px;">
-      <button id="loadAnnual" class="primary-btn">年度を選択</button>
+        <div id="loadArea" style="margin-bottom: 16px;">
+            <button id="loadAnnual" class="primary-btn">年度を選択</button>
+        </div>
+
+        <select id="yearSelector" style="display:none;"></select>
+
+        <div id="table-area"></div>
+
+        <div id="printArea"></div>
+
     </div>
 
-    <select id="yearSelector" style="display:none;"></select>
+    <div id="modal-container"></div>
 
-    <div id="table-area"></div>
+    <!-- annual-list.js は defer のみ。DOMContentLoaded は JS 側で不要 -->
+    <script type="module" src="./annual-list.js?v=4" defer></script>
 
-    <div id="printArea"></div>
+    <script type="module">
+        import { verifyLocalAuth } from "/common/ui.js";
+        import { renderHeader } from "/common/header.js";
 
-  </div>
+        window.addEventListener("DOMContentLoaded", async () => {
+            const ok = await verifyLocalAuth();
+            if (!ok) return;
 
-  <div id="modal-container"></div>
+            renderHeader();
 
-  <!-- annual-list.js は defer のみ。DOMContentLoaded は JS 側で不要 -->
-  <script type="module" src="./annual-list.js?v=4" defer></script>
+            if (window.currentRole === "worker") {
+                alert("このページは家族または管理者のみ閲覧できます");
+                location.href = "/";
+                return;
+            }
 
-  <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js";
-    import { renderHeader } from "/common/header.js";
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
-
-      renderHeader();
-
-      if (window.currentRole === "worker") {
-        alert("このページは家族または管理者のみ閲覧できます");
-        location.href = "/";
-        return;
-      }
-
-      document.getElementById("page-area").style.display = "block";
-    });
-  </script>
+            document.getElementById("page-area").style.display = "block";
+        });
+    </script>
 
 </body>
+
 </html>
