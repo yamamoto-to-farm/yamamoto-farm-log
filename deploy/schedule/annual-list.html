@@ -5,7 +5,6 @@
   <title>年間作付計画一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css?v=1">
   <link rel="stylesheet" href="./annual-list.css?v=1">
   <link rel="stylesheet" href="/common/filter/filter.css?v=1">
@@ -17,29 +16,23 @@
 
     <h1 class="page-title">年間作付計画一覧</h1>
 
-    <!-- ▼ 年度選択ボタン（最上段） -->
     <div id="loadArea" style="margin-bottom: 16px;">
       <button id="loadAnnual" class="primary-btn">年度を選択</button>
     </div>
 
-    <!-- ▼ 年フィルタ（内部用） -->
     <select id="yearSelector" style="display:none;"></select>
 
-    <!-- ▼ 年度の内容（カード） -->
     <div id="table-area"></div>
 
-    <!-- ▼ 印刷用 -->
     <div id="printArea"></div>
 
   </div>
 
-  <!-- モーダル（filter-year-simple.js が使用） -->
   <div id="modal-container"></div>
 
-  <!-- annual-list.js（defer + キャッシュバスター） -->
-  <script type="module" src="./annual-list.js?v=3" defer></script>
+  <!-- annual-list.js は defer のみ。DOMContentLoaded は JS 側で不要 -->
+  <script type="module" src="./annual-list.js?v=4" defer></script>
 
-  <!-- ログインチェック & ヘッダー -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -50,14 +43,12 @@
 
       renderHeader();
 
-      // worker → アクセス禁止
       if (window.currentRole === "worker") {
         alert("このページは家族または管理者のみ閲覧できます");
         location.href = "/";
         return;
       }
 
-      // family → 年度選択は可能（編集は annual/index.html 側で制御）
       document.getElementById("page-area").style.display = "block";
     });
   </script>
