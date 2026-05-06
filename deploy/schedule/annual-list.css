@@ -47,6 +47,7 @@ th {
     page-break-before: always;
   }
 }
+
 /* ▼ ボタンの統一（既存の primary-btn / secondary-btn を活かす） */
 .step-footer .primary-btn,
 .step-footer .secondary-btn {
@@ -54,11 +55,12 @@ th {
   height: 36px;
   font-size: 14px;
 }
-/* family（閲覧のみ）モード */
-.readonly-mode input:not([readonly]),
-.readonly-mode select,
-.readonly-mode button.primary-btn,
-.readonly-mode button.secondary-btn {
-    pointer-events: none;
-    opacity: 0.5;
+
+/* ---------------------------------------------------------
+   family（閲覧のみ）モードの解除（annual-list ページ限定）
+   annual-list は「年度選択ページ」なので family も操作可能にする
+--------------------------------------------------------- */
+body.readonly-mode #page-area * {
+  pointer-events: auto !important;
+  opacity: 1 !important;
 }
