@@ -74,7 +74,7 @@ export function renderStep1(step1) {
        HTML 出力
     ------------------------------------------------------------ */
     return `
-    <h3>STEP1：年間フレーム</h3>
+    <h3>STEP1：年間収穫計画</h3>
 
     <div class="step1-wrapper">
       <table class="step1-table">
@@ -121,7 +121,7 @@ export function renderStep1(step1) {
 
 
 /* ============================================================
-   STEP2：週別作付計画（現状版）
+   STEP2：月別収穫計画
 ============================================================ */
 export function renderStep2(step2) {
   if (!step2 || !step2.rows || step2.rows.length === 0) {
@@ -135,7 +135,7 @@ export function renderStep2(step2) {
     groups[row.month].push(row);
   }
 
-  let html = `<h3>STEP2：週別計画</h3>`;
+  let html = `<h3>STEP2：月別収穫計画</h3>`;
 
   for (const ym of Object.keys(groups).sort()) {
     const rows = groups[ym];
@@ -146,11 +146,11 @@ export function renderStep2(step2) {
         <table class="step2-table">
           <thead>
             <tr>
-              <th>週</th>
+              <th>収穫週</th>
               <th>品種</th>
-              <th>基数</th>
+              <th>目標基数</th>
               <th>基/反</th>
-              <th>必要面積</th>
+              <th>必要面積(反)</th>
               <th>播種日</th>
               <th>定植日</th>
             </tr>
