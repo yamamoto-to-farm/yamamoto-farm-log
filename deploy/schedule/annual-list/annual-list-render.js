@@ -124,51 +124,60 @@ export function renderStep1(step1) {
    STEP2：週別作付計画（現状版）
 ============================================================ */
 export function renderStep2(step2) {
-    if (!step2 || !step2.rows) return "<p>STEP2 データなし</p>";
+  if (!step2 || !step2.rows || step2.rows.length === 0) {
+    return `<p>STEP2 データなし</p>`;
+  }
 
-    const rows = Object.values(step2.rows);
-    if (rows.length === 0) return "<p>STEP2 データなし</p>";
+  // 月ごとにグループ化
+  const groups = {};
+  for (const row of step2.rows) {
+    if (!groups[row.month]) groups[row.month] = [];
+    groups[row.month].push(row);
+  }
 
-    const byMonth = {};
-    rows.forEach(r => {
-        if (!byMonth[r.month]) byMonth[r.month] = [];
-        byMonth[r.month].push(r);
-    });
+  let html = `<h3>STEP2：週別計画</h3>`;
 
-    let html = `<h3>STEP2：週別作付計画</h3>`;
+  for (const ym of Object.keys(groups).sort()) {
+    const rows = groups[ym];
 
-    for (const month of Object.keys(byMonth).sort()) {
-        html += `
-      <h4>${month}</h4>
-      <table class="step2-table">
-        <thead>
-          <tr>
-            <th>週</th>
-            <th>品目</th>
-            <th>基数</th>
-            <th>面積</th>
-            <th>播種日</th>
-            <th>定植日</th>
-          </tr>
-        </thead>
-        <tbody>
+    html += `
+      <h4>${ym}</h4>
+      <div class="step2-wrapper">
+        <table class="step2-table">
+          <thead>
+            <tr>
+              <th>週</th>
+              <th>品種</th>
+              <th>基数</th>
+              <th>基/反</th>
+              <th>必要面積</th>
+              <th>播種日</th>
+              <th>定植日</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
 
-        byMonth[month].forEach(r => {
-            html += `
+    for (const r of rows) {
+      html += `
         <tr>
-          <td>${r.week ?? ""}</td>
-          <td>${r.varietyName ?? ""}</td>
-          <td>${r.units ?? ""}</td>
-          <td>${r.area ?? ""}</td>
-          <td>${r.sowDate ?? ""}</td>
-          <td>${r.plantDate ?? ""}</td>
+          <td>${r.harvestWeek}</td>
+          <td>${r.variety}</td>
+          <td class="num">${fmtInt(r.targetUnits)}</td>
+          <td class="num">${fmtInt(r.per10a)}</td>
+          <td class="num">${fmtFloat(r.needArea)}</td>
+          <td>${r.sowDate || ""}</td>
+          <td>${r.plantDate || ""}</td>
         </tr>
       `;
-        });
-
-        html += `</tbody></table>`;
     }
 
-    return html;
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  return html;
 }
