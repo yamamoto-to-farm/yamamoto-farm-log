@@ -82,21 +82,51 @@ th {
         visibility: visible !important;
     }
 
-    /* カードをページ左上に固定 */
-    .card {
+    /* タイトル（印刷専用） */
+    #print-title {
+        display: block !important;
+        visibility: visible !important;
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 16px;
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
     }
 
-    /* 印刷不要なボタン類 */
+    /* カードをタイトルの下に配置 */
+    .card {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100% !important;   /* ★ 印刷時は全幅にする */
+        max-width: none !important; /* ★ 中央寄せの制限を解除 */
+        margin: 0 !important;
+        padding: 0 10px !important; /* ★ 余白を少しだけ確保 */
+        box-sizing: border-box;
+    }
+
+    /* テーブルが見切れないように */
+    table {
+        width: 100% !important;     /* ★ 必ずページ幅に合わせる */
+        table-layout: fixed;        /* ★ 列幅を固定して崩れ防止 */
+        font-size: 12px;            /* ★ 印刷用に少し小さめ */
+    }
+
+    th, td {
+        padding: 4px 6px !important;
+        word-break: break-all;      /* ★ 長い文字列でも切れない */
+    }
+
+    /* ボタン類は非表示 */
     .primary-btn,
     .secondary-btn,
     #loadArea {
         display: none !important;
     }
 }
+
 
 /* ============================================================
    ボタンの統一
