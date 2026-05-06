@@ -23,10 +23,16 @@
 
     <div id="page-area" style="display:none;">
 
+        <!-- 印刷専用タイトル（通常は非表示） -->
+        <h1 id="print-title"></h1>
+
         <h1 class="page-title">年間作付計画一覧</h1>
 
         <div id="loadArea" style="margin-bottom: 16px;">
             <button id="loadAnnual" class="primary-btn">年度を選択</button>
+            <button id="createYearBtn" class="secondary-btn" style="margin-left: 12px;">
+                新しい年度を作成
+            </button>
         </div>
 
         <select id="yearSelector" style="display:none;"></select>
@@ -39,8 +45,8 @@
 
     <div id="modal-container"></div>
 
-    <!-- annual-list.js は defer のみ。DOMContentLoaded は JS 側で不要 -->
-    <script type="module" src="./annual-list.js?v=4" defer></script>
+    <!-- annual-list.js は defer のみ -->
+    <script type="module" src="./annual-list.js?v=5" defer></script>
 
     <script type="module">
         import { verifyLocalAuth } from "/common/ui.js";
@@ -59,6 +65,26 @@
             }
 
             document.getElementById("page-area").style.display = "block";
+        });
+    </script>
+
+    <!-- 年度追加ボタンの動作 -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById("createYearBtn");
+
+            btn.addEventListener("click", () => {
+                const y = prompt("作成する年度を入力してください（例：2027）");
+
+                if (!y) return;
+                if (!/^\d{4}$/.test(y)) {
+                    alert("年度は4桁の数字で入力してください");
+                    return;
+                }
+
+                // 編集ページへ遷移（保存すれば年度が生まれる）
+                window.location.href = `/schedule/annual/index.html?year=${y}`;
+            });
         });
     </script>
 

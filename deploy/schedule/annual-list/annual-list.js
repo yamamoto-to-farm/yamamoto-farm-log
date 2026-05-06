@@ -5,6 +5,7 @@ import { renderStep1, renderStep2 } from "./annual-list-render.js";
 const loadBtn = document.getElementById("loadAnnual");
 const tableArea = document.getElementById("table-area");
 const yearSelector = document.getElementById("yearSelector");
+const printTitle = document.getElementById("print-title");
 
 let annualAll = null;
 
@@ -22,6 +23,10 @@ loadBtn.addEventListener("click", async () => {
       onSelect: (y) => {
         yearSelector.innerHTML = `<option value="${y}">${y}</option>`;
         yearSelector.value = y;
+
+        // 印刷タイトル更新
+        printTitle.textContent = `${y} 年の作付計画`;
+
         renderSelectedYear();
       }
     });
@@ -39,6 +44,9 @@ function renderSelectedYear() {
   const y = yearSelector.value;
   const data = annualAll[y];
   const isAdmin = window.currentRole === "admin";
+
+  // 印刷タイトル更新（年度追加ボタンから来た場合にも対応）
+  printTitle.textContent = `${y} 年の作付計画`;
 
   if (!data) {
     tableArea.innerHTML = `
