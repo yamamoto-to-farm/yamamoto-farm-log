@@ -3,112 +3,113 @@
 import { loadJSON } from "/common/json.js";
 import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
 
-const loadBtn = document.getElementById("loadAnnual");
-const tableArea = document.getElementById("table-area");
-const yearSelector = document.getElementById("yearSelector");
+window.addEventListener("DOMContentLoaded", () => {
 
-let annualAll = null;
+  const loadBtn = document.getElementById("loadAnnual");
+  const tableArea = document.getElementById("table-area");
+  const yearSelector = document.getElementById("yearSelector");
 
-// ★ デバッグフラグ（ログ出力用）
-const DEBUG = true;
+  let annualAll = null;
 
-/* ============================================================
-   「年度を選択」ボタン → モーダルで年を選ぶ
-============================================================ */
-loadBtn.addEventListener("click", async () => {
-  try {
-    annualAll = await loadJSON("/logs/schedule/annual/annual.json");
+  // ★ デバッグフラグ（ログ出力用）
+  const DEBUG = true;
+
+  /* ============================================================
+     「年度を選択」ボタン → モーダルで年を選ぶ
+  ============================================================ */
+  loadBtn.addEventListener("click", async () => {
+    try {
+      annualAll = await loadJSON("/logs/schedule/annual/annual.json");
+
+      if (DEBUG) {
+        console.log("[DEBUG] annual.json 読み込み成功:", annualAll);
+      }
+
+      const years = Object.keys(annualAll).sort();
+
+      openYearSelectModal({
+        years,
+        onSelect: (y) => {
+          if (DEBUG) console.log("[DEBUG] モーダルで選択された年:", y);
+
+          if (!y) {
+            console.warn("[WARN] 年が選択されませんでした");
+            return;
+          }
+
+          yearSelector.value = y;
+          renderSelectedYear();
+        }
+      });
+
+    } catch (e) {
+      tableArea.innerHTML = `<p>annual.json の読み込みに失敗しました</p>`;
+      console.error("[DEBUG] annual.json 読み込み失敗:", e);
+    }
+  });
+
+  /* ============================================================
+     選択された年だけ表示
+  ============================================================ */
+  function renderSelectedYear() {
+    if (!annualAll) return;
+
+    const y = yearSelector.value;
 
     if (DEBUG) {
-      console.log("[DEBUG] annual.json 読み込み成功:", annualAll);
+      console.log(`[DEBUG] renderSelectedYear() 呼び出し`);
+      console.log(`[DEBUG] yearSelector.value = "${y}"`);
     }
 
-    const years = Object.keys(annualAll).sort();
+    if (!y) {
+      if (DEBUG) console.log("[DEBUG] 年が空のため描画スキップ");
+      return;
+    }
 
-    // ▼ モーダルで年を選択
-    openYearSelectModal({
-      years,
-      onSelect: (y) => {
-        if (DEBUG) console.log("[DEBUG] モーダルで選択された年:", y);
+    const data = annualAll[y];
 
-        // 念のため undefined / null / 空文字を防ぐ
-        if (!y) {
-          console.warn("[WARN] 年が選択されませんでした");
-          return;
-        }
+    if (DEBUG) {
+      console.log("[DEBUG] 年データ:", data);
+    }
 
-        yearSelector.value = y;
-        renderSelectedYear();
-      }
-    });
+    const isAdmin = window.currentRole === "admin";
 
-  } catch (e) {
-    tableArea.innerHTML = `<p>annual.json の読み込みに失敗しました</p>`;
-    console.error("[DEBUG] annual.json 読み込み失敗:", e);
-  }
-});
+    /* ---------------------------------------------------------
+       データが無い年（＝新規年度作成）
+       → admin は編集画面へ遷移できる
+    --------------------------------------------------------- */
+    if (!data) {
+      tableArea.innerHTML = `
+        <div class="card">
+          <h2>${y} 年の作付計画</h2>
+          <p>この年度のデータはまだありません（新規作成）。</p>
 
-/* ============================================================
-   選択された年だけ表示
-============================================================ */
-function renderSelectedYear() {
-  if (!annualAll) return;
+          ${
+            isAdmin
+              ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">
+                   新規作成（編集画面へ）
+                 </a>`
+              : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
+          }
+        </div>
+      `;
+      return;
+    }
 
-  const y = yearSelector.value;
-
-  if (DEBUG) {
-    console.log(`[DEBUG] renderSelectedYear() 呼び出し`);
-    console.log(`[DEBUG] yearSelector.value = "${y}"`);
-  }
-
-  // 年が空なら何もしない（誤動作防止）
-  if (!y) {
-    if (DEBUG) console.log("[DEBUG] 年が空のため描画スキップ");
-    return;
-  }
-
-  const data = annualAll[y];
-
-  if (DEBUG) {
-    console.log("[DEBUG] 年データ:", data);
-  }
-
-  const isAdmin = window.currentRole === "admin";
-
-  /* ---------------------------------------------------------
-     データが無い年（＝新規年度作成）
-     → admin は編集画面へ遷移できる
-  --------------------------------------------------------- */
-  if (!data) {
+    /* ---------------------------------------------------------
+       データがある年（通常表示）
+    --------------------------------------------------------- */
     tableArea.innerHTML = `
       <div class="card">
         <h2>${y} 年の作付計画</h2>
-        <p>この年度のデータはまだありません（新規作成）。</p>
 
         ${
           isAdmin
-            ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">
-                 新規作成（編集画面へ）
-               </a>`
+            ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">編集する</a>`
             : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
         }
       </div>
     `;
-    return;
   }
 
-  /* ---------------------------------------------------------
-     データがある年（通常表示）
-  --------------------------------------------------------- */
-  tableArea.innerHTML = `
-    <div class="card">
-      <h2>${y} 年の作付計画</h2>
-
-      ${
-        isAdmin
-          ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">編集する</a>`
-          : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
-      }
-    </div>
-  `;
-}
+});

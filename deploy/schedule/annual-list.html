@@ -36,8 +36,8 @@
   <!-- モーダル（filter-year-simple.js が使用） -->
   <div id="modal-container"></div>
 
-  <!-- annual-list.js（キャッシュ回避のため v=2 を付与） -->
-  <script type="module" src="./annual-list.js?v=2"></script>
+  <!-- annual-list.js（defer + キャッシュバスター） -->
+  <script type="module" src="./annual-list.js?v=3" defer></script>
 
   <!-- ログインチェック & ヘッダー -->
   <script type="module">
@@ -50,18 +50,14 @@
 
       renderHeader();
 
-      /* ---------------------------------------------------------
-         権限チェック
-         admin → OK
-         family → 年度選択は可能（編集は annual/index.html 側で制御）
-         worker → アクセス禁止
-      --------------------------------------------------------- */
+      // worker → アクセス禁止
       if (window.currentRole === "worker") {
         alert("このページは家族または管理者のみ閲覧できます");
         location.href = "/";
         return;
       }
 
+      // family → 年度選択は可能（編集は annual/index.html 側で制御）
       document.getElementById("page-area").style.display = "block";
     });
   </script>
