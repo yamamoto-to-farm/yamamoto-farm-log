@@ -109,7 +109,7 @@ export function renderStep1(step1) {
 }
 
 /* ============================================================
-   STEP2：月別収穫計画（集計行 + 月クリック展開）
+   STEP2：月別収穫計画（集計行 + 月クリック展開 + 品種リンク）
 ============================================================ */
 export function renderStep2(step2) {
   if (!step2 || !step2.rows || step2.rows.length === 0) {
@@ -155,10 +155,12 @@ export function renderStep2(step2) {
     `;
 
     for (const r of rows) {
+      const varietyLink = `/varieties/index.html?variety=${encodeURIComponent(r.variety)}`;
+
       html += `
         <tr>
           <td>${r.harvestWeek}</td>
-          <td>${r.variety}</td>
+          <td><a href="${varietyLink}" target="_blank">${r.variety}</a></td>
           <td class="num">${fmtInt(r.targetUnits)}</td>
           <td class="num">${fmtInt(r.per10a)}</td>
           <td class="num">${fmtFloat(r.needArea)}</td>
@@ -188,4 +190,3 @@ export function renderStep2(step2) {
 
   return html;
 }
-
