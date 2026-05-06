@@ -67,24 +67,24 @@ th {
 }
 
 .month-toggle {
-  cursor: pointer;
-  margin-top: 24px;
-  margin-bottom: 8px;
+    cursor: pointer;
+    margin-top: 24px;
+    margin-bottom: 8px;
 }
 
 .month-toggle:hover {
-  opacity: 0.7;
+    opacity: 0.7;
 }
 
 .step2-total-row th,
 .step2-total-row td {
-  font-weight: bold;
-  background: #f5f5f5;
-  border-top: 2px solid #999;
+    font-weight: bold;
+    background: #f5f5f5;
+    border-top: 2px solid #999;
 }
 
 .month-box {
-  margin-bottom: 24px;
+    margin-bottom: 24px;
 }
 
 
@@ -122,23 +122,31 @@ th {
         position: absolute;
         top: 60px;
         left: 0;
-        width: 100% !important;   /* ★ 印刷時は全幅にする */
-        max-width: none !important; /* ★ 中央寄せの制限を解除 */
+        width: 100% !important;
+        /* ★ 印刷時は全幅にする */
+        max-width: none !important;
+        /* ★ 中央寄せの制限を解除 */
         margin: 0 !important;
-        padding: 0 10px !important; /* ★ 余白を少しだけ確保 */
+        padding: 0 10px !important;
+        /* ★ 余白を少しだけ確保 */
         box-sizing: border-box;
     }
 
     /* テーブルが見切れないように */
     table {
-        width: 100% !important;     /* ★ 必ずページ幅に合わせる */
-        table-layout: fixed;        /* ★ 列幅を固定して崩れ防止 */
-        font-size: 12px;            /* ★ 印刷用に少し小さめ */
+        width: 100% !important;
+        /* ★ 必ずページ幅に合わせる */
+        table-layout: fixed;
+        /* ★ 列幅を固定して崩れ防止 */
+        font-size: 12px;
+        /* ★ 印刷用に少し小さめ */
     }
 
-    th, td {
+    th,
+    td {
         padding: 4px 6px !important;
-        word-break: break-all;      /* ★ 長い文字列でも切れない */
+        word-break: break-all;
+        /* ★ 長い文字列でも切れない */
     }
 
     /* ボタン類は非表示 */
@@ -146,6 +154,10 @@ th {
     .secondary-btn,
     #loadArea {
         display: none !important;
+    }
+
+    .month-box {
+        display: block !important;
     }
 }
 

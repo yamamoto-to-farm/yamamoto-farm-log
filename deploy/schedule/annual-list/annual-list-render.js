@@ -142,7 +142,7 @@ export function renderStep2(step2) {
           <table class="step2-table">
             <thead>
               <tr>
-                <th>区分</th>
+                <th>収穫週</th>
                 <th>品種</th>
                 <th>目標基数</th>
                 <th>基/反</th>
