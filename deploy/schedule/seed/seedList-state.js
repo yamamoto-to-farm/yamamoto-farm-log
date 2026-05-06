@@ -4,6 +4,9 @@ import { resolveHarvestYM } from "./seedList-calc.js";
 
 let rows = [];
 
+/* ============================================================
+   行データ管理
+============================================================ */
 export function getRows() {
   return rows;
 }
@@ -25,7 +28,21 @@ export function makeEmptyRow() {
 }
 
 /* ============================================================
-   annual.json の STEP2 → seedList 初期行生成（収穫予定も自動計算）
+   ★ 品種データ取得（A方式：ここに追加）
+   varieties.json を読み込んで返す
+============================================================ */
+export async function getVarietyData() {
+  const res = await fetch("/data/varieties.json");
+  if (!res.ok) {
+    console.error("varieties.json の読み込みに失敗:", res.status);
+    return [];
+  }
+  return await res.json();
+}
+
+/* ============================================================
+   annual.json の STEP2 → seedList 初期行生成
+   （収穫予定も自動計算）
 ============================================================ */
 export async function setSeedRowsFromAnnual(step2rows) {
   rows = step2rows.map(r => {
