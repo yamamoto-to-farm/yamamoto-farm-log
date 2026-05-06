@@ -32,7 +32,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     --------------------------------------------------------- */
     if (window.currentRole === "worker") {
         alert("このページは管理者のみ利用できます");
-        location.href = "/schedule/annual-list.html";
+        location.href = "/schedule/annual-list/annual-list.html";
         return;
     }
 

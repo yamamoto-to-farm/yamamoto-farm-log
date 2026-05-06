@@ -1,0 +1,125 @@
+/* annual-list.css（フィルタ削除版） */
+
+#loadArea {
+    margin: 20px 0;
+}
+
+#countArea {
+    margin: 12px 0;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 8px 10px;
+}
+
+th {
+    background: #f0f0f0;
+}
+
+.action-links a {
+    margin-right: 12px;
+}
+
+/* STEP1 表の横スクロール（必要なら） */
+.step1-wrapper {
+    overflow-x: auto;
+}
+
+/* 列幅固定 */
+.step1-table th,
+.step1-table td {
+    min-width: 90px;
+    padding: 6px 8px;
+    text-align: right;
+}
+
+.step1-table th:first-child {
+    text-align: left;
+    min-width: 120px;
+}
+
+/* 数値右寄せ */
+.num {
+    text-align: right;
+}
+
+/* 合計列の背景色 */
+.total-col {
+    background: #fafafa;
+    font-weight: bold;
+}
+
+/* 行タイトルの色分け（編集ページと統一） */
+.row-targetUnits th {
+    color: #1e88e5;
+}
+
+/* 青 */
+.row-unitsPer10a th {
+    color: #43a047;
+}
+
+/* 緑 */
+.row-yieldPer10a th {
+    color: #fb8c00;
+}
+
+/* オレンジ */
+.row-needArea th {
+    color: #e53935;
+}
+
+/* 赤 */
+
+
+/* 印刷用 */
+@media print {
+
+    header,
+    #loadArea {
+        display: none;
+    }
+
+    #printArea table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    #printArea th,
+    #printArea td {
+        border: 1px solid #333;
+        padding: 4px;
+    }
+
+    h2 {
+        margin-top: 40px;
+        page-break-before: always;
+    }
+}
+
+/* ▼ ボタンの統一（既存の primary-btn / secondary-btn を活かす） */
+.step-footer .primary-btn,
+.step-footer .secondary-btn {
+    min-width: 90px;
+    height: 36px;
+    font-size: 14px;
+}
+
+/* ---------------------------------------------------------
+   family（閲覧のみ）モードの解除（annual-list ページ限定）
+   annual-list は「年度選択ページ」なので family も操作可能にする
+--------------------------------------------------------- */
+body.readonly-mode #page-area * {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}

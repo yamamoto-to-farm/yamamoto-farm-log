@@ -146,7 +146,7 @@
     {
       "id": "annual-list",
       "name": "年間作付計画",
-      "path": "schedule/annual-list.html",
+      "path": "schedule/annual-list/annual-list.html",
       "category": "計画",
       "roles": ["family", "admin"],
       "icon": "assets/icons/schedule.png"
