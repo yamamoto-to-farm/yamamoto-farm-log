@@ -1,145 +1,66 @@
-// annual-list.js（フィルタ削除版 + annual.json 表示）
+// annual-list.js（年フィルタ + 権限対応）
 
 import { loadJSON } from "/common/json.js";
 
-/* ============================================================
-   初期化
-============================================================ */
-window.addEventListener("DOMContentLoaded", async () => {
+const loadBtn = document.getElementById("loadAnnual");
+const tableArea = document.getElementById("table-area");
+const yearSelector = document.getElementById("yearSelector");
 
-  const annualAll = await loadAnnualAll();
-  renderYearTable(annualAll);
-
-  document.getElementById("loadAnnual").addEventListener("click", () => {
-    renderAnnualDetail(annualAll);
-  });
-});
+let annualAll = null;
 
 /* ============================================================
    annual.json 読み込み
 ============================================================ */
-async function loadAnnualAll() {
+loadBtn.addEventListener("click", async () => {
   try {
-    return await loadJSON("/logs/schedule/annual/annual.json");
-  } catch {
-    console.warn("annual.json が存在しません → 空で開始");
-    return {};
+    annualAll = await loadJSON("/logs/schedule/annual/annual.json");
+
+    // 年フィルタ生成
+    const years = Object.keys(annualAll).sort();
+    yearSelector.innerHTML = years
+      .map(y => `<option value="${y}">${y}年</option>`)
+      .join("");
+
+    renderSelectedYear();
+  } catch (e) {
+    tableArea.innerHTML = `<p>annual.json の読み込みに失敗しました</p>`;
+    console.error(e);
   }
-}
+});
 
 /* ============================================================
-   年度一覧テーブル（編集リンク）
+   年選択時
 ============================================================ */
-function renderYearTable(annualAll) {
+yearSelector.addEventListener("change", () => {
+  renderSelectedYear();
+});
 
-  const years = Object.keys(annualAll).sort();
+/* ============================================================
+   選択された年だけ表示
+============================================================ */
+function renderSelectedYear() {
+  if (!annualAll) return;
 
-  let html = `
-    <table>
-      <thead>
-        <tr>
-          <th>年</th>
-          <th>状態</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
+  const y = yearSelector.value;
+  const data = annualAll[y];
+
+  if (!data) {
+    tableArea.innerHTML = "<p>データがありません</p>";
+    return;
+  }
+
+  // ★ ロール判定（admin のみ編集可能）
+  const isAdmin = window.currentRole === "admin";
+
+  tableArea.innerHTML = `
+    <div class="card">
+      <h2>${y} 年の作付計画</h2>
+
+      ${
+        isAdmin
+          ? `<a href="/schedule/annual/index.html?year=${y}" class="primary-btn">編集する</a>`
+          : `<span style="opacity:0.6;">閲覧のみ（編集不可）</span>`
+      }
+    </div>
   `;
-
-  for (const y of years) {
-    html += `
-      <tr>
-        <td>${y}</td>
-        <td>作成済み</td>
-        <td class="action-links">
-          <a href="/schedule/annual/index.html?year=${y}">編集</a>
-          <a href="/schedule/plan.html?year=${y}">播種・定植計画へ</a>
-        </td>
-      </tr>
-    `;
-  }
-
-  html += `</tbody></table>`;
-
-  document.getElementById("table-area").innerHTML = html;
-}
-
-/* ============================================================
-   annual.json の内容を表として表示（印刷用）
-============================================================ */
-function renderAnnualDetail(annualAll) {
-
-  let html = "";
-
-  for (const year of Object.keys(annualAll).sort()) {
-    const data = annualAll[year];
-
-    html += `<h2>${year} 年</h2>`;
-
-    /* --- STEP1 --- */
-    html += `
-      <h3>STEP1：月別目標</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>月</th>
-            <th>目標基数</th>
-            <th>基/反</th>
-            <th>目標反収</th>
-            <th>必要面積(反)</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    data.step1.months.forEach(m => {
-      html += `
-        <tr>
-          <td>${m.month}</td>
-          <td>${m.targetUnits}</td>
-          <td>${m.unitsPer10a}</td>
-          <td>${m.yieldPer10a}</td>
-          <td>${m.needArea}</td>
-        </tr>
-      `;
-    });
-
-    html += `</tbody></table>`;
-
-    /* --- STEP2 --- */
-    html += `
-      <h3>STEP2：品種別計画</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>収穫週</th>
-            <th>品種</th>
-            <th>目標基数</th>
-            <th>基/反</th>
-            <th>必要面積(反)</th>
-            <th>播種日</th>
-            <th>定植日</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    data.step2.rows.forEach(r => {
-      html += `
-        <tr>
-          <td>${r.harvestWeek}</td>
-          <td>${r.variety}</td>
-          <td>${r.targetUnits}</td>
-          <td>${r.per10a}</td>
-          <td>${r.needArea}</td>
-          <td>${r.sowDate}</td>
-          <td>${r.plantDate}</td>
-        </tr>
-      `;
-    });
-
-    html += `</tbody></table>`;
-  }
-
-  document.getElementById("printArea").innerHTML = html;
 }
