@@ -5,24 +5,26 @@
   <title>年間作付計画一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css?v=1">
-
-  <!-- 年間作付計画一覧専用 CSS -->
   <link rel="stylesheet" href="./annual-list.css?v=1">
 </head>
 
 <body>
 
-  <!-- ▼ ログイン後に表示される領域 -->
   <div id="page-area" style="display:none;">
 
     <h1 class="page-title">年間作付計画一覧</h1>
 
-    <!-- 年度一覧（編集リンク） -->
+    <!-- ▼ 年フィルタ -->
+    <div class="card" style="margin-bottom: 16px;">
+      <label for="yearSelector"><b>年度を選択：</b></label>
+      <select id="yearSelector"></select>
+    </div>
+
+    <!-- ▼ 年度一覧（編集リンク） -->
     <div id="table-area"></div>
 
-    <!-- annual.json 読み込みボタン（admin のみ表示） -->
+    <!-- annual.json 読み込みボタン（admin のみ） -->
     <div id="loadArea">
       <button id="loadAnnual" class="primary-btn">annual.json を読み込む</button>
     </div>
@@ -32,13 +34,10 @@
 
   </div>
 
-  <!-- モーダル（必要なら使用） -->
   <div id="modal-container"></div>
 
-  <!-- メイン JS -->
   <script type="module" src="./annual-list.js"></script>
 
-  <!-- ▼ ログインチェック & ヘッダー & 権限処理 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -49,12 +48,6 @@
 
       renderHeader();
 
-      /* ---------------------------------------------------------
-         ★ 権限チェック
-         admin → 編集OK
-         family → 閲覧OK（読み込みボタンは非表示）
-         worker → アクセス禁止
-      --------------------------------------------------------- */
       if (window.currentRole === "worker") {
         alert("このページは家族または管理者のみ閲覧できます");
         location.href = "/";
@@ -62,12 +55,10 @@
       }
 
       if (window.currentRole === "family") {
-        // 読み込みボタンを非表示（閲覧のみ）
         const loadArea = document.getElementById("loadArea");
         if (loadArea) loadArea.style.display = "none";
       }
 
-      // admin はそのまま表示
       document.getElementById("page-area").style.display = "block";
     });
   </script>
