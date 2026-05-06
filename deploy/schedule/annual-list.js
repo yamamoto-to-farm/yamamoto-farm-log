@@ -1,6 +1,7 @@
-// annual-list.js（年フィルタ + 権限対応）
+// annual-list.js（モーダル年選択 + 権限対応）
 
 import { loadJSON } from "/common/json.js";
+import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
 
 const loadBtn = document.getElementById("loadAnnual");
 const tableArea = document.getElementById("table-area");
@@ -9,30 +10,27 @@ const yearSelector = document.getElementById("yearSelector");
 let annualAll = null;
 
 /* ============================================================
-   annual.json 読み込み
+   「年度を選択」ボタン → モーダルで年を選ぶ
 ============================================================ */
 loadBtn.addEventListener("click", async () => {
   try {
     annualAll = await loadJSON("/logs/schedule/annual/annual.json");
 
-    // 年フィルタ生成
     const years = Object.keys(annualAll).sort();
-    yearSelector.innerHTML = years
-      .map(y => `<option value="${y}">${y}年</option>`)
-      .join("");
 
-    renderSelectedYear();
+    // ▼ モーダルで年を選択
+    openYearSelectModal({
+      years,
+      onSelect: (y) => {
+        yearSelector.value = y;   // セレクタは非表示だが内部的に保持
+        renderSelectedYear();
+      }
+    });
+
   } catch (e) {
     tableArea.innerHTML = `<p>annual.json の読み込みに失敗しました</p>`;
     console.error(e);
   }
-});
-
-/* ============================================================
-   年選択時
-============================================================ */
-yearSelector.addEventListener("change", () => {
-  renderSelectedYear();
 });
 
 /* ============================================================
