@@ -45,6 +45,7 @@
   { "name": "りくと", "type": "寒玉キャベツ", "harvestMonth": 2 },
   { "name": "りくよう", "type": "寒玉キャベツ", "harvestMonth": 4 },
   { "name": "えんよう", "type": "寒玉キャベツ", "harvestMonth": 4 },
+  { "name": "みぞれ雪", "type": "寒玉キャベツ", "harvestMonth": 2 },
 
   { "name": "改良愛輝(THY104)", "type": "初夏キャベツ", "harvestMonth": 6 },
   { "name": "YR天空", "type": "初夏キャベツ", "harvestMonth": 5 },
