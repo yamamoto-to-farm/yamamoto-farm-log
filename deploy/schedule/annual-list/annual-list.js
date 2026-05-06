@@ -74,3 +74,13 @@ function renderSelectedYear() {
     </div>
   `;
 }
+
+// 月クリックで展開・閉じる
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("month-toggle")) {
+    const ym = e.target.dataset.month;
+    const box = document.getElementById(`month-${ym}`);
+    box.style.display = box.style.display === "none" ? "block" : "none";
+  }
+});
+

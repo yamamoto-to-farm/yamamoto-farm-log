@@ -66,6 +66,28 @@ th {
     font-weight: bold;
 }
 
+.month-toggle {
+  cursor: pointer;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.month-toggle:hover {
+  opacity: 0.7;
+}
+
+.step2-total-row th,
+.step2-total-row td {
+  font-weight: bold;
+  background: #f5f5f5;
+  border-top: 2px solid #999;
+}
+
+.month-box {
+  margin-bottom: 24px;
+}
+
+
 /* ============================================================
    印刷用（カードだけ印刷）
 ============================================================ */
@@ -126,7 +148,6 @@ th {
         display: none !important;
     }
 }
-
 
 /* ============================================================
    ボタンの統一

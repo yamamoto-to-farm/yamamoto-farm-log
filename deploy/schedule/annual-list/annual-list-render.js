@@ -108,10 +108,8 @@ export function renderStep1(step1) {
   `;
 }
 
-
-
 /* ============================================================
-   STEP2：月別収穫計画（集計行つき）
+   STEP2：月別収穫計画（集計行 + 月クリック展開）
 ============================================================ */
 export function renderStep2(step2) {
   if (!step2 || !step2.rows || step2.rows.length === 0) {
@@ -135,21 +133,25 @@ export function renderStep2(step2) {
     const totalArea = rows.reduce((s, r) => s + Number(r.needArea || 0), 0);
 
     html += `
-      <h4>${shortMonth(ym)}</h4>
-      <div class="step2-wrapper">
-        <table class="step2-table">
-          <thead>
-            <tr>
-              <th>区分</th>
-              <th>品種</th>
-              <th>目標基数</th>
-              <th>基/反</th>
-              <th>必要面積(反)</th>
-              <th>播種日</th>
-              <th>定植日</th>
-            </tr>
-          </thead>
-          <tbody>
+      <h4 class="month-toggle" data-month="${ym}">
+        ${shortMonth(ym)}
+      </h4>
+
+      <div id="month-${ym}" class="month-box" style="display:none;">
+        <div class="step2-wrapper">
+          <table class="step2-table">
+            <thead>
+              <tr>
+                <th>区分</th>
+                <th>品種</th>
+                <th>目標基数</th>
+                <th>基/反</th>
+                <th>必要面積(反)</th>
+                <th>播種日</th>
+                <th>定植日</th>
+              </tr>
+            </thead>
+            <tbody>
     `;
 
     for (const r of rows) {
@@ -166,7 +168,7 @@ export function renderStep2(step2) {
       `;
     }
 
-    // ★ 集計行を追加
+    // 集計行
     html += `
         <tr class="step2-total-row">
           <th>合計</th>
@@ -180,8 +182,10 @@ export function renderStep2(step2) {
       </tbody>
     </table>
   </div>
+</div>
     `;
   }
 
   return html;
 }
+
