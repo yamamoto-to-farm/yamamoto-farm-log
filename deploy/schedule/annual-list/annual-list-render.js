@@ -43,6 +43,7 @@ export function renderStep1(step1) {
     ------------------------------------------------------------ */
     const total_targetUnits = months.reduce((s, m) => s + (Number(m.targetUnits) || 0), 0);
     const total_needArea = months.reduce((s, m) => s + (Number(m.needArea) || 0), 0);
+    const total_yieldPer10a = months.reduce((s, m) => s + (Number(m.yieldPer10a) || 0), 0);
 
     /* ------------------------------------------------------------
        平均値（整数項目は整数平均）
@@ -101,7 +102,9 @@ export function renderStep1(step1) {
           <tr>
             <th>目標反収(kg)</th>
             ${row_yieldPer10a}
-            <td class="num total-col">${fmtInt(avg_yieldPer10a)}</td>
+            <td class="num total-col">
+              ${fmtInt(total_yieldPer10a)}（${fmtInt(avg_yieldPer10a)}）
+            </td>
           </tr>
 
           <tr>
@@ -114,6 +117,7 @@ export function renderStep1(step1) {
     </div>
   `;
 }
+
 
 
 /* ============================================================
