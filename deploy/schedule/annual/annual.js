@@ -21,14 +21,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     log("=== Annual Init ===");
     log("[INFO] year =", year);
-    log("[INFO] loadPath =", loadPath);
-    log("[INFO] savePath =", savePath);
 
     document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
 
-    // ---------------------------------------------------------
-    // ★ フィルタ用データを読み込む（STEP2 の品種選択に必須）
-    // ---------------------------------------------------------
+    /* ---------------------------------------------------------
+       フィルタ用データ（品種選択モーダル用）
+    --------------------------------------------------------- */
     try {
         const fields = await loadJSON("/data/fields.json");
         const varieties = await loadJSON("/data/varieties.json");
@@ -53,7 +51,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             typeMap[v.type].push(v.name);
         });
 
-        // ★ フィルタデータをセット（select モードで使用）
         setFilterData({
             years: [],
             months: {},
@@ -61,49 +58,42 @@ window.addEventListener("DOMContentLoaded", async () => {
             varieties: { parents: typeOrder, children: typeMap }
         });
 
-        log("[INFO] setFilterData 完了");
     } catch (e) {
         error("[ERROR] フィルタデータ読み込み失敗:", e);
     }
 
-    // ---------------------------------------------------------
-    // annual.json 読み込み
-    // ---------------------------------------------------------
+    /* ---------------------------------------------------------
+       annual.json 読み込み
+    --------------------------------------------------------- */
     let annualAll;
     try {
-        log("[loadJSON] 読み込み開始:", loadPath);
         annualAll = await loadJSON(loadPath);
-        log("[loadJSON] 読み込み成功:", JSON.parse(JSON.stringify(annualAll)));
     } catch (e) {
         warn("[loadJSON] 読み込み失敗 → 空で開始:", e);
         annualAll = {};
     }
 
-    // ---------------------------------------------------------
-    // 年データが無ければ新規作成
-    // ---------------------------------------------------------
+    /* ---------------------------------------------------------
+       年データが無ければ新規作成（YYYY-MM 方式）
+    --------------------------------------------------------- */
     if (!annualAll[year]) {
-        log(`[INFO] ${year} のデータが無いため新規作成`);
         annualAll[year] = createEmptyAnnual(year);
     }
 
     const annual = annualAll[year];
 
-    // ---------------------------------------------------------
-    // STEP1 / STEP2 初期化
-    // ---------------------------------------------------------
+    /* ---------------------------------------------------------
+       STEP1 / STEP2 初期化
+    --------------------------------------------------------- */
     initStep1(annual);
     initStep2(annual);
 
-    // ---------------------------------------------------------
-    // 保存（saveLog 方式）
-    // ---------------------------------------------------------
+    /* ---------------------------------------------------------
+       保存（saveLog）
+    --------------------------------------------------------- */
     const saveButton = document.getElementById("save");
 
     const doSave = async () => {
-        log("=== SAVE BUTTON CLICKED ===");
-        log("[saveLog] 保存データ annualAll =", JSON.parse(JSON.stringify(annualAll)));
-
         try {
             await saveLog({
                 type: "multi",
@@ -115,7 +105,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                 ]
             });
 
-            log("[saveLog] 保存成功:", savePath);
             document.getElementById("saveStatus").textContent = "保存しました";
         } catch (e) {
             error("[saveLog] 保存失敗:", e);
@@ -125,9 +114,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     saveButton.addEventListener("click", doSave);
 
-    // ---------------------------------------------------------
-    // STEP1 / STEP2 の保存ボタン → 共通保存を呼ぶ
-    // ---------------------------------------------------------
+    /* ---------------------------------------------------------
+       STEP1 / STEP2 の保存ボタン → 共通保存を呼ぶ
+    --------------------------------------------------------- */
     const saveStep1Button = document.getElementById("saveStep1");
     if (saveStep1Button) {
         saveStep1Button.addEventListener("click", () => saveButton.click());
@@ -139,12 +128,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// ---------------------------------------------------------
-// 年データの初期構造
-// ---------------------------------------------------------
+/* ---------------------------------------------------------
+   年データの初期構造（YYYY-MM 方式）
+--------------------------------------------------------- */
 function createEmptyAnnual(year) {
-    log("[createEmptyAnnual] 新規作成 year =", year);
-
     const y = Number(year);
     const next = y + 1;
 
@@ -173,4 +160,3 @@ function createEmptyAnnual(year) {
         }
     };
 }
-
