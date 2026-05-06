@@ -25,6 +25,20 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("pageTitle").textContent = `${year} 年間作付計画`;
 
     /* ---------------------------------------------------------
+       ★ ロールチェック（admin 以外は編集不可）
+    --------------------------------------------------------- */
+    if (window.currentRole === "worker") {
+        alert("このページは管理者のみ利用できます");
+        location.href = "/schedule/annual-list.html";
+        return;
+    }
+
+    if (window.currentRole === "family") {
+        // 閲覧のみモード
+        document.body.classList.add("readonly-mode");
+    }
+
+    /* ---------------------------------------------------------
        フィルタ用データ（品種選択モーダル用）
     --------------------------------------------------------- */
     try {

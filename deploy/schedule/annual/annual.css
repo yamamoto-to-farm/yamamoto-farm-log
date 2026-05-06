@@ -58,3 +58,11 @@ input {
   height: 36px;
   font-size: 14px;
 }
+/* family（閲覧のみ）モード */
+.readonly-mode input:not([readonly]),
+.readonly-mode select,
+.readonly-mode button.primary-btn,
+.readonly-mode button.secondary-btn {
+    pointer-events: none;
+    opacity: 0.5;
+}
