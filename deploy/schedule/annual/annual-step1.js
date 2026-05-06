@@ -23,7 +23,7 @@ function buildUI(annual) {
   annual.step1.months.forEach((m, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${m.month}月</td>
+      <td>${m.month.slice(5)}月</td>
 
       <td>
         <input 

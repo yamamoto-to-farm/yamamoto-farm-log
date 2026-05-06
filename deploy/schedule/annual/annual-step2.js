@@ -1,4 +1,4 @@
-// annual-step2.js（STEP1連動・月選択式UI・差分チェック・行削除対応・テンキー最適化・入力体験統一）
+// annual-step2.js（YYYY-MM対応・STEP1連動・月選択式UI・差分チェック・行削除対応・テンキー最適化・入力体験統一）
 
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
@@ -14,17 +14,21 @@ const log = (...a) => DEBUG && console.log(...a);
   }
 })();
 
-let currentMonth = "11"; // 初期値（11月）
+// ★ 初期値は STEP1 の最初の month を使うため、initStep2 内でセットする
+let currentMonth = null;
 
 export function initStep2(annual) {
   log("[STEP2] init");
+
+  // ★ 初期月を STEP1 の最初の YYYY-MM にする
+  currentMonth = annual.step1.months[0].month;
 
   setupMonthSelector(annual);
   buildUI(annual);
 
   document.getElementById("addStep2Row").addEventListener("click", () => {
     annual.step2.rows.push({
-      month: currentMonth,
+      month: currentMonth,   // ← YYYY-MM を保持
       harvestWeek: "",
       variety: "",
       targetUnits: "",
@@ -43,18 +47,18 @@ export function initStep2(annual) {
 }
 
 /* ============================================================
-   月選択 UI
+   月選択 UI（YYYY-MM → MM月 表示）
 ============================================================ */
 function setupMonthSelector(annual) {
-  const months = annual.step1.months.map(m => m.month);
+  const months = annual.step1.months.map(m => m.month); // "2026-11"
 
   const selector = document.createElement("select");
   selector.id = "step2-month-selector";
 
   months.forEach(m => {
     const op = document.createElement("option");
-    op.value = m;
-    op.textContent = `${m}月`;
+    op.value = m; // "2026-11"
+    op.textContent = `${m.slice(5)}月`; // "11月"
     selector.appendChild(op);
   });
 
@@ -106,7 +110,6 @@ function buildUI(annual) {
                value="${r.variety}" readonly>
       </td>
 
-      <!-- ★ STEP1 と完全統一したテンキー入力 -->
       <td>
         <input 
           type="text" inputmode="numeric" pattern="[0-9]*"
@@ -212,7 +215,7 @@ function calcSumArea(annual) {
 }
 
 /* ============================================================
-   月内合計の差分表示
+   月内合計の差分表示（YYYY-MM → MM月）
 ============================================================ */
 function updateSummary(targetUnits, needArea, sumUnits, sumArea) {
   let summary = document.getElementById("step2-summary");
@@ -228,8 +231,10 @@ function updateSummary(targetUnits, needArea, sumUnits, sumArea) {
     step2.insertBefore(summary, step2.children[2]);
   }
 
+  const mm = currentMonth.slice(5); // "2027-01" → "01"
+
   summary.innerHTML = `
-    <div><b>${currentMonth}月の目標</b></div>
+    <div><b>${mm}月の目標</b></div>
     ・目標基数：${targetUnits} 基  
     ・必要面積：${needArea} 反  
 
