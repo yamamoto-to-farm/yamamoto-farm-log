@@ -1,31 +1,17 @@
-// schedule/seed/seedList-state.js
+// seedList-state.js
 
-import { loadJSON } from "/common/json.js";
+import { resolveHarvestYM } from "./seedList-calc.js";
 
 let rows = [];
-let varietyData = [];
 
 export function getRows() {
   return rows;
-}
-
-export function getVarietyData() {
-  return varietyData;
-}
-
-export async function initRows() {
-  varietyData = await loadJSON("/data/varieties.json");
-
-  for (let i = 0; i < 12; i++) {
-    rows.push(makeEmptyRow());
-  }
 }
 
 export function makeEmptyRow() {
   return {
     planSowDate: "",
     variety: "",
-    cropType: "",
     trayCountRaw: "",
     trayCount: 0,
     trayType: "",
@@ -34,6 +20,31 @@ export function makeEmptyRow() {
     daysToPlant: 0,
     planPlantDate: "",
     harvestPlanYM: "",
-    source: "" 
+    source: ""
   };
+}
+
+/* ============================================================
+   annual.json の STEP2 → seedList 初期行生成（収穫予定も自動計算）
+============================================================ */
+export async function setSeedRowsFromAnnual(step2rows) {
+  rows = step2rows.map(r => {
+    const planSowDate = r.sowDate || "";
+    const planPlantDate = r.plantDate || "";
+    const harvestMonth = r.month.split("-")[1]; // "11" など
+
+    return {
+      planSowDate,
+      variety: r.variety,
+      trayCountRaw: "",
+      trayCount: 0,
+      trayType: "",
+      planArea: r.needArea || "",
+      daysToPlantRaw: "",
+      daysToPlant: 0,
+      planPlantDate,
+      harvestPlanYM: resolveHarvestYM(planPlantDate, planSowDate, harvestMonth),
+      source: `STEP2:${r.harvestWeek}`
+    };
+  });
 }

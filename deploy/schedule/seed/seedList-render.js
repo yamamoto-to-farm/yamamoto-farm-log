@@ -4,19 +4,14 @@ import { getRows, makeEmptyRow } from "./seedList-state.js";
 import {
   calcAreaFromTray,
   calcPlanPlantDate,
-  resolveHarvestYM,
-  renderSummary
+  resolveHarvestYM
 } from "./seedList-calc.js";
 import {
   openVarietySelectModal,
-  openTrayTypeSelectModal,
-  openHarvestMonthModal
+  openTrayTypeSelectModal
 } from "./seedList-modal.js";
-import { saveSeedList } from "./seedList-save.js";   // ★ 保存機能を追加
+import { saveSeedList } from "./seedList-save.js";
 
-/* ===============================
-   テーブル描画
-=============================== */
 export function renderTable() {
   const rows = getRows();
   const tableArea = document.getElementById("table-area");
@@ -49,7 +44,7 @@ export function renderTable() {
         <td>${r.planArea || ""}</td>
         <td><input type="text" inputmode="numeric" class="input-days" value="${r.daysToPlantRaw}"></td>
         <td>${r.planPlantDate || ""}</td>
-        <td class="harvest-cell">${r.harvestPlanYM || "選択"}</td>
+        <td>${r.harvestPlanYM || ""}</td>
         <td><input type="text" class="input-source" value="${r.source || ""}"></td>
       </tr>
     `;
@@ -57,7 +52,6 @@ export function renderTable() {
 
   html += `</tbody></table>`;
 
-  // ▼ 保存ボタンを下に追加
   html += `
     <div style="margin-top: 16px;">
       <button id="saveCsvBtn" class="primary-btn">CSV に追加してクリア</button>
@@ -67,12 +61,8 @@ export function renderTable() {
   tableArea.innerHTML = html;
 
   attachEvents();
-  renderSummary();
 }
 
-/* ===============================
-   イベント付与
-=============================== */
 function attachEvents() {
   const rows = getRows();
 
@@ -84,29 +74,28 @@ function attachEvents() {
     tr.querySelector(".input-sow").addEventListener("change", e => {
       row.planSowDate = e.target.value;
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
+      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate);
       renderTable();
     });
 
-    /* ▼ 品種（モーダル） */
+    /* ▼ 品種 */
     tr.querySelector(".variety-cell").addEventListener("click", () => {
       openVarietySelectModal(selected => {
         row.variety = selected.name;
-        row.cropType = selected.type;
         renderTable();
       });
     });
 
-    /* ▼ 枚数（再描画しない） */
+    /* ▼ 枚数 */
     tr.querySelector(".input-tray").addEventListener("input", e => {
       row.trayCountRaw = e.target.value;
       row.trayCount = Number(row.trayCountRaw) || 0;
       row.planArea = calcAreaFromTray(row.trayCount, row.trayType);
 
       tr.querySelector("td:nth-child(5)").textContent = row.planArea || "";
-      renderSummary();
     });
 
-    /* ▼ トレイタイプ（モーダル） */
+    /* ▼ トレイタイプ */
     tr.querySelector(".tray-type-cell").addEventListener("click", () => {
       openTrayTypeSelectModal(type => {
         row.trayType = type;
@@ -115,25 +104,18 @@ function attachEvents() {
       });
     });
 
-    /* ▼ 日数（再描画しない） */
+    /* ▼ 日数 */
     tr.querySelector(".input-days").addEventListener("input", e => {
       row.daysToPlantRaw = e.target.value;
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
+      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate);
 
       tr.querySelector("td:nth-child(7)").textContent = row.planPlantDate || "";
-      renderSummary();
+      tr.querySelector("td:nth-child(8)").textContent = row.harvestPlanYM || "";
     });
 
-    /* ▼ 収穫予定（モーダル） */
-    tr.querySelector(".harvest-cell").addEventListener("click", () => {
-      openHarvestMonthModal(mm => {
-        row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, mm);
-        renderTable();
-      });
-    });
-
-    /* ▼ 備考（source） */
+    /* ▼ 備考 */
     tr.querySelector(".input-source").addEventListener("input", e => {
       row.source = e.target.value;
     });
@@ -145,16 +127,11 @@ function attachEvents() {
     renderTable();
   };
 
-  /* ▼ 容量変更 */
-  document.getElementById("nurseryCapacity").oninput = () => {
-    renderSummary();
-  };
-
-  /* ▼ CSV 保存ボタン */
+  /* ▼ CSV 保存 */
   const saveBtn = document.getElementById("saveCsvBtn");
   if (saveBtn) {
     saveBtn.onclick = () => {
-      saveSeedList();   // ★ 保存機能呼び出し
+      saveSeedList();
     };
   }
 }

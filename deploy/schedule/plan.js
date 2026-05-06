@@ -1,21 +1,54 @@
-// ===============================
-// list.js（一覧ページのモード管理）
-// ===============================
+// plan.js
 
+import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
+import { loadJSON } from "/common/json.js";
+import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
+import { renderSeedList } from "./seed/index.js";
 import { renderPlantingList } from "./plantingList.js";
-import { renderSeedList } from "./seed/index.js";   // ← 修正ポイント
 import { setFilterData } from "/common/filter.js";
 
 let currentMode = "seed";
+let selectedYear = null;
 
+/* ============================================================
+   年度選択 → annual.json 読み込み → seedList 初期行生成
+============================================================ */
+export function initAnnualLinkage() {
+  const btn = document.getElementById("selectYearBtn");
+  const label = document.getElementById("selectedYearLabel");
+
+  btn.addEventListener("click", async () => {
+    const annualAll = await loadJSON("/logs/schedule/annual/annual.json");
+    const years = Object.keys(annualAll).sort();
+
+    openYearSelectModal({
+      years,
+      onSelect: async (y) => {
+        selectedYear = y;
+        label.textContent = `${y} 年`;
+
+        const step2 = annualAll[y]?.step2;
+        if (step2?.rows) {
+          await setSeedRowsFromAnnual(step2.rows);
+        }
+
+        if (currentMode === "seed") {
+          renderSeedList();
+        }
+      }
+    });
+  });
+}
+
+/* ============================================================
+   モード切り替え
+============================================================ */
 export function initListPage() {
-
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");
   if (modeParam === "planting") currentMode = "planting";
   else currentMode = "seed";
 
-  // ▼ ページ再読み込みしない高速モード切り替え
   document.getElementById("btn-planting").addEventListener("click", () => {
     if (currentMode === "planting") return;
     currentMode = "planting";
@@ -43,7 +76,6 @@ function applyModeUI() {
   btnPlanting.classList.toggle("active", currentMode === "planting");
   btnSeed.classList.toggle("active", currentMode === "seed");
 
-  // ▼ seed モードではフィルタ UI を非表示（seedList はフィルタ未実装）
   const filterCard = document.getElementById("filter-card");
   const activeFilters = document.getElementById("activeFilters");
 
@@ -62,21 +94,14 @@ function renderCurrentMode() {
 
   if (currentMode === "planting") {
     renderPlantingList();
-
-    // ▼ 定植ベース用フィルタを再設定
     if (window.plantingFilterData) {
       setFilterData(window.plantingFilterData);
     }
-
   } else {
     renderSeedList();
-
-    // ▼ seed モードはフィルタ未実装なので何もしない
-    // （将来 seedFilterData を作るならここで setFilterData を呼ぶ）
   }
 }
 
-// ▼ フィルタ適用時は現在のモードを再描画（planting のみ有効）
 window.addEventListener("filter:apply", () => {
   if (currentMode === "planting") renderCurrentMode();
 });
