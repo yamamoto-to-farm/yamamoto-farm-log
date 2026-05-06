@@ -5,6 +5,7 @@
   <title>年間作付計画一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/style.css?v=1">
   <link rel="stylesheet" href="./annual-list.css?v=1">
   <link rel="stylesheet" href="/common/filter/filter.css?v=1">
@@ -32,10 +33,13 @@
 
   </div>
 
+  <!-- モーダル（filter-year-simple.js が使用） -->
   <div id="modal-container"></div>
 
-  <script type="module" src="./annual-list.js"></script>
+  <!-- annual-list.js（キャッシュ回避のため v=2 を付与） -->
+  <script type="module" src="./annual-list.js?v=2"></script>
 
+  <!-- ログインチェック & ヘッダー -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -46,15 +50,17 @@
 
       renderHeader();
 
-      // worker → アクセス禁止
+      /* ---------------------------------------------------------
+         権限チェック
+         admin → OK
+         family → 年度選択は可能（編集は annual/index.html 側で制御）
+         worker → アクセス禁止
+      --------------------------------------------------------- */
       if (window.currentRole === "worker") {
         alert("このページは家族または管理者のみ閲覧できます");
         location.href = "/";
         return;
       }
-
-      // family → 年度選択ボタンは表示（編集は annual/index.html 側で制御）
-      // admin → もちろん表示
 
       document.getElementById("page-area").style.display = "block";
     });

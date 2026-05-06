@@ -25,9 +25,18 @@ loadBtn.addEventListener("click", async () => {
 
     const years = Object.keys(annualAll).sort();
 
+    // ▼ モーダルで年を選択
     openYearSelectModal({
       years,
       onSelect: (y) => {
+        if (DEBUG) console.log("[DEBUG] モーダルで選択された年:", y);
+
+        // 念のため undefined / null / 空文字を防ぐ
+        if (!y) {
+          console.warn("[WARN] 年が選択されませんでした");
+          return;
+        }
+
         yearSelector.value = y;
         renderSelectedYear();
       }
@@ -46,10 +55,21 @@ function renderSelectedYear() {
   if (!annualAll) return;
 
   const y = yearSelector.value;
+
+  if (DEBUG) {
+    console.log(`[DEBUG] renderSelectedYear() 呼び出し`);
+    console.log(`[DEBUG] yearSelector.value = "${y}"`);
+  }
+
+  // 年が空なら何もしない（誤動作防止）
+  if (!y) {
+    if (DEBUG) console.log("[DEBUG] 年が空のため描画スキップ");
+    return;
+  }
+
   const data = annualAll[y];
 
   if (DEBUG) {
-    console.log(`[DEBUG] 選択された年: ${y}`);
     console.log("[DEBUG] 年データ:", data);
   }
 
