@@ -1,6 +1,6 @@
 // seedList-render.js
 
-import { getRows, makeEmptyRow } from "./seedList-state.js";
+import { getRows, makeEmptyRow, sortKey, sortOrder, setSort } from "./seedList-state.js";
 import {
   calcAreaFromTray,
   calcPlanPlantDate,
@@ -13,7 +13,40 @@ import {
 } from "./seedList-modal.js";
 import { saveSeedList } from "./seedList-save.js";
 
+/* ===============================
+   ソート処理
+=============================== */
+function sortRows() {
+  const rows = getRows();
+
+  if (!sortKey) return rows;
+
+  rows.sort((a, b) => {
+    const va = a[sortKey] || "";
+    const vb = b[sortKey] || "";
+
+    // ▼ 日付ソート
+    if (sortKey === "planSowDate" || sortKey === "planPlantDate") {
+      return sortOrder === "asc"
+        ? va.localeCompare(vb)
+        : vb.localeCompare(va);
+    }
+
+    // ▼ 数値ソート
+    return sortOrder === "asc"
+      ? Number(va) - Number(vb)
+      : Number(vb) - Number(va);
+  });
+
+  return rows;
+}
+
+/* ===============================
+   テーブル描画
+=============================== */
 export function renderTable() {
+  sortRows();  // ★ ソート適用
+
   const rows = getRows();
   const tableArea = document.getElementById("table-area");
 
@@ -21,14 +54,14 @@ export function renderTable() {
     <table class="schedule-table">
       <thead>
         <tr>
-          <th>播種予定日</th>
-          <th>品種</th>
-          <th>枚数</th>
+          <th class="sortable" data-key="planSowDate">播種予定日</th>
+          <th class="sortable" data-key="variety">品種</th>
+          <th class="sortable" data-key="trayCount">枚数</th>
           <th>トレイ</th>
           <th>計画面積(反)</th>
-          <th>計算面積(反)</th>
-          <th>定植まで日数</th>
-          <th>定植予定日</th>
+          <th class="sortable" data-key="planAreaCalc">計算面積(反)</th>
+          <th class="sortable" data-key="daysToPlant">定植まで日数</th>
+          <th class="sortable" data-key="planPlantDate">定植予定日</th>
           <th>収穫予定</th>
           <th>収穫区分</th>
           <th>種の由来</th>
@@ -76,9 +109,22 @@ export function renderTable() {
   updateSummary();
 }
 
+/* ===============================
+   イベント付与
+=============================== */
 function attachEvents() {
   const rows = getRows();
 
+  /* ▼ ソートヘッダー */
+  document.querySelectorAll("th.sortable").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      setSort(key);
+      renderTable();
+    });
+  });
+
+  /* ▼ 行ごとのイベント */
   document.querySelectorAll("tr[data-index]").forEach(tr => {
     const idx = Number(tr.dataset.index);
     const row = rows[idx];
@@ -86,7 +132,7 @@ function attachEvents() {
     const calcAreaCell = tr.querySelector(".calc-area-cell");
     const harvestCell = tr.querySelector(".harvest-cell");
 
-    /* ▼ 播種予定日（再描画必要） */
+    /* ▼ 播種予定日 */
     tr.querySelector(".input-sow").addEventListener("change", e => {
       row.planSowDate = e.target.value;
 
@@ -105,7 +151,7 @@ function attachEvents() {
       renderTable();
     });
 
-    /* ▼ 品種（モーダル → 再描画） */
+    /* ▼ 品種 */
     tr.querySelector(".variety-cell").addEventListener("click", () => {
       openVarietySelectModal(selected => {
         row.variety = selected.name;
@@ -113,7 +159,7 @@ function attachEvents() {
       });
     });
 
-    /* ▼ 枚数（再描画しない） */
+    /* ▼ 枚数 */
     tr.querySelector(".input-tray").addEventListener("input", e => {
       row.trayCountRaw = e.target.value;
       row.trayCount = Number(row.trayCountRaw) || 0;
@@ -130,7 +176,7 @@ function attachEvents() {
       updateSummary();
     });
 
-    /* ▼ トレイ（モーダル → 再描画） */
+    /* ▼ トレイ */
     tr.querySelector(".tray-type-cell").addEventListener("click", () => {
       openTrayTypeSelectModal(type => {
         row.trayType = type;
@@ -144,7 +190,7 @@ function attachEvents() {
       });
     });
 
-    /* ▼ 計算面積セルクリック → spacing モーダル */
+    /* ▼ spacing モーダル */
     calcAreaCell.addEventListener("click", () => {
       openSpacingModal(row, updated => {
         row.spacingRow = updated.spacingRow;
@@ -163,7 +209,7 @@ function attachEvents() {
       });
     });
 
-    /* ▼ 日数（再描画しない） */
+    /* ▼ 日数 */
     tr.querySelector(".input-days").addEventListener("input", e => {
       row.daysToPlantRaw = e.target.value;
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
@@ -181,7 +227,7 @@ function attachEvents() {
       updateSummary();
     });
 
-    /* ▼ 定植予定日（再描画しない） */
+    /* ▼ 定植予定日 */
     tr.querySelector(".input-plant").addEventListener("change", e => {
       row.planPlantDate = e.target.value;
 

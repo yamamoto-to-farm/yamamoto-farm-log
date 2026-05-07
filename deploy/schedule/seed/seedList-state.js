@@ -8,6 +8,19 @@ export function getRows() {
   return rows;
 }
 
+/* ▼ ソート状態 */
+export let sortKey = null;
+export let sortOrder = "asc";
+
+export function setSort(key) {
+  if (sortKey === key) {
+    sortOrder = sortOrder === "asc" ? "desc" : "asc";
+  } else {
+    sortKey = key;
+    sortOrder = "asc";
+  }
+}
+
 export function makeEmptyRow() {
   return {
     planSowDate: "",
@@ -15,39 +28,32 @@ export function makeEmptyRow() {
     trayCountRaw: "",
     trayCount: 0,
     trayType: "",
-    planAreaPlan: "",     // 計画面積（STEP2）
-    planAreaCalc: "",     // 計算面積
-
-    spacingRow: 34,       // ★ 株間（デフォルト）
-    spacingBed: 60,       // ★ 畝間（デフォルト）
-
+    planAreaPlan: "",
+    planAreaCalc: "",
+    spacingRow: 34,
+    spacingBed: 60,
     daysToPlantRaw: "",
     daysToPlant: 0,
     planPlantDate: "",
-
     harvestMonth: "",
     harvestPlanYM: "",
     harvestWeek: "",
-
     source: "",
-    memo: ""              // ★ 備考
+    memo: ""
   };
 }
 
-// 品種データ
 export async function getVarietyData() {
   const res = await fetch("/data/varieties.json");
   return await res.json();
 }
 
-// STEP2 → 初期行生成
 export async function setSeedRowsFromAnnual(step2rows) {
   rows = step2rows.map(r => {
     const planSowDate = r.sowDate || "";
     const planPlantDate = r.plantDate || "";
-    const harvestMonth = r.month.split("-")[1]; // "11"
+    const harvestMonth = r.month.split("-")[1];
 
-    // 日数自動計算
     let daysToPlant = "";
     if (planSowDate && planPlantDate) {
       const d1 = new Date(planSowDate);
@@ -58,25 +64,19 @@ export async function setSeedRowsFromAnnual(step2rows) {
     return {
       planSowDate,
       variety: r.variety,
-
       trayCountRaw: "",
       trayCount: 0,
       trayType: "",
-
       planAreaPlan: r.needArea || "",
       planAreaCalc: "",
-
-      spacingRow: 34,      // ★ デフォルト株間
-      spacingBed: 60,      // ★ デフォルト畝間
-
+      spacingRow: 34,
+      spacingBed: 60,
       daysToPlantRaw: daysToPlant,
       daysToPlant,
       planPlantDate,
-
       harvestMonth,
       harvestPlanYM: resolveHarvestYM(planPlantDate, planSowDate, harvestMonth),
       harvestWeek: r.harvestWeek,
-
       source: "",
       memo: ""
     };
