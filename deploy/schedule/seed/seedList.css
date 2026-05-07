@@ -214,7 +214,7 @@
   /* ▼ 列幅（印刷用） */
   #table-area .schedule-table th:nth-child(1),
   #table-area .schedule-table td:nth-child(1) {
-    width: 100px;
+    width: 140px;
   }
 
   #table-area .schedule-table th:nth-child(2),
