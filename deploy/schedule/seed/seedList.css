@@ -151,6 +151,7 @@
 
 #mode-switch-card button,
 #seedList-controls button {
+  width: auto !important;
   flex: 0 0 auto;
   height: 40px;
   padding: 8px 12px;
