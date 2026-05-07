@@ -96,11 +96,6 @@ export function renderTable() {
 
   html += `</tbody></table>`;
 
-  html += `
-    <div style="margin-top: 16px;">
-      <button id="saveCsvBtn" class="primary-btn">CSV に追加してクリア</button>
-    </div>
-  `;
 
   tableArea.innerHTML = html;
 

@@ -11,7 +11,26 @@
   <link rel="stylesheet" href="/schedule/seed/seedList.css?v=1">
 
   <style>
-    /* ▼ ボタン行の統一デザイン */
+    /* ===============================
+     播種／定植切替ボタン
+  ================================ */
+    #mode-switch-card {
+      display: flex;
+      gap: 8px;
+    }
+
+    #mode-switch-card button {
+      flex: 0 0 auto;
+      height: 40px;
+      padding: 8px 12px;
+      font-size: 15px;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+
+    /* ===============================
+     CSV / JSON / 保存ボタン（seed モード専用）
+  ================================ */
     #seedList-controls {
       display: flex;
       gap: 8px;
@@ -19,18 +38,16 @@
     }
 
     #seedList-controls button {
-      flex: 1;
-      height: 42px;
+      flex: 0 0 auto;
+      height: 40px;
+      padding: 8px 10px;
       font-size: 15px;
-    }
-
-    /* ▼ モード切り替えボタンの統一 */
-    #mode-switch-card button {
-      flex: 1;
-      height: 42px;
-      font-size: 16px;
+      white-space: nowrap;
+      max-width: 180px;
+      box-sizing: border-box;
     }
   </style>
+
 </head>
 
 <body>
@@ -115,4 +132,5 @@
   </script>
 
 </body>
+
 </html>
