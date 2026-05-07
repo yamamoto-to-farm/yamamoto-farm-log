@@ -9,7 +9,6 @@ import { renderPlantingList } from "./plantingList.js";
 import { setFilterData } from "/common/filter.js";
 
 import {
-  initSeedList,
   loadSeedListFromCSV,
   loadSeedListFromJSON,
   getCurrentYear
@@ -67,8 +66,7 @@ export function initAnnualLinkage() {
 export function initListPage() {
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");
-  if (modeParam === "planting") currentMode = "planting";
-  else currentMode = "seed";
+  currentMode = (modeParam === "planting") ? "planting" : "seed";
 
   // ▼ JSON 読み込みボタン
   const btnJson = document.getElementById("loadJsonBtn");
@@ -135,7 +133,7 @@ export function initListPage() {
 }
 
 /* ============================================================
-   UI 切り替え
+   UI 切り替え（seed 専用 UI を完全分離）
 ============================================================ */
 function applyModeUI() {
   const btnPlanting = document.getElementById("btn-planting");
@@ -147,24 +145,25 @@ function applyModeUI() {
   const filterCard = document.getElementById("filter-card");
   const activeFilters = document.getElementById("activeFilters");
 
-  // 播種計画専用コントロール（CSV/JSON 読み込み・保存）
+  // ▼ 播種計画専用コントロール（CSV/JSON 読み込み・保存）
   const seedControls = document.getElementById("seedList-controls");
   if (seedControls) {
     seedControls.style.display = (currentMode === "seed") ? "flex" : "none";
   }
 
-  // 育苗ハウス容量カード
+  // ▼ 育苗ハウス容量カード
   const capacityCard = document.getElementById("capacity-card");
   if (capacityCard) {
     capacityCard.style.display = (currentMode === "seed") ? "" : "none";
   }
 
-  // サマリーカード（容量チェックなど）
+  // ▼ サマリーカード（容量チェック）
   const summaryCard = document.getElementById("summary-card");
   if (summaryCard) {
     summaryCard.style.display = (currentMode === "seed") ? "" : "none";
   }
 
+  // ▼ フィルタ（定植計画専用）
   if (currentMode === "seed") {
     filterCard.style.display = "none";
     activeFilters.style.display = "none";
