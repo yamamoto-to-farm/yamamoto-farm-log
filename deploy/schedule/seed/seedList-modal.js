@@ -60,7 +60,6 @@ export function openTrayTypeSelectModal(onSelect) {
 
       <div class="modal-item" data-type="128">128穴</div>
       <div class="modal-item" data-type="200">200穴</div>
-      <div class="modal-item" data-type="288">288穴</div>
 
       <button id="closeTrayModal" class="secondary-btn" style="margin-top:12px;">閉じる</button>
     </div>
