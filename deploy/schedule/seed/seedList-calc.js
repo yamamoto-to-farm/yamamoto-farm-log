@@ -25,21 +25,29 @@ export function calcPlanPlantDate(planSowDate, days) {
   return d.toISOString().slice(0, 10);
 }
 
-export function resolveHarvestYM(planPlantDate, planSowDate, mm) {
-  const today = new Date();
-  const fallbackYear = today.getFullYear();
+export function resolveHarvestYM(planPlantDate, planSowDate, harvestMonth) {
+  // ▼ 必要な値が揃っていない場合は空を返す
+  if (!planPlantDate && !planSowDate) return "";
+  if (!harvestMonth) return "";
 
+  // ▼ 基準日を決める（定植日 > 播種日）
   const base = planPlantDate || planSowDate;
-  if (!base) return `${fallbackYear}-${mm}`;
+  if (!base) return "";
 
-  const y = Number(base.slice(0, 4));
-  const plantMonth = Number(base.slice(5, 7));
-  const harvestMonth = Number(mm);
+  const d = new Date(base);
+  if (isNaN(d)) return "";
 
-  const harvestYear = harvestMonth < plantMonth ? y + 1 : y;
+  const y = d.getFullYear();
+  const m = Number(harvestMonth);
 
-  return `${harvestYear}-${mm}`;
+  if (!m || m < 1 || m > 12) return "";
+
+  // ▼ 収穫月が基準月より前なら翌年扱い
+  const harvestY = (m < (d.getMonth() + 1)) ? y + 1 : y;
+
+  return `${harvestY}-${String(m).padStart(2, "0")}`;
 }
+
 
 export function calcNurseryStockTimeline() {
   const rows = getRows();

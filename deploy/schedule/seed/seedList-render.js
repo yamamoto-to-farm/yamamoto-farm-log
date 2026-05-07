@@ -1,4 +1,4 @@
-// schedule/seed/seedList-render.js
+// seedList-render.js
 
 import { getRows, makeEmptyRow } from "./seedList-state.js";
 import {
@@ -24,10 +24,12 @@ export function renderTable() {
           <th>品種</th>
           <th>枚数</th>
           <th>トレイ</th>
-          <th>予定面積(反)</th>
+          <th>計画面積(反)</th>
+          <th>計算面積(反)</th>
           <th>定植まで日数</th>
           <th>定植予定日</th>
           <th>収穫予定</th>
+          <th>収穫区分</th>
           <th>備考</th>
         </tr>
       </thead>
@@ -41,10 +43,12 @@ export function renderTable() {
         <td class="variety-cell">${r.variety || "選択"}</td>
         <td><input type="text" inputmode="numeric" class="input-tray" value="${r.trayCountRaw}"></td>
         <td class="tray-type-cell">${r.trayType || "選択"}</td>
-        <td>${r.planArea || ""}</td>
+        <td>${r.planAreaPlan || ""}</td>
+        <td>${r.planAreaCalc || ""}</td>
         <td><input type="text" inputmode="numeric" class="input-days" value="${r.daysToPlantRaw}"></td>
-        <td>${r.planPlantDate || ""}</td>
+        <td><input type="date" class="input-plant" value="${r.planPlantDate}"></td>
         <td>${r.harvestPlanYM || ""}</td>
+        <td>第${r.harvestWeek}週</td>
         <td><input type="text" class="input-source" value="${r.source || ""}"></td>
       </tr>
     `;
@@ -73,8 +77,16 @@ function attachEvents() {
     /* ▼ 播種予定日 */
     tr.querySelector(".input-sow").addEventListener("change", e => {
       row.planSowDate = e.target.value;
-      row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
-      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate);
+
+      // 定植日があれば日数再計算
+      if (row.planPlantDate) {
+        const d1 = new Date(row.planSowDate);
+        const d2 = new Date(row.planPlantDate);
+        row.daysToPlant = Math.round((d2 - d1) / 86400000);
+        row.daysToPlantRaw = row.daysToPlant;
+      }
+
+      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, row.harvestMonth);
       renderTable();
     });
 
@@ -90,16 +102,16 @@ function attachEvents() {
     tr.querySelector(".input-tray").addEventListener("input", e => {
       row.trayCountRaw = e.target.value;
       row.trayCount = Number(row.trayCountRaw) || 0;
-      row.planArea = calcAreaFromTray(row.trayCount, row.trayType);
 
-      tr.querySelector("td:nth-child(5)").textContent = row.planArea || "";
+      row.planAreaCalc = calcAreaFromTray(row.trayCount, row.trayType);
+      tr.querySelector("td:nth-child(6)").textContent = row.planAreaCalc || "";
     });
 
     /* ▼ トレイタイプ */
     tr.querySelector(".tray-type-cell").addEventListener("click", () => {
       openTrayTypeSelectModal(type => {
         row.trayType = type;
-        row.planArea = calcAreaFromTray(row.trayCount, row.trayType);
+        row.planAreaCalc = calcAreaFromTray(row.trayCount, row.trayType);
         renderTable();
       });
     });
@@ -108,11 +120,26 @@ function attachEvents() {
     tr.querySelector(".input-days").addEventListener("input", e => {
       row.daysToPlantRaw = e.target.value;
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
-      row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
-      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate);
 
-      tr.querySelector("td:nth-child(7)").textContent = row.planPlantDate || "";
-      tr.querySelector("td:nth-child(8)").textContent = row.harvestPlanYM || "";
+      row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
+      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, row.harvestMonth);
+
+      renderTable();
+    });
+
+    /* ▼ 定植予定日（手入力可能） */
+    tr.querySelector(".input-plant").addEventListener("change", e => {
+      row.planPlantDate = e.target.value;
+
+      if (row.planSowDate) {
+        const d1 = new Date(row.planSowDate);
+        const d2 = new Date(row.planPlantDate);
+        row.daysToPlant = Math.round((d2 - d1) / 86400000);
+        row.daysToPlantRaw = row.daysToPlant;
+      }
+
+      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, row.harvestMonth);
+      renderTable();
     });
 
     /* ▼ 備考 */

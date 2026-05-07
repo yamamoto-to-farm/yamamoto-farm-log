@@ -4,9 +4,6 @@ import { resolveHarvestYM } from "./seedList-calc.js";
 
 let rows = [];
 
-/* ============================================================
-   行データ管理
-============================================================ */
 export function getRows() {
   return rows;
 }
@@ -18,37 +15,38 @@ export function makeEmptyRow() {
     trayCountRaw: "",
     trayCount: 0,
     trayType: "",
-    planArea: "",
+    planAreaPlan: "",     // 計画面積（STEP2）
+    planAreaCalc: "",     // 計算面積
     daysToPlantRaw: "",
     daysToPlant: 0,
     planPlantDate: "",
+    harvestMonth: "",
     harvestPlanYM: "",
+    harvestWeek: "",
     source: ""
   };
 }
 
-/* ============================================================
-   ★ 品種データ取得（A方式：ここに追加）
-   varieties.json を読み込んで返す
-============================================================ */
+// 品種データ
 export async function getVarietyData() {
   const res = await fetch("/data/varieties.json");
-  if (!res.ok) {
-    console.error("varieties.json の読み込みに失敗:", res.status);
-    return [];
-  }
   return await res.json();
 }
 
-/* ============================================================
-   annual.json の STEP2 → seedList 初期行生成
-   （収穫予定も自動計算）
-============================================================ */
+// STEP2 → 初期行生成
 export async function setSeedRowsFromAnnual(step2rows) {
   rows = step2rows.map(r => {
     const planSowDate = r.sowDate || "";
     const planPlantDate = r.plantDate || "";
-    const harvestMonth = r.month.split("-")[1]; // "11" など
+    const harvestMonth = r.month.split("-")[1]; // "11"
+
+    // 日数自動計算
+    let daysToPlant = "";
+    if (planSowDate && planPlantDate) {
+      const d1 = new Date(planSowDate);
+      const d2 = new Date(planPlantDate);
+      daysToPlant = Math.round((d2 - d1) / 86400000);
+    }
 
     return {
       planSowDate,
@@ -56,12 +54,15 @@ export async function setSeedRowsFromAnnual(step2rows) {
       trayCountRaw: "",
       trayCount: 0,
       trayType: "",
-      planArea: r.needArea || "",
-      daysToPlantRaw: "",
-      daysToPlant: 0,
+      planAreaPlan: r.needArea || "",
+      planAreaCalc: "",
+      daysToPlantRaw: daysToPlant,
+      daysToPlant,
       planPlantDate,
+      harvestMonth,
       harvestPlanYM: resolveHarvestYM(planPlantDate, planSowDate, harvestMonth),
-      source: `STEP2:${r.harvestWeek}`
+      harvestWeek: r.harvestWeek,
+      source: ""
     };
   });
 }
