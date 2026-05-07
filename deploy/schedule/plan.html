@@ -12,11 +12,12 @@
 
   <style>
     /* ===============================
-     播種／定植切替ボタン
-  ================================ */
+       播種／定植切替ボタン
+    ================================ */
     #mode-switch-card {
       display: flex;
       gap: 8px;
+      padding: 12px 0;
     }
 
     #mode-switch-card button {
@@ -29,8 +30,8 @@
     }
 
     /* ===============================
-     CSV / JSON / 保存ボタン（seed モード専用）
-  ================================ */
+       CSV / JSON / 保存ボタン（seed モード専用）
+    ================================ */
     #seedList-controls {
       display: flex;
       gap: 8px;
@@ -63,7 +64,7 @@
     </div>
 
     <!-- モード切り替え -->
-    <div class="card" id="mode-switch-card" style="margin-bottom: 16px; display:flex; gap:8px;">
+    <div class="card" id="mode-switch-card" style="margin-bottom: 16px;">
       <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
       <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
     </div>
