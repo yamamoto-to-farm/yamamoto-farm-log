@@ -52,7 +52,7 @@
   text-align: right;
 }
 
-/* 6: 計算面積(反) ← ★ spacing モーダル対象 */
+/* 6: 計算面積(反) ← spacing モーダル対象 */
 #table-area .schedule-table th:nth-child(6),
 #table-area .schedule-table td:nth-child(6) {
   width: 110px;
@@ -140,6 +140,46 @@
   background-color: #ffb3b3 !important;
   color: #900 !important;
   font-weight: bold;
+}
+
+/* ===============================
+   モーダル用
+=============================== */
+.modal-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  width: 320px;
+  border-radius: 8px;
+}
+
+.modal-item {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.modal-item:hover {
+  background: #eef7ff;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
 }
 
 /* ===============================
