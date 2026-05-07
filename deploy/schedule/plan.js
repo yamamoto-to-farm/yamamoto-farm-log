@@ -147,6 +147,24 @@ function applyModeUI() {
   const filterCard = document.getElementById("filter-card");
   const activeFilters = document.getElementById("activeFilters");
 
+  // 播種計画専用コントロール（CSV/JSON 読み込み・保存）
+  const seedControls = document.getElementById("seedList-controls");
+  if (seedControls) {
+    seedControls.style.display = (currentMode === "seed") ? "flex" : "none";
+  }
+
+  // 育苗ハウス容量カード
+  const capacityCard = document.getElementById("capacity-card");
+  if (capacityCard) {
+    capacityCard.style.display = (currentMode === "seed") ? "" : "none";
+  }
+
+  // サマリーカード（容量チェックなど）
+  const summaryCard = document.getElementById("summary-card");
+  if (summaryCard) {
+    summaryCard.style.display = (currentMode === "seed") ? "" : "none";
+  }
+
   if (currentMode === "seed") {
     filterCard.style.display = "none";
     activeFilters.style.display = "none";
