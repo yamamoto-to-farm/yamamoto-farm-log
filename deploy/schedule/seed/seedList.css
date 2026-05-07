@@ -272,3 +272,27 @@
     width: 200px;
   }
 }
+/* ===============================
+   播種計画：CSV/JSON/保存ボタン行
+=============================== */
+
+#seedList-controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+#seedList-controls button {
+  flex: 0 0 auto;        /* ← これで間延び防止（重要） */
+  padding: 8px 14px;
+  height: 40px;
+  font-size: 15px;
+  white-space: nowrap;   /* ← ボタン内改行防止 */
+  box-sizing: border-box;
+}
+
+/* ボタンが勝手に広がらないように最大幅を制限 */
+#seedList-controls button.primary-btn,
+#seedList-controls button.secondary-btn {
+  max-width: 180px;
+}
