@@ -6,30 +6,41 @@
 import { getRows, makeEmptyRow, setSeedRowsFromAnnual } from "./seedList-state.js";
 import { renderTable } from "./seedList-render.js";
 
-/**
- * 現在の年度を取得
- * - 年度セレクトがあればそこから
- * - なければ今年の西暦
- */
+/* ============================================================
+   デバッグモード（true でログ ON）
+============================================================ */
+const DEBUG = true;
+const log = (...args) => DEBUG && console.log("[seedList-load]", ...args);
+
+/* ============================================================
+   現在の年度を取得
+============================================================ */
 export function getCurrentYear() {
   const sel = document.getElementById("yearSelect");
   if (sel && sel.value) {
+    log("getCurrentYear → yearSelect:", sel.value);
     return sel.value;
   }
-  return String(new Date().getFullYear());
+  const y = String(new Date().getFullYear());
+  log("getCurrentYear → fallback:", y);
+  return y;
 }
 
-/**
- * CSV → rows に復元
- * 新フォーマット（この OS 専用）：
- * header:
- * sowDate,variety,trayCount,trayType,spacingRow,spacingBed,planAreaPlan,planAreaCalc,daysToPlant,planPlantDate,harvestMonth,harvestPlanYM,harvestWeek,source,memo
- */
+/* ============================================================
+   CSV パース
+============================================================ */
 function parseSeedListCsv(csvText) {
+  log("parseSeedListCsv: start");
+
   const lines = csvText.trim().split(/\r?\n/);
-  if (lines.length <= 1) return [];
+  if (lines.length <= 1) {
+    log("parseSeedListCsv: no data");
+    return [];
+  }
 
   const header = lines[0].split(",");
+  log("CSV header:", header);
+
   const rows = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -37,13 +48,11 @@ function parseSeedListCsv(csvText) {
     if (!line) continue;
 
     const cols = line.split(",");
-
     const row = makeEmptyRow();
 
     const get = name => {
       const idx = header.indexOf(name);
-      if (idx === -1) return "";
-      return cols[idx] ?? "";
+      return idx === -1 ? "" : (cols[idx] ?? "");
     };
 
     row.planSowDate   = get("sowDate");
@@ -72,21 +81,23 @@ function parseSeedListCsv(csvText) {
     rows.push(row);
   }
 
+  log("parseSeedListCsv: parsed rows =", rows.length);
   return rows;
 }
 
-/**
- * 年度ごとの CSV を読み込む
- * - あればそれを rows にセット
- * - なければ false を返す（呼び出し側で JSON にフォールバック）
- */
+/* ============================================================
+   年度ごとの CSV を読み込む
+============================================================ */
 export async function loadSeedListFromCSV(year) {
   const path = `/logs/schedule-seed/${year}.csv`;
+  log("loadSeedListFromCSV:", path);
 
   try {
     const res = await fetch(path, { cache: "no-store" });
+    log("CSV fetch status:", res.status);
+
     if (!res.ok) {
-      // 404 など → CSV なし
+      log("CSV not found → fallback to JSON");
       return false;
     }
 
@@ -97,64 +108,67 @@ export async function loadSeedListFromCSV(year) {
     rows.length = 0;
     parsed.forEach(r => rows.push(r));
 
+    log("CSV loaded. rows =", rows.length);
     renderTable();
     return true;
+
   } catch (e) {
     console.error("loadSeedListFromCSV error", e);
     return false;
   }
 }
 
-/**
- * annual.json から指定年度の STEP2 結果を読み込み、
- * setSeedRowsFromAnnual() で rows を初期生成する。
- *
- * annual.json の構造は OS 側に合わせてここを調整してほしい。
- * 例：
- * {
- *   "2026": {
- *     "seedList": [ { sowDate, plantDate, month, variety, needArea, harvestWeek }, ... ]
- *   }
- * }
- */
+/* ============================================================
+   annual.json → rows 初期生成
+============================================================ */
 export async function loadSeedListFromJSON(year) {
   const path = `/logs/schedule/annual/annual.json`;
+  log("loadSeedListFromJSON:", path);
 
   try {
     const res = await fetch(path, { cache: "no-store" });
+    log("JSON fetch status:", res.status);
+
     if (!res.ok) {
       console.error("annual.json not found", res.status);
       return;
     }
 
     const data = await res.json();
+    log("annual.json loaded keys:", Object.keys(data));
 
-    // ★★★ ここは OS の annual.json の実際の構造に合わせて調整 ★★★
-    // 例として data[year].seedList を想定
     const yearBlock = data[year];
     if (!yearBlock) {
       console.error("annual.json: year block not found", year);
       return;
     }
 
+    // ★ OS の構造に合わせてここを調整
     const step2rows = yearBlock.seedList || yearBlock.sowPlan || [];
-    // sowDate, plantDate, month, variety, needArea, harvestWeek を持つ配列を想定
+    log("step2 rows:", step2rows.length);
 
     await setSeedRowsFromAnnual(step2rows);
     renderTable();
+
+    log("JSON load complete");
+
   } catch (e) {
     console.error("loadSeedListFromJSON error", e);
   }
 }
 
-/**
- * 初期ロード：CSV 優先 → なければ JSON
- */
+/* ============================================================
+   初期ロード：CSV 優先 → JSON
+============================================================ */
 export async function initSeedList() {
   const year = getCurrentYear();
+  log("initSeedList: year =", year);
 
   const ok = await loadSeedListFromCSV(year);
   if (!ok) {
+    log("CSV not found → JSON fallback");
     await loadSeedListFromJSON(year);
   }
+
+  log("initSeedList: done");
 }
