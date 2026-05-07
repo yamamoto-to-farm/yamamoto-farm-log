@@ -51,11 +51,13 @@ function convertToCsvLines(rows) {
       r.cropType || "",
       r.trayCount || 0,
       r.trayType || "",
-      r.planArea || "",
+      r.planAreaCalc || "",   // ★ 計算面積のみ保存
       r.daysToPlant || 0,
       r.planPlantDate || "",
       r.harvestPlanYM || "",
-      r.source || ""
+      r.harvestWeek || "",
+      r.source || "",         // ★ 種の由来
+      r.memo || ""            // ★ 備考
     ]
     .map(v => `"${String(v).replace(/"/g, '""')}"`)
     .join(","))
@@ -64,6 +66,7 @@ function convertToCsvLines(rows) {
   dbg("csvLines:\n" + csv);
   return csv;
 }
+
 
 /* ===============================
    3. 入力フォームをクリア

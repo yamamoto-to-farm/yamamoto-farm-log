@@ -11,7 +11,7 @@ export function calcPlanPlantDate(sowDate, days) {
 
 // 計算面積（反）
 // trayCount × trayType × spacingRow × spacingBed
-export function calcAreaFromTray(trayCount, trayType, spacingRow = 30, spacingBed = 120) {
+export function calcAreaFromTray(trayCount, trayType, spacingRow = 34, spacingBed = 60) {
   if (!trayCount || !trayType) return "";
   const plants = trayCount * trayType;
   const m2 = plants * (spacingRow / 100) * (spacingBed / 100);
