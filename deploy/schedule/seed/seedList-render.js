@@ -8,7 +8,8 @@ import {
 } from "./seedList-calc.js";
 import {
   openVarietySelectModal,
-  openTrayTypeSelectModal
+  openTrayTypeSelectModal,
+  openSpacingModal
 } from "./seedList-modal.js";
 import { saveSeedList } from "./seedList-save.js";
 
@@ -26,8 +27,6 @@ export function renderTable() {
           <th>トレイ</th>
           <th>計画面積(反)</th>
           <th>計算面積(反)</th>
-          <th>株間(cm)</th>
-          <th>畝間(cm)</th>
           <th>定植まで日数</th>
           <th>定植予定日</th>
           <th>収穫予定</th>
@@ -46,15 +45,14 @@ export function renderTable() {
         <td class="variety-cell">${r.variety || "選択"}</td>
         <td><input type="text" inputmode="numeric" class="input-tray" value="${r.trayCountRaw}"></td>
         <td class="tray-type-cell">${r.trayType || "選択"}</td>
-        <td>${r.planAreaPlan || ""}</td>
-        <td>${r.planAreaCalc || ""}</td>
 
-        <td><input type="text" inputmode="numeric" class="input-spacing-row" value="${r.spacingRow || 30}"></td>
-        <td><input type="text" inputmode="numeric" class="input-spacing-bed" value="${r.spacingBed || 120}"></td>
+        <td>${r.planAreaPlan || ""}</td>
+        <td class="calc-area-cell clickable">${r.planAreaCalc || ""}</td>
 
         <td><input type="text" inputmode="numeric" class="input-days" value="${r.daysToPlantRaw}"></td>
         <td><input type="date" class="input-plant" value="${r.planPlantDate}"></td>
-        <td>${r.harvestPlanYM || ""}</td>
+
+        <td class="harvest-cell">${r.harvestPlanYM || ""}</td>
         <td>第${r.harvestWeek}週</td>
 
         <td><input type="text" class="input-source" value="${r.source || ""}"></td>
@@ -83,7 +81,10 @@ function attachEvents() {
     const idx = Number(tr.dataset.index);
     const row = rows[idx];
 
-    /* ▼ 播種予定日 */
+    const calcAreaCell = tr.querySelector(".calc-area-cell");
+    const harvestCell = tr.querySelector(".harvest-cell");
+
+    /* ▼ 播種予定日（再描画必要） */
     tr.querySelector(".input-sow").addEventListener("change", e => {
       row.planSowDate = e.target.value;
 
@@ -98,7 +99,7 @@ function attachEvents() {
       renderTable();
     });
 
-    /* ▼ 品種 */
+    /* ▼ 品種（モーダル → 再描画） */
     tr.querySelector(".variety-cell").addEventListener("click", () => {
       openVarietySelectModal(selected => {
         row.variety = selected.name;
@@ -106,50 +107,69 @@ function attachEvents() {
       });
     });
 
-    /* ▼ 枚数 */
+    /* ▼ 枚数（再描画しない） */
     tr.querySelector(".input-tray").addEventListener("input", e => {
       row.trayCountRaw = e.target.value;
       row.trayCount = Number(row.trayCountRaw) || 0;
 
-      row.planAreaCalc = calcAreaFromTray(row.trayCount, row.trayType, row.spacingRow, row.spacingBed);
-      tr.querySelector("td:nth-child(6)").textContent = row.planAreaCalc || "";
+      row.planAreaCalc = calcAreaFromTray(
+        row.trayCount,
+        row.trayType,
+        row.spacingRow,
+        row.spacingBed
+      );
+
+      calcAreaCell.textContent = row.planAreaCalc || "";
     });
 
-    /* ▼ トレイタイプ */
+    /* ▼ トレイ（モーダル → 再描画） */
     tr.querySelector(".tray-type-cell").addEventListener("click", () => {
       openTrayTypeSelectModal(type => {
         row.trayType = type;
-        row.planAreaCalc = calcAreaFromTray(row.trayCount, row.trayType, row.spacingRow, row.spacingBed);
+        row.planAreaCalc = calcAreaFromTray(
+          row.trayCount,
+          row.trayType,
+          row.spacingRow,
+          row.spacingBed
+        );
         renderTable();
       });
     });
 
-    /* ▼ 株間 */
-    tr.querySelector(".input-spacing-row").addEventListener("input", e => {
-      row.spacingRow = Number(e.target.value) || 0;
-      row.planAreaCalc = calcAreaFromTray(row.trayCount, row.trayType, row.spacingRow, row.spacingBed);
-      renderTable();
+    /* ▼ 計算面積セルクリック → spacing モーダル */
+    calcAreaCell.addEventListener("click", () => {
+      openSpacingModal(row, updated => {
+        row.spacingRow = updated.spacingRow;
+        row.spacingBed = updated.spacingBed;
+
+        row.planAreaCalc = calcAreaFromTray(
+          row.trayCount,
+          row.trayType,
+          row.spacingRow,
+          row.spacingBed
+        );
+
+        calcAreaCell.textContent = row.planAreaCalc || "";
+      });
     });
 
-    /* ▼ 畝間 */
-    tr.querySelector(".input-spacing-bed").addEventListener("input", e => {
-      row.spacingBed = Number(e.target.value) || 0;
-      row.planAreaCalc = calcAreaFromTray(row.trayCount, row.trayType, row.spacingRow, row.spacingBed);
-      renderTable();
-    });
-
-    /* ▼ 日数 */
+    /* ▼ 日数（再描画しない） */
     tr.querySelector(".input-days").addEventListener("input", e => {
       row.daysToPlantRaw = e.target.value;
       row.daysToPlant = Number(row.daysToPlantRaw) || 0;
 
       row.planPlantDate = calcPlanPlantDate(row.planSowDate, row.daysToPlant);
-      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, row.harvestMonth);
+      row.harvestPlanYM = resolveHarvestYM(
+        row.planPlantDate,
+        row.planSowDate,
+        row.harvestMonth
+      );
 
-      renderTable();
+      tr.querySelector(".input-plant").value = row.planPlantDate || "";
+      harvestCell.textContent = row.harvestPlanYM || "";
     });
 
-    /* ▼ 定植予定日 */
+    /* ▼ 定植予定日（再描画しない） */
     tr.querySelector(".input-plant").addEventListener("change", e => {
       row.planPlantDate = e.target.value;
 
@@ -160,8 +180,14 @@ function attachEvents() {
         row.daysToPlantRaw = row.daysToPlant;
       }
 
-      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, row.harvestMonth);
-      renderTable();
+      row.harvestPlanYM = resolveHarvestYM(
+        row.planPlantDate,
+        row.planSowDate,
+        row.harvestMonth
+      );
+
+      tr.querySelector(".input-days").value = row.daysToPlantRaw || "";
+      harvestCell.textContent = row.harvestPlanYM || "";
     });
 
     /* ▼ 種の由来 */

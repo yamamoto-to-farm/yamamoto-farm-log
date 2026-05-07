@@ -17,13 +17,16 @@ export function makeEmptyRow() {
     trayType: "",
     planAreaPlan: "",     // 計画面積（STEP2）
     planAreaCalc: "",     // 計算面積
+    spacingRow: 34,       // ★ 株間（デフォルト）
+    spacingBed: 60,       // ★ 畝間（デフォルト）
     daysToPlantRaw: "",
     daysToPlant: 0,
     planPlantDate: "",
     harvestMonth: "",
     harvestPlanYM: "",
     harvestWeek: "",
-    source: ""
+    source: "",
+    memo: ""              // ★ 備考
   };
 }
 
@@ -56,13 +59,16 @@ export async function setSeedRowsFromAnnual(step2rows) {
       trayType: "",
       planAreaPlan: r.needArea || "",
       planAreaCalc: "",
+      spacingRow: 34,      // ★ デフォルト株間
+      spacingBed: 60,      // ★ デフォルト畝間
       daysToPlantRaw: daysToPlant,
       daysToPlant,
       planPlantDate,
       harvestMonth,
       harvestPlanYM: resolveHarvestYM(planPlantDate, planSowDate, harvestMonth),
       harvestWeek: r.harvestWeek,
-      source: ""
+      source: "",
+      memo: ""
     };
   });
 }

@@ -113,3 +113,38 @@ export function openHarvestMonthModal(callback) {
     });
   });
 }
+export function openSpacingModal(row, onSelect) {
+  const modal = document.createElement("div");
+  modal.className = "modal-bg";
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h2>株間・畝間の設定</h2>
+
+      <label>株間(cm)</label>
+      <input type="number" id="spacingRowInput" value="${row.spacingRow || 34}">
+
+      <label>畝間(cm)</label>
+      <input type="number" id="spacingBedInput" value="${row.spacingBed || 60}">
+
+      <div style="margin-top: 16px;">
+        <button id="spacingOkBtn" class="primary-btn">OK</button>
+        <button id="spacingCancelBtn">キャンセル</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelector("#spacingOkBtn").addEventListener("click", () => {
+    const spacingRow = Number(modal.querySelector("#spacingRowInput").value) || 0;
+    const spacingBed = Number(modal.querySelector("#spacingBedInput").value) || 0;
+
+    onSelect({ spacingRow, spacingBed });
+    modal.remove();
+  });
+
+  modal.querySelector("#spacingCancelBtn").addEventListener("click", () => {
+    modal.remove();
+  });
+}
