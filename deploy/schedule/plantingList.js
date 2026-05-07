@@ -28,10 +28,16 @@ let initialized = false;
    外部から呼ばれるエントリポイント
 ============================================================ */
 export async function renderPlantingList() {
+
+  // ★ planting モード以外では何もしない（エラー防止）
+  const mode = new URLSearchParams(location.search).get("mode");
+  if (mode !== "planting") return;
+
   if (!initialized) {
     await initPlantingListPage();
     initialized = true;
   }
+
   const state = window.currentFilterState || {};
   const filtered = applyAllFilters(plantingRows, state);
   renderTable(filtered);
@@ -41,6 +47,10 @@ export async function renderPlantingList() {
    初期化
 ============================================================ */
 async function initPlantingListPage() {
+
+  // ★ planting モード以外では初期化しない
+  const mode = new URLSearchParams(location.search).get("mode");
+  if (mode !== "planting") return;
 
   if (window.currentRole === "admin") canDiscard = true;
 
@@ -96,9 +106,15 @@ async function initPlantingListPage() {
   // ▼ list.js がモード切替時に再適用できるよう保存
   window.plantingFilterData = filterData;
 
-  document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
-  document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
-  document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
+  // ▼ フィルタボタン（存在チェック付き）
+  const yearBtn = document.querySelector('[data-type="year"]');
+  if (yearBtn) yearBtn.addEventListener("click", openYearModal);
+
+  const fieldBtn = document.querySelector('[data-type="field"]');
+  if (fieldBtn) fieldBtn.addEventListener("click", openFieldModal);
+
+  const varietyBtn = document.querySelector('[data-type="variety"]');
+  if (varietyBtn) varietyBtn.addEventListener("click", openVarietyModal);
 
   window.addEventListener("filter:apply", (e) => {
     window.currentFilterState = e.detail;
@@ -236,10 +252,13 @@ function renderTable(rows) {
     </table>
   `;
 
-  document.getElementById("countArea").textContent = `${rows.length} 件`;
-  document.getElementById("summaryArea").innerHTML =
-    `株数合計：${totalQuantity.toLocaleString()} 株　
-     面積合計：${totalAreaTan.toFixed(2)} 反`;
+  // ▼ planting モード用の summary 表示（seed 専用 summaryArea は使わない）
+  const summary = document.getElementById("summaryArea");
+  if (summary) {
+    summary.innerHTML =
+      `株数合計：${totalQuantity.toLocaleString()} 株　
+       面積合計：${totalAreaTan.toFixed(2)} 反`;
+  }
 
   tableArea.innerHTML = html;
 
