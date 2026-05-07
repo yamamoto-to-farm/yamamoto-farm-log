@@ -45,37 +45,57 @@
   text-align: center;
 }
 
-/* 5: 予定面積 */
+/* 5: 計画面積(反) */
 #table-area .schedule-table th:nth-child(5),
 #table-area .schedule-table td:nth-child(5) {
   width: 110px;
   text-align: right;
 }
 
-/* 6: 定植まで日数 */
+/* 6: 計算面積(反) ← ★ spacing モーダル対象 */
 #table-area .schedule-table th:nth-child(6),
 #table-area .schedule-table td:nth-child(6) {
+  width: 110px;
+  text-align: right;
+}
+
+/* 7: 定植まで日数 */
+#table-area .schedule-table th:nth-child(7),
+#table-area .schedule-table td:nth-child(7) {
   width: 70px;
   text-align: right;
 }
 
-/* 7: 定植予定日 */
-#table-area .schedule-table th:nth-child(7),
-#table-area .schedule-table td:nth-child(7) {
+/* 8: 定植予定日 */
+#table-area .schedule-table th:nth-child(8),
+#table-area .schedule-table td:nth-child(8) {
   width: 130px;
   white-space: nowrap;
 }
 
-/* 8: 収穫予定 ← ★ 新規追加 */
-#table-area .schedule-table th:nth-child(8),
-#table-area .schedule-table td:nth-child(8) {
+/* 9: 収穫予定 */
+#table-area .schedule-table th:nth-child(9),
+#table-area .schedule-table td:nth-child(9) {
   width: 120px;
   white-space: nowrap;
 }
 
-/* 9: 備考 ← ★ 新規追加 */
-#table-area .schedule-table th:nth-child(9),
-#table-area .schedule-table td:nth-child(9) {
+/* 10: 収穫区分 */
+#table-area .schedule-table th:nth-child(10),
+#table-area .schedule-table td:nth-child(10) {
+  width: 80px;
+  text-align: center;
+}
+
+/* 11: 種の由来 */
+#table-area .schedule-table th:nth-child(11),
+#table-area .schedule-table td:nth-child(11) {
+  width: 140px;
+}
+
+/* 12: 備考 */
+#table-area .schedule-table th:nth-child(12),
+#table-area .schedule-table td:nth-child(12) {
   width: 240px;
 }
 
@@ -85,13 +105,13 @@
 
 .variety-cell,
 .tray-type-cell,
-.harvest-cell {
+.calc-area-cell {
   cursor: pointer;
 }
 
 .variety-cell:hover,
 .tray-type-cell:hover,
-.harvest-cell:hover {
+.calc-area-cell:hover {
   background: #eef7ff;
 }
 
@@ -108,9 +128,18 @@
 }
 
 /* ▼ 定植まで日数 input の幅固定（伸び防止） */
-#table-area .schedule-table td:nth-child(6) input {
+#table-area .schedule-table td:nth-child(7) input {
   width: 60px;
   text-align: right;
+}
+
+/* ===============================
+   育苗ハウス容量オーバー（赤表示）
+=============================== */
+.over-capacity {
+  background-color: #ffb3b3 !important;
+  color: #900 !important;
+  font-weight: bold;
 }
 
 /* ===============================
@@ -170,23 +199,36 @@
 
   #table-area .schedule-table th:nth-child(6),
   #table-area .schedule-table td:nth-child(6) {
-    width: 80px;
+    width: 110px;
   }
 
   #table-area .schedule-table th:nth-child(7),
   #table-area .schedule-table td:nth-child(7) {
-    width: 120px;
+    width: 80px;
   }
 
-  /* 8: 収穫予定（印刷用） */
   #table-area .schedule-table th:nth-child(8),
   #table-area .schedule-table td:nth-child(8) {
     width: 120px;
   }
 
-  /* 9: 備考（印刷用） */
   #table-area .schedule-table th:nth-child(9),
   #table-area .schedule-table td:nth-child(9) {
+    width: 120px;
+  }
+
+  #table-area .schedule-table th:nth-child(10),
+  #table-area .schedule-table td:nth-child(10) {
+    width: 80px;
+  }
+
+  #table-area .schedule-table th:nth-child(11),
+  #table-area .schedule-table td:nth-child(11) {
+    width: 140px;
+  }
+
+  #table-area .schedule-table th:nth-child(12),
+  #table-area .schedule-table td:nth-child(12) {
     width: 200px;
   }
 }

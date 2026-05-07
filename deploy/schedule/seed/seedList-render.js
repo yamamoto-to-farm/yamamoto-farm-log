@@ -72,6 +72,7 @@ export function renderTable() {
   tableArea.innerHTML = html;
 
   attachEvents();
+  checkCapacity(); // 初回描画時に容量チェック
 }
 
 function attachEvents() {
@@ -95,7 +96,11 @@ function attachEvents() {
         row.daysToPlantRaw = row.daysToPlant;
       }
 
-      row.harvestPlanYM = resolveHarvestYM(row.planPlantDate, row.planSowDate, row.harvestMonth);
+      row.harvestPlanYM = resolveHarvestYM(
+        row.planPlantDate,
+        row.planSowDate,
+        row.harvestMonth
+      );
       renderTable();
     });
 
@@ -120,6 +125,7 @@ function attachEvents() {
       );
 
       calcAreaCell.textContent = row.planAreaCalc || "";
+      checkCapacity();
     });
 
     /* ▼ トレイ（モーダル → 再描画） */
@@ -150,6 +156,7 @@ function attachEvents() {
         );
 
         calcAreaCell.textContent = row.planAreaCalc || "";
+        checkCapacity();
       });
     });
 
@@ -167,6 +174,7 @@ function attachEvents() {
 
       tr.querySelector(".input-plant").value = row.planPlantDate || "";
       harvestCell.textContent = row.harvestPlanYM || "";
+      checkCapacity();
     });
 
     /* ▼ 定植予定日（再描画しない） */
@@ -188,6 +196,7 @@ function attachEvents() {
 
       tr.querySelector(".input-days").value = row.daysToPlantRaw || "";
       harvestCell.textContent = row.harvestPlanYM || "";
+      checkCapacity();
     });
 
     /* ▼ 種の由来 */
@@ -214,4 +223,73 @@ function attachEvents() {
       saveSeedList();
     };
   }
+}
+
+/**
+ * 育苗ハウス容量チェック
+ * - 播種日で +trayCount
+ * - 定植日で -trayCount
+ * - 日付順に累積し、capacity を超える期間を持つ行の計算面積セルを赤表示
+ */
+function checkCapacity() {
+  const rows = getRows();
+  const capacityInput = document.getElementById("nurseryCapacity");
+  if (!capacityInput) return;
+
+  const capacity = Number(capacityInput.value) || 0;
+  if (capacity <= 0) {
+    // 容量未設定なら全て通常表示
+    document.querySelectorAll(".calc-area-cell").forEach(cell => {
+      cell.classList.remove("over-capacity");
+    });
+    return;
+  }
+
+  let events = [];
+
+  rows.forEach(r => {
+    if (r.trayCount > 0 && r.planSowDate) {
+      events.push({ date: r.planSowDate, delta: r.trayCount });
+    }
+    if (r.trayCount > 0 && r.planPlantDate) {
+      events.push({ date: r.planPlantDate, delta: -r.trayCount });
+    }
+  });
+
+  if (events.length === 0) {
+    document.querySelectorAll(".calc-area-cell").forEach(cell => {
+      cell.classList.remove("over-capacity");
+    });
+    return;
+  }
+
+  events.sort((a, b) => a.date.localeCompare(b.date));
+
+  let stock = 0;
+  const timeline = [];
+
+  for (const ev of events) {
+    stock += ev.delta;
+    timeline.push({ date: ev.date, stock });
+  }
+
+  document.querySelectorAll("tr[data-index]").forEach(tr => {
+    const idx = Number(tr.dataset.index);
+    const r = rows[idx];
+    const cell = tr.querySelector(".calc-area-cell");
+
+    cell.classList.remove("over-capacity");
+
+    if (!r.planSowDate || !r.planPlantDate || r.trayCount <= 0) return;
+
+    const over = timeline.some(t =>
+      t.date >= r.planSowDate &&
+      t.date < r.planPlantDate &&
+      t.stock > capacity
+    );
+
+    if (over) {
+      cell.classList.add("over-capacity");
+    }
+  });
 }
