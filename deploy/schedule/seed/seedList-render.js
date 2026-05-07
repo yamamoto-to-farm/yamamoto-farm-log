@@ -72,7 +72,8 @@ export function renderTable() {
   tableArea.innerHTML = html;
 
   attachEvents();
-  checkCapacity(); // 初回描画時に容量チェック
+  checkCapacity();
+  updateSummary();
 }
 
 function attachEvents() {
@@ -126,6 +127,7 @@ function attachEvents() {
 
       calcAreaCell.textContent = row.planAreaCalc || "";
       checkCapacity();
+      updateSummary();
     });
 
     /* ▼ トレイ（モーダル → 再描画） */
@@ -157,6 +159,7 @@ function attachEvents() {
 
         calcAreaCell.textContent = row.planAreaCalc || "";
         checkCapacity();
+        updateSummary();
       });
     });
 
@@ -175,6 +178,7 @@ function attachEvents() {
       tr.querySelector(".input-plant").value = row.planPlantDate || "";
       harvestCell.textContent = row.harvestPlanYM || "";
       checkCapacity();
+      updateSummary();
     });
 
     /* ▼ 定植予定日（再描画しない） */
@@ -197,6 +201,7 @@ function attachEvents() {
       tr.querySelector(".input-days").value = row.daysToPlantRaw || "";
       harvestCell.textContent = row.harvestPlanYM || "";
       checkCapacity();
+      updateSummary();
     });
 
     /* ▼ 種の由来 */
@@ -223,27 +228,26 @@ function attachEvents() {
       saveSeedList();
     };
   }
+
+  /* ▼ 容量変更時に即反映 */
+  const cap = document.getElementById("nurseryCapacity");
+  if (cap) {
+    cap.addEventListener("input", () => {
+      checkCapacity();
+      updateSummary();
+    });
+  }
 }
 
-/**
- * 育苗ハウス容量チェック
- * - 播種日で +trayCount
- * - 定植日で -trayCount
- * - 日付順に累積し、capacity を超える期間を持つ行の計算面積セルを赤表示
- */
+/* ===============================
+   育苗ハウス容量チェック
+=============================== */
 function checkCapacity() {
   const rows = getRows();
   const capacityInput = document.getElementById("nurseryCapacity");
   if (!capacityInput) return;
 
   const capacity = Number(capacityInput.value) || 0;
-  if (capacity <= 0) {
-    // 容量未設定なら全て通常表示
-    document.querySelectorAll(".calc-area-cell").forEach(cell => {
-      cell.classList.remove("over-capacity");
-    });
-    return;
-  }
 
   let events = [];
 
@@ -255,13 +259,6 @@ function checkCapacity() {
       events.push({ date: r.planPlantDate, delta: -r.trayCount });
     }
   });
-
-  if (events.length === 0) {
-    document.querySelectorAll(".calc-area-cell").forEach(cell => {
-      cell.classList.remove("over-capacity");
-    });
-    return;
-  }
 
   events.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -292,4 +289,32 @@ function checkCapacity() {
       cell.classList.add("over-capacity");
     }
   });
+}
+
+/* ===============================
+   summary 表示
+=============================== */
+function updateSummary() {
+  const rows = getRows();
+  const capacity = Number(document.getElementById("nurseryCapacity").value) || 0;
+
+  const totalTrays = rows.reduce((sum, r) => sum + (r.trayCount || 0), 0);
+  const totalArea = rows.reduce((sum, r) => sum + (Number(r.planAreaCalc) || 0), 0);
+
+  const remain = capacity - totalTrays;
+
+  let statusHtml = "";
+
+  if (remain >= 0) {
+    statusHtml = `<span style="color:green; font-weight:bold;">OK（残り ${remain} 枚）</span>`;
+  } else {
+    statusHtml = `<span style="color:red; font-weight:bold;">⚠ 容量オーバー（不足 ${Math.abs(remain)} 枚）</span>`;
+  }
+
+  document.getElementById("summaryArea").innerHTML = `
+    <div>総トレイ枚数：${totalTrays} 枚</div>
+    <div>総予定面積：${totalArea.toFixed(2)} 反</div>
+    <div>育苗ハウス容量：${capacity} 枚</div>
+    <div style="margin-top:6px;">${statusHtml}</div>
+  `;
 }
