@@ -2,16 +2,27 @@
 
 import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
 import { loadJSON } from "/common/json.js";
+
 import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
 import { renderSeedList } from "./seed/index.js";
 import { renderPlantingList } from "./plantingList.js";
 import { setFilterData } from "/common/filter.js";
+
+import {
+  initSeedList,
+  loadSeedListFromCSV,
+  loadSeedListFromJSON,
+  getCurrentYear
+} from "./seed/seedList-load.js";
+
+import { saveSeedList } from "./seed/seedList-save.js";
 
 let currentMode = "seed";
 let selectedYear = null;
 
 /* ============================================================
    年度選択 → annual.json 読み込み → seedList 初期行生成
+   ＋ 年度ごと CSV があれば CSV を優先ロード
 ============================================================ */
 export function initAnnualLinkage() {
   const btn = document.getElementById("selectYearBtn");
@@ -27,9 +38,19 @@ export function initAnnualLinkage() {
         selectedYear = y;
         label.textContent = `${y} 年`;
 
-        const step2 = annualAll[y]?.step2;
-        if (step2?.rows) {
-          await setSeedRowsFromAnnual(step2.rows);
+        // ▼ 年度を UI に反映（seedList-load.js が参照）
+        const yearSelect = document.getElementById("yearSelect");
+        if (yearSelect) yearSelect.value = y;
+
+        // ▼ まず CSV を試す
+        const ok = await loadSeedListFromCSV(y);
+
+        if (!ok) {
+          // ▼ CSV が無ければ annual.json → STEP2 初期生成
+          const step2 = annualAll[y]?.step2;
+          if (step2?.rows) {
+            await setSeedRowsFromAnnual(step2.rows);
+          }
         }
 
         if (currentMode === "seed") {
@@ -49,6 +70,50 @@ export function initListPage() {
   if (modeParam === "planting") currentMode = "planting";
   else currentMode = "seed";
 
+  // ▼ JSON 読み込みボタン
+  const btnJson = document.getElementById("loadJsonBtn");
+  if (btnJson) {
+    btnJson.onclick = async () => {
+      const year = getCurrentYear();
+      if (!year) {
+        alert("年度を選択してください。");
+        return;
+      }
+      if (!confirm(`${year}年の播種計画を annual.json から再生成します。現在の内容は上書きされます。`)) {
+        return;
+      }
+      await loadSeedListFromJSON(year);
+      renderSeedList();
+    };
+  }
+
+  // ▼ CSV 読み込みボタン
+  const btnCsv = document.getElementById("loadCsvBtn");
+  if (btnCsv) {
+    btnCsv.onclick = async () => {
+      const year = getCurrentYear();
+      if (!year) {
+        alert("年度を選択してください。");
+        return;
+      }
+      const ok = await loadSeedListFromCSV(year);
+      if (!ok) {
+        alert(`${year}年の CSV が見つかりませんでした。`);
+      } else {
+        renderSeedList();
+      }
+    };
+  }
+
+  // ▼ CSV 保存ボタン
+  const btnSave = document.getElementById("saveCsvBtn");
+  if (btnSave) {
+    btnSave.onclick = () => {
+      saveSeedList();
+    };
+  }
+
+  // ▼ モード切り替え
   document.getElementById("btn-planting").addEventListener("click", () => {
     if (currentMode === "planting") return;
     currentMode = "planting";
@@ -69,6 +134,9 @@ export function initListPage() {
   renderCurrentMode();
 }
 
+/* ============================================================
+   UI 切り替え
+============================================================ */
 function applyModeUI() {
   const btnPlanting = document.getElementById("btn-planting");
   const btnSeed = document.getElementById("btn-seed");
@@ -88,6 +156,9 @@ function applyModeUI() {
   }
 }
 
+/* ============================================================
+   モードごとの描画
+============================================================ */
 function renderCurrentMode() {
   const tableArea = document.getElementById("table-area");
   tableArea.innerHTML = "";
@@ -102,6 +173,9 @@ function renderCurrentMode() {
   }
 }
 
+/* ============================================================
+   フィルタイベント
+============================================================ */
 window.addEventListener("filter:apply", () => {
   if (currentMode === "planting") renderCurrentMode();
 });

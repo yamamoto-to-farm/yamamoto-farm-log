@@ -1,6 +1,7 @@
 // schedule/seed/seedList-save.js
 
-import { getRows, makeEmptyRow } from "./seedList-state.js";
+import { getRows } from "./seedList-state.js";
+import { getCurrentYear } from "./seedList-load.js";
 import { renderTable } from "./seedList-render.js";
 import { saveLog } from "../../common/save/index.js";
 
@@ -29,11 +30,13 @@ function extractFilledRows() {
     r.variety ||
     r.trayCount > 0 ||
     r.trayType ||
-    r.planArea ||
+    r.planAreaPlan ||
+    r.planAreaCalc ||
     r.daysToPlant > 0 ||
     r.planPlantDate ||
     r.harvestPlanYM ||
-    r.source
+    r.source ||
+    r.memo
   );
 
   dbg("filled rows:", filled);
@@ -41,50 +44,59 @@ function extractFilledRows() {
 }
 
 /* ===============================
-   2. CSV（ヘッダなし）に変換
+   2. CSV（ヘッダあり）に変換
 =============================== */
-function convertToCsvLines(rows) {
-  const csv = rows
-    .map(r => [
+function convertToCsv(rows) {
+  const header = [
+    "sowDate",
+    "variety",
+    "trayCount",
+    "trayType",
+    "spacingRow",
+    "spacingBed",
+    "planAreaPlan",
+    "planAreaCalc",
+    "daysToPlant",
+    "planPlantDate",
+    "harvestMonth",
+    "harvestPlanYM",
+    "harvestWeek",
+    "source",
+    "memo"
+  ];
+
+  const lines = [];
+  lines.push(header.join(","));
+
+  rows.forEach(r => {
+    const cols = [
       r.planSowDate || "",
       r.variety || "",
-      r.cropType || "",
       r.trayCount || 0,
       r.trayType || "",
-      r.planAreaCalc || "",   // ★ 計算面積のみ保存
-      r.daysToPlant || 0,
+      r.spacingRow ?? "",
+      r.spacingBed ?? "",
+      r.planAreaPlan || "",
+      r.planAreaCalc || "",
+      r.daysToPlant || "",
       r.planPlantDate || "",
+      r.harvestMonth || "",
       r.harvestPlanYM || "",
       r.harvestWeek || "",
-      r.source || "",         // ★ 種の由来
-      r.memo || ""            // ★ 備考
-    ]
-    .map(v => `"${String(v).replace(/"/g, '""')}"`)
-    .join(","))
-    .join("\n");
+      (r.source || "").replace(/,/g, "、"),
+      (r.memo || "").replace(/,/g, "、")
+    ];
 
-  dbg("csvLines:\n" + csv);
+    lines.push(cols.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+  });
+
+  const csv = lines.join("\n") + "\n";
+  dbg("csv:\n" + csv);
   return csv;
 }
 
-
 /* ===============================
-   3. 入力フォームをクリア
-=============================== */
-function clearForm() {
-  dbg("clearForm()");
-  const rows = getRows();
-  rows.length = 0;
-
-  for (let i = 0; i < 12; i++) {
-    rows.push(makeEmptyRow());
-  }
-
-  renderTable();
-}
-
-/* ===============================
-   4. メイン処理（saveLog append）
+   3. メイン処理（年度ごと CSV replace）
 =============================== */
 export async function saveSeedList() {
   dbg("=== saveSeedList START ===");
@@ -96,23 +108,22 @@ export async function saveSeedList() {
     return;
   }
 
-  const csvLines = convertToCsvLines(filled);
+  const csv = convertToCsv(filled);
+  const year = getCurrentYear();
 
   try {
-    dbg("calling saveLog append…");
+    dbg("calling saveLog replace…");
 
     await saveLog(
-      "schedule-seed",   // logs/schedule-seed/
-      "all",             // all.csv
-      {},                // JSON なし
-      csvLines,          // append 内容
-      ""                 // replaceCsv 空 → append モード
+      "schedule-seed",          // logs/schedule-seed/
+      `${year}`,                // 2026.csv など
+      {},                       // JSON なし
+      "",                       // append 内容なし
+      csv                       // replaceCsv → 置換保存
     );
 
     dbg("saveLog completed");
-
-    //clearForm();
-    //alert("播種計画を保存しました（logs/schedule-seed/all.csv に追記）");
+    alert(`播種計画を保存しました（logs/schedule-seed/${year}.csv に上書き）`);
 
   } catch (e) {
     console.error("❌ saveSeedList error:", e);
