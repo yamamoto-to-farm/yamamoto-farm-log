@@ -12,6 +12,7 @@ import {
   openSpacingModal
 } from "./seedList-modal.js";
 import { saveSeedList } from "./seedList-save.js";
+import { checkCapacity } from "./seedList-capacity.js";
 
 /* ===============================
    ソート処理
@@ -64,7 +65,7 @@ export function renderTable() {
           <th>収穫区分</th>
           <th>種の由来</th>
           <th>備考</th>
-          <th>削除</th>   <!-- ★ 追加 -->
+          <th>削除</th>
         </tr>
       </thead>
       <tbody>
@@ -90,7 +91,6 @@ export function renderTable() {
         <td><input type="text" class="input-source" value="${r.source || ""}"></td>
         <td><input type="text" class="input-memo" value="${r.memo || ""}"></td>
 
-        <!-- ★ 行削除ボタン -->
         <td><button class="delete-row" data-i="${i}">削除</button></td>
       </tr>
     `;
@@ -100,8 +100,7 @@ export function renderTable() {
   tableArea.innerHTML = html;
 
   attachEvents();
-  checkCapacity();
-  updateSummary();
+  checkCapacity();   // ★ updateSummary は capacity.js 内で呼ばれる
 }
 
 /* ===============================
@@ -168,7 +167,6 @@ function attachEvents() {
 
       calcAreaCell.textContent = row.planAreaCalc || "";
       checkCapacity();
-      updateSummary();
     });
 
     /* ▼ トレイ */
@@ -200,7 +198,6 @@ function attachEvents() {
 
         calcAreaCell.textContent = row.planAreaCalc || "";
         checkCapacity();
-        updateSummary();
       });
     });
 
@@ -219,7 +216,6 @@ function attachEvents() {
       tr.querySelector(".input-plant").value = row.planPlantDate || "";
       harvestCell.textContent = row.harvestPlanYM || "";
       checkCapacity();
-      updateSummary();
     });
 
     /* ▼ 定植予定日 */
@@ -242,7 +238,6 @@ function attachEvents() {
       tr.querySelector(".input-days").value = row.daysToPlantRaw || "";
       harvestCell.textContent = row.harvestPlanYM || "";
       checkCapacity();
-      updateSummary();
     });
 
     /* ▼ 種の由来 */
@@ -255,7 +250,7 @@ function attachEvents() {
       row.memo = e.target.value;
     });
 
-    /* ▼ ★ 行削除 */
+    /* ▼ 行削除 */
     tr.querySelector(".delete-row").addEventListener("click", () => {
       rows.splice(idx, 1);
       renderTable();
@@ -281,108 +276,6 @@ function attachEvents() {
   if (cap) {
     cap.addEventListener("input", () => {
       checkCapacity();
-      updateSummary();
     });
   }
-}
-
-/* ===============================
-   育苗ハウス容量チェック（最大同時在庫方式）
-=============================== */
-function checkCapacity() {
-  const rows = getRows();
-  const capacityInput = document.getElementById("nurseryCapacity");
-  if (!capacityInput) return;
-
-  const capacity = Number(capacityInput.value) || 0;
-
-  let events = [];
-
-  rows.forEach(r => {
-    if (r.trayCount > 0 && r.planSowDate) {
-      // ★ 冷暗2日後にハウス入り
-      const start = new Date(r.planSowDate);
-      start.setDate(start.getDate() + 2);
-      const startDate = start.toISOString().slice(0, 10);
-
-      events.push({ date: startDate, delta: r.trayCount });
-    }
-
-    if (r.trayCount > 0 && r.planPlantDate) {
-      events.push({ date: r.planPlantDate, delta: -r.trayCount });
-    }
-  });
-
-  // 日付順に並べる
-  events.sort((a, b) => a.date.localeCompare(b.date));
-
-  let stock = 0;
-  let maxStock = 0;
-  const timeline = [];
-
-  for (const ev of events) {
-    stock += ev.delta;
-    if (stock > maxStock) maxStock = stock;
-    timeline.push({ date: ev.date, stock });
-  }
-
-  /* ===============================
-     行ごとの over-capacity 判定
-  ================================ */
-  document.querySelectorAll("tr[data-index]").forEach(tr => {
-    const idx = Number(tr.dataset.index);
-    const r = rows[idx];
-    const cell = tr.querySelector(".calc-area-cell");
-
-    cell.classList.remove("over-capacity");
-
-    if (!r.planSowDate || !r.planPlantDate || r.trayCount <= 0) return;
-
-    // ★ 行ごとの冷暗2日後
-    const sowStart = new Date(r.planSowDate);
-    sowStart.setDate(sowStart.getDate() + 2);
-    const sowStartStr = sowStart.toISOString().slice(0, 10);
-
-    const over = timeline.some(t =>
-      t.date >= sowStartStr &&
-      t.date < r.planPlantDate &&
-      t.stock > capacity
-    );
-
-    if (over) {
-      cell.classList.add("over-capacity");
-    }
-  });
-
-  // ★ summary 表示を checkCapacity の結果で更新
-  updateSummary(maxStock);
-}
-
-
-/* ===============================
-   summary 表示（最大同時在庫方式に統一）
-=============================== */
-function updateSummary(maxStock) {
-  const rows = getRows();
-  const capacity = Number(document.getElementById("nurseryCapacity").value) || 0;
-
-  // 面積は従来通り合計
-  const totalArea = rows.reduce((sum, r) => sum + (Number(r.planAreaCalc) || 0), 0);
-
-  const diff = capacity - maxStock;
-
-  let statusHtml = "";
-
-  if (diff >= 0) {
-    statusHtml = `<span style="color:green; font-weight:bold;">OK（残り ${diff} 枚）</span>`;
-  } else {
-    statusHtml = `<span style="color:red; font-weight:bold;">⚠ 容量オーバー（不足 ${Math.abs(diff)} 枚）</span>`;
-  }
-
-  document.getElementById("summaryArea").innerHTML = `
-    <div>最大同時トレイ数：${maxStock} 枚</div>
-    <div>総予定面積：${totalArea.toFixed(2)} 反</div>
-    <div>育苗ハウス容量：${capacity} 枚</div>
-    <div style="margin-top:6px;">${statusHtml}</div>
-  `;
 }
