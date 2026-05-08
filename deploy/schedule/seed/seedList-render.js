@@ -300,8 +300,14 @@ function checkCapacity() {
 
   rows.forEach(r => {
     if (r.trayCount > 0 && r.planSowDate) {
-      events.push({ date: r.planSowDate, delta: r.trayCount });
+      // ★ 冷暗2日後にハウス入り
+      const start = new Date(r.planSowDate);
+      start.setDate(start.getDate() + 2);
+      const startDate = start.toISOString().slice(0, 10);
+
+      events.push({ date: startDate, delta: r.trayCount });
     }
+
     if (r.trayCount > 0 && r.planPlantDate) {
       events.push({ date: r.planPlantDate, delta: -r.trayCount });
     }
@@ -326,8 +332,13 @@ function checkCapacity() {
 
     if (!r.planSowDate || !r.planPlantDate || r.trayCount <= 0) return;
 
+    // ★ 行ごとの冷暗2日後
+    const sowStart = new Date(r.planSowDate);
+    sowStart.setDate(sowStart.getDate() + 2);
+    const sowStartStr = sowStart.toISOString().slice(0, 10);
+
     const over = timeline.some(t =>
-      t.date >= r.planSowDate &&
+      t.date >= sowStartStr &&
       t.date < r.planPlantDate &&
       t.stock > capacity
     );
@@ -337,6 +348,7 @@ function checkCapacity() {
     }
   });
 }
+
 
 /* ===============================
    summary 表示
