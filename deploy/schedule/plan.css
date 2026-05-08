@@ -1,147 +1,74 @@
 /* ===============================
-   定植一覧専用 CSS
+   印刷（定植一覧専用）
 =============================== */
-
-/* ▼ 定植日列 */
-#table-area table th:nth-child(1),
-#table-area table td:nth-child(1) {
-  width: 130px;
-  white-space: nowrap;
-  text-align: left !important;
-}
-
-/* ▼ 定植日セル（クリック可能） */
-.plant-date-cell {
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.plant-date-cell:hover {
-  background: #eef7ff;
-}
-
-/* ===============================
-   操作列（破棄）
-=============================== */
-
-#table-area table th:last-child,
-#table-area table td:last-child {
-  width: 60px;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.discard-btn {
-  padding: 2px 6px;
-  font-size: 12px;
-}
-
-/* ===============================
-   モード切り替えボタン
-=============================== */
-
-#mode-switch-card button {
-  background: #e2e8f0;
-  color: #333;
-  border: 1px solid #cbd5e0;
-}
-
-#mode-switch-card button.active {
-  background: #2f855a !important;
-  color: #fff !important;
-  border: none !important;
-}
-
-/* ===============================
-   plantList 専用モーダル（衝突回避）
-=============================== */
-
-.plant-modal-bg {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.plant-modal-content {
-  background: #fff;
-  padding: 20px;
-  width: 320px;
-  border-radius: 8px;
-}
-
-.plant-modal-item {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-  cursor: pointer;
-}
-
-.plant-modal-item:hover {
-  background: #eef7ff;
-}
-
-.plant-modal-input {
-  width: 100%;
-  padding: 6px;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-}
-
-/* ===============================
-   印刷用
-=============================== */
-
 @media print {
 
-  .app-header,
+  /* ▼ 画面UIカードは全部非表示 */
   #mode-switch-card,
-  #btn-planting,
-  #btn-seed,
   #filter-card,
   #activeFilters,
-  #modal-container {
+  #capacity-card,
+  #summary-card .card-header,
+  .app-header,
+  .app-footer,
+  .button-area,
+  button,
+  .discard-btn,
+  #addRowBtn,
+  #saveCsvBtn {
     display: none !important;
   }
 
-  #table-area table th:last-child,
-  #table-area table td:last-child {
-    display: none !important;
+  /* ▼ カード枠は消す（中身だけ印刷） */
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 8px 0 !important;
   }
 
+  /* ▼ summary は中身だけ印刷 */
+  #summary-card {
+    display: block !important;
+  }
+
+  #summaryArea {
+    display: block !important;
+    margin-bottom: 12px;
+    font-size: 13pt;
+  }
+
+  /* ▼ 表が切れないように最適化 */
   #table-area table {
-    table-layout: fixed;
-    width: 100%;
-    font-size: 12pt;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11pt !important;
+    table-layout: fixed !important;
   }
 
-  #table-area table th:nth-child(1),
-  #table-area table td:nth-child(1) {
-    width: 100px;
-    white-space: nowrap;
+  #table-area th,
+  #table-area td {
+    border: 1px solid #999 !important;
+    padding: 3px 4px !important;
+    word-break: break-all !important;
   }
 
-  #table-area table th:nth-child(2),
-  #table-area table td:nth-child(2) {
-    width: 140px;
+  /* ▼ 入力欄は文字だけ印刷 */
+  input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
   }
 
-  #table-area table th:nth-child(3),
-  #table-area table td:nth-child(3) {
-    width: 140px;
+  /* ▼ 削除列は完全に消す */
+  #table-area th:last-child,
+  #table-area td:last-child {
+    display: none !important;
   }
 
-  #table-area table th:nth-child(4),
-  #table-area table td:nth-child(4) {
-    width: 70px;
-    text-align: right;
-  }
-
-  #table-area table th:nth-child(5),
-  #table-area table td:nth-child(5) {
-    width: 150px;
-    white-space: nowrap;
+  /* ▼ ページ余白 */
+  @page {
+    margin: 10mm;
   }
 }
