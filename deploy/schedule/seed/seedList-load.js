@@ -106,7 +106,7 @@ function parseSeedListCsv(csvText) {
    年度ごとの CSV を読み込む
 ============================================================ */
 export async function loadSeedListFromCSV(year) {
-  const path = `/logs/schedule-seed/${year}.csv`;
+  const path = `/logs/schedule/seed/${year}.csv`;
   log("loadSeedListFromCSV:", path);
 
   try {

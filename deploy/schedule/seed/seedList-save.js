@@ -7,8 +7,6 @@ import { saveLog } from "../../common/save/index.js";
 
 /* ---------------------------------------------------------
    デバッグ切り替え（localStorage）
-   localStorage.setItem("debugSeedListSave", "1") → ON
-   localStorage.removeItem("debugSeedListSave") → OFF
 --------------------------------------------------------- */
 function isDebug() {
   return localStorage.getItem("debugSeedListSave") === "1";
@@ -115,15 +113,16 @@ export async function saveSeedList() {
     dbg("calling saveLog replace…");
 
     await saveLog(
-      "schedule-seed",          // logs/schedule-seed/
-      `${year}`,                // 2026.csv など
-      {},                       // JSON なし
-      "",                       // append 内容なし
-      csv                       // replaceCsv → 置換保存
+      "schedule/seed",   // ★ 新しい保存先フォルダ
+      `${year}`,         // ★ 2026 → 2026.csv
+      {},                // JSON なし
+      "",                // append なし
+      csv,               // replaceCsv
+      "csv-replace"      // ★ 明示的に置換保存
     );
 
     dbg("saveLog completed");
-    alert(`播種計画を保存しました（logs/schedule-seed/${year}.csv に上書き）`);
+    alert(`播種計画を保存しました（logs/schedule/seed/${year}.csv に上書き）`);
 
   } catch (e) {
     console.error("❌ saveSeedList error:", e);
