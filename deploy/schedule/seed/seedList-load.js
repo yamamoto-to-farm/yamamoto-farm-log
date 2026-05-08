@@ -9,7 +9,7 @@ import { renderTable } from "./seedList-render.js";
 /* ============================================================
    デバッグモード
 ============================================================ */
-const DEBUG = true;
+const DEBUG = false;
 const log = (...args) => DEBUG && console.log("[seedList-load]", ...args);
 
 /* ============================================================
