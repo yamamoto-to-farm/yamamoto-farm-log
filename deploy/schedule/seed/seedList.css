@@ -199,8 +199,10 @@
 
   /* ▼ UIカード・ボタン類は丸ごと非表示 */
   #mode-switch-card,
+  #seedList-controls,
   #filter-card,
   #activeFilters,
+  #capacity-card,
   .app-header,
   .app-footer,
   .button-area,
@@ -211,7 +213,19 @@
     display: none !important;
   }
 
+  /* ▼ カード枠は消す（中身だけ印刷） */
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 8px 0 !important;
+  }
+
   /* ▼ summary と表だけ印刷 */
+  #summary-card {
+    display: block !important;
+  }
+
   #summaryArea {
     display: block !important;
     margin-bottom: 12px;
@@ -223,16 +237,33 @@
   }
 
   #table-area table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12pt;
-    table-layout: fixed;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11pt !important;
+    table-layout: fixed !important;
   }
 
   #table-area th,
   #table-area td {
-    border: 1px solid #999;
-    padding: 4px 6px;
+    border: 1px solid #999 !important;
+    padding: 4px 6px !important;
+    word-break: break-all !important;
+  }
+
+  /* ▼ 印刷時だけ右揃えにする列 */
+  #table-area th:nth-child(1),
+  #table-area td:nth-child(1),   /* 播種予定日 */
+  #table-area th:nth-child(3),
+  #table-area td:nth-child(3),   /* 枚数 */
+  #table-area th:nth-child(5),
+  #table-area td:nth-child(5),   /* 計画面積 */
+  #table-area th:nth-child(6),
+  #table-area td:nth-child(6),   /* 計算面積 */
+  #table-area th:nth-child(7),
+  #table-area td:nth-child(7),   /* 日数 */
+  #table-area th:nth-child(8),
+  #table-area td:nth-child(8) {  /* 定植予定日 */
+    text-align: right !important;
   }
 
   /* ▼ 入力欄は文字だけ印刷 */
@@ -240,7 +271,7 @@
     border: none !important;
     background: transparent !important;
     padding: 0 !important;
-    font-size: 12pt !important;
+    font-size: 11pt !important;
   }
 
   /* ▼ 削除列は完全に消す */

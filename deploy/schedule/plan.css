@@ -2,7 +2,7 @@
    定植一覧専用 CSS
 =============================== */
 
-/* ▼ 定植日列 */
+/* ▼ 定植日列（画面用） */
 #table-area table th:nth-child(1),
 #table-area table td:nth-child(1) {
   width: 130px;
@@ -144,6 +144,18 @@
     border: 1px solid #999 !important;
     padding: 3px 4px !important;
     word-break: break-all !important;
+  }
+
+  /* ▼ 印刷時だけ右揃えにする列 */
+  #table-area table th:nth-child(1),
+  #table-area table td:nth-child(1),   /* 定植日 */
+  #table-area table th:nth-child(3),
+  #table-area table td:nth-child(3),   /* 面積 or 枚数 */
+  #table-area table th:nth-child(4),
+  #table-area table td:nth-child(4),   /* 日数 */
+  #table-area table th:nth-child(5),
+  #table-area table td:nth-child(5) {  /* 収穫予定日 */
+    text-align: right !important;
   }
 
   /* ▼ 入力欄は文字だけ印刷 */
