@@ -3,9 +3,6 @@
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
 /* ===============================
-   品種選択モーダル（annual-step2 と同じUI）
-=============================== */
-/* ===============================
    品種選択モーダル（カテゴリ対応）
 =============================== */
 export async function openVarietySelectModal(onSelect) {
@@ -21,14 +18,15 @@ export async function openVarietySelectModal(onSelect) {
   // ▼ filter-variety.js の新APIに完全対応
   openVarietyModal({
     mode: "select",
-    parents,
-    selected,
+    parents,     // ← 必須
+    selected,    // ← 必須
     onSelect: (name) => {
       // ★ harvestMonth は seedList では使わない
       onSelect({ name });
     }
   });
 }
+
 /* ===============================
    トレイ選択モーダル（既存）
 =============================== */
