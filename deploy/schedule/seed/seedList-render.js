@@ -25,14 +25,12 @@ function sortRows() {
     const va = a[sortKey] || "";
     const vb = b[sortKey] || "";
 
-    // ▼ 日付ソート
     if (sortKey === "planSowDate" || sortKey === "planPlantDate") {
       return sortOrder === "asc"
         ? va.localeCompare(vb)
         : vb.localeCompare(va);
     }
 
-    // ▼ 数値ソート
     return sortOrder === "asc"
       ? Number(va) - Number(vb)
       : Number(vb) - Number(va);
@@ -45,7 +43,7 @@ function sortRows() {
    テーブル描画
 =============================== */
 export function renderTable() {
-  sortRows();  // ★ ソート適用
+  sortRows();
 
   const rows = getRows();
   const tableArea = document.getElementById("table-area");
@@ -66,6 +64,7 @@ export function renderTable() {
           <th>収穫区分</th>
           <th>種の由来</th>
           <th>備考</th>
+          <th>削除</th>   <!-- ★ 追加 -->
         </tr>
       </thead>
       <tbody>
@@ -90,13 +89,14 @@ export function renderTable() {
 
         <td><input type="text" class="input-source" value="${r.source || ""}"></td>
         <td><input type="text" class="input-memo" value="${r.memo || ""}"></td>
+
+        <!-- ★ 行削除ボタン -->
+        <td><button class="delete-row" data-i="${i}">削除</button></td>
       </tr>
     `;
   });
 
   html += `</tbody></table>`;
-
-
   tableArea.innerHTML = html;
 
   attachEvents();
@@ -110,7 +110,7 @@ export function renderTable() {
 function attachEvents() {
   const rows = getRows();
 
-  /* ▼ ソートヘッダー */
+  /* ▼ ソート */
   document.querySelectorAll("th.sortable").forEach(th => {
     th.addEventListener("click", () => {
       const key = th.dataset.key;
@@ -119,7 +119,7 @@ function attachEvents() {
     });
   });
 
-  /* ▼ 行ごとのイベント */
+  /* ▼ 行イベント */
   document.querySelectorAll("tr[data-index]").forEach(tr => {
     const idx = Number(tr.dataset.index);
     const row = rows[idx];
@@ -185,7 +185,7 @@ function attachEvents() {
       });
     });
 
-    /* ▼ spacing モーダル */
+    /* ▼ spacing */
     calcAreaCell.addEventListener("click", () => {
       openSpacingModal(row, updated => {
         row.spacingRow = updated.spacingRow;
@@ -254,6 +254,12 @@ function attachEvents() {
     tr.querySelector(".input-memo").addEventListener("input", e => {
       row.memo = e.target.value;
     });
+
+    /* ▼ ★ 行削除 */
+    tr.querySelector(".delete-row").addEventListener("click", () => {
+      rows.splice(idx, 1);
+      renderTable();
+    });
   });
 
   /* ▼ 行追加 */
@@ -270,7 +276,7 @@ function attachEvents() {
     };
   }
 
-  /* ▼ 容量変更時に即反映 */
+  /* ▼ 容量変更 */
   const cap = document.getElementById("nurseryCapacity");
   if (cap) {
     cap.addEventListener("input", () => {

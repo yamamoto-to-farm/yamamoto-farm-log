@@ -1,33 +1,40 @@
-// seedList-modal.js（annual-step2 と同じ品種選択UIに統一）
+// seedList-modal.js（filter-variety.js の新APIに対応）
 
 import { openVarietyModal } from "/common/filter/filter-variety.js";
 
 /* ===============================
-   モーダル共通：背景生成
+   品種選択モーダル（annual-step2 と同じUI）
 =============================== */
-function createModalBase() {
-  const modal = document.createElement("div");
-  modal.className = "modal-bg";
-  return modal;
-}
-
 /* ===============================
-   ★ 新：品種選択モーダル（annual-step2 と同じ）
+   品種選択モーダル（カテゴリ対応）
 =============================== */
-export function openVarietySelectModal(onSelect) {
+export async function openVarietySelectModal(onSelect) {
+  // ▼ varieties.json を読み込む
+  const list = await fetch("/data/varieties.json").then(r => r.json());
+
+  // ▼ 親カテゴリ一覧（type）を抽出
+  const parents = [...new Set(list.map(v => v.type))];
+
+  // ▼ seedList では初期選択なし
+  const selected = [];
+
+  // ▼ filter-variety.js の新APIに完全対応
   openVarietyModal({
     mode: "select",
+    parents,
+    selected,
     onSelect: (name) => {
+      // ★ harvestMonth は seedList では使わない
       onSelect({ name });
     }
   });
 }
-
 /* ===============================
    トレイ選択モーダル（既存）
 =============================== */
 export function openTrayTypeSelectModal(onSelect) {
-  const modal = createModalBase();
+  const modal = document.createElement("div");
+  modal.className = "modal-bg";
 
   modal.innerHTML = `
     <div class="modal-content">
@@ -58,7 +65,8 @@ export function openTrayTypeSelectModal(onSelect) {
    株間・畝間モーダル（既存）
 =============================== */
 export function openSpacingModal(row, onSelect) {
-  const modal = createModalBase();
+  const modal = document.createElement("div");
+  modal.className = "modal-bg";
 
   modal.innerHTML = `
     <div class="modal-content">
