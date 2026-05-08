@@ -6,7 +6,8 @@ import { loadJSON } from "/common/json.js";
 import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
 import { renderSeedList } from "./seed/index.js";
 import { renderPlantingList } from "./plantingList.js";
-import { setFilterData } from "/common/filter.js";
+import { setFilterData } from "/common/filter/filter-core.js";
+
 
 import {
   loadSeedListFromCSV,
