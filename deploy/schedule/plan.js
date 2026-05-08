@@ -20,6 +20,37 @@ let currentMode = "seed";
 let selectedYear = null;
 
 /* ============================================================
+   seedList 用：品種フィルタデータ初期化
+   （annual.js と同等の varieties.parents / children をセット）
+============================================================ */
+async function initSeedListFilter() {
+  try {
+    const varieties = await loadJSON("/data/varieties.json");
+
+    const typeMap = {};
+    const typeOrder = [];
+
+    varieties.forEach(v => {
+      if (!typeMap[v.type]) {
+        typeMap[v.type] = [];
+        typeOrder.push(v.type);
+      }
+      typeMap[v.type].push(v.name);
+    });
+
+    // seedList では fields / years / months は使わないので空で渡す
+    setFilterData({
+      years: [],
+      months: {},
+      fields: { parents: [], children: {} },
+      varieties: { parents: typeOrder, children: typeMap }
+    });
+  } catch (e) {
+    console.error("[seedList] フィルタ用 varieties データ初期化失敗:", e);
+  }
+}
+
+/* ============================================================
    年度選択 → annual.json 読み込み → seedList 初期行生成
    ＋ 年度ごと CSV があれば CSV を優先ロード
 ============================================================ */
@@ -63,7 +94,10 @@ export function initAnnualLinkage() {
 /* ============================================================
    モード切り替え
 ============================================================ */
-export function initListPage() {
+export async function initListPage() {
+  // ★ seedList 用の品種フィルタデータを先に初期化
+  await initSeedListFilter();
+
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");
   currentMode = (modeParam === "planting") ? "planting" : "seed";

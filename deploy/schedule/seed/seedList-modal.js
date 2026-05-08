@@ -5,23 +5,14 @@ import { openVarietyModal } from "/common/filter/filter-variety.js";
 /* ===============================
    品種選択モーダル（カテゴリ対応）
 =============================== */
-export async function openVarietySelectModal(onSelect) {
-  // ▼ varieties.json を読み込む
-  const list = await fetch("/data/varieties.json").then(r => r.json());
+export function openVarietySelectModal(onSelect) {
 
-  // ▼ 親カテゴリ一覧（type）を抽出
-  const parents = [...new Set(list.map(v => v.type))];
+  // ★ filter-core.js に varieties.parents / children が
+  //    plan.js の initSeedListFilter() でセットされている前提
 
-  // ▼ seedList では初期選択なし
-  const selected = [];
-
-  // ▼ filter-variety.js の新APIに完全対応
   openVarietyModal({
     mode: "select",
-    parents,     // ← 必須
-    selected,    // ← 必須
     onSelect: (name) => {
-      // ★ harvestMonth は seedList では使わない
       onSelect({ name });
     }
   });
