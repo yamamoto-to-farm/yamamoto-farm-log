@@ -19,40 +19,73 @@
 =============================== */
 
 #table-area .schedule-table th:nth-child(1),
-#table-area .schedule-table td:nth-child(1) { width: 130px; white-space: nowrap; }
+#table-area .schedule-table td:nth-child(1) {
+  width: 130px;
+  white-space: nowrap;
+}
 
 #table-area .schedule-table th:nth-child(2),
-#table-area .schedule-table td:nth-child(2) { width: 160px; }
+#table-area .schedule-table td:nth-child(2) {
+  width: 160px;
+}
 
 #table-area .schedule-table th:nth-child(3),
-#table-area .schedule-table td:nth-child(3) { width: 80px; text-align: right; }
+#table-area .schedule-table td:nth-child(3) {
+  width: 80px;
+  text-align: right;
+}
 
 #table-area .schedule-table th:nth-child(4),
-#table-area .schedule-table td:nth-child(4) { width: 70px; text-align: center; }
+#table-area .schedule-table td:nth-child(4) {
+  width: 70px;
+  text-align: center;
+}
 
 #table-area .schedule-table th:nth-child(5),
-#table-area .schedule-table td:nth-child(5) { width: 110px; text-align: right; }
+#table-area .schedule-table td:nth-child(5) {
+  width: 110px;
+  text-align: right;
+}
 
 #table-area .schedule-table th:nth-child(6),
-#table-area .schedule-table td:nth-child(6) { width: 110px; text-align: right; }
+#table-area .schedule-table td:nth-child(6) {
+  width: 110px;
+  text-align: right;
+}
 
 #table-area .schedule-table th:nth-child(7),
-#table-area .schedule-table td:nth-child(7) { width: 70px; text-align: right; }
+#table-area .schedule-table td:nth-child(7) {
+  width: 70px;
+  text-align: right;
+}
 
 #table-area .schedule-table th:nth-child(8),
-#table-area .schedule-table td:nth-child(8) { width: 130px; white-space: nowrap; }
+#table-area .schedule-table td:nth-child(8) {
+  width: 130px;
+  white-space: nowrap;
+}
 
 #table-area .schedule-table th:nth-child(9),
-#table-area .schedule-table td:nth-child(9) { width: 120px; white-space: nowrap; }
+#table-area .schedule-table td:nth-child(9) {
+  width: 120px;
+  white-space: nowrap;
+}
 
 #table-area .schedule-table th:nth-child(10),
-#table-area .schedule-table td:nth-child(10) { width: 80px; text-align: center; }
+#table-area .schedule-table td:nth-child(10) {
+  width: 80px;
+  text-align: center;
+}
 
 #table-area .schedule-table th:nth-child(11),
-#table-area .schedule-table td:nth-child(11) { width: 140px; }
+#table-area .schedule-table td:nth-child(11) {
+  width: 140px;
+}
 
 #table-area .schedule-table th:nth-child(12),
-#table-area .schedule-table td:nth-child(12) { width: 240px; }
+#table-area .schedule-table td:nth-child(12) {
+  width: 240px;
+}
 
 /* ===============================
    クリック可能セル
@@ -104,7 +137,7 @@
 .seed-modal-bg {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -162,19 +195,22 @@
 /* ===============================
    印刷（播種計画ページ専用）
 =============================== */
+/* ===============================
+   印刷（播種モード専用）
+=============================== */
 @media print {
 
-  /* ▼ 画面UIは全部非表示 */
-  .app-header,
+  /* ▼ 画面UIカードは全部非表示 */
   #mode-switch-card,
   #filter-card,
   #activeFilters,
-  #modal-container,
-  #addRowBtn,
-  #saveCsvBtn,
+  .app-header,
+  .app-footer,
+  .button-area,
+  button,
   .delete-row,
-  .tray-type-cell button,
-  .variety-cell button {
+  #addRowBtn,
+  #saveCsvBtn {
     display: none !important;
   }
 
@@ -183,6 +219,10 @@
     display: block !important;
     margin-bottom: 12px;
     font-size: 13pt;
+  }
+
+  #table-area {
+    display: block !important;
   }
 
   #table-area table {
@@ -198,7 +238,7 @@
     padding: 4px 6px;
   }
 
-  /* ▼ 入力欄は印刷時は文字だけにする */
+  /* ▼ 入力欄は文字だけ印刷 */
   input {
     border: none !important;
     background: transparent !important;
@@ -217,4 +257,3 @@
     margin: 12mm;
   }
 }
-
