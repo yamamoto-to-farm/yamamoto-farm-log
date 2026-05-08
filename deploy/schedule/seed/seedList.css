@@ -250,20 +250,24 @@
     word-break: break-all !important;
   }
 
-  /* ▼ 印刷時だけ右揃えにする列（!important で強制上書き） */
-  #table-area th:nth-child(1),
-  #table-area td:nth-child(1),   /* 播種予定日 */
-  #table-area th:nth-child(3),
-  #table-area td:nth-child(3),   /* 枚数 */
-  #table-area th:nth-child(5),
-  #table-area td:nth-child(5),   /* 計画面積 */
-  #table-area th:nth-child(6),
-  #table-area td:nth-child(6),   /* 計算面積 */
-  #table-area th:nth-child(7),
-  #table-area td:nth-child(7),   /* 日数 */
-  #table-area th:nth-child(8),
-  #table-area td:nth-child(8) {  /* 定植予定日 */
+  /* ===============================
+     印刷時だけ右揃え（最強版）
+     Chrome の table-cell を完全に無効化
+  ================================ */
+  #table-area table th:nth-child(1),
+  #table-area table td:nth-child(1),
+  #table-area table th:nth-child(3),
+  #table-area table td:nth-child(3),
+  #table-area table th:nth-child(5),
+  #table-area table td:nth-child(5),
+  #table-area table th:nth-child(6),
+  #table-area table td:nth-child(6),
+  #table-area table th:nth-child(7),
+  #table-area table td:nth-child(7),
+  #table-area table th:nth-child(8),
+  #table-area table td:nth-child(8) {
     text-align: right !important;
+    display: block !important;
   }
 
   /* ▼ 入力欄は文字だけ印刷 */
