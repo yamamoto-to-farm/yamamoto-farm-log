@@ -250,24 +250,20 @@
     word-break: break-all !important;
   }
 
-  /* ===============================
-     印刷時だけ右揃え（最強版）
-     Chrome の table-cell を完全に無効化
-  ================================ */
-  #table-area table th:nth-child(1),
-  #table-area table td:nth-child(1),
-  #table-area table th:nth-child(3),
-  #table-area table td:nth-child(3),
-  #table-area table th:nth-child(5),
-  #table-area table td:nth-child(5),
-  #table-area table th:nth-child(6),
-  #table-area table td:nth-child(6),
-  #table-area table th:nth-child(7),
-  #table-area table td:nth-child(7),
-  #table-area table th:nth-child(8),
-  #table-area table td:nth-child(8) {
+  /* ▼ 印刷時だけ右揃え（表が崩れない版） */
+  #table-area th:nth-child(1),
+  #table-area td:nth-child(1),
+  #table-area th:nth-child(3),
+  #table-area td:nth-child(3),
+  #table-area th:nth-child(5),
+  #table-area td:nth-child(5),
+  #table-area th:nth-child(6),
+  #table-area td:nth-child(6),
+  #table-area th:nth-child(7),
+  #table-area td:nth-child(7),
+  #table-area th:nth-child(8),
+  #table-area td:nth-child(8) {
     text-align: right !important;
-    display: block !important;
   }
 
   /* ▼ 入力欄は文字だけ印刷 */
