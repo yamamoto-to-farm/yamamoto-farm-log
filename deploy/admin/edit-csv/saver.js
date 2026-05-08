@@ -10,6 +10,8 @@ import { updateSaveModal } from "../../common/save-modal.js";
 --------------------------------------------------------- */
 function isDebug() {
   return localStorage.getItem("debugEditCsv") === "1";
+  // localStorage.setItem("debugEditCsv", "1");  // ON
+  // localStorage.removeItem("debugEditCsv");    // OFF
 }
 
 function dbg(...args) {
@@ -72,10 +74,17 @@ export async function saveCsvFile(csvType, csvFile) {
   dbg("=== FINAL CSV TEXT (Papa.unparse) ===\n" + csvText);
 
   // ==========================================================
-  // ★ 4. すべての CSV を saveLog → S3 保存（特別分岐なし）
+  // ★ 4. saveLog → S3 保存（後方互換100%）
   // ==========================================================
   try {
-    await saveLog(csvType, "all", {}, "", csvText, "csv-replace");
+    await saveLog(
+      csvType,     // 例: "seed"
+      "all",       // dateStr（互換用）
+      null,        // ★ JSON 保存しない（重要）
+      "",          // append なし
+      csvText,     // replaceCsv（CSV 本体）
+      "all.csv"    // ★ 正しいファイル名（csv-replace ではない）
+    );
 
     // CloudFront の URL（loader.js と統一）
     const url = `https://d3sscxnlo0qnhe.cloudfront.net/logs/${csvType}/${csvFile}`;
