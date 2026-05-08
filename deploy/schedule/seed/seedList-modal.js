@@ -1,4 +1,6 @@
-// seedList-modal.js
+// seedList-modal.js（annual-step2 と同じ品種選択UIに統一）
+
+import { openVarietyModal } from "/common/filter/filter-variety.js";
 
 /* ===============================
    モーダル共通：背景生成
@@ -10,46 +12,19 @@ function createModalBase() {
 }
 
 /* ===============================
-   品種選択モーダル
+   ★ 新：品種選択モーダル（annual-step2 と同じ）
 =============================== */
 export function openVarietySelectModal(onSelect) {
-  const modal = createModalBase();
-
-  modal.innerHTML = `
-    <div class="modal-content">
-      <h2>品種を選択</h2>
-      <div id="varietyList" class="modal-list"></div>
-      <button id="closeVarietyModal" class="secondary-btn" style="margin-top:12px;">閉じる</button>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  // 品種データ読み込み
-  fetch("/data/varieties.json")
-    .then(res => res.json())
-    .then(list => {
-      const area = modal.querySelector("#varietyList");
-      area.innerHTML = list
-        .map(v => `<div class="modal-item" data-name="${v.name}">${v.name}</div>`)
-        .join("");
-
-      area.querySelectorAll(".modal-item").forEach(item => {
-        item.addEventListener("click", () => {
-          const name = item.dataset.name;
-          onSelect({ name });
-          modal.remove();
-        });
-      });
-    });
-
-  modal.querySelector("#closeVarietyModal").addEventListener("click", () => {
-    modal.remove();
+  openVarietyModal({
+    mode: "select",
+    onSelect: (name) => {
+      onSelect({ name });
+    }
   });
 }
 
 /* ===============================
-   トレイ選択モーダル
+   トレイ選択モーダル（既存）
 =============================== */
 export function openTrayTypeSelectModal(onSelect) {
   const modal = createModalBase();
@@ -80,7 +55,7 @@ export function openTrayTypeSelectModal(onSelect) {
 }
 
 /* ===============================
-   株間・畝間モーダル（★ 新規追加）
+   株間・畝間モーダル（既存）
 =============================== */
 export function openSpacingModal(row, onSelect) {
   const modal = createModalBase();
