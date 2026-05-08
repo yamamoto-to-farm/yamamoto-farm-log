@@ -160,29 +160,61 @@
 }
 
 /* ===============================
-   印刷用
+   印刷（播種計画ページ専用）
 =============================== */
-
 @media print {
 
+  /* ▼ 画面UIは全部非表示 */
   .app-header,
   #mode-switch-card,
   #filter-card,
   #activeFilters,
-  #modal-container {
+  #modal-container,
+  #addRowBtn,
+  #saveCsvBtn,
+  .delete-row,
+  .tray-type-cell button,
+  .variety-cell button {
     display: none !important;
   }
 
-  .schedule-table {
-    table-layout: fixed;
-    width: 100%;
-    font-size: 12pt;
+  /* ▼ summary と表だけ印刷 */
+  #summaryArea {
+    display: block !important;
+    margin-bottom: 12px;
+    font-size: 13pt;
   }
 
-  .schedule-table input {
-    border: none;
-    background: transparent;
-    padding: 0;
+  #table-area table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 12pt;
+    table-layout: fixed;
+  }
+
+  #table-area th,
+  #table-area td {
+    border: 1px solid #999;
+    padding: 4px 6px;
+  }
+
+  /* ▼ 入力欄は印刷時は文字だけにする */
+  input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    font-size: 12pt !important;
+  }
+
+  /* ▼ 削除列は完全に消す */
+  #table-area th:last-child,
+  #table-area td:last-child {
+    display: none !important;
+  }
+
+  /* ▼ ページ余白 */
+  @page {
+    margin: 12mm;
   }
 }
+
