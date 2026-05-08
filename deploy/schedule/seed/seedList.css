@@ -98,15 +98,12 @@
 }
 
 /* ===============================
-   モーダル
+   seedList 専用モーダル（衝突回避）
 =============================== */
 
-.modal-bg {
+.seed-modal-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0,0,0,0.4);
   display: flex;
   justify-content: center;
@@ -114,24 +111,24 @@
   z-index: 2000;
 }
 
-.modal-content {
+.seed-modal-content {
   background: #fff;
   padding: 20px;
   width: 320px;
   border-radius: 8px;
 }
 
-.modal-item {
+.seed-modal-item {
   padding: 8px;
   border-bottom: 1px solid #ddd;
   cursor: pointer;
 }
 
-.modal-item:hover {
+.seed-modal-item:hover {
   background: #eef7ff;
 }
 
-.modal-input {
+.seed-modal-input {
   width: 100%;
   padding: 6px;
   margin-bottom: 12px;
