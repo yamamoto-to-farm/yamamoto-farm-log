@@ -113,13 +113,12 @@ export async function saveSeedList() {
     dbg("calling saveLog replace…");
 
     await saveLog(
-      "schedule/seed",     // ★ 保存フォルダ
+      "schedule/seed",     // 保存フォルダ
       `${year}`,           // dateStr（互換用）
       {},                  // JSON なし
       "",                  // append なし
-      csv,                 // replaceCsv
-      "csv-replace",       // ★ 明示的に置換
-      `${year}.csv`        // ★ 新規追加：保存ファイル名
+      csv,                 // replaceCsv（CSV 本体）
+      `${year}.csv`        // ★ 正しい fileName
     );
 
     dbg("saveLog completed");
