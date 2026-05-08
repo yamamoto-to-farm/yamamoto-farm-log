@@ -45,6 +45,7 @@ async function initSeedListFilter() {
       fields: { parents: [], children: {} },
       varieties: { parents: typeOrder, children: typeMap }
     });
+
   } catch (e) {
     console.error("[seedList] フィルタ用 varieties データ初期化失敗:", e);
   }
@@ -95,7 +96,8 @@ export function initAnnualLinkage() {
    モード切り替え
 ============================================================ */
 export async function initListPage() {
-  // ★ seedList 用の品種フィルタデータを先に初期化
+
+  // ★ 最重要：filter-core.js に varieties データをセット
   await initSeedListFilter();
 
   const params = new URLSearchParams(location.search);

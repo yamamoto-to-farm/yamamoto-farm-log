@@ -132,7 +132,9 @@
       document.getElementById("page-area").style.display = "block";
 
       initAnnualLinkage();
-      initListPage();
+
+      // ★★★ 最重要：initListPage() を await する ★★★
+      await initListPage();
     });
   </script>
 
