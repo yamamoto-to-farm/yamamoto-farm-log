@@ -1,6 +1,6 @@
 // seedList-load.js
 // 播種計画の読み込み（CSV / JSON）
-// 年度ごと CSV：logs/schedule-seed/{year}.csv
+// 年度ごと CSV：logs/schedule/seed/{year}.csv
 // annual.json：logs/schedule/annual/annual.json
 
 import { getRows, makeEmptyRow, setSeedRowsFromAnnual } from "./seedList-state.js";
@@ -44,59 +44,51 @@ function showSeedListMessage(msg) {
 }
 
 /* ============================================================
-   CSV パース
+   CSV パース（PapaParse 版）
 ============================================================ */
 function parseSeedListCsv(csvText) {
   log("parseSeedListCsv: start");
 
-  const lines = csvText.trim().split(/\r?\n/);
-  if (lines.length <= 1) {
-    log("parseSeedListCsv: no data");
+  const parsed = Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+  });
+
+  if (!parsed.data || parsed.data.length === 0) {
+    log("parseSeedListCsv: no rows");
     return [];
   }
 
-  const header = lines[0].split(",");
-  log("CSV header:", header);
-
-  const rows = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    const cols = line.split(",");
+  const rows = parsed.data.map(src => {
     const row = makeEmptyRow();
 
-    const get = name => {
-      const idx = header.indexOf(name);
-      return idx === -1 ? "" : (cols[idx] ?? "");
-    };
+    row.planSowDate   = src.sowDate || "";
+    row.variety       = src.variety || "";
 
-    row.planSowDate   = get("sowDate");
-    row.variety       = get("variety");
-    row.trayCountRaw  = get("trayCount");
+    row.trayCountRaw  = src.trayCount || "";
     row.trayCount     = Number(row.trayCountRaw) || 0;
-    row.trayType      = get("trayType");
+    row.trayType      = src.trayType || "";
 
-    row.spacingRow    = Number(get("spacingRow")) || 34;
-    row.spacingBed    = Number(get("spacingBed")) || 60;
+    row.spacingRow    = Number(src.spacingRow || 34);
+    row.spacingBed    = Number(src.spacingBed || 60);
 
-    row.planAreaPlan  = get("planAreaPlan");
-    row.planAreaCalc  = get("planAreaCalc");
+    row.planAreaPlan  = src.planAreaPlan || "";
+    row.planAreaCalc  = src.planAreaCalc || "";
 
-    row.daysToPlantRaw = get("daysToPlant");
+    row.daysToPlantRaw = src.daysToPlant || "";
     row.daysToPlant    = Number(row.daysToPlantRaw) || 0;
-    row.planPlantDate  = get("planPlantDate");
 
-    row.harvestMonth   = get("harvestMonth");
-    row.harvestPlanYM  = get("harvestPlanYM");
-    row.harvestWeek    = get("harvestWeek");
+    row.planPlantDate  = src.planPlantDate || "";
 
-    row.source         = get("source");
-    row.memo           = get("memo");
+    row.harvestMonth   = src.harvestMonth || "";
+    row.harvestPlanYM  = src.harvestPlanYM || "";
+    row.harvestWeek    = src.harvestWeek || "";
 
-    rows.push(row);
-  }
+    row.source         = src.source || "";
+    row.memo           = src.memo || "";
+
+    return row;
+  });
 
   log("parseSeedListCsv: parsed rows =", rows.length);
   return rows;
@@ -160,9 +152,6 @@ export async function loadSeedListFromJSON(year) {
       return;
     }
 
-    /* ------------------------------
-       annual.json の構造を自動判定
-    ------------------------------ */
     let step2rows = [];
 
     if (Array.isArray(yearBlock.seedList)) {
@@ -196,13 +185,11 @@ export async function loadSeedListFromJSON(year) {
 
 /* ============================================================
    初期ロード：CSV 優先 → JSON
-   読み込み元をメッセージ表示
 ============================================================ */
 export async function initSeedList() {
   const year = getCurrentYear();
   log("initSeedList: year =", year);
 
-  // ▼ CSV 読み込み
   const ok = await loadSeedListFromCSV(year);
   if (ok) {
     showSeedListMessage(`📄 CSV（${year}.csv）を読み込みました`);
@@ -210,10 +197,8 @@ export async function initSeedList() {
     return;
   }
 
-  // ▼ JSON フォールバック
   await loadSeedListFromJSON(year);
 
-  // JSON 読み込み後に rows が空かどうか確認
   const rows = getRows();
   if (rows.length > 0) {
     showSeedListMessage(`📘 annual.json（${year}）から読み込みました`);
@@ -221,8 +206,6 @@ export async function initSeedList() {
   } else {
     showSeedListMessage(`⚠ ${year} のデータがありません（CSV も JSON も空）`);
     log("initSeedList: no data in CSV or JSON");
-
-    // ★ rows が空でもテーブルをクリアしておく
     renderTable();
   }
 
