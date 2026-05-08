@@ -250,7 +250,7 @@
     word-break: break-all !important;
   }
 
-  /* ▼ 印刷時だけ右揃えにする列 */
+  /* ▼ 印刷時だけ右揃えにする列（!important で強制上書き） */
   #table-area th:nth-child(1),
   #table-area td:nth-child(1),   /* 播種予定日 */
   #table-area th:nth-child(3),
