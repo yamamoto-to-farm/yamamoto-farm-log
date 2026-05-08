@@ -287,7 +287,7 @@ function attachEvents() {
 }
 
 /* ===============================
-   育苗ハウス容量チェック
+   育苗ハウス容量チェック（最大同時在庫方式）
 =============================== */
 function checkCapacity() {
   const rows = getRows();
@@ -313,16 +313,22 @@ function checkCapacity() {
     }
   });
 
+  // 日付順に並べる
   events.sort((a, b) => a.date.localeCompare(b.date));
 
   let stock = 0;
+  let maxStock = 0;
   const timeline = [];
 
   for (const ev of events) {
     stock += ev.delta;
+    if (stock > maxStock) maxStock = stock;
     timeline.push({ date: ev.date, stock });
   }
 
+  /* ===============================
+     行ごとの over-capacity 判定
+  ================================ */
   document.querySelectorAll("tr[data-index]").forEach(tr => {
     const idx = Number(tr.dataset.index);
     const r = rows[idx];
@@ -347,31 +353,34 @@ function checkCapacity() {
       cell.classList.add("over-capacity");
     }
   });
+
+  // ★ summary 表示を checkCapacity の結果で更新
+  updateSummary(maxStock);
 }
 
 
 /* ===============================
-   summary 表示
+   summary 表示（最大同時在庫方式に統一）
 =============================== */
-function updateSummary() {
+function updateSummary(maxStock) {
   const rows = getRows();
   const capacity = Number(document.getElementById("nurseryCapacity").value) || 0;
 
-  const totalTrays = rows.reduce((sum, r) => sum + (r.trayCount || 0), 0);
+  // 面積は従来通り合計
   const totalArea = rows.reduce((sum, r) => sum + (Number(r.planAreaCalc) || 0), 0);
 
-  const remain = capacity - totalTrays;
+  const diff = capacity - maxStock;
 
   let statusHtml = "";
 
-  if (remain >= 0) {
-    statusHtml = `<span style="color:green; font-weight:bold;">OK（残り ${remain} 枚）</span>`;
+  if (diff >= 0) {
+    statusHtml = `<span style="color:green; font-weight:bold;">OK（残り ${diff} 枚）</span>`;
   } else {
-    statusHtml = `<span style="color:red; font-weight:bold;">⚠ 容量オーバー（不足 ${Math.abs(remain)} 枚）</span>`;
+    statusHtml = `<span style="color:red; font-weight:bold;">⚠ 容量オーバー（不足 ${Math.abs(diff)} 枚）</span>`;
   }
 
   document.getElementById("summaryArea").innerHTML = `
-    <div>総トレイ枚数：${totalTrays} 枚</div>
+    <div>最大同時トレイ数：${maxStock} 枚</div>
     <div>総予定面積：${totalArea.toFixed(2)} 反</div>
     <div>育苗ハウス容量：${capacity} 枚</div>
     <div style="margin-top:6px;">${statusHtml}</div>
