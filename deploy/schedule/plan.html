@@ -113,12 +113,13 @@
     </div>
   </div>
 
-  <!-- ★★★ ここに PapaParse を追加（重要） ★★★ -->
+  <!-- ★★★ PapaParse ★★★ -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- seedList ロジック -->
-  <script type="module" src="./plan.js"></script>
+  <!-- ★★★ plan.js はここでは読み込まない（2 重ロード防止） ★★★ -->
+  <!-- <script type="module" src="./plan.js"></script>  ← 削除 -->
 
+  <!-- ★★★ 正しい読み込み方法 ★★★ -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -133,7 +134,7 @@
 
       initAnnualLinkage();
 
-      // ★★★ 最重要：initListPage() を await する ★★★
+      // ★★★ 最重要：filter-core 初期化が完了するまで待つ ★★★
       await initListPage();
     });
   </script>
