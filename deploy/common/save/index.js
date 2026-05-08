@@ -13,8 +13,6 @@ const APPEND_URL =
 
 /* ---------------------------------------------------------
    デバッグ切り替え（localStorage）
-   localStorage.setItem("debugSaveLog", "1") → ON
-   localStorage.removeItem("debugSaveLog") → OFF
 --------------------------------------------------------- */
 function isDebug() {
   return localStorage.getItem("debugSaveLog") === "1";
@@ -26,13 +24,15 @@ function dbg(...args) {
 
 /* ---------------------------------------------------------
    saveLog（append / multi / json / replaceCsv）
+   ★ fileName を追加（後方互換100%）
 --------------------------------------------------------- */
 export async function saveLog(
   payloadOrType,
   dateStr,
   jsonData,
   csvLine,
-  replaceCsv = ""
+  replaceCsv = "",
+  fileName = null   // ← ★ 新規追加（指定がなければ null）
 ) {
   let payload;
 
@@ -44,14 +44,14 @@ export async function saveLog(
       dateStr,
       json: jsonData,
       csv: csvLine,
-      replaceCsv
+      replaceCsv,
+      fileName   // ← ★ 追加
     };
   }
 
   dbg("=== saveLog START ===");
   dbg("payload:", payload);
 
-  // 保存開始モーダル
   showSaveModal("保存しています…");
 
   return saveToS3(payload);
@@ -126,7 +126,11 @@ async function saveToS3(payload) {
 
     // CSV 全書き換え
     if (payload.replaceCsv !== "") {
-      const key = `logs/${payload.type}/all.csv`;
+      // ★ fileName が指定されていればそれを使う
+      // ★ 指定されていなければ all.csv（後方互換）
+      const fileName = payload.fileName || "all.csv";
+
+      const key = `logs/${payload.type}/${fileName}`;
       dbg("CSV file:", key);
 
       files.push({
