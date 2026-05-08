@@ -1,14 +1,107 @@
 /* ===============================
+   定植一覧専用 CSS
+=============================== */
+
+/* ▼ 定植日列 */
+#table-area table th:nth-child(1),
+#table-area table td:nth-child(1) {
+  width: 130px;
+  white-space: nowrap;
+  text-align: left !important;
+}
+
+/* ▼ 定植日セル（クリック可能） */
+.plant-date-cell {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.plant-date-cell:hover {
+  background: #eef7ff;
+}
+
+/* ===============================
+   操作列（破棄）
+=============================== */
+
+#table-area table th:last-child,
+#table-area table td:last-child {
+  width: 60px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.discard-btn {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* ===============================
+   モード切り替えボタン
+=============================== */
+
+#mode-switch-card button {
+  background: #e2e8f0;
+  color: #333;
+  border: 1px solid #cbd5e0;
+}
+
+#mode-switch-card button.active {
+  background: #2f855a !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* ===============================
+   plantList 専用モーダル（衝突回避）
+=============================== */
+
+.plant-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.plant-modal-content {
+  background: #fff;
+  padding: 20px;
+  width: 320px;
+  border-radius: 8px;
+}
+
+.plant-modal-item {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.plant-modal-item:hover {
+  background: #eef7ff;
+}
+
+.plant-modal-input {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+/* ===============================
    印刷（定植一覧専用）
 =============================== */
+
 @media print {
 
   /* ▼ 画面UIカードは全部非表示 */
   #mode-switch-card,
+  #seedList-controls,
   #filter-card,
   #activeFilters,
   #capacity-card,
-  #summary-card .card-header,
   .app-header,
   .app-footer,
   .button-area,
