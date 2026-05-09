@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
-  <title>圃場マップ</title>
+  <title>圃場マップ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通CSS -->
-  <link rel="stylesheet" href="/common/css/main.css?v=2">
+  <!-- 共通 CSS -->
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <!-- map.css -->
-  <link rel="stylesheet" href="./map.css?v=2">
+  <link rel="stylesheet" href="./map.css?v=1">
 
   <style>
     body { margin: 0; }
@@ -35,35 +37,43 @@
     }
   </style>
 </head>
+
 <body>
 
-  <!-- ★ filter-ui.js が必要とする DOM -->
-  <div id="modal-root"></div>
+  <div id="page-area" style="display:none;">
 
-  <div id="map-container" style="display:none;">
+    <h1 class="page-title">圃場マップ</h1>
+
+    <!-- 圃場選択ボタン -->
     <div id="field-select-container">
       <button id="openFieldSelectBtn" class="primary-btn">
         圃場を選択する
       </button>
     </div>
+
     <div id="map"></div>
+
   </div>
 
+  <!-- ★★★ list.html と同じ ID に統一 ★★★ -->
+  <div id="modal-container"></div>
+
   <script type="module">
-    import { verifyLocalAuth } from "../common/ui.js";
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
     import { initMap } from "./map.js";
 
-    /* ★★★ filter 系はここで import（script src は禁止） ★★★ */
+    /* filter 系は import で読み込む */
     import "/common/filter/filter-core.js";
     import "/common/filter/filter-ui.js";
     import "/common/filter/filter-field.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
-
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      document.getElementById("map-container").style.display = "block";
+      renderHeader();
+      document.getElementById("page-area").style.display = "block";
 
       initMap();
     });
