@@ -14,12 +14,15 @@
   <!-- map.css -->
   <link rel="stylesheet" href="./map.css?v=2">
 
-  <!-- ★ フィルタ関連（initFilterCore は無いので import だけ） -->
+  <!-- ★ フィルタ関連 -->
   <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
 </head>
 <body>
+
+  <!-- ★★★ これが無かったのが原因 ★★★ -->
+  <div id="modal-root"></div>
 
   <div id="map-container" style="display:none;">
     <div id="field-select-container">
@@ -41,7 +44,6 @@
 
       document.getElementById("map-container").style.display = "block";
 
-      // ★ map.js 内で setFilterData() を呼ぶのでこれで十分
       initMap();
     });
   </script>
