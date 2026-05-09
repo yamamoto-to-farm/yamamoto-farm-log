@@ -6,7 +6,8 @@
       "path": "seed/index.html",
       "category": "作業ログ",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/seed.png"
+      "icon": "assets/icons/seed.png",
+      "openLog": true
     },
     {
       "id": "nursery-log",
@@ -14,7 +15,8 @@
       "path": "nursery/index.html",
       "category": "作業ログ",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/nursery.png"
+      "icon": "assets/icons/nursery.png",
+      "openLog": true
     },
     {
       "id": "planting",
@@ -22,7 +24,8 @@
       "path": "planting/index.html",
       "category": "作業ログ",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/planting.png"
+      "icon": "assets/icons/planting.png",
+      "openLog": true
     },
     {
       "id": "cultivation-log",
@@ -30,7 +33,8 @@
       "path": "cultivation/index.html",
       "category": "作業ログ",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/cultivation.png"
+      "icon": "assets/icons/cultivation.png",
+      "openLog": true
     },
     {
       "id": "harvest",
@@ -38,7 +42,8 @@
       "path": "harvest/index.html",
       "category": "作業ログ",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/harvest.png"
+      "icon": "assets/icons/harvest.png",
+      "openLog": true
     },
     {
       "id": "shipping",
@@ -46,7 +51,8 @@
       "path": "shipping/index.html",
       "category": "作業ログ",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/shipping.png"
+      "icon": "assets/icons/shipping.png",
+      "openLog": true
     },
 
     {
@@ -55,7 +61,8 @@
       "path": "diary/index.html",
       "category": "作業日誌・記録一覧",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/diary.png"
+      "icon": "assets/icons/diary.png",
+      "openLog": false
     },
 
     {
@@ -64,7 +71,8 @@
       "path": "list/list.html",
       "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/planting.png"
+      "icon": "assets/icons/planting.png",
+      "openLog": false
     },
 
     {
@@ -73,7 +81,8 @@
       "path": "performance/harvest-kpi.html",
       "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/harvest-kpi.png"
+      "icon": "assets/icons/harvest-kpi.png",
+      "openLog": false
     },
     {
       "id": "shipping-list",
@@ -81,7 +90,8 @@
       "path": "shipping/list.html",
       "category": "作業日誌・記録一覧",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/kpi-month.png"
+      "icon": "assets/icons/kpi-month.png",
+      "openLog": false
     },
 
     {
@@ -90,7 +100,8 @@
       "path": "nursery/house.html",
       "category": "育苗",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/nursery.png"
+      "icon": "assets/icons/nursery.png",
+      "openLog": false
     },
     {
       "id": "nursery-variety",
@@ -98,7 +109,8 @@
       "path": "varieties/index.html",
       "category": "育苗",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/variety.png"
+      "icon": "assets/icons/variety.png",
+      "openLog": false
     },
 
     {
@@ -107,7 +119,8 @@
       "path": "map/index.html",
       "category": "圃場",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/map.png"
+      "icon": "assets/icons/map.png",
+      "openLog": false
     },
     {
       "id": "field-detail",
@@ -115,7 +128,8 @@
       "path": "fields/index.html",
       "category": "圃場",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/analysis.png"
+      "icon": "assets/icons/analysis.png",
+      "openLog": false
     },
 
     {
@@ -124,7 +138,8 @@
       "path": "fields/field-performance.html",
       "category": "分析",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/analysis.png"
+      "icon": "assets/icons/analysis.png",
+      "openLog": false
     },
     {
       "id": "variety-analysis",
@@ -132,7 +147,8 @@
       "path": "fields/variety.html",
       "category": "分析",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/variety.png"
+      "icon": "assets/icons/variety.png",
+      "openLog": false
     },
     {
       "id": "year-compare",
@@ -140,7 +156,8 @@
       "path": "fields/year-compare.html",
       "category": "分析",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/year.png"
+      "icon": "assets/icons/year.png",
+      "openLog": false
     },
 
     {
@@ -149,7 +166,8 @@
       "path": "schedule/annual-list/annual-list.html",
       "category": "計画",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/schedule.png"
+      "icon": "assets/icons/schedule.png",
+      "openLog": false
     },
     {
       "id": "plan",
@@ -157,7 +175,8 @@
       "path": "schedule/plan.html",
       "category": "計画",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/schedule.png"
+      "icon": "assets/icons/schedule.png",
+      "openLog": false
     },
 
     {
@@ -166,7 +185,8 @@
       "path": "admin/index.html",
       "category": "管理",
       "roles": ["admin"],
-      "icon": "assets/icons/admin.png"
+      "icon": "assets/icons/admin.png",
+      "openLog": false
     },
     {
       "id": "edit-json",
@@ -174,7 +194,8 @@
       "path": "edit-json/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
-      "icon": "assets/icons/json.png"
+      "icon": "assets/icons/json.png",
+      "openLog": false
     },
     {
       "id": "edit-csv",
@@ -182,7 +203,8 @@
       "path": "edit-csv/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
-      "icon": "assets/icons/csv.png"
+      "icon": "assets/icons/csv.png",
+      "openLog": false
     },
     {
       "id": "machine-qr",
@@ -190,7 +212,8 @@
       "path": "machine-qr.html",
       "category": "管理/ツール",
       "roles": ["admin"],
-      "icon": "assets/icons/qr.png"
+      "icon": "assets/icons/qr.png",
+      "openLog": false
     },
     {
       "id": "summary-manager",
@@ -198,7 +221,8 @@
       "path": "summary-manager.html",
       "category": "管理/ツール",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/summary.png"
+      "icon": "assets/icons/summary.png",
+      "openLog": false
     },
     {
       "id": "access",
@@ -206,7 +230,8 @@
       "path": "access.html",
       "category": "管理/ツール",
       "roles": ["admin"],
-      "icon": "assets/icons/access.png"
+      "icon": "assets/icons/access.png",
+      "openLog": false
     },
     {
       "id": "roadmap",
@@ -214,7 +239,8 @@
       "path": "roadmap.html",
       "category": "管理/ツール",
       "roles": ["admin"],
-      "icon": "assets/icons/roadmap.png"
+      "icon": "assets/icons/roadmap.png",
+      "openLog": false
     }
   ]
 }

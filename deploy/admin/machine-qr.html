@@ -5,7 +5,12 @@
   <title>QRコード生成 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ★ 共通デザイン -->
+  <!-- キャッシュ対策 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
   <!-- QRコード生成ライブラリ -->
@@ -14,53 +19,77 @@
 
 <body>
 
-  <h1>QRコード生成</h1>
-
-  <!-- ページ選択 -->
-  <div class="form-field">
-    <label>ページを選択</label>
-    <select id="page-select" class="form-input"></select>
+  <!-- ===============================
+       PIN 入力
+  =============================== -->
+  <div id="pin-area">
+    <div>アクセスキーを入力してください</div>
+    <input id="pin-input" type="password" class="pin-input">
+    <button id="pin-submit" class="pin-submit">OK</button>
   </div>
 
-  <!-- 機械選択 -->
-  <div class="form-field">
-    <label>機械を選択（任意）</label>
-    <select id="machine-select" class="form-input">
-      <option value="">（なし）</option>
-    </select>
+  <!-- ===============================
+       ページ本体
+  =============================== -->
+  <div id="page-area" style="display:none;">
+
+    <h1 class="page-title">QRコード生成</h1>
+
+    <!-- ページ選択 -->
+    <div class="form-field">
+      <label>ページを選択</label>
+      <select id="page-select" class="form-input"></select>
+    </div>
+
+    <!-- 機械選択 -->
+    <div class="form-field">
+      <label>機械を選択（任意）</label>
+      <select id="machine-select" class="form-input">
+        <option value="">（なし）</option>
+      </select>
+    </div>
+
+    <!-- 生成ボタン -->
+    <button id="generate-btn" class="primary-btn">QRコード生成</button>
+
+    <!-- QR表示エリア -->
+    <div id="qr-area" class="card" style="text-align:center;">
+      <img id="qr-icon" style="display:none; width:80px; margin-bottom:10px;">
+      <div id="qr-machine" class="info-line" style="font-size:18px; font-weight:600;"></div>
+      <div id="qrcode"></div>
+      <div id="qr-url" class="url-box"></div>
+    </div>
+
   </div>
 
-  <!-- 生成ボタン -->
-  <button id="generate-btn" class="primary-btn">QRコード生成</button>
-
-  <!-- QR表示エリア -->
-  <div id="qr-area" class="card" style="text-align:center;">
-    <img id="qr-icon" style="display:none; width:80px; margin-bottom:10px;">
-    <div id="qr-machine" class="info-line" style="font-size:18px; font-weight:600;"></div>
-    <div id="qrcode"></div>
-    <div id="qr-url" class="url-box"></div>
-  </div>
-
+  <!-- ===============================
+       メインスクリプト
+  =============================== -->
   <script type="module">
+    import { showPinGate } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js?v=1";
+
     async function loadJSON(path) {
       const res = await fetch(path);
       if (!res.ok) throw new Error(`Failed to load ${path}`);
       return await res.json();
     }
 
-    async function init() {
+    async function initPage() {
       const pages = (await loadJSON("/data/pages.json")).pages;
       const machines = (await loadJSON("/data/machines.json")).machines;
 
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
 
-      // ページ一覧（管理/ツール含む全て）
+      // ページ一覧
       pages.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.id;              // ← id を使う（seed / planting / harvest）
+        opt.value = p.id;
         opt.textContent = p.name;
         opt.dataset.icon = p.icon || "";
+        opt.dataset.path = p.path || "";
+        opt.dataset.openLog = p.openLog ? "true" : "false";
         pageSel.appendChild(opt);
       });
 
@@ -73,17 +102,32 @@
       });
 
       document.getElementById("generate-btn").onclick = () => {
-        const pageId = pageSel.value;          // ← id を取得
+        const selected = pageSel.selectedOptions[0];
+        const pageId = selected.value;
+        const pagePath = selected.dataset.path;
+        const openLog = selected.dataset.openLog === "true";
         const machineId = machineSel.value;
 
         const siteRoot = "https://d3sscxnlo0qnhe.cloudfront.net/";
 
-        // ★ open-log.html 経由 URL を生成
-        let absUrl = `${siteRoot}?id=${pageId}`;
-        if (machineId) absUrl += `&machine=${machineId}`;
+        let absUrl;
+
+        // ★ ログページだけ open-log.html 経由
+        if (openLog) {
+          absUrl = `${siteRoot}open-log.html?id=${pageId}`;
+          if (machineId) absUrl += `&machine=${machineId}`;
+        } else {
+          absUrl = new URL(pagePath, siteRoot).href;
+
+          if (machineId) {
+            const urlObj = new URL(absUrl);
+            urlObj.searchParams.set("machine", machineId);
+            absUrl = urlObj.href;
+          }
+        }
 
         // アイコン
-        const iconPath = pageSel.selectedOptions[0].dataset.icon;
+        const iconPath = selected.dataset.icon;
         const iconImg = document.getElementById("qr-icon");
         if (iconPath) {
           iconImg.src = new URL(iconPath, siteRoot).href;
@@ -110,14 +154,15 @@
       };
     }
 
-    init().catch(err => {
-      console.error(err);
-      alert("設定ファイルの読み込みに失敗しました");
+    // PIN 認証 → ヘッダー → ページ表示
+    window.addEventListener("DOMContentLoaded", () => {
+      showPinGate("pin-area", async () => {
+        renderHeader();
+        document.getElementById("page-area").style.display = "block";
+        initPage();
+      });
     });
   </script>
 
 </body>
 </html>
-
-
-
