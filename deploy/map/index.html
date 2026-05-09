@@ -14,14 +14,31 @@
   <!-- map.css -->
   <link rel="stylesheet" href="./map.css?v=2">
 
-  <!-- ★ フィルタ関連 -->
-  <script type="module" src="/common/filter/filter-core.js"></script>
-  <script type="module" src="/common/filter/filter-ui.js"></script>
-  <script type="module" src="/common/filter/filter-field.js"></script>
+  <style>
+    body { margin: 0; }
+
+    #field-select-container {
+      padding: 10px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ccc;
+    }
+
+    #fieldSelect {
+      font-size: 20px;
+      padding: 8px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    /* ヘッダー(60) + body padding(80) + 選択リスト(70) */
+    #map {
+      height: calc(100vh - 150px);
+    }
+  </style>
 </head>
 <body>
 
-  <!-- ★★★ これが無かったのが原因 ★★★ -->
+  <!-- ★★★ filter-ui.js が必ず必要とする DOM ★★★ -->
   <div id="modal-root"></div>
 
   <div id="map-container" style="display:none;">
@@ -36,6 +53,11 @@
   <script type="module">
     import { verifyLocalAuth } from "../common/ui.js";
     import { initMap } from "./map.js";
+
+    /* ★ filter 系は script src ではなく import で読み込む */
+    import "/common/filter/filter-core.js";
+    import "/common/filter/filter-ui.js";
+    import "/common/filter/filter-field.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
