@@ -1,3 +1,5 @@
+// map.js
+
 import { openFieldModal } from "../common/filter/filter-field.js";
 import { setFilterData } from "../common/filter/filter-core.js";
 
@@ -47,28 +49,27 @@ export function initMap() {
     .then(fields => {
 
       /* ============================================================
-         ★ フィルタ用データをセット（これが無いとモーダルが壊れる）
+         ★ list.js と同じ：フィルタデータをセット
       ============================================================ */
-      const areaMap = {};
-      const areaOrder = [];
+      const parents = [];
+      const children = {};
 
       fields.forEach(f => {
-        if (!areaMap[f.area]) {
-          areaMap[f.area] = [];
-          areaOrder.push(f.area);
+        if (!children[f.area]) {
+          children[f.area] = [];
+          parents.push(f.area);
         }
-        areaMap[f.area].push(f.name);
+        children[f.area].push(f.name);
       });
 
       setFilterData({
-        years: [],
-        months: {},
-        fields: { parents: areaOrder, children: areaMap },
+        yearMonths: [],
+        fields: { parents, children },
         varieties: { parents: [], children: {} }
       });
 
       /* ============================================================
-         ★ 地図描画（従来通り）
+         ★ 地図描画
       ============================================================ */
       fields.forEach(field => {
 
@@ -126,7 +127,7 @@ export function initMap() {
       });
 
       /* ============================================================
-         ★ 圃場選択モーダル
+         ★ 圃場選択モーダル（list.js と同じ思想）
       ============================================================ */
       const selectBtn = document.getElementById("fieldSelect");
       selectBtn.addEventListener("click", () => {
