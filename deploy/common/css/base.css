@@ -1,0 +1,281 @@
+/* =========================================================
+   base.css
+   OS 全体の共通 UI（レイアウト・フォーム・ボタン・テーブル）
+========================================================= */
+
+/* ------------------------------
+   全体レイアウト
+------------------------------ */
+body {
+    font-family: "Helvetica", "Yu Gothic", "Hiragino Sans", sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 80px 20px 20px;
+    color: #333;
+}
+
+/* ------------------------------
+   ヘッダー
+------------------------------ */
+.app-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background: #fafafa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+}
+
+.app-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #2a4d2f;
+    letter-spacing: 0.5px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+}
+
+.logout-btn {
+    padding: 6px 12px;
+    background: #d9534f;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.logout-btn:hover { background: #c9302c; }
+
+/* ------------------------------
+   ページタイトル
+------------------------------ */
+.page-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 20px 0 16px;
+    color: #2a4d2f;
+    letter-spacing: 0.3px;
+}
+
+/* ------------------------------
+   見出し
+------------------------------ */
+.section-title,
+.menu-section-title,
+.basic-toggle,
+details summary {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 20px 0 12px;
+    color: #333;
+    user-select: none;
+    cursor: pointer;
+}
+
+details[open] {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* ------------------------------
+   カード
+------------------------------ */
+.card,
+.menu-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+}
+
+/* ------------------------------
+   情報ブロック
+------------------------------ */
+.info-line {
+    font-size: 16px;
+    margin: 3px 0;
+    line-height: 1.4;
+}
+
+.info-block { margin: 10px 0; }
+
+.info-block-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* ------------------------------
+   圃場一覧
+------------------------------ */
+.field-group ul {
+    margin: 6px 0 14px 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.field-group li { margin: 4px 0; }
+
+.field-group a {
+    font-size: 16px;
+    color: #2b6cb0;
+    text-decoration: none;
+}
+
+/* ------------------------------
+   アコーディオン
+------------------------------ */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+}
+.menu-grid.open {
+    max-height: 500px;
+    transition: max-height 0.25s ease-in;
+}
+
+/* ------------------------------
+   PIN UI
+------------------------------ */
+#pin-area {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.pin-input,
+.pin-submit {
+    font-size: 18px;
+    padding: 6px 12px;
+    margin-top: 8px;
+}
+
+/* ------------------------------
+   フォーム
+------------------------------ */
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    box-sizing: border-box;
+}
+textarea { resize: vertical; }
+
+.form-field { margin-bottom: 16px; }
+.form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* ------------------------------
+   JSON 編集
+------------------------------ */
+.parcel-header,
+.contract-header,
+.parcel-row,
+.contract-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    font-size: 14px;
+}
+.parcel-header,
+.contract-header { font-weight: bold; margin-bottom: 6px; }
+.parcel-row input,
+.contract-row input { padding: 8px; }
+
+/* ------------------------------
+   ボタン
+------------------------------ */
+.primary-btn,
+.secondary-btn {
+    padding: 12px 18px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: #2f855a;
+    color: #fff;
+    border: none;
+    margin-top: 20px;
+}
+.secondary-btn {
+    background: #e2e8f0;
+    color: #333;
+    border: 1px solid #cbd5e0;
+}
+.primary-btn + .secondary-btn { margin-top: 14px; }
+
+/* ------------------------------
+   モード切り替え
+------------------------------ */
+.mode-btn {
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #e2e8f0;
+  color: #333;
+  border: 1px solid #cbd5e0;
+  margin-right: 8px;
+}
+
+.mode-btn.active {
+  background: #2f855a !important;
+  color: #fff !important;
+  border-color: #276749 !important;
+}
+
+/* ------------------------------
+   テーブル
+------------------------------ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+}
+th { background: #f0f0f0; text-align: center; }
+td { text-align: right; }
+
+tbody tr:nth-child(odd) { background: #fafafa; }
+
+/* ------------------------------
+   スマホ最適化
+------------------------------ */
+@media (max-width: 600px) {
+    body { padding: 70px 14px 14px; }
+    h2.menu-section-title { font-size: 18px; }
+    table { overflow-x: auto; white-space: nowrap; display: block; }
+    th, td { font-size: 13px; padding: 6px 8px; }
+}
