@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>施肥ログ（試験）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <h1>施肥ログ（試験）</h1>
+
+  <label>日付：</label>
+  <input type="date" id="date"><br><br>
+
+  <label>圃場（複数選択可）：</label><br>
+  <select id="fields" multiple size="5" style="width:200px;">
+    <option value="ぎょうざ東1">ぎょうざ東1</option>
+    <option value="ぎょうざ東2">ぎょうざ東2</option>
+    <option value="ぎょうざ西1">ぎょうざ西1</option>
+  </select>
+  <br><br>
+
+  <label>肥料名：</label>
+  <input type="text" id="fertilizer_id" placeholder="硫安"><br><br>
+
+  <label>袋数：</label>
+  <input type="number" id="bags" value="1"><br><br>
+
+  <label>量（kg）：</label>
+  <input type="number" id="amount" value="20"><br><br>
+
+  <label>機械：</label>
+  <input type="text" id="machine" value="YT5113"><br><br>
+
+  <label>作業者：</label>
+  <input type="text" id="worker" value="直輝"><br><br>
+
+  <label>備考：</label><br>
+  <textarea id="notes" rows="3" cols="30"></textarea><br><br>
+
+  <button id="save-btn">保存</button>
+
+  <script type="module" src="./fertilizer.js?v=1"></script>
+</body>
+</html>
