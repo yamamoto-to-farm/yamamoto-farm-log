@@ -1,0 +1,136 @@
+/* =========================================================
+   components.css
+   共通 UI コンポーネント（modal / filter / select-item など）
+========================================================= */
+
+/* ------------------------------
+   activeFilters（フィルタタグ）
+------------------------------ */
+#activeFilters {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-tag {
+  background: #e8f2ff;
+  border: 1px solid #4da3ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.filter-tag-remove {
+  cursor: pointer;
+  font-weight: bold;
+  color: #4da3ff;
+}
+
+.filter-reset-btn {
+  margin-left: 10px;
+  padding: 4px 10px;
+  background: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+/* ------------------------------
+   select-item（選択 UI）
+------------------------------ */
+.select-item {
+  display: inline-block;
+  padding: 8px 14px;
+  margin: 6px;
+  border-radius: 6px;
+  background: #f2f2f2;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.select-item:hover {
+  background: #e3e3e3;
+}
+
+.select-item.selected {
+  background: #4da3ff;
+  color: white;
+  font-weight: bold;
+}
+
+/* ------------------------------
+   filter（子要素開閉）
+------------------------------ */
+.filter-children {
+  display: none;
+  padding: 8px 0 0 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.filter-block.open .filter-children {
+  display: flex;
+}
+
+/* ------------------------------
+   modal（モーダル）
+------------------------------ */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  position: relative;
+  animation: modalFadeIn 0.15s ease-out;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .modal {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 22px;
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+.modal-footer {
+  margin-top: 20px;
+  text-align: center;
+}
