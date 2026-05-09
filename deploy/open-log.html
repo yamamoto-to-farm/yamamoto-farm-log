@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>作業ページを開く</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: sans-serif;
@@ -44,7 +45,7 @@
       throw new Error("id is required");
     }
 
-    // id → 実際のログページのパス（/logs は使わない）
+    // ★ ログページ専用マッピング
     const idToPath = {
       "seed": "/seed/index.html",
       "nursery-log": "/nursery/index.html",
@@ -54,11 +55,12 @@
       "shipping": "/shipping/index.html"
     };
 
-    const targetBase = idToPath[id];
+    let targetBase = idToPath[id];
 
+    // ★ ログページ以外の id が来たら “直リンク” にフォールバック
     if (!targetBase) {
-      document.body.innerHTML = `<h2>エラー：不明な id (${id}) です</h2>`;
-      throw new Error("Unknown id: " + id);
+      // 例: id=map → /map/index.html
+      targetBase = `/${id}/index.html`;
     }
 
     // パラメータ付与
