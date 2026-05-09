@@ -127,9 +127,9 @@ export function initMap() {
       });
 
       /* ============================================================
-         ★ 圃場選択モーダル（filter-field.js の select モード）
+         ★ 圃場選択モーダル（ボタン対応）
       ============================================================ */
-      const selectBtn = document.getElementById("fieldSelect");
+      const selectBtn = document.getElementById("openFieldSelectBtn");
       selectBtn.addEventListener("click", () => {
 
         openFieldModal({

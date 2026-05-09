@@ -23,14 +23,14 @@
       border-bottom: 1px solid #ccc;
     }
 
-    #fieldSelect {
-      font-size: 20px;
-      padding: 8px;
+    #openFieldSelectBtn {
       width: 100%;
+      font-size: 20px;
+      padding: 10px;
       cursor: pointer;
     }
 
-    /* ヘッダー(60) + body padding(80) + 選択リスト(70) */
+    /* ヘッダー(60) + body padding(80) + 選択ボタン(70) */
     #map {
       height: calc(100vh - 150px);
     }
@@ -38,15 +38,18 @@
 </head>
 <body>
 
-  <!-- ★★★ filter-ui.js が必ず必要とする DOM ★★★ -->
+  <!-- ★ filter-ui.js が必ず必要とする DOM -->
   <div id="modal-root"></div>
 
   <div id="map-container" style="display:none;">
+
+    <!-- ★ セレクト → ボタンに変更 -->
     <div id="field-select-container">
-      <select id="fieldSelect">
-        <option value="">畑を選択してください</option>
-      </select>
+      <button id="openFieldSelectBtn" class="primary-btn">
+        圃場を選択する
+      </button>
     </div>
+
     <div id="map"></div>
   </div>
 
@@ -54,7 +57,7 @@
     import { verifyLocalAuth } from "../common/ui.js";
     import { initMap } from "./map.js";
 
-    /* ★ filter 系は script src ではなく import で読み込む */
+    /* filter 系は import で読み込む（script src は使わない） */
     import "/common/filter/filter-core.js";
     import "/common/filter/filter-ui.js";
     import "/common/filter/filter-field.js";
