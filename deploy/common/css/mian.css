@@ -1,0 +1,38 @@
+/* ===============================
+   CSS Cascade Layers 定義
+=============================== */
+@layer reset, base, components, pages, overrides;
+
+/* ===============================
+   reset
+=============================== */
+@import url("./reset.css") layer(reset);
+
+/* ===============================
+   base（共通レイアウト・共通UI）
+=============================== */
+@import url("./style.css") layer(base);
+
+/* ===============================
+   components（共通パーツ）
+=============================== */
+@import url("../common/filter.css") layer(components);
+@import url("../common/filter/filter.css") layer(components);
+@import url("../common/modal/modal.css") layer(components);
+@import url("../map/map.css") layer(components);
+@import url("../performance/kpi.css") layer(components);
+
+/* ===============================
+   pages（ページ固有）
+=============================== */
+@import url("../list/plantingList.css") layer(pages);
+@import url("../schedule/seed/seedList.css") layer(pages);
+@import url("../schedule/plan.css") layer(pages);
+@import url("../schedule/annual/annual.css") layer(pages);
+@import url("../schedule/annual-list/annual-list.css") layer(pages);
+@import url("../admin/edit-csv/edit-csv.css") layer(pages);
+
+/* ===============================
+   overrides（最後の強制上書き）
+=============================== */
+@import url("./overrides.css") layer(overrides);
