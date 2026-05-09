@@ -47,6 +47,9 @@ function renderCurrentMode() {
   const tableArea = document.getElementById("table-area");
   tableArea.innerHTML = "";
 
+  // ★ 現在のモードを filter.js に共有
+  window.currentListMode = currentMode;
+
   if (currentMode === "planting") {
     renderPlantingList();
 
@@ -65,6 +68,7 @@ function renderCurrentMode() {
   }
 }
 
-// ▼ フィルタ適用時は現在のモードを再描画
-window.addEventListener("filter:apply", () => renderCurrentMode());
-window.addEventListener("filter:reset", () => renderCurrentMode());
+// ▼ フィルタ適用時は再描画しない（重要）
+// filter.js が行の表示/非表示を制御するため、ここでは何もしない
+// window.addEventListener("filter:apply", () => renderCurrentMode());
+// window.addEventListener("filter:reset", () => renderCurrentMode());
