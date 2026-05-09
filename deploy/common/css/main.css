@@ -19,7 +19,7 @@
 @import url("./components.css") layer(components);
 @import url("../filter.css") layer(components);
 @import url("../filter/filter.css") layer(components);
-@import url("../modal/modal.css") layer(components);
+@import url("../modal.css") layer(components);
 @import url("../../map/map.css") layer(components);
 @import url("../../performance/kpi.css") layer(components);
 
