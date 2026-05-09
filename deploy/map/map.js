@@ -49,7 +49,7 @@ export function initMap() {
     .then(fields => {
 
       /* ============================================================
-         ★ list.js と同じ：フィルタデータをセット
+         ★ フィルタデータをセット（filter-field.js が使う）
       ============================================================ */
       const parents = [];
       const children = {};
@@ -127,7 +127,7 @@ export function initMap() {
       });
 
       /* ============================================================
-         ★ 圃場選択モーダル（list.js と同じ思想）
+         ★ 圃場選択モーダル（filter-field.js の select モード）
       ============================================================ */
       const selectBtn = document.getElementById("fieldSelect");
       selectBtn.addEventListener("click", () => {
@@ -164,6 +164,9 @@ export function initMap() {
 
       });
 
+      /* ============================================================
+         ★ Leaflet の描画ズレ対策
+      ============================================================ */
       setTimeout(() => {
         map.invalidateSize();
       }, 200);
