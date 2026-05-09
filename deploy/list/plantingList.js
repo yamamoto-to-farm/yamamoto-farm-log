@@ -24,9 +24,6 @@ let canDiscard = false;
 let filterData = {};
 let initialized = false;
 
-/* ============================================================
-   外部から呼ばれるエントリポイント
-============================================================ */
 export async function renderPlantingList() {
   if (!initialized) {
     await initPlantingListPage();
@@ -37,9 +34,6 @@ export async function renderPlantingList() {
   renderTable(filtered);
 }
 
-/* ============================================================
-   初期化
-============================================================ */
 async function initPlantingListPage() {
 
   if (window.currentRole === "admin") canDiscard = true;
@@ -50,7 +44,6 @@ async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
-  /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
   plantingRows.forEach(r => {
     if (!r.plantDate) return;
@@ -61,7 +54,6 @@ async function initPlantingListPage() {
   });
   Object.keys(ymMap).forEach(y => ymMap[y].sort());
 
-  /* ▼ 圃場 area → name */
   const areaMap = {};
   const areaOrder = [];
   fieldData.forEach(f => {
@@ -72,7 +64,6 @@ async function initPlantingListPage() {
     areaMap[f.area].push(f.name);
   });
 
-  /* ▼ 品種 type → name */
   const typeMap = {};
   const typeOrder = [];
   varietyData.forEach(v => {
@@ -90,10 +81,7 @@ async function initPlantingListPage() {
     varieties: { parents: typeOrder, children: typeMap }
   };
 
-  // ▼ フィルタ UI 初期化
   setFilterData(filterData);
-
-  // ▼ list.js がモード切替時に再適用できるよう保存
   window.plantingFilterData = filterData;
 
   document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
@@ -101,19 +89,18 @@ async function initPlantingListPage() {
   document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
 
   window.addEventListener("filter:apply", (e) => {
+    if (window.currentListMode !== "planting") return;  // ★ 追加
     window.currentFilterState = e.detail;
     renderTable(applyAllFilters(plantingRows, e.detail));
   });
 
   window.addEventListener("filter:reset", () => {
+    if (window.currentListMode !== "planting") return;  // ★ 追加
     window.currentFilterState = {};
     renderTable(plantingRows);
   });
 }
 
-/* ============================================================
-   フィルタ適用
-============================================================ */
 function applyAllFilters(rows, state) {
 
   let result = rows;
@@ -137,9 +124,6 @@ function applyAllFilters(rows, state) {
   return result;
 }
 
-/* ============================================================
-   播種日（複数対応）
-============================================================ */
 function getSeedDates(seedRef) {
   if (!seedRef) return "";
   const clean = s => (s ?? "").replace(/\s+/g, "").trim();
@@ -153,9 +137,6 @@ function getSeedDates(seedRef) {
   return dates.filter(d => d).join("<br>");
 }
 
-/* ============================================================
-   モーダル用データ
-============================================================ */
 function getPlantDetail(plantingRef) {
   const row = plantingRows.find(r => r.plantingRef === plantingRef);
   if (!row) {
@@ -181,9 +162,6 @@ function getPlantDetail(plantingRef) {
   };
 }
 
-/* ============================================================
-   テーブル描画
-============================================================ */
 function renderTable(rows) {
 
   const tableArea = document.getElementById("table-area");
@@ -243,7 +221,6 @@ function renderTable(rows) {
 
   tableArea.innerHTML = html;
 
-  /* ▼ 定植日クリックでモーダル */
   document.querySelectorAll(".plant-date-cell").forEach(cell => {
     cell.addEventListener("click", () => {
       const ref = cell.dataset.id;
@@ -252,7 +229,6 @@ function renderTable(rows) {
     });
   });
 
-  /* ▼ 破棄ボタン */
   document.querySelectorAll(".discard-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ref = btn.dataset.ref;

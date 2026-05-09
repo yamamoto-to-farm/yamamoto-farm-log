@@ -31,6 +31,7 @@ export async function renderSeedList() {
     await initSeedListPage();
     initialized = true;
   }
+
   const state = window.currentFilterState || {};
   const filtered = applyAllFilters(seedRows, state);
   renderTable(filtered);
@@ -79,19 +80,24 @@ async function initSeedListPage() {
   // ▼ フィルタ UI 初期化
   setFilterData(filterData);
 
-  // ▼ list.js がモード切替時に再適用できるよう保存（重要）
+  // ▼ list.js がモード切替時に再適用できるよう保存
   window.seedFilterData = filterData;
 
   document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
   document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
   document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
 
+  /* ============================================================
+     ★ フィルタ適用時：seed モードのときだけ動く
+  ============================================================ */
   window.addEventListener("filter:apply", (e) => {
+    if (window.currentListMode !== "seed") return;  // ← これが重要
     window.currentFilterState = e.detail;
     renderTable(applyAllFilters(seedRows, e.detail));
   });
 
   window.addEventListener("filter:reset", () => {
+    if (window.currentListMode !== "seed") return;  // ← これが重要
     window.currentFilterState = {};
     renderTable(seedRows);
   });
@@ -142,7 +148,7 @@ function getPlantingRefs(seedRef) {
 }
 
 /* ============================================================
-   モーダル用データ（備考は削除）
+   モーダル用データ
 ============================================================ */
 function getSeedDetail(row) {
   return {
@@ -158,7 +164,7 @@ function getSeedDetail(row) {
 }
 
 /* ============================================================
-   予定面積(反)（株間34cm / 畝間60cm）
+   予定面積(反)
 ============================================================ */
 function calcSeedAreaTan(seedCount) {
   const spacingRow = 34;
@@ -245,7 +251,7 @@ function renderTable(rows) {
     });
   });
 
-  /* ▼ 予定面積(反) ヘッダークリックで備考モーダル */
+  /* ▼ 予定面積(反) ヘッダークリックで説明モーダル */
   document.getElementById("th-area").addEventListener("click", () => {
     showInfoModal(
       "予定面積の計算基準",

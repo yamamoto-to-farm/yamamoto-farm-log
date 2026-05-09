@@ -14,7 +14,6 @@ export function initListPage() {
   const modeParam = params.get("mode");
   if (modeParam === "seed") currentMode = "seed";
 
-  // ▼ ページ再読み込みしない高速モード切り替え
   document.getElementById("btn-planting").addEventListener("click", () => {
     if (currentMode === "planting") return;
     currentMode = "planting";
@@ -47,28 +46,18 @@ function renderCurrentMode() {
   const tableArea = document.getElementById("table-area");
   tableArea.innerHTML = "";
 
-  // ★ 現在のモードを filter.js に共有
+  // ★ 現在のモードを filter.js / 各一覧JS に共有
   window.currentListMode = currentMode;
 
   if (currentMode === "planting") {
     renderPlantingList();
-
-    // ▼ 定植ベース用フィルタを再設定
-    if (window.plantingFilterData) {
-      setFilterData(window.plantingFilterData);
-    }
-
+    if (window.plantingFilterData) setFilterData(window.plantingFilterData);
   } else {
     renderSeedList();
-
-    // ▼ 播種ベース用フィルタを再設定
-    if (window.seedFilterData) {
-      setFilterData(window.seedFilterData);
-    }
+    if (window.seedFilterData) setFilterData(window.seedFilterData);
   }
 }
 
-// ▼ フィルタ適用時は再描画しない（重要）
-// filter.js が行の表示/非表示を制御するため、ここでは何もしない
+// ★ フィルタ適用時は再描画しない（各一覧JSが担当）
 // window.addEventListener("filter:apply", () => renderCurrentMode());
 // window.addEventListener("filter:reset", () => renderCurrentMode());
