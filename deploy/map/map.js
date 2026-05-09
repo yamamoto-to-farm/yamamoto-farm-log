@@ -1,6 +1,5 @@
-// map.js
-
 import { openFieldModal } from "../common/filter/filter-field.js";
+import { setFilterData } from "../common/filter/filter-core.js";
 
 export function initMap() {
 
@@ -47,6 +46,30 @@ export function initMap() {
     .then(res => res.json())
     .then(fields => {
 
+      /* ============================================================
+         ★ フィルタ用データをセット（これが無いとモーダルが壊れる）
+      ============================================================ */
+      const areaMap = {};
+      const areaOrder = [];
+
+      fields.forEach(f => {
+        if (!areaMap[f.area]) {
+          areaMap[f.area] = [];
+          areaOrder.push(f.area);
+        }
+        areaMap[f.area].push(f.name);
+      });
+
+      setFilterData({
+        years: [],
+        months: {},
+        fields: { parents: areaOrder, children: areaMap },
+        varieties: { parents: [], children: {} }
+      });
+
+      /* ============================================================
+         ★ 地図描画（従来通り）
+      ============================================================ */
       fields.forEach(field => {
 
         const safeId = field.name.replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -102,9 +125,9 @@ export function initMap() {
         fieldLayers[field.name] = { polygon, marker, field };
       });
 
-      // ===============================
-      // ★ 圃場選択モーダルを開く
-      // ===============================
+      /* ============================================================
+         ★ 圃場選択モーダル
+      ============================================================ */
       const selectBtn = document.getElementById("fieldSelect");
       selectBtn.addEventListener("click", () => {
 
@@ -112,7 +135,6 @@ export function initMap() {
           mode: "select",
           onSelect: (selectedName) => {
 
-            // ★ 選択された圃場をハイライト
             Object.keys(fieldLayers).forEach(name => {
               const { polygon, marker, field } = fieldLayers[name];
               const isSelected = (name === selectedName);
@@ -141,7 +163,6 @@ export function initMap() {
 
       });
 
-      // ★ Leaflet の描画ズレを完全解消
       setTimeout(() => {
         map.invalidateSize();
       }, 200);
