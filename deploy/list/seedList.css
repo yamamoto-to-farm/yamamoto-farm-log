@@ -38,7 +38,7 @@
 
 #table-area table th:nth-child(5),
 #table-area table td:nth-child(5) {
-  width: 150px;
+  width: 160px;
   white-space: nowrap;
 }
 
