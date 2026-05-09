@@ -9,6 +9,14 @@
 <body>
   <h1>施肥ログ（試験）</h1>
 
+  <!-- ★ 保存モーダル（必須） -->
+  <div id="save-modal" 
+       style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+              background:rgba(0,0,0,0.4); color:white; font-size:20px;
+              display:flex; align-items:center; justify-content:center;">
+    <div id="save-modal-text">保存しています…</div>
+  </div>
+
   <label>日付：</label>
   <input type="date" id="date"><br><br>
 
@@ -40,7 +48,6 @@
 
   <button id="save-btn">保存</button>
 
-  <!-- ★ fertilizer.js を ES Module として読み込む -->
   <script type="module" src="./fertilizer.js?v=1"></script>
 </body>
 </html>
