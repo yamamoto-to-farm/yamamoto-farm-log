@@ -28,6 +28,7 @@
       font-size: 20px;
       padding: 8px;
       width: 100%;
+      cursor: pointer;
     }
 
     /* ★ ヘッダー(60px) + body padding(80px) + 選択リスト(70px) */
@@ -61,6 +62,7 @@
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
+      // 認証済み → 地図表示
       document.getElementById("map-container").style.display = "block";
 
       // Leaflet 初期化
