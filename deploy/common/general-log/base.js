@@ -1,9 +1,9 @@
 // =========================================================
 // common/general-log/base.js
-// 圃場ログの汎用保存エンジン
+// 圃場ログの汎用保存エンジン（saveLog 版）
 // =========================================================
 
-import { loadJSON, saveJSON } from "/common/json.js?v=1";
+import { loadJSON } from "/common/json.js?v=1";
 import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName, safeFileName } from "/common/utils.js?v=1";
 
@@ -47,7 +47,7 @@ async function loadIndex(type) {
 }
 
 /* ---------------------------------------------------------
-   4. インデックス更新
+   4. インデックス更新（saveLog で保存）
 --------------------------------------------------------- */
 async function updateIndex(type, field, year, fileName) {
   const index = await loadIndex(type);
@@ -60,7 +60,16 @@ async function updateIndex(type, field, year, fileName) {
     index[field][year].sort();
   }
 
-  await saveJSON(`data/${type}-index.json`, index);
+  // ★ saveLog で S3 に保存（CloudFront 経由しない）
+  await saveLog({
+    type: "multi",
+    files: [
+      {
+        path: `data/${type}-index.json`,
+        content: JSON.stringify(index, null, 2)
+      }
+    ]
+  });
 }
 
 /* ---------------------------------------------------------
@@ -91,7 +100,7 @@ export async function saveMultiFieldLog({
   // 圃場ごとに保存
   for (const field of fields) {
     const safeField = safeFieldName(field);
-    const filePath = `/logs/${type}/${safeField}.json`;
+    const filePath = `logs/${type}/${safeField}.json`; // ★ 先頭の / を付けない（saveLog 用）
 
     // JSON 読み込み（なければ空）
     const data = await loadFieldLog(type, safeField);
@@ -105,8 +114,16 @@ export async function saveMultiFieldLog({
       ...dividedEntry
     });
 
-    // 保存
-    await saveJSON(filePath, data);
+    // ★ saveLog で S3 に保存（CloudFront を通さない）
+    await saveLog({
+      type: "multi",
+      files: [
+        {
+          path: filePath,
+          content: JSON.stringify(data, null, 2)
+        }
+      ]
+    });
 
     // インデックス更新
     const fileName = `${date}-${safeFileName(type)}.json`;

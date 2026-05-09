@@ -24,10 +24,10 @@
   <input type="text" id="fertilizer_id" placeholder="硫安"><br><br>
 
   <label>袋数：</label>
-  <input type="number" id="bags" value="1"><br><br>
+  <input type="number" id="bags" value="1" min="0" step="0.1"><br><br>
 
   <label>量（kg）：</label>
-  <input type="number" id="amount" value="20"><br><br>
+  <input type="number" id="amount" value="20" min="0" step="0.1"><br><br>
 
   <label>機械：</label>
   <input type="text" id="machine" value="YT5113"><br><br>
@@ -40,6 +40,7 @@
 
   <button id="save-btn">保存</button>
 
+  <!-- ★ fertilizer.js を ES Module として読み込む -->
   <script type="module" src="./fertilizer.js?v=1"></script>
 </body>
 </html>
