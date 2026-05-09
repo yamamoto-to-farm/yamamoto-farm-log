@@ -16,9 +16,9 @@
    優しめの色味（ナビ＝緑）
    ============================ */
 button[id^="nav-"] {
-  background: #d8f3dc;        /* 淡いミントグリーン */
-  color: #1b4332;             /* 深い緑で視認性UP */
-  border: 1px solid #95d5b2;  /* 優しい緑の枠線 */
+  background: #d8f3dc;
+  color: #1b4332;
+  border: 1px solid #95d5b2;
   border-radius: 8px;
   padding: 12px 0;
   font-size: 18px;
@@ -35,9 +35,9 @@ button[id^="nav-"]:hover {
    優しめの色味（分析＝青）
    ============================ */
 button[id^="analysis-"] {
-  background: #e7f1ff;        /* 淡いパステルブルー */
-  color: #1d3557;             /* 深い青で視認性UP */
-  border: 1px solid #a8c9ff;  /* 優しい青の枠線 */
+  background: #e7f1ff;
+  color: #1d3557;
+  border: 1px solid #a8c9ff;
   border-radius: 8px;
   padding: 12px 0;
   font-size: 18px;

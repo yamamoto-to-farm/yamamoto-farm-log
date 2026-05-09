@@ -1,6 +1,5 @@
 // map.js
 
-// ★ initMap は export するだけ。自動実行しない。
 export function initMap() {
 
   const map = L.map("map").setView([34.75, 137.38], 13);
@@ -9,16 +8,10 @@ export function initMap() {
     maxZoom: 19
   }).addTo(map);
 
-  // ===============================
-  // ★ 畑データ保持用（ハイライト用）
-  // ===============================
-  const fieldLayers = {};   // { fieldName: { polygon, marker, field } }
-  let lastSelected = "";    // 前回選択した畑名
-  let nextSelected = "";    // click 時点の値（再タップ判定用）
+  const fieldLayers = {};
+  let lastSelected = "";
+  let nextSelected = "";
 
-  // ===============================
-  // ★ マーカーアイコン（大きく・見やすく）
-  // ===============================
   function createFieldIcon(field, isSelected = false) {
     return L.divIcon({
       html: `
@@ -49,15 +42,12 @@ export function initMap() {
     });
   }
 
-  // ===============================
-  // ★ fields.json 読み込み
-  // ===============================
   fetch("../data/fields.json")
     .then(res => res.json())
     .then(fields => {
 
-      // ▼ 選択リストに追加
       const select = document.getElementById("fieldSelect");
+
       fields.forEach(f => {
         const opt = document.createElement("option");
         opt.value = f.name;
@@ -65,12 +55,10 @@ export function initMap() {
         select.appendChild(opt);
       });
 
-      // ▼ 地図に描画
       fields.forEach(field => {
 
         const safeId = field.name.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-        // ★ ポリゴン
         let polygon = null;
         if (field.coords) {
           polygon = L.polygon(field.coords, {
@@ -79,12 +67,10 @@ export function initMap() {
           }).addTo(map);
         }
 
-        // ★ マーカー
         const marker = L.marker([field.lat, field.lng], {
           icon: createFieldIcon(field)
         }).addTo(map);
 
-        // ★ ポップアップ
         const popupHtml = `
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
@@ -121,24 +107,16 @@ export function initMap() {
           }
         });
 
-        // ★ レイヤーを保存（ハイライト用）
         fieldLayers[field.name] = { polygon, marker, field };
       });
 
-      // ===============================
-      // ★ 選択リスト：再タップ判定（click）
-      // ===============================
       select.addEventListener("click", () => {
         nextSelected = select.value;
       });
 
-      // ===============================
-      // ★ 畑選択 → ハイライト処理（change）
-      // ===============================
       select.addEventListener("change", () => {
         let selected = select.value;
 
-        // ★ 同じ畑をもう一度選んだ → 解除
         if (selected === lastSelected && selected === nextSelected) {
           selected = "";
           select.value = "";
@@ -150,7 +128,6 @@ export function initMap() {
           const { polygon, marker, field } = fieldLayers[name];
           const isSelected = (name === selected);
 
-          // ▼ ポリゴンのスタイル変更
           if (polygon) {
             polygon.setStyle({
               color: isSelected ? "red" : (field.color || "#3388ff"),
@@ -158,10 +135,8 @@ export function initMap() {
             });
           }
 
-          // ▼ マーカーのアイコン変更
           marker.setIcon(createFieldIcon(field, isSelected));
 
-          // ▼ 選択された畑へズーム
           if (isSelected) {
             if (polygon) {
               map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
@@ -171,11 +146,15 @@ export function initMap() {
           }
         });
 
-        // ★ 解除時は全体表示に戻す
         if (selected === "") {
           map.setView([34.75, 137.38], 13);
         }
       });
+
+      // ★ Leaflet の描画ズレを完全解消
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
 
     });
 }

@@ -3,12 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>圃場マップ</title>
-  <link rel="stylesheet" href="/common/css/main.css?v=1">
+
+  <!-- 共通CSS -->
+  <link rel="stylesheet" href="/common/css/main.css?v=2">
 
   <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- ★ map.css を読み込む（必須） -->
+  <!-- map.css -->
+  <link rel="stylesheet" href="./map.css?v=2">
 
   <style>
     body { margin: 0; }
@@ -26,9 +30,9 @@
       width: 100%;
     }
 
-    /* 地図本体は選択リストの高さを引く */
+    /* ★ ヘッダー(60px) + body padding(80px) + 選択リスト(70px) */
     #map {
-      height: calc(100vh - 70px);
+      height: calc(100vh - 150px);
     }
   </style>
 </head>
@@ -37,7 +41,7 @@
   <!-- 認証後に表示される地図 -->
   <div id="map-container" style="display:none;">
 
-    <!-- ★ 畑選択リスト（追加） -->
+    <!-- 畑選択リスト -->
     <div id="field-select-container">
       <select id="fieldSelect">
         <option value="">畑を選択してください</option>
@@ -54,19 +58,15 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
 
-      // ★ localStorage の認証情報が有効かチェック
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ★ 認証済み → 地図を表示
       document.getElementById("map-container").style.display = "block";
 
-      // ★ Leaflet 初期化（display:block の後で実行）
+      // Leaflet 初期化
       initMap();
     });
   </script>
 
 </body>
 </html>
-
-
