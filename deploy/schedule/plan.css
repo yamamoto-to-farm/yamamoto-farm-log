@@ -44,6 +44,12 @@
   background: #e2e8f0;
   color: #333;
   border: 1px solid #cbd5e0;
+
+  /* ▼ 高さを統一（今回の修正ポイント） */
+  height: 40px !important;
+  padding: 8px 12px !important;
+  font-size: 15px !important;
+  box-sizing: border-box !important;
 }
 
 #mode-switch-card button.active {

@@ -184,6 +184,8 @@
   display: inline-flex !important;
   width: auto !important;
   flex: 0 0 auto !important;
+
+  /* ▼ 高さを統一（今回の修正ポイント） */
   height: 40px !important;
   padding: 8px 12px !important;
   font-size: 15px !important;

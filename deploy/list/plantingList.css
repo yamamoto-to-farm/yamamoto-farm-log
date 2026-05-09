@@ -24,6 +24,7 @@
    操作列（破棄）を細くする
 =============================== */
 
+/* ▼ 操作列の幅固定 */
 #table-area table th:last-child,
 #table-area table td:last-child {
   width: 60px;
@@ -31,6 +32,7 @@
   text-align: center;
 }
 
+/* ▼ 破棄ボタンをコンパクトに */
 .discard-btn {
   padding: 2px 6px;
   font-size: 12px;
@@ -46,12 +48,6 @@
   color: #333;
   border: 1px solid #cbd5e0;
   margin-top: 0 !important;
-
-  /* ▼ 高さを統一（ここが今回の修正ポイント） */
-  height: 40px !important;
-  padding: 8px 12px !important;
-  font-size: 15px !important;
-  box-sizing: border-box !important;
 }
 
 /* ▼ アクティブ（primary-btn と同じ緑） */
