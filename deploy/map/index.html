@@ -14,7 +14,8 @@
   <!-- map.css -->
   <link rel="stylesheet" href="./map.css?v=2">
 
-  <!-- ★ フィルタ関連 -->
+  <!-- ★ フィルタ関連（initFilterCore は無いので import だけ） -->
+  <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
 </head>
@@ -32,18 +33,15 @@
   <script type="module">
     import { verifyLocalAuth } from "../common/ui.js";
     import { initMap } from "./map.js";
-    import { initFilterCore } from "/common/filter/filter-core.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ★ filter-core の初期化完了を待つ（重要）
-      await initFilterCore();
-
       document.getElementById("map-container").style.display = "block";
 
+      // ★ map.js 内で setFilterData() を呼ぶのでこれで十分
       initMap();
     });
   </script>
