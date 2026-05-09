@@ -1,5 +1,7 @@
 // map.js
 
+import { openFieldModal } from "../common/filter/filter-field.js";
+
 export function initMap() {
 
   const map = L.map("map").setView([34.75, 137.38], 13);
@@ -10,7 +12,6 @@ export function initMap() {
 
   const fieldLayers = {};
   let lastSelected = "";
-  let nextSelected = "";
 
   function createFieldIcon(field, isSelected = false) {
     return L.divIcon({
@@ -45,15 +46,6 @@ export function initMap() {
   fetch("../data/fields.json")
     .then(res => res.json())
     .then(fields => {
-
-      const select = document.getElementById("fieldSelect");
-
-      fields.forEach(f => {
-        const opt = document.createElement("option");
-        opt.value = f.name;
-        opt.textContent = f.name;
-        select.appendChild(opt);
-      });
 
       fields.forEach(field => {
 
@@ -110,45 +102,43 @@ export function initMap() {
         fieldLayers[field.name] = { polygon, marker, field };
       });
 
-      select.addEventListener("click", () => {
-        nextSelected = select.value;
-      });
+      // ===============================
+      // ★ 圃場選択モーダルを開く
+      // ===============================
+      const selectBtn = document.getElementById("fieldSelect");
+      selectBtn.addEventListener("click", () => {
 
-      select.addEventListener("change", () => {
-        let selected = select.value;
+        openFieldModal({
+          mode: "select",
+          onSelect: (selectedName) => {
 
-        if (selected === lastSelected && selected === nextSelected) {
-          selected = "";
-          select.value = "";
-        }
+            // ★ 選択された圃場をハイライト
+            Object.keys(fieldLayers).forEach(name => {
+              const { polygon, marker, field } = fieldLayers[name];
+              const isSelected = (name === selectedName);
 
-        lastSelected = selected;
+              if (polygon) {
+                polygon.setStyle({
+                  color: isSelected ? "red" : (field.color || "#3388ff"),
+                  weight: isSelected ? 4 : 2
+                });
+              }
 
-        Object.keys(fieldLayers).forEach(name => {
-          const { polygon, marker, field } = fieldLayers[name];
-          const isSelected = (name === selected);
+              marker.setIcon(createFieldIcon(field, isSelected));
 
-          if (polygon) {
-            polygon.setStyle({
-              color: isSelected ? "red" : (field.color || "#3388ff"),
-              weight: isSelected ? 4 : 2
+              if (isSelected) {
+                if (polygon) {
+                  map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
+                } else {
+                  map.setView([field.lat, field.lng], 17);
+                }
+              }
             });
-          }
 
-          marker.setIcon(createFieldIcon(field, isSelected));
-
-          if (isSelected) {
-            if (polygon) {
-              map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
-            } else {
-              map.setView([field.lat, field.lng], 17);
-            }
+            lastSelected = selectedName;
           }
         });
 
-        if (selected === "") {
-          map.setView([34.75, 137.38], 13);
-        }
       });
 
       // ★ Leaflet の描画ズレを完全解消
