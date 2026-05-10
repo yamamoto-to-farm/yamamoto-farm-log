@@ -13,12 +13,35 @@
   <!-- 共通スタイル -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
+  <style>
+    .category-section, .subcategory-section {
+      margin-bottom: 20px;
+    }
+    .category-title, .subcategory-title {
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    .subcategory-title {
+      font-size: 17px;
+      margin-left: 20px;
+    }
+    .menu-grid {
+      display: none;
+      margin-left: 40px;
+    }
+    .menu-grid.open {
+      display: grid;
+    }
+  </style>
+
   <script type="module">
     import { showPinGate } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
 
-    /* ▼ トップカテゴリの表示順（サブカテゴリはこの下に並ぶ） */
-    const CATEGORY_ORDER = [
+    /* ▼ トップカテゴリの表示順 */
+    const TOP_CATEGORY_ORDER = [
       "作業ログ",
       "作業日誌・記録一覧",
       "育苗",
@@ -28,13 +51,23 @@
       "管理"
     ];
 
+    /* ▼ サブカテゴリの表示順（あなたの指定） */
+    const SUB_CATEGORY_ORDER = {
+      "作業ログ": [
+        "播種・育苗",
+        "定植",
+        "収穫・出荷",
+        "栽培管理",
+        "圃場管理"
+      ]
+    };
+
     async function loadPages() {
       const res = await fetch(`data/pages.json?v=${Date.now()}`);
       const json = await res.json();
       return json.pages;
     }
 
-    /* ▼ カード生成 */
     function createCard(page) {
       const div = document.createElement("div");
       div.className = "menu-card";
@@ -42,71 +75,106 @@
       return div;
     }
 
-    /* ▼ セクション生成（サブカテゴリも含む） */
-    function ensureSection(category) {
-      let section = document.querySelector(`section[data-category="${category}"]`);
+    /* ▼ トップカテゴリ生成 */
+    function ensureTopCategory(top) {
+      let section = document.querySelector(`section[data-top="${top}"]`);
       if (!section) {
         section = document.createElement("section");
-        section.dataset.category = category;
+        section.dataset.top = top;
+        section.className = "category-section";
 
         const h2 = document.createElement("h2");
-        h2.className = "menu-section-title";
-        h2.textContent = category;
+        h2.className = "category-title";
+        h2.textContent = top;
+
+        const container = document.createElement("div");
+        container.className = "subcategory-container";
+        container.style.display = "none";
+
+        section.appendChild(h2);
+        section.appendChild(container);
+        document.getElementById("menu-area").appendChild(section);
+      }
+      return section.querySelector(".subcategory-container");
+    }
+
+    /* ▼ サブカテゴリ生成 */
+    function ensureSubCategory(topContainer, sub) {
+      let subSection = topContainer.querySelector(`div[data-sub="${sub}"]`);
+      if (!subSection) {
+        subSection = document.createElement("div");
+        subSection.dataset.sub = sub;
+        subSection.className = "subcategory-section";
+
+        const h3 = document.createElement("div");
+        h3.className = "subcategory-title";
+        h3.textContent = sub;
 
         const grid = document.createElement("div");
         grid.className = "menu-grid";
 
-        section.appendChild(h2);
-        section.appendChild(grid);
-
-        document.getElementById("menu-area").appendChild(section);
+        subSection.appendChild(h3);
+        subSection.appendChild(grid);
+        topContainer.appendChild(subSection);
       }
-      return section.querySelector(".menu-grid");
+      return subSection.querySelector(".menu-grid");
     }
 
-    /* ▼ カテゴリの並び順を決める */
-    function getCategorySortKey(category) {
-      // 例: "作業ログ/栽培管理" → "作業ログ"
-      const top = category.split("/")[0];
-      const topIndex = CATEGORY_ORDER.indexOf(top);
-      return topIndex === -1 ? 999 : topIndex;
+    /* ▼ 並び順ロジック */
+    function sortPages(pages) {
+      return pages.sort((a, b) => {
+        const [aTop, aSub] = a.category.split("/");
+        const [bTop, bSub] = b.category.split("/");
+
+        // トップカテゴリ順
+        const topA = TOP_CATEGORY_ORDER.indexOf(aTop);
+        const topB = TOP_CATEGORY_ORDER.indexOf(bTop);
+        if (topA !== topB) return topA - topB;
+
+        // サブカテゴリ順
+        const subOrder = SUB_CATEGORY_ORDER[aTop] || [];
+        const subA = subOrder.indexOf(aSub);
+        const subB = subOrder.indexOf(bSub);
+
+        if (subA !== -1 && subB !== -1) return subA - subB;
+
+        // 未定義は五十音順
+        return aSub.localeCompare(bSub, "ja");
+      });
     }
 
     window.addEventListener("DOMContentLoaded", () => {
       showPinGate("pin-area", async () => {
 
-        // ▼ PIN 認証成功 → ヘッダー描画
         renderHeader();
-
-        // ▼ メニュー表示
         document.getElementById("menu-area").style.display = "block";
 
         const role = window.currentRole;
-        const pages = await loadPages();
+        let pages = await loadPages();
 
-        /* ▼ カテゴリ順でソート（トップカテゴリ → サブカテゴリ） */
-        pages.sort((a, b) => {
-          const aKey = getCategorySortKey(a.category);
-          const bKey = getCategorySortKey(b.category);
-          if (aKey !== bKey) return aKey - bKey;
-          return a.category.localeCompare(b.category, "ja");
-        });
+        pages = sortPages(pages);
 
-        /* ▼ カード配置 */
         pages.forEach(page => {
           if (!page.roles.includes(role)) return;
-          if (page.category.startsWith("管理/")) return; // 管理/ツールは非表示
+          if (page.category.startsWith("管理/")) return;
 
-          const grid = ensureSection(page.category);
+          const [top, sub] = page.category.split("/");
+
+          const topContainer = ensureTopCategory(top);
+          const grid = ensureSubCategory(topContainer, sub);
           grid.appendChild(createCard(page));
         });
       });
 
-      /* ▼ カテゴリ見出しクリックで開閉 */
+      /* ▼ 開閉処理 */
       document.addEventListener("click", (e) => {
-        if (e.target.classList.contains("menu-section-title")) {
-          const section = e.target.parentElement;
-          const grid = section.querySelector(".menu-grid");
+        if (e.target.classList.contains("category-title")) {
+          const container = e.target.parentElement.querySelector(".subcategory-container");
+          container.style.display = container.style.display === "none" ? "block" : "none";
+        }
+
+        if (e.target.classList.contains("subcategory-title")) {
+          const grid = e.target.parentElement.querySelector(".menu-grid");
           grid.classList.toggle("open");
         }
       });
@@ -116,18 +184,12 @@
 
 <body>
 
-  <!-- ===============================
-       PIN 入力
-  =============================== -->
   <div id="pin-area">
     <div>アクセスキーを入力してください</div>
     <input id="pin-input" type="password" class="pin-input">
     <button id="pin-submit" class="pin-submit">OK</button>
   </div>
 
-  <!-- ===============================
-       メニュー
-  =============================== -->
   <div id="menu-area" style="display:none"></div>
 
 </body>
