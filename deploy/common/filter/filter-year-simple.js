@@ -1,7 +1,7 @@
 // /common/filter/filter-year-simple.js
 // 年だけを選ぶ簡易フィルタ（annual-list 用）
 
-import { openModal, closeModal } from "./filter-ui.js";
+import { openModal, closeModal } from "./filter-core.js?v=1";
 
 export function openYearSelectModal({ years, onSelect }) {
 

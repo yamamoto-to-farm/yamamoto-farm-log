@@ -2,8 +2,7 @@
 // 年 + 月フィルタ（旧 filter.js と互換）
 // 親クリックで月を全選択／全解除に対応
 
-import { filterState, getFilterData, applyFilter } from "./filter-core.js?v=1";
-import { openModal, closeModal } from "./filter-ui.js";
+import { filterState, getFilterData, applyFilter, openModal, closeModal } from "./filter-core.js?v=1";
 
 /* ============================================================
    年フィルタモーダル

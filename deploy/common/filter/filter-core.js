@@ -1,7 +1,12 @@
 // common/filter/filter-core.js
 // 旧 filter.js と互換の state を管理するコア
 
-import { updateActiveFilterUI } from "./filter-active.js";
+// ★ すべての依存モジュールをここで読み込む（バージョン指定を一元管理）
+import { updateActiveFilterUI } from "./filter-active.js?v=1";
+import { openModal, closeModal } from "./filter-ui.js?v=1";
+
+// ★ 他のモジュールも再エクスポート（一貫性を保つ）
+export { openModal, closeModal };
 
 export const filterState = {
   yearMonths: [],

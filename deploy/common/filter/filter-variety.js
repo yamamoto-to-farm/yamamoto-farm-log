@@ -1,7 +1,6 @@
 // common/filter/filter-variety.js
 
-import { filterState, getFilterData, applyFilter } from "./filter-core.js";
-import { openModal, closeModal } from "./filter-ui.js";
+import { filterState, getFilterData, applyFilter, openModal, closeModal } from "./filter-core.js?v=1";
 
 /* ============================================================
    品種フィルタモーダル（フィルタ／選択モード両対応）

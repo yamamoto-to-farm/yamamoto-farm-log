@@ -1,7 +1,6 @@
 // common/filter/filter-field.js
 
-import { filterState, getFilterData, applyFilter } from "./filter-core.js?v=1";
-import { openModal, closeModal } from "./filter-ui.js?v=1";
+import { filterState, getFilterData, applyFilter, openModal, closeModal } from "./filter-core.js?v=1";
 
 /* ============================================================
    圃場フィルタモーダル（フィルタ／選択モード両対応）
