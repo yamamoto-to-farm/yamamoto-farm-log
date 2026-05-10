@@ -1,5 +1,9 @@
-import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { filterState, setFilterData } from "/common/filter/filter-core.js?v=1";
+import {
+  openFieldModal,
+  setFilterData,
+  filterState
+} from "/common/filter.js?v=1";
+
 import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
 
 /* ============================================================
@@ -11,7 +15,7 @@ export async function initFertilizerPage() {
   /* ▼ 圃場選択モーダルを開く */
   document.getElementById("open-field-modal").onclick = () => {
     openFieldModal({
-      mode: "filter"   // ★複数選択モード
+      mode: "filter"
     });
   };
 
@@ -22,8 +26,6 @@ export async function initFertilizerPage() {
 
   /* ▼ 保存処理 */
   document.getElementById("save-btn").onclick = async () => {
-    console.log("=== [UI] 保存ボタン押下 ===");
-
     const date = document.getElementById("date").value;
     const fields = filterState.fields;
     const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
@@ -33,24 +35,11 @@ export async function initFertilizerPage() {
     const worker = document.getElementById("worker").value.trim();
     const notes = document.getElementById("notes").value.trim();
 
-    console.log("[UI] 入力値:", {
-      date,
-      fields,
-      fertilizer_id,
-      bags,
-      amountValue,
-      machine,
-      worker,
-      notes
-    });
-
-    // 必須チェック
     if (!date || fields.length === 0 || !fertilizer_id) {
       alert("日付・圃場・肥料名は必須です");
       return;
     }
 
-    // 保存ボタン連打防止
     const btn = document.getElementById("save-btn");
     btn.disabled = true;
     btn.textContent = "保存中…";
