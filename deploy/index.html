@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>山本農園 OS</title>
@@ -14,23 +15,29 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
   <style>
-    .category-section, .subcategory-section {
+    .category-section,
+    .subcategory-section {
       margin-bottom: 20px;
     }
-    .category-title, .subcategory-title {
+
+    .category-title,
+    .subcategory-title {
       font-size: 20px;
       font-weight: bold;
       cursor: pointer;
       margin: 10px 0;
     }
+
     .subcategory-title {
       font-size: 17px;
       margin-left: 20px;
     }
+
     .menu-grid {
       display: none;
       margin-left: 40px;
     }
+
     .menu-grid.open {
       display: grid;
     }
@@ -147,6 +154,15 @@
         return aSub.localeCompare(bSub, "ja");
       });
     }
+    function normalizeCategory(category) {
+      const parts = category.split("/");
+      if (parts.length === 1) {
+        // サブカテゴリが無い場合はトップカテゴリ名をサブカテゴリとして扱う
+        return [parts[0], parts[0]];
+      }
+      return parts;
+    }
+
 
     window.addEventListener("DOMContentLoaded", () => {
       showPinGate("pin-area", async () => {
@@ -198,4 +214,5 @@
   <div id="menu-area" style="display:none"></div>
 
 </body>
+
 </html>
