@@ -39,12 +39,12 @@ export async function initFertilizerPage() {
   }
 
   // 4. フィルタ変更時の表示更新
-  document.addEventListener("filter:apply", () => {
+  window.addEventListener("filter:apply", () => {
     debugLog("filter:apply event", filterState.fields);
     updateSelectedFields();
   });
 
-  document.addEventListener("filter:reset", () => {
+  window.addEventListener("filter:reset", () => {
     debugLog("filter:reset event");
     updateSelectedFields();
   });
