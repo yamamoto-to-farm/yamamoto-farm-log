@@ -1,7 +1,7 @@
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
-import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
+import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 
 /* ============================================================
    初期化（plan.js と同じ順序）
@@ -25,7 +25,10 @@ export async function initFertilizerPage() {
 
   updateSelectedFields();
 
-  // ★ 5. 保存処理
+  // ★ 5. フィルタUI初期化
+  initActiveFilterUI();
+
+  // ★ 6. 保存処理
   document.getElementById("save-btn").onclick = saveData;
 }
 
@@ -88,16 +91,18 @@ async function saveData() {
   btn.textContent = "保存中…";
 
   try {
-    await saveFertilizerLog({
-      date,
-      fields,
-      fertilizer_id,
-      bags,
-      amount: { value: amountValue, unit: "kg" },
-      machine,
-      worker,
-      notes
-    });
+      await saveMultiFieldLog({
+        type: "fertilizer",
+        date,
+        fields,
+        entry: {
+          fertilizer_id,
+          bags,
+          amount: { value: amountValue, unit: "kg" },
+          machine,
+          worker,
+          notes
+        }
 
     alert("保存しました！");
     document.getElementById("notes").value = "";
