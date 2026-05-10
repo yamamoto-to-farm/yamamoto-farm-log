@@ -88,18 +88,19 @@ async function saveData() {
   btn.textContent = "保存中…";
 
   try {
-      await saveMultiFieldLog({
-        type: "fertilizer",
-        date,
-        fields,
-        entry: {
-          fertilizer_id,
-          bags,
-          amount: { value: amountValue, unit: "kg" },
-          machine,
-          worker,
-          notes
-        }
+    await saveMultiFieldLog({
+      type: "fertilizer",
+      date,
+      fields,
+      entry: {
+        fertilizer_id,
+        bags,
+        amount: { value: amountValue, unit: "kg" },
+        machine,
+        worker,
+        notes
+      }
+    });
 
     alert("保存しました！");
     document.getElementById("notes").value = "";

@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <title>施肥ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 </head>
 
@@ -59,45 +58,39 @@
       <textarea id="notes" class="form-textarea"></textarea>
     </div>
 
-    <!-- フィルタ（選択中圃場表示） -->
-    <div id="activeFilters"></div>
-
     <button id="save-btn" class="primary-btn">保存</button>
 
   </div>
 
   <div id="modal-container"></div>
 
+  <!-- 保存モーダル -->
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
       .then(html => document.getElementById("modal-container").innerHTML = html);
   </script>
 
+  <!-- summary.js / save/index.js -->
   <script type="module" src="/common/summary.js"></script>
   <script type="module" src="/common/save/index.js"></script>
 
-  <!-- 新フィルタ構造 -->
+  <!-- ★ 新フィルタ構造（plan.html と同じ） -->
   <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
   <script type="module" src="/common/filter/filter-active.js"></script>
 
+  <!-- 初期化 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { attachWorkDoneButton } from "/common/utils.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
 
       renderHeader();
       document.getElementById("page-area").style.display = "block";
-
-      document.getElementById("date").value =
-        new Date().toISOString().slice(0, 10);
-
-      attachWorkDoneButton();
 
       const module = await import("./fertilizer.js?v=1");
       module.initFertilizerPage();
