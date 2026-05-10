@@ -1,59 +1,81 @@
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
 
-document.getElementById("save-btn").onclick = async () => {
-  console.log("=== [UI] 保存ボタン押下 ===");
+/* ============================================================
+   初期化
+============================================================ */
+export function initFertilizerPage() {
 
-  const date = document.getElementById("date").value;
+  /* ▼ 圃場選択モーダルを開く */
+  document.getElementById("open-field-modal").onclick = () => {
+    openFieldModal({
+      mode: "filter"   // ★複数選択モード
+    });
+  };
 
-  const fields = Array.from(
-    document.getElementById("fields").selectedOptions
-  ).map(o => o.value);
-
-  const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
-  const bags = Number(document.getElementById("bags").value);
-  const amountValue = Number(document.getElementById("amount").value);
-  const machine = document.getElementById("machine").value.trim();
-  const worker = document.getElementById("worker").value.trim();
-  const notes = document.getElementById("notes").value.trim();
-
-  console.log("[UI] 入力値:", {
-    date,
-    fields,
-    fertilizer_id,
-    bags,
-    amountValue,
-    machine,
-    worker,
-    notes
+  /* ▼ 圃場選択が更新されたら UI に反映 */
+  document.addEventListener("filter-updated", () => {
+    const fields = window.filterState.fields;
+    document.getElementById("selected-fields").textContent =
+      fields.length ? fields.join("、") : "未選択";
   });
 
-  // ★ 必須チェック
-  if (!date || fields.length === 0 || !fertilizer_id) {
-    alert("日付・圃場・肥料名は必須です");
-    return;
-  }
+  /* ▼ 保存処理 */
+  document.getElementById("save-btn").onclick = async () => {
+    console.log("=== [UI] 保存ボタン押下 ===");
 
-  // ★ 保存実行
-  try {
-    console.log("=== [UI] saveFertilizerLog 呼び出し ===");
+    const date = document.getElementById("date").value;
+    const fields = window.filterState.fields;
+    const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
+    const bags = Number(document.getElementById("bags").value);
+    const amountValue = Number(document.getElementById("amount").value);
+    const machine = document.getElementById("machine").value.trim();
+    const worker = document.getElementById("worker").value.trim();
+    const notes = document.getElementById("notes").value.trim();
 
-    await saveFertilizerLog({
+    console.log("[UI] 入力値:", {
       date,
       fields,
       fertilizer_id,
       bags,
-      amount: { value: amountValue, unit: "kg" },
+      amountValue,
       machine,
       worker,
       notes
     });
 
-    console.log("=== [UI] saveFertilizerLog 完了 ===");
-    alert("保存しました！");
-  } catch (e) {
-    console.error("=== [UI] 保存エラー発生 ===");
-    console.error(e);
+    // 必須チェック
+    if (!date || fields.length === 0 || !fertilizer_id) {
+      alert("日付・圃場・肥料名は必須です");
+      return;
+    }
 
-    alert("保存に失敗しました。コンソールログを確認してください。");
-  }
-};
+    // 保存ボタン連打防止
+    const btn = document.getElementById("save-btn");
+    btn.disabled = true;
+    btn.textContent = "保存中…";
+
+    try {
+      await saveFertilizerLog({
+        date,
+        fields,
+        fertilizer_id,
+        bags,
+        amount: { value: amountValue, unit: "kg" },
+        machine,
+        worker,
+        notes
+      });
+
+      alert("保存しました！");
+      document.getElementById("notes").value = "";
+
+    } catch (e) {
+      console.error(e);
+      alert("保存に失敗しました");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "保存";
+    }
+  };
+}

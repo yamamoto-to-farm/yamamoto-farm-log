@@ -1,54 +1,134 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
-  <title>施肥ログ（試験）</title>
+  <title>施肥ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 共通デザイン -->
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
 </head>
 
 <body>
-  <h1>施肥ログ（試験）</h1>
 
-  <!-- ★★★★★ 保存モーダル（OS 共通仕様） ★★★★★ -->
-  <div id="saveModal" class="save-modal" style="display:none;">
-    <div class="save-modal-content">
-      <span id="saveModalMessage">保存しています…</span>
-      <button id="saveModalCloseBtn" style="display:none;">OK</button>
+  <!-- ===============================
+       ★ ヘッダー（header.js が自動挿入）
+  =============================== -->
+
+  <div id="form-area" style="display:none;">
+
+    <!-- ページタイトル -->
+    <h1 class="page-title">施肥ログ</h1>
+
+    <!-- 施肥日 -->
+    <h2 class="section-title">施肥日</h2>
+    <div class="card">
+      <input type="date" id="date" class="form-input">
     </div>
+
+    <!-- 圃場 -->
+    <h2 class="section-title">圃場</h2>
+    <div class="card">
+      <button type="button" class="primary-btn" id="open-field-modal">
+        圃場を選択
+      </button>
+
+      <div id="selected-fields" class="selected-list" style="margin-top:10px; font-weight:bold;">
+        未選択
+      </div>
+    </div>
+
+    <!-- 肥料名 -->
+    <h2 class="section-title">肥料名</h2>
+    <div class="card">
+      <input type="text" id="fertilizer_id" class="form-input" placeholder="例：硫安">
+    </div>
+
+    <!-- 使用量 -->
+    <h2 class="section-title">使用量</h2>
+    <div class="card">
+      <div class="form-field">
+        <label>袋数</label>
+        <input type="number" id="bags" class="form-input" value="1" min="0" step="0.1">
+      </div>
+
+      <div class="form-field">
+        <label>量（kg）</label>
+        <input type="number" id="amount" class="form-input" value="20" min="0" step="0.1">
+      </div>
+    </div>
+
+    <!-- 使用機械 -->
+    <h2 class="section-title">使用機械</h2>
+    <div class="card">
+      <input type="text" id="machine" class="form-input" value="YT5113">
+    </div>
+
+    <!-- 作業者 -->
+    <h2 class="section-title">作業者</h2>
+    <div class="card">
+      <input type="text" id="worker" class="form-input" value="直輝">
+    </div>
+
+    <!-- 備考 -->
+    <h2 class="section-title">備考</h2>
+    <div class="card">
+      <textarea id="notes" class="form-textarea" rows="3"></textarea>
+    </div>
+
+    <!-- 保存 -->
+    <button type="button" id="save-btn" class="primary-btn">保存</button>
+
+    <!-- ★ 作業完了ボタンは utils.js が追加する -->
   </div>
-  <!-- ★★★★★ ここまで ★★★★★ -->
 
-  <label>日付：</label>
-  <input type="date" id="date"><br><br>
+  <!-- 保存モーダル -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
 
-  <label>圃場（複数選択可）：</label><br>
-  <select id="fields" multiple size="5" style="width:200px;">
-    <option value="ぎょうざ東1">ぎょうざ東1</option>
-    <option value="ぎょうざ東2">ぎょうざ東2</option>
-    <option value="ぎょうざ西1">ぎょうざ西1</option>
-  </select>
-  <br><br>
+  <!-- summary.js（モーダル制御） -->
+  <script type="module" src="/common/summary.js"></script>
 
-  <label>肥料名：</label>
-  <input type="text" id="fertilizer_id" placeholder="硫安"><br><br>
+  <!-- save/index.js（S3 書き込み） -->
+  <script type="module" src="/common/save/index.js"></script>
 
-  <label>袋数：</label>
-  <input type="number" id="bags" value="1" min="0" step="0.1"><br><br>
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { attachWorkDoneButton } from "/common/utils.js";
 
-  <label>量（kg）：</label>
-  <input type="number" id="amount" value="20" min="0" step="0.1"><br><br>
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
 
-  <label>機械：</label>
-  <input type="text" id="machine" value="YT5113"><br><br>
+      // ヘッダー描画
+      renderHeader();
 
-  <label>作業者：</label>
-  <input type="text" id="worker" value="直輝"><br><br>
+      // ページ表示
+      document.getElementById("form-area").style.display = "block";
 
-  <label>備考：</label><br>
-  <textarea id="notes" rows="3" cols="30"></textarea><br><br>
+      // 日付初期値
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("date").value = today;
 
-  <button id="save-btn">保存</button>
+      // 作業完了ボタン
+      attachWorkDoneButton();
 
-  <script type="module" src="./fertilizer.js?v=1"></script>
+      // fertilizer.js をロードして初期化
+      const module = await import("./fertilizer.js?v=1");
+      module.initFertilizerPage();
+    });
+  </script>
+
 </body>
 </html>
