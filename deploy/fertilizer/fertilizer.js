@@ -1,10 +1,12 @@
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { filterState, setFilterData } from "/common/filter/filter-core.js?v=1";
 import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
 
 /* ============================================================
    初期化
 ============================================================ */
-export function initFertilizerPage() {
+export async function initFertilizerPage() {
+  await initFieldFilterData();
 
   /* ▼ 圃場選択モーダルを開く */
   document.getElementById("open-field-modal").onclick = () => {
@@ -14,18 +16,16 @@ export function initFertilizerPage() {
   };
 
   /* ▼ 圃場選択が更新されたら UI に反映 */
-  document.addEventListener("filter-updated", () => {
-    const fields = window.filterState.fields;
-    document.getElementById("selected-fields").textContent =
-      fields.length ? fields.join("、") : "未選択";
-  });
+  document.addEventListener("filter:apply", updateSelectedFields);
+  document.addEventListener("filter:reset", updateSelectedFields);
+  updateSelectedFields();
 
   /* ▼ 保存処理 */
   document.getElementById("save-btn").onclick = async () => {
     console.log("=== [UI] 保存ボタン押下 ===");
 
     const date = document.getElementById("date").value;
-    const fields = window.filterState.fields;
+    const fields = filterState.fields;
     const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
     const bags = Number(document.getElementById("bags").value);
     const amountValue = Number(document.getElementById("amount").value);
@@ -78,4 +78,32 @@ export function initFertilizerPage() {
       btn.textContent = "保存";
     }
   };
+}
+
+async function initFieldFilterData() {
+  const res = await fetch("/data/fields.json?v=" + Date.now());
+  const fields = await res.json();
+
+  const parents = [];
+  const children = {};
+
+  fields.forEach(f => {
+    if (!children[f.area]) {
+      children[f.area] = [];
+      parents.push(f.area);
+    }
+    children[f.area].push(f.name);
+  });
+
+  setFilterData({
+    yearMonths: [],
+    fields: { parents, children },
+    varieties: { parents: [], children: {} }
+  });
+}
+
+function updateSelectedFields() {
+  const fields = filterState.fields;
+  document.getElementById("selected-fields").textContent =
+    fields.length ? fields.join("、") : "未選択";
 }
