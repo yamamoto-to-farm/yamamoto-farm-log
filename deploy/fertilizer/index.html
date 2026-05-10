@@ -16,22 +16,26 @@
 
     <h1 class="page-title">施肥ログ</h1>
 
+    <!-- 施肥日 -->
     <h2 class="section-title">施肥日</h2>
     <div class="card">
       <input type="date" id="date" class="form-input">
     </div>
 
+    <!-- 圃場 -->
     <h2 class="section-title">圃場</h2>
     <div class="card">
       <button id="open-field-modal" class="primary-btn">圃場を選択</button>
       <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
+    <!-- 肥料名 -->
     <h2 class="section-title">肥料名</h2>
     <div class="card">
       <input type="text" id="fertilizer_id" class="form-input" placeholder="例：硫安">
     </div>
 
+    <!-- 使用量 -->
     <h2 class="section-title">使用量</h2>
     <div class="card">
       <div class="form-field">
@@ -44,28 +48,32 @@
       </div>
     </div>
 
+    <!-- 使用機械 -->
     <h2 class="section-title">使用機械</h2>
     <div class="card">
       <input type="text" id="machine" class="form-input" value="YT5113">
     </div>
 
+    <!-- 作業者 -->
     <h2 class="section-title">作業者</h2>
     <div class="card">
       <input type="text" id="worker" class="form-input" value="直輝">
     </div>
 
+    <!-- 備考 -->
     <h2 class="section-title">備考</h2>
     <div class="card">
       <textarea id="notes" class="form-textarea" rows="3"></textarea>
     </div>
 
+    <!-- 保存 -->
     <button id="save-btn" class="primary-btn">保存</button>
   </div>
 
   <!-- モーダル -->
   <div id="modal-container"></div>
 
-  <!-- 共通モーダル -->
+  <!-- 保存モーダル読み込み -->
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
@@ -76,10 +84,40 @@
   <script type="module" src="/common/summary.js"></script>
   <script type="module" src="/common/save/index.js"></script>
 
-  <!-- ★ filter 系は map.html と同じ方式で読み込む -->
+  <!-- ★ filter 系（map.html と同じ構造） -->
   <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
+  <script type="module" src="/common/filter/filter-active.js"></script>
+
+  <!-- ★ setFilterData() を index.html 側で実行（最重要） -->
+  <script type="module">
+    import { setFilterData } from "/common/filter/filter-core.js?v=1";
+
+    async function initFilterBase() {
+      const res = await fetch("/data/fields.json?v=" + Date.now());
+      const fields = await res.json();
+
+      const parents = [];
+      const children = {};
+
+      fields.forEach(f => {
+        if (!children[f.area]) {
+          children[f.area] = [];
+          parents.push(f.area);
+        }
+        children[f.area].push(f.name);
+      });
+
+      setFilterData({
+        yearMonths: [],
+        fields: { parents, children },
+        varieties: { parents: [], children: {} }
+      });
+    }
+
+    await initFilterBase();
+  </script>
 
   <!-- 初期化 -->
   <script type="module">
