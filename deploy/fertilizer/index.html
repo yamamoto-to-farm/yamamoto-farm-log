@@ -70,21 +70,26 @@
 
   </div>
 
-  <!-- モーダル（filter-field.js がここに挿入する） -->
+  <!-- ★ モーダルはここにだけ入れる（filter-ui.js 用） -->
   <div id="modal-container"></div>
 
-  <!-- 保存モーダル -->
+  <!-- 保存モーダル（上書きではなく appendChild で安全に追加） -->
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
-      .then(html => document.getElementById("modal-container").innerHTML += html);
+      .then(html => {
+        const container = document.getElementById("modal-container");
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html;
+        container.appendChild(wrapper.firstElementChild);
+      });
   </script>
 
   <!-- 共通スクリプト -->
   <script type="module" src="/common/summary.js"></script>
   <script type="module" src="/common/save/index.js"></script>
 
-  <!-- ★ フィルタ構造（必須） -->
+  <!-- フィルタ構造 -->
   <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
@@ -94,7 +99,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initFertilizerPage } from "./fertilizer.js?v=1";
+    import { initFertilizerPage } from "./fertilizer.js?v=2";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
