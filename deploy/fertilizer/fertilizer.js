@@ -1,5 +1,14 @@
 // fertilizer.js
 
+// ===============================
+// デバッグフラグ
+// ===============================
+const DEBUG = true;   // ← false にすればログが一切出ない
+
+function debugLog(...args) {
+  if (DEBUG) console.log("[fertilizer-debug]", ...args);
+}
+
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
@@ -10,23 +19,34 @@ import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 ============================================================ */
 export async function initFertilizerPage() {
 
-  // 1. フィルタデータ初期化（fields.parents / children をセット）
+  debugLog("initFertilizerPage start");
+
+  // 1. フィルタデータ初期化
   await initFieldFilterData();
 
-  // 2. アクティブフィルタタグ UI 初期化
+  // 2. タグ UI 初期化
   initActiveFilterUI();
+  debugLog("active filter UI initialized");
 
-  // 3. 圃場モーダル（filter-field.js のモーダル構造）
+  // 3. 圃場モーダル
   const btnField = document.getElementById("open-field-modal");
   if (btnField) {
     btnField.onclick = () => {
+      debugLog("openFieldModal called");
       openFieldModal({ mode: "filter" });
     };
   }
 
   // 4. フィルタ変更時の表示更新
-  document.addEventListener("filter:apply", updateSelectedFields);
-  document.addEventListener("filter:reset", updateSelectedFields);
+  document.addEventListener("filter:apply", () => {
+    debugLog("filter:apply event", filterState.fields);
+    updateSelectedFields();
+  });
+
+  document.addEventListener("filter:reset", () => {
+    debugLog("filter:reset event");
+    updateSelectedFields();
+  });
 
   updateSelectedFields();
 
@@ -35,14 +55,20 @@ export async function initFertilizerPage() {
   if (btnSave) {
     btnSave.onclick = saveData;
   }
+
+  debugLog("initFertilizerPage done");
 }
 
 /* ============================================================
-   圃場フィルタデータ初期化（fields.parents / children）
+   圃場フィルタデータ初期化
 ============================================================ */
 async function initFieldFilterData() {
+  debugLog("loading fields.json");
+
   const res = await fetch("/data/fields.json?v=" + Date.now());
   const fields = await res.json();
+
+  debugLog("fields.json loaded", fields);
 
   const parents = [];
   const children = {};
@@ -55,12 +81,17 @@ async function initFieldFilterData() {
     children[f.area].push(f.name);
   });
 
+  debugLog("filter parents", parents);
+  debugLog("filter children", children);
+
   setFilterData({
     years: [],
     months: {},
     fields: { parents, children },
     varieties: { parents: [], children: {} }
   });
+
+  debugLog("setFilterData completed");
 }
 
 /* ============================================================
@@ -68,6 +99,8 @@ async function initFieldFilterData() {
 ============================================================ */
 function updateSelectedFields() {
   const fields = filterState.fields || [];
+  debugLog("updateSelectedFields", fields);
+
   const el = document.getElementById("selected-fields");
   if (!el) return;
 
@@ -78,6 +111,8 @@ function updateSelectedFields() {
    保存処理
 ============================================================ */
 async function saveData() {
+  debugLog("saveData start");
+
   const date = document.getElementById("date").value;
   const fields = filterState.fields || [];
   const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
@@ -86,6 +121,10 @@ async function saveData() {
   const machine = document.getElementById("machine").value.trim();
   const worker = document.getElementById("worker").value.trim();
   const notes = document.getElementById("notes").value.trim();
+
+  debugLog("save payload", {
+    date, fields, fertilizer_id, bags, amountValue, machine, worker, notes
+  });
 
   if (!date || fields.length === 0 || !fertilizer_id) {
     alert("日付・圃場・肥料名は必須です");
@@ -113,11 +152,14 @@ async function saveData() {
       }
     });
 
+    debugLog("saveMultiFieldLog success");
+
     alert("保存しました！");
     document.getElementById("notes").value = "";
 
   } catch (e) {
     console.error(e);
+    debugLog("saveMultiFieldLog error", e);
     alert("保存に失敗しました");
   } finally {
     if (btn) {
