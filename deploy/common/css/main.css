@@ -1,7 +1,7 @@
 /* ===============================
    CSS Cascade Layers 定義
 =============================== */
-@layer reset, base, components, pages, overrides;
+@layer reset, base, components-old, components-new, components, pages, overrides;
 
 /* ===============================
    reset
@@ -16,9 +16,15 @@
 /* ===============================
    components（共通パーツ）
 =============================== */
+
+/* 旧 filter.js 用（旧 UI） */
+@import url("../filter.css") layer(components-old);
+
+/* 新 filter-core / filter-field 用（新 UI） */
+@import url("../filter/filter.css") layer(components-new);
+
+/* その他の共通パーツ */
 @import url("./components.css") layer(components);
-@import url("../filter.css") layer(components);
-@import url("../filter/filter.css") layer(components);
 @import url("../modal.css") layer(components);
 @import url("../../map/map.css") layer(components);
 @import url("../../performance/kpi.css") layer(components);
