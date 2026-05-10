@@ -1,17 +1,21 @@
 // fertilizer.js
 
-const DEBUG = true;
+// ===============================
+// デバッグフラグ
+// ===============================
+const DEBUG = true;   // ← false にすればログが一切出ない
+
 function debugLog(...args) {
   if (DEBUG) console.log("[fertilizer-debug]", ...args);
 }
 
-import { openFieldModal } from "/common/filter/filter-field.js?v=2";
-import { setFilterData, filterState } from "/common/filter/filter-core.js?v=2";
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { setFilterData, filterState, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 
 /* ============================================================
-   初期化
+   初期化（フィルタ構造＋モーダル構造）
 ============================================================ */
 export async function initFertilizerPage() {
 
@@ -29,14 +33,12 @@ export async function initFertilizerPage() {
   if (btnField) {
     btnField.onclick = () => {
       debugLog("openFieldModal called");
+      debugLog("getFilterData before openFieldModal:", getFilterData());
       openFieldModal({ mode: "filter" });
-
-      // ★ モーダル開いた直後に同期（保険）
-      setTimeout(updateSelectedFields, 50);
     };
   }
 
-  // 4. フィルタ変更イベント
+  // 4. フィルタ変更時の表示更新
   document.addEventListener("filter:apply", () => {
     debugLog("filter:apply event", filterState.fields);
     updateSelectedFields();
@@ -91,6 +93,7 @@ async function initFieldFilterData() {
   });
 
   debugLog("setFilterData completed");
+  debugLog("getFilterData after setFilterData:", getFilterData());
 }
 
 /* ============================================================

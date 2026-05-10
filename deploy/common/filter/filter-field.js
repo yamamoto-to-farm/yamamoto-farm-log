@@ -13,6 +13,7 @@ export function openFieldModal(options = {}) {
 
   // ★★★ 安全ガード（最重要）★★★
   const filter = getFilterData();
+  console.log("[filter-field] getFilterData result:", filter);
   const data = filter?.fields || { parents: [], children: {} };
   const parents = data.parents || [];
   const children = data.children || {};
