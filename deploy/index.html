@@ -51,7 +51,7 @@
       "管理"
     ];
 
-    /* ▼ サブカテゴリの表示順（あなたの指定） */
+    /* ▼ サブカテゴリの表示順（栽培ステージ順） */
     const SUB_CATEGORY_ORDER = {
       "作業ログ": [
         "播種・育苗",
@@ -120,7 +120,7 @@
       return subSection.querySelector(".menu-grid");
     }
 
-    /* ▼ 並び順ロジック */
+    /* ▼ 並び順ロジック（undefined 対策済み） */
     function sortPages(pages) {
       return pages.sort((a, b) => {
         const [aTop, aSub] = a.category.split("/");
@@ -130,6 +130,11 @@
         const topA = TOP_CATEGORY_ORDER.indexOf(aTop);
         const topB = TOP_CATEGORY_ORDER.indexOf(bTop);
         if (topA !== topB) return topA - topB;
+
+        // サブカテゴリが無い場合は後ろへ
+        if (!aSub && !bSub) return 0;
+        if (!aSub) return 1;
+        if (!bSub) return -1;
 
         // サブカテゴリ順
         const subOrder = SUB_CATEGORY_ORDER[aTop] || [];
