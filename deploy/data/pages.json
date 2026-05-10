@@ -4,7 +4,7 @@
       "id": "seed",
       "name": "播種ログ",
       "path": "seed/index.html",
-      "category": "作業ログ",
+      "category": "作業ログ/播種・育苗",
       "roles": ["worker", "family", "admin"],
       "icon": "assets/icons/seed.png",
       "openLog": true
@@ -13,43 +13,110 @@
       "id": "nursery-log",
       "name": "育苗ログ",
       "path": "nursery/index.html",
-      "category": "作業ログ",
+      "category": "作業ログ/播種・育苗",
       "roles": ["worker", "family", "admin"],
       "icon": "assets/icons/nursery.png",
       "openLog": true
     },
+
+    {
+      "id": "tillage",
+      "name": "土づくり・耕起ログ",
+      "path": "field/tillage/index.html",
+      "category": "作業ログ/圃場管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/tillage.png",
+      "openLog": true
+    },
+    {
+      "id": "weeding-machine",
+      "name": "除草・草刈りログ",
+      "path": "field/weeding/index.html",
+      "category": "作業ログ/圃場管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/weeding.png",
+      "openLog": true
+    },
+    {
+      "id": "field-maintenance",
+      "name": "圃場整備ログ",
+      "path": "field/maintenance/index.html",
+      "category": "作業ログ/圃場管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/maintenance.png",
+      "openLog": true
+    },
+
     {
       "id": "fertilizer",
       "name": "施肥ログ",
       "path": "fertilizer/index.html",
-      "category": "作業ログ",
+      "category": "作業ログ/栽培管理",
       "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/planting.png",
+      "icon": "assets/icons/fertilizer.png",
       "openLog": true
     },
+    {
+      "id": "pesticide",
+      "name": "防除ログ",
+      "path": "pesticide/index.html",
+      "category": "作業ログ/栽培管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/pesticide.png",
+      "openLog": true
+    },
+    {
+      "id": "watering",
+      "name": "潅水ログ",
+      "path": "watering/index.html",
+      "category": "作業ログ/栽培管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/watering.png",
+      "openLog": true
+    },
+    {
+      "id": "hand-weeding",
+      "name": "除草ログ（手作業）",
+      "path": "hand-weeding/index.html",
+      "category": "作業ログ/栽培管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/hand-weeding.png",
+      "openLog": true
+    },
+    {
+      "id": "intertill",
+      "name": "中耕ログ",
+      "path": "intertill/index.html",
+      "category": "作業ログ/栽培管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/intertill.png",
+      "openLog": true
+    },
+    {
+      "id": "bedmaking",
+      "name": "畝立てログ",
+      "path": "bedmaking/index.html",
+      "category": "作業ログ/栽培管理",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/bedmaking.png",
+      "openLog": true
+    },
+
     {
       "id": "planting",
       "name": "定植ログ",
       "path": "planting/index.html",
-      "category": "作業ログ",
+      "category": "作業ログ/定植",
       "roles": ["worker", "family", "admin"],
       "icon": "assets/icons/planting.png",
       "openLog": true
     },
-    {
-      "id": "cultivation-log",
-      "name": "栽培管理ログ",
-      "path": "cultivation/index.html",
-      "category": "作業ログ",
-      "roles": ["worker", "family", "admin"],
-      "icon": "assets/icons/cultivation.png",
-      "openLog": true
-    },
+
     {
       "id": "harvest",
       "name": "収穫ログ",
       "path": "harvest/index.html",
-      "category": "作業ログ",
+      "category": "作業ログ/収穫・出荷",
       "roles": ["worker", "family", "admin"],
       "icon": "assets/icons/harvest.png",
       "openLog": true
@@ -58,7 +125,7 @@
       "id": "shipping",
       "name": "出荷ログ",
       "path": "shipping/index.html",
-      "category": "作業ログ",
+      "category": "作業ログ/収穫・出荷",
       "roles": ["worker", "family", "admin"],
       "icon": "assets/icons/shipping.png",
       "openLog": true
@@ -73,7 +140,6 @@
       "icon": "assets/icons/diary.png",
       "openLog": false
     },
-
     {
       "id": "list",
       "name": "播種・定植一覧",
@@ -83,7 +149,6 @@
       "icon": "assets/icons/planting.png",
       "openLog": false
     },
-
     {
       "id": "harvest-kpi",
       "name": "収穫KPI",

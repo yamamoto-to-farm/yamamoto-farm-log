@@ -17,7 +17,7 @@
     import { showPinGate } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
 
-    /* カテゴリの表示順を固定 */
+    /* ▼ トップカテゴリの表示順（サブカテゴリはこの下に並ぶ） */
     const CATEGORY_ORDER = [
       "作業ログ",
       "作業日誌・記録一覧",
@@ -34,6 +34,7 @@
       return json.pages;
     }
 
+    /* ▼ カード生成 */
     function createCard(page) {
       const div = document.createElement("div");
       div.className = "menu-card";
@@ -41,6 +42,7 @@
       return div;
     }
 
+    /* ▼ セクション生成（サブカテゴリも含む） */
     function ensureSection(category) {
       let section = document.querySelector(`section[data-category="${category}"]`);
       if (!section) {
@@ -62,6 +64,14 @@
       return section.querySelector(".menu-grid");
     }
 
+    /* ▼ カテゴリの並び順を決める */
+    function getCategorySortKey(category) {
+      // 例: "作業ログ/栽培管理" → "作業ログ"
+      const top = category.split("/")[0];
+      const topIndex = CATEGORY_ORDER.indexOf(top);
+      return topIndex === -1 ? 999 : topIndex;
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       showPinGate("pin-area", async () => {
 
@@ -74,11 +84,15 @@
         const role = window.currentRole;
         const pages = await loadPages();
 
-        /* カテゴリ順でソート */
-        pages.sort((a, b) =>
-          CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category)
-        );
+        /* ▼ カテゴリ順でソート（トップカテゴリ → サブカテゴリ） */
+        pages.sort((a, b) => {
+          const aKey = getCategorySortKey(a.category);
+          const bKey = getCategorySortKey(b.category);
+          if (aKey !== bKey) return aKey - bKey;
+          return a.category.localeCompare(b.category, "ja");
+        });
 
+        /* ▼ カード配置 */
         pages.forEach(page => {
           if (!page.roles.includes(role)) return;
           if (page.category.startsWith("管理/")) return; // 管理/ツールは非表示
@@ -118,5 +132,3 @@
 
 </body>
 </html>
-
-
