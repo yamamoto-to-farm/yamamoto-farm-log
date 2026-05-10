@@ -106,12 +106,17 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { attachWorkDoneButton } from "/common/utils.js";
+    import { initFilterData } from "/common/filter/filter-core.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
+      // ヘッダー描画
       renderHeader();
+
+      // ★★★ 圃場フィルタの基礎データを初期化（必須） ★★★
+      await initFilterData();
 
       // ページ表示
       document.getElementById("form-area").style.display = "block";
