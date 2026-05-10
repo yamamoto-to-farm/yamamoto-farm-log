@@ -90,16 +90,16 @@
   <script type="module" src="/common/save/index.js"></script>
 
   <!-- フィルタ構造 -->
-  <script type="module" src="/common/filter/filter-core.js"></script>
-  <script type="module" src="/common/filter/filter-ui.js"></script>
-  <script type="module" src="/common/filter/filter-field.js"></script>
-  <script type="module" src="/common/filter/filter-active.js"></script>
+  <script type="module" src="/common/filter/filter-core.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-ui.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-field.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-active.js?v=1"></script>
 
   <!-- 初期化 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initFertilizerPage } from "./fertilizer.js?v=2";
+    import { initFertilizerPage } from "./fertilizer.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;

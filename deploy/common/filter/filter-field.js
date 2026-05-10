@@ -1,6 +1,6 @@
 // common/filter/filter-field.js
 
-import { filterState, getFilterData, applyFilter } from "./filter-core.js";
+import { filterState, getFilterData, applyFilter } from "./filter-core.js?v=1";
 import { openModal, closeModal } from "./filter-ui.js";
 
 /* ============================================================

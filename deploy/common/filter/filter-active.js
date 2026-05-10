@@ -1,7 +1,7 @@
 // common/filter/filter-active.js
 // 旧 filter.js の「現在のフィルタ表示」を新フィルタに追加する
 
-import { getFilter, resetFilter } from "./filter-core.js";
+import { getFilter, resetFilter } from "./filter-core.js?v=1";
 
 export function initActiveFilterUI() {
   updateActiveFilterUI();
