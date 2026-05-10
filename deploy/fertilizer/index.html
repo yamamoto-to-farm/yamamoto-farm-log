@@ -3,99 +3,107 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>施肥ログ - 山本農園</title>
+  <title>播種・定植計画 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 共通CSS -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+
 </head>
 
 <body>
 
   <div id="page-area" style="display:none;">
 
-    <h1 class="page-title">施肥ログ</h1>
+    <h1 class="page-title">播種・定植計画</h1>
 
-    <h2 class="section-title">施肥日</h2>
-    <div class="card">
-      <input type="date" id="date" class="form-input">
+    <!-- 年度選択 -->
+    <div class="card" style="margin-bottom:16px;">
+      <button id="selectYearBtn" class="primary-btn">年度を選択</button>
+      <span id="selectedYearLabel" style="margin-left:12px; font-weight:bold;"></span>
     </div>
 
-    <h2 class="section-title">圃場</h2>
-    <div class="card">
-      <button id="open-field-modal" class="primary-btn">圃場を選択</button>
-      <div id="activeFilters" style="margin-top:10px;"></div>
-      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
+    <!-- モード切り替え -->
+    <div class="card" id="mode-switch-card" style="margin-bottom: 16px;">
+      <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
+      <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
     </div>
 
-    <h2 class="section-title">肥料名</h2>
-    <div class="card">
-      <input type="text" id="fertilizer_id" class="form-input">
+    <!-- CSV / JSON 読み込み・保存（seed モードのみ表示） -->
+    <div class="card" id="seedList-controls" style="margin-bottom:16px;">
+      <button id="loadJsonBtn" class="secondary-btn">JSON 読み込み（初期化）</button>
+      <button id="loadCsvBtn" class="secondary-btn">CSV 読み込み（復元）</button>
+      <button id="saveCsvBtn" class="primary-btn">CSV 保存</button>
     </div>
 
-    <h2 class="section-title">使用量</h2>
-    <div class="card">
-      <div class="form-field">
-        <label>袋数</label>
-        <input type="number" id="bags" class="form-input" value="1">
-      </div>
-      <div class="form-field">
-        <label>量（kg）</label>
-        <input type="number" id="amount" class="form-input" value="20">
-      </div>
+    <!-- 定植計画専用フィルタ -->
+    <div class="card" id="filter-card">
+      <h2 class="section-title">フィルタ</h2>
+      <div class="filter-open-btn" data-type="year">▶ 年</div>
+      <div class="filter-open-btn" data-type="field">▶ 圃場</div>
+      <div class="filter-open-btn" data-type="variety">▶ 品種</div>
     </div>
 
-    <h2 class="section-title">使用機械</h2>
-    <div class="card">
-      <input type="text" id="machine" class="form-input" value="YT5113">
+    <div id="activeFilters"></div>
+
+    <!-- 播種計画専用：育苗容量 -->
+    <div class="card" id="capacity-card">
+      <label>育苗ハウス容量（トレイ枚数）</label>
+      <input type="number" id="nurseryCapacity" value="3312" style="width:120px;">
     </div>
 
-    <h2 class="section-title">作業者</h2>
-    <div class="card">
-      <input type="text" id="worker" class="form-input" value="直輝">
+    <!-- 播種計画専用：容量サマリー -->
+    <div class="card" id="summary-card">
+      <div id="summaryArea"></div>
     </div>
 
-    <h2 class="section-title">備考</h2>
-    <div class="card">
-      <textarea id="notes" class="form-textarea"></textarea>
-    </div>
+    <!-- 表 -->
+    <div id="table-area"></div>
 
-    <button id="save-btn" class="primary-btn">保存</button>
+    <!-- 行追加 -->
+    <div style="margin-top: 16px;">
+      <button id="addRowBtn" class="primary-btn">＋ 行を追加</button>
+    </div>
 
   </div>
 
+  <!-- モーダル -->
   <div id="modal-container"></div>
 
   <!-- 保存モーダル -->
-  <script>
-    fetch("/common/save-modal.html")
-      .then(r => r.text())
-      .then(html => document.getElementById("modal-container").innerHTML = html);
-  </script>
+  <div id="saveModal" class="save-modal" style="display:none;">
+    <div class="save-modal-content">
+      <span id="saveModalMessage">保存しています…</span>
+      <button id="saveModalCloseBtn" style="display:none;">OK</button>
+    </div>
+  </div>
 
-  <!-- summary.js / save/index.js -->
-  <script type="module" src="/common/summary.js"></script>
-  <script type="module" src="/common/save/index.js"></script>
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- ★ 新フィルタ構造（plan.html と同じ） -->
-  <script type="module" src="/common/filter/filter-core.js"></script>
-  <script type="module" src="/common/filter/filter-ui.js"></script>
-  <script type="module" src="/common/filter/filter-field.js"></script>
-  <script type="module" src="/common/filter/filter-active.js"></script>
-
-  <!-- 初期化 -->
+  <!-- メインスクリプト -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
+    import { initListPage, initAnnualLinkage } from "./plan.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
-      if (!await verifyLocalAuth()) return;
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
 
       renderHeader();
       document.getElementById("page-area").style.display = "block";
 
-      const module = await import("./fertilizer.js?v=1");
-      module.initFertilizerPage();
+      initAnnualLinkage();
+
+      // filter-core 初期化完了まで待つ
+      await initListPage();
     });
   </script>
 
 </body>
+
 </html>
+
+
+

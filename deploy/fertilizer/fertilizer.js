@@ -1,115 +1,238 @@
-import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
-import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
-import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
+// plan.js
+
+import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
+import { loadJSON } from "/common/json.js";
+
+import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
+import { renderSeedList } from "./seed/index.js";
+import { renderPlantingList } from "./plantingList.js";
+import { setFilterData } from "/common/filter/filter-core.js";
+
+
+import {
+  loadSeedListFromCSV,
+  loadSeedListFromJSON,
+  getCurrentYear
+} from "./seed/seedList-load.js";
+
+import { saveSeedList } from "./seed/seedList-save.js";
+
+let currentMode = "seed";
+let selectedYear = null;
 
 /* ============================================================
-   初期化（plan.js と同じ順序）
+   seedList 用：品種フィルタデータ初期化
+   （annual.js と同等の varieties.parents / children をセット）
 ============================================================ */
-export async function initFertilizerPage() {
-
-  // ★ 1. 最初にフィルタデータをセット（最重要）
-  await initFieldFilterData();
-
-  // ★ 2. タグ UI 初期化（setFilterData の後）
-  initActiveFilterUI();
-
-  // ★ 3. モーダルを開く
-  document.getElementById("open-field-modal").onclick = () => {
-    openFieldModal({ mode: "filter" });
-  };
-
-  // ★ 4. フィルタ変更時の UI 更新
-  document.addEventListener("filter:apply", updateSelectedFields);
-  document.addEventListener("filter:reset", updateSelectedFields);
-
-  updateSelectedFields();
-
-  // ★ 5. 保存処理
-  document.getElementById("save-btn").onclick = saveData;
-}
-
-/* ============================================================
-   圃場フィルタデータ初期化（plan.js と同じ構造）
-============================================================ */
-async function initFieldFilterData() {
-  const res = await fetch("/data/fields.json?v=" + Date.now());
-  const fields = await res.json();
-
-  const parents = [];
-  const children = {};
-
-  fields.forEach(f => {
-    if (!children[f.area]) {
-      children[f.area] = [];
-      parents.push(f.area);
-    }
-    children[f.area].push(f.name);
-  });
-
-  // ★ filter-core の内部状態をここで初期化
-  setFilterData({
-    years: [],
-    months: {},
-    fields: { parents, children },
-    varieties: { parents: [], children: {} }
-  });
-}
-
-/* ============================================================
-   選択圃場の表示更新
-============================================================ */
-function updateSelectedFields() {
-  const fields = filterState.fields;
-  document.getElementById("selected-fields").textContent =
-    fields.length ? fields.join("、") : "未選択";
-}
-
-/* ============================================================
-   保存処理
-============================================================ */
-async function saveData() {
-  const date = document.getElementById("date").value;
-  const fields = filterState.fields;
-  const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
-  const bags = Number(document.getElementById("bags").value);
-  const amountValue = Number(document.getElementById("amount").value);
-  const machine = document.getElementById("machine").value.trim();
-  const worker = document.getElementById("worker").value.trim();
-  const notes = document.getElementById("notes").value.trim();
-
-  if (!date || fields.length === 0 || !fertilizer_id) {
-    alert("日付・圃場・肥料名は必須です");
-    return;
-  }
-
-  const btn = document.getElementById("save-btn");
-  btn.disabled = true;
-  btn.textContent = "保存中…";
-
+async function initSeedListFilter() {
   try {
-    await saveMultiFieldLog({
-      type: "fertilizer",
-      date,
-      fields,
-      entry: {
-        fertilizer_id,
-        bags,
-        amount: { value: amountValue, unit: "kg" },
-        machine,
-        worker,
-        notes
+    const varieties = await loadJSON("/data/varieties.json");
+
+    const typeMap = {};
+    const typeOrder = [];
+
+    varieties.forEach(v => {
+      if (!typeMap[v.type]) {
+        typeMap[v.type] = [];
+        typeOrder.push(v.type);
       }
+      typeMap[v.type].push(v.name);
     });
 
-    alert("保存しました！");
-    document.getElementById("notes").value = "";
+    // seedList では fields / years / months は使わないので空で渡す
+    setFilterData({
+      years: [],
+      months: {},
+      fields: { parents: [], children: {} },
+      varieties: { parents: typeOrder, children: typeMap }
+    });
 
   } catch (e) {
-    console.error(e);
-    alert("保存に失敗しました");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "保存";
+    console.error("[seedList] フィルタ用 varieties データ初期化失敗:", e);
   }
 }
+
+/* ============================================================
+   年度選択 → annual.json 読み込み → seedList 初期行生成
+   ＋ 年度ごと CSV があれば CSV を優先ロード
+============================================================ */
+export function initAnnualLinkage() {
+  const btn = document.getElementById("selectYearBtn");
+  const label = document.getElementById("selectedYearLabel");
+
+  btn.addEventListener("click", async () => {
+    const annualAll = await loadJSON("/logs/schedule/annual/annual.json");
+    const years = Object.keys(annualAll).sort();
+
+    openYearSelectModal({
+      years,
+      onSelect: async (y) => {
+        selectedYear = y;
+        label.textContent = `${y} 年`;
+
+        // ▼ 年度を UI に反映（seedList-load.js が参照）
+        const yearSelect = document.getElementById("yearSelect");
+        if (yearSelect) yearSelect.value = y;
+
+        // ▼ まず CSV を試す
+        const ok = await loadSeedListFromCSV(y);
+
+        if (!ok) {
+          // ▼ CSV が無ければ annual.json → STEP2 初期生成
+          const step2 = annualAll[y]?.step2;
+          if (step2?.rows) {
+            await setSeedRowsFromAnnual(step2.rows);
+          }
+        }
+
+        if (currentMode === "seed") {
+          renderSeedList();
+        }
+      }
+    });
+  });
+}
+
+/* ============================================================
+   モード切り替え
+============================================================ */
+export async function initListPage() {
+
+  // ★ 最重要：filter-core.js に varieties データをセット
+  await initSeedListFilter();
+
+  const params = new URLSearchParams(location.search);
+  const modeParam = params.get("mode");
+  currentMode = (modeParam === "planting") ? "planting" : "seed";
+
+  // ▼ JSON 読み込みボタン
+  const btnJson = document.getElementById("loadJsonBtn");
+  if (btnJson) {
+    btnJson.onclick = async () => {
+      const year = getCurrentYear();
+      if (!year) {
+        alert("年度を選択してください。");
+        return;
+      }
+      if (!confirm(`${year}年の播種計画を annual.json から再生成します。現在の内容は上書きされます。`)) {
+        return;
+      }
+      await loadSeedListFromJSON(year);
+      renderSeedList();
+    };
+  }
+
+  // ▼ CSV 読み込みボタン
+  const btnCsv = document.getElementById("loadCsvBtn");
+  if (btnCsv) {
+    btnCsv.onclick = async () => {
+      const year = getCurrentYear();
+      if (!year) {
+        alert("年度を選択してください。");
+        return;
+      }
+      const ok = await loadSeedListFromCSV(year);
+      if (!ok) {
+        alert(`${year}年の CSV が見つかりませんでした。`);
+      } else {
+        renderSeedList();
+      }
+    };
+  }
+
+  // ▼ CSV 保存ボタン
+  const btnSave = document.getElementById("saveCsvBtn");
+  if (btnSave) {
+    btnSave.onclick = () => {
+      saveSeedList();
+    };
+  }
+
+  // ▼ モード切り替え
+  document.getElementById("btn-planting").addEventListener("click", () => {
+    if (currentMode === "planting") return;
+    currentMode = "planting";
+    history.replaceState(null, "", `${location.pathname}?mode=planting`);
+    applyModeUI();
+    renderCurrentMode();
+  });
+
+  document.getElementById("btn-seed").addEventListener("click", () => {
+    if (currentMode === "seed") return;
+    currentMode = "seed";
+    history.replaceState(null, "", `${location.pathname}?mode=seed`);
+    applyModeUI();
+    renderCurrentMode();
+  });
+
+  applyModeUI();
+  renderCurrentMode();
+}
+
+/* ============================================================
+   UI 切り替え（seed 専用 UI を完全分離）
+============================================================ */
+function applyModeUI() {
+  const btnPlanting = document.getElementById("btn-planting");
+  const btnSeed = document.getElementById("btn-seed");
+
+  btnPlanting.classList.toggle("active", currentMode === "planting");
+  btnSeed.classList.toggle("active", currentMode === "seed");
+
+  const filterCard = document.getElementById("filter-card");
+  const activeFilters = document.getElementById("activeFilters");
+
+  // ▼ 播種計画専用コントロール（CSV/JSON 読み込み・保存）
+  const seedControls = document.getElementById("seedList-controls");
+  if (seedControls) {
+    seedControls.style.display = (currentMode === "seed") ? "flex" : "none";
+  }
+
+  // ▼ 育苗ハウス容量カード
+  const capacityCard = document.getElementById("capacity-card");
+  if (capacityCard) {
+    capacityCard.style.display = (currentMode === "seed") ? "" : "none";
+  }
+
+  // ▼ サマリーカード（容量チェック）
+  const summaryCard = document.getElementById("summary-card");
+  if (summaryCard) {
+    summaryCard.style.display = (currentMode === "seed") ? "" : "none";
+  }
+
+  // ▼ フィルタ（定植計画専用）
+  if (currentMode === "seed") {
+    filterCard.style.display = "none";
+    activeFilters.style.display = "none";
+  } else {
+    filterCard.style.display = "";
+    activeFilters.style.display = "";
+  }
+}
+
+/* ============================================================
+   モードごとの描画
+============================================================ */
+function renderCurrentMode() {
+  const tableArea = document.getElementById("table-area");
+  tableArea.innerHTML = "";
+
+  if (currentMode === "planting") {
+    renderPlantingList();
+    if (window.plantingFilterData) {
+      setFilterData(window.plantingFilterData);
+    }
+  } else {
+    renderSeedList();
+  }
+}
+
+/* ============================================================
+   フィルタイベント
+============================================================ */
+window.addEventListener("filter:apply", () => {
+  if (currentMode === "planting") renderCurrentMode();
+});
+window.addEventListener("filter:reset", () => {
+  if (currentMode === "planting") renderCurrentMode();
+});
