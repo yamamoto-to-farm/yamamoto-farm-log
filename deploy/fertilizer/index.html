@@ -73,17 +73,29 @@
   <!-- ★ モーダルはここにだけ入れる（filter-ui.js 用） -->
   <div id="modal-container"></div>
 
-  <!-- 保存モーダル（上書きではなく appendChild で安全に追加） -->
-  <script>
-    fetch("/common/save-modal.html")
-      .then(r => r.text())
-      .then(html => {
-        const container = document.getElementById("modal-container");
-        const wrapper = document.createElement("div");
-        wrapper.innerHTML = html;
-        container.appendChild(wrapper.firstElementChild);
-      });
-  </script>
+  <!-- 保存モーダル（直接埋め込み） -->
+  <div id="saveModal" style="
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  ">
+    <div style="
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 300px;
+      text-align: center;
+    ">
+      <div id="saveModalMessage">保存中です…</div>
+      <button id="saveModalCloseBtn" style="margin-top: 20px; display:none;">
+        OK
+      </button>
+    </div>
+  </div>
 
   <!-- 共通スクリプト -->
   <script type="module" src="/common/summary.js"></script>
