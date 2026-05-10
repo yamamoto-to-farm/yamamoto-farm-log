@@ -1,8 +1,7 @@
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { setFilterData } from "/common/filter/filter-core.js?v=1";
+import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
+import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
-
-let selectedFields = [];
 
 /* ============================================================
    初期化
@@ -10,23 +9,27 @@ let selectedFields = [];
 export async function initFertilizerPage() {
   await initFieldFilterData();
 
+  // ★ タグ UI を有効化（一覧ページと同じ）
+  initActiveFilterUI();
+
+  /* ▼ 圃場選択モーダル（filter モード） */
   document.getElementById("open-field-modal").onclick = () => {
     openFieldModal({
-      mode: "select",
-      onSelect: (name) => {
-        toggleField(name);
-        updateSelectedFields();
-      }
+      mode: "filter"
     });
   };
 
+  /* ▼ 選択圃場の表示更新 */
+  document.addEventListener("filter:apply", updateSelectedFields);
+  document.addEventListener("filter:reset", updateSelectedFields);
   updateSelectedFields();
 
+  /* ▼ 保存処理 */
   document.getElementById("save-btn").onclick = saveData;
 }
 
 /* ============================================================
-   圃場フィルタデータ初期化（map.js と同じ）
+   圃場フィルタデータ初期化
 ============================================================ */
 async function initFieldFilterData() {
   const res = await fetch("/data/fields.json?v=" + Date.now());
@@ -51,19 +54,12 @@ async function initFieldFilterData() {
 }
 
 /* ============================================================
-   圃場選択管理（map.js と同じ思想）
+   選択圃場の表示更新
 ============================================================ */
-function toggleField(name) {
-  if (selectedFields.includes(name)) {
-    selectedFields = selectedFields.filter(f => f !== name);
-  } else {
-    selectedFields.push(name);
-  }
-}
-
 function updateSelectedFields() {
+  const fields = filterState.fields;
   document.getElementById("selected-fields").textContent =
-    selectedFields.length ? selectedFields.join("、") : "未選択";
+    fields.length ? fields.join("、") : "未選択";
 }
 
 /* ============================================================
@@ -71,6 +67,7 @@ function updateSelectedFields() {
 ============================================================ */
 async function saveData() {
   const date = document.getElementById("date").value;
+  const fields = filterState.fields;
   const fertilizer_id = document.getElementById("fertilizer_id").value.trim();
   const bags = Number(document.getElementById("bags").value);
   const amountValue = Number(document.getElementById("amount").value);
@@ -78,7 +75,7 @@ async function saveData() {
   const worker = document.getElementById("worker").value.trim();
   const notes = document.getElementById("notes").value.trim();
 
-  if (!date || selectedFields.length === 0 || !fertilizer_id) {
+  if (!date || fields.length === 0 || !fertilizer_id) {
     alert("日付・圃場・肥料名は必須です");
     return;
   }
@@ -90,7 +87,7 @@ async function saveData() {
   try {
     await saveFertilizerLog({
       date,
-      fields: selectedFields,
+      fields,
       fertilizer_id,
       bags,
       amount: { value: amountValue, unit: "kg" },
