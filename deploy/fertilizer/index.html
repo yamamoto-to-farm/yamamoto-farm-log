@@ -6,102 +6,80 @@
   <title>施肥ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 </head>
 
 <body>
 
-  <!-- ページ全体（ログイン後に表示） -->
   <div id="page-area" style="display:none;">
 
     <h1 class="page-title">施肥ログ</h1>
 
-    <!-- 施肥日 -->
     <h2 class="section-title">施肥日</h2>
     <div class="card">
       <input type="date" id="date" class="form-input">
     </div>
 
-    <!-- 圃場（新フィルタ UI） -->
     <h2 class="section-title">圃場</h2>
     <div class="card">
       <button id="open-field-modal" class="primary-btn">圃場を選択</button>
-
-      <!-- 適用中フィルタ（タグ UI） -->
       <div id="activeFilters" style="margin-top:10px;"></div>
-
-      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">
-        未選択
-      </div>
+      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
-    <!-- 肥料名 -->
     <h2 class="section-title">肥料名</h2>
     <div class="card">
-      <input type="text" id="fertilizer_id" class="form-input" placeholder="例：硫安">
+      <input type="text" id="fertilizer_id" class="form-input">
     </div>
 
-    <!-- 使用量 -->
     <h2 class="section-title">使用量</h2>
     <div class="card">
       <div class="form-field">
         <label>袋数</label>
-        <input type="number" id="bags" class="form-input" value="1" min="0" step="0.1">
+        <input type="number" id="bags" class="form-input" value="1">
       </div>
       <div class="form-field">
         <label>量（kg）</label>
-        <input type="number" id="amount" class="form-input" value="20" min="0" step="0.1">
+        <input type="number" id="amount" class="form-input" value="20">
       </div>
     </div>
 
-    <!-- 使用機械 -->
     <h2 class="section-title">使用機械</h2>
     <div class="card">
       <input type="text" id="machine" class="form-input" value="YT5113">
     </div>
 
-    <!-- 作業者 -->
     <h2 class="section-title">作業者</h2>
     <div class="card">
       <input type="text" id="worker" class="form-input" value="直輝">
     </div>
 
-    <!-- 備考 -->
     <h2 class="section-title">備考</h2>
     <div class="card">
-      <textarea id="notes" class="form-textarea" rows="3"></textarea>
+      <textarea id="notes" class="form-textarea"></textarea>
     </div>
 
-    <!-- 保存 -->
     <button id="save-btn" class="primary-btn">保存</button>
 
   </div>
 
-  <!-- モーダル -->
   <div id="modal-container"></div>
 
-  <!-- save-modal 読み込み -->
-  <div id="save-modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
-      .then(html => {
-        document.getElementById("save-modal-container").innerHTML = html;
-      });
+      .then(html => document.getElementById("modal-container").innerHTML = html);
   </script>
 
-  <!-- summary.js / save/index.js -->
   <script type="module" src="/common/summary.js"></script>
   <script type="module" src="/common/save/index.js"></script>
 
-  <!-- ★ 新フィルタ構造（plan.js と同じ） -->
+  <!-- 新フィルタ構造 -->
   <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
   <script type="module" src="/common/filter/filter-active.js"></script>
 
-  <!-- 初期化 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";

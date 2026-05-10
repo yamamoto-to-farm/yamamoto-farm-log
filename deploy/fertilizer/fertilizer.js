@@ -4,28 +4,28 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
 
 /* ============================================================
-   初期化
+   初期化（plan.js と同じ順序）
 ============================================================ */
 export async function initFertilizerPage() {
 
-  // ★ フィルタデータ初期化（plan.js と同じ）
+  // ★ 1. 最初にフィルタデータをセット（最重要）
   await initFieldFilter();
 
-  // ★ タグ UI 初期化
+  // ★ 2. タグ UI 初期化（setFilterData の後）
   initActiveFilterUI();
 
-  // 圃場モーダル
+  // ★ 3. モーダルを開く
   document.getElementById("open-field-modal").onclick = () => {
     openFieldModal({ mode: "filter" });
   };
 
-  // フィルタ変更時の UI 更新
+  // ★ 4. フィルタ変更時の UI 更新
   document.addEventListener("filter:apply", updateSelectedFields);
   document.addEventListener("filter:reset", updateSelectedFields);
 
   updateSelectedFields();
 
-  // 保存処理
+  // ★ 5. 保存処理
   document.getElementById("save-btn").onclick = saveData;
 }
 
@@ -47,6 +47,7 @@ async function initFieldFilter() {
     children[f.area].push(f.name);
   });
 
+  // ★ filter-core の内部状態をここで初期化
   setFilterData({
     years: [],
     months: {},
