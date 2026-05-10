@@ -12,9 +12,11 @@ export function openFieldModal(options = {}) {
     onSelect = null      // 選択モード時のコールバック
   } = options;
 
-  const data = getFilterData().fields;
-  const parents = data.parents;
-  const children = data.children;
+  // ★★★ 安全ガード（最重要）★★★
+  const filter = getFilterData();
+  const data = filter?.fields || { parents: [], children: {} };
+  const parents = data.parents || [];
+  const children = data.children || {};
 
   const html = `
     <div class="modal-bg" id="modal-bg">
