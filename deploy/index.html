@@ -40,7 +40,6 @@
     import { showPinGate } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
 
-    /* ▼ トップカテゴリの表示順 */
     const TOP_CATEGORY_ORDER = [
       "作業ログ",
       "作業日誌・記録一覧",
@@ -51,7 +50,6 @@
       "管理"
     ];
 
-    /* ▼ サブカテゴリの表示順（栽培ステージ順） */
     const SUB_CATEGORY_ORDER = {
       "作業ログ": [
         "播種・育苗",
@@ -62,11 +60,11 @@
       ]
     };
 
-    /* ▼ サブカテゴリが無いカテゴリを補完 */
+    // 並び順用：サブカテゴリが無いカテゴリを補完
     function normalizeCategory(category) {
       const parts = category.split("/");
       if (parts.length === 1) {
-        return [parts[0], parts[0]]; // サブカテゴリ = トップカテゴリ
+        return [parts[0], parts[0]];
       }
       return parts;
     }
@@ -84,7 +82,6 @@
       return div;
     }
 
-    /* ▼ トップカテゴリ生成 */
     function ensureTopCategory(top) {
       let section = document.querySelector(`section[data-top="${top}"]`);
       if (!section) {
@@ -100,15 +97,20 @@
         container.className = "subcategory-container";
         container.style.display = "none";
 
+        // サブカテゴリを持たない場合用のグリッド（トップ直下）
+        const directGrid = document.createElement("div");
+        directGrid.className = "menu-grid direct-grid";
+
         section.appendChild(h2);
         section.appendChild(container);
+        section.appendChild(directGrid);
         document.getElementById("menu-area").appendChild(section);
       }
-      return section.querySelector(".subcategory-container");
+      return section;
     }
 
-    /* ▼ サブカテゴリ生成 */
-    function ensureSubCategory(topContainer, sub) {
+    function ensureSubCategory(topSection, sub) {
+      const topContainer = topSection.querySelector(".subcategory-container");
       let subSection = topContainer.querySelector(`div[data-sub="${sub}"]`);
       if (!subSection) {
         subSection = document.createElement("div");
@@ -129,25 +131,21 @@
       return subSection.querySelector(".menu-grid");
     }
 
-    /* ▼ 並び順ロジック（normalizeCategory 対応） */
     function sortPages(pages) {
       return pages.sort((a, b) => {
         const [aTop, aSub] = normalizeCategory(a.category);
         const [bTop, bSub] = normalizeCategory(b.category);
 
-        // トップカテゴリ順
         const topA = TOP_CATEGORY_ORDER.indexOf(aTop);
         const topB = TOP_CATEGORY_ORDER.indexOf(bTop);
         if (topA !== topB) return topA - topB;
 
-        // サブカテゴリ順
         const subOrder = SUB_CATEGORY_ORDER[aTop] || [];
         const subA = subOrder.indexOf(aSub);
         const subB = subOrder.indexOf(bSub);
 
         if (subA !== -1 && subB !== -1) return subA - subB;
 
-        // 未定義は五十音順
         return aSub.localeCompare(bSub, "ja");
       });
     }
@@ -167,19 +165,36 @@
           if (!page.roles.includes(role)) return;
           if (page.category.startsWith("管理/")) return;
 
-          const [top, sub] = normalizeCategory(page.category);
+          const section = ensureTopCategory(page.category.split("/")[0]);
 
-          const topContainer = ensureTopCategory(top);
-          const grid = ensureSubCategory(topContainer, sub);
-          grid.appendChild(createCard(page));
+          // 描画用：元の category を見て分岐
+          if (page.category.includes("/")) {
+            const [, sub] = page.category.split("/");
+            const grid = ensureSubCategory(section, sub);
+            grid.appendChild(createCard(page));
+          } else {
+            const directGrid = section.querySelector(".direct-grid");
+            directGrid.appendChild(createCard(page));
+          }
         });
       });
 
-      /* ▼ 開閉処理 */
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("category-title")) {
-          const container = e.target.parentElement.querySelector(".subcategory-container");
-          container.style.display = container.style.display === "none" ? "block" : "none";
+          const section = e.target.parentElement;
+          const subContainer = section.querySelector(".subcategory-container");
+          const directGrid = section.querySelector(".direct-grid");
+
+          const isHidden =
+            (subContainer && subContainer.style.display === "none") &&
+            (directGrid && !directGrid.classList.contains("open"));
+
+          if (subContainer) {
+            subContainer.style.display = subContainer.style.display === "none" ? "block" : "none";
+          }
+          if (directGrid) {
+            directGrid.classList.toggle("open");
+          }
         }
 
         if (e.target.classList.contains("subcategory-title")) {
