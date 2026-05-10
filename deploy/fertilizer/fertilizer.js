@@ -9,7 +9,7 @@ import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 export async function initFertilizerPage() {
 
   // ★ 1. 最初にフィルタデータをセット（最重要）
-  await initFieldFilter();
+  await initFieldFilterData();
 
   // ★ 2. タグ UI 初期化（setFilterData の後）
   initActiveFilterUI();
@@ -25,17 +25,14 @@ export async function initFertilizerPage() {
 
   updateSelectedFields();
 
-  // ★ 5. フィルタUI初期化
-  initActiveFilterUI();
-
-  // ★ 6. 保存処理
+  // ★ 5. 保存処理
   document.getElementById("save-btn").onclick = saveData;
 }
 
 /* ============================================================
    圃場フィルタデータ初期化（plan.js と同じ構造）
 ============================================================ */
-async function initFieldFilter() {
+async function initFieldFilterData() {
   const res = await fetch("/data/fields.json?v=" + Date.now());
   const fields = await res.json();
 
