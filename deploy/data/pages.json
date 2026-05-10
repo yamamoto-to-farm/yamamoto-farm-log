@@ -19,6 +19,15 @@
       "openLog": true
     },
     {
+      "id": "fertilizer",
+      "name": "施肥ログ",
+      "path": "fertilizer/index.html",
+      "category": "作業ログ",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/planting.png",
+      "openLog": true
+    },
+    {
       "id": "planting",
       "name": "定植ログ",
       "path": "planting/index.html",
