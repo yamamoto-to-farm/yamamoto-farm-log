@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
   <meta charset="UTF-8">
   <title>山本農園 OS</title>
@@ -15,29 +14,23 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
   <style>
-    .category-section,
-    .subcategory-section {
+    .category-section, .subcategory-section {
       margin-bottom: 20px;
     }
-
-    .category-title,
-    .subcategory-title {
+    .category-title, .subcategory-title {
       font-size: 20px;
       font-weight: bold;
       cursor: pointer;
       margin: 10px 0;
     }
-
     .subcategory-title {
       font-size: 17px;
       margin-left: 20px;
     }
-
     .menu-grid {
       display: none;
       margin-left: 40px;
     }
-
     .menu-grid.open {
       display: grid;
     }
@@ -68,6 +61,15 @@
         "圃場管理"
       ]
     };
+
+    /* ▼ サブカテゴリが無いカテゴリを補完 */
+    function normalizeCategory(category) {
+      const parts = category.split("/");
+      if (parts.length === 1) {
+        return [parts[0], parts[0]]; // サブカテゴリ = トップカテゴリ
+      }
+      return parts;
+    }
 
     async function loadPages() {
       const res = await fetch(`data/pages.json?v=${Date.now()}`);
@@ -127,21 +129,16 @@
       return subSection.querySelector(".menu-grid");
     }
 
-    /* ▼ 並び順ロジック（undefined 対策済み） */
+    /* ▼ 並び順ロジック（normalizeCategory 対応） */
     function sortPages(pages) {
       return pages.sort((a, b) => {
-        const [aTop, aSub] = a.category.split("/");
-        const [bTop, bSub] = b.category.split("/");
+        const [aTop, aSub] = normalizeCategory(a.category);
+        const [bTop, bSub] = normalizeCategory(b.category);
 
         // トップカテゴリ順
         const topA = TOP_CATEGORY_ORDER.indexOf(aTop);
         const topB = TOP_CATEGORY_ORDER.indexOf(bTop);
         if (topA !== topB) return topA - topB;
-
-        // サブカテゴリが無い場合は後ろへ
-        if (!aSub && !bSub) return 0;
-        if (!aSub) return 1;
-        if (!bSub) return -1;
 
         // サブカテゴリ順
         const subOrder = SUB_CATEGORY_ORDER[aTop] || [];
@@ -154,15 +151,6 @@
         return aSub.localeCompare(bSub, "ja");
       });
     }
-    function normalizeCategory(category) {
-      const parts = category.split("/");
-      if (parts.length === 1) {
-        // サブカテゴリが無い場合はトップカテゴリ名をサブカテゴリとして扱う
-        return [parts[0], parts[0]];
-      }
-      return parts;
-    }
-
 
     window.addEventListener("DOMContentLoaded", () => {
       showPinGate("pin-area", async () => {
@@ -179,7 +167,7 @@
           if (!page.roles.includes(role)) return;
           if (page.category.startsWith("管理/")) return;
 
-          const [top, sub] = page.category.split("/");
+          const [top, sub] = normalizeCategory(page.category);
 
           const topContainer = ensureTopCategory(top);
           const grid = ensureSubCategory(topContainer, sub);
@@ -214,5 +202,4 @@
   <div id="menu-area" style="display:none"></div>
 
 </body>
-
 </html>
