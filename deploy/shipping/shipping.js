@@ -343,7 +343,7 @@ async function saveShipping() {
     ]
   });
 
-  await saveLog("weight", "all", {}, "", csvText, "csv-replace");
+  await saveLog("weight", "all", {}, "", csvText);
 
   // ★ サマリー更新
   targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));

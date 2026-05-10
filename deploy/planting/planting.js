@@ -430,7 +430,7 @@ async function savePlantingInner() {
 
   const csvText = Papa.unparse(rows);
 
-  await saveLog("planting", "all", {}, "", csvText, "csv-replace");
+  await saveLog("planting", "all", {}, "", csvText);
 
   updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(plantingRef);

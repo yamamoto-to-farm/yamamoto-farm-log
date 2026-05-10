@@ -273,7 +273,7 @@ async function saveHarvestInner() {
   });
 
   // ★ replace 保存
-  await saveLog("harvest", "all", {}, "", csvText, "csv-replace");
+  await saveLog("harvest", "all", {}, "", csvText);
 
   // ★ summaryUpdate
   updateSaveModal("サマリーを更新しています…");
