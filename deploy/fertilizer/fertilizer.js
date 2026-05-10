@@ -80,6 +80,9 @@ export async function initFertilizerPage() {
   };
 }
 
+/* ============================================================
+   圃場フィルタデータ初期化
+============================================================ */
 async function initFieldFilterData() {
   const res = await fetch("/data/fields.json?v=" + Date.now());
   const fields = await res.json();
@@ -102,6 +105,9 @@ async function initFieldFilterData() {
   });
 }
 
+/* ============================================================
+   選択圃場の表示更新
+============================================================ */
 function updateSelectedFields() {
   const fields = filterState.fields;
   document.getElementById("selected-fields").textContent =
