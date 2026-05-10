@@ -5,7 +5,7 @@ import { saveLog } from "/common/save/index.js";
 import { initStep1 } from "./annual-step1.js";
 import { initStep2 } from "./annual-step2.js";
 
-import { setFilterData } from "/common/filter/filter-core.js";   // ★ 品種選択モーダルに必須
+import { setFilterData } from "/common/filter/filter-core.js?v=1";   // ★ 品種選択モーダルに必須
 
 const DEBUG = false;
 const log = (...a) => DEBUG && console.log(...a);

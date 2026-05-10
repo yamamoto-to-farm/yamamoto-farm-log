@@ -1,12 +1,12 @@
 // plan.js
 
-import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
+import { openYearSelectModal } from "/common/filter/filter-year-simple.js?v=1";
 import { loadJSON } from "/common/json.js";
 
 import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
 import { renderSeedList } from "./seed/index.js";
 import { renderPlantingList } from "./plantingList.js";
-import { setFilterData } from "/common/filter/filter-core.js";
+import { setFilterData } from "/common/filter/filter-core.js?v=1";
 
 
 import {

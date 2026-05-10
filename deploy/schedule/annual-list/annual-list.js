@@ -1,5 +1,5 @@
 import { loadJSON } from "/common/json.js";
-import { openYearSelectModal } from "/common/filter/filter-year-simple.js";
+import { openYearSelectModal } from "/common/filter/filter-year-simple.js?v=1";
 import { renderStep1, renderStep2 } from "./annual-list-render.js";
 
 const loadBtn = document.getElementById("loadAnnual");

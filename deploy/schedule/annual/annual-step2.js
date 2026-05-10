@@ -1,6 +1,6 @@
 // annual-step2.js（YYYY-MM対応・STEP1連動・月選択式UI・差分チェック・行削除対応・テンキー最適化・入力体験統一）
 
-import { openVarietyModal } from "/common/filter/filter-variety.js";
+import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 
 const DEBUG = false;
 const log = (...a) => DEBUG && console.log(...a);

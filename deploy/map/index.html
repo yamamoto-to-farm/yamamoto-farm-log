@@ -63,10 +63,9 @@
     import { renderHeader } from "/common/header.js";
     import { initMap } from "./map.js";
 
-    /* filter 系は import で読み込む */
-    import "/common/filter/filter-core.js";
-    import "/common/filter/filter-ui.js";
-    import "/common/filter/filter-field.js";
+    /* filter 系は filter-core.js を中心化 */
+    import "/common/filter/filter-core.js?v=1";
+    import "/common/filter/filter-field.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();

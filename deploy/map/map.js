@@ -1,7 +1,7 @@
 // map.js
 
-import { openFieldModal } from "../common/filter/filter-field.js";
-import { setFilterData } from "../common/filter/filter-core.js";
+import { openFieldModal } from "../common/filter/filter-field.js?v=1";
+import { setFilterData } from "../common/filter/filter-core.js?v=1";
 
 export function initMap() {
 

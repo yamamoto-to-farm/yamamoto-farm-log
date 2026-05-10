@@ -1,6 +1,6 @@
 // seedList-modal.js（filter-variety.js の新APIに対応）
 
-import { openVarietyModal } from "/common/filter/filter-variety.js";
+import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 
 /* ===============================
    品種選択モーダル（カテゴリ対応）
