@@ -6,13 +6,14 @@
   <title>施肥ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- 共通デザイン -->
+  <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 </head>
 
 <body>
 
-  <div id="form-area" style="display:none;">
+  <!-- ページ全体（ログイン後に表示） -->
+  <div id="page-area" style="display:none;">
 
     <h1 class="page-title">施肥ログ</h1>
 
@@ -22,11 +23,17 @@
       <input type="date" id="date" class="form-input">
     </div>
 
-    <!-- 圃場 -->
+    <!-- 圃場（新フィルタ UI） -->
     <h2 class="section-title">圃場</h2>
     <div class="card">
       <button id="open-field-modal" class="primary-btn">圃場を選択</button>
-      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
+
+      <!-- 適用中フィルタ（タグ UI） -->
+      <div id="activeFilters" style="margin-top:10px;"></div>
+
+      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">
+        未選択
+      </div>
     </div>
 
     <!-- 肥料名 -->
@@ -68,56 +75,31 @@
 
     <!-- 保存 -->
     <button id="save-btn" class="primary-btn">保存</button>
+
   </div>
 
   <!-- モーダル -->
   <div id="modal-container"></div>
 
-  <!-- 保存モーダル読み込み -->
+  <!-- save-modal 読み込み -->
+  <div id="save-modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
-      .then(html => document.getElementById("modal-container").innerHTML = html);
+      .then(html => {
+        document.getElementById("save-modal-container").innerHTML = html;
+      });
   </script>
 
   <!-- summary.js / save/index.js -->
   <script type="module" src="/common/summary.js"></script>
   <script type="module" src="/common/save/index.js"></script>
 
-  <!-- ★ filter 系（map.html と同じ構造） -->
+  <!-- ★ 新フィルタ構造（plan.js と同じ） -->
   <script type="module" src="/common/filter/filter-core.js"></script>
   <script type="module" src="/common/filter/filter-ui.js"></script>
   <script type="module" src="/common/filter/filter-field.js"></script>
   <script type="module" src="/common/filter/filter-active.js"></script>
-
-  <!-- ★ setFilterData() を index.html 側で実行（最重要） -->
-  <script type="module">
-    import { setFilterData } from "/common/filter/filter-core.js?v=1";
-
-    async function initFilterBase() {
-      const res = await fetch("/data/fields.json?v=" + Date.now());
-      const fields = await res.json();
-
-      const parents = [];
-      const children = {};
-
-      fields.forEach(f => {
-        if (!children[f.area]) {
-          children[f.area] = [];
-          parents.push(f.area);
-        }
-        children[f.area].push(f.name);
-      });
-
-      setFilterData({
-        yearMonths: [],
-        fields: { parents, children },
-        varieties: { parents: [], children: {} }
-      });
-    }
-
-    await initFilterBase();
-  </script>
 
   <!-- 初期化 -->
   <script type="module">
@@ -129,7 +111,7 @@
       if (!await verifyLocalAuth()) return;
 
       renderHeader();
-      document.getElementById("form-area").style.display = "block";
+      document.getElementById("page-area").style.display = "block";
 
       document.getElementById("date").value =
         new Date().toISOString().slice(0, 10);

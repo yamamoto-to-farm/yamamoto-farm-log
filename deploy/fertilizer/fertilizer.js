@@ -7,31 +7,32 @@ import { saveFertilizerLog } from "/common/general-log/fertilizer.js?v=1";
    初期化
 ============================================================ */
 export async function initFertilizerPage() {
-  await initFieldFilterData();
 
-  // ★ タグ UI を有効化（一覧ページと同じ）
+  // ★ フィルタデータ初期化（plan.js と同じ）
+  await initFieldFilter();
+
+  // ★ タグ UI 初期化
   initActiveFilterUI();
 
-  /* ▼ 圃場選択モーダル（filter モード） */
+  // 圃場モーダル
   document.getElementById("open-field-modal").onclick = () => {
-    openFieldModal({
-      mode: "filter"
-    });
+    openFieldModal({ mode: "filter" });
   };
 
-  /* ▼ 選択圃場の表示更新 */
+  // フィルタ変更時の UI 更新
   document.addEventListener("filter:apply", updateSelectedFields);
   document.addEventListener("filter:reset", updateSelectedFields);
+
   updateSelectedFields();
 
-  /* ▼ 保存処理 */
+  // 保存処理
   document.getElementById("save-btn").onclick = saveData;
 }
 
 /* ============================================================
-   圃場フィルタデータ初期化
+   圃場フィルタデータ初期化（plan.js と同じ構造）
 ============================================================ */
-async function initFieldFilterData() {
+async function initFieldFilter() {
   const res = await fetch("/data/fields.json?v=" + Date.now());
   const fields = await res.json();
 
@@ -47,7 +48,8 @@ async function initFieldFilterData() {
   });
 
   setFilterData({
-    yearMonths: [],
+    years: [],
+    months: {},
     fields: { parents, children },
     varieties: { parents: [], children: {} }
   });
