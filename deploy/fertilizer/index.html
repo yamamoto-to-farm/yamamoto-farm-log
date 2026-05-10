@@ -12,119 +12,92 @@
 
 <body>
 
-  <!-- ===============================
-       ★ ヘッダー（header.js が自動挿入）
-  =============================== -->
-
   <div id="form-area" style="display:none;">
 
-    <!-- ページタイトル -->
     <h1 class="page-title">施肥ログ</h1>
 
-    <!-- 施肥日 -->
     <h2 class="section-title">施肥日</h2>
     <div class="card">
       <input type="date" id="date" class="form-input">
     </div>
 
-    <!-- 圃場 -->
     <h2 class="section-title">圃場</h2>
     <div class="card">
-      <button type="button" class="primary-btn" id="open-field-modal">
-        圃場を選択
-      </button>
-
-      <div id="selected-fields" class="selected-list" style="margin-top:10px; font-weight:bold;">
-        未選択
-      </div>
+      <button id="open-field-modal" class="primary-btn">圃場を選択</button>
+      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
-    <!-- 肥料名 -->
     <h2 class="section-title">肥料名</h2>
     <div class="card">
       <input type="text" id="fertilizer_id" class="form-input" placeholder="例：硫安">
     </div>
 
-    <!-- 使用量 -->
     <h2 class="section-title">使用量</h2>
     <div class="card">
       <div class="form-field">
         <label>袋数</label>
         <input type="number" id="bags" class="form-input" value="1" min="0" step="0.1">
       </div>
-
       <div class="form-field">
         <label>量（kg）</label>
         <input type="number" id="amount" class="form-input" value="20" min="0" step="0.1">
       </div>
     </div>
 
-    <!-- 使用機械 -->
     <h2 class="section-title">使用機械</h2>
     <div class="card">
       <input type="text" id="machine" class="form-input" value="YT5113">
     </div>
 
-    <!-- 作業者 -->
     <h2 class="section-title">作業者</h2>
     <div class="card">
       <input type="text" id="worker" class="form-input" value="直輝">
     </div>
 
-    <!-- 備考 -->
     <h2 class="section-title">備考</h2>
     <div class="card">
       <textarea id="notes" class="form-textarea" rows="3"></textarea>
     </div>
 
-    <!-- 保存 -->
-    <button type="button" id="save-btn" class="primary-btn">保存</button>
-
-    <!-- ★ 作業完了ボタンは utils.js が追加する -->
+    <button id="save-btn" class="primary-btn">保存</button>
   </div>
 
-  <!-- 保存モーダル -->
+  <!-- モーダル -->
   <div id="modal-container"></div>
+
+  <!-- 共通モーダル -->
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
-      .then(html => {
-        document.getElementById("modal-container").innerHTML = html;
-      });
+      .then(html => document.getElementById("modal-container").innerHTML = html);
   </script>
 
-  <!-- summary.js（モーダル制御） -->
+  <!-- summary.js / save/index.js -->
   <script type="module" src="/common/summary.js"></script>
-
-  <!-- save/index.js（S3 書き込み） -->
   <script type="module" src="/common/save/index.js"></script>
 
-  <!-- ===============================
-       ▼ 認証 → ヘッダー挿入 → 初期化
-  =============================== -->
+  <!-- ★ filter 系は map.html と同じ方式で読み込む -->
+  <script type="module" src="/common/filter/filter-core.js"></script>
+  <script type="module" src="/common/filter/filter-ui.js"></script>
+  <script type="module" src="/common/filter/filter-field.js"></script>
+
+  <!-- 初期化 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { attachWorkDoneButton } from "/common/utils.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
+      if (!await verifyLocalAuth()) return;
 
-      // ヘッダー描画
       renderHeader();
-
-      // ページ表示
       document.getElementById("form-area").style.display = "block";
 
-      // 日付初期値
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("date").value = today;
+      document.getElementById("date").value =
+        new Date().toISOString().slice(0, 10);
 
-      // 作業完了ボタン
       attachWorkDoneButton();
 
-      // fertilizer.js をロードして初期化
       const module = await import("./fertilizer.js?v=1");
       module.initFertilizerPage();
     });
