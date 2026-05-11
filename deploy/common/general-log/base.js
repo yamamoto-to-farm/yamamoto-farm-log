@@ -34,17 +34,35 @@ function ensureYear(data, year) {
 }
 
 /* ---------------------------------------------------------
-   3. インデックス読み込み（存在しない場合は空）
+   3. インデックス読み込み（階層構造の揺れを吸収）
 --------------------------------------------------------- */
 async function loadIndex(type) {
-  const path = `/data/${type}-index.json`;
 
-  try {
-    return await loadJSON(path);
-  } catch (e) {
-    return {};
+  // A. ルート直下型
+  const pathA = `/data/${type}-index.json`;
+
+  // B. ディレクトリ型
+  const pathB = `/data/${type}/${type}-index.json`;
+
+  // 1. まず A を試す
+  let data = await loadJSON(pathA);
+  if (Object.keys(data).length !== 0) {
+    debugLog(`[loadIndex] loaded from A: ${pathA}`);
+    return data;
   }
+
+  // 2. 次に B を試す
+  data = await loadJSON(pathB);
+  if (Object.keys(data).length !== 0) {
+    debugLog(`[loadIndex] loaded from B: ${pathB}`);
+    return data;
+  }
+
+  // 3. どちらも無い → 初回保存用
+  debugLog(`[loadIndex] no index found → empty object`);
+  return {};
 }
+
 
 /* ---------------------------------------------------------
    4. インデックス更新（saveLog で保存）
