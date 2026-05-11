@@ -283,13 +283,7 @@ export function showPinGate(containerId, onSuccess) {
 
     try {
       // ★ AWS では絶対ルートパスが最も安全
-      const res = await fetch("/data/access.csv");
-      const text = await res.text();
-      const lines = text.trim().split("\n");
-      const headers = lines[0].split(",");
-
       const res = await fetch("/data/workers.json?v=" + Date.now());
-
       const user = users.find(u => u.pin === pin);
 
       if (!user) {
