@@ -3,7 +3,7 @@
 // ===============================
 // デバッグフラグ
 // ===============================
-const DEBUG = true;   // ← false にすればログが一切出ない
+const DEBUG = true;
 
 function debugLog(...args) {
   if (DEBUG) console.log("[fertilizer-debug]", ...args);
@@ -46,10 +46,9 @@ export async function initFertilizerPage() {
     btnFertilizer.onclick = () => {
       debugLog("openFertilizerModal called");
       debugLog("getFilterData before openFertilizerModal:", getFilterData());
-      openFertilizerModal({ mode: "filter" }); // ★ mode を変えるだけでOK
+      openFertilizerModal({ mode: "filter" });
     };
   }
-
 
   // 5. フィルタ変更時の表示更新
   window.addEventListener("filter:apply", () => {
@@ -58,7 +57,7 @@ export async function initFertilizerPage() {
   });
 
   window.addEventListener("filter:apply", () => {
-    updateSelectedFertilizer();
+    updateSelectedFertilizers();   // ← 修正済み
   });
 
   window.addEventListener("filter:reset", () => {
@@ -136,7 +135,6 @@ async function initFertilizerFilterData() {
   debugLog("fertilizer parents", parents);
   debugLog("fertilizer children", children);
 
-  // ★ 既存の filterState に肥料フィルタを追加
   const current = getFilterData();
   setFilterData({
     ...current,
@@ -164,7 +162,7 @@ function updateSelectedFertilizers() {
   const fertilizers = filterState.fertilizers || [];
   debugLog("updateSelectedFertilizers", fertilizers);
 
-  const el = document.getElementById("selected-fertilizers");
+  const el = document.getElementById("selected-fertilizer");  // ← 修正済み
   if (!el) return;
 
   el.textContent = fertilizers.length ? fertilizers.join("、") : "未選択";

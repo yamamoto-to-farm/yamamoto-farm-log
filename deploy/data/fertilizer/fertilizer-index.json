@@ -1,6 +1,33 @@
 [
-  { "category": "化成", "name": "化成14-14-14" },
-  { "category": "化成", "name": "化成8-8-8" },
-  { "category": "石灰", "name": "苦土石灰" },
-  { "category": "堆肥", "name": "牛ふん堆肥" }
+  {
+    "id": "F001",
+    "category": "堆肥",
+    "name": "牛ふん堆肥",
+    "capacity": 15
+  },
+  {
+    "id": "F002",
+    "category": "堆肥",
+    "name": "バーク堆肥",
+    "capacity": 20
+  },
+  {
+    "id": "F101",
+    "category": "窒素肥料",
+    "name": "硫安",
+    "capacity": 20
+  },
+  {
+    "id": "F102",
+    "category": "窒素肥料",
+    "name": "尿素",
+    "capacity": 20
+  },
+  {
+    "id": "F201",
+    "category": "複合肥料",
+    "name": "化成14-14-14",
+    "capacity": 20
+  }
 ]
+
