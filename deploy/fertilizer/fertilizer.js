@@ -42,7 +42,9 @@ export async function initFertilizerPage() {
   const btnFertilizer = document.getElementById("open-fertilizer-modal");
   if (btnFertilizer) {
     btnFertilizer.onclick = () => {
-      openFieldModal({ mode: "fertilizer" }); // ★ mode を変えるだけでOK
+      debugLog("openFertilizerModal called");
+      debugLog("getFilterData before openFertilizerModal:", getFilterData());
+      openFertilizerModal({ mode: "filter" }); // ★ mode を変えるだけでOK
     };
   }
 
@@ -51,6 +53,10 @@ export async function initFertilizerPage() {
   window.addEventListener("filter:apply", () => {
     debugLog("filter:apply event", filterState.fields);
     updateSelectedFields();
+  });
+
+  window.addEventListener("filter:apply", () => {
+    updateSelectedFertilizer();
   });
 
   window.addEventListener("filter:reset", () => {
@@ -152,7 +158,15 @@ function updateSelectedFields() {
 /* ============================================================
    選択肥料の表示更新
 ============================================================ */
+function updateSelectedFertilizers() {
+  const fertilizers = filterState.fertilizers || [];
+  debugLog("updateSelectedFertilizers", fertilizers);
 
+  const el = document.getElementById("selected-fertilizers");
+  if (!el) return;
+
+  el.textContent = fertilizers.length ? fertilizers.join("、") : "未選択";
+}
 
 /* ============================================================
    保存処理
