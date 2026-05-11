@@ -13,26 +13,26 @@ const DEBUG_MODE = false;
 // デバッグ表示用UI（自動生成）
 // ===============================
 function debugLog(msg) {
-    if (!DEBUG_MODE) return;
+  if (!DEBUG_MODE) return;
 
-    let box = document.getElementById("debug");
-    if (!box) {
-        box = document.createElement("div");
-        box.id = "debug";
-        box.style.position = "fixed";
-        box.style.bottom = "0";
-        box.style.left = "0";
-        box.style.right = "0";
-        box.style.background = "rgba(0,0,0,0.75)";
-        box.style.color = "#fff";
-        box.style.fontSize = "12px";
-        box.style.padding = "6px 10px";
-        box.style.zIndex = "9999";
-        box.style.whiteSpace = "pre-line";
-        document.body.appendChild(box);
-    }
+  let box = document.getElementById("debug");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "debug";
+    box.style.position = "fixed";
+    box.style.bottom = "0";
+    box.style.left = "0";
+    box.style.right = "0";
+    box.style.background = "rgba(0,0,0,0.75)";
+    box.style.color = "#fff";
+    box.style.fontSize = "12px";
+    box.style.padding = "6px 10px";
+    box.style.zIndex = "9999";
+    box.style.whiteSpace = "pre-line";
+    document.body.appendChild(box);
+  }
 
-    box.textContent = msg;
+  box.textContent = msg;
 }
 
 
@@ -41,51 +41,51 @@ function debugLog(msg) {
 // ===============================
 export async function createFieldSelector(autoId, areaId, manualId) {
 
-    // ▼ fields.json 読み込み
-    const res = await fetch("/data/fields.json");
-    const fields = await res.json();
+  // ▼ fields.json 読み込み
+  const res = await fetch("/data/fields.json");
+  const fields = await res.json();
 
-    // 自動判定欄（読み取り専用）
-    const auto = document.getElementById(autoId);
-    auto.readOnly = true;
+  // 自動判定欄（読み取り専用）
+  const auto = document.getElementById(autoId);
+  auto.readOnly = true;
 
-    // ▼ エリア一覧を抽出
-    const areaSel = document.getElementById(areaId);
-    const areas = [...new Set(fields.map(f => f.area))];
+  // ▼ エリア一覧を抽出
+  const areaSel = document.getElementById(areaId);
+  const areas = [...new Set(fields.map(f => f.area))];
 
-    areas.forEach(area => {
-        const opt = document.createElement("option");
-        opt.value = area;          // ← area 名
-        opt.textContent = area;
-        areaSel.appendChild(opt);
+  areas.forEach(area => {
+    const opt = document.createElement("option");
+    opt.value = area;          // ← area 名
+    opt.textContent = area;
+    areaSel.appendChild(opt);
+  });
+
+  // ▼ 圃場セレクタ（手動）
+  const fieldSel = document.getElementById(manualId);
+  fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
+
+  // ▼ エリア選択時に圃場を絞り込み
+  areaSel.addEventListener("change", () => {
+    const selectedArea = areaSel.value;
+
+    fieldSel.innerHTML = "";
+
+    if (!selectedArea) {
+      fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
+      return;
+    }
+
+    const filtered = fields.filter(f => f.area === selectedArea);
+
+    filtered.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.name;     // ★ ここを id → name に変更
+      opt.textContent = f.name;
+      fieldSel.appendChild(opt);
     });
+  });
 
-    // ▼ 圃場セレクタ（手動）
-    const fieldSel = document.getElementById(manualId);
-    fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
-
-    // ▼ エリア選択時に圃場を絞り込み
-    areaSel.addEventListener("change", () => {
-        const selectedArea = areaSel.value;
-
-        fieldSel.innerHTML = "";
-
-        if (!selectedArea) {
-            fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
-            return;
-        }
-
-        const filtered = fields.filter(f => f.area === selectedArea);
-
-        filtered.forEach(f => {
-            const opt = document.createElement("option");
-            opt.value = f.name;     // ★ ここを id → name に変更
-            opt.textContent = f.name;
-            fieldSel.appendChild(opt);
-        });
-    });
-
-    return fields;
+  return fields;
 }
 
 // ===============================
@@ -128,77 +128,77 @@ async function setupVarietySelector() {
 // ===============================
 export async function autoDetectField(autoId, areaId, manualId) {
 
-    const auto = document.getElementById(autoId);
-    const areaSel = document.getElementById(areaId);
-    const fieldSel = document.getElementById(manualId);
+  const auto = document.getElementById(autoId);
+  const areaSel = document.getElementById(areaId);
+  const fieldSel = document.getElementById(manualId);
 
-    auto.value = "GPS取得中…";
-    debugLog("GPS取得中…");
+  auto.value = "GPS取得中…";
+  debugLog("GPS取得中…");
 
-    try {
-        const pos = await getCurrentPosition(15000);
-        const { lat, lng, accuracy } = pos;
+  try {
+    const pos = await getCurrentPosition(15000);
+    const { lat, lng, accuracy } = pos;
 
-        debugLog(
-            `GPS取得成功
+    debugLog(
+      `GPS取得成功
 lat: ${lat}
 lng: ${lng}
 accuracy: ±${accuracy}m`
-        );
+    );
 
-        const nearest = await getNearestField(lat, lng);
+    const nearest = await getNearestField(lat, lng);
 
-        const distText =
-            nearest.distance != null
-                ? `\n距離: ${nearest.distance.toFixed(1)}m`
-                : "";
+    const distText =
+      nearest.distance != null
+        ? `\n距離: ${nearest.distance.toFixed(1)}m`
+        : "";
 
-        debugLog(
-            `GPS取得成功
+    debugLog(
+      `GPS取得成功
 lat: ${lat}
 lng: ${lng}
 accuracy: ±${accuracy}m
 
 最寄り圃場: ${nearest.name}${distText}`
-        );
+    );
 
-        // ▼ 自動判定欄に name を表示
-        auto.value = `${nearest.name}（推定）`;
+    // ▼ 自動判定欄に name を表示
+    auto.value = `${nearest.name}（推定）`;
 
-        // ▼ エリアをセット
-        areaSel.value = nearest.area;
-        areaSel.dispatchEvent(new Event("change"));
+    // ▼ エリアをセット
+    areaSel.value = nearest.area;
+    areaSel.dispatchEvent(new Event("change"));
 
-        // ▼ 圃場セレクタも name をセット（id → name に変更）
-        fieldSel.value = nearest.name;
+    // ▼ 圃場セレクタも name をセット（id → name に変更）
+    fieldSel.value = nearest.name;
 
-    } catch (err) {
-        auto.value = "自動判定できませんでした（GPSエラー）";
-        debugLog(`GPSエラー: ${err}`);
-        console.error("GPSエラー:", err);
-    }
+  } catch (err) {
+    auto.value = "自動判定できませんでした（GPSエラー）";
+    debugLog(`GPSエラー: ${err}`);
+    console.error("GPSエラー:", err);
+  }
 }
 
 // ===============================
 // 作業者チェックボックス
 // ===============================
 export async function createWorkerCheckboxes(containerId) {
-    
-    const res = await fetch("/data/workers.json");
-    const workers = await res.json();
 
-    const box = document.getElementById(containerId);
+  const res = await fetch("/data/workers.json");
+  const workers = await res.json();
 
-    workers.forEach(w => {
-        const div = document.createElement("div");
-        div.innerHTML = `
+  const box = document.getElementById(containerId);
+
+  workers.forEach(w => {
+    const div = document.createElement("div");
+    div.innerHTML = `
             <label>
                 <input type="checkbox" name="workers" value="${w.name}">
                 ${w.name}
             </label>
         `;
-        box.appendChild(div);
-    });
+    box.appendChild(div);
+  });
 }
 
 
@@ -206,15 +206,15 @@ export async function createWorkerCheckboxes(containerId) {
 // 作業者の取得（固定＋単発バイト）
 // ===============================
 export function getSelectedWorkers(boxId, tempId) {
-    const fixed = [...document.querySelectorAll(`#${boxId} input[name='workers']:checked`)]
-        .map(x => x.value);
+  const fixed = [...document.querySelectorAll(`#${boxId} input[name='workers']:checked`)]
+    .map(x => x.value);
 
-    const temp = document.getElementById(tempId).value
-        .split(",")
-        .map(x => x.trim())
-        .filter(x => x);
+  const temp = document.getElementById(tempId).value
+    .split(",")
+    .map(x => x.trim())
+    .filter(x => x);
 
-    return [...fixed, ...temp].join(",");
+  return [...fixed, ...temp].join(",");
 }
 
 
@@ -222,22 +222,22 @@ export function getSelectedWorkers(boxId, tempId) {
 // 日付入力コンポーネント
 // ===============================
 export function createDateInput(targetId, labelText = "") {
-    const container = document.getElementById(targetId);
+  const container = document.getElementById(targetId);
 
-    const label = document.createElement("label");
-    label.textContent = labelText;
+  const label = document.createElement("label");
+  label.textContent = labelText;
 
-    const input = document.createElement("input");
-    input.type = "date";
-    input.style.width = "100%";
-    input.style.padding = "8px";
-    input.style.fontSize = "16px";
-    input.style.marginTop = "5px";
+  const input = document.createElement("input");
+  input.type = "date";
+  input.style.width = "100%";
+  input.style.padding = "8px";
+  input.style.fontSize = "16px";
+  input.style.marginTop = "5px";
 
-    container.appendChild(label);
-    container.appendChild(input);
+  container.appendChild(label);
+  container.appendChild(input);
 
-    return input;
+  return input;
 }
 
 // ===============================
@@ -248,17 +248,17 @@ export function getFinalField(
   manualId = "field_manual",
   confirmId = "field_confirm"
 ) {
-    const rawAuto = document.getElementById(autoId)?.value || "";
-    const manual = document.getElementById(manualId)?.value || "";
-    const confirmed = document.getElementById(confirmId)?.checked;
+  const rawAuto = document.getElementById(autoId)?.value || "";
+  const manual = document.getElementById(manualId)?.value || "";
+  const confirmed = document.getElementById(confirmId)?.checked;
 
-    // ▼ auto の「（推定）」を除去して name だけにする
-    const auto = rawAuto.replace(/（推定）/g, "").trim();
+  // ▼ auto の「（推定）」を除去して name だけにする
+  const auto = rawAuto.replace(/（推定）/g, "").trim();
 
-    // ▼ 優先順位：確認チェック → 手動 → 自動
-    if (confirmed && auto) return auto;
-    if (manual) return manual;
-    return auto;
+  // ▼ 優先順位：確認チェック → 手動 → 自動
+  if (confirmed && auto) return auto;
+  if (manual) return manual;
+  return auto;
 }
 
 // ===============================
@@ -288,12 +288,7 @@ export function showPinGate(containerId, onSuccess) {
       const lines = text.trim().split("\n");
       const headers = lines[0].split(",");
 
-      const users = lines.slice(1).map(line => {
-        const cols = line.split(",");
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = cols[i]);
-        return obj;
-      });
+      const res = await fetch("/data/workers.json?v=" + Date.now());
 
       const user = users.find(u => u.pin === pin);
 
@@ -304,11 +299,11 @@ export function showPinGate(containerId, onSuccess) {
 
       // 認証成功 → グローバル変数に保存
       window.currentHuman = user.name;
-      window.currentRole  = user.role;
+      window.currentRole = user.role;
 
       // localStorage に保存（QR 直アクセス対応）
       localStorage.setItem("human", user.name);
-      localStorage.setItem("role",  user.role);
+      localStorage.setItem("role", user.role);
 
       // PIN UI を非表示
       container.style.display = "none";
@@ -337,7 +332,7 @@ export function showPinGate(containerId, onSuccess) {
 // ===============================
 export async function verifyLocalAuth() {
   const savedHuman = localStorage.getItem("human");
-  const savedRole  = localStorage.getItem("role");
+  const savedRole = localStorage.getItem("role");
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
@@ -347,19 +342,10 @@ export async function verifyLocalAuth() {
 
   try {
     // ★ AWS では絶対ルートパスが正解
-    const res = await fetch("/data/access.csv");
-    const text = await res.text();
-    const lines = text.trim().split("\n");
-    const headers = lines[0].split(",");
+    const res = await fetch("/data/workers.json?v=" + Date.now());
+    const users = await res.json();
 
-    const users = lines.slice(1).map(line => {
-      const cols = line.split(",");
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = cols[i]);
-      return obj;
-    });
-
-    // localStorage の情報が access.csv に存在するか確認
+    // localStorage の情報が workers.json に存在するか確認
     const user = users.find(u => u.name === savedHuman && u.role === savedRole);
 
     if (!user) {
@@ -373,7 +359,7 @@ export async function verifyLocalAuth() {
 
     // 認証OK → グローバル変数に反映
     window.currentHuman = savedHuman;
-    window.currentRole  = savedRole;
+    window.currentRole = savedRole;
 
     return true;
 
@@ -394,7 +380,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // index.html では verifyLocalAuth を呼ばない
   if (location.pathname === "/" ||
-      location.pathname === "/index.html") {
+    location.pathname === "/index.html") {
     return;
   }
 
@@ -402,6 +388,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!ok) return;
 
   // 認証OK → グローバル変数に反映（保険）
-  window.currentRole  = localStorage.getItem("role");
+  window.currentRole = localStorage.getItem("role");
   window.currentHuman = localStorage.getItem("human");
 });

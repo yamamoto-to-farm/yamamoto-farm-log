@@ -1,9 +1,9 @@
 [
-  { "id": "F001", "name": "山本 雅彦" },
-  { "id": "F002", "name": "山本 咲子" },
-  { "id": "F003", "name": "山本 直輝" },
-  { "id": "F004", "name": "山本 千尋" },
-  { "id": "Y005", "name": "若月 道昭" },
-  { "id": "Y006", "name": "石原 孝晋" },
-  { "id": "Y007", "name": "土井 琉羽" }
+  { "pin": "000", "name": "naoki", "role": "admin" },
+  { "pin": "001", "name": "sakiko", "role": "family" },
+  { "pin": "002", "name": "masahiko", "role": "family" },
+  { "pin": "003", "name": "chihiro", "role": "family" },
+  { "pin": "Y005", "name": "wakatsuki", "role": "worker" },
+  { "pin": "Y006", "name": "ishihara", "role": "worker" },
+  { "pin": "Y007", "name": "doi", "role": "worker" }
 ]
