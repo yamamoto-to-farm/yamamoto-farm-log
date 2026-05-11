@@ -264,9 +264,6 @@ export function getFinalField(
 // ===============================
 // PIN 認証 UI を表示し、認証後に callback を実行
 // ===============================
-// ===============================
-// PIN 認証 UI を表示し、認証後に callback を実行
-// ===============================
 export function showPinGate(containerId, onSuccess) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -284,11 +281,11 @@ export function showPinGate(containerId, onSuccess) {
     if (!pin) return;
 
     try {
-      // ★ workers.json を読み込む
+      // workers.json を読み込む
       const resWorkers = await fetch("/data/workers.json?v=" + Date.now());
       const users = await resWorkers.json();
 
-      // ★ PIN 一致ユーザーを検索
+      // PIN 一致ユーザーを検索
       const user = users.find(u => u.pin === pin);
 
       if (!user) {
@@ -298,11 +295,11 @@ export function showPinGate(containerId, onSuccess) {
 
       // 認証成功 → グローバル変数に保存
       window.currentHuman = user.name;
-      window.currentRole = user.role;
+      window.currentRole  = user.role;
 
       // localStorage に保存
       localStorage.setItem("human", user.name);
-      localStorage.setItem("role", user.role);
+      localStorage.setItem("role",  user.role);
 
       // PIN UI を非表示
       container.style.display = "none";
@@ -311,26 +308,19 @@ export function showPinGate(containerId, onSuccess) {
       if (onSuccess) onSuccess();
 
     } catch (e) {
-      console.error(e);
+      console.error("認証データ読み込みエラー:", e);
       alert("認証データの読み込みに失敗しました");
     }
   }
 
+  // ボタン押下
   button.onclick = authenticate;
 
+  // Enter キー対応
   input.addEventListener("keydown", e => {
     if (e.key === "Enter") authenticate();
   });
 }
-
-
-// ボタン押下
-button.onclick = authenticate;
-
-// Enter キー対応
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") authenticate();
-});
 
 // ===============================
 // localStorage の認証情報がまだ有効かチェック
