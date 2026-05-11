@@ -11,7 +11,8 @@ export { openModal, closeModal };
 export const filterState = {
   yearMonths: [],
   fields: [],
-  varieties: []
+  varieties: [],
+  fertilizers: []
 };
 
 let filterData = {}; // setFilterData で受け取る
@@ -51,6 +52,7 @@ export function resetFilter() {
   filterState.yearMonths = [];
   filterState.fields = [];
   filterState.varieties = [];
+  filterState.fertilizers = [];
 
   window.dispatchEvent(new Event("filter:reset"));
   updateActiveFilterUI();
