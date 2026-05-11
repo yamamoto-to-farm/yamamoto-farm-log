@@ -10,6 +10,7 @@ function debugLog(...args) {
 }
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { openFieldModal } from "/common/filter/filter-fertilizer.js?v=1";
 import { setFilterData, filterState, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
