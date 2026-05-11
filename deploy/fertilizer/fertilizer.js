@@ -123,6 +123,15 @@ async function initFertilizerFilterData() {
   const res = await fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now());
   const list = await res.json();
 
+  // ★ 辞書を作る（name → object）
+  const dict = {};
+  list.forEach(f => {
+    dict[f.name] = f;
+  });
+
+  // ★ multi-input に辞書を渡す
+  setFertilizerDict(dict);
+
   const parents = [];
   const children = {};
 
