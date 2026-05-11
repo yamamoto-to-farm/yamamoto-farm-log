@@ -38,6 +38,7 @@
 @import url("../../schedule/annual/annual.css") layer(pages);
 @import url("../../schedule/annual-list/annual-list.css") layer(pages);
 @import url("../../admin/edit-csv/edit-csv.css") layer(pages);
+@import url("../../fertilizer/fertilizer.css") layer(pages);
 
 /* ===============================
    overrides（最後の強制上書き）

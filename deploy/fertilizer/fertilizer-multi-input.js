@@ -6,7 +6,7 @@
 const DEBUG = true;   // ← false にすればログが一切出ない
 
 function debugLog(...args) {
-  if (DEBUG) console.log("[multi-input-debug]", ...args);
+    if (DEBUG) console.log("[multi-input-debug]", ...args);
 }
 
 import { filterState } from "/common/filter/filter-core.js?v=1";
@@ -18,100 +18,90 @@ import { filterState } from "/common/filter/filter-core.js?v=1";
 export let fertilizerDict = {};
 
 export function setFertilizerDict(dict) {
-  fertilizerDict = dict;
-  debugLog("setFertilizerDict:", dict);
+    fertilizerDict = dict;
+    debugLog("setFertilizerDict:", dict);
 }
 
 /* ============================================================
    複数肥料入力 UI を描画
 ============================================================ */
 export function renderFertilizerInputs() {
-  debugLog("renderFertilizerInputs start");
+    debugLog("renderFertilizerInputs start");
 
-  const area = document.getElementById("fertilizer-input-area");
-  if (!area) {
-    debugLog("fertilizer-input-area not found");
-    return;
-  }
+    const area = document.getElementById("fertilizer-input-area");
+    if (!area) {
+        debugLog("fertilizer-input-area not found");
+        return;
+    }
 
-  const selected = filterState.fertilizers || [];
-  debugLog("selected fertilizers:", selected);
+    const selected = filterState.fertilizers || [];
+    debugLog("selected fertilizers:", selected);
 
-  if (selected.length === 0) {
-    area.innerHTML = `<p class="no-fertilizer">肥料が選択されていません</p>`;
-    debugLog("no fertilizers selected");
-    return;
-  }
+    if (selected.length === 0) {
+        area.innerHTML = `<p class="no-fertilizer">肥料が選択されていません</p>`;
+        debugLog("no fertilizers selected");
+        return;
+    }
 
-  // UI を生成
-  area.innerHTML = selected.map(name => {
-    const f = fertilizerDict[name] || {};
-    const capacity = f.capacity || 0;
+    // UI を生成
+    area.innerHTML = selected.map(name => {
+        const f = fertilizerDict[name] || {};
+        const capacity = f.capacity || 0;
 
-    debugLog(`render row for ${name}`, f);
+        debugLog(`render row for ${name}`, f);
 
-    return `
-      <div class="fertilizer-row" data-name="${name}">
-        <div class="fertilizer-title">${name}</div>
+        return `
+  <div class="fertilizer-row" data-name="${name}">
+    <div class="fertilizer-title">${name}</div>
 
-        <div class="fertilizer-inputs">
+    <div class="fertilizer-line">
+      <input type="text"
+             inputmode="numeric"
+             pattern="[0-9]*"
+             class="bags-input"
+             data-name="${name}"
+             value="0"> 袋
 
-          <label>袋数</label>
-          <input type="number"
-                 class="bags-input"
-                 data-name="${name}"
-                 value="0"
-                 min="0">
+      × ${capacity}kg
 
-          <label>容量(kg)</label>
-          <input type="number"
-                 class="capacity-input"
-                 value="${capacity}"
-                 disabled>
+      = <span class="total-display" data-name="${name}">0</span> kg
+    </div>
+  </div>
+`;
 
-          <label>合計(kg)</label>
-          <input type="number"
-                 class="total-input"
-                 data-name="${name}"
-                 value="0"
-                 disabled>
+    }).join("");
 
-        </div>
-      </div>
-    `;
-  }).join("");
+    initInputEvents();
 
-  initInputEvents();
-
-  debugLog("renderFertilizerInputs done");
+    debugLog("renderFertilizerInputs done");
 }
 
 /* ============================================================
    入力イベント（袋数 → 合計kg 自動計算）
 ============================================================ */
 function initInputEvents() {
-  debugLog("initInputEvents start");
+    debugLog("initInputEvents start");
 
-  document.querySelectorAll(".bags-input").forEach(input => {
-    input.addEventListener("input", () => {
-      const name = input.dataset.name;
-      const bags = Number(input.value);
+    document.querySelectorAll(".bags-input").forEach(input => {
+        input.addEventListener("input", () => {
+            const name = input.dataset.name;
+            const bags = Number(input.value);
 
-      const f = fertilizerDict[name];
-      const capacity = f.capacity || 0;
+            const f = fertilizerDict[name];
+            const capacity = f.capacity || 0;
 
-      const total = bags * capacity;
+            const total = bags * capacity;
 
-      debugLog(`calc total for ${name}: bags=${bags}, capacity=${capacity}, total=${total}`);
+            debugLog(`calc total for ${name}: bags=${bags}, capacity=${capacity}, total=${total}`);
 
-      const totalInput = document.querySelector(
-        `.total-input[data-name="${name}"]`
-      );
-      if (totalInput) totalInput.value = total;
+            const totalInput = document.querySelector(
+                `.total-input[data-name="${name}"]`
+            );
+            if (totalInput) totalInput.value = total;
+        });
     });
-  });
 
-  debugLog("initInputEvents done");
+    debugLog("initInputEvents done");
 }
 
 /* ============================================================
@@ -119,41 +109,41 @@ function initInputEvents() {
    → fertilizer.js の saveData() から呼び出す
 ============================================================ */
 export function getFertilizerInputData() {
-  debugLog("getFertilizerInputData start");
+    debugLog("getFertilizerInputData start");
 
-  const selected = filterState.fertilizers || [];
-  const result = [];
+    const selected = filterState.fertilizers || [];
+    const result = [];
 
-  selected.forEach(name => {
-    const bagsInput = document.querySelector(
-      `.bags-input[data-name="${name}"]`
-    );
-    const totalInput = document.querySelector(
-      `.total-input[data-name="${name}"]`
-    );
+    selected.forEach(name => {
+        const bagsInput = document.querySelector(
+            `.bags-input[data-name="${name}"]`
+        );
+        const totalInput = document.querySelector(
+            `.total-input[data-name="${name}"]`
+        );
 
-    if (!bagsInput || !totalInput) {
-      debugLog(`inputs not found for ${name}`);
-      return;
-    }
+        if (!bagsInput || !totalInput) {
+            debugLog(`inputs not found for ${name}`);
+            return;
+        }
 
-    const bags = Number(bagsInput.value);
-    const total = Number(totalInput.value);
+        const bags = Number(bagsInput.value);
+        const total = Number(totalInput.value);
 
-    const f = fertilizerDict[name];
+        const f = fertilizerDict[name];
 
-    const row = {
-      fertilizer_id: f.id,
-      name,
-      bags,
-      total_kg: total
-    };
+        const row = {
+            fertilizer_id: f.id,
+            name,
+            bags,
+            total_kg: total
+        };
 
-    debugLog("row:", row);
+        debugLog("row:", row);
 
-    result.push(row);
-  });
+        result.push(row);
+    });
 
-  debugLog("getFertilizerInputData result:", result);
-  return result;
+    debugLog("getFertilizerInputData result:", result);
+    return result;
 }
