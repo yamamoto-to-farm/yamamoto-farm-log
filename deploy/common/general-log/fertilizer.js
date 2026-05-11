@@ -9,14 +9,12 @@ import { saveMultiFieldLog } from "./base.js?v=1";
  * 施肥ログを保存する
  *
  * @param {Object} input
- * @param {string} input.date - "2026-05-10"
- * @param {string[]} input.fields - ["ぎょうざ東1", "ぎょうざ東2"]
- * @param {string} input.fertilizer_id - 肥料ID（硫安など）
- * @param {number} input.bags - 袋数（総数）
- * @param {Object} input.amount - { value: 60, unit: "kg" }
- * @param {string} input.machine - 使用機械
- * @param {string} input.worker - 作業者
- * @param {string} input.notes - 備考
+ * @param {string} input.date
+ * @param {string[]} input.fields
+ * @param {Array} input.distributed  // ★ 按分済み
+ * @param {string} input.machine
+ * @param {string} input.worker
+ * @param {string} input.notes
  */
 export function saveFertilizerLog(input) {
   return saveMultiFieldLog({
@@ -24,9 +22,7 @@ export function saveFertilizerLog(input) {
     date: input.date,
     fields: input.fields,
     entry: {
-      fertilizer_id: input.fertilizer_id,
-      bags: input.bags,
-      amount: input.amount,   // { value, unit }
+      distributed: input.distributed,   // ★ ここがメイン
       machine: input.machine,
       worker: input.worker,
       notes: input.notes || ""
