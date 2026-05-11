@@ -7,12 +7,14 @@ import { filterState, getFilterData, applyFilter, openModal, closeModal } from "
 ============================================================ */
 export function openFertilizerModal(options = {}) {
   const {
-    mode = "filter",     // "filter" or "select"
+    mode = "filter",
     onSelect = null
   } = options;
 
   const filter = getFilterData();
-  const list = filter?.fertilizers || [];
+  const data = filter?.fertilizers || { parents: [], children: {} };
+  const parents = data.parents || [];
+  const children = data.children || {};
 
   const html = `
     <div class="modal-bg" id="modal-bg">
@@ -21,13 +23,19 @@ export function openFertilizerModal(options = {}) {
 
         <h3>肥料の選択</h3>
 
-        <div class="filter-children">
-          ${list.map(name => `
-            <div class="select-item" data-fertilizer="${name}">
-              ${name}
+        ${parents.map(cat => `
+          <div class="filter-block" data-cat="${cat}">
+            <div class="filter-header">
+              <span class="filter-label" data-cat="${cat}">${cat}</span>
+              <span class="filter-toggle-btn" data-cat="${cat}">▼</span>
             </div>
-          `).join("")}
-        </div>
+            <div class="filter-children">
+              ${(children[cat] || []).map(name => `
+                <div class="select-item" data-fertilizer="${name}">${name}</div>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
 
         ${
           mode === "filter"
@@ -44,18 +52,23 @@ export function openFertilizerModal(options = {}) {
   `;
 
   openModal(html);
-  initFertilizerEvents(mode, onSelect);
+  initFertilizerEvents(children, mode, onSelect);
 }
 
 /* ============================================================
    イベント
 ============================================================ */
-function initFertilizerEvents(mode, onSelect) {
+function initFertilizerEvents(children, mode, onSelect) {
 
   document.getElementById("modal-close").onclick = closeModal;
   document.getElementById("modal-bg").onclick = e => {
     if (e.target.classList.contains("modal-bg")) closeModal();
   };
+
+  // ▼ 親カテゴリ折りたたみ
+  document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
+    btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
+  });
 
   // ▼ 子クリック
   document.querySelectorAll("[data-fertilizer]").forEach(el => {
