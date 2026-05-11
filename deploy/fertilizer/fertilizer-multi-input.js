@@ -68,7 +68,6 @@ export function renderFertilizerInputs() {
     </div>
   </div>
 `;
-
     }).join("");
 
     initInputEvents();
@@ -94,10 +93,11 @@ function initInputEvents() {
 
             debugLog(`calc total for ${name}: bags=${bags}, capacity=${capacity}, total=${total}`);
 
-            const totalInput = document.querySelector(
-                `.total-input[data-name="${name}"]`
+            // ★ span 表示に変更
+            const totalDisplay = document.querySelector(
+                `.total-display[data-name="${name}"]`
             );
-            if (totalInput) totalInput.value = total;
+            if (totalDisplay) totalDisplay.textContent = total;
         });
     });
 
@@ -118,17 +118,17 @@ export function getFertilizerInputData() {
         const bagsInput = document.querySelector(
             `.bags-input[data-name="${name}"]`
         );
-        const totalInput = document.querySelector(
-            `.total-input[data-name="${name}"]`
+        const totalDisplay = document.querySelector(
+            `.total-display[data-name="${name}"]`
         );
 
-        if (!bagsInput || !totalInput) {
+        if (!bagsInput || !totalDisplay) {
             debugLog(`inputs not found for ${name}`);
             return;
         }
 
         const bags = Number(bagsInput.value);
-        const total = Number(totalInput.value);
+        const total = Number(totalDisplay.textContent);
 
         const f = fertilizerDict[name];
 
