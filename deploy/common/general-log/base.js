@@ -104,8 +104,9 @@ async function updateIndex(type, field, year, fileName) {
 
   try {
     const resA = await fetch(`/${pathA}`, { method: "HEAD" });
-    if (resA.ok) savePath = pathA;
-    else {
+    if (resA.ok) {
+      savePath = pathA;
+    } else {
       const resB = await fetch(`/${pathB}`, { method: "HEAD" });
       if (resB.ok) savePath = pathB;
     }
@@ -127,15 +128,14 @@ async function updateIndex(type, field, year, fileName) {
   debugLog("[updateIndex] saved:", savePath);
 }
 
-
 /* ---------------------------------------------------------
-   5. 複数圃場ログ保存（按分はしない）
+   5. 複数圃場ログ保存（按分はしないが、圃場ごとに絞り込む）
 --------------------------------------------------------- */
 export async function saveMultiFieldLog({
   type,      // fertilizer / pesticide / water など
   date,      // "2026-05-10"
   fields,    // ["ぎょうざ東1", "ぎょうざ東2"]
-  entry      // ★ 按分済み or 完成形の entry をそのまま保存
+  entry      // { distributed, machine, worker, notes } など完成形
 }) {
   const year = date.substring(0, 4);
 
@@ -151,11 +151,20 @@ export async function saveMultiFieldLog({
     // 年次階層を確保
     ensureYear(data, year);
 
-    // ★ entry は “完成形” をそのまま保存
-    data.years[year].entries.push({
+    // ★ この圃場の分だけ distributed を抽出（施肥など distributed を持つ場合）
+    let perFieldDistributed = undefined;
+    if (Array.isArray(entry.distributed)) {
+      perFieldDistributed = entry.distributed.filter(d => d.field === field);
+    }
+
+    // ★ entry は “完成形” をベースにしつつ、distributed だけ圃場ごとに絞る
+    const storedEntry = {
       date,
-      ...entry
-    });
+      ...entry,
+      ...(perFieldDistributed !== undefined ? { distributed: perFieldDistributed } : {})
+    };
+
+    data.years[year].entries.push(storedEntry);
 
     // 保存
     await saveLog({
