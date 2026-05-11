@@ -38,7 +38,16 @@ export async function initFertilizerPage() {
     };
   }
 
-  // 4. フィルタ変更時の表示更新
+  // 4. 肥料モーダル
+  const btnFertilizer = document.getElementById("open-fertilizer-modal");
+  if (btnFertilizer) {
+    btnFertilizer.onclick = () => {
+      openFieldModal({ mode: "fertilizer" }); // ★ mode を変えるだけでOK
+    };
+  }
+
+
+  // 5. フィルタ変更時の表示更新
   window.addEventListener("filter:apply", () => {
     debugLog("filter:apply event", filterState.fields);
     updateSelectedFields();
@@ -51,7 +60,7 @@ export async function initFertilizerPage() {
 
   updateSelectedFields();
 
-  // 5. 保存ボタン
+  // 6. 保存ボタン
   const btnSave = document.getElementById("save-btn");
   if (btnSave) {
     btnSave.onclick = saveData;
@@ -97,6 +106,37 @@ async function initFieldFilterData() {
 }
 
 /* ============================================================
+   肥料フィルタデータ初期化
+============================================================ */
+async function initFertilizerFilterData() {
+  debugLog("loading fertilizer-index.json");
+
+  const res = await fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now());
+  const list = await res.json();
+
+  const parents = [];
+  const children = {};
+
+  list.forEach(f => {
+    if (!children[f.category]) {
+      children[f.category] = [];
+      parents.push(f.category);
+    }
+    children[f.category].push(f.name);
+  });
+
+  debugLog("fertilizer parents", parents);
+  debugLog("fertilizer children", children);
+
+  // ★ 既存の filterState に肥料フィルタを追加
+  const current = getFilterData();
+  setFilterData({
+    ...current,
+    fertilizers: { parents, children }
+  });
+}
+
+/* ============================================================
    選択圃場の表示更新
 ============================================================ */
 function updateSelectedFields() {
@@ -108,6 +148,11 @@ function updateSelectedFields() {
 
   el.textContent = fields.length ? fields.join("、") : "未選択";
 }
+
+/* ============================================================
+   選択肥料の表示更新
+============================================================ */
+
 
 /* ============================================================
    保存処理
