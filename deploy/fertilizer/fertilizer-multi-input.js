@@ -11,7 +11,7 @@ export let fertilizerDict = {};
 export function setFertilizerDict(dict) {
   fertilizerDict = dict;
 }
-
+//aaa
 /* ============================================================
    複数肥料入力 UI を描画
 ============================================================ */
