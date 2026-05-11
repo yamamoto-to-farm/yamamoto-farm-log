@@ -37,6 +37,14 @@
   </style>
 
   <script type="module">
+    // ===============================
+    // デバッグフラグ（?debug=1 で有効）
+    // ===============================
+    const DEBUG = new URL(location.href).searchParams.get("debug") === "1";
+    function dlog(...msg) {
+      if (DEBUG) console.log("[DEBUG]", ...msg);
+    }
+
     import { showPinGate } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
 
@@ -60,7 +68,6 @@
       ]
     };
 
-    // 並び順用：サブカテゴリが無いカテゴリを補完
     function normalizeCategory(category) {
       const parts = category.split("/");
       if (parts.length === 1) {
@@ -70,8 +77,10 @@
     }
 
     async function loadPages() {
+      dlog("loading pages.json");
       const res = await fetch(`data/pages.json?v=${Date.now()}`);
       const json = await res.json();
+      dlog("pages.json loaded:", json.pages);
       return json.pages;
     }
 
@@ -85,6 +94,8 @@
     function ensureTopCategory(top) {
       let section = document.querySelector(`section[data-top="${top}"]`);
       if (!section) {
+        dlog("create top category:", top);
+
         section = document.createElement("section");
         section.dataset.top = top;
         section.className = "category-section";
@@ -97,7 +108,6 @@
         container.className = "subcategory-container";
         container.style.display = "none";
 
-        // サブカテゴリを持たない場合用のグリッド（トップ直下）
         const directGrid = document.createElement("div");
         directGrid.className = "menu-grid direct-grid";
 
@@ -113,6 +123,8 @@
       const topContainer = topSection.querySelector(".subcategory-container");
       let subSection = topContainer.querySelector(`div[data-sub="${sub}"]`);
       if (!subSection) {
+        dlog("create sub category:", sub);
+
         subSection = document.createElement("div");
         subSection.dataset.sub = sub;
         subSection.className = "subcategory-section";
@@ -132,6 +144,7 @@
     }
 
     function sortPages(pages) {
+      dlog("sorting pages");
       return pages.sort((a, b) => {
         const [aTop, aSub] = normalizeCategory(a.category);
         const [bTop, bSub] = normalizeCategory(b.category);
@@ -151,23 +164,28 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      dlog("DOMContentLoaded start");
+
       showPinGate("pin-area", async () => {
+        dlog("PIN OK → renderHeader");
 
         renderHeader();
         document.getElementById("menu-area").style.display = "block";
 
         const role = window.currentRole;
-        let pages = await loadPages();
+        dlog("currentRole =", role);
 
+        let pages = await loadPages();
         pages = sortPages(pages);
 
         pages.forEach(page => {
+          dlog("check page:", page.name, "roles:", page.roles);
+
           if (!page.roles.includes(role)) return;
           if (page.category.startsWith("管理/")) return;
 
           const section = ensureTopCategory(page.category.split("/")[0]);
 
-          // 描画用：元の category を見て分岐
           if (page.category.includes("/")) {
             const [, sub] = page.category.split("/");
             const grid = ensureSubCategory(section, sub);
@@ -177,6 +195,8 @@
             directGrid.appendChild(createCard(page));
           }
         });
+
+        dlog("menu rendering complete");
       });
 
       document.addEventListener("click", (e) => {
@@ -185,12 +205,9 @@
           const subContainer = section.querySelector(".subcategory-container");
           const directGrid = section.querySelector(".direct-grid");
 
-          const isHidden =
-            (subContainer && subContainer.style.display === "none") &&
-            (directGrid && !directGrid.classList.contains("open"));
-
           if (subContainer) {
-            subContainer.style.display = subContainer.style.display === "none" ? "block" : "none";
+            subContainer.style.display =
+              subContainer.style.display === "none" ? "block" : "none";
           }
           if (directGrid) {
             directGrid.classList.toggle("open");
