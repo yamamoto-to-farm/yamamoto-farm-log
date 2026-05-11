@@ -1,11 +1,1 @@
-{
-  "TEMPLATE_VARIETY": {
-    "maker": "",
-    "sowingPeriod": "",
-    "harvestPeriod": "",
-    "bestGrowth": "",
-    "coldTolerance": "",
-    "features": "",
-    "memo": ""
-  }
-}
+{"CTみかさ":{"maker":"中神種苗","sowingPeriod":"8/5~8/13","harvestPeriod":"12月下旬~1月","bestGrowth":"砂土質　粘土質","coldTolerance":"","features":"根こぶ病耐病性","memo":"裂球はじまると早い印象"},"TS-C2010":{"maker":"トヨタネ","sowingPeriod":"8/15~8/20","harvestPeriod":"1月上旬~2月上旬","bestGrowth":"undefined","coldTolerance":"低温肥大性","features":"葉が厚く霜痛みしにくい","memo":"草勢はおとなしい(通路ふさがりにくい)"},"YR888":{"maker":"中神種苗","sowingPeriod":"7/20~8/5","harvestPeriod":"11月中旬~12月上旬","bestGrowth":"粘土質","coldTolerance":"","features":"定植~収穫まで80日\n球の尖りや角張がなく、作型・気候による球形の乱れが少ない","memo":"黒腐病は「ないと」より強いが、重量は劣る"}}
