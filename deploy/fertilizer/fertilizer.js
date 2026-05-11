@@ -14,6 +14,7 @@ import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=1";
 import { setFilterData, filterState, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
+import { renderFertilizerInputs } from "./fertilizer-multi-input.js?v=1";
 
 /* ============================================================
    初期化（フィルタ構造＋モーダル構造）
@@ -58,6 +59,7 @@ export async function initFertilizerPage() {
 
   window.addEventListener("filter:apply", () => {
     updateSelectedFertilizers();   // ← 修正済み
+    renderFertilizerInputs();
   });
 
   window.addEventListener("filter:reset", () => {
