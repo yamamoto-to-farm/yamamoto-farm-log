@@ -29,23 +29,18 @@
       <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
+    <!-- 肥料 -->
     <h2 class="section-title">肥料</h2>
     <div class="card">
       <button id="open-fertilizer-modal" class="primary-btn">肥料を選択</button>
       <div id="selected-fertilizer" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
-
-    <!-- 使用量 -->
-    <h2 class="section-title">使用量</h2>
+    <!-- ▼ 複数肥料入力エリア（multi-input.js がここに描画） -->
+    <h2 class="section-title">使用量（複数肥料）</h2>
     <div class="card">
-      <div class="form-field">
-        <label>袋数</label>
-        <input type="number" id="bags" class="form-input" value="1">
-      </div>
-      <div class="form-field">
-        <label>量（kg）</label>
-        <input type="number" id="amount" class="form-input" value="20">
+      <div id="fertilizer-input-area">
+        <p style="color:#777;">肥料を選択すると入力欄が表示されます</p>
       </div>
     </div>
 
@@ -75,7 +70,7 @@
   <!-- ★ モーダルはここにだけ入れる（filter-ui.js 用） -->
   <div id="modal-container"></div>
 
-  <!-- 保存モーダル（直接埋め込み） -->
+  <!-- 保存モーダル -->
   <div id="saveModal" style="
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -104,13 +99,16 @@
   <script type="module" src="/common/save/index.js?v=1"></script>
   <script type="module" src="/common/save-modal.js?v=1"></script>
 
-  <!-- フィルタ構造（filter-core.js を起点に一元管理） -->
+  <!-- フィルタ構造 -->
   <script type="module" src="/common/filter/filter-core.js?v=1"></script>
   <script type="module" src="/common/filter/filter-field.js?v=1"></script>
   <script type="module" src="/common/filter/filter-fertilizer.js?v=1"></script>
   <script type="module" src="/common/filter/filter-active.js?v=1"></script>
 
-  <!-- 初期化 -->
+  <!-- 複数肥料入力ロジック -->
+  <script type="module" src="/common/fertilizer/fertilizer-multi-input.js?v=1"></script>
+
+  <!-- ページロジック -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
