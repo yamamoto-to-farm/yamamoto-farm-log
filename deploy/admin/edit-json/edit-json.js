@@ -24,10 +24,23 @@ export async function initEditJson() {
   // -----------------------------
   // 編集ページ
   // -----------------------------
-  const json = await loadJSON(`/data/${dataName}.json`);
 
-  // ★ dataName に応じて card-edit-◯◯ を読み込む
+  // ① デフォルト：/data/${dataName}.json
+  let path = `/data/${dataName}.json`;
+
+  // ② もし存在しなければ /data/${dataName}/${dataName}.json を試す
+  try {
+    await fetch(path, { method: "HEAD" });
+  } catch {
+    // フォルダ構造版
+    path = `/data/${dataName}/${dataName}.json`;
+  }
+
+  const json = await loadJSON(path);
+
+  // 編集カード読み込み
   const module = await import(`./card-edit-${dataName}.js`);
+
 
   // ★ fieldName と variety の両方を渡す（どちらか片方を使う）
   module.renderEditCard({
