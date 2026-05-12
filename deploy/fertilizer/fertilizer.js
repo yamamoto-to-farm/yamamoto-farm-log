@@ -10,7 +10,7 @@ function debugLog(...args) {
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=1";
-import { setFilterData, filterState, getFilterData } from "/common/filter/filter-core.js?v=1";
+import { setFilterData, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 
 import { setFertilizerDict, renderFertilizerInputs } 
@@ -53,19 +53,21 @@ export async function initFertilizerPage() {
     };
   }
 
-  // フィルタ変更時の UI 更新
-  window.addEventListener("filter:apply", () => {
-    updateSelectedFieldsUI();
+  /* ============================================================
+     フィルタ変更時の UI 更新（★await 必須）
+  ============================================================ */
+  window.addEventListener("filter:apply", async () => {
+    await updateSelectedFieldsUI();
     updateSelectedFertilizersUI();
     renderFertilizerInputs();
   });
 
-  window.addEventListener("filter:reset", () => {
-    updateSelectedFieldsUI();
+  window.addEventListener("filter:reset", async () => {
+    await updateSelectedFieldsUI();
   });
 
-  // 初期表示
-  updateSelectedFieldsUI();
+  // 初期表示（★await 必須）
+  await updateSelectedFieldsUI();
 
   // 保存ボタン
   const btnSave = document.getElementById("save-btn");
