@@ -38,6 +38,17 @@ export async function updateSelectedFieldsUI() {
 }
 
 /* ============================================================
+   肥料選択後の UI 更新
+============================================================ */
+export function updateSelectedFertilizersUI() {
+    /*
+  const fertilizers = filterState.fertilizers || [];
+  const el = document.getElementById("selected-fertilizer");
+  if (el) el.textContent = fertilizers.length ? fertilizers.join("、") : "未選択";
+  */
+}
+
+/* ============================================================
    保存処理（複数肥料＋按分対応）
 ============================================================ */
 export async function saveFertilizerLog() {
