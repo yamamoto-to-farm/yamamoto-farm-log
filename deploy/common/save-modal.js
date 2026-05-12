@@ -1,14 +1,42 @@
-export function showSaveModal(message = "保存中です…") {
+// ===============================
+// DOM が読み込まれるまで待つユーティリティ
+// ===============================
+async function waitForModalElements() {
+  return new Promise(resolve => {
+    const check = () => {
+      const msg = document.getElementById("saveModalMessage");
+      const btn = document.getElementById("saveModalCloseBtn");
+      const modal = document.getElementById("saveModal");
+
+      if (msg && btn && modal) {
+        resolve();
+      } else {
+        requestAnimationFrame(check);
+      }
+    };
+    check();
+  });
+}
+
+// ===============================
+// 保存モーダル表示
+// ===============================
+export async function showSaveModal(message = "保存中です…") {
+  await waitForModalElements();
+
   document.getElementById("saveModalMessage").textContent = message;
   document.getElementById("saveModalCloseBtn").style.display = "none";
   document.getElementById("saveModal").style.display = "flex";
 }
 
-export function updateSaveModal(message) {
+export async function updateSaveModal(message) {
+  await waitForModalElements();
   document.getElementById("saveModalMessage").textContent = message;
 }
 
-export function completeSaveModal(message = "保存が完了しました") {
+export async function completeSaveModal(message = "保存が完了しました") {
+  await waitForModalElements();
+
   document.getElementById("saveModalMessage").textContent = message;
 
   const btn = document.getElementById("saveModalCloseBtn");
@@ -23,11 +51,14 @@ export function completeSaveModal(message = "保存が完了しました") {
   document.getElementById("saveModal").style.display = "flex";
 }
 
-export function closeSaveModal() {
+export async function closeSaveModal() {
+  await waitForModalElements();
   document.getElementById("saveModal").style.display = "none";
 }
 
-export function completeAndCloseModal(message = "作業が完了しました") {
+export async function completeAndCloseModal(message = "作業が完了しました") {
+  await waitForModalElements();
+
   document.getElementById("saveModalMessage").textContent = message;
 
   const btn = document.getElementById("saveModalCloseBtn");
@@ -42,7 +73,6 @@ export function completeAndCloseModal(message = "作業が完了しました") {
     // ★ 100ms 後に「閉じられたか」をチェック
     setTimeout(() => {
       if (!document.hidden) {
-        // → 閉じられていない（ブラウザで開いている）
         alert("ページを閉じられませんでした。\n右上のタブを閉じてください。");
       }
     }, 100);
