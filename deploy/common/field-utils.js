@@ -52,12 +52,14 @@ export async function getTotalFieldSize(fields) {
   const detail = await loadFieldDetail();
 
   const total = fields.reduce((sum, f) => {
-    return sum + (detail[f]?.size || 0);
+    const size = Number(detail[f]?.size || 0);  // ★ 数値化
+    return sum + size;
   }, 0);
 
   debugLog("getTotalFieldSize:", fields, "=", total);
-  return total;
+  return total;  // number
 }
+
 
 /* ============================================================
    面積比で按分（kg → 圃場ごとの kg）
