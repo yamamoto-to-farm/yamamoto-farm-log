@@ -1,6 +1,6 @@
 // admin/edit-json/card-edit-field-detail.js
-import { loadJSON, saveJSON } from "/common/json.js?v=2026031418";
-import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=2026031418";
+import { loadJSON, saveJSON } from "/common/json.js?v=1";
+import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 export function renderEditCard({ dataName, fieldName, json, container }) {
 

@@ -1,6 +1,6 @@
 // admin/edit-json/card-edit-fertilizer-index.js
-import { saveJSON } from "/common/json.js?v=2026031418";
-import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=2026031418";
+import { saveJSON } from "/common/json.js?v=1";
+import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 export function renderEditCard({ dataName, json, container, finalPath }) {
 
@@ -107,15 +107,13 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       const lines = el.value
         .split("\n")
         .map(s => s.trim())
-        .filter(s => s);
+        .filter(s => s.length > 0);
 
       json[field][year] = lines;
     });
 
-    // ★ finalPath を saveJSON 用に変換
-    // finalPath: "/data/fertilizer/fertilizer-index.json"
-    // saveJSON は "data/..." を要求する
-    const savePath = finalPath.replace("/data/", "data/");
+    // ★ finalPath を saveJSON 用に変換（より安全な方式）
+    const savePath = "data/" + finalPath.replace(/^\/data\//, "");
 
     await saveJSON(savePath, json);
 
