@@ -101,15 +101,11 @@
   <!-- 複数肥料入力 -->
   <script type="module" src="./fertilizer-multi-input.js?v=1"></script>
 
-  <!-- 作業者 -->
-  <script type="module" src="/common/workers.js?v=1"></script>
-
   <!-- ページロジック -->
   <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js";
+    import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
     import { renderHeader } from "/common/header.js";
     import { initFertilizerPage } from "./fertilizer.js?v=1";
-    import { createWorkerCheckboxes } from "/common/workers.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
