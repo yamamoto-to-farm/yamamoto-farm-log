@@ -5,7 +5,7 @@ import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=202603
 export function renderEditCard({ dataName, json, container }) {
 
   const title = document.getElementById("page-title");
-  if (title) title.textContent = "施肥ログインデックス（fertilizer-index.json）";
+  if (title) title.textContent = "肥料基本情報（fertilizer-index.json）";
 
   container.insertAdjacentHTML("beforeend", `
     <div id="index-list"></div>
@@ -112,7 +112,8 @@ export function renderEditCard({ dataName, json, container }) {
       json[field][year] = lines;
     });
 
-    await saveJSON(`data/${dataName}.json`, json);
+    // ★ 保存先を fertilizer フォルダに変更
+    await saveJSON(`data/fertilizer/${dataName}.json`, json);
 
     completeSaveModal("保存が完了しました");
   };
