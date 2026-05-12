@@ -42,7 +42,10 @@
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
-    import { initEditJson } from "./edit-json.js";
+
+    // ★★★★★ ここを絶対パスに修正 ★★★★★
+    import { initEditJson } from "/admin/edit-json/edit-json.js?v=2026031418";
+    // ★★★★★ ここまで ★★★★★
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -64,6 +67,3 @@
 
 </body>
 </html>
-
-
-
