@@ -9,64 +9,78 @@ export function initActiveFilterUI() {
 }
 
 export function updateActiveFilterUI() {
-  const box = document.getElementById("activeFilters");
-  if (!box) return;
+
+  const fieldBox = document.getElementById("activeFieldFilters");
+  const fertBox  = document.getElementById("activeFertilizerFilters");
 
   const state = getFilter();
-  let html = "";
-  const tagList = [];
 
-  // 年月
-  state.yearMonths.forEach(ym => {
-    const id = "tag-" + Math.random().toString(36).slice(2);
-    html += createTag(ym, id);
-    tagList.push({ id, handler: () => removeYM(ym) });
-  });
+  /* -------------------------------
+     圃場タグ
+  -------------------------------- */
+  if (fieldBox) {
+    let html = "";
+    const tagList = [];
 
-  // 圃場
-  state.fields.forEach(f => {
-    const id = "tag-" + Math.random().toString(36).slice(2);
-    html += createTag(f, id);
-    tagList.push({ id, handler: () => removeField(f) });
-  });
+    state.fields.forEach(f => {
+      const id = "tag-" + Math.random().toString(36).slice(2);
+      html += createTag(f, id);
+      tagList.push({ id, handler: () => removeField(f) });
+    });
 
-  // 品種
-  state.varieties.forEach(v => {
-    const id = "tag-" + Math.random().toString(36).slice(2);
-    html += createTag(v, id);
-    tagList.push({ id, handler: () => removeVariety(v) });
-  });
+    if (state.fields.length) {
+      html += `<button id="fieldFilterReset" class="filter-reset-btn">全解除</button>`;
+    }
 
-  // 肥料
-  state.fertilizers?.forEach(f => {
-    const id = "tag-" + Math.random().toString(36).slice(2);
-    html += createTag(f, id);
-    tagList.push({ id, handler: () => removeFertilizer(f) });
-  });
+    fieldBox.innerHTML = html;
 
-  // 全解除
-  if (
-    state.yearMonths.length ||
-    state.fields.length ||
-    state.varieties.length ||
-    state.fertilizers?.length
-  ) {
-    html += `<button id="activeFilterReset" class="filter-reset-btn">全解除</button>`;
+    tagList.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) el.onclick = t.handler;
+    });
+
+    const resetBtn = document.getElementById("fieldFilterReset");
+    if (resetBtn) resetBtn.onclick = () => {
+      filterState.fields = [];
+      window.dispatchEvent(new CustomEvent("filter:apply"));
+    };
   }
 
-  box.innerHTML = html;
+  /* -------------------------------
+     肥料タグ
+  -------------------------------- */
+  if (fertBox) {
+    let html = "";
+    const tagList = [];
 
-  // 個別 ×
-  tagList.forEach(t => {
-    const el = document.getElementById(t.id);
-    if (el) el.onclick = t.handler;
-  });
+    state.fertilizers.forEach(f => {
+      const id = "tag-" + Math.random().toString(36).slice(2);
+      html += createTag(f, id);
+      tagList.push({ id, handler: () => removeFertilizer(f) });
+    });
 
-  // 全解除
-  const resetBtn = document.getElementById("activeFilterReset");
-  if (resetBtn) resetBtn.onclick = resetFilter;
+    if (state.fertilizers.length) {
+      html += `<button id="fertFilterReset" class="filter-reset-btn">全解除</button>`;
+    }
+
+    fertBox.innerHTML = html;
+
+    tagList.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) el.onclick = t.handler;
+    });
+
+    const resetBtn = document.getElementById("fertFilterReset");
+    if (resetBtn) resetBtn.onclick = () => {
+      filterState.fertilizers = [];
+      window.dispatchEvent(new CustomEvent("filter:apply"));
+    };
+  }
 }
 
+/* ------------------------------------------------------------
+   タグ生成
+------------------------------------------------------------ */
 function createTag(label, id) {
   return `
     <span class="filter-tag">
@@ -76,21 +90,11 @@ function createTag(label, id) {
   `;
 }
 
-/* -------------------------------
-   個別削除（★ filterState を直接更新）
--------------------------------- */
-function removeYM(ym) {
-  filterState.yearMonths = filterState.yearMonths.filter(v => v !== ym);
-  window.dispatchEvent(new CustomEvent("filter:apply"));
-}
-
+/* ------------------------------------------------------------
+   個別削除
+------------------------------------------------------------ */
 function removeField(f) {
   filterState.fields = filterState.fields.filter(v => v !== f);
-  window.dispatchEvent(new CustomEvent("filter:apply"));
-}
-
-function removeVariety(v) {
-  filterState.varieties = filterState.varieties.filter(v2 => v2 !== v);
   window.dispatchEvent(new CustomEvent("filter:apply"));
 }
 
