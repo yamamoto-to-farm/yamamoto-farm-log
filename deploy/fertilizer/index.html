@@ -25,8 +25,14 @@
     <h2 class="section-title">圃場</h2>
     <div class="card">
       <button id="open-field-modal" class="primary-btn">圃場を選択</button>
+
+      <!-- filter-active.js が自動でタグを描画 -->
       <div id="activeFilters" style="margin-top:10px;"></div>
-      <div id="selected-fields" style="margin-top:10px; font-weight:bold;">未選択</div>
+
+      <!-- 合計面積 -->
+      <div id="field-area-total" style="margin-top:10px; font-weight:bold; color:#444;">
+        合計面積：0 a
+      </div>
     </div>
 
     <!-- 肥料 -->
@@ -36,7 +42,7 @@
       <div id="selected-fertilizer" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
-    <!-- ▼ 複数肥料入力エリア（multi-input.js がここに描画） -->
+    <!-- ▼ 複数肥料入力エリア -->
     <h2 class="section-title">使用量（複数肥料）</h2>
     <div class="card">
       <div id="fertilizer-input-area">
@@ -47,13 +53,14 @@
     <!-- 使用機械 -->
     <h2 class="section-title">使用機械</h2>
     <div class="card">
-      <input type="text" id="machine" class="form-input" value="YT5113">
+      <input type="text" id="machine" class="form-input">
     </div>
 
     <!-- 作業者 -->
     <h2 class="section-title">作業者</h2>
     <div class="card">
-      <input type="text" id="worker" class="form-input" value="直輝">
+      <div id="worker-box"></div>
+      <input type="text" id="temp-workers" class="form-input" placeholder="単発バイト（カンマ区切り）">
     </div>
 
     <!-- 備考 -->
@@ -67,7 +74,7 @@
 
   </div>
 
-  <!-- ★ モーダルはここにだけ入れる（filter-ui.js 用） -->
+  <!-- モーダル -->
   <div id="modal-container"></div>
 
   <!-- 保存モーダル -->
@@ -108,11 +115,15 @@
   <!-- 複数肥料入力ロジック -->
   <script type="module" src="./fertilizer-multi-input.js?v=1"></script>
 
+  <!-- 作業者 -->
+  <script type="module" src="/common/workers.js?v=1"></script>
+
   <!-- ページロジック -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { initFertilizerPage } from "./fertilizer.js?v=1";
+    import { createWorkerCheckboxes } from "/common/workers.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
@@ -120,9 +131,19 @@
       renderHeader();
       document.getElementById("page-area").style.display = "block";
 
-      // 今日の日付をセット
+      // 今日の日付
       document.getElementById("date").value =
         new Date().toISOString().slice(0, 10);
+
+      // 作業者チェックボックス
+      await createWorkerCheckboxes("worker-box");
+
+      // URL パラメータで機械を自動入力
+      const params = new URLSearchParams(location.search);
+      const machine = params.get("machine");
+      if (machine) {
+        document.getElementById("machine").value = machine;
+      }
 
       await initFertilizerPage();
     });
