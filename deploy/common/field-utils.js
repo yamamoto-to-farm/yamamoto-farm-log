@@ -39,11 +39,12 @@ export async function loadFieldDetail() {
 ============================================================ */
 export async function getFieldSize(fieldName) {
   const detail = await loadFieldDetail();
-  const size = detail[fieldName]?.size || 0;
+  const size = Number(detail[fieldName]?.size || 0);  // ★ 数値化
 
   debugLog(`getFieldSize: ${fieldName} = ${size}`);
   return size;
 }
+
 
 /* ============================================================
    複数圃場の合計面積
