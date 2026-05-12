@@ -47,7 +47,15 @@ function renderJsonList(container) {
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <h2>圃場基本情報（field-detail.json）</h2>
+      <h2>圃場基本情報（fields.json）</h2>
+      <button class="primary-btn"
+        onclick="location.href='?data=fields'">
+        編集する
+      </button>
+    </div> 
+    
+    <div class="card">
+      <h2>圃場詳細（field-detail.json）</h2>
       <button class="primary-btn"
         onclick="location.href='?data=field-detail'">
         編集する
@@ -55,19 +63,52 @@ function renderJsonList(container) {
     </div>
 
     <div class="card">
-      <h2>アクセス権限（access.json）</h2>
+      <h2>品種基本情報（varieties.json）</h2>
       <button class="primary-btn"
-        onclick="location.href='?data=access'">
+        onclick="location.href='?data=varieties'">
         編集する
       </button>
     </div>
 
     <div class="card">
-      <h2>品種基本情報（variety-detail.json）</h2>
+      <h2>品種詳細情報（variety-detail.json）</h2>
       <button class="primary-btn"
         onclick="location.href='?data=variety-detail'">
         編集する
       </button>
     </div>
+
+    <div class="card">
+      <h2>肥料基本情報（fertilizer-index.json）</h2>
+      <button class="primary-btn"
+        onclick="location.href='?data=fertilizer-index'">
+        編集する
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>肥料詳細情報（fertilizer-detail.json）</h2>
+      <button class="primary-btn"
+        onclick="location.href='?data=fertilizer-detail'">
+        編集する
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>アクセス権限（workers.json）</h2>
+      <button class="primary-btn"
+        onclick="location.href='?data=workers'">
+        編集する
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>機械（machines.json）</h2>
+      <button class="primary-btn"
+        onclick="location.href='?data=machines'">
+        編集する
+      </button>
+    </div>
+
   `);
 }
