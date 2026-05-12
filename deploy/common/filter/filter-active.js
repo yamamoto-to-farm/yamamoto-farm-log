@@ -16,42 +16,77 @@ export function updateActiveFilterUI() {
 
   const state = getFilter();
   let html = "";
+  const tagList = [];
 
-  // 年月
+  /* -------------------------------
+     年月
+  -------------------------------- */
   state.yearMonths.forEach(ym => {
-    html += createTag(ym, () => removeYM(ym));
+    const id = "tag-" + Math.random().toString(36).slice(2);
+    html += createTag(ym, id);
+    tagList.push({ id, handler: () => removeYM(ym) });
   });
 
-  // 圃場
+  /* -------------------------------
+     圃場
+  -------------------------------- */
   state.fields.forEach(f => {
-    html += createTag(f, () => removeField(f));
+    const id = "tag-" + Math.random().toString(36).slice(2);
+    html += createTag(f, id);
+    tagList.push({ id, handler: () => removeField(f) });
   });
 
-  // 品種
+  /* -------------------------------
+     品種
+  -------------------------------- */
   state.varieties.forEach(v => {
-    html += createTag(v, () => removeVariety(v));
+    const id = "tag-" + Math.random().toString(36).slice(2);
+    html += createTag(v, id);
+    tagList.push({ id, handler: () => removeVariety(v) });
   });
 
-  if (state.yearMonths.length || state.fields.length || state.varieties.length) {
+  /* -------------------------------
+     肥料（★追加）
+  -------------------------------- */
+  state.fertilizers?.forEach(f => {
+    const id = "tag-" + Math.random().toString(36).slice(2);
+    html += createTag(f, id);
+    tagList.push({ id, handler: () => removeFertilizer(f) });
+  });
+
+  /* -------------------------------
+     全解除ボタン
+  -------------------------------- */
+  if (
+    state.yearMonths.length ||
+    state.fields.length ||
+    state.varieties.length ||
+    state.fertilizers?.length
+  ) {
     html += `<button id="activeFilterReset" class="filter-reset-btn">全解除</button>`;
   }
 
   box.innerHTML = html;
 
+  /* -------------------------------
+     個別 × のイベントをまとめて付ける
+  -------------------------------- */
+  tagList.forEach(t => {
+    const el = document.getElementById(t.id);
+    if (el) el.onclick = t.handler;
+  });
+
+  /* -------------------------------
+     全解除
+  -------------------------------- */
   const resetBtn = document.getElementById("activeFilterReset");
   if (resetBtn) resetBtn.onclick = resetFilter;
 }
 
 /* ------------------------------------------------------------
-   タグ生成
+   タグ生成（イベントは後で付ける）
 ------------------------------------------------------------ */
-function createTag(label, onRemove) {
-  const id = "tag-" + Math.random().toString(36).slice(2);
-  setTimeout(() => {
-    const el = document.getElementById(id);
-    if (el) el.onclick = onRemove;
-  });
-
+function createTag(label, id) {
   return `
     <span class="filter-tag">
       ${label}
@@ -78,5 +113,11 @@ function removeField(f) {
 function removeVariety(v) {
   const state = getFilter();
   state.varieties = state.varieties.filter(v2 => v2 !== v);
+  window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
+}
+
+function removeFertilizer(f) {
+  const state = getFilter();
+  state.fertilizers = state.fertilizers.filter(v => v !== f);
   window.dispatchEvent(new CustomEvent("filter:apply", { detail: state }));
 }
