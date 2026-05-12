@@ -15,11 +15,18 @@
   border: 1px solid #4da3ff;
   padding: 4px 10px;
   border-radius: 6px;
-  display: flex;
+
+  display: inline-flex;   /* ← flex から inline-flex に変更 */
+  flex-wrap: wrap;        /* ← タグ内部で折り返し可能に */
+  white-space: normal;    /* ← 折り返し許可 */
+
   align-items: center;
   gap: 6px;
   font-size: 14px;
+
+  max-width: 100%;        /* ← 横に伸びすぎ防止（重要） */
 }
+
 
 .filter-tag-remove {
   cursor: pointer;
