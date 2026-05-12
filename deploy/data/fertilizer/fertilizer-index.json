@@ -82,5 +82,17 @@
         "category": "堆肥",
         "name": "JA畜産課 牛糞堆肥",
         "capacity": 1000
+    },
+    {
+        "id": "F501",
+        "category": "土壌消毒剤",
+        "name": "フロンサイド粉剤",
+        "capacity": 1000
+    },
+    {
+        "id": "F502",
+        "category": "土壌消毒剤",
+        "name": "ネビジン粉剤",
+        "capacity": 10
     }
 ]
