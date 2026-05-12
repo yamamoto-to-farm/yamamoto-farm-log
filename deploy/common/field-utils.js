@@ -68,7 +68,8 @@ export async function distributeByFieldSize(fields, totalKg) {
   const detail = await loadFieldDetail();
 
   const totalSize = fields.reduce((sum, f) => {
-    return sum + (detail[f]?.size || 0);
+    const size = Number(detail[f]?.size || 0);  // ★ 数値化
+    return sum + size;
   }, 0);
 
   if (totalSize === 0) {
@@ -77,7 +78,7 @@ export async function distributeByFieldSize(fields, totalKg) {
   }
 
   const result = fields.map(f => {
-    const size = detail[f]?.size || 0;
+    const size = Number(detail[f]?.size || 0);  // ★ 数値化
     const ratio = size / totalSize;
 
     // 小数第1位で丸める（現場で扱いやすい）
