@@ -1,25 +1,26 @@
-// fertilizer.js
+// fertilizer.js（軽量化版）
 
 // ===============================
-// デバッグフラグ
+// デバッグ
 // ===============================
 const DEBUG = true;
-
 function debugLog(...args) {
-  if (DEBUG) console.log("[fertilizer-debug]", ...args);
+  if (DEBUG) console.log("[fertilizer]", ...args);
 }
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=1";
 import { setFilterData, filterState, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
-import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 
-import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData } 
+import { setFertilizerDict, renderFertilizerInputs } 
   from "./fertilizer-multi-input.js?v=1";
 
-import { distributeFertilizers } 
-  from "./fertilizer-distribute.js?v=1";
+import { 
+  updateSelectedFieldsUI,
+  updateSelectedFertilizersUI,
+  saveFertilizerLog
+} from "./fertilizer-utils.js?v=1";
 
 /* ============================================================
    初期化（フィルタ構造＋モーダル構造）
@@ -38,7 +39,7 @@ export async function initFertilizerPage() {
   const btnField = document.getElementById("open-field-modal");
   if (btnField) {
     btnField.onclick = () => {
-      debugLog("openFieldModal called");
+      debugLog("openFieldModal");
       openFieldModal({ mode: "filter" });
     };
   }
@@ -47,31 +48,29 @@ export async function initFertilizerPage() {
   const btnFertilizer = document.getElementById("open-fertilizer-modal");
   if (btnFertilizer) {
     btnFertilizer.onclick = () => {
-      debugLog("openFertilizerModal called");
+      debugLog("openFertilizerModal");
       openFertilizerModal({ mode: "filter" });
     };
   }
 
-  // フィルタ変更時の表示更新
+  // フィルタ変更時の UI 更新
   window.addEventListener("filter:apply", () => {
-    updateSelectedFields();
-  });
-
-  window.addEventListener("filter:apply", () => {
-    updateSelectedFertilizers();
-    renderFertilizerInputs();   // ★ 複数肥料入力欄を描画
+    updateSelectedFieldsUI();
+    updateSelectedFertilizersUI();
+    renderFertilizerInputs();
   });
 
   window.addEventListener("filter:reset", () => {
-    updateSelectedFields();
+    updateSelectedFieldsUI();
   });
 
-  updateSelectedFields();
+  // 初期表示
+  updateSelectedFieldsUI();
 
   // 保存ボタン
   const btnSave = document.getElementById("save-btn");
   if (btnSave) {
-    btnSave.onclick = saveData;
+    btnSave.onclick = saveFertilizerLog;
   }
 
   debugLog("initFertilizerPage done");
@@ -143,89 +142,4 @@ async function initFertilizerFilterData() {
   });
 
   debugLog("fertilizer filter set");
-}
-
-/* ============================================================
-   選択圃場の表示更新
-============================================================ */
-function updateSelectedFields() {
-  const fields = filterState.fields || [];
-  const el = document.getElementById("selected-fields");
-  if (!el) return;
-
-  el.textContent = fields.length ? fields.join("、") : "未選択";
-}
-
-/* ============================================================
-   選択肥料の表示更新
-============================================================ */
-function updateSelectedFertilizers() {
-  const fertilizers = filterState.fertilizers || [];
-  const el = document.getElementById("selected-fertilizer");
-  if (!el) return;
-
-  el.textContent = fertilizers.length ? fertilizers.join("、") : "未選択";
-}
-
-/* ============================================================
-   保存処理（複数肥料＋按分対応）
-============================================================ */
-async function saveData() {
-  debugLog("saveData start");
-
-  const date = document.getElementById("date").value;
-  const fields = filterState.fields || [];
-  const machine = document.getElementById("machine").value.trim();
-  const worker = document.getElementById("worker").value.trim();
-  const notes = document.getElementById("notes").value.trim();
-
-  if (!date || fields.length === 0) {
-    alert("日付・圃場は必須です");
-    return;
-  }
-
-  // ★ multi-input から複数肥料データを取得
-  const fertilizers = getFertilizerInputData();
-  debugLog("fertilizers from UI:", fertilizers);
-
-  if (fertilizers.length === 0) {
-    alert("肥料を選択してください");
-    return;
-  }
-
-  // ★ 面積比で按分（施肥専用ロジック）
-  const distributed = await distributeFertilizers(fields, fertilizers);
-  debugLog("distributed:", distributed);
-
-  const btn = document.getElementById("save-btn");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "保存中…";
-  }
-
-  try {
-    await saveMultiFieldLog({
-      type: "fertilizer",
-      date,
-      fields,
-      entry: {
-        distributed,   // ★ 圃場ごとの施肥量
-        machine,
-        worker,
-        notes
-      }
-    });
-
-    alert("保存しました！");
-    document.getElementById("notes").value = "";
-
-  } catch (e) {
-    console.error(e);
-    alert("保存に失敗しました");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "保存";
-    }
-  }
 }

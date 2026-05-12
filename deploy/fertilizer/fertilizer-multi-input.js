@@ -66,6 +66,11 @@ export function renderFertilizerInputs() {
 
       = <span class="total-display" data-name="${name}">0</span> kg
     </div>
+
+    <!-- ★ /10a 表示欄 -->
+    <div class="per10a" id="per10a-${f.id}" style="margin-top:4px; color:#555;">
+      - kg/10a
+    </div>
   </div>
 `;
     }).join("");
@@ -98,6 +103,11 @@ function initInputEvents() {
                 `.total-display[data-name="${name}"]`
             );
             if (totalDisplay) totalDisplay.textContent = total;
+
+            // ★ /10a 更新（fertilizer.js 側で totalA をセットして呼ぶ）
+            if (window.__fertilizer_totalA) {
+                updatePer10aAll(window.__fertilizer_totalA);
+            }
         });
     });
 
@@ -105,8 +115,41 @@ function initInputEvents() {
 }
 
 /* ============================================================
+   /10a の使用量を更新（fertilizer.js から呼ばれる）
+============================================================ */
+export function updatePer10aAll(totalA) {
+    debugLog("updatePer10aAll:", totalA);
+
+    // fertilizer.js から参照できるように保存
+    window.__fertilizer_totalA = totalA;
+
+    if (!totalA || totalA === 0) {
+        document.querySelectorAll(".per10a").forEach(el => el.textContent = "- kg/10a");
+        return;
+    }
+
+    const selected = filterState.fertilizers || [];
+
+    selected.forEach(name => {
+        const f = fertilizerDict[name];
+        if (!f) return;
+
+        const totalDisplay = document.querySelector(
+            `.total-display[data-name="${name}"]`
+        );
+        if (!totalDisplay) return;
+
+        const totalKg = Number(totalDisplay.textContent);
+
+        const per10a = (totalKg / totalA * 10).toFixed(1);
+
+        const el = document.getElementById(`per10a-${f.id}`);
+        if (el) el.textContent = `${per10a} kg/10a`;
+    });
+}
+
+/* ============================================================
    保存用データを取得
-   → fertilizer.js の saveData() から呼び出す
 ============================================================ */
 export function getFertilizerInputData() {
     debugLog("getFertilizerInputData start");

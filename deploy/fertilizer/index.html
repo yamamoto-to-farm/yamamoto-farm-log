@@ -50,11 +50,8 @@
       </div>
     </div>
 
-    <!-- 使用機械 -->
-    <h2 class="section-title">使用機械</h2>
-    <div class="card">
-      <input type="text" id="machine" class="form-input">
-    </div>
+    <!-- 使用機械（削除済み） -->
+    <!-- harvest と同じく URL パラメータから取得 -->
 
     <!-- 作業者（収穫ログと統一） -->
     <h2 class="section-title">作業者</h2>
@@ -120,12 +117,9 @@
       // 作業者チェックボックス（収穫ログと同じ）
       await createWorkerCheckboxes("workers_box");
 
-      // URL パラメータで機械を自動入力
+      // URL パラメータから使用機械を取得（harvest と同じ）
       const params = new URLSearchParams(location.search);
-      const machine = params.get("machine");
-      if (machine) {
-        document.getElementById("machine").value = machine;
-      }
+      window.__fertilizer_machine = params.get("machine") || "";
 
       await initFertilizerPage();
     });
