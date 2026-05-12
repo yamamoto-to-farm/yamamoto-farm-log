@@ -54,11 +54,11 @@ export async function initFertilizerPage() {
   }
 
   /* ============================================================
-     フィルタ変更時の UI 更新（★await 必須）
+     フィルタ変更時の UI 更新
   ============================================================ */
   window.addEventListener("filter:apply", async () => {
     await updateSelectedFieldsUI();
-    updateSelectedFertilizersUI();
+    updateSelectedFertilizersUI();   // ★ selected-fertilizer は更新しない
     renderFertilizerInputs();
   });
 
@@ -66,7 +66,7 @@ export async function initFertilizerPage() {
     await updateSelectedFieldsUI();
   });
 
-  // 初期表示（★await 必須）
+  // 初期表示
   await updateSelectedFieldsUI();
 
   // 保存ボタン
