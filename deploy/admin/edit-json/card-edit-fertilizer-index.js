@@ -7,67 +7,76 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "肥料基本情報（fertilizer-index.json）";
 
+  // json がオブジェクトの場合は配列に変換（保険）
+  let listData = Array.isArray(json)
+    ? json
+    : Object.values(json || {});
+
   container.insertAdjacentHTML("beforeend", `
-    <div id="index-list"></div>
+    <div class="card">
+      <h2>肥料一覧</h2>
+      <div id="fertilizer-list"></div>
 
-    <button id="add-field-btn" class="primary-btn" style="margin-top:20px;">
-      ＋ 圃場を追加
-    </button>
+      <button id="add-fertilizer-btn" class="primary-btn" style="margin-top:20px;">
+        ＋ 肥料を追加
+      </button>
 
-    <button id="save-btn" class="primary-btn" style="margin-top:20px;">
-      保存する
-    </button>
+      <button id="save-btn" class="primary-btn" style="margin-top:20px;">
+        保存する
+      </button>
+    </div>
   `);
 
-  const list = document.getElementById("index-list");
+  const listEl = document.getElementById("fertilizer-list");
 
   // -----------------------------
   // レンダリング
   // -----------------------------
   function render() {
-    list.innerHTML = "";
+    listEl.innerHTML = "";
 
-    for (const field in json) {
-      const years = json[field];
+    listData.forEach((item, index) => {
+      const id = item.id ?? "";
+      const category = item.category ?? "";
+      const name = item.name ?? "";
+      const capacity = item.capacity ?? "";
 
-      list.insertAdjacentHTML("beforeend", `
-        <div class="card" style="margin-bottom:20px;">
-          <h3>${field}</h3>
+      listEl.insertAdjacentHTML("beforeend", `
+        <div class="sub-card" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label class="form-label">ID</label>
+            <input class="form-input fert-id" data-index="${index}" value="${id}">
+          </div>
 
-          <div id="years-${field}"></div>
+          <div class="form-row">
+            <label class="form-label">カテゴリ</label>
+            <input class="form-input fert-category" data-index="${index}" value="${category}">
+          </div>
 
-          <button class="secondary-btn add-year-btn" data-field="${field}">
-            ＋ 年度を追加
+          <div class="form-row">
+            <label class="form-label">名称</label>
+            <input class="form-input fert-name" data-index="${index}" value="${name}">
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">容量（kgなど）</label>
+            <input class="form-input fert-capacity" data-index="${index}" value="${capacity}">
+          </div>
+
+          <button class="secondary-btn delete-fert-btn" data-index="${index}" style="margin-top:8px;">
+            削除
           </button>
         </div>
       `);
+    });
 
-      const yBox = document.getElementById(`years-${field}`);
-
-      for (const year in years) {
-        yBox.insertAdjacentHTML("beforeend", `
-          <div class="sub-card" style="margin-bottom:10px;">
-            <h4>${year}</h4>
-            <textarea class="form-input" data-field="${field}" data-year="${year}" rows="3">${years[year].join("\n")}</textarea>
-          </div>
-        `);
-      }
-    }
-
-    // 年度追加ボタン
-    document.querySelectorAll(".add-year-btn").forEach(btn => {
+    // 削除ボタン
+    document.querySelectorAll(".delete-fert-btn").forEach(btn => {
       btn.onclick = () => {
-        const field = btn.dataset.field;
-        const newYear = prompt("追加する年度を入力（例：2026）");
-
-        if (!newYear) return;
-
-        if (!json[field][newYear]) {
-          json[field][newYear] = [];
-          render();
-        } else {
-          alert("その年度はすでに存在します");
-        }
+        const idx = Number(btn.dataset.index);
+        if (!confirm("この肥料を削除しますか？")) return;
+        listData.splice(idx, 1);
+        render();
       };
     });
   }
@@ -75,19 +84,15 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   render();
 
   // -----------------------------
-  // 圃場追加
+  // 肥料追加
   // -----------------------------
-  document.getElementById("add-field-btn").onclick = () => {
-    const newField = prompt("追加する圃場名を入力してください");
-
-    if (!newField) return;
-
-    if (json[newField]) {
-      alert("その圃場はすでに存在します");
-      return;
-    }
-
-    json[newField] = {};
+  document.getElementById("add-fertilizer-btn").onclick = () => {
+    listData.push({
+      id: "",
+      category: "",
+      name: "",
+      capacity: ""
+    });
     render();
   };
 
@@ -98,24 +103,39 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
     showSaveModal("保存しています…");
 
-    const areas = container.querySelectorAll("textarea[data-field]");
+    // 画面の入力値を listData に反映
+    const ids = container.querySelectorAll(".fert-id");
+    const categories = container.querySelectorAll(".fert-category");
+    const names = container.querySelectorAll(".fert-name");
+    const capacities = container.querySelectorAll(".fert-capacity");
 
-    areas.forEach(el => {
-      const field = el.dataset.field;
-      const year = el.dataset.year;
+    const newList = [];
 
-      const lines = el.value
-        .split("\n")
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
+    ids.forEach((input, i) => {
+      const id = input.value.trim();
+      const category = categories[i].value.trim();
+      const name = names[i].value.trim();
+      const capacityRaw = capacities[i].value.trim();
 
-      json[field][year] = lines;
+      if (!id && !name) {
+        // ID も名称も空ならスキップ（空行扱い）
+        return;
+      }
+
+      const capacity = capacityRaw === "" ? null : Number(capacityRaw);
+
+      newList.push({
+        id,
+        category,
+        name,
+        capacity
+      });
     });
 
-    // ★ finalPath を saveJSON 用に変換（より安全な方式）
+    // 保存用パス生成
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
 
-    await saveJSON(savePath, json);
+    await saveJSON(savePath, newList);
 
     completeSaveModal("保存が完了しました");
   };
