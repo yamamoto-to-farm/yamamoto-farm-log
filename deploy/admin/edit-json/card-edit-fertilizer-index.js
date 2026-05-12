@@ -2,7 +2,7 @@
 import { saveJSON } from "/common/json.js?v=2026031418";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=2026031418";
 
-export function renderEditCard({ dataName, json, container }) {
+export function renderEditCard({ dataName, json, container, finalPath }) {
 
   const title = document.getElementById("page-title");
   if (title) title.textContent = "肥料基本情報（fertilizer-index.json）";
@@ -112,8 +112,12 @@ export function renderEditCard({ dataName, json, container }) {
       json[field][year] = lines;
     });
 
-    // ★ 保存先を fertilizer フォルダに変更
-    await saveJSON(`data/fertilizer/${dataName}.json`, json);
+    // ★ finalPath を saveJSON 用に変換
+    // finalPath: "/data/fertilizer/fertilizer-index.json"
+    // saveJSON は "data/..." を要求する
+    const savePath = finalPath.replace("/data/", "data/");
+
+    await saveJSON(savePath, json);
 
     completeSaveModal("保存が完了しました");
   };
