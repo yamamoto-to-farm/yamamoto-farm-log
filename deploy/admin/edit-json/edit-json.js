@@ -5,10 +5,9 @@ export async function initEditJson() {
 
   const params = new URLSearchParams(location.search);
 
-  // ★ URL パラメータ取得（field-detail / variety-detail 両対応）
-  const dataName = params.get("data");      // field-detail / variety-detail
+  const dataName = params.get("data");      // fields / field-detail / fertilizer-index など
   const fieldName = params.get("field");    // 圃場名
-  const variety = params.get("variety");    // 品種名 ← 追加
+  const variety = params.get("variety");    // 品種名
 
   const container = document.getElementById("edit-container");
   container.innerHTML = "";   // ★ 二重描画防止
@@ -28,27 +27,36 @@ export async function initEditJson() {
   // ① デフォルト：/data/${dataName}.json
   let path = `/data/${dataName}.json`;
 
-  // ② もし存在しなければ /data/${dataName}/${dataName}.json を試す
+  // ② フォルダ構造版：/data/${dataName}/${dataName}.json
+  const altPath = `/data/${dataName}/${dataName}.json`;
+
+  // ③ HEAD で存在チェック（CloudFront は 404 でも reject しない）
+  let finalPath = path;
   try {
-    await fetch(path, { method: "HEAD" });
+    const head = await fetch(path, { method: "HEAD" });
+    if (!head.ok) {
+      // デフォルトが無ければフォルダ構造版に切り替え
+      finalPath = altPath;
+    }
   } catch {
-    // フォルダ構造版
-    path = `/data/${dataName}/${dataName}.json`;
+    // fetch 自体が失敗した場合もフォルダ構造版へ
+    finalPath = altPath;
   }
 
-  const json = await loadJSON(path);
+  // ④ JSON 読み込み
+  const json = await loadJSON(finalPath);
 
-  // 編集カード読み込み
+  // ⑤ 編集カード読み込み
   const module = await import(`./card-edit-${dataName}.js`);
 
-
-  // ★ fieldName と variety の両方を渡す（どちらか片方を使う）
+  // ⑥ 編集カードへ渡す
   module.renderEditCard({
     dataName,
     fieldName,
     variety,
     json,
-    container
+    container,
+    finalPath   // ★ 保存時に使うため渡す
   });
 }
 
@@ -122,6 +130,5 @@ function renderJsonList(container) {
         編集する
       </button>
     </div>
-
   `);
 }
