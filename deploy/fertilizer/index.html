@@ -26,7 +26,7 @@
     <div class="card">
       <button id="open-field-modal" class="primary-btn">圃場を選択</button>
 
-      <!-- filter-active.js が自動でタグを描画 -->
+      <!-- filter-active.js が自動描画 -->
       <div id="activeFilters" style="margin-top:10px;"></div>
 
       <!-- 合計面積 -->
@@ -42,7 +42,7 @@
       <div id="selected-fertilizer" style="margin-top:10px; font-weight:bold;">未選択</div>
     </div>
 
-    <!-- ▼ 複数肥料入力エリア -->
+    <!-- 使用量（複数肥料） -->
     <h2 class="section-title">使用量（複数肥料）</h2>
     <div class="card">
       <div id="fertilizer-input-area">
@@ -56,11 +56,13 @@
       <input type="text" id="machine" class="form-input">
     </div>
 
-    <!-- 作業者 -->
+    <!-- 作業者（収穫ログと統一） -->
     <h2 class="section-title">作業者</h2>
+    <div class="card" id="workers_box"></div>
+
     <div class="card">
-      <div id="worker-box"></div>
-      <input type="text" id="temp-workers" class="form-input" placeholder="単発バイト（カンマ区切り）">
+      <label for="temp_workers">単発バイト（カンマ区切り）</label>
+      <input id="temp_workers" class="form-input" placeholder="例：佐藤さん, 田中さん">
     </div>
 
     <!-- 備考 -->
@@ -78,33 +80,17 @@
   <div id="modal-container"></div>
 
   <!-- 保存モーダル -->
-  <div id="saveModal" style="
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.4);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  ">
-    <div style="
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      width: 300px;
-      text-align: center;
-    ">
-      <div id="saveModalMessage">保存中です…</div>
-      <button id="saveModalCloseBtn" style="margin-top: 20px; display:none;">
-        OK
-      </button>
-    </div>
-  </div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
 
   <!-- 共通スクリプト -->
   <script type="module" src="/common/summary.js?v=1"></script>
   <script type="module" src="/common/save/index.js?v=1"></script>
-  <script type="module" src="/common/save-modal.js?v=1"></script>
 
   <!-- フィルタ構造 -->
   <script type="module" src="/common/filter/filter-core.js?v=1"></script>
@@ -112,7 +98,7 @@
   <script type="module" src="/common/filter/filter-fertilizer.js?v=1"></script>
   <script type="module" src="/common/filter/filter-active.js?v=1"></script>
 
-  <!-- 複数肥料入力ロジック -->
+  <!-- 複数肥料入力 -->
   <script type="module" src="./fertilizer-multi-input.js?v=1"></script>
 
   <!-- 作業者 -->
@@ -135,8 +121,8 @@
       document.getElementById("date").value =
         new Date().toISOString().slice(0, 10);
 
-      // 作業者チェックボックス
-      await createWorkerCheckboxes("worker-box");
+      // 作業者チェックボックス（収穫ログと同じ）
+      await createWorkerCheckboxes("workers_box");
 
       // URL パラメータで機械を自動入力
       const params = new URLSearchParams(location.search);
