@@ -1,9 +1,44 @@
 [
-  { "pin": "000", "name": "naoki", "role": "admin" },
-  { "pin": "001", "name": "sakiko", "role": "family" },
-  { "pin": "002", "name": "masahiko", "role": "family" },
-  { "pin": "003", "name": "chihiro", "role": "family" },
-  { "pin": "Y005", "name": "wakatsuki", "role": "worker" },
-  { "pin": "Y006", "name": "ishihara", "role": "worker" },
-  { "pin": "Y007", "name": "doi", "role": "worker" }
+  {
+    "pin": "000",
+    "name": "naoki",
+    "display": "山本 直輝",
+    "role": "admin"
+  },
+  {
+    "pin": "001",
+    "name": "sakiko",
+    "display": "咲子",
+    "role": "family"
+  },
+  {
+    "pin": "002",
+    "name": "masahiko",
+    "display": "山本 雅彦",
+    "role": "family"
+  },
+  {
+    "pin": "003",
+    "name": "chihiro",
+    "display": "山本 千尋",
+    "role": "family"
+  },
+  {
+    "pin": "Y005",
+    "name": "wakatsuki",
+    "display": "若月 道昭",
+    "role": "worker"
+  },
+  {
+    "pin": "Y006",
+    "name": "ishihara",
+    "display": "石原 孝晋",
+    "role": "worker"
+  },
+  {
+    "pin": "Y007",
+    "name": "doi",
+    "display": "土井 琉羽",
+    "role": "worker"
+  }
 ]

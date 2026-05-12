@@ -192,13 +192,14 @@ export async function createWorkerCheckboxes(containerId) {
   workers.forEach(w => {
     const div = document.createElement("div");
     div.innerHTML = `
-            <label>
-                <input type="checkbox" name="workers" value="${w.name}">
-                ${w.name}
-            </label>
-        `;
+    <label>
+      <input type="checkbox" name="workers" value="${w.display}">
+      ${w.display}
+    </label>
+  `;
     box.appendChild(div);
   });
+
 }
 
 
@@ -295,11 +296,11 @@ export function showPinGate(containerId, onSuccess) {
 
       // 認証成功 → グローバル変数に保存
       window.currentHuman = user.name;
-      window.currentRole  = user.role;
+      window.currentRole = user.role;
 
       // localStorage に保存
       localStorage.setItem("human", user.name);
-      localStorage.setItem("role",  user.role);
+      localStorage.setItem("role", user.role);
 
       // PIN UI を非表示
       container.style.display = "none";
