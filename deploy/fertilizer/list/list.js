@@ -7,11 +7,17 @@ import { loadAllLogs } from "/common/general-log/base.js?v=1";
    初期化
 ============================================================ */
 export async function initFertilizerList() {
+  // 肥料マスター
   const index = await loadJSON("/data/fertilizer/fertilizer-index.json");
-  const logs = await loadAllLogs("fertilizer"); // 全圃場の施肥ログ
 
+  // 全圃場 × 全年 × 全ログ
+  const logs = await loadAllLogs("fertilizer");
+
+  // 存在する年を抽出
   const years = collectYears(logs);
+
   const container = document.getElementById("year-container");
+  container.innerHTML = "";
 
   years.forEach(year => {
     const table = createYearTable(year, index, logs);
@@ -25,11 +31,8 @@ export async function initFertilizerList() {
 function collectYears(logs) {
   const set = new Set();
 
-  logs.forEach(field => {
-    field.entries.forEach(e => {
-      const y = e.date.slice(0, 4);
-      set.add(y);
-    });
+  logs.forEach(f => {
+    set.add(f.year);   // ← ★ loadAllLogs の構造に合わせる
   });
 
   return Array.from(set).sort((a, b) => b - a);
@@ -69,7 +72,10 @@ function createYearTable(year, index, logs) {
 
     // 肥料名（クリックで詳細へ）
     const nameCell = document.createElement("td");
-    nameCell.innerHTML = `<a href="./month.html?year=${year}&fertilizer=${encodeURIComponent(fert.name)}">${fert.name}</a>`;
+    nameCell.innerHTML = `
+      <a href="./month.html?year=${year}&fertilizer=${encodeURIComponent(fert.name)}">
+        ${fert.name}
+      </a>`;
     row.appendChild(nameCell);
 
     // 月別集計
@@ -106,19 +112,20 @@ function sumFertilizer(logs, fertName, year, month) {
   let sum = 0;
 
   logs.forEach(field => {
+    // ★ 年が一致するログだけを見る
+    if (field.year != year) return;
+
     field.entries.forEach(e => {
       if (!e.fertilizers) return;
 
-      const y = e.date.slice(0, 4);
       const m = Number(e.date.slice(5, 7));
+      if (m !== month) return;
 
-      if (y == year && m == month) {
-        e.fertilizers.forEach(f => {
-          if (f.name === fertName) {
-            sum += Number(f.amount || 0);
-          }
-        });
-      }
+      e.fertilizers.forEach(f => {
+        if (f.name === fertName) {
+          sum += Number(f.amount || 0);
+        }
+      });
     });
   });
 
