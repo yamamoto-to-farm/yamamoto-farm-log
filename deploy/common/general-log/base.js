@@ -51,27 +51,27 @@ function ensureYear(data, year) {
 }
 
 /* ---------------------------------------------------------
-   3. インデックス読み込み（階層構造の揺れを吸収）
+   3. インデックス読み込み（正規構造を優先）
 --------------------------------------------------------- */
 async function loadIndex(type) {
 
-  // A. ルート直下型
-  const pathA = `/data/${type}-index.json`;
-
-  // B. ディレクトリ型
+  // 正規構造（Farm OS 標準）
   const pathB = `/data/${type}/${type}-index.json`;
 
-  // A を試す
-  let data = await loadJSON(pathA);
+  // 旧構造（互換）
+  const pathA = `/data/${type}-index.json`;
+
+  // B を先に試す
+  let data = await loadJSON(pathB);
   if (data && Object.keys(data).length !== 0) {
-    debugLog(`[loadIndex] loaded from A: ${pathA}`);
+    debugLog(`[loadIndex] loaded from B: ${pathB}`);
     return data;
   }
 
-  // B を試す
-  data = await loadJSON(pathB);
+  // A を試す
+  data = await loadJSON(pathA);
   if (data && Object.keys(data).length !== 0) {
-    debugLog(`[loadIndex] loaded from B: ${pathB}`);
+    debugLog(`[loadIndex] loaded from A: ${pathA}`);
     return data;
   }
 
@@ -81,8 +81,7 @@ async function loadIndex(type) {
 }
 
 /* ---------------------------------------------------------
-   4. インデックス更新（saveLog で保存）
-   読み込みと同じく、保存先も揺れ吸収する
+   4. インデックス更新（正規構造を優先して保存）
 --------------------------------------------------------- */
 async function updateIndex(type, field, year, fileName) {
   const index = await loadIndex(type);
@@ -96,23 +95,24 @@ async function updateIndex(type, field, year, fileName) {
   }
 
   // 保存先候補
-  const pathA = `data/${type}-index.json`;          // ルート直下型
-  const pathB = `data/${type}/${type}-index.json`;  // ディレクトリ型
+  const pathB = `data/${type}/${type}-index.json`;  // 正規構造
+  const pathA = `data/${type}-index.json`;          // 旧構造
 
-  // どちらが存在するかチェック
-  let savePath = pathA;
+  let savePath = pathB;
 
   try {
-    const resA = await fetch(`/${pathA}`, { method: "HEAD" });
-    if (resA.ok) {
-      savePath = pathA;
+    // B が存在するなら B に保存
+    const resB = await fetch(`/${pathB}`, { method: "HEAD" });
+    if (resB.ok) {
+      savePath = pathB;
     } else {
-      const resB = await fetch(`/${pathB}`, { method: "HEAD" });
-      if (resB.ok) savePath = pathB;
+      // B が無い → A を試す
+      const resA = await fetch(`/${pathA}`, { method: "HEAD" });
+      if (resA.ok) savePath = pathA;
     }
   } catch (e) {
-    // どちらも無い → pathA に新規作成
-    savePath = pathA;
+    // どちらも無い → 正規構造で新規作成
+    savePath = pathB;
   }
 
   await saveLog({
@@ -151,13 +151,13 @@ export async function saveMultiFieldLog({
     // 年次階層を確保
     ensureYear(data, year);
 
-    // ★ この圃場の分だけ distributed を抽出（施肥など distributed を持つ場合）
+    // ★ distributed を圃場ごとに絞る
     let perFieldDistributed = undefined;
     if (Array.isArray(entry.distributed)) {
       perFieldDistributed = entry.distributed.filter(d => d.field === field);
     }
 
-    // ★ entry は “完成形” をベースにしつつ、distributed だけ圃場ごとに絞る
+    // ★ entry を圃場ごとに調整
     const storedEntry = {
       date,
       ...entry,
