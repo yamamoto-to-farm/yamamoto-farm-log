@@ -1,6 +1,7 @@
 // fertilizer/list/list.js
 
-import { loadJSON, loadAllLogs } from "/common/general-log/base.js?v=1";
+import { loadJSON } from "/common/json.js?v=1";
+import { loadAllLogs } from "/common/general-log/base.js?v=1";
 
 /* ============================================================
    初期化
