@@ -12,6 +12,7 @@ export function updateActiveFilterUI() {
 
   const fieldBox = document.getElementById("activeFieldFilters");
   const fertBox  = document.getElementById("activeFertilizerFilters");
+  const pestBox  = document.getElementById("activePesticideFilters");
 
   const state = getFilter();
 
@@ -76,24 +77,21 @@ export function updateActiveFilterUI() {
       window.dispatchEvent(new CustomEvent("filter:apply"));
     };
   }
-}
 
   /* -------------------------------
-     農薬タグ
+     農薬タグ（★正しい位置）
   -------------------------------- */
-  const pestBox = document.getElementById("activePesticideFilters");
-
   if (pestBox) {
     let html = "";
     const tagList = [];
 
-    state.selectedPesticides.forEach(p => {
+    state.pesticides.forEach(p => {
       const id = "tag-" + Math.random().toString(36).slice(2);
       html += createTag(p, id);
       tagList.push({ id, handler: () => removePesticide(p) });
     });
 
-    if (state.selectedPesticides.length) {
+    if (state.pesticides.length) {
       html += `<button id="pestFilterReset" class="filter-reset-btn">全解除</button>`;
     }
 
@@ -106,10 +104,11 @@ export function updateActiveFilterUI() {
 
     const resetBtn = document.getElementById("pestFilterReset");
     if (resetBtn) resetBtn.onclick = () => {
-      filterState.selectedPesticides = [];
+      filterState.pesticides = [];
       window.dispatchEvent(new CustomEvent("filter:apply"));
     };
   }
+}
 
 /* ------------------------------------------------------------
    タグ生成
@@ -133,5 +132,10 @@ function removeField(f) {
 
 function removeFertilizer(f) {
   filterState.fertilizers = filterState.fertilizers.filter(v => v !== f);
+  window.dispatchEvent(new CustomEvent("filter:apply"));
+}
+
+function removePesticide(p) {
+  filterState.pesticides = filterState.pesticides.filter(v => v !== p);
   window.dispatchEvent(new CustomEvent("filter:apply"));
 }
