@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>施肥ログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
+</head>
+
+<body>
+
+  <div id="page-area" style="display:none;">
+
+    <h1 class="page-title">施肥ログ</h1>
+
+    <!-- 日付 -->
+    <h2 class="section-title">施肥日</h2>
+    <div class="card">
+      <input type="date" id="date" class="form-input">
+    </div>
+
+    <!-- 圃場 -->
+    <h2 class="section-title">圃場</h2>
+    <div class="card">
+      <button id="open-field-modal" class="primary-btn">圃場を選択</button>
+
+      <!-- 圃場のタグ表示 -->
+      <div id="activeFieldFilters" style="margin-top:10px;"></div>
+
+      <!-- 合計面積 -->
+      <div id="field-area-total" style="margin-top:10px; font-weight:bold; color:#444;">
+        合計面積：0 a
+      </div>
+    </div>
+
+    <!-- 肥料 -->
+    <h2 class="section-title">肥料</h2>
+    <div class="card">
+      <button id="open-fertilizer-modal" class="primary-btn">肥料を選択</button>
+
+      <!-- 肥料のタグ表示 -->
+      <div id="activeFertilizerFilters" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- ★ カード外にリンクを配置（標準UIとして最適） -->
+    <div style="margin:10px 0; display:flex; gap:10px;">
+      <a href="/fertilizer/list/list.html" class="secondary-btn">施肥記録一覧</a>
+      <a href="/fertilizer/schedule/schedule.html" class="secondary-btn">施肥計画を見る</a>
+      <a href="/admin/edit-json/index.html?data=fertilizer-index" class="secondary-btn">
+        肥料基本情報を編集
+      </a>
+    </div>
+
+    <!-- 使用量（複数肥料） -->
+    <h2 class="section-title">使用量（複数肥料）</h2>
+    <div class="card">
+      <div id="fertilizer-input-area">
+        <p style="color:#777;">肥料を選択すると入力欄が表示されます</p>
+      </div>
+    </div>
+
+    <!-- 作業者 -->
+    <h2 class="section-title">作業者</h2>
+    <div class="card" id="workers_box"></div>
+
+    <div class="card">
+      <label for="temp_workers">単発バイト（カンマ区切り）</label>
+      <input id="temp_workers" class="form-input" placeholder="例：佐藤さん, 田中さん">
+    </div>
+
+    <!-- 備考 -->
+    <h2 class="section-title">備考</h2>
+    <div class="card">
+      <textarea id="notes" class="form-textarea"></textarea>
+    </div>
+
+    <!-- 保存 -->
+    <button id="save-btn" class="primary-btn">保存</button>
+
+  </div>
+
+  <!-- モーダル -->
+  <div id="modal-container"></div>
+
+  <!-- 保存モーダル -->
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
+  <!-- 共通スクリプト -->
+  <script type="module" src="/common/summary.js?v=1"></script>
+  <script type="module" src="/common/save/index.js?v=1"></script>
+
+  <!-- フィルタ構造 -->
+  <script type="module" src="/common/filter/filter-core.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-field.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-fertilizer.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-active.js?v=1"></script>
+
+  <!-- 複数肥料入力 -->
+  <script type="module" src="./fertilizer-multi-input.js?v=1"></script>
+
+  <!-- ページロジック -->
+  <script type="module">
+    import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js";
+    import { initFertilizerPage } from "./fertilizer.js?v=1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+
+      renderHeader();
+      document.getElementById("page-area").style.display = "block";
+
+      // 今日の日付
+      document.getElementById("date").value =
+        new Date().toISOString().slice(0, 10);
+
+      // 作業者チェックボックス
+      await createWorkerCheckboxes("workers_box");
+
+      // URL パラメータから使用機械を取得
+      const params = new URLSearchParams(location.search);
+      window.__fertilizer_machine = params.get("machine") || "";
+
+      await initFertilizerPage();
+    });
+  </script>
+
+</body>
+
+</html>
