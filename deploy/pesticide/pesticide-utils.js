@@ -1,19 +1,19 @@
-// /common/fertilizer/fertilizer-utils.js
+// /common/pesticide/pesticide-utils.js
 
 // ===============================
 // デバッグ
 // ===============================
 const DEBUG = true;
 function debugLog(...args) {
-  if (DEBUG) console.log("[fertilizer-utils]", ...args);
+  if (DEBUG) console.log("[pesticide-utils]", ...args);
 }
 
 import { filterState } from "/common/filter/filter-core.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
-import { updatePer10aAll, getFertilizerInputData } 
-  from "./fertilizer-multi-input.js?v=1";
-import { distributeFertilizers } 
-  from "./fertilizer-distribute.js?v=1";
+import { updatePer10aAll, getpesticideInputData } 
+  from "./pesticide-multi-input.js?v=1";
+import { distributepesticides } 
+  from "./pesticide-distribute.js?v=1";
 import { saveMultiFieldLog } 
   from "/common/general-log/base.js?v=1";
 import { getSelectedWorkers } 
@@ -40,26 +40,26 @@ export async function updateSelectedFieldsUI() {
 /* ============================================================
    肥料選択後の UI 更新
 ============================================================ */
-export function updateSelectedFertilizersUI() {
+export function updateSelectedpesticidesUI() {
     /*
-  const fertilizers = filterState.fertilizers || [];
-  const el = document.getElementById("selected-fertilizer");
-  if (el) el.textContent = fertilizers.length ? fertilizers.join("、") : "未選択";
+  const pesticides = filterState.pesticides || [];
+  const el = document.getElementById("selected-pesticide");
+  if (el) el.textContent = pesticides.length ? pesticides.join("、") : "未選択";
   */
 }
 
 /* ============================================================
    保存処理（複数肥料＋按分対応）
 ============================================================ */
-export async function saveFertilizerLog() {
-  debugLog("saveFertilizerLog start");
+export async function savepesticideLog() {
+  debugLog("savepesticideLog start");
 
   const date = document.getElementById("date").value;
   const fields = filterState.fields || [];
   const notes = document.getElementById("notes").value.trim();
 
   // ★ 使用機械（harvest と同じく URL パラメータから取得）
-  const machine = window.__fertilizer_machine || "";
+  const machine = window.__pesticide_machine || "";
 
   // 作業者（収穫ログと同じ方式）
   const workers = getSelectedWorkers("workers_box", "temp_workers");
@@ -69,13 +69,13 @@ export async function saveFertilizerLog() {
     return;
   }
 
-  const fertilizers = getFertilizerInputData();
-  if (fertilizers.length === 0) {
+  const pesticides = getpesticideInputData();
+  if (pesticides.length === 0) {
     alert("肥料を選択してください");
     return;
   }
 
-  const distributed = await distributeFertilizers(fields, fertilizers);
+  const distributed = await distributepesticides(fields, pesticides);
 
   const btn = document.getElementById("save-btn");
   if (btn) {
@@ -85,7 +85,7 @@ export async function saveFertilizerLog() {
 
   try {
     await saveMultiFieldLog({
-      type: "fertilizer",
+      type: "pesticide",
       date,
       fields,
       entry: {

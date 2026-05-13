@@ -38,17 +38,17 @@
     <!-- 肥料 -->
     <h2 class="section-title">肥料</h2>
     <div class="card">
-      <button id="open-fertilizer-modal" class="primary-btn">肥料を選択</button>
+      <button id="open-pesticide-modal" class="primary-btn">肥料を選択</button>
 
       <!-- 肥料のタグ表示 -->
-      <div id="activeFertilizerFilters" style="margin-top:10px;"></div>
+      <div id="activepesticideFilters" style="margin-top:10px;"></div>
     </div>
 
     <!-- ★ カード外にリンクを配置（標準UIとして最適） -->
     <div style="margin:10px 0; display:flex; gap:10px;">
-      <a href="/fertilizer/list/list.html" class="secondary-btn">施肥記録一覧</a>
-      <a href="/fertilizer/schedule/schedule.html" class="secondary-btn">施肥計画を見る</a>
-      <a href="/admin/edit-json/index.html?data=fertilizer-index" class="secondary-btn">
+      <a href="/pesticide/list/list.html" class="secondary-btn">施肥記録一覧</a>
+      <a href="/pesticide/schedule/schedule.html" class="secondary-btn">施肥計画を見る</a>
+      <a href="/admin/edit-json/index.html?data=pesticide-index" class="secondary-btn">
         肥料基本情報を編集
       </a>
     </div>
@@ -56,7 +56,7 @@
     <!-- 使用量（複数肥料） -->
     <h2 class="section-title">使用量（複数肥料）</h2>
     <div class="card">
-      <div id="fertilizer-input-area">
+      <div id="pesticide-input-area">
         <p style="color:#777;">肥料を選択すると入力欄が表示されます</p>
       </div>
     </div>
@@ -100,17 +100,17 @@
   <!-- フィルタ構造 -->
   <script type="module" src="/common/filter/filter-core.js?v=1"></script>
   <script type="module" src="/common/filter/filter-field.js?v=1"></script>
-  <script type="module" src="/common/filter/filter-fertilizer.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-pesticide.js?v=1"></script>
   <script type="module" src="/common/filter/filter-active.js?v=1"></script>
 
   <!-- 複数肥料入力 -->
-  <script type="module" src="./fertilizer-multi-input.js?v=1"></script>
+  <script type="module" src="./pesticide-multi-input.js?v=1"></script>
 
   <!-- ページロジック -->
   <script type="module">
     import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
     import { renderHeader } from "/common/header.js";
-    import { initFertilizerPage } from "./fertilizer.js?v=1";
+    import { initpesticidePage } from "./pesticide.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
@@ -127,9 +127,9 @@
 
       // URL パラメータから使用機械を取得
       const params = new URLSearchParams(location.search);
-      window.__fertilizer_machine = params.get("machine") || "";
+      window.__pesticide_machine = params.get("machine") || "";
 
-      await initFertilizerPage();
+      await initpesticidePage();
     });
   </script>
 

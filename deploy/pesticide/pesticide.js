@@ -1,36 +1,36 @@
-// fertilizer.js（軽量化版）
+// pesticide.js（軽量化版）
 
 // ===============================
 // デバッグ
 // ===============================
 const DEBUG = true;
 function debugLog(...args) {
-  if (DEBUG) console.log("[fertilizer]", ...args);
+  if (DEBUG) console.log("[pesticide]", ...args);
 }
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=1";
+import { openpesticideModal } from "/common/filter/filter-pesticide.js?v=1";
 import { setFilterData, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 
-import { setFertilizerDict, renderFertilizerInputs } 
-  from "./fertilizer-multi-input.js?v=1";
+import { setpesticideDict, renderpesticideInputs } 
+  from "./pesticide-multi-input.js?v=1";
 
 import { 
   updateSelectedFieldsUI,
-  updateSelectedFertilizersUI,
-  saveFertilizerLog
-} from "./fertilizer-utils.js?v=1";
+  updateSelectedpesticidesUI,
+  savepesticideLog
+} from "./pesticide-utils.js?v=1";
 
 /* ============================================================
    初期化（フィルタ構造＋モーダル構造）
 ============================================================ */
-export async function initFertilizerPage() {
+export async function initpesticidePage() {
 
-  debugLog("initFertilizerPage start");
+  debugLog("initpesticidePage start");
 
   await initFieldFilterData();
-  await initFertilizerFilterData();
+  await initpesticideFilterData();
 
   initActiveFilterUI();
   debugLog("active filter UI initialized");
@@ -45,11 +45,11 @@ export async function initFertilizerPage() {
   }
 
   // 肥料モーダル
-  const btnFertilizer = document.getElementById("open-fertilizer-modal");
-  if (btnFertilizer) {
-    btnFertilizer.onclick = () => {
-      debugLog("openFertilizerModal");
-      openFertilizerModal({ mode: "filter" });
+  const btnpesticide = document.getElementById("open-pesticide-modal");
+  if (btnpesticide) {
+    btnpesticide.onclick = () => {
+      debugLog("openpesticideModal");
+      openpesticideModal({ mode: "filter" });
     };
   }
 
@@ -58,8 +58,8 @@ export async function initFertilizerPage() {
   ============================================================ */
   window.addEventListener("filter:apply", async () => {
     await updateSelectedFieldsUI();
-    updateSelectedFertilizersUI();   // ★ selected-fertilizer は更新しない
-    renderFertilizerInputs();
+    updateSelectedpesticidesUI();   // ★ selected-pesticide は更新しない
+    renderpesticideInputs();
   });
 
   window.addEventListener("filter:reset", async () => {
@@ -72,10 +72,10 @@ export async function initFertilizerPage() {
   // 保存ボタン
   const btnSave = document.getElementById("save-btn");
   if (btnSave) {
-    btnSave.onclick = saveFertilizerLog;
+    btnSave.onclick = savepesticideLog;
   }
 
-  debugLog("initFertilizerPage done");
+  debugLog("initpesticidePage done");
 }
 
 /* ============================================================
@@ -111,10 +111,10 @@ async function initFieldFilterData() {
 /* ============================================================
    肥料フィルタデータ初期化
 ============================================================ */
-async function initFertilizerFilterData() {
-  debugLog("loading fertilizer-index.json");
+async function initpesticideFilterData() {
+  debugLog("loading pesticide-index.json");
 
-  const res = await fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now());
+  const res = await fetch("/data/pesticide/pesticide-index.json?v=" + Date.now());
   const list = await res.json();
 
   // 辞書を作る（name → object）
@@ -124,7 +124,7 @@ async function initFertilizerFilterData() {
   });
 
   // multi-input に辞書を渡す
-  setFertilizerDict(dict);
+  setpesticideDict(dict);
 
   const parents = [];
   const children = {};
@@ -140,8 +140,8 @@ async function initFertilizerFilterData() {
   const current = getFilterData();
   setFilterData({
     ...current,
-    fertilizers: { parents, children }
+    pesticides: { parents, children }
   });
 
-  debugLog("fertilizer filter set");
+  debugLog("pesticide filter set");
 }

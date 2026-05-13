@@ -1,4 +1,4 @@
-// /common/fertilizer/fertilizer-multi-input.js
+// /common/pesticide/pesticide-multi-input.js
 
 // ===============================
 // デバッグフラグ
@@ -13,48 +13,48 @@ import { filterState } from "/common/filter/filter-core.js?v=1";
 
 /* ============================================================
    肥料辞書（name → full object）
-   fertilizer-index.json を読み込んだ fertilizer.js からセットされる
+   pesticide-index.json を読み込んだ pesticide.js からセットされる
 ============================================================ */
-export let fertilizerDict = {};
+export let pesticideDict = {};
 
-export function setFertilizerDict(dict) {
-    fertilizerDict = dict;
-    debugLog("setFertilizerDict:", dict);
+export function setpesticideDict(dict) {
+    pesticideDict = dict;
+    debugLog("setpesticideDict:", dict);
 }
 
 /* ============================================================
    複数肥料入力 UI を描画
 ============================================================ */
-export function renderFertilizerInputs() {
-    debugLog("renderFertilizerInputs start");
+export function renderpesticideInputs() {
+    debugLog("renderpesticideInputs start");
 
-    const area = document.getElementById("fertilizer-input-area");
+    const area = document.getElementById("pesticide-input-area");
     if (!area) {
-        debugLog("fertilizer-input-area not found");
+        debugLog("pesticide-input-area not found");
         return;
     }
 
-    const selected = filterState.fertilizers || [];
-    debugLog("selected fertilizers:", selected);
+    const selected = filterState.pesticides || [];
+    debugLog("selected pesticides:", selected);
 
     if (selected.length === 0) {
-        area.innerHTML = `<p class="no-fertilizer">肥料が選択されていません</p>`;
-        debugLog("no fertilizers selected");
+        area.innerHTML = `<p class="no-pesticide">肥料が選択されていません</p>`;
+        debugLog("no pesticides selected");
         return;
     }
 
     // UI を生成
     area.innerHTML = selected.map(name => {
-        const f = fertilizerDict[name] || {};
+        const f = pesticideDict[name] || {};
         const capacity = f.capacity || 0;
 
         debugLog(`render row for ${name}`, f);
 
         return `
-  <div class="fertilizer-row" data-name="${name}">
-    <div class="fertilizer-title">${name}</div>
+  <div class="pesticide-row" data-name="${name}">
+    <div class="pesticide-title">${name}</div>
 
-    <div class="fertilizer-line">
+    <div class="pesticide-line">
       <input type="text"
              inputmode="numeric"
              pattern="[0-9]*"
@@ -77,7 +77,7 @@ export function renderFertilizerInputs() {
 
     initInputEvents();
 
-    debugLog("renderFertilizerInputs done");
+    debugLog("renderpesticideInputs done");
 }
 
 /* ============================================================
@@ -91,7 +91,7 @@ function initInputEvents() {
             const name = input.dataset.name;
             const bags = Number(input.value);
 
-            const f = fertilizerDict[name];
+            const f = pesticideDict[name];
             const capacity = f.capacity || 0;
 
             const total = bags * capacity;
@@ -104,9 +104,9 @@ function initInputEvents() {
             );
             if (totalDisplay) totalDisplay.textContent = total;
 
-            // ★ /10a 更新（fertilizer.js 側で totalA をセットして呼ぶ）
-            if (window.__fertilizer_totalA) {
-                updatePer10aAll(window.__fertilizer_totalA);
+            // ★ /10a 更新（pesticide.js 側で totalA をセットして呼ぶ）
+            if (window.__pesticide_totalA) {
+                updatePer10aAll(window.__pesticide_totalA);
             }
         });
     });
@@ -115,23 +115,23 @@ function initInputEvents() {
 }
 
 /* ============================================================
-   /10a の使用量を更新（fertilizer.js から呼ばれる）
+   /10a の使用量を更新（pesticide.js から呼ばれる）
 ============================================================ */
 export function updatePer10aAll(totalA) {
     debugLog("updatePer10aAll:", totalA);
 
-    // fertilizer.js から参照できるように保存
-    window.__fertilizer_totalA = totalA;
+    // pesticide.js から参照できるように保存
+    window.__pesticide_totalA = totalA;
 
     if (!totalA || totalA === 0) {
         document.querySelectorAll(".per10a").forEach(el => el.textContent = "- kg/10a");
         return;
     }
 
-    const selected = filterState.fertilizers || [];
+    const selected = filterState.pesticides || [];
 
     selected.forEach(name => {
-        const f = fertilizerDict[name];
+        const f = pesticideDict[name];
         if (!f) return;
 
         const totalDisplay = document.querySelector(
@@ -151,10 +151,10 @@ export function updatePer10aAll(totalA) {
 /* ============================================================
    保存用データを取得
 ============================================================ */
-export function getFertilizerInputData() {
-    debugLog("getFertilizerInputData start");
+export function getpesticideInputData() {
+    debugLog("getpesticideInputData start");
 
-    const selected = filterState.fertilizers || [];
+    const selected = filterState.pesticides || [];
     const result = [];
 
     selected.forEach(name => {
@@ -173,10 +173,10 @@ export function getFertilizerInputData() {
         const bags = Number(bagsInput.value);
         const total = Number(totalDisplay.textContent);
 
-        const f = fertilizerDict[name];
+        const f = pesticideDict[name];
 
         const row = {
-            fertilizer_id: f.id,
+            pesticide_id: f.id,
             name,
             bags,
             total_kg: total
@@ -187,6 +187,6 @@ export function getFertilizerInputData() {
         result.push(row);
     });
 
-    debugLog("getFertilizerInputData result:", result);
+    debugLog("getpesticideInputData result:", result);
     return result;
 }
