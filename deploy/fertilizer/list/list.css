@@ -1,0 +1,95 @@
+/* ================================
+   年ブロック
+================================ */
+.year-block {
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 年タイトル（クリックで開閉） */
+.year-title {
+  background: #f0f0f0;
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid #ddd;
+}
+
+.year-title:hover {
+  background: #e8e8e8;
+}
+
+/* ================================
+   テーブル
+================================ */
+.fert-table {
+  width: 100%;
+  border-collapse: collapse;
+  display: none; /* デフォルトは閉じる */
+}
+
+.year-block.open .fert-table {
+  display: table; /* 開いたら表示 */
+}
+
+/* ヘッダ */
+.fert-table th {
+  background: #fafafa;
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-weight: bold;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* セル */
+.fert-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* 肥料名リンク */
+.fert-table td a {
+  color: #0077cc;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.fert-table td a:hover {
+  text-decoration: underline;
+}
+
+/* 偶数行の背景色 */
+.fert-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+/* 合計列を少し強調 */
+.fert-table td:last-child {
+  font-weight: bold;
+  background: #fdfdfd;
+}
+
+/* ================================
+   スマホ対応
+================================ */
+@media (max-width: 600px) {
+  .fert-table th,
+  .fert-table td {
+    padding: 4px;
+    font-size: 12px;
+  }
+
+  .year-title {
+    font-size: 16px;
+    padding: 10px;
+  }
+}
