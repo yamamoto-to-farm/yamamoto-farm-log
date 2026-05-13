@@ -1,3 +1,14 @@
-{
-  "materials": []
-}
+[
+  {
+    "id": "F304",
+    "name": "アファーム乳剤",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "F305",
+    "name": "ダコニール",
+    "category": "殺菌剤",
+    "unit": "ml"
+  }
+]
