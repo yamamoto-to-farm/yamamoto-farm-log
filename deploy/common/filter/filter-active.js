@@ -78,6 +78,39 @@ export function updateActiveFilterUI() {
   }
 }
 
+  /* -------------------------------
+     農薬タグ
+  -------------------------------- */
+  const pestBox = document.getElementById("activePesticideFilters");
+
+  if (pestBox) {
+    let html = "";
+    const tagList = [];
+
+    state.selectedPesticides.forEach(p => {
+      const id = "tag-" + Math.random().toString(36).slice(2);
+      html += createTag(p, id);
+      tagList.push({ id, handler: () => removePesticide(p) });
+    });
+
+    if (state.selectedPesticides.length) {
+      html += `<button id="pestFilterReset" class="filter-reset-btn">全解除</button>`;
+    }
+
+    pestBox.innerHTML = html;
+
+    tagList.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) el.onclick = t.handler;
+    });
+
+    const resetBtn = document.getElementById("pestFilterReset");
+    if (resetBtn) resetBtn.onclick = () => {
+      filterState.selectedPesticides = [];
+      window.dispatchEvent(new CustomEvent("filter:apply"));
+    };
+  }
+
 /* ------------------------------------------------------------
    タグ生成
 ------------------------------------------------------------ */

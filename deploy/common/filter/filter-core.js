@@ -8,18 +8,27 @@ import { openModal, closeModal } from "./filter-ui.js?v=1";
 // ★ 他のモジュールも再エクスポート（一貫性を保つ）
 export { openModal, closeModal };
 
+/* ============================================================
+   ★ フィルタの選択状態（state）
+   - fields
+   - fertilizers
+   - pesticides ← ★追加
+   - varieties / yearMonths は既存のまま
+============================================================ */
 export const filterState = {
   yearMonths: [],
   fields: [],
   varieties: [],
-  fertilizers: []
+  fertilizers: [],
+  pesticides: []   // ★ 農薬フィルタの選択状態を追加
 };
 
-let filterData = {}; // setFilterData で受け取る
-
 /* ============================================================
-   フィルタデータのセット / 取得
+   カテゴリ構造（parents / children）を保持する領域
+   setFilterData() で pesticide / fertilizer のカテゴリを受け取る
 ============================================================ */
+let filterData = {}; 
+
 export function setFilterData(data) {
   filterData = data;
 }
@@ -29,9 +38,10 @@ export function getFilterData() {
 }
 
 /* ============================================================
-   ★ これが無いと annual-list.js が動かない
+   ★ annual-list.js が必要とするフィルタ取得関数
 ============================================================ */
 export function getFilter() {
+  // state をディープコピーして返す
   return JSON.parse(JSON.stringify(filterState));
 }
 
@@ -53,6 +63,7 @@ export function resetFilter() {
   filterState.fields = [];
   filterState.varieties = [];
   filterState.fertilizers = [];
+  filterState.pesticides = [];   // ★ 農薬フィルタもリセット
 
   window.dispatchEvent(new Event("filter:reset"));
   updateActiveFilterUI();
