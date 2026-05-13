@@ -186,3 +186,30 @@ export async function saveMultiFieldLog({
 
   debugLog("[saveMultiFieldLog] done");
 }
+
+/* ---------------------------------------------------------
+   全圃場ログ読み込み（fertilizer / pesticide 共通）
+--------------------------------------------------------- */
+export async function loadAllLogs(type) {
+  const index = await loadIndex(type);
+  const result = [];
+
+  for (const field in index) {
+    for (const year in index[field]) {
+      for (const file of index[field][year]) {
+        const path = `/logs/${type}/${file}`;
+        const data = await loadJSON(path);
+
+        if (data && data.years && data.years[year]) {
+          result.push({
+            field,
+            year,
+            entries: data.years[year].entries
+          });
+        }
+      }
+    }
+  }
+
+  return result;
+}
