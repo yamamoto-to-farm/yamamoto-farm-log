@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>施肥ログ - 山本農園</title>
+  <title>防除ログ - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
@@ -13,10 +13,10 @@
 
   <div id="page-area" style="display:none;">
 
-    <h1 class="page-title">施肥ログ</h1>
+    <h1 class="page-title">ログ</h1>
 
     <!-- 日付 -->
-    <h2 class="section-title">施肥日</h2>
+    <h2 class="section-title">防除日</h2>
     <div class="card">
       <input type="date" id="date" class="form-input">
     </div>
@@ -35,29 +35,29 @@
       </div>
     </div>
 
-    <!-- 肥料 -->
-    <h2 class="section-title">肥料</h2>
+    <!-- 農薬 -->
+    <h2 class="section-title">農薬</h2>
     <div class="card">
-      <button id="open-pesticide-modal" class="primary-btn">肥料を選択</button>
+      <button id="open-pesticide-modal" class="primary-btn">農薬を選択</button>
 
-      <!-- 肥料のタグ表示 -->
+      <!-- 農薬のタグ表示 -->
       <div id="activepesticideFilters" style="margin-top:10px;"></div>
     </div>
 
     <!-- ★ カード外にリンクを配置（標準UIとして最適） -->
     <div style="margin:10px 0; display:flex; gap:10px;">
-      <a href="/pesticide/list/list.html" class="secondary-btn">施肥記録一覧</a>
-      <a href="/pesticide/schedule/schedule.html" class="secondary-btn">施肥計画を見る</a>
+      <a href="/pesticide/list/list.html" class="secondary-btn">防除記録一覧</a>
+      <a href="/pesticide/schedule/schedule.html" class="secondary-btn">防除計画を見る</a>
       <a href="/admin/edit-json/index.html?data=pesticide-index" class="secondary-btn">
-        肥料基本情報を編集
+        農薬基本情報を編集
       </a>
     </div>
 
-    <!-- 使用量（複数肥料） -->
-    <h2 class="section-title">使用量（複数肥料）</h2>
+    <!-- 使用量（複数農薬） -->
+    <h2 class="section-title">使用量（複数農薬）</h2>
     <div class="card">
       <div id="pesticide-input-area">
-        <p style="color:#777;">肥料を選択すると入力欄が表示されます</p>
+        <p style="color:#777;">農薬を選択すると入力欄が表示されます</p>
       </div>
     </div>
 
@@ -103,7 +103,7 @@
   <script type="module" src="/common/filter/filter-pesticide.js?v=1"></script>
   <script type="module" src="/common/filter/filter-active.js?v=1"></script>
 
-  <!-- 複数肥料入力 -->
+  <!-- 複数農薬入力 -->
   <script type="module" src="./pesticide-multi-input.js?v=1"></script>
 
   <!-- ページロジック -->
