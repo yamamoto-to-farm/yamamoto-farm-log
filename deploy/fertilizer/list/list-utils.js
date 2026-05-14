@@ -28,7 +28,6 @@ export async function getFertilizerByName(name) {
 
 /* ============================================================
    全圃場の施肥ログを読み込む
-   fields.json は配列形式（name が圃場名）
    ★ safeFieldName を使ってファイル名を正規化
 ============================================================ */
 export async function loadAllFertilizerLogs() {
