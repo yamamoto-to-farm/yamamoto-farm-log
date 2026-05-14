@@ -78,7 +78,6 @@ function createCategoryTable(year, fertList, logs) {
     }
   });
 
-  // ★ 1行も無ければ null を返す
   if (!hasRow) return null;
 
   table.appendChild(tbody);
@@ -104,7 +103,7 @@ function createFertilizerRow(fert, year, logs) {
       .map((v, i) => {
         const cls = v === 0 ? "zero" : "value";
         return `
-          <td class="${cls}"
+          <td class="${cls} clickable"
               onclick="location.href='month.html?year=${year}&month=${i+1}&fert=${encodeURIComponent(fert.name)}'">
             ${v}
           </td>`;

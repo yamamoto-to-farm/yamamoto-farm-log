@@ -39,7 +39,7 @@
 .fert-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* 列幅固定でガタつき防止 */
+  table-layout: fixed;
 }
 
 .fert-table th,
@@ -55,16 +55,13 @@
   text-align: center;
 }
 
-/* データは右揃え（数字中心） */
+/* データは右揃え */
 .fert-table td {
   text-align: right;
 }
 
 /* ================================
-   列幅指定（list.html 専用）
-   1: 肥料名（sticky）
-   2〜13: 1〜12月
-   14: 合計
+   列幅指定
 ================================ */
 
 /* 肥料名（sticky） */
@@ -79,7 +76,7 @@
   width: 70px;
 }
 
-/* 合計列（右端） */
+/* 合計列 */
 .fert-table th:nth-child(14),
 .fert-table td:nth-child(14) {
   width: 80px;
@@ -110,4 +107,64 @@ td.total {
   left: 0;
   background: #fff;
   z-index: 3;
+}
+
+/* ================================
+   クリック可能セル（リンク感を出す）
+================================ */
+.fert-table td.clickable {
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.fert-table td.clickable:hover {
+  background: #eef6ff;   /* 薄い青でリンク感 */
+  color: #005bbb;        /* 少し濃い青 */
+  font-weight: bold;
+}
+
+/* ================================
+   印刷用 CSS
+================================ */
+@media print {
+
+  /* 余白を最適化（A4 縦） */
+  @page {
+    margin: 12mm;
+  }
+
+  /* 背景色を印刷 */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* summary の背景色を確実に印刷 */
+  .cat-block summary,
+  .year-title {
+    background: #e8e8e8 !important;
+  }
+
+  /* sticky を無効化（印刷では邪魔） */
+  .sticky-col {
+    position: static !important;
+  }
+
+  /* クリック可能セルの hover 効果を無効化 */
+  .clickable:hover {
+    background: none !important;
+    color: inherit !important;
+  }
+
+  /* リンク色を黒に統一 */
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  /* ページ分割を防ぐ（カテゴリごとにまとまる） */
+  .cat-block,
+  .year-block {
+    page-break-inside: avoid;
+  }
 }
