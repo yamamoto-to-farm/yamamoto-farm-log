@@ -34,12 +34,12 @@
 }
 
 /* ================================
-   テーブル（list.html 専用）
+   テーブル
 ================================ */
 .fert-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* 列幅固定でガタつき防止 */
+  table-layout: fixed;   /* ★ 列幅を固定してガタつきを防止 */
 }
 
 .fert-table th,
@@ -48,44 +48,42 @@
   padding: 6px;
 }
 
-/* ヘッダーは中央揃え */
+/* ★ ヘッダーは中央揃え */
 .fert-table th {
   background: #fafafa;
   font-weight: bold;
   text-align: center;
 }
 
-/* データは右揃え（数字中心） */
+/* ★ データは右揃え（圃場名含む） */
 .fert-table td {
   text-align: right;
 }
 
-/* ================================
-   列幅指定（list.html 専用）
-   1: カテゴリ
-   2: 肥料名
-   3〜14: 1〜12月 + 合計
-================================ */
+/* ★ 列幅指定（安定したレイアウト） */
 .fert-table th:nth-child(1),
 .fert-table td:nth-child(1) {
-  width: 140px; /* カテゴリ */
+  width: 200px;   /* 圃場名 */
 }
 
 .fert-table th:nth-child(2),
 .fert-table td:nth-child(2) {
-  width: 180px; /* 肥料名 */
+  width: 80px;    /* 施肥量 */
 }
 
-/* 月別（1〜12月） */
-.fert-table th:nth-child(n+3):nth-child(-n+14),
-.fert-table td:nth-child(n+3):nth-child(-n+14) {
-  width: 70px;
+.fert-table th:nth-child(3),
+.fert-table td:nth-child(3) {
+  width: 80px;    /* 袋数 */
 }
 
-/* 合計列（右端） */
-.fert-table th:last-child,
-.fert-table td:last-child {
-  width: 80px;
+.fert-table th:nth-child(4),
+.fert-table td:nth-child(4) {
+  width: 160px;   /* 作業者 */
+}
+
+.fert-table th:nth-child(5),
+.fert-table td:nth-child(5) {
+  width: auto;    /* メモ（可変） */
 }
 
 .fert-table tbody tr:nth-child(even) {
@@ -105,9 +103,7 @@ td.total {
   background: #fdfdfd;
 }
 
-/* ================================
-   左列固定（カテゴリ・肥料名）
-================================ */
+/* 左列固定（必要なら） */
 .sticky-col {
   position: sticky;
   left: 0;
@@ -117,7 +113,7 @@ td.total {
 
 .sticky-col2 {
   position: sticky;
-  left: 140px; /* カテゴリ列の幅に合わせる */
+  left: 120px;
   background: #fff;
   z-index: 3;
 }
