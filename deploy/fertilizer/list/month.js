@@ -30,33 +30,20 @@ async function init() {
   const container = document.getElementById("fertilizer-detail-container");
   container.innerHTML = "";
 
-  const table = createDetailTable(logs, year, month, fert);
-  container.appendChild(table);
+  const blocks = createDateBlocks(logs, year, month, fert);
+  blocks.forEach(b => container.appendChild(b));
+
+  // 月全体の合計行
+  container.appendChild(createMonthlyTotal(blocks));
 }
 
 /* ============================================================
-   詳細テーブル生成（合計行つき）
+   日付ごとにブロック化（案1）
 ============================================================ */
-function createDetailTable(logs, year, month, fertName) {
-  const table = document.createElement("table");
-  table.className = "fert-detail-table";
+function createDateBlocks(logs, year, month, fertName) {
+  const rows = [];
 
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>圃場</th>
-        <th>日付</th>
-        <th>施肥量（kg）</th>
-        <th>作業者</th>
-        <th>メモ</th>
-      </tr>
-    </thead>
-  `;
-
-  const tbody = document.createElement("tbody");
-
-  let totalAmount = 0;
-
+  /* ---------- データ抽出 ---------- */
   logs.forEach(field => {
     if (field.year !== year) return;
 
@@ -69,45 +56,127 @@ function createDetailTable(logs, year, month, fertName) {
       e.distributed.forEach(f => {
         if (f.name !== fertName) return;
 
-        const amount = Number(f.amount_kg || 0);
-        totalAmount += amount;
-
-        const tr = document.createElement("tr");
-
-        const fieldLink = `
-          <a href="https://d3sscxnlo0qnhe.cloudfront.net/fields/index.html?field=${encodeURIComponent(field.field)}"
-             class="field-link">
-            ${field.field}
-          </a>
-        `;
-
-        tr.innerHTML = `
-          <td>${fieldLink}</td>
-          <td>${e.date}</td>
-          <td class="value">${amount}</td>
-          <td>${e.workers || ""}</td>
-          <td>${e.notes || ""}</td>
-        `;
-
-        tbody.appendChild(tr);
+        rows.push({
+          field: field.field,
+          date: e.date,
+          amount: Number(f.amount_kg || 0),
+          workers: e.workers || "",
+          notes: e.notes || ""
+        });
       });
     });
   });
 
-  /* ---------- 合計行を追加 ---------- */
-  const totalRow = document.createElement("tr");
-  totalRow.className = "total-row";
+  /* ---------- 日付昇順でソート ---------- */
+  rows.sort((a, b) => (a.date > b.date ? 1 : -1));
 
-  totalRow.innerHTML = `
-    <td colspan="2" style="font-weight:bold; background:#f0f0f0;">合計</td>
-    <td class="total" style="font-weight:bold; background:#fdfdfd;">${totalAmount}</td>
-    <td colspan="2"></td>
+  /* ---------- 日付ごとにグループ化 ---------- */
+  const groups = {};
+  rows.forEach(r => {
+    if (!groups[r.date]) groups[r.date] = [];
+    groups[r.date].push(r);
+  });
+
+  /* ---------- ブロック生成 ---------- */
+  const blocks = [];
+
+  Object.keys(groups).forEach(date => {
+    const list = groups[date];
+    const total = list.reduce((a, b) => a + b.amount, 0);
+
+    const details = document.createElement("details");
+    details.className = "date-block";
+    details.open = true;
+
+    const summary = document.createElement("summary");
+    summary.innerHTML = `
+      ${date}（${list.length}圃場 / ${total}kg）
+    `;
+    details.appendChild(summary);
+
+    const table = document.createElement("table");
+    table.className = "fert-table";
+
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>圃場</th>
+          <th>日付</th>
+          <th>施肥量（kg）</th>
+          <th>作業者</th>
+          <th>メモ</th>
+        </tr>
+      </thead>
+    `;
+
+    const tbody = document.createElement("tbody");
+
+    list.forEach(r => {
+      const fieldLink = `
+        <a href="https://d3sscxnlo0qnhe.cloudfront.net/fields/index.html?field=${encodeURIComponent(r.field)}"
+           class="field-link">
+          ${r.field}
+        </a>
+      `;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fieldLink}</td>
+        <td>${r.date}</td>
+        <td class="value">${r.amount}</td>
+        <td>${r.workers}</td>
+        <td>${r.notes}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    details.appendChild(table);
+
+    blocks.push(details);
+  });
+
+  return blocks;
+}
+
+/* ============================================================
+   月全体の合計行
+============================================================ */
+function createMonthlyTotal(blocks) {
+  let totalAmount = 0;
+  let totalDays = 0;
+
+  blocks.forEach(b => {
+    const summary = b.querySelector("summary").textContent;
+    const match = summary.match(/\/\s*(\d+)kg/);
+    if (match) totalAmount += Number(match[1]);
+
+    totalDays++;
+  });
+
+  const div = document.createElement("div");
+  div.style.marginTop = "20px";
+
+  const table = document.createElement("table");
+  table.className = "fert-table";
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>月合計日数</th>
+        <th>月合計施肥量（kg）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="value">${totalDays} 日</td>
+        <td class="total">${totalAmount}</td>
+      </tr>
+    </tbody>
   `;
 
-  tbody.appendChild(totalRow);
-
-  table.appendChild(tbody);
-  return table;
+  div.appendChild(table);
+  return div;
 }
 
 init();
