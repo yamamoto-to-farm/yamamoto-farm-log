@@ -35,7 +35,7 @@ async function init() {
 }
 
 /* ============================================================
-   詳細テーブル生成
+   詳細テーブル生成（合計行つき）
 ============================================================ */
 function createDetailTable(logs, year, month, fertName) {
   const table = document.createElement("table");
@@ -55,6 +55,8 @@ function createDetailTable(logs, year, month, fertName) {
 
   const tbody = document.createElement("tbody");
 
+  let totalAmount = 0;
+
   logs.forEach(field => {
     if (field.year !== year) return;
 
@@ -67,12 +69,22 @@ function createDetailTable(logs, year, month, fertName) {
       e.distributed.forEach(f => {
         if (f.name !== fertName) return;
 
+        const amount = Number(f.amount_kg || 0);
+        totalAmount += amount;
+
         const tr = document.createElement("tr");
 
+        const fieldLink = `
+          <a href="https://d3sscxnlo0qnhe.cloudfront.net/fields/index.html?field=${encodeURIComponent(field.field)}"
+             class="field-link">
+            ${field.field}
+          </a>
+        `;
+
         tr.innerHTML = `
-          <td>${field.field}</td>
+          <td>${fieldLink}</td>
           <td>${e.date}</td>
-          <td>${f.amount_kg}</td>
+          <td class="value">${amount}</td>
           <td>${e.workers || ""}</td>
           <td>${e.notes || ""}</td>
         `;
@@ -81,6 +93,18 @@ function createDetailTable(logs, year, month, fertName) {
       });
     });
   });
+
+  /* ---------- 合計行を追加 ---------- */
+  const totalRow = document.createElement("tr");
+  totalRow.className = "total-row";
+
+  totalRow.innerHTML = `
+    <td colspan="2" style="font-weight:bold; background:#f0f0f0;">合計</td>
+    <td class="total" style="font-weight:bold; background:#fdfdfd;">${totalAmount}</td>
+    <td colspan="2"></td>
+  `;
+
+  tbody.appendChild(totalRow);
 
   table.appendChild(tbody);
   return table;
