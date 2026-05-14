@@ -118,25 +118,31 @@ td.total {
 }
 
 .fert-table td.clickable:hover {
-  background: #eef6ff;   /* 薄い青でリンク感 */
-  color: #005bbb;        /* 少し濃い青 */
+  background: #eef6ff;
+  color: #005bbb;
   font-weight: bold;
 }
 
 /* ================================
-   印刷用 CSS
+   印刷用 CSS（安定版）
 ================================ */
 @media print {
 
-  /* 余白を最適化（A4 縦） */
   @page {
     margin: 12mm;
   }
 
-  /* 背景色を印刷 */
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* 印刷時は必ず details を展開 */
+  details {
+    display: block !important;
+  }
+  details:not([open]) > * {
+    display: block !important;
   }
 
   /* summary の背景色を確実に印刷 */
@@ -145,12 +151,23 @@ td.total {
     background: #e8e8e8 !important;
   }
 
-  /* sticky を無効化（印刷では邪魔） */
+  /* sticky を無効化 */
   .sticky-col {
     position: static !important;
   }
 
-  /* クリック可能セルの hover 効果を無効化 */
+  /* テーブルが縮小される問題を防止 */
+  .fert-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  /* 印刷時のフォントサイズを安定化 */
+  body, table, td, th {
+    font-size: 12px !important;
+  }
+
+  /* hover 効果を無効化 */
   .clickable:hover {
     background: none !important;
     color: inherit !important;
@@ -162,9 +179,14 @@ td.total {
     text-decoration: none !important;
   }
 
-  /* ページ分割を防ぐ（カテゴリごとにまとまる） */
+  /* ページ分割を防ぐ */
   .cat-block,
   .year-block {
     page-break-inside: avoid;
+  }
+
+  /* overflow による印刷欠けを防止 */
+  * {
+    overflow: visible !important;
   }
 }
