@@ -1,45 +1,34 @@
 /* ================================
-   年ブロック
+   年ブロック（収穫KPIと統一）
 ================================ */
-.year-block {
-  margin-bottom: 20px;
+.year-section {
+  margin-bottom: 30px;
   border: 1px solid #ccc;
   border-radius: 6px;
-  overflow: hidden;
   background: #fff;
+  overflow: hidden;
 }
 
-/* 年タイトル（クリックで開閉） */
-.year-title {
+.year-section h2 {
   background: #f0f0f0;
   padding: 12px 14px;
   margin: 0;
   font-size: 18px;
   font-weight: bold;
-  cursor: pointer;
-  user-select: none;
   border-bottom: 1px solid #ddd;
-}
-
-.year-title:hover {
-  background: #e8e8e8;
+  user-select: none;
 }
 
 /* ================================
-   テーブル
+   テーブル（年ごとの施肥一覧）
 ================================ */
-.fert-table {
+.fert-year-table {
   width: 100%;
   border-collapse: collapse;
-  display: none; /* デフォルトは閉じる */
-}
-
-.year-block.open .fert-table {
-  display: table; /* 開いたら表示 */
 }
 
 /* ヘッダ */
-.fert-table th {
+.fert-year-table th {
   background: #fafafa;
   border: 1px solid #ddd;
   padding: 8px;
@@ -49,47 +38,103 @@
 }
 
 /* セル */
-.fert-table td {
+.fert-year-table td {
   border: 1px solid #ddd;
   padding: 6px;
   text-align: center;
   font-size: 14px;
-}
-
-/* 肥料名リンク */
-.fert-table td a {
-  color: #0077cc;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.fert-table td a:hover {
-  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* 偶数行の背景色 */
-.fert-table tbody tr:nth-child(even) {
+.fert-year-table tbody tr:nth-child(even) {
   background: #f9f9f9;
 }
 
-/* 合計列を少し強調 */
-.fert-table td:last-child {
+/* 年間合計列 */
+.fert-year-table td.total {
   font-weight: bold;
   background: #fdfdfd;
+}
+
+/* 0 のセルは薄く */
+td.zero {
+  color: #bbb;
+}
+
+/* 数字のあるセルは強調 */
+td.value {
+  font-weight: bold;
+  color: #000;
+}
+
+/* ================================
+   左列固定（カテゴリ・肥料名）
+================================ */
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+}
+
+.sticky-col2 {
+  position: sticky;
+  left: 120px; /* カテゴリ列の幅に合わせる */
+  background: #fff;
+  z-index: 3;
+}
+
+/* ================================
+   カテゴリ折りたたみ（details/summary）
+================================ */
+details {
+  margin: 0;
+  padding: 0;
+}
+
+summary {
+  background: #e8e8e8;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+  user-select: none;
+}
+
+summary:hover {
+  background: #dcdcdc;
+}
+
+/* カテゴリ内のテーブル */
+.inner-cat-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inner-cat-table td,
+.inner-cat-table th {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
 }
 
 /* ================================
    スマホ対応
 ================================ */
 @media (max-width: 600px) {
-  .fert-table th,
-  .fert-table td {
+  .fert-year-table th,
+  .fert-year-table td {
     padding: 4px;
     font-size: 12px;
   }
 
-  .year-title {
-    font-size: 16px;
-    padding: 10px;
+  summary {
+    font-size: 14px;
+    padding: 6px;
+  }
+
+  .sticky-col2 {
+    left: 90px;
   }
 }
