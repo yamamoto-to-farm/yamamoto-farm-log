@@ -43,9 +43,10 @@ function createYearTable(year, master, logs) {
   const thead = document.createElement("thead");
   thead.innerHTML = `
     <tr>
-      <th>カテゴリ</th>
-      <th>肥料名</th>
+      <th class="sticky-col">カテゴリ</th>
+      <th class="sticky-col2">肥料名</th>
       ${[...Array(12).keys()].map(m => `<th>${m + 1}月</th>`).join("")}
+      <th>合計</th>
     </tr>
   `;
   table.appendChild(thead);
@@ -53,16 +54,35 @@ function createYearTable(year, master, logs) {
   /* ---------- ボディ ---------- */
   const tbody = document.createElement("tbody");
 
-  master.forEach(fert => {
-    const tr = document.createElement("tr");
+  // カテゴリごとにまとめる
+  const categories = groupByCategory(master);
 
-    tr.innerHTML = `
-      <td>${fert.category}</td>
-      <td>${fert.name}</td>
-      ${[...Array(12).keys()]
-        .map(m => `<td>${sumFertilizer(logs, fert.name, year, m + 1)}</td>`)
-        .join("")}
-    `;
+  Object.keys(categories).forEach(cat => {
+    const details = document.createElement("details");
+    details.open = true;
+
+    const summary = document.createElement("summary");
+    summary.textContent = `${cat}（${categories[cat].length}種類）`;
+    details.appendChild(summary);
+
+    const innerTable = document.createElement("table");
+    innerTable.className = "inner-cat-table";
+
+    const innerBody = document.createElement("tbody");
+
+    categories[cat].forEach(fert => {
+      const row = createFertilizerRow(fert, year, logs);
+      if (row) innerBody.appendChild(row); // 年間合計0は非表示
+    });
+
+    innerTable.appendChild(innerBody);
+    details.appendChild(innerTable);
+
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 15;
+    td.appendChild(details);
+    tr.appendChild(td);
 
     tbody.appendChild(tr);
   });
@@ -70,6 +90,51 @@ function createYearTable(year, master, logs) {
   table.appendChild(tbody);
 
   return table;
+}
+
+/* ============================================================
+   肥料1行を生成（年間合計0なら null を返す）
+============================================================ */
+function createFertilizerRow(fert, year, logs) {
+  const monthly = [...Array(12).keys()].map(m =>
+    sumFertilizer(logs, fert.name, year, m + 1)
+  );
+
+  const total = monthly.reduce((a, b) => a + b, 0);
+
+  if (total === 0) return null; // 年間合計0は非表示
+
+  const tr = document.createElement("tr");
+  tr.dataset.cat = fert.category;
+
+  tr.innerHTML = `
+    <td class="sticky-col">${fert.category}</td>
+    <td class="sticky-col2">${fert.name}</td>
+    ${monthly
+      .map((v, i) => {
+        const cls = v === 0 ? "zero" : "value";
+        return `
+          <td class="${cls}" onclick="location.href='month.html?year=${year}&fert=${encodeURIComponent(fert.name)}&month=${i+1}'">
+            ${v}
+          </td>`;
+      })
+      .join("")}
+    <td class="total">${total}</td>
+  `;
+
+  return tr;
+}
+
+/* ============================================================
+   カテゴリごとに肥料をまとめる
+============================================================ */
+function groupByCategory(master) {
+  const map = {};
+  master.forEach(f => {
+    if (!map[f.category]) map[f.category] = [];
+    map[f.category].push(f);
+  });
+  return map;
 }
 
 /* ============================================================
