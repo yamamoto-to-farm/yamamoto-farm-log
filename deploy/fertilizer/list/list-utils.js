@@ -1,70 +1,164 @@
-// fertilizer/list-utils.js
+// fertilizer/list/list.js
 
-import { loadJSON } from "/common/json.js?v=1";
-
-/* ============================================================
-   肥料マスターを読み込む（共通関数）
-============================================================ */
-export async function loadFertilizerMaster() {
-  return await loadJSON("/data/fertilizer/fertilizer-index.json");
-}
+import {
+  loadFertilizerMaster,
+  loadAllFertilizerLogs,
+  collectYears
+} from "./list-utils.js?v=1";
 
 /* ============================================================
-   ID → 肥料オブジェクト を取得
+   初期化
 ============================================================ */
-export async function getFertilizerById(id) {
+export async function initFertilizerList() {
   const master = await loadFertilizerMaster();
-  return master.find(f => f.id === id) || null;
+  const logs = await loadAllFertilizerLogs();
+  const years = collectYears(logs);
+
+  const container = document.getElementById("fertilizer-container");
+  container.innerHTML = "";
+
+  years.forEach(year => {
+    const section = document.createElement("div");
+    section.className = "year-section";
+
+    const title = document.createElement("h2");
+    title.textContent = `${year}年`;
+    section.appendChild(title);
+
+    const table = createYearTable(year, master, logs);
+    section.appendChild(table);
+
+    container.appendChild(section);
+  });
 }
 
 /* ============================================================
-   名前 → 肥料オブジェクト を取得
+   年ごとの施肥一覧テーブル生成
 ============================================================ */
-export async function getFertilizerByName(name) {
-  const master = await loadFertilizerMaster();
-  return master.find(f => f.name === name) || null;
+function createYearTable(year, master, logs) {
+  const table = document.createElement("table");
+  table.className = "fert-year-table";
+
+  /* ---------- ヘッダー ---------- */
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th class="sticky-col">カテゴリ</th>
+      <th class="sticky-col2">肥料名</th>
+      ${[...Array(12).keys()].map(m => `<th>${m + 1}月</th>`).join("")}
+      <th>合計</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+
+  /* ---------- ボディ ---------- */
+  const tbody = document.createElement("tbody");
+
+  // カテゴリごとにまとめる
+  const categories = groupByCategory(master);
+
+  Object.keys(categories).forEach(cat => {
+    const details = document.createElement("details");
+    details.open = true;
+
+    const summary = document.createElement("summary");
+    summary.textContent = `${cat}（${categories[cat].length}種類）`;
+    details.appendChild(summary);
+
+    const innerTable = document.createElement("table");
+    innerTable.className = "inner-cat-table";
+
+    const innerBody = document.createElement("tbody");
+
+    categories[cat].forEach(fert => {
+      const row = createFertilizerRow(fert, year, logs);
+      if (row) innerBody.appendChild(row); // 年間合計0は非表示
+    });
+
+    innerTable.appendChild(innerBody);
+    details.appendChild(innerTable);
+
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 15;
+    td.appendChild(details);
+    tr.appendChild(td);
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+
+  return table;
 }
 
 /* ============================================================
-   全圃場の施肥ログを読み込む
-   fields.json は配列形式（name が圃場名）
+   肥料1行を生成（年間合計0なら null を返す）
 ============================================================ */
-export async function loadAllFertilizerLogs() {
-  const fieldsData = await loadJSON("/data/fields.json");
+function createFertilizerRow(fert, year, logs) {
+  const monthly = [...Array(12).keys()].map(m =>
+    sumFertilizer(logs, fert.name, year, m + 1)
+  );
 
-  // 圃場名一覧を抽出
-  const fields = fieldsData.map(f => f.name);
+  const total = monthly.reduce((a, b) => a + b, 0);
 
-  const logs = [];
+  if (total === 0) return null; // 年間合計0は非表示
 
-  for (const field of fields) {
-    const path = `/logs/fertilizer/${field}.json`;
+  const tr = document.createElement("tr");
+  tr.dataset.cat = fert.category;
 
-    try {
-      const data = await loadJSON(path);
+  tr.innerHTML = `
+    <td class="sticky-col">${fert.category}</td>
+    <td class="sticky-col2">${fert.name}</td>
+    ${monthly
+      .map((v, i) => {
+        const cls = v === 0 ? "zero" : "value";
+        return `
+          <td class="${cls}" onclick="location.href='month.html?year=${year}&fert=${encodeURIComponent(fert.name)}&month=${i+1}'">
+            ${v}
+          </td>`;
+      })
+      .join("")}
+    <td class="total">${total}</td>
+  `;
 
-      // 年ごとに展開
-      for (const year of Object.keys(data.years)) {
-        logs.push({
-          field: data.field,
-          year: Number(year),
-          entries: data.years[year].entries
-        });
-      }
-
-    } catch (e) {
-      console.warn(`[fertilizer] No log for field: ${field}`);
-    }
-  }
-
-  return logs;
+  return tr;
 }
 
 /* ============================================================
-   全ログから存在する年一覧を取得
+   カテゴリごとに肥料をまとめる
 ============================================================ */
-export function collectYears(logs) {
-  const set = new Set();
-  logs.forEach(l => set.add(l.year));
-  return Array.from(set).sort((a, b) => b - a);
+function groupByCategory(master) {
+  const map = {};
+  master.forEach(f => {
+    if (!map[f.category]) map[f.category] = [];
+    map[f.category].push(f);
+  });
+  return map;
+}
+
+/* ============================================================
+   施肥量集計（肥料 × 年 × 月）
+============================================================ */
+function sumFertilizer(logs, fertName, year, month) {
+  let sum = 0;
+
+  logs.forEach(field => {
+    if (field.year !== year) return;
+
+    field.entries.forEach(e => {
+      if (!e.distributed) return;
+
+      const m = Number(e.date.slice(5, 7));
+      if (m !== month) return;
+
+      e.distributed.forEach(f => {
+        if (f.name === fertName) {
+          sum += Number(f.amount_kg || 0);
+        }
+      });
+    });
+  });
+
+  return sum;
 }
