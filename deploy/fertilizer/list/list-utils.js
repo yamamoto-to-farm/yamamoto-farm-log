@@ -27,13 +27,13 @@ export async function getFertilizerByName(name) {
 
 /* ============================================================
    全圃場の施肥ログを読み込む
-   /logs/fertilizer/*.json を全部読む
-   → 年ごとに展開しやすい構造に変換
+   fields.json は配列形式（name が圃場名）
 ============================================================ */
 export async function loadAllFertilizerLogs() {
-  // 圃場一覧（あなたの OS の fields.json に合わせて変更）
   const fieldsData = await loadJSON("/data/fields.json");
-  const fields = fieldsData.fields;
+
+  // 圃場名一覧を抽出
+  const fields = fieldsData.map(f => f.name);
 
   const logs = [];
 
