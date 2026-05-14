@@ -1,5 +1,3 @@
-// fertilizer/list/list.js
-
 import {
   loadFertilizerMaster,
   loadAllFertilizerLogs,
@@ -18,82 +16,67 @@ export async function initFertilizerList() {
   container.innerHTML = "";
 
   years.forEach(year => {
-    const section = document.createElement("div");
-    section.className = "year-section";
+    const block = document.createElement("div");
+    block.className = "year-block";
 
     const title = document.createElement("h2");
+    title.className = "year-title";
     title.textContent = `${year}年`;
-    section.appendChild(title);
+    block.appendChild(title);
 
-    const table = createYearTable(year, master, logs);
-    section.appendChild(table);
+    // カテゴリごとにまとめる
+    const categories = groupByCategory(master);
 
-    container.appendChild(section);
+    Object.keys(categories).forEach(cat => {
+      const details = document.createElement("details");
+      details.className = "cat-block";
+      details.open = true;
+
+      const summary = document.createElement("summary");
+      summary.textContent = `${cat}（${categories[cat].length}種類）`;
+      details.appendChild(summary);
+
+      const table = createCategoryTable(year, categories[cat], logs);
+      details.appendChild(table);
+
+      block.appendChild(details);
+    });
+
+    container.appendChild(block);
   });
 }
 
 /* ============================================================
-   年ごとの施肥一覧テーブル生成
+   カテゴリ内のテーブル生成
 ============================================================ */
-function createYearTable(year, master, logs) {
+function createCategoryTable(year, fertList, logs) {
   const table = document.createElement("table");
-  table.className = "fert-year-table";
+  table.className = "fert-table";
 
-  /* ---------- ヘッダー ---------- */
-  const thead = document.createElement("thead");
-  thead.innerHTML = `
-    <tr>
-      <th class="sticky-col">カテゴリ</th>
-      <th class="sticky-col2">肥料名</th>
-      ${[...Array(12).keys()].map(m => `<th>${m + 1}月</th>`).join("")}
-      <th>合計</th>
-    </tr>
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th class="sticky-col">カテゴリ</th>
+        <th class="sticky-col2">肥料名</th>
+        ${[...Array(12).keys()].map(m => `<th>${m + 1}月</th>`).join("")}
+        <th>合計</th>
+      </tr>
+    </thead>
   `;
-  table.appendChild(thead);
 
-  /* ---------- ボディ ---------- */
   const tbody = document.createElement("tbody");
 
-  // カテゴリごとにまとめる
-  const categories = groupByCategory(master);
-
-  Object.keys(categories).forEach(cat => {
-    const details = document.createElement("details");
-    details.open = true;
-
-    const summary = document.createElement("summary");
-    summary.textContent = `${cat}（${categories[cat].length}種類）`;
-    details.appendChild(summary);
-
-    const innerTable = document.createElement("table");
-    innerTable.className = "inner-cat-table";
-
-    const innerBody = document.createElement("tbody");
-
-    categories[cat].forEach(fert => {
-      const row = createFertilizerRow(fert, year, logs);
-      if (row) innerBody.appendChild(row); // 年間合計0は非表示
-    });
-
-    innerTable.appendChild(innerBody);
-    details.appendChild(innerTable);
-
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 15;
-    td.appendChild(details);
-    tr.appendChild(td);
-
-    tbody.appendChild(tr);
+  fertList.forEach(fert => {
+    const row = createFertilizerRow(fert, year, logs);
+    if (row) tbody.appendChild(row);
   });
 
   table.appendChild(tbody);
-
   return table;
 }
 
 /* ============================================================
-   肥料1行を生成（年間合計0なら null を返す）
+   肥料1行を生成（年間合計0なら null）
 ============================================================ */
 function createFertilizerRow(fert, year, logs) {
   const monthly = [...Array(12).keys()].map(m =>
@@ -101,11 +84,9 @@ function createFertilizerRow(fert, year, logs) {
   );
 
   const total = monthly.reduce((a, b) => a + b, 0);
-
-  if (total === 0) return null; // 年間合計0は非表示
+  if (total === 0) return null;
 
   const tr = document.createElement("tr");
-  tr.dataset.cat = fert.category;
 
   tr.innerHTML = `
     <td class="sticky-col">${fert.category}</td>
@@ -114,7 +95,8 @@ function createFertilizerRow(fert, year, logs) {
       .map((v, i) => {
         const cls = v === 0 ? "zero" : "value";
         return `
-          <td class="${cls}" onclick="location.href='month.html?year=${year}&fert=${encodeURIComponent(fert.name)}&month=${i+1}'">
+          <td class="${cls}"
+              onclick="location.href='month.html?year=${year}&month=${i+1}&fert=${encodeURIComponent(fert.name)}'">
             ${v}
           </td>`;
       })
@@ -126,7 +108,7 @@ function createFertilizerRow(fert, year, logs) {
 }
 
 /* ============================================================
-   カテゴリごとに肥料をまとめる
+   カテゴリごとにまとめる
 ============================================================ */
 function groupByCategory(master) {
   const map = {};
@@ -138,7 +120,7 @@ function groupByCategory(master) {
 }
 
 /* ============================================================
-   施肥量集計（肥料 × 年 × 月）
+   施肥量集計
 ============================================================ */
 function sumFertilizer(logs, fertName, year, month) {
   let sum = 0;

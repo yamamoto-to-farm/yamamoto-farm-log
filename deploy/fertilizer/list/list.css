@@ -1,76 +1,76 @@
 /* ================================
-   年ブロック（収穫KPIと統一）
+   年ブロック
 ================================ */
-.year-section {
+.year-block {
   margin-bottom: 30px;
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #fff;
-  overflow: hidden;
 }
 
-.year-section h2 {
+.year-title {
   background: #f0f0f0;
   padding: 12px 14px;
   margin: 0;
   font-size: 18px;
   font-weight: bold;
   border-bottom: 1px solid #ddd;
-  user-select: none;
 }
 
 /* ================================
-   テーブル（年ごとの施肥一覧）
+   カテゴリ折りたたみ
 ================================ */
-.fert-year-table {
+.cat-block summary {
+  background: #e8e8e8;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+  user-select: none;
+}
+
+.cat-block summary:hover {
+  background: #dcdcdc;
+}
+
+/* ================================
+   テーブル
+================================ */
+.fert-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-/* ヘッダ */
-.fert-year-table th {
-  background: #fafafa;
-  border: 1px solid #ddd;
-  padding: 8px;
-  font-weight: bold;
-  text-align: center;
-  white-space: nowrap;
-}
-
-/* セル */
-.fert-year-table td {
+.fert-table th,
+.fert-table td {
   border: 1px solid #ddd;
   padding: 6px;
   text-align: center;
-  font-size: 14px;
-  cursor: pointer;
 }
 
-/* 偶数行の背景色 */
-.fert-year-table tbody tr:nth-child(even) {
+.fert-table th {
+  background: #fafafa;
+  font-weight: bold;
+}
+
+.fert-table tbody tr:nth-child(even) {
   background: #f9f9f9;
 }
 
-/* 年間合計列 */
-.fert-year-table td.total {
-  font-weight: bold;
-  background: #fdfdfd;
-}
-
-/* 0 のセルは薄く */
 td.zero {
   color: #bbb;
 }
 
-/* 数字のあるセルは強調 */
 td.value {
   font-weight: bold;
-  color: #000;
 }
 
-/* ================================
-   左列固定（カテゴリ・肥料名）
-================================ */
+td.total {
+  font-weight: bold;
+  background: #fdfdfd;
+}
+
+/* 左列固定 */
 .sticky-col {
   position: sticky;
   left: 0;
@@ -80,61 +80,7 @@ td.value {
 
 .sticky-col2 {
   position: sticky;
-  left: 120px; /* カテゴリ列の幅に合わせる */
+  left: 120px;
   background: #fff;
   z-index: 3;
-}
-
-/* ================================
-   カテゴリ折りたたみ（details/summary）
-================================ */
-details {
-  margin: 0;
-  padding: 0;
-}
-
-summary {
-  background: #e8e8e8;
-  padding: 8px 10px;
-  font-weight: bold;
-  cursor: pointer;
-  border-bottom: 1px solid #ccc;
-  user-select: none;
-}
-
-summary:hover {
-  background: #dcdcdc;
-}
-
-/* カテゴリ内のテーブル */
-.inner-cat-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.inner-cat-table td,
-.inner-cat-table th {
-  border: 1px solid #ddd;
-  padding: 6px;
-  text-align: center;
-}
-
-/* ================================
-   スマホ対応
-================================ */
-@media (max-width: 600px) {
-  .fert-year-table th,
-  .fert-year-table td {
-    padding: 4px;
-    font-size: 12px;
-  }
-
-  summary {
-    font-size: 14px;
-    padding: 6px;
-  }
-
-  .sticky-col2 {
-    left: 90px;
-  }
 }
