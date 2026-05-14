@@ -45,12 +45,18 @@
 .fert-table td {
   border: 1px solid #ddd;
   padding: 6px;
-  text-align: center;
 }
 
+/* ★ ヘッダーは中央揃え */
 .fert-table th {
   background: #fafafa;
   font-weight: bold;
+  text-align: center;
+}
+
+/* ★ データは右揃え（圃場名含む） */
+.fert-table td {
+  text-align: right;
 }
 
 .fert-table tbody tr:nth-child(even) {
@@ -70,7 +76,7 @@ td.total {
   background: #fdfdfd;
 }
 
-/* 左列固定 */
+/* 左列固定（必要なら） */
 .sticky-col {
   position: sticky;
   left: 0;
