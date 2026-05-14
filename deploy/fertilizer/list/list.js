@@ -24,21 +24,23 @@ export async function initFertilizerList() {
     title.textContent = `${year}年`;
     block.appendChild(title);
 
-    // カテゴリごとにまとめる
     const categories = groupByCategory(master);
 
     Object.keys(categories).forEach(cat => {
+      const table = createCategoryTable(year, categories[cat], logs);
+
+      // ★ テーブルが null（＝1行も無い）ならカテゴリごと非表示
+      if (!table) return;
+
       const details = document.createElement("details");
       details.className = "cat-block";
       details.open = true;
 
       const summary = document.createElement("summary");
-      summary.textContent = `${cat}（${categories[cat].length}種類）`;
+      summary.textContent = `${cat}`;
       details.appendChild(summary);
 
-      const table = createCategoryTable(year, categories[cat], logs);
       details.appendChild(table);
-
       block.appendChild(details);
     });
 
@@ -48,6 +50,7 @@ export async function initFertilizerList() {
 
 /* ============================================================
    カテゴリ内のテーブル生成
+   ★ 1行も無ければ null を返す
 ============================================================ */
 function createCategoryTable(year, fertList, logs) {
   const table = document.createElement("table");
@@ -56,8 +59,7 @@ function createCategoryTable(year, fertList, logs) {
   table.innerHTML = `
     <thead>
       <tr>
-        <th class="sticky-col">カテゴリ</th>
-        <th class="sticky-col2">肥料名</th>
+        <th class="sticky-col">肥料名</th>
         ${[...Array(12).keys()].map(m => `<th>${m + 1}月</th>`).join("")}
         <th>合計</th>
       </tr>
@@ -66,10 +68,18 @@ function createCategoryTable(year, fertList, logs) {
 
   const tbody = document.createElement("tbody");
 
+  let hasRow = false;
+
   fertList.forEach(fert => {
     const row = createFertilizerRow(fert, year, logs);
-    if (row) tbody.appendChild(row);
+    if (row) {
+      hasRow = true;
+      tbody.appendChild(row);
+    }
   });
+
+  // ★ 1行も無ければ null を返す
+  if (!hasRow) return null;
 
   table.appendChild(tbody);
   return table;
@@ -89,8 +99,7 @@ function createFertilizerRow(fert, year, logs) {
   const tr = document.createElement("tr");
 
   tr.innerHTML = `
-    <td class="sticky-col">${fert.category}</td>
-    <td class="sticky-col2">${fert.name}</td>
+    <td class="sticky-col">${fert.name}</td>
     ${monthly
       .map((v, i) => {
         const cls = v === 0 ? "zero" : "value";

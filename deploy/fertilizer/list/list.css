@@ -62,29 +62,26 @@
 
 /* ================================
    列幅指定（list.html 専用）
-   1: カテゴリ
-   2: 肥料名
-   3〜14: 1〜12月 + 合計
+   1: 肥料名（sticky）
+   2〜13: 1〜12月
+   14: 合計
 ================================ */
+
+/* 肥料名（sticky） */
 .fert-table th:nth-child(1),
 .fert-table td:nth-child(1) {
-  width: 140px; /* カテゴリ */
-}
-
-.fert-table th:nth-child(2),
-.fert-table td:nth-child(2) {
-  width: 180px; /* 肥料名 */
+  width: 200px;
 }
 
 /* 月別（1〜12月） */
-.fert-table th:nth-child(n+3):nth-child(-n+14),
-.fert-table td:nth-child(n+3):nth-child(-n+14) {
+.fert-table th:nth-child(n+2):nth-child(-n+13),
+.fert-table td:nth-child(n+2):nth-child(-n+13) {
   width: 70px;
 }
 
 /* 合計列（右端） */
-.fert-table th:last-child,
-.fert-table td:last-child {
+.fert-table th:nth-child(14),
+.fert-table td:nth-child(14) {
   width: 80px;
 }
 
@@ -106,18 +103,11 @@ td.total {
 }
 
 /* ================================
-   左列固定（カテゴリ・肥料名）
+   左列固定（肥料名のみ）
 ================================ */
 .sticky-col {
   position: sticky;
   left: 0;
-  background: #fff;
-  z-index: 3;
-}
-
-.sticky-col2 {
-  position: sticky;
-  left: 140px; /* カテゴリ列の幅に合わせる */
   background: #fff;
   z-index: 3;
 }
