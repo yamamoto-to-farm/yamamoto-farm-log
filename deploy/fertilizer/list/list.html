@@ -6,15 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="./list.css?v=1">
+
+  <style>
+    /* 印刷時は必ず表示されるようにする（保険） */
+    @media print {
+      #page-area {
+        display: block !important;
+        visibility: visible !important;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-  <div id="page-area" style="display:none;">
+  <!-- ★ 初期状態で表示しておく（display:none を削除） -->
+  <div id="page-area">
     <h1 class="page-title">施肥記録一覧</h1>
-
     <div id="fertilizer-container"></div>
-
   </div>
 
   <script type="module">
@@ -23,11 +32,16 @@
     import { initFertilizerList } from "./list.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
-      if (!await verifyLocalAuth()) return;
+
+      const ok = await verifyLocalAuth();
+
+      // ★ 未ログイン時だけ非表示にする（印刷プレビュー対策）
+      if (!ok) {
+        document.getElementById("page-area").style.display = "none";
+        return;
+      }
 
       renderHeader();
-      document.getElementById("page-area").style.display = "block";
-
       initFertilizerList();
     });
   </script>
