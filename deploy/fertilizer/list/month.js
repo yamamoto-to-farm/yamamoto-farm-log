@@ -1,7 +1,8 @@
 // fertilizer/list/month.js
 
 import {
-  loadAllFertilizerLogs
+  loadAllFertilizerLogs,
+  getFertilizerByName
 } from "./list-utils.js?v=1";
 
 /* ============================================================
@@ -26,24 +27,23 @@ async function init() {
     `${year}年 ${month}月 「${fert}」 施肥詳細`;
 
   const logs = await loadAllFertilizerLogs();
+  const fertInfo = await getFertilizerByName(fert); // ★ capacity 取得
 
   const container = document.getElementById("fertilizer-detail-container");
   container.innerHTML = "";
 
-  const blocks = createDateBlocks(logs, year, month, fert);
+  const blocks = createDateBlocks(logs, year, month, fert, fertInfo);
   blocks.forEach(b => container.appendChild(b));
 
-  // 月全体の合計行
   container.appendChild(createMonthlyTotal(blocks));
 }
 
 /* ============================================================
-   日付ごとにブロック化（案1）
+   日付ごとにブロック化（案1 + 袋数対応）
 ============================================================ */
-function createDateBlocks(logs, year, month, fertName) {
+function createDateBlocks(logs, year, month, fertName, fertInfo) {
   const rows = [];
 
-  /* ---------- データ抽出 ---------- */
   logs.forEach(field => {
     if (field.year !== year) return;
 
@@ -56,10 +56,16 @@ function createDateBlocks(logs, year, month, fertName) {
       e.distributed.forEach(f => {
         if (f.name !== fertName) return;
 
+        const amount = Number(f.amount_kg || 0);
+        const bags = fertInfo?.capacity
+          ? amount / fertInfo.capacity
+          : null;
+
         rows.push({
           field: field.field,
           date: e.date,
-          amount: Number(f.amount_kg || 0),
+          amount,
+          bags,
           workers: e.workers || "",
           notes: e.notes || ""
         });
@@ -82,7 +88,11 @@ function createDateBlocks(logs, year, month, fertName) {
 
   Object.keys(groups).forEach(date => {
     const list = groups[date];
-    const total = list.reduce((a, b) => a + b.amount, 0);
+
+    const totalKg = list.reduce((a, b) => a + b.amount, 0);
+    const totalBags = fertInfo?.capacity
+      ? list.reduce((a, b) => a + b.bags, 0)
+      : null;
 
     const details = document.createElement("details");
     details.className = "date-block";
@@ -90,7 +100,7 @@ function createDateBlocks(logs, year, month, fertName) {
 
     const summary = document.createElement("summary");
     summary.innerHTML = `
-      ${date}（${list.length}圃場 / ${total}kg）
+      ${date}（${list.length}圃場 / ${totalKg}kg${totalBags !== null ? ` / ${totalBags.toFixed(2)}袋` : ""}）
     `;
     details.appendChild(summary);
 
@@ -101,8 +111,8 @@ function createDateBlocks(logs, year, month, fertName) {
       <thead>
         <tr>
           <th>圃場</th>
-          <th>日付</th>
           <th>施肥量（kg）</th>
+          <th>袋数</th>
           <th>作業者</th>
           <th>メモ</th>
         </tr>
@@ -122,8 +132,8 @@ function createDateBlocks(logs, year, month, fertName) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${fieldLink}</td>
-        <td>${r.date}</td>
         <td class="value">${r.amount}</td>
+        <td class="value">${r.bags !== null ? r.bags.toFixed(2) : "-"}</td>
         <td>${r.workers}</td>
         <td>${r.notes}</td>
       `;
@@ -140,16 +150,21 @@ function createDateBlocks(logs, year, month, fertName) {
 }
 
 /* ============================================================
-   月全体の合計行
+   月全体の合計行（袋数対応）
 ============================================================ */
 function createMonthlyTotal(blocks) {
-  let totalAmount = 0;
+  let totalKg = 0;
   let totalDays = 0;
+  let totalBags = 0;
 
   blocks.forEach(b => {
     const summary = b.querySelector("summary").textContent;
-    const match = summary.match(/\/\s*(\d+)kg/);
-    if (match) totalAmount += Number(match[1]);
+
+    const kgMatch = summary.match(/\/\s*(\d+)kg/);
+    if (kgMatch) totalKg += Number(kgMatch[1]);
+
+    const bagMatch = summary.match(/\/\s*([\d.]+)袋/);
+    if (bagMatch) totalBags += Number(bagMatch[1]);
 
     totalDays++;
   });
@@ -165,12 +180,14 @@ function createMonthlyTotal(blocks) {
       <tr>
         <th>月合計日数</th>
         <th>月合計施肥量（kg）</th>
+        <th>月合計袋数</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td class="value">${totalDays} 日</td>
-        <td class="total">${totalAmount}</td>
+        <td class="total">${totalKg}</td>
+        <td class="total">${totalBags.toFixed(2)}</td>
       </tr>
     </tbody>
   `;
