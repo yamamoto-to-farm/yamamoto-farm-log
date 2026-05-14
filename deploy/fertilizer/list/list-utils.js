@@ -1,6 +1,7 @@
 // fertilizer/list-utils.js
 
 import { loadJSON } from "/common/json.js?v=1";
+import { safeFieldName } from "/common/utils.js?v=1";
 
 /* ============================================================
    肥料マスターを読み込む（共通関数）
@@ -28,17 +29,21 @@ export async function getFertilizerByName(name) {
 /* ============================================================
    全圃場の施肥ログを読み込む
    fields.json は配列形式（name が圃場名）
+   ★ safeFieldName を使ってファイル名を正規化
 ============================================================ */
 export async function loadAllFertilizerLogs() {
   const fieldsData = await loadJSON("/data/fields.json");
 
-  // 圃場名一覧を抽出
-  const fields = fieldsData.map(f => f.name);
+  // 圃場名 → safeFieldName に変換
+  const fields = fieldsData.map(f => ({
+    original: f.name,          // 表示用
+    safe: safeFieldName(f.name) // ファイル名用
+  }));
 
   const logs = [];
 
-  for (const field of fields) {
-    const path = `/logs/fertilizer/${field}.json`;
+  for (const f of fields) {
+    const path = `/logs/fertilizer/${f.safe}.json`;
 
     try {
       const data = await loadJSON(path);
@@ -46,14 +51,14 @@ export async function loadAllFertilizerLogs() {
       // 年ごとに展開
       for (const year of Object.keys(data.years)) {
         logs.push({
-          field: data.field,
+          field: f.original,              // 表示は元の圃場名
           year: Number(year),
           entries: data.years[year].entries
         });
       }
 
     } catch (e) {
-      console.warn(`[fertilizer] No log for field: ${field}`);
+      console.warn(`[fertilizer] No log for field: ${f.original} (${f.safe})`);
     }
   }
 
