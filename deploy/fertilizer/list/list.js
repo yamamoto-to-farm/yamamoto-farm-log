@@ -12,6 +12,9 @@ export async function initFertilizerList() {
   const logs = await loadAllFertilizerLogs();
   const years = collectYears(logs);
 
+  // ★ ここで一括集計（高速化の核心）
+  const usage = buildUsageIndex(logs);
+
   const container = document.getElementById("fertilizer-container");
   container.innerHTML = "";
 
@@ -27,10 +30,9 @@ export async function initFertilizerList() {
     const categories = groupByCategory(master);
 
     Object.keys(categories).forEach(cat => {
-      const table = createCategoryTable(year, categories[cat], logs);
+      const table = createCategoryTable(year, categories[cat], usage);
 
-      // ★ テーブルが null（＝1行も無い）ならカテゴリごと非表示
-      if (!table) return;
+      if (!table) return; // ★ 空カテゴリは非表示
 
       const details = document.createElement("details");
       details.className = "cat-block";
@@ -49,10 +51,37 @@ export async function initFertilizerList() {
 }
 
 /* ============================================================
-   カテゴリ内のテーブル生成
-   ★ 1行も無ければ null を返す
+   ★ 高速化の核心：使用量インデックスを構築
 ============================================================ */
-function createCategoryTable(year, fertList, logs) {
+function buildUsageIndex(logs) {
+  const usage = {}; // usage[year][fertName][month] = kg
+
+  logs.forEach(field => {
+    const year = field.year;
+    if (!usage[year]) usage[year] = {};
+
+    field.entries.forEach(e => {
+      if (!e.distributed) return;
+
+      const month = Number(e.date.slice(5, 7));
+
+      e.distributed.forEach(f => {
+        const name = f.name;
+        const amount = Number(f.amount_kg || 0);
+
+        if (!usage[year][name]) usage[year][name] = Array(13).fill(0);
+        usage[year][name][month] += amount;
+      });
+    });
+  });
+
+  return usage;
+}
+
+/* ============================================================
+   カテゴリ内のテーブル生成
+============================================================ */
+function createCategoryTable(year, fertList, usage) {
   const table = document.createElement("table");
   table.className = "fert-table";
 
@@ -67,11 +96,10 @@ function createCategoryTable(year, fertList, logs) {
   `;
 
   const tbody = document.createElement("tbody");
-
   let hasRow = false;
 
   fertList.forEach(fert => {
-    const row = createFertilizerRow(fert, year, logs);
+    const row = createFertilizerRow(fert, year, usage);
     if (row) {
       hasRow = true;
       tbody.appendChild(row);
@@ -85,14 +113,12 @@ function createCategoryTable(year, fertList, logs) {
 }
 
 /* ============================================================
-   肥料1行を生成（年間合計0なら null）
+   肥料1行を生成（高速版）
 ============================================================ */
-function createFertilizerRow(fert, year, logs) {
-  const monthly = [...Array(12).keys()].map(m =>
-    sumFertilizer(logs, fert.name, year, m + 1)
-  );
-
+function createFertilizerRow(fert, year, usage) {
+  const monthly = usage[year]?.[fert.name] || Array(13).fill(0);
   const total = monthly.reduce((a, b) => a + b, 0);
+
   if (total === 0) return null;
 
   const tr = document.createElement("tr");
@@ -100,6 +126,7 @@ function createFertilizerRow(fert, year, logs) {
   tr.innerHTML = `
     <td class="sticky-col">${fert.name}</td>
     ${monthly
+      .slice(1)
       .map((v, i) => {
         const cls = v === 0 ? "zero" : "value";
         return `
@@ -125,30 +152,4 @@ function groupByCategory(master) {
     map[f.category].push(f);
   });
   return map;
-}
-
-/* ============================================================
-   施肥量集計
-============================================================ */
-function sumFertilizer(logs, fertName, year, month) {
-  let sum = 0;
-
-  logs.forEach(field => {
-    if (field.year !== year) return;
-
-    field.entries.forEach(e => {
-      if (!e.distributed) return;
-
-      const m = Number(e.date.slice(5, 7));
-      if (m !== month) return;
-
-      e.distributed.forEach(f => {
-        if (f.name === fertName) {
-          sum += Number(f.amount_kg || 0);
-        }
-      });
-    });
-  });
-
-  return sum;
 }
