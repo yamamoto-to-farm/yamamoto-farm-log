@@ -1,14 +1,25 @@
+// fertilizer/list/list.js
+
+import {
+  loadFertilizerMaster,
+  loadAllFertilizerLogs,
+  collectYears
+} from "./list-utils.js?v=1";
+
+/* ============================================================
+   初期化
+============================================================ */
 export async function initFertilizerList() {
   const master = await loadFertilizerMaster();
   const logs = await loadAllFertilizerLogs();
   const years = collectYears(logs);
 
+  // ★ 高速化の核心：全ログを一括集計
   const usage = buildUsageIndex(logs);
 
   const container = document.getElementById("fertilizer-container");
   container.innerHTML = "";
 
-  // ★ DOM を文字列で構築して最後に一括挿入（爆速化の核心）
   let html = "";
 
   years.forEach(year => {
@@ -33,8 +44,35 @@ export async function initFertilizerList() {
     html += `</div>`;
   });
 
-  // ★ 一括挿入（ここが最重要）
   container.innerHTML = html;
+}
+
+/* ============================================================
+   ★ 全ログを一括集計（高速化の核心）
+============================================================ */
+function buildUsageIndex(logs) {
+  const usage = {}; // usage[year][fertName][month] = kg
+
+  logs.forEach(field => {
+    const year = field.year;
+    if (!usage[year]) usage[year] = {};
+
+    field.entries.forEach(e => {
+      if (!e.distributed) return;
+
+      const month = Number(e.date.slice(5, 7));
+
+      e.distributed.forEach(f => {
+        const name = f.name;
+        const amount = Number(f.amount_kg || 0);
+
+        if (!usage[year][name]) usage[year][name] = Array(13).fill(0);
+        usage[year][name][month] += amount;
+      });
+    });
+  });
+
+  return usage;
 }
 
 /* ============================================================
@@ -76,4 +114,16 @@ function createCategoryTableHTML(year, fertList, usage) {
       <tbody>${rows}</tbody>
     </table>
   `;
+}
+
+/* ============================================================
+   カテゴリごとにまとめる
+============================================================ */
+function groupByCategory(master) {
+  const map = {};
+  master.forEach(f => {
+    if (!map[f.category]) map[f.category] = [];
+    map[f.category].push(f);
+  });
+  return map;
 }
