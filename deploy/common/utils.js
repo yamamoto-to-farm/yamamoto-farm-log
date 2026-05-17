@@ -112,18 +112,25 @@ export function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) return;
 
-  const original = document.body.innerHTML;
+  // ★ 折りたたみを全部開く
+  document.querySelectorAll(".field-group > div").forEach(w => {
+    w.style.display = "block";
+  });
 
-  // 印刷用 HTML に差し替え
+  const originalHTML = document.body.innerHTML;
+
   document.body.innerHTML = `
-    <h1>${title}</h1>
-    ${target.innerHTML}
+    <div style="padding: 12mm; font-size: 12px;">
+      <h1 style="font-size: 20px; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 4px;">
+        ${title}
+      </h1>
+      ${target.innerHTML}
+    </div>
   `;
 
   window.print();
 
-  // 元に戻す
-  document.body.innerHTML = original;
-  location.reload(); // JS 再実行のため
+  document.body.innerHTML = originalHTML;
+  location.reload();
 }
 
