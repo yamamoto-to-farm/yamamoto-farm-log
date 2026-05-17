@@ -8,29 +8,6 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-
-  <!-- ★ 圃場一覧専用 CSS（印刷対応） -->
-  <style>
-    @media print {
-      /* 全エリアを強制展開 */
-      .field-group > div {
-        display: block !important;
-        height: auto !important;
-        overflow: visible !important;
-      }
-
-      /* ボタン非表示 */
-      button {
-        display: none !important;
-      }
-
-      /* 背景色を印刷 */
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-    }
-  </style>
 </head>
 
 <body>
@@ -46,7 +23,7 @@
     地図に戻る
   </button>
 
-  <!-- ★ 印刷ボタン（追加） -->
+  <!-- ★ 印刷ボタン（別ウィンドウ印刷） -->
   <button id="print-btn" class="primary-btn" style="margin-left:10px;">
     印刷
   </button>
@@ -57,6 +34,7 @@
     import { renderHeader } from "/common/header.js?v=1.1";
     import { initAnalysisPage } from "./analysis.js";   // 圃場別分析
     import { renderFieldList } from "./index.js";        // 圃場一覧
+    import { printContent } from "/common/utils.js";     // ★ 共通印刷ユーティリティ
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -64,7 +42,7 @@
       const ok = await verifyLocalAuth();
       if (!ok) return;
 
-      // ヘッダー表示（認証済み状態で currentRole/currentHuman が使える）
+      // ヘッダー表示
       renderHeader();
 
       // worker → 閲覧禁止
@@ -80,28 +58,20 @@
 
       // ★ 分岐
       if (field) {
-        // 圃場名をタイトルに反映
         document.getElementById("field-name").textContent = `${field}（圃場詳細）`;
-
-        // 圃場別詳細
         initAnalysisPage(field);
 
       } else {
-        // 圃場一覧
         document.getElementById("field-name").textContent = "圃場を選択してください";
         await renderFieldList();
       }
     });
 
     /* -----------------------------------------
-       印刷ボタン：印刷前に全エリアを展開
+       印刷ボタン：別ウィンドウで印刷
     ----------------------------------------- */
     document.getElementById("print-btn").addEventListener("click", () => {
-      document.querySelectorAll(".field-group > div").forEach(w => {
-        w.style.display = "block";
-      });
-
-      window.print();
+      printContent("#analysis-container", "圃場一覧");
     });
   </script>
 

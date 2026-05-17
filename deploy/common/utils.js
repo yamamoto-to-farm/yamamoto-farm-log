@@ -105,3 +105,47 @@ export async function resolveFieldFromFileName(fileName) {
   console.warn("[resolveField] field not found:", normalizedField);
   return null;
 }
+/* ============================================================
+   印刷ユーティリティ（全ページ共通）
+   指定したセレクタの中身を別ウィンドウで印刷する
+============================================================ */
+export function printContent(selector, title = "印刷") {
+  const target = document.querySelector(selector);
+  if (!target) {
+    console.error("printContent: selector が見つかりません:", selector);
+    return;
+  }
+
+  const html = target.innerHTML;
+
+  const win = window.open("", "_blank");
+
+  win.document.write(`
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${title}</title>
+      <link rel="stylesheet" href="/common/css/main.css?v=1">
+      <style>
+        body { margin: 12mm; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #999; padding: 4px; }
+        h1 { margin-bottom: 10px; }
+      </style>
+    </head>
+    <body>
+      <h1>${title}</h1>
+      ${html}
+    </body>
+    </html>
+  `);
+
+  win.document.close();
+  win.focus();
+
+  // 印刷
+  win.print();
+
+  // 印刷後に自動で閉じる
+  win.close();
+}

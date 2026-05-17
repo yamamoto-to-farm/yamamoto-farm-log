@@ -161,12 +161,3 @@ function attachEvents() {
     });
   });
 }
-
-/* -----------------------------------------
-   ★ 印刷前に全エリアを展開する関数
------------------------------------------ */
-export function expandAllForPrint() {
-  document.querySelectorAll(".field-group > div").forEach(w => {
-    w.style.display = "block";
-  });
-}
