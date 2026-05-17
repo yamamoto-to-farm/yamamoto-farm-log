@@ -81,7 +81,7 @@
     background: none !important;
   }
 
-  /* ★ ボタン非表示（地図に戻る） */
+  /* ★ ボタン非表示（地図に戻る・印刷ボタン） */
   button {
     display: none !important;
   }

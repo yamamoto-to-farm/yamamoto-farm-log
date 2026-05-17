@@ -8,6 +8,29 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+
+  <!-- ★ 圃場一覧専用 CSS（印刷対応） -->
+  <style>
+    @media print {
+      /* 全エリアを強制展開 */
+      .field-group > div {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* ボタン非表示 */
+      button {
+        display: none !important;
+      }
+
+      /* 背景色を印刷 */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -21,6 +44,11 @@
   <!-- 地図に戻る -->
   <button class="primary-btn" onclick="location.href='/map/index.html'">
     地図に戻る
+  </button>
+
+  <!-- ★ 印刷ボタン（追加） -->
+  <button id="print-btn" class="primary-btn" style="margin-left:10px;">
+    印刷
   </button>
 
   <!-- 認証チェック & メイン処理 -->
@@ -61,13 +89,21 @@
       } else {
         // 圃場一覧
         document.getElementById("field-name").textContent = "圃場を選択してください";
-        renderFieldList();
+        await renderFieldList();
       }
+    });
+
+    /* -----------------------------------------
+       印刷ボタン：印刷前に全エリアを展開
+    ----------------------------------------- */
+    document.getElementById("print-btn").addEventListener("click", () => {
+      document.querySelectorAll(".field-group > div").forEach(w => {
+        w.style.display = "block";
+      });
+
+      window.print();
     });
   </script>
 
 </body>
 </html>
-
-
-
