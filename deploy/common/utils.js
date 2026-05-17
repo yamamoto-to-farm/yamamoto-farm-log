@@ -108,6 +108,7 @@ export async function resolveFieldFromFileName(fileName) {
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
 ============================================================ */
+// utils.js
 export function openPrintWindow(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) {
@@ -117,11 +118,9 @@ export function openPrintWindow(selector, title = "印刷") {
 
   const html = target.innerHTML;
 
-  // ★ print.html にデータを渡す
   const url = `/common/print/print.html?title=${encodeURIComponent(title)}`;
   const win = window.open(url, "_blank");
 
-  // ★ 別ウィンドウに HTML を渡す
   win.printData = {
     title,
     html
