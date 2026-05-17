@@ -108,7 +108,7 @@ export async function resolveFieldFromFileName(fileName) {
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
 ============================================================ */
-eexport function printInline(selector, title = "印刷") {
+export function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) {
     alert("印刷対象が見つかりません");
