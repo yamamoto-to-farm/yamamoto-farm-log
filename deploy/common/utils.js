@@ -131,20 +131,30 @@ export function printContent(selector, title = "印刷") {
       <!-- ★ CSS 読み込み完了を待つために onload を付ける -->
       <link id="print-css" rel="stylesheet" href="/common/css/main.css?v=1">
 
-      <style>
-        body {
-          margin: 12mm;
-          width: 180mm;
-          font-size: 12px;
-        }
-        table {
-          width: 100% !important;
-          table-layout: fixed !important;
-        }
-        th, td {
-          overflow-wrap: break-word !important;
-        }
-      </style>
+<style>
+  body {
+    margin: 12mm;
+    width: 180mm;
+    font-size: 12px;
+  }
+
+  table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  th, td {
+    overflow-wrap: break-word !important;
+  }
+
+  /* ★ これが最重要：印刷時に強制展開 */
+  .field-group > div {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+</style>
+
     </head>
 
     <body>
