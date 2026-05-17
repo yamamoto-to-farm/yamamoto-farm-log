@@ -108,90 +108,22 @@ export async function resolveFieldFromFileName(fileName) {
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
 ============================================================ */
-// utils.js
-export function openPrintWindow(selector, title = "印刷") {
+export function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
-  if (!target) {
-    console.error("openPrintWindow: selector が見つかりません:", selector);
-    return;
-  }
+  if (!target) return;
 
-  const html = target.innerHTML;
+  const original = document.body.innerHTML;
 
-  const url = `/common/print/print.html?title=${encodeURIComponent(title)}`;
+  // 印刷用 HTML に差し替え
+  document.body.innerHTML = `
+    <h1>${title}</h1>
+    ${target.innerHTML}
+  `;
 
-  // ★ Chrome がブロックしない window.open の書き方
-  const win = window.open(url, "_blank", "noopener,noreferrer");
+  window.print();
 
-  if (!win) {
-    alert("ポップアップがブロックされています。許可してください。");
-    return;
-  }
-
-  // ★ print.html が「準備できた」と言うまで待つ
-  const handler = (e) => {
-    if (e.data === "READY_FOR_PRINT_DATA") {
-      win.postMessage(
-        {
-          type: "PRINT_DATA",
-          title,
-          html
-        },
-        "*"
-      );
-      window.removeEventListener("message", handler);
-    }
-  };
-
-  window.addEventListener("message", handler);
+  // 元に戻す
+  document.body.innerHTML = original;
+  location.reload(); // JS 再実行のため
 }
 
-
-
-
-// utils.js より（元の印刷関数）
-export function printContent(selector, title = "印刷") {
-  const target = document.querySelector(selector);
-  if (!target) {
-    console.error("printContent: selector が見つかりません:", selector);
-    return;
-  }
-
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("ポップアップがブロックされました。許可してください。");
-    return;
-  }
-
-  // ★ 別ウィンドウに HTML を書き込む
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html lang="ja">
-    <head>
-      <meta charset="UTF-8">
-      <title>${title}</title>
-      <link rel="stylesheet" href="/common/css/main.css?v=1">
-      <style>
-        /* 印刷用の最小限の調整 */
-        body {
-          margin: 12mm;
-          font-size: 12px;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>${title}</h1>
-      ${target.innerHTML}
-    </body>
-    </html>
-  `);
-
-  printWindow.document.close();
-
-  // ★ 読み込み完了後に印刷
-  printWindow.onload = () => {
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
-}
