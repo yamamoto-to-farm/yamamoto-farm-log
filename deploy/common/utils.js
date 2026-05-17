@@ -132,7 +132,7 @@ export function printInline(selector, title = "印刷") {
   const doc = iframe.contentWindow.document;
 
   // ★ main.css を読み込んで埋め込む
-  fetch("common/css/main.css?v=1")
+  fetch("/common/css/main.css?v=1")
     .then(r => r.text())
     .then(css => {
       doc.open();
