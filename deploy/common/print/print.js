@@ -1,12 +1,12 @@
-// print.js
+// /common/print/print.js
 
 window.addEventListener("message", (e) => {
   if (e.data?.type === "PRINT_DATA") {
     const { title, html } = e.data;
 
     document.title = title;
-    const root = document.getElementById("print-root");
 
+    const root = document.getElementById("print-root");
     root.innerHTML = `
       <h1>${title}</h1>
       ${html}
@@ -17,11 +17,15 @@ window.addEventListener("message", (e) => {
       w.style.display = "block";
     });
 
-    // ★ レイアウト確定を待ってから印刷
-    setTimeout(() => {
-      window.print();
-      window.close();
-    }, 150); // ← これが超重要
+    // ★ レイアウト確定を待つ（これが超重要）
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          window.print();
+          window.close();
+        }, 50);
+      });
+    });
   }
 });
 
