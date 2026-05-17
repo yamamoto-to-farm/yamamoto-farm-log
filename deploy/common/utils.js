@@ -118,18 +118,18 @@ export function printContent(selector, title = "印刷") {
 
   const html = target.innerHTML;
 
-  // ★ about:blank ではなく、独立したドキュメントとして開く
   const win = window.open("", "_blank");
-
-  // ★ まず空の HTML を作る（ここが重要）
   win.document.open();
+
   win.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
       <title>${title}</title>
-      <link rel="stylesheet" href="/common/css/main.css?v=1">
+
+      <!-- ★ CSS 読み込み完了を待つために onload を付ける -->
+      <link id="print-css" rel="stylesheet" href="/common/css/main.css?v=1">
 
       <style>
         body {
@@ -146,32 +146,30 @@ export function printContent(selector, title = "印刷") {
         }
       </style>
     </head>
+
     <body>
       <h1>${title}</h1>
       ${html}
     </body>
     </html>
   `);
+
   win.document.close();
 
-  // ★ DOM が構築されるまで確実に待つ
-  const timer = setInterval(() => {
-    if (win.document.readyState === "complete") {
+  // ★ CSS 読み込み完了を待つ
+  const css = win.document.getElementById("print-css");
 
-      // ★ 展開処理
-      win.document.querySelectorAll(".field-group > div").forEach(w => {
-        w.style.display = "block";
-      });
+  css.onload = () => {
+    // ★ 折りたたみ解除（CSS が適用された後なので確実に効く）
+    win.document.querySelectorAll(".field-group > div").forEach(w => {
+      w.style.display = "block";
+    });
 
-      clearInterval(timer);
+    // 印刷
+    win.focus();
+    win.print();
 
-      // ★ 印刷
-      win.focus();
-      win.print();
-
-      // ★ 閉じる
-      win.close();
-    }
-  }, 50);
+    // 閉じる
+    win.close();
+  };
 }
-
