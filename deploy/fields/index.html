@@ -71,10 +71,15 @@
     /* -----------------------------------------
        印刷ボタン：元の printContent を使う
     ----------------------------------------- */
-    document.getElementById("print-btn").addEventListener("click", () => {
+    /*document.getElementById("print-btn").addEventListener("click", () => {
       printContent("#analysis-container", "圃場一覧");
+    });
+    */
+    document.getElementById("print-btn").addEventListener("click", () => {
+      openPrintWindow("#analysis-container", "圃場一覧");
     });
   </script>
 
 </body>
+
 </html>
