@@ -112,25 +112,40 @@ export function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) return;
 
-  // ★ 折りたたみを全部開く
-  document.querySelectorAll(".field-group > div").forEach(w => {
-    w.style.display = "block";
-  });
+  // iframe 作成
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
 
-  const originalHTML = document.body.innerHTML;
+  document.body.appendChild(iframe);
 
-  document.body.innerHTML = `
-    <div style="padding: 12mm; font-size: 12px;">
-      <h1 style="font-size: 20px; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 4px;">
-        ${title}
-      </h1>
+  const doc = iframe.contentWindow.document;
+
+  // iframe 内に印刷用 HTML を書き込む
+  doc.open();
+  doc.write(`
+    <html>
+    <head>
+      <title>${title}</title>
+      <link rel="stylesheet" href="/common/css/main.css?v=1">
+    </head>
+    <body>
+      <h1>${title}</h1>
       ${target.innerHTML}
-    </div>
-  `;
+    </body>
+    </html>
+  `);
+  doc.close();
 
-  window.print();
-
-  document.body.innerHTML = originalHTML;
-  location.reload();
+  // 読み込み完了後に印刷
+  iframe.onload = () => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    document.body.removeChild(iframe);
+  };
 }
 
