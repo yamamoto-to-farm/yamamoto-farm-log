@@ -128,32 +128,37 @@ export function printContent(selector, title = "印刷") {
       <meta charset="UTF-8">
       <title>${title}</title>
 
-      <!-- ★ CSS 読み込み完了を待つために onload を付ける -->
       <link id="print-css" rel="stylesheet" href="/common/css/main.css?v=1">
 
-<style>
-  body {
-    margin: 12mm;
-    width: 180mm;
-    font-size: 12px;
-  }
+      <style>
+        body {
+          margin: 12mm;
+          width: 180mm;
+          font-size: 12px;
+        }
 
-  table {
-    width: 100% !important;
-    table-layout: fixed !important;
-  }
+        table {
+          width: 100% !important;
+          table-layout: fixed !important;
+        }
 
-  th, td {
-    overflow-wrap: break-word !important;
-  }
+        th, td {
+          overflow-wrap: break-word !important;
+        }
 
-  /* ★ これが最重要：印刷時に強制展開 */
-  .field-group > div {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-</style>
+        /* ★ main.css の印刷ルールに絶対勝つ強制展開 */
+        .field-group > div,
+        .field-group div,
+        .field-group .section-body,
+        .field-group .collapse,
+        .field-group .accordion-content {
+          display: block !important;
+          height: auto !important;
+          overflow: visible !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+      </style>
 
     </head>
 
@@ -166,20 +171,11 @@ export function printContent(selector, title = "印刷") {
 
   win.document.close();
 
-  // ★ CSS 読み込み完了を待つ
   const css = win.document.getElementById("print-css");
 
   css.onload = () => {
-    // ★ 折りたたみ解除（CSS が適用された後なので確実に効く）
-    win.document.querySelectorAll(".field-group > div").forEach(w => {
-      w.style.display = "block";
-    });
-
-    // 印刷
     win.focus();
     win.print();
-
-    // 閉じる
     win.close();
   };
 }
