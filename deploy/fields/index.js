@@ -153,11 +153,13 @@ export async function renderFieldList() {
   // ▼ ★ 印刷ボタン（printInline に変更）
   const printBtn = document.getElementById("print-btn");
   if (printBtn) {
+    printBtn.disabled = false; // ← 追加
     printBtn.onclick = () => {
       const title = document.getElementById("field-name").textContent || "圃場一覧";
       printInline("#analysis-container", title);
     };
   }
+
 }
 
 /* -----------------------------------------
