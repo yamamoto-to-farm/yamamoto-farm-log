@@ -49,8 +49,13 @@ export async function renderFieldList() {
     const wrap = document.createElement("div");
     wrap.style.display = "none";
 
+    // ★ colgroup を追加して列幅固定
     let tableHtml = `
       <table class="field-table">
+        <colgroup>
+          <col style="width:70%;">
+          <col style="width:30%;">
+        </colgroup>
         <thead>
           <tr>
             <th>圃場名</th>
@@ -76,7 +81,6 @@ export async function renderFieldList() {
       }
 
       if (detail && detail.size != null) {
-        // 数値化を試みる（"16" → 16）
         const sizeA = Number(detail.size);
 
         if (!isNaN(sizeA)) {

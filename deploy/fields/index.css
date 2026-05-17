@@ -1,19 +1,79 @@
+/* ================================
+   圃場一覧テーブル（幅固定）
+================================ */
 .field-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;        /* ★ 列幅を固定 */
   margin-bottom: 10px;
+}
+
+/* 列幅を固定（圃場名：70%、面積：30%） */
+.field-table colgroup col:nth-child(1) {
+  width: 70%;
+}
+.field-table colgroup col:nth-child(2) {
+  width: 30%;
 }
 
 .field-table th,
 .field-table td {
   border-bottom: 1px solid #ddd;
   padding: 6px 8px;
+  overflow-wrap: break-word;  /* 長い名前でも崩れない */
 }
 
+/* 行クリック */
 .field-row {
   cursor: pointer;
 }
 
 .field-row:hover {
   background: #eef7ff;
+}
+
+/* ================================
+   印刷用 CSS（安定版）
+================================ */
+@media print {
+
+  @page {
+    margin: 12mm;
+  }
+
+  /* 背景色を印刷 */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 折りたたみ解除 */
+  .field-group > div {
+    display: block !important;
+  }
+
+  /* テーブル幅を強制固定 */
+  .field-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    font-size: 12px !important;
+  }
+
+  /* 列幅も固定 */
+  .field-table colgroup col:nth-child(1) {
+    width: 70% !important;
+  }
+  .field-table colgroup col:nth-child(2) {
+    width: 30% !important;
+  }
+
+  /* hover 無効化 */
+  .field-row:hover {
+    background: none !important;
+  }
+
+  /* ボタン非表示（地図に戻る） */
+  button {
+    display: none !important;
+  }
 }
