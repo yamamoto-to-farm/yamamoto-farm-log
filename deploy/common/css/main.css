@@ -28,7 +28,6 @@
 @import url("../modal.css") layer(components);
 @import url("../../map/map.css") layer(components);
 @import url("../../performance/kpi.css") layer(components);
-@import url("../print/print.css") layer(components);
 
 /* ===============================
    pages（ページ固有）
@@ -40,7 +39,7 @@
 @import url("../../schedule/annual-list/annual-list.css") layer(pages);
 @import url("../../admin/edit-csv/edit-csv.css") layer(pages);
 @import url("../../fertilizer/fertilizer.css") layer(pages);
-@import url("../../fields/index.css") layer(pages);
+
 
 /* ===============================
    overrides（最後の強制上書き）
