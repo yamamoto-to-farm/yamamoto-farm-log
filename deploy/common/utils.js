@@ -126,14 +126,22 @@ export function openPrintWindow(selector, title = "印刷") {
     return;
   }
 
-  // ★ print.html の読み込み完了を待ってからデータを渡す
-  const timer = setInterval(() => {
-    if (win.document.readyState === "complete") {
-      clearInterval(timer);
-      win.printData = { title, html };
+  // ★ print.html が準備できたらデータを送る
+  window.addEventListener("message", function handler(e) {
+    if (e.data === "READY_FOR_PRINT_DATA") {
+      win.postMessage(
+        {
+          type: "PRINT_DATA",
+          title,
+          html
+        },
+        "*"
+      );
+      window.removeEventListener("message", handler);
     }
-  }, 50);
+  });
 }
+
 
 // utils.js より（元の印刷関数）
 export function printContent(selector, title = "印刷") {

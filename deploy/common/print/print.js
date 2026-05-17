@@ -1,25 +1,24 @@
-// /common/print/print.js
+// print.js
 
-window.addEventListener("DOMContentLoaded", () => {
-  const data = window.printData;
+window.addEventListener("message", (e) => {
+  if (e.data?.type === "PRINT_DATA") {
+    const { title, html } = e.data;
 
-  if (!data) {
-    document.getElementById("print-root").textContent = "印刷データがありません";
-    return;
+    document.title = title;
+    document.getElementById("print-root").innerHTML = `
+      <h1>${title}</h1>
+      ${html}
+    `;
+
+    // 折りたたみ強制展開
+    document.querySelectorAll(".field-group > div").forEach(w => {
+      w.style.display = "block";
+    });
+
+    window.print();
+    window.close();
   }
-
-  document.title = data.title;
-
-  document.getElementById("print-root").innerHTML = `
-    <h1>${data.title}</h1>
-    ${data.html}
-  `;
-
-  // ★ 折りたたみを強制展開
-  document.querySelectorAll(".field-group > div").forEach(w => {
-    w.style.display = "block";
-  });
-
-  window.print();
-  window.close();
 });
+
+// ★ 親ウィンドウに「準備できた」と通知
+window.opener?.postMessage("READY_FOR_PRINT_DATA", "*");
