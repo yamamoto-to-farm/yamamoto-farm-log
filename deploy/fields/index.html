@@ -23,7 +23,7 @@
     地図に戻る
   </button>
 
-  <!-- ★ 印刷ボタン（print.html 方式） -->
+  <!-- ★ 印刷ボタン（元の printContent 方式） -->
   <button id="print-btn" class="primary-btn" style="margin-left:10px;">
     印刷
   </button>
@@ -34,9 +34,7 @@
     import { renderHeader } from "/common/header.js?v=1.1";
     import { initAnalysisPage } from "./analysis.js";   // 圃場別分析
     import { renderFieldList } from "./index.js";        // 圃場一覧
-
-    /* ★ 修正：printContent → openPrintWindow */
-    import { openPrintWindow } from "/common/utils.js";
+    import { printContent } from "/common/utils.js";     // ★ 元の印刷ユーティリティ
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -70,10 +68,10 @@
     });
 
     /* -----------------------------------------
-       印刷ボタン：print.html にデータを渡す
+       印刷ボタン：元の printContent を使う
     ----------------------------------------- */
     document.getElementById("print-btn").addEventListener("click", () => {
-      openPrintWindow("#analysis-container", "圃場一覧");
+      printContent("#analysis-container", "圃場一覧");
     });
   </script>
 

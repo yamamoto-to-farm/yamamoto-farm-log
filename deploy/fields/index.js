@@ -45,9 +45,8 @@ export async function renderFieldList() {
     title.textContent = `▶ ${groupName}`;
     title.className = "section-title group-title";
 
-    // ▼ 折りたたみ用ラッパー（★ 印刷対応のため class を付ける）
+    // ▼ 折りたたみ用ラッパー
     const wrap = document.createElement("div");
-    wrap.className = "field-group-body";
     wrap.style.display = "none";
 
     // ★ colgroup を追加して列幅固定

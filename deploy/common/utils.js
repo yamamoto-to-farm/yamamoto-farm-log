@@ -126,3 +126,49 @@ export function openPrintWindow(selector, title = "印刷") {
     html
   };
 }
+// utils.js より（元の印刷関数）
+export function printContent(selector, title = "印刷") {
+  const target = document.querySelector(selector);
+  if (!target) {
+    console.error("printContent: selector が見つかりません:", selector);
+    return;
+  }
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("ポップアップがブロックされました。許可してください。");
+    return;
+  }
+
+  // ★ 別ウィンドウに HTML を書き込む
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+      <meta charset="UTF-8">
+      <title>${title}</title>
+      <link rel="stylesheet" href="/common/css/main.css?v=1">
+      <style>
+        /* 印刷用の最小限の調整 */
+        body {
+          margin: 12mm;
+          font-size: 12px;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${title}</h1>
+      ${target.innerHTML}
+    </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+
+  // ★ 読み込み完了後に印刷
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+}
