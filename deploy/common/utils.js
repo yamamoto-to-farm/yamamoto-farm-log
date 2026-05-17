@@ -138,7 +138,7 @@ export function printInline(selector, title = "印刷") {
     <html>
     <head>
       <title>${title}</title>
-      <link rel="stylesheet" href="/common/css/main.css?v=1">
+      <link rel="stylesheet" href="common/css/main.css?v=1">
     </head>
     <body>
       <h1 style="font-size:20px; margin-bottom:12px; border-bottom:2px solid #333;">
