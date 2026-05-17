@@ -108,9 +108,12 @@ export async function resolveFieldFromFileName(fileName) {
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
 ============================================================ */
-export function printInline(selector, title = "印刷") {
+eexport function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
-  if (!target) return;
+  if (!target) {
+    alert("印刷対象が見つかりません");
+    return;
+  }
 
   // iframe 作成
   const iframe = document.createElement("iframe");
@@ -120,32 +123,26 @@ export function printInline(selector, title = "印刷") {
   iframe.style.width = "0";
   iframe.style.height = "0";
   iframe.style.border = "0";
-
   document.body.appendChild(iframe);
 
   const doc = iframe.contentWindow.document;
 
-  // iframe 内に印刷用 HTML を書き込む
+  // ★ 最小構成の HTML（CSS も一切なし）
   doc.open();
   doc.write(`
     <html>
-    <head>
-      <title>${title}</title>
-      <link rel="stylesheet" href="/common/css/main.css?v=1">
-    </head>
     <body>
       <h1>${title}</h1>
-      ${target.innerHTML}
+      <div>${target.innerHTML}</div>
     </body>
     </html>
   `);
   doc.close();
 
-  // 読み込み完了後に印刷
   iframe.onload = () => {
-    iframe.contentWindow.focus();
     iframe.contentWindow.print();
     document.body.removeChild(iframe);
   };
 }
+
 
