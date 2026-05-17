@@ -1,5 +1,6 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
+import { openPrintWindow } from "/common/utils.js";   // ★ 印刷対応を追加
 
 // ▼ デバッグフラグ（true でログ ON）
 const DEBUG_FIELD_LIST = true;
@@ -148,6 +149,14 @@ export async function renderFieldList() {
 
   // ▼ 圃場クリック → 詳細ページへ
   attachEvents();
+
+  // ▼ ★ 印刷ボタンの動作を追加
+  const printBtn = document.getElementById("print-btn");
+  if (printBtn) {
+    printBtn.onclick = () => {
+      openPrintWindow("#analysis-container", "圃場一覧");
+    };
+  }
 }
 
 /* -----------------------------------------

@@ -127,7 +127,7 @@ export function openPrintWindow(selector, title = "印刷") {
   }
 
   // ★ print.html が準備できたらデータを送る
-  window.addEventListener("message", function handler(e) {
+  const handler = (e) => {
     if (e.data === "READY_FOR_PRINT_DATA") {
       win.postMessage(
         {
@@ -139,8 +139,11 @@ export function openPrintWindow(selector, title = "印刷") {
       );
       window.removeEventListener("message", handler);
     }
-  });
+  };
+
+  window.addEventListener("message", handler);
 }
+
 
 
 // utils.js より（元の印刷関数）
