@@ -119,14 +119,16 @@ export function openPrintWindow(selector, title = "印刷") {
   const html = target.innerHTML;
 
   const url = `/common/print/print.html?title=${encodeURIComponent(title)}`;
-  const win = window.open(url, "_blank");
+
+  // ★ Chrome がブロックしない window.open の書き方
+  const win = window.open(url, "_blank", "noopener,noreferrer");
 
   if (!win) {
-    alert("ポップアップがブロックされています");
+    alert("ポップアップがブロックされています。許可してください。");
     return;
   }
 
-  // ★ print.html が準備できたらデータを送る
+  // ★ print.html が「準備できた」と言うまで待つ
   const handler = (e) => {
     if (e.data === "READY_FOR_PRINT_DATA") {
       win.postMessage(
@@ -143,6 +145,7 @@ export function openPrintWindow(selector, title = "印刷") {
 
   window.addEventListener("message", handler);
 }
+
 
 
 
