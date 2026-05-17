@@ -151,14 +151,21 @@ export async function renderFieldList() {
   attachEvents();
 
   // ▼ ★ 印刷ボタン（printInline に変更）
+  // ▼ ★ 印刷ボタン（printInline に変更）
   const printBtn = document.getElementById("print-btn");
   if (printBtn) {
-    printBtn.disabled = false; // ← 追加
+
+    // ★ DOM が完全に描画されるまで待つ
+    setTimeout(() => {
+      printBtn.disabled = false;
+    }, 500); // ← 500ms 待つ（重要）
+
     printBtn.onclick = () => {
       const title = document.getElementById("field-name").textContent || "圃場一覧";
       printInline("#analysis-container", title);
     };
   }
+
 
 }
 
