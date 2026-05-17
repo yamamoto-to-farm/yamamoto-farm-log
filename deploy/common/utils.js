@@ -110,10 +110,15 @@ export async function resolveFieldFromFileName(fileName) {
 ============================================================ */
 export function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
-  if (!target) {
-    alert("印刷対象が見つかりません");
-    return;
-  }
+  if (!target) return;
+
+  // ★ まず display:none を全部解除（ここが最重要）
+  document.querySelectorAll(".field-group > div").forEach(w => {
+    w.style.display = "block";
+  });
+
+  // ★ 解除後の innerHTML を取得
+  const html = target.innerHTML;
 
   // iframe 作成
   const iframe = document.createElement("iframe");
@@ -127,13 +132,19 @@ export function printInline(selector, title = "印刷") {
 
   const doc = iframe.contentWindow.document;
 
-  // ★ 最小構成の HTML（CSS も一切なし）
+  // iframe 内に印刷用 HTML を書き込む
   doc.open();
   doc.write(`
     <html>
+    <head>
+      <title>${title}</title>
+      <link rel="stylesheet" href="/common/css/main.css?v=1">
+    </head>
     <body>
-      <h1>${title}</h1>
-      <div>${target.innerHTML}</div>
+      <h1 style="font-size:20px; margin-bottom:12px; border-bottom:2px solid #333;">
+        ${title}
+      </h1>
+      ${html}
     </body>
     </html>
   `);
@@ -144,5 +155,6 @@ export function printInline(selector, title = "印刷") {
     document.body.removeChild(iframe);
   };
 }
+
 
 
