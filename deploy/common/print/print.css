@@ -1,26 +1,17 @@
-/* ============================================
-   print.css（印刷専用）
-   - main.css を邪魔しない
-   - A4 縦向きに最適化
-   - 折りたたみを強制展開
-   - 表が崩れないように固定
-============================================ */
+/* /common/print/print.css */
 
-/* A4 余白 */
 @page {
   margin: 12mm;
 }
 
-/* 本文の基本レイアウト */
 body {
   margin: 0;
   padding: 0;
-  width: 180mm;        /* A4 幅に収める */
+  width: 180mm;
   font-size: 12px;
-  color: #000;
+  background: #fff;
 }
 
-/* タイトル */
 h1 {
   font-size: 20px;
   margin-bottom: 12px;
@@ -31,33 +22,25 @@ h1 {
 /* 表の最適化 */
 table {
   width: 100% !important;
-  border-collapse: collapse;
   table-layout: fixed !important;
 }
 
 th, td {
-  border-bottom: 1px solid #ccc;
-  padding: 6px 8px;
   overflow-wrap: break-word;
+  padding: 6px 8px;
+  border-bottom: 1px solid #ccc;
 }
 
-/* ★ 折りたたみを強制展開（最重要） */
-.field-group > div,
-.field-group div,
-.field-group .section-body,
-.field-group .collapse,
-.field-group .accordion-content {
+/* ★ 折りたたみを強制展開 */
+.field-group > div {
   display: block !important;
   height: auto !important;
   overflow: visible !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
-/* 印刷に不要な UI を消す（必要に応じて追加） */
+/* 印刷不要 UI を非表示 */
 button,
 .app-header,
-#mode-switch-card,
 #filter-card,
 #activeFilters,
 #modal-container {
