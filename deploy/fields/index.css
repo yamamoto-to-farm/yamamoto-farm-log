@@ -33,7 +33,7 @@
 }
 
 /* ================================
-   印刷用 CSS（安定版）
+   印刷用 CSS（完全版）
 ================================ */
 @media print {
 
@@ -43,23 +43,32 @@
 
   /* 背景色を印刷 */
   * {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  /* 折りたたみ解除 */
+  /* ★ 折りたたみ解除（最重要） */
   .field-group > div {
     display: block !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  /* テーブル幅を強制固定 */
+  /* ★ h2 の ▶/▼ を印刷用に固定 */
+  .group-title {
+    font-size: 16px !important;
+    font-weight: bold !important;
+  }
+
+  /* ★ テーブル幅を強制固定 */
   .field-table {
     width: 100% !important;
     table-layout: fixed !important;
     font-size: 12px !important;
+    border-collapse: collapse !important;
   }
 
-  /* 列幅も固定 */
+  /* ★ 列幅も強制固定 */
   .field-table colgroup col:nth-child(1) {
     width: 70% !important;
   }
@@ -67,13 +76,26 @@
     width: 30% !important;
   }
 
-  /* hover 無効化 */
+  /* ★ hover 無効化 */
   .field-row:hover {
     background: none !important;
   }
 
-  /* ボタン非表示（地図に戻る） */
+  /* ★ ボタン非表示（地図に戻る） */
   button {
     display: none !important;
+  }
+
+  /* ★ ページタイトルを印刷時に上部固定 */
+  .page-title {
+    margin-bottom: 10px !important;
+    font-size: 20px !important;
+  }
+
+  /* ★ 印刷時に余計な余白を消す */
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
