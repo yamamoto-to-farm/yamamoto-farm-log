@@ -107,75 +107,23 @@ export async function resolveFieldFromFileName(fileName) {
 }
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
-   指定したセレクタの中身を「展開した状態」で印刷する
 ============================================================ */
-export function printContent(selector, title = "印刷") {
+export function openPrintWindow(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) {
-    console.error("printContent: selector が見つかりません:", selector);
+    console.error("openPrintWindow: selector が見つかりません:", selector);
     return;
   }
 
   const html = target.innerHTML;
 
-  const win = window.open("", "_blank");
-  win.document.open();
+  // ★ print.html にデータを渡す
+  const url = `/common/print/print.html?title=${encodeURIComponent(title)}`;
+  const win = window.open(url, "_blank");
 
-  win.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>${title}</title>
-
-      <link id="print-css" rel="stylesheet" href="/common/css/main.css?v=1">
-
-      <style>
-        body {
-          margin: 12mm;
-          width: 180mm;
-          font-size: 12px;
-        }
-
-        table {
-          width: 100% !important;
-          table-layout: fixed !important;
-        }
-
-        th, td {
-          overflow-wrap: break-word !important;
-        }
-
-        /* ★ main.css の印刷ルールに絶対勝つ強制展開 */
-        .field-group > div,
-        .field-group div,
-        .field-group .section-body,
-        .field-group .collapse,
-        .field-group .accordion-content {
-          display: block !important;
-          height: auto !important;
-          overflow: visible !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-        }
-      </style>
-
-    </head>
-
-    <body>
-      <h1>${title}</h1>
-      ${html}
-    </body>
-    </html>
-  `);
-
-  win.document.close();
-
-  const css = win.document.getElementById("print-css");
-
-  css.onload = () => {
-    win.focus();
-    win.print();
-    win.close();
+  // ★ 別ウィンドウに HTML を渡す
+  win.printData = {
+    title,
+    html
   };
 }

@@ -28,6 +28,7 @@
 @import url("../modal.css") layer(components);
 @import url("../../map/map.css") layer(components);
 @import url("../../performance/kpi.css") layer(components);
+@import url("../print/print.css") layer(components);
 
 /* ===============================
    pages（ページ固有）
