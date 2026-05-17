@@ -118,22 +118,23 @@ export function printContent(selector, title = "印刷") {
 
   const html = target.innerHTML;
 
+  // ★ about:blank ではなく、独立したドキュメントとして開く
   const win = window.open("", "_blank");
 
+  // ★ まず空の HTML を作る（ここが重要）
+  win.document.open();
   win.document.write(`
+    <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
       <title>${title}</title>
-
-      <!-- main.css をそのまま使う -->
       <link rel="stylesheet" href="/common/css/main.css?v=1">
 
-      <!-- 印刷用の最小限の補正 -->
       <style>
         body {
           margin: 12mm;
-          width: 180mm; /* A4 幅に収める */
+          width: 180mm;
           font-size: 12px;
         }
         table {
@@ -145,28 +146,32 @@ export function printContent(selector, title = "印刷") {
         }
       </style>
     </head>
-
     <body>
       <h1>${title}</h1>
       ${html}
     </body>
     </html>
   `);
-
   win.document.close();
 
-  // ★ DOM が構築されるのを待つ（これが最重要）
-  win.onload = () => {
+  // ★ DOM が構築されるまで確実に待つ
+  const timer = setInterval(() => {
+    if (win.document.readyState === "complete") {
 
-    // ★ 別ウィンドウ内で折りたたみ解除
-    win.document.querySelectorAll(".field-group > div").forEach(w => {
-      w.style.display = "block";
-    });
+      // ★ 展開処理
+      win.document.querySelectorAll(".field-group > div").forEach(w => {
+        w.style.display = "block";
+      });
 
-    // 印刷
-    win.print();
+      clearInterval(timer);
 
-    // 閉じる
-    win.close();
-  };
+      // ★ 印刷
+      win.focus();
+      win.print();
+
+      // ★ 閉じる
+      win.close();
+    }
+  }, 50);
 }
+
