@@ -7,7 +7,8 @@
 body {
   margin: 0;
   padding: 0;
-  width: 180mm;
+  width: auto;          /* ★ 修正 */
+  max-width: 180mm;     /* ★ A4 幅に収める */
   font-size: 12px;
   background: #fff;
 }
