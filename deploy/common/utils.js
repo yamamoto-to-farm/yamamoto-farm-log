@@ -155,7 +155,7 @@ export function printContent(selector, title = "印刷") {
 
   win.document.close();
 
-  // ★ DOM が構築されるのを待つ
+  // ★ DOM が構築されるのを待つ（これが最重要）
   win.onload = () => {
 
     // ★ 別ウィンドウ内で折りたたみ解除
