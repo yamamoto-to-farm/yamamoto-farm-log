@@ -107,7 +107,7 @@ export async function resolveFieldFromFileName(fileName) {
 }
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
-   指定したセレクタの中身を別ウィンドウで印刷する
+   main.css をそのまま使い、最小限の補正だけ追加
 ============================================================ */
 export function printContent(selector, title = "印刷") {
   const target = document.querySelector(selector);
@@ -125,14 +125,42 @@ export function printContent(selector, title = "印刷") {
     <head>
       <meta charset="UTF-8">
       <title>${title}</title>
+
+      <!-- ★ main.css をそのまま使う -->
       <link rel="stylesheet" href="/common/css/main.css?v=1">
+
+      <!-- ★ 印刷用の最小限の補正だけ -->
       <style>
-        body { margin: 12mm; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #999; padding: 4px; }
-        h1 { margin-bottom: 10px; }
+        /* A4 幅に収める（main.css の横幅を抑える） */
+        body {
+          margin: 12mm;
+          width: 180mm;   /* A4 の印刷可能幅 */
+        }
+
+        /* 表の幅を強制的に100%に */
+        table {
+          width: 100% !important;
+          table-layout: fixed !important;
+        }
+
+        /* 右寄せ・左寄せを main.css より優先させる */
+        th[style*="right"],
+        td[style*="right"] {
+          text-align: right !important;
+        }
+
+        th[style*="left"],
+        td[style*="left"] {
+          text-align: left !important;
+        }
+
+        /* 長い文字がはみ出さないように */
+        th, td {
+          overflow-wrap: break-word !important;
+        }
       </style>
     </head>
+
     <body>
       <h1>${title}</h1>
       ${html}
@@ -143,9 +171,6 @@ export function printContent(selector, title = "印刷") {
   win.document.close();
   win.focus();
 
-  // 印刷
   win.print();
-
-  // 印刷後に自動で閉じる
   win.close();
 }
