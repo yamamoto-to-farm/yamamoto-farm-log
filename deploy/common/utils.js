@@ -121,11 +121,20 @@ export function openPrintWindow(selector, title = "印刷") {
   const url = `/common/print/print.html?title=${encodeURIComponent(title)}`;
   const win = window.open(url, "_blank");
 
-  win.printData = {
-    title,
-    html
-  };
+  if (!win) {
+    alert("ポップアップがブロックされています");
+    return;
+  }
+
+  // ★ print.html の読み込み完了を待ってからデータを渡す
+  const timer = setInterval(() => {
+    if (win.document.readyState === "complete") {
+      clearInterval(timer);
+      win.printData = { title, html };
+    }
+  }, 50);
 }
+
 // utils.js より（元の印刷関数）
 export function printContent(selector, title = "印刷") {
   const target = document.querySelector(selector);
