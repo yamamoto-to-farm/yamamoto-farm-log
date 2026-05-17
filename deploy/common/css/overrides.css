@@ -1,0 +1,25 @@
+@media print {
+  table {
+    display: table !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tbody {
+    display: table-row-group !important;
+  }
+
+  tr {
+    display: table-row !important;
+  }
+
+  th, td {
+    display: table-cell !important;
+    padding: 4px 6px !important;
+    border: 1px solid #333 !important;
+  }
+}
