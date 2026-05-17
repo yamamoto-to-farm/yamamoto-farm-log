@@ -112,12 +112,11 @@ export function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) return;
 
-  // ★ まず display:none を全部解除（ここが最重要）
+  // 折りたたみ解除
   document.querySelectorAll(".field-group > div").forEach(w => {
     w.style.display = "block";
   });
 
-  // ★ 解除後の innerHTML を取得
   const html = target.innerHTML;
 
   // iframe 作成
@@ -132,30 +131,34 @@ export function printInline(selector, title = "印刷") {
 
   const doc = iframe.contentWindow.document;
 
-  // iframe 内に印刷用 HTML を書き込む
-  doc.open();
-  doc.write(`
-    <html>
-    <head>
-      <title>${title}</title>
-      <link rel="stylesheet" href="common/css/main.css?v=1">
-    </head>
-    <body>
-      <h1 style="font-size:20px; margin-bottom:12px; border-bottom:2px solid #333;">
-        ${title}
-      </h1>
-      ${html}
-    </body>
-    </html>
-  `);
-  doc.close();
+  // ★ main.css を読み込んで埋め込む
+  fetch("/common/css/main.css?v=1")
+    .then(r => r.text())
+    .then(css => {
+      doc.open();
+      doc.write(`
+        <html>
+        <head>
+          <title>${title}</title>
+          <style>${css}</style>
+        </head>
+        <body>
+          <h1 style="font-size:20px; margin-bottom:12px; border-bottom:2px solid #333;">
+            ${title}
+          </h1>
+          ${html}
+        </body>
+        </html>
+      `);
+      doc.close();
 
-  iframe.onload = () => {
-    iframe.contentWindow.print();
-    document.body.removeChild(iframe);
-  };
-  console.log(doc.documentElement.outerHTML);
-
+      // ★ CSS が適用されるまで少し待つ（重要）
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        document.body.removeChild(iframe);
+      }, 150); // ← 150ms で安定
+    });
 }
 
 
