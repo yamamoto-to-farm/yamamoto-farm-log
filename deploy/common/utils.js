@@ -154,6 +154,8 @@ export function printInline(selector, title = "印刷") {
     iframe.contentWindow.print();
     document.body.removeChild(iframe);
   };
+  console.log(doc.documentElement.outerHTML);
+
 }
 
 
