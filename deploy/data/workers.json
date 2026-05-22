@@ -40,5 +40,11 @@
     "name": "doi",
     "display": "土井 琉羽",
     "role": "worker"
+  },
+  {
+    "pin": "Y008",
+    "name": "matsui",
+    "display": "松井 忠昭",
+    "role": "worker"
   }
 ]
