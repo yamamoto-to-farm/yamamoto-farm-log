@@ -126,6 +126,7 @@ export async function loadNotesForPlantingRef(plantingRef) {
           row.notes ??
           row.memo ??
           row.comment ??
+          row.issue ??
           "";
 
         // 日付抽出
