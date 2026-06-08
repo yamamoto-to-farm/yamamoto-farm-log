@@ -2,7 +2,7 @@
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
 // ★ デバッグフラグ（true でログ出る）
-const DEBUG = true;
+const DEBUG = false;
 
 /* ===============================
    安全な CSV 1行パース（カンマ対応）
