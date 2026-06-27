@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>作業日誌（Diary） - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <script type="module" src="./diary.js"></script>
+</head>
+
+<body>
+
+  <div class="page-header">
+    <h1 id="page-title">作業日誌（Diary）</h1>
+    <div id="page-subtitle" class="page-subtitle"></div>
+  </div>
+
+  <!-- ▼ 認証後に diary.js がここへカードを差し込む -->
+  <main id="diary-container"></main>
+
+  <!-- ▼ 保存モーダル（harvest と同じ） -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
+</body>
+</html>
+
+
+
