@@ -30,3 +30,10 @@ export function classifyWeather(precip, sunshine) {
   // 曇り
   return "曇";
 }
+
+export function weatherIcon(type) {
+  if (type === "晴") return "☀️";
+  if (type === "曇") return "🌥️";
+  if (type === "雨") return "🌧️";
+  return "🌤";
+}
