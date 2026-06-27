@@ -1,18 +1,128 @@
-import { getWeatherByDate } from "/common/weather/weather.js";
+<!DOCTYPE html>
+<html lang="ja">
 
-async function showWeather(date) {
-  const w = await getWeatherByDate(date);
-  const box = document.getElementById("weatherBox");
+<head>
+  <meta charset="UTF-8">
+  <title>作業日誌 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  if (!w) {
-    box.innerHTML = "データなし";
-    return;
-  }
+  <!-- 共通デザイン -->
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+</head>
 
-  box.innerHTML = `
-    <p>最高気温：${w.tmax} ℃</p>
-    <p>最低気温：${w.tmin} ℃</p>
-    <p>降水量：${w.precip} mm</p>
-    <p>日照時間：${w.sunshine} h</p>
-  `;
-}
+<body>
+
+  <!-- ===============================
+       ★ ヘッダー（header.js が自動挿入）
+  =============================== -->
+
+  <div id="form-area" style="display:none;">
+
+    <h1 class="page-title">作業日誌</h1>
+
+    <!-- 日付 -->
+    <h2 class="section-title">日付</h2>
+    <div class="form-field">
+      <input type="date" id="diaryDate" class="form-input">
+    </div>
+
+    <!-- 気象情報 -->
+    <h2 class="section-title">気象情報</h2>
+    <div class="card" id="weatherBox">
+      <p>日付を選択すると気象情報が表示されます。</p>
+    </div>
+
+    <!-- 作業内容 -->
+    <h2 class="section-title">作業内容</h2>
+    <div class="card">
+      <textarea id="workNotes" rows="4" class="form-textarea" placeholder="作業内容を入力"></textarea>
+    </div>
+
+    <!-- 保存 -->
+    <button type="button" class="primary-btn" onclick="saveDiary()">保存</button>
+
+  </div>
+
+  <!-- 保存モーダル -->
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
+  <!-- save-modal.js -->
+  <script type="module" src="/common/save-modal.js"></script>
+
+  <!-- summary.js -->
+  <script type="module" src="/common/summary.js"></script>
+
+  <!-- save/index.js -->
+  <script type="module" src="/common/save/index.js"></script>
+
+  <!-- ===============================
+       ▼ 認証 → ヘッダー挿入 → 初期化
+  =============================== -->
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { attachWorkDoneButton } from "/common/utils.js";
+    import { getWeatherByDate } from "/common/weather/weather.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      // ヘッダー描画
+      renderHeader();
+
+      // ページ表示
+      document.getElementById("form-area").style.display = "block";
+
+      // 日付初期値
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("diaryDate").value = today;
+
+      // 作業完了ボタン
+      attachWorkDoneButton();
+
+      // 初期気象表示
+      showWeather(today);
+    });
+
+    // 気象表示
+    async function showWeather(date) {
+      const w = await getWeatherByDate(date);
+      const box = document.getElementById("weatherBox");
+
+      if (!w) {
+        box.innerHTML = "<p>データがありません。</p>";
+        return;
+      }
+
+      box.innerHTML = `
+        <p><strong>${date} の気象情報</strong></p>
+        <p>最高気温：${w.tmax} ℃</p>
+        <p>最低気温：${w.tmin} ℃</p>
+        <p>降水量：${w.precip} mm</p>
+        <p>日照時間：${w.sunshine} h</p>
+        <p>観測地点：${w.station}</p>
+      `;
+    }
+
+    // 日付変更時に気象情報更新
+    document.getElementById("diaryDate").addEventListener("change", (e) => {
+      showWeather(e.target.value);
+    });
+
+    // 保存処理（必要なら後で拡張）
+    function saveDiary() {
+      alert("保存処理はまだ実装していません（後で追加）");
+    }
+  </script>
+
+</body>
+
+</html>
