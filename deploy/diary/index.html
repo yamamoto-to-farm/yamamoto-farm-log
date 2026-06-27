@@ -69,7 +69,7 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { attachWorkDoneButton } from "/common/utils.js";
-    import { getWeatherByDate } from "/common/weather/weather.js";
+    import { getWeatherByDate, classifyWeather } from "/common/weather/weather.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -102,6 +102,8 @@
         return;
       }
 
+      const weatherType = classifyWeather(w.precip, w.sunshine);
+
       box.innerHTML = `
         <p><strong>${date} の気象情報</strong></p>
         <p>最高気温：${w.tmax} ℃</p>
@@ -109,6 +111,7 @@
         <p>降水量：${w.precip} mm</p>
         <p>日照時間：${w.sunshine} h</p>
         <p>観測地点：${w.station}</p>
+        <p>天気：${weatherType}</p>
       `;
     }
 

@@ -1,0 +1,1241 @@
+{
+  "2026-01-01": {
+    "tmax": 9.2,
+    "tmin": 4.2,
+    "precip": 0.0,
+    "sunshine": 9.1,
+    "station": "Toyohashi"
+  },
+  "2026-01-02": {
+    "tmax": 8.4,
+    "tmin": -0.3,
+    "precip": 0.0,
+    "sunshine": 6.8,
+    "station": "Toyohashi"
+  },
+  "2026-01-03": {
+    "tmax": 8.2,
+    "tmin": 1.1,
+    "precip": 0.0,
+    "sunshine": 8.1,
+    "station": "Toyohashi"
+  },
+  "2026-01-04": {
+    "tmax": 9.6,
+    "tmin": 2.3,
+    "precip": 0.0,
+    "sunshine": 9.0,
+    "station": "Toyohashi"
+  },
+  "2026-01-05": {
+    "tmax": 12.3,
+    "tmin": 2.2,
+    "precip": 0.0,
+    "sunshine": 6.5,
+    "station": "Toyohashi"
+  },
+  "2026-01-06": {
+    "tmax": 9.2,
+    "tmin": 2.7,
+    "precip": 0.0,
+    "sunshine": 9.3,
+    "station": "Toyohashi"
+  },
+  "2026-01-07": {
+    "tmax": 9.7,
+    "tmin": -1.6,
+    "precip": 0.0,
+    "sunshine": 5.6,
+    "station": "Toyohashi"
+  },
+  "2026-01-08": {
+    "tmax": 9.2,
+    "tmin": -0.7,
+    "precip": 0.0,
+    "sunshine": 7.8,
+    "station": "Toyohashi"
+  },
+  "2026-01-09": {
+    "tmax": 8.7,
+    "tmin": 0.2,
+    "precip": 0.0,
+    "sunshine": 9.4,
+    "station": "Toyohashi"
+  },
+  "2026-01-10": {
+    "tmax": 12.6,
+    "tmin": -1.9,
+    "precip": 0.0,
+    "sunshine": 9.1,
+    "station": "Toyohashi"
+  },
+  "2026-01-11": {
+    "tmax": 10.4,
+    "tmin": 0.9,
+    "precip": 0.0,
+    "sunshine": 5.0,
+    "station": "Toyohashi"
+  },
+  "2026-01-12": {
+    "tmax": 6.4,
+    "tmin": 0.3,
+    "precip": 0.0,
+    "sunshine": 9.5,
+    "station": "Toyohashi"
+  },
+  "2026-01-13": {
+    "tmax": 11.7,
+    "tmin": -0.7,
+    "precip": 0.0,
+    "sunshine": 8.0,
+    "station": "Toyohashi"
+  },
+  "2026-01-14": {
+    "tmax": 8.3,
+    "tmin": 3.3,
+    "precip": 0.0,
+    "sunshine": 4.6,
+    "station": "Toyohashi"
+  },
+  "2026-01-15": {
+    "tmax": 10.2,
+    "tmin": -0.6,
+    "precip": 0.0,
+    "sunshine": 5.9,
+    "station": "Toyohashi"
+  },
+  "2026-01-16": {
+    "tmax": 14.5,
+    "tmin": 1.1,
+    "precip": 0.0,
+    "sunshine": 8.6,
+    "station": "Toyohashi"
+  },
+  "2026-01-17": {
+    "tmax": 16.6,
+    "tmin": -0.1,
+    "precip": 0.0,
+    "sunshine": 9.6,
+    "station": "Toyohashi"
+  },
+  "2026-01-18": {
+    "tmax": 13.8,
+    "tmin": 5.1,
+    "precip": 0.0,
+    "sunshine": 9.6,
+    "station": "Toyohashi"
+  },
+  "2026-01-19": {
+    "tmax": 14.1,
+    "tmin": 3.4,
+    "precip": 0.0,
+    "sunshine": 9.5,
+    "station": "Toyohashi"
+  },
+  "2026-01-20": {
+    "tmax": 11.2,
+    "tmin": 1.2,
+    "precip": 0.0,
+    "sunshine": 7.4,
+    "station": "Toyohashi"
+  },
+  "2026-01-21": {
+    "tmax": 6.6,
+    "tmin": 0.2,
+    "precip": 0.0,
+    "sunshine": 8.2,
+    "station": "Toyohashi"
+  },
+  "2026-01-22": {
+    "tmax": 5.5,
+    "tmin": 0.7,
+    "precip": 0.0,
+    "sunshine": 8.2,
+    "station": "Toyohashi"
+  },
+  "2026-01-23": {
+    "tmax": 6.8,
+    "tmin": -1.8,
+    "precip": 0.0,
+    "sunshine": 8.2,
+    "station": "Toyohashi"
+  },
+  "2026-01-24": {
+    "tmax": 9.5,
+    "tmin": -2.2,
+    "precip": 0.0,
+    "sunshine": 8.8,
+    "station": "Toyohashi"
+  },
+  "2026-01-25": {
+    "tmax": 7.5,
+    "tmin": 1.1,
+    "precip": 0.0,
+    "sunshine": 8.1,
+    "station": "Toyohashi"
+  },
+  "2026-01-26": {
+    "tmax": 7.0,
+    "tmin": 0.5,
+    "precip": 0.0,
+    "sunshine": 9.8,
+    "station": "Toyohashi"
+  },
+  "2026-01-27": {
+    "tmax": 9.7,
+    "tmin": 0.2,
+    "precip": 0.0,
+    "sunshine": 8.1,
+    "station": "Toyohashi"
+  },
+  "2026-01-28": {
+    "tmax": 9.6,
+    "tmin": 1.9,
+    "precip": 0.0,
+    "sunshine": 8.8,
+    "station": "Toyohashi"
+  },
+  "2026-01-29": {
+    "tmax": 8.2,
+    "tmin": 0.9,
+    "precip": 0.0,
+    "sunshine": 3.2,
+    "station": "Toyohashi"
+  },
+  "2026-01-30": {
+    "tmax": 6.8,
+    "tmin": 0.0,
+    "precip": 0.0,
+    "sunshine": 6.8,
+    "station": "Toyohashi"
+  },
+  "2026-01-31": {
+    "tmax": 7.8,
+    "tmin": 0.7,
+    "precip": 0.0,
+    "sunshine": 9.9,
+    "station": "Toyohashi"
+  },
+  "2026-02-01": {
+    "tmax": 9.5,
+    "tmin": -2.6,
+    "precip": 0.0,
+    "sunshine": 9.3,
+    "station": "Toyohashi"
+  },
+  "2026-02-02": {
+    "tmax": 9.5,
+    "tmin": 0.5,
+    "precip": 0.0,
+    "sunshine": 8.6,
+    "station": "Toyohashi"
+  },
+  "2026-02-03": {
+    "tmax": 9.4,
+    "tmin": 0.7,
+    "precip": 0.0,
+    "sunshine": 10.1,
+    "station": "Toyohashi"
+  },
+  "2026-02-04": {
+    "tmax": 11.0,
+    "tmin": -0.6,
+    "precip": 0.0,
+    "sunshine": 8.3,
+    "station": "Toyohashi"
+  },
+  "2026-02-05": {
+    "tmax": 12.8,
+    "tmin": -1.6,
+    "precip": 0.0,
+    "sunshine": 5.9,
+    "station": "Toyohashi"
+  },
+  "2026-02-06": {
+    "tmax": 14.5,
+    "tmin": 1.4,
+    "precip": 0.0,
+    "sunshine": 5.5,
+    "station": "Toyohashi"
+  },
+  "2026-02-07": {
+    "tmax": 8.4,
+    "tmin": 3.2,
+    "precip": 0.0,
+    "sunshine": 3.0,
+    "station": "Toyohashi"
+  },
+  "2026-02-08": {
+    "tmax": 5.5,
+    "tmin": -1.5,
+    "precip": 0.0,
+    "sunshine": 4.4,
+    "station": "Toyohashi"
+  },
+  "2026-02-09": {
+    "tmax": 8.0,
+    "tmin": -2.1,
+    "precip": 0.0,
+    "sunshine": 10.2,
+    "station": "Toyohashi"
+  },
+  "2026-02-10": {
+    "tmax": 9.8,
+    "tmin": -3.1,
+    "precip": 0.0,
+    "sunshine": 5.2,
+    "station": "Toyohashi"
+  },
+  "2026-02-11": {
+    "tmax": 10.2,
+    "tmin": 5.0,
+    "precip": 19.0,
+    "sunshine": 2.4,
+    "station": "Toyohashi"
+  },
+  "2026-02-12": {
+    "tmax": 11.1,
+    "tmin": 3.5,
+    "precip": 0.0,
+    "sunshine": 10.2,
+    "station": "Toyohashi"
+  },
+  "2026-02-13": {
+    "tmax": 12.0,
+    "tmin": 3.2,
+    "precip": 0.0,
+    "sunshine": 9.0,
+    "station": "Toyohashi"
+  },
+  "2026-02-14": {
+    "tmax": 14.9,
+    "tmin": 1.9,
+    "precip": 0.0,
+    "sunshine": 10.0,
+    "station": "Toyohashi"
+  },
+  "2026-02-15": {
+    "tmax": 15.5,
+    "tmin": 6.8,
+    "precip": 0.0,
+    "sunshine": 3.7,
+    "station": "Toyohashi"
+  },
+  "2026-02-16": {
+    "tmax": 15.7,
+    "tmin": 5.5,
+    "precip": 0.0,
+    "sunshine": 8.3,
+    "station": "Toyohashi"
+  },
+  "2026-02-17": {
+    "tmax": 9.8,
+    "tmin": 3.5,
+    "precip": 0.0,
+    "sunshine": 2.0,
+    "station": "Toyohashi"
+  },
+  "2026-02-18": {
+    "tmax": 12.9,
+    "tmin": 1.2,
+    "precip": 0.0,
+    "sunshine": 8.6,
+    "station": "Toyohashi"
+  },
+  "2026-02-19": {
+    "tmax": 9.7,
+    "tmin": 1.5,
+    "precip": 0.0,
+    "sunshine": 10.7,
+    "station": "Toyohashi"
+  },
+  "2026-02-20": {
+    "tmax": 10.1,
+    "tmin": -2.9,
+    "precip": 0.0,
+    "sunshine": 4.9,
+    "station": "Toyohashi"
+  },
+  "2026-02-21": {
+    "tmax": 15.5,
+    "tmin": -0.1,
+    "precip": 0.0,
+    "sunshine": 10.5,
+    "station": "Toyohashi"
+  },
+  "2026-02-22": {
+    "tmax": 20.2,
+    "tmin": 5.1,
+    "precip": 0.0,
+    "sunshine": 8.0,
+    "station": "Toyohashi"
+  },
+  "2026-02-23": {
+    "tmax": 20.4,
+    "tmin": 9.7,
+    "precip": 0.0,
+    "sunshine": 8.5,
+    "station": "Toyohashi"
+  },
+  "2026-02-24": {
+    "tmax": 18.9,
+    "tmin": 4.1,
+    "precip": 5.5,
+    "sunshine": 4.9,
+    "station": "Toyohashi"
+  },
+  "2026-02-25": {
+    "tmax": 16.8,
+    "tmin": 12.5,
+    "precip": 20.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-02-26": {
+    "tmax": 17.5,
+    "tmin": 11.6,
+    "precip": 0.5,
+    "sunshine": 7.1,
+    "station": "Toyohashi"
+  },
+  "2026-02-27": {
+    "tmax": 16.6,
+    "tmin": 11.6,
+    "precip": 0.0,
+    "sunshine": 0.3,
+    "station": "Toyohashi"
+  },
+  "2026-02-28": {
+    "tmax": 17.2,
+    "tmin": 9.3,
+    "precip": 0.0,
+    "sunshine": 10.3,
+    "station": "Toyohashi"
+  },
+  "2026-03-01": {
+    "tmax": 16.8,
+    "tmin": 6.4,
+    "precip": 0.0,
+    "sunshine": 10.6,
+    "station": "Toyohashi"
+  },
+  "2026-03-02": {
+    "tmax": 15.7,
+    "tmin": 6.9,
+    "precip": 1.0,
+    "sunshine": 5.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-03": {
+    "tmax": 14.3,
+    "tmin": 10.8,
+    "precip": 23.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-04": {
+    "tmax": 13.1,
+    "tmin": 5.9,
+    "precip": 0.5,
+    "sunshine": 10.8,
+    "station": "Toyohashi"
+  },
+  "2026-03-05": {
+    "tmax": 13.7,
+    "tmin": 5.1,
+    "precip": 0.0,
+    "sunshine": 11.1,
+    "station": "Toyohashi"
+  },
+  "2026-03-06": {
+    "tmax": 16.1,
+    "tmin": 3.0,
+    "precip": 6.5,
+    "sunshine": 4.2,
+    "station": "Toyohashi"
+  },
+  "2026-03-07": {
+    "tmax": 12.3,
+    "tmin": 6.0,
+    "precip": 0.0,
+    "sunshine": 9.9,
+    "station": "Toyohashi"
+  },
+  "2026-03-08": {
+    "tmax": 10.4,
+    "tmin": 3.5,
+    "precip": 0.0,
+    "sunshine": 11.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-09": {
+    "tmax": 10.7,
+    "tmin": 1.6,
+    "precip": 0.0,
+    "sunshine": 8.1,
+    "station": "Toyohashi"
+  },
+  "2026-03-10": {
+    "tmax": 12.7,
+    "tmin": 2.2,
+    "precip": 0.0,
+    "sunshine": 11.2,
+    "station": "Toyohashi"
+  },
+  "2026-03-11": {
+    "tmax": 11.5,
+    "tmin": 2.1,
+    "precip": 0.0,
+    "sunshine": 8.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-12": {
+    "tmax": 12.8,
+    "tmin": 0.6,
+    "precip": 0.0,
+    "sunshine": 11.2,
+    "station": "Toyohashi"
+  },
+  "2026-03-13": {
+    "tmax": 11.2,
+    "tmin": 3.2,
+    "precip": 0.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-14": {
+    "tmax": 15.6,
+    "tmin": 4.8,
+    "precip": 0.0,
+    "sunshine": 10.8,
+    "station": "Toyohashi"
+  },
+  "2026-03-15": {
+    "tmax": 14.5,
+    "tmin": 4.3,
+    "precip": 0.0,
+    "sunshine": 10.8,
+    "station": "Toyohashi"
+  },
+  "2026-03-16": {
+    "tmax": 15.2,
+    "tmin": 6.0,
+    "precip": 0.0,
+    "sunshine": 11.2,
+    "station": "Toyohashi"
+  },
+  "2026-03-17": {
+    "tmax": 16.1,
+    "tmin": 4.4,
+    "precip": 0.0,
+    "sunshine": 10.3,
+    "station": "Toyohashi"
+  },
+  "2026-03-18": {
+    "tmax": 17.5,
+    "tmin": 4.7,
+    "precip": 2.5,
+    "sunshine": 6.3,
+    "station": "Toyohashi"
+  },
+  "2026-03-19": {
+    "tmax": 17.7,
+    "tmin": 8.4,
+    "precip": 7.5,
+    "sunshine": 6.2,
+    "station": "Toyohashi"
+  },
+  "2026-03-20": {
+    "tmax": 16.2,
+    "tmin": 5.6,
+    "precip": 0.0,
+    "sunshine": 8.6,
+    "station": "Toyohashi"
+  },
+  "2026-03-21": {
+    "tmax": 17.1,
+    "tmin": 3.1,
+    "precip": 0.0,
+    "sunshine": 11.2,
+    "station": "Toyohashi"
+  },
+  "2026-03-22": {
+    "tmax": 15.0,
+    "tmin": 0.5,
+    "precip": 0.0,
+    "sunshine": 6.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-23": {
+    "tmax": 17.7,
+    "tmin": 8.5,
+    "precip": 2.0,
+    "sunshine": 6.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-24": {
+    "tmax": 18.4,
+    "tmin": 7.2,
+    "precip": 0.0,
+    "sunshine": 9.3,
+    "station": "Toyohashi"
+  },
+  "2026-03-25": {
+    "tmax": 14.8,
+    "tmin": 10.3,
+    "precip": 26.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-03-26": {
+    "tmax": 17.9,
+    "tmin": 10.3,
+    "precip": 10.5,
+    "sunshine": 1.9,
+    "station": "Toyohashi"
+  },
+  "2026-03-27": {
+    "tmax": 18.4,
+    "tmin": 9.1,
+    "precip": 0.0,
+    "sunshine": 11.3,
+    "station": "Toyohashi"
+  },
+  "2026-03-28": {
+    "tmax": 19.0,
+    "tmin": 8.4,
+    "precip": 0.0,
+    "sunshine": 10.4,
+    "station": "Toyohashi"
+  },
+  "2026-03-29": {
+    "tmax": 20.4,
+    "tmin": 8.7,
+    "precip": 0.0,
+    "sunshine": 9.5,
+    "station": "Toyohashi"
+  },
+  "2026-03-30": {
+    "tmax": 21.6,
+    "tmin": 13.0,
+    "precip": 7.0,
+    "sunshine": 7.7,
+    "station": "Toyohashi"
+  },
+  "2026-03-31": {
+    "tmax": 19.7,
+    "tmin": 14.5,
+    "precip": 46.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-01": {
+    "tmax": 15.8,
+    "tmin": 12.9,
+    "precip": 33.5,
+    "sunshine": 1.3,
+    "station": "Toyohashi"
+  },
+  "2026-04-02": {
+    "tmax": 16.8,
+    "tmin": 9.8,
+    "precip": 3.0,
+    "sunshine": 11.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-03": {
+    "tmax": 19.1,
+    "tmin": 7.4,
+    "precip": 0.0,
+    "sunshine": 11.7,
+    "station": "Toyohashi"
+  },
+  "2026-04-04": {
+    "tmax": 19.5,
+    "tmin": 11.9,
+    "precip": 28.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-05": {
+    "tmax": 19.7,
+    "tmin": 15.1,
+    "precip": 0.0,
+    "sunshine": 2.6,
+    "station": "Toyohashi"
+  },
+  "2026-04-06": {
+    "tmax": 21.7,
+    "tmin": 12.4,
+    "precip": 0.0,
+    "sunshine": 6.6,
+    "station": "Toyohashi"
+  },
+  "2026-04-07": {
+    "tmax": 17.9,
+    "tmin": 8.5,
+    "precip": 0.0,
+    "sunshine": 0.2,
+    "station": "Toyohashi"
+  },
+  "2026-04-08": {
+    "tmax": 17.1,
+    "tmin": 7.8,
+    "precip": 0.0,
+    "sunshine": 12.2,
+    "station": "Toyohashi"
+  },
+  "2026-04-09": {
+    "tmax": 19.2,
+    "tmin": 7.3,
+    "precip": 4.0,
+    "sunshine": 6.4,
+    "station": "Toyohashi"
+  },
+  "2026-04-10": {
+    "tmax": 20.3,
+    "tmin": 15.8,
+    "precip": 65.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-11": {
+    "tmax": 23.2,
+    "tmin": 16.2,
+    "precip": 0.0,
+    "sunshine": 11.5,
+    "station": "Toyohashi"
+  },
+  "2026-04-12": {
+    "tmax": 20.5,
+    "tmin": 14.1,
+    "precip": 0.0,
+    "sunshine": 8.9,
+    "station": "Toyohashi"
+  },
+  "2026-04-13": {
+    "tmax": 20.1,
+    "tmin": 11.4,
+    "precip": 0.0,
+    "sunshine": 1.8,
+    "station": "Toyohashi"
+  },
+  "2026-04-14": {
+    "tmax": 22.9,
+    "tmin": 13.2,
+    "precip": 0.0,
+    "sunshine": 10.6,
+    "station": "Toyohashi"
+  },
+  "2026-04-15": {
+    "tmax": 20.3,
+    "tmin": 14.8,
+    "precip": 7.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-16": {
+    "tmax": 25.2,
+    "tmin": 14.1,
+    "precip": 0.0,
+    "sunshine": 12.1,
+    "station": "Toyohashi"
+  },
+  "2026-04-17": {
+    "tmax": 18.5,
+    "tmin": 14.0,
+    "precip": 0.0,
+    "sunshine": 5.7,
+    "station": "Toyohashi"
+  },
+  "2026-04-18": {
+    "tmax": 21.8,
+    "tmin": 13.7,
+    "precip": 0.0,
+    "sunshine": 10.5,
+    "station": "Toyohashi"
+  },
+  "2026-04-19": {
+    "tmax": 22.5,
+    "tmin": 14.1,
+    "precip": 0.0,
+    "sunshine": 6.9,
+    "station": "Toyohashi"
+  },
+  "2026-04-20": {
+    "tmax": 22.9,
+    "tmin": 15.6,
+    "precip": 0.0,
+    "sunshine": 7.1,
+    "station": "Toyohashi"
+  },
+  "2026-04-21": {
+    "tmax": 21.5,
+    "tmin": 13.1,
+    "precip": 1.5,
+    "sunshine": 5.9,
+    "station": "Toyohashi"
+  },
+  "2026-04-22": {
+    "tmax": 21.6,
+    "tmin": 11.7,
+    "precip": 0.0,
+    "sunshine": 2.1,
+    "station": "Toyohashi"
+  },
+  "2026-04-23": {
+    "tmax": 17.1,
+    "tmin": 13.2,
+    "precip": 39.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-24": {
+    "tmax": 18.4,
+    "tmin": 13.2,
+    "precip": 1.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-25": {
+    "tmax": 20.3,
+    "tmin": 14.8,
+    "precip": 0.0,
+    "sunshine": 5.7,
+    "station": "Toyohashi"
+  },
+  "2026-04-26": {
+    "tmax": 21.4,
+    "tmin": 12.1,
+    "precip": 0.0,
+    "sunshine": 9.2,
+    "station": "Toyohashi"
+  },
+  "2026-04-27": {
+    "tmax": 21.9,
+    "tmin": 14.9,
+    "precip": 24.0,
+    "sunshine": 6.0,
+    "station": "Toyohashi"
+  },
+  "2026-04-28": {
+    "tmax": 22.6,
+    "tmin": 13.0,
+    "precip": 0.0,
+    "sunshine": 9.9,
+    "station": "Toyohashi"
+  },
+  "2026-04-29": {
+    "tmax": 21.0,
+    "tmin": 15.4,
+    "precip": 0.0,
+    "sunshine": 0.5,
+    "station": "Toyohashi"
+  },
+  "2026-04-30": {
+    "tmax": 16.3,
+    "tmin": 14.0,
+    "precip": 9.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-05-01": {
+    "tmax": 20.1,
+    "tmin": 15.0,
+    "precip": 18.0,
+    "sunshine": 1.5,
+    "station": "Toyohashi"
+  },
+  "2026-05-02": {
+    "tmax": 23.9,
+    "tmin": 14.1,
+    "precip": 0.0,
+    "sunshine": 10.6,
+    "station": "Toyohashi"
+  },
+  "2026-05-03": {
+    "tmax": 22.1,
+    "tmin": 14.8,
+    "precip": 20.0,
+    "sunshine": 0.6,
+    "station": "Toyohashi"
+  },
+  "2026-05-04": {
+    "tmax": 21.3,
+    "tmin": 14.1,
+    "precip": 8.0,
+    "sunshine": 3.1,
+    "station": "Toyohashi"
+  },
+  "2026-05-05": {
+    "tmax": 20.5,
+    "tmin": 11.5,
+    "precip": 0.0,
+    "sunshine": 12.2,
+    "station": "Toyohashi"
+  },
+  "2026-05-06": {
+    "tmax": 19.1,
+    "tmin": 14.0,
+    "precip": 0.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-05-07": {
+    "tmax": 25.0,
+    "tmin": 15.8,
+    "precip": 0.0,
+    "sunshine": 9.7,
+    "station": "Toyohashi"
+  },
+  "2026-05-08": {
+    "tmax": 22.8,
+    "tmin": 16.1,
+    "precip": 0.0,
+    "sunshine": 2.3,
+    "station": "Toyohashi"
+  },
+  "2026-05-09": {
+    "tmax": 21.7,
+    "tmin": 13.9,
+    "precip": 0.0,
+    "sunshine": 9.4,
+    "station": "Toyohashi"
+  },
+  "2026-05-10": {
+    "tmax": 22.7,
+    "tmin": 10.3,
+    "precip": 0.0,
+    "sunshine": 13.3,
+    "station": "Toyohashi"
+  },
+  "2026-05-11": {
+    "tmax": 23.0,
+    "tmin": 13.5,
+    "precip": 0.0,
+    "sunshine": 7.2,
+    "station": "Toyohashi"
+  },
+  "2026-05-12": {
+    "tmax": 23.1,
+    "tmin": 15.7,
+    "precip": 0.0,
+    "sunshine": 9.6,
+    "station": "Toyohashi"
+  },
+  "2026-05-13": {
+    "tmax": 25.3,
+    "tmin": 13.7,
+    "precip": 0.5,
+    "sunshine": 12.1,
+    "station": "Toyohashi"
+  },
+  "2026-05-14": {
+    "tmax": 25.0,
+    "tmin": 14.4,
+    "precip": 0.0,
+    "sunshine": 11.8,
+    "station": "Toyohashi"
+  },
+  "2026-05-15": {
+    "tmax": 23.8,
+    "tmin": 15.4,
+    "precip": 0.0,
+    "sunshine": 10.5,
+    "station": "Toyohashi"
+  },
+  "2026-05-16": {
+    "tmax": 24.3,
+    "tmin": 14.9,
+    "precip": 0.0,
+    "sunshine": 13.3,
+    "station": "Toyohashi"
+  },
+  "2026-05-17": {
+    "tmax": 28.4,
+    "tmin": 15.5,
+    "precip": 0.0,
+    "sunshine": 13.5,
+    "station": "Toyohashi"
+  },
+  "2026-05-18": {
+    "tmax": 28.4,
+    "tmin": 15.0,
+    "precip": 0.0,
+    "sunshine": 13.4,
+    "station": "Toyohashi"
+  },
+  "2026-05-19": {
+    "tmax": 27.0,
+    "tmin": 16.3,
+    "precip": 0.0,
+    "sunshine": 12.4,
+    "station": "Toyohashi"
+  },
+  "2026-05-20": {
+    "tmax": 28.1,
+    "tmin": 19.5,
+    "precip": 0.0,
+    "sunshine": 7.4,
+    "station": "Toyohashi"
+  },
+  "2026-05-21": {
+    "tmax": 24.8,
+    "tmin": 21.9,
+    "precip": 28.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-05-22": {
+    "tmax": 24.7,
+    "tmin": 17.2,
+    "precip": 12.5,
+    "sunshine": 3.6,
+    "station": "Toyohashi"
+  },
+  "2026-05-23": {
+    "tmax": 21.5,
+    "tmin": 16.8,
+    "precip": 0.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-05-24": {
+    "tmax": 26.0,
+    "tmin": 18.4,
+    "precip": 0.0,
+    "sunshine": 9.8,
+    "station": "Toyohashi"
+  },
+  "2026-05-25": {
+    "tmax": 26.0,
+    "tmin": 18.6,
+    "precip": 0.0,
+    "sunshine": 12.3,
+    "station": "Toyohashi"
+  },
+  "2026-05-26": {
+    "tmax": 27.2,
+    "tmin": 18.0,
+    "precip": 0.0,
+    "sunshine": 11.4,
+    "station": "Toyohashi"
+  },
+  "2026-05-27": {
+    "tmax": 25.6,
+    "tmin": 19.0,
+    "precip": 0.5,
+    "sunshine": 0.2,
+    "station": "Toyohashi"
+  },
+  "2026-05-28": {
+    "tmax": 25.6,
+    "tmin": 20.3,
+    "precip": 0.0,
+    "sunshine": 0.8,
+    "station": "Toyohashi"
+  },
+  "2026-05-29": {
+    "tmax": 27.7,
+    "tmin": 19.6,
+    "precip": 0.0,
+    "sunshine": 13.4,
+    "station": "Toyohashi"
+  },
+  "2026-05-30": {
+    "tmax": 27.4,
+    "tmin": 16.2,
+    "precip": 0.0,
+    "sunshine": 12.2,
+    "station": "Toyohashi"
+  },
+  "2026-05-31": {
+    "tmax": 27.8,
+    "tmin": 17.9,
+    "precip": 0.0,
+    "sunshine": 5.1,
+    "station": "Toyohashi"
+  },
+  "2026-06-01": {
+    "tmax": 26.9,
+    "tmin": 19.3,
+    "precip": 0.0,
+    "sunshine": 11.9,
+    "station": "Toyohashi"
+  },
+  "2026-06-02": {
+    "tmax": 22.3,
+    "tmin": 18.3,
+    "precip": 15.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-03": {
+    "tmax": 26.1,
+    "tmin": 18.2,
+    "precip": 83.5,
+    "sunshine": 4.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-04": {
+    "tmax": 22.0,
+    "tmin": 18.6,
+    "precip": 0.0,
+    "sunshine": 0.2,
+    "station": "Toyohashi"
+  },
+  "2026-06-05": {
+    "tmax": 24.3,
+    "tmin": 18.1,
+    "precip": 1.0,
+    "sunshine": 3.1,
+    "station": "Toyohashi"
+  },
+  "2026-06-06": {
+    "tmax": 23.3,
+    "tmin": 18.9,
+    "precip": 0.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-07": {
+    "tmax": 20.5,
+    "tmin": 18.8,
+    "precip": 22.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-08": {
+    "tmax": 26.8,
+    "tmin": 18.1,
+    "precip": 5.0,
+    "sunshine": 8.1,
+    "station": "Toyohashi"
+  },
+  "2026-06-09": {
+    "tmax": 22.7,
+    "tmin": 19.2,
+    "precip": 2.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-10": {
+    "tmax": 26.3,
+    "tmin": 18.0,
+    "precip": 0.0,
+    "sunshine": 10.7,
+    "station": "Toyohashi"
+  },
+  "2026-06-11": {
+    "tmax": 26.3,
+    "tmin": 17.4,
+    "precip": 0.0,
+    "sunshine": 5.2,
+    "station": "Toyohashi"
+  },
+  "2026-06-12": {
+    "tmax": 27.5,
+    "tmin": 17.6,
+    "precip": 0.0,
+    "sunshine": 11.2,
+    "station": "Toyohashi"
+  },
+  "2026-06-13": {
+    "tmax": 27.3,
+    "tmin": 17.8,
+    "precip": 0.0,
+    "sunshine": 10.5,
+    "station": "Toyohashi"
+  },
+  "2026-06-14": {
+    "tmax": 25.5,
+    "tmin": 19.9,
+    "precip": 0.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-15": {
+    "tmax": 25.4,
+    "tmin": 17.3,
+    "precip": 5.0,
+    "sunshine": 7.9,
+    "station": "Toyohashi"
+  },
+  "2026-06-16": {
+    "tmax": 25.9,
+    "tmin": 19.2,
+    "precip": 0.0,
+    "sunshine": 2.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-17": {
+    "tmax": 26.5,
+    "tmin": 19.9,
+    "precip": 0.5,
+    "sunshine": 6.9,
+    "station": "Toyohashi"
+  },
+  "2026-06-18": {
+    "tmax": 27.8,
+    "tmin": 20.0,
+    "precip": 8.5,
+    "sunshine": 8.1,
+    "station": "Toyohashi"
+  },
+  "2026-06-19": {
+    "tmax": 29.9,
+    "tmin": 20.5,
+    "precip": 0.0,
+    "sunshine": 8.2,
+    "station": "Toyohashi"
+  },
+  "2026-06-20": {
+    "tmax": 24.5,
+    "tmin": 21.4,
+    "precip": 16.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-21": {
+    "tmax": 29.2,
+    "tmin": 23.1,
+    "precip": 1.5,
+    "sunshine": 6.3,
+    "station": "Toyohashi"
+  },
+  "2026-06-22": {
+    "tmax": 26.0,
+    "tmin": 21.1,
+    "precip": 0.0,
+    "sunshine": 1.4,
+    "station": "Toyohashi"
+  },
+  "2026-06-23": {
+    "tmax": 24.5,
+    "tmin": 19.8,
+    "precip": 0.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-24": {
+    "tmax": 25.6,
+    "tmin": 18.6,
+    "precip": 1.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-25": {
+    "tmax": 22.1,
+    "tmin": 19.6,
+    "precip": 28.0,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  },
+  "2026-06-26": {
+    "tmax": 25.0,
+    "tmin": 20.5,
+    "precip": 56.5,
+    "sunshine": 0.0,
+    "station": "Toyohashi"
+  }
+}
