@@ -13,6 +13,43 @@ export function initMap() {
 
   const fieldLayers = {};
   let lastSelected = "";
+  const fieldListEl = document.getElementById("field-list");
+
+  function updateFieldListSelection(selectedName = "") {
+    if (!fieldListEl) return;
+
+    [...fieldListEl.children].forEach(li => {
+      const isSelected = li.dataset.fieldName === selectedName;
+      li.classList.toggle("selected", isSelected);
+    });
+  }
+
+  function applySelection(selectedName) {
+    Object.keys(fieldLayers).forEach(name => {
+      const { polygon, marker, field } = fieldLayers[name];
+      const isSelected = (name === selectedName);
+
+      if (polygon) {
+        polygon.setStyle({
+          color: isSelected ? "red" : (field.color || "#3388ff"),
+          weight: isSelected ? 4 : 2
+        });
+      }
+
+      marker.setIcon(createFieldIcon(field, isSelected));
+
+      if (isSelected) {
+        if (polygon) {
+          map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
+        } else {
+          map.setView([field.lat, field.lng], 17);
+        }
+      }
+    });
+
+    lastSelected = selectedName;
+    updateFieldListSelection(selectedName);
+  }
 
   function createFieldIcon(field, isSelected = false) {
     return L.divIcon({
@@ -124,6 +161,18 @@ export function initMap() {
         });
 
         fieldLayers[field.name] = { polygon, marker, field };
+
+        if (fieldListEl) {
+          const li = document.createElement("li");
+          li.className = "field-list-item";
+          li.dataset.fieldName = field.name;
+          li.innerHTML = `
+            <span class="field-list-swatch" style="background:${field.color || "#3388ff"}"></span>
+            <span class="field-list-name">${field.name}</span>
+          `;
+          li.addEventListener("click", () => applySelection(field.name));
+          fieldListEl.appendChild(li);
+        }
       });
 
       /* ============================================================
@@ -135,30 +184,7 @@ export function initMap() {
         openFieldModal({
           mode: "select",
           onSelect: (selectedName) => {
-
-            Object.keys(fieldLayers).forEach(name => {
-              const { polygon, marker, field } = fieldLayers[name];
-              const isSelected = (name === selectedName);
-
-              if (polygon) {
-                polygon.setStyle({
-                  color: isSelected ? "red" : (field.color || "#3388ff"),
-                  weight: isSelected ? 4 : 2
-                });
-              }
-
-              marker.setIcon(createFieldIcon(field, isSelected));
-
-              if (isSelected) {
-                if (polygon) {
-                  map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
-                } else {
-                  map.setView([field.lat, field.lng], 17);
-                }
-              }
-            });
-
-            lastSelected = selectedName;
+            applySelection(selectedName);
           }
         });
 
