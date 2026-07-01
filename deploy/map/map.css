@@ -137,6 +137,7 @@ button[id^="analysis-"]:hover {
 
   #page-area {
     display: block !important;
+    visibility: visible !important;
   }
 
   #field-select-container {
@@ -147,11 +148,21 @@ button[id^="analysis-"]:hover {
     display: block !important;
     margin: 0 0 12px;
     box-shadow: none;
+    visibility: visible !important;
   }
 
   #map {
-    height: 320px;
+    height: 420px !important;
+    min-height: 420px !important;
     margin-bottom: 12px;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .leaflet-container {
+    height: 100% !important;
+    width: 100% !important;
+    background: #fff !important;
   }
 
   .leaflet-control-container,

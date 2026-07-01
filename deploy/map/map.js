@@ -193,9 +193,21 @@ export function initMap() {
       /* ============================================================
          ★ Leaflet の描画ズレ対策
       ============================================================ */
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 200);
+      const refreshMapLayout = () => {
+        setTimeout(() => {
+          map.invalidateSize();
+          map.setView(map.getCenter(), map.getZoom());
+        }, 200);
+      };
+
+      refreshMapLayout();
+
+      window.addEventListener("beforeprint", () => {
+        refreshMapLayout();
+        setTimeout(() => {
+          refreshMapLayout();
+        }, 400);
+      });
 
     });
 }
