@@ -15,6 +15,12 @@ export function initMap() {
   let lastSelected = "";
   const fieldListEl = document.getElementById("field-list");
 
+  function getFieldAddressText(field) {
+    if (!field?.address) return "";
+    const addresses = Array.isArray(field.address) ? field.address : [field.address];
+    return addresses.filter(Boolean).join(" / ");
+  }
+
   function updateFieldListSelection(selectedName = "") {
     if (!fieldListEl) return;
 
@@ -164,11 +170,15 @@ export function initMap() {
 
         if (fieldListEl) {
           const li = document.createElement("li");
+          const addressText = getFieldAddressText(field);
           li.className = "field-list-item";
           li.dataset.fieldName = field.name;
           li.innerHTML = `
             <span class="field-list-swatch" style="background:${field.color || "#3388ff"}"></span>
-            <span class="field-list-name">${field.name}</span>
+            <span class="field-list-text">
+              <span class="field-list-name">${field.name}</span>
+              ${addressText ? `<span class="field-list-address">${addressText}</span>` : ""}
+            </span>
           `;
           li.addEventListener("click", () => applySelection(field.name));
           fieldListEl.appendChild(li);

@@ -23,7 +23,7 @@
 
 .field-list-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid #e5e7eb;
@@ -50,9 +50,23 @@
   flex-shrink: 0;
 }
 
+.field-list-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .field-list-name {
   font-size: 14px;
   color: #111827;
+  font-weight: 600;
+}
+
+.field-list-address {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 /* ============================
