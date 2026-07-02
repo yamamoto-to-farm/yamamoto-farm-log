@@ -1,6 +1,6 @@
 // =========================================================
 // diary/saveDiary.js
-// 作業日誌の保存処理（既存JSON読み込み → 更新 → saveJSON）
+// 保存先を data/diary/ に変更した版
 // =========================================================
 
 import { loadJSON, saveJSON } from "/common/json.js";
@@ -10,10 +10,10 @@ export async function saveDiary(date, autoList) {
   const year = date.slice(0, 4);
 
   // CloudFront 用（読み込み）
-  const loadPath = `/diary/data/${year}/${date}.json`;
+  const loadPath = `/data/diary/${year}/${date}.json`;
 
   // S3 用（保存）
-  const savePath = `diary/data/${year}/${date}.json`;
+  const savePath = `data/diary/${year}/${date}.json`;
 
   // -------------------------------
   // 既存 JSON を読み込む（なければ新規作成）
@@ -35,16 +35,11 @@ export async function saveDiary(date, autoList) {
     end: document.getElementById(`end_${idx}`).value
   }));
 
-  const freeMemo = document.getElementById("freeMemo").value;
-
-  // -------------------------------
-  // JSON を更新
-  // -------------------------------
   current.work = newWork;
-  current.memo = freeMemo;
+  current.memo = document.getElementById("freeMemo").value;
 
   // -------------------------------
-  // 保存（フォルダも自動作成）
+  // 保存（data/diary/ 配下なので確実に保存される）
   // -------------------------------
   try {
     await saveJSON(savePath, current);
