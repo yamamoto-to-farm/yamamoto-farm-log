@@ -198,18 +198,29 @@
 
       document.getElementById("generate-btn").onclick = () => {
         const selected = pageSel.selectedOptions[0];
+        const pageId = selected.value;
         const pageName = selected.textContent;
         const pagePath = selected.dataset.path;
+        const openLog = selected.dataset.openLog === "true";
         const machineId = machineSel.value;
 
         const siteRoot = "https://d3sscxnlo0qnhe.cloudfront.net/";
 
-        let absUrl = new URL(pagePath, siteRoot).href;
+        let absUrl;
 
-        if (machineId) {
-          const urlObj = new URL(absUrl);
-          urlObj.searchParams.set("machine", machineId);
-          absUrl = urlObj.href;
+        if (openLog) {
+          absUrl = `${siteRoot}open-log.html?id=${pageId}`;
+          if (machineId) {
+            absUrl += `&machine=${encodeURIComponent(machineId)}`;
+          }
+        } else {
+          absUrl = new URL(pagePath, siteRoot).href;
+
+          if (machineId) {
+            const urlObj = new URL(absUrl);
+            urlObj.searchParams.set("machine", machineId);
+            absUrl = urlObj.href;
+          }
         }
 
         // アイコン
