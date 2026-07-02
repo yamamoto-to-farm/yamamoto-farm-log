@@ -24,4 +24,18 @@
     border: 1px solid #333 !important;
     vertical-align: middle !important;
   }
+
+  /* Make scrollable/card containers print-friendly */
+  /* Many pages use max-height + overflow for on-screen scrolling which
+     can result in empty areas in print/PDF. Force visible for print. */
+  .card, .edit-card, .view-card, .diary-container, #form-area, #page-area,
+  #workContentWrapper, .month-box, .list, .filter-block {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Ensure body/page use full height for printing */
+  html, body {
+    height: auto !important;
+  }
 }
