@@ -99,7 +99,7 @@
       await createWorkerCheckboxes("workers_box");
 
       const params = new URLSearchParams(location.search);
-      window.__tillage_machine = params.get("machine") || "";
+      window.__tillage_machine = params.get("machine") || "machine1";
 
       await initTillagePage();
     });

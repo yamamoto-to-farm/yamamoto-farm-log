@@ -73,7 +73,7 @@ export async function showWorkSummary(date) {
 }
 
 // =========================================================
-// 作業編集カード用：作業名＋従事者＋圃場IDの自動抽出
+// 作業編集カード用：作業名＋従事者＋圃場ID＋機械の自動抽出
 // =========================================================
 
 export function extractWorkForEdit(logs) {
@@ -117,10 +117,16 @@ export function extractWorkForEdit(logs) {
         : "";
     }
 
+    // ★ machine 抽出（headerName に machine がある場合のみ）
+    const machine = log.headerName.includes("machine")
+      ? String(log.data["machine"] ?? "").trim()
+      : "";
+
     autoList.push({
       type,
       workers,
-      field   // ★ 圃場IDを追加
+      field,
+      machine
     });
   });
 

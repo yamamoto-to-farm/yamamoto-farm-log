@@ -127,7 +127,7 @@
 
       // URL パラメータから使用機械を取得
       const params = new URLSearchParams(location.search);
-      window.__pesticide_machine = params.get("machine") || "";
+      window.__pesticide_machine = params.get("machine") || "machine1";
 
       await initpesticidePage();
     });

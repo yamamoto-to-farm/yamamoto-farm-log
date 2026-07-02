@@ -106,7 +106,7 @@
       await createWorkerCheckboxes("workers_box");
 
       const params = new URLSearchParams(location.search);
-      window.__weeding_machine = params.get("machine") || "";
+      window.__weeding_machine = params.get("machine") || "machine1";
 
       await initWeedingPage();
     });

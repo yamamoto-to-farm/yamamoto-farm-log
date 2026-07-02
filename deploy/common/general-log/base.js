@@ -201,27 +201,21 @@ export async function saveMultiFieldLog({
 }
 
 async function updateGeneralAllCsv(type, { date, fields, entry }) {
-  const header = "date,worker,field";
+  const header = "date,worker,field,machine";
   const worker = normalizeWorker(entry);
   const field = Array.isArray(fields) ? fields.join("／") : "";
-  const line = [date, worker, field].map(toCsvCell).join(",");
+  const machine = normalizeMachine(entry);
+  const newRow = { date, worker, field, machine };
 
   const path = `/logs/${type}/all.csv`;
-  let content = `${header}\n${line}\n`;
+  let content = buildAllCsvContent(header, [], newRow);
 
   try {
     const res = await fetch(`${path}?ts=${Date.now()}`);
     if (res.ok) {
       const text = await res.text();
-      const normalized = String(text || "").replace(/\r\n/g, "\n").trim();
-
-      if (normalized) {
-        if (normalized.startsWith(header)) {
-          content = `${normalized}\n${line}\n`;
-        } else {
-          content = `${header}\n${normalized}\n${line}\n`;
-        }
-      }
+      const existingRows = parseAllCsvRows(text);
+      content = buildAllCsvContent(header, existingRows, newRow);
     }
   } catch (e) {
     debugLog("[updateGeneralAllCsv] existing all.csv read failed -> create new", e);
@@ -234,6 +228,93 @@ async function updateGeneralAllCsv(type, { date, fields, entry }) {
   });
 
   debugLog("[updateGeneralAllCsv] saved:", `logs/${type}/all.csv`);
+}
+
+function buildAllCsvContent(header, rows, appendedRow) {
+  const allRows = [...rows, appendedRow]
+    .map(r => [r.date, r.worker, r.field, r.machine].map(toCsvCell).join(","))
+    .join("\n");
+
+  return `${header}\n${allRows}\n`;
+}
+
+function parseAllCsvRows(csvText) {
+  const normalized = String(csvText || "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) return [];
+
+  const lines = normalized
+    .split("\n")
+    .map(v => v.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return [];
+
+  const firstCols = parseCsvLine(lines[0]).map(v => String(v || "").trim().toLowerCase());
+  const looksHeader = firstCols.includes("date") && firstCols.includes("worker") && firstCols.includes("field");
+
+  let colIndex = { date: 0, worker: 1, field: 2, machine: -1 };
+  let startLine = 0;
+
+  if (looksHeader) {
+    colIndex = {
+      date: firstCols.indexOf("date"),
+      worker: firstCols.indexOf("worker"),
+      field: firstCols.indexOf("field"),
+      machine: firstCols.indexOf("machine")
+    };
+    startLine = 1;
+  }
+
+  const rows = [];
+  for (let i = startLine; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const date = pickCsvCol(cols, colIndex.date);
+    const worker = pickCsvCol(cols, colIndex.worker);
+    const field = pickCsvCol(cols, colIndex.field);
+    const machine = pickCsvCol(cols, colIndex.machine);
+
+    if (!date && !worker && !field && !machine) continue;
+    rows.push({ date, worker, field, machine });
+  }
+
+  return rows;
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === "," && !inQuotes) {
+      out.push(cur);
+      cur = "";
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  out.push(cur);
+  return out;
+}
+
+function pickCsvCol(cols, index) {
+  if (!Array.isArray(cols)) return "";
+  if (typeof index !== "number" || index < 0) return "";
+  return String(cols[index] ?? "").trim();
 }
 
 function normalizeWorker(entry) {
@@ -259,6 +340,17 @@ function normalizeWorker(entry) {
   }
 
   return text;
+}
+
+function normalizeMachine(entry) {
+  if (!entry) return "";
+
+  const raw = entry.machine ?? "";
+  if (Array.isArray(raw)) {
+    return raw.map(v => String(v || "").trim()).filter(Boolean).join("／");
+  }
+
+  return String(raw || "").trim();
 }
 
 function toCsvCell(value) {

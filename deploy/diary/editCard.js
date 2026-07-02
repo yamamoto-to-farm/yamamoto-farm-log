@@ -28,6 +28,8 @@ export function renderEditCards(autoList, diary) {
     const field = existing.field || item.field || "";
     const fieldText = normalizeMultiText(field) || "（未入力）";
     const workersText = normalizeMultiText(existing.workers || item.workers) || "（未入力）";
+    const machine = String(existing.machine ?? item.machine ?? "").trim();
+    const machineText = machine || "（未入力）";
 
     const card = document.createElement("div");
     card.className = "card edit-card";
@@ -35,9 +37,10 @@ export function renderEditCards(autoList, diary) {
     card.innerHTML = `
       <h3 class="edit-title">${item.type}</h3>
       <p class="edit-workers">圃場： ${fieldText}</p>
-      <p class="edit-workers">従事者： ${workersText}</p>
+      <p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>
 
       <input type="hidden" id="field_${idx}" value="${field}">
+      <input type="hidden" id="machine_${idx}" value="${machine}">
 
       <div class="time-row">
         <label>開始</label>
@@ -92,7 +95,7 @@ export async function initEditPage() {
   // ★ 既存の日誌を読み込む
   const diary = await loadDiaryByDate(date);   // null の可能性あり
 
-  // ★ 作業ログから自動抽出（type, workers, field）
+  // ★ 作業ログから自動抽出（type, workers, field, machine）
   const logs = await loadLogsByDate(date);
   const autoList = extractWorkForEdit(logs);
 

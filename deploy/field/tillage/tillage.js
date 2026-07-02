@@ -85,7 +85,7 @@ async function saveTillageLog() {
   const notes = (document.getElementById("notes")?.value || "").trim();
   const fields = filterState.fields || [];
   const workers = getSelectedWorkers("workers_box", "temp_workers");
-  const machine = window.__tillage_machine || "";
+  const machine = window.__tillage_machine || "machine1";
 
   if (!date || !type || fields.length === 0) {
     alert("作業日・作業区分・圃場は必須です");

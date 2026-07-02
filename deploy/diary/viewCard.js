@@ -49,12 +49,13 @@ export async function initViewPage() {
 
     const workerText = normalizeMultiText(w.workers);
     const workerLine = workerText || "（未入力）";
+    const machineLine = String(w.machine || "").trim() || "（未入力）";
 
     html += `
       <div class="card view-card">
         <h3>${title}</h3>
         <p><strong>圃場：</strong> ${fieldLine}</p>
-        <p><strong>従事者：</strong> ${workerLine}</p>
+        <p><strong>従事者：</strong> ${workerLine}　　<strong>作業機械：</strong> ${machineLine}</p>
         <p><strong>開始：</strong> ${w.start}　<strong>終了：</strong> ${w.end}</p>
       </div>
     `;

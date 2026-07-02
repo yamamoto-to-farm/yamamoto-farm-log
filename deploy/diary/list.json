@@ -43,7 +43,8 @@
     "headerName": [
       "date",
       "worker",
-      "field"
+      "field",
+      "machine"
     ]
   },
   {
@@ -53,7 +54,8 @@
     "headerName": [
       "date",
       "worker",
-      "field"
+      "field",
+      "machine"
     ]
   },
   {
@@ -63,7 +65,8 @@
     "headerName": [
       "date",
       "worker",
-      "field"
+      "field",
+      "machine"
     ]
   },
   {
@@ -73,7 +76,8 @@
     "headerName": [
       "date",
       "worker",
-      "field"
+      "field",
+      "machine"
     ]
   },
   {

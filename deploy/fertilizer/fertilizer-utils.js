@@ -59,7 +59,7 @@ export async function saveFertilizerLog() {
   const notes = document.getElementById("notes").value.trim();
 
   // ★ 使用機械（harvest と同じく URL パラメータから取得）
-  const machine = window.__fertilizer_machine || "";
+  const machine = window.__fertilizer_machine || "machine1";
 
   // 作業者（収穫ログと同じ方式）
   const workers = getSelectedWorkers("workers_box", "temp_workers");

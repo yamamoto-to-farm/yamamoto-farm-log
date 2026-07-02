@@ -33,6 +33,7 @@ export async function saveDiary(date, autoList) {
     // workers と同じく配列で保存（複数値は "／" でまとめる）
     field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || ""),
     workers: normalizeMultiValueAsArray(item.workers),
+    machine: String(document.getElementById(`machine_${idx}`)?.value || item.machine || "").trim(),
     start: document.getElementById(`start_${idx}`).value,
     end: document.getElementById(`end_${idx}`).value
   }));
