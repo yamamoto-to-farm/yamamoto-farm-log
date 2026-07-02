@@ -63,8 +63,8 @@ export async function initViewPage() {
 
   workList.forEach(w => {
 
-    const fieldName = getFieldName(w.field, fieldDetail);
-    const title = fieldName ? `${w.type}（${fieldName}）` : w.type;
+    const fieldName = getFieldName(w.field || "", fieldDetail);
+    const title = fieldName ? `${w.type} ${fieldName}` : w.type;
 
     html += `
       <div class="view-card">

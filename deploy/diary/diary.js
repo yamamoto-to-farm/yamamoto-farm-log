@@ -102,7 +102,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     saveBtn.addEventListener("click", async () => {
       const date = dateInput.value;
 
-      // ★ 保存時は autoList を再生成（構造維持）
       const logs = await loadLogsByDate(date);
       const autoList = extractWorkForEdit(logs);
 
