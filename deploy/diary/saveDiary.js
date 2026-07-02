@@ -13,7 +13,7 @@ import { loadJSON, saveJSON } from "/common/json.js";
 export async function saveDiary(date, autoList) {
 
   const year = date.slice(0, 4);
-  const path = `/diary/data/${year}/${date}.json`;
+  const path = `diary/data/${year}/${date}.json`;
 
   // -------------------------------
   // 既存 JSON を読み込む（なければ新規作成）
