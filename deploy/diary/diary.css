@@ -1,17 +1,14 @@
-/* ===============================
-   作業日誌ページ専用 CSS（編集＋閲覧）
-   layer: pages
-=============================== */
+/* ================================
+  作業日誌
+================================ */
 
 .diary-container {
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 12px;
+  padding: 0;
 }
 
-/* --------------------------------
-   モード切り替えボタン
--------------------------------- */
+/* モード切り替え */
 #modeSwitchArea {
   text-align: right;
   margin: 12px 0 4px;
@@ -33,9 +30,7 @@
   font-weight: bold;
 }
 
-/* --------------------------------
-   折りたたみタイトル（▶ / ▼）
--------------------------------- */
+/* 折りたたみ */
 .collapse-title {
   font-size: 1.1rem;
   font-weight: bold;
@@ -44,30 +39,24 @@
   user-select: none;
 }
 
-/* --------------------------------
-   折りたたみコンテンツ
--------------------------------- */
 .collapse-content {
   display: none;
   margin-bottom: 16px;
 }
 
-/* --------------------------------
-   カード共通（編集カード・閲覧カード・天気カード）
--------------------------------- */
+/* カード共通 */
 .edit-card,
 .view-card,
 .weather-card {
   background: #fff;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 18px;
-  margin: 20px auto;
-  max-width: 680px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin: 0 0 18px;
+  max-width: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-/* タイトル */
 .edit-card h3,
 .view-card h3,
 .weather-card h3 {
@@ -75,7 +64,6 @@
   font-size: 1.15rem;
 }
 
-/* テキスト */
 .edit-card p,
 .view-card p,
 .weather-card p {
@@ -84,11 +72,7 @@
   line-height: 1.55;
 }
 
-/* --------------------------------
-   編集カード専用
--------------------------------- */
-
-/* 時刻を横並びに（PC） */
+/* 編集カード */
 .time-row {
   display: flex;
   gap: 12px;
@@ -103,59 +87,39 @@
   flex: 1;
 }
 
-/* メモ欄（編集モードのみ） */
 .diary-memo textarea {
   width: 100%;
   resize: vertical;
   min-height: 80px;
 }
 
-/* --------------------------------
-   閲覧カード専用
--------------------------------- */
 .view-card p {
   margin-bottom: 10px;
   color: #444;
 }
 
-/* --------------------------------
-   天気カード（weatherBox）
--------------------------------- */
 .weather-icon {
   font-size: 1.4rem;
   margin-bottom: 10px;
 }
 
-/* --------------------------------
-   作業内容スクロール領域
--------------------------------- */
+/* 作業内容 */
 #workContentWrapper {
   max-height: 420px;
   overflow-y: auto;
   padding-right: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   border-radius: 6px;
 }
 
-/* --------------------------------
-   保存ボタン（編集モードのみ）
--------------------------------- */
 #saveDiaryBtn {
   display: block;
-  margin: 28px auto;
+  margin: 24px auto 0;
   padding: 12px 24px;
 }
 
-/* --------------------------------
-   スマホ最適化
--------------------------------- */
+/* スマホ */
 @media (max-width: 600px) {
-
-  .diary-container {
-    padding: 0 10px;
-  }
-
-  /* モード切替ボタンを縦並びに */
   #modeSwitchArea {
     text-align: left;
   }
@@ -164,32 +128,30 @@
     display: block;
     width: 100%;
     margin: 6px 0;
-    font-size: 0.95rem;
+    font-size: 15px;
   }
 
-  /* カードの余白と文字サイズを調整 */
   .edit-card,
   .view-card,
   .weather-card {
-    padding: 14px;
-    margin: 16px 0;
+    padding: 14px 16px;
+    margin: 0 0 16px;
   }
 
   .edit-card h3,
   .view-card h3,
   .weather-card h3 {
-    font-size: 1.05rem;
+    font-size: 17px;
     margin-bottom: 8px;
   }
 
   .edit-card p,
   .view-card p,
   .weather-card p {
-    font-size: 0.95rem;
+    font-size: 14px;
     margin: 6px 0;
   }
 
-  /* 時刻入力を縦並びに */
   .time-row {
     flex-direction: column;
     gap: 4px;
@@ -199,16 +161,19 @@
     width: auto;
   }
 
-  /* 折りたたみタイトルの余白調整 */
   .collapse-title {
-    font-size: 1rem;
+    font-size: 16px;
     margin: 14px 0 6px;
   }
 
-  /* スクロール領域の高さ調整 */
   #workContentWrapper {
     max-height: 320px;
   }
-}
 
-/* (以前の印刷用上書きは削除されました) */
+  .time-row input,
+  .diary-memo textarea,
+  #diaryDate,
+  #saveDiaryBtn {
+    font-size: 14px;
+  }
+}
