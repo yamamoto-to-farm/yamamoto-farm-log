@@ -1,5 +1,5 @@
 // =========================================================
-// diary/viewCard.js — 閲覧専用カード
+// diary/viewCard.js — 閲覧専用カード（時系列ソート対応）
 // =========================================================
 
 import { loadDiaryByDate } from "./loadDiary.js";
@@ -17,19 +17,32 @@ export async function initViewPage() {
 
   if (!diary) {
     area.innerHTML = `
-      <div class="edit-card">
+      <div class="view-card">
         <p>この日の作業日誌はありません。</p>
       </div>
     `;
     return;
   }
 
-  // 作業カード（閲覧専用）
+  // ---------------------------------------------
+  // 時系列ソート（閲覧モードのみ）
+  // ---------------------------------------------
+  const workList = [...diary.work]; // 破壊しないようコピー
+
+  workList.sort((a, b) => {
+    const t1 = a.start || "99:99";
+    const t2 = b.start || "99:99";
+    return t1.localeCompare(t2);
+  });
+
+  // ---------------------------------------------
+  // 作業カード（折りたたみなし）
+  // ---------------------------------------------
   let html = "";
 
-  diary.work.forEach(w => {
+  workList.forEach(w => {
     html += `
-      <div class="edit-card">
+      <div class="view-card">
         <h3>${w.type}</h3>
         <p><strong>従事者：</strong> ${w.workers.join(" / ")}</p>
         <p><strong>開始：</strong> ${w.start}　<strong>終了：</strong> ${w.end}</p>
@@ -37,9 +50,11 @@ export async function initViewPage() {
     `;
   });
 
+  // ---------------------------------------------
   // メモ（閲覧専用）
+  // ---------------------------------------------
   html += `
-    <div class="edit-card diary-memo">
+    <div class="view-card diary-memo">
       <h3>日誌メモ</h3>
       <p>${diary.memo ? diary.memo : "（メモなし）"}</p>
     </div>
