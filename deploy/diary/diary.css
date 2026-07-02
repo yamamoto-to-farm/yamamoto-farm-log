@@ -71,9 +71,10 @@
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
-  padding: 16px;
+  padding: 18px;
   margin: 20px auto;
   max-width: 680px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
 
 /* タイトル */
@@ -90,7 +91,7 @@
 .weather-card p {
   margin: 8px 0;
   color: #333;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* --------------------------------
@@ -133,6 +134,17 @@
 .weather-icon {
   font-size: 1.4rem;
   margin-bottom: 10px;
+}
+
+/* --------------------------------
+   作業内容スクロール領域
+-------------------------------- */
+#workContentWrapper {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 24px;
+  border-radius: 6px;
 }
 
 /* --------------------------------
@@ -201,5 +213,10 @@
   .collapse-title {
     font-size: 1rem;
     margin: 14px 0 6px;
+  }
+
+  /* スクロール領域の高さ調整 */
+  #workContentWrapper {
+    max-height: 320px;
   }
 }
