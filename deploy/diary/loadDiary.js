@@ -9,7 +9,9 @@ import { loadJSON } from "/common/json.js";
  * @param {string} date - "2026-07-02"
  */
 export async function loadDiaryByDate(date) {
-  const path = `/diary/data/${date}.json`;
+
+  const year = date.slice(0, 4);   // ★ これが必要
+  const path = `/data/diary/${year}/${date}.json`; 
 
   try {
     return await loadJSON(path);
