@@ -57,6 +57,16 @@
     ]
   },
   {
+    "folder": "tillage",
+    "dateColumn": "date",
+    "displayName": "土づくり・耕起",
+    "headerName": [
+      "date",
+      "worker",
+      "field"
+    ]
+  },
+  {
     "folder": "seed",
     "dateColumn": "seedDate",
     "displayName": "播種",
