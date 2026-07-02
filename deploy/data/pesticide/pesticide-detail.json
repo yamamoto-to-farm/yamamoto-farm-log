@@ -1,1 +1,54 @@
-{}
+{
+	"F304": {
+		"name": "アファーム乳剤",
+		"maker": "",
+		"category": "殺虫剤",
+		"unit": "ml",
+		"registrationNo": "",
+		"formulation": "乳剤",
+		"price": {},
+		"activeIngredients": [],
+		"dilution": {
+			"min": null,
+			"max": null,
+			"default": null
+		},
+		"standardDose": {
+			"per10a": null,
+			"unit": "ml"
+		},
+		"targetCrops": [],
+		"targetPests": [],
+		"maxApplicationsPerSeason": null,
+		"preHarvestIntervalDays": null,
+		"reentryIntervalHours": null,
+		"resistanceCode": "",
+		"notes": ""
+	},
+	"F305": {
+		"name": "ダコニール",
+		"maker": "",
+		"category": "殺菌剤",
+		"unit": "ml",
+		"registrationNo": "",
+		"formulation": "",
+		"price": {},
+		"activeIngredients": [],
+		"dilution": {
+			"min": null,
+			"max": null,
+			"default": null
+		},
+		"standardDose": {
+			"per10a": null,
+			"unit": "ml"
+		},
+		"targetCrops": [],
+		"targetPests": [],
+		"maxApplicationsPerSeason": null,
+		"preHarvestIntervalDays": null,
+		"reentryIntervalHours": null,
+		"resistanceCode": "",
+		"notes": ""
+	}
+}

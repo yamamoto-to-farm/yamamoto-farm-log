@@ -106,8 +106,18 @@ function renderJsonList(container) {
     </div>
 
     <div class="card">
+      <h2>農薬基本情報（pesticide-index.json）</h2>
+      <button class="primary-btn" onclick="location.href='?data=pesticide-index'">編集する</button>
+    </div>
+
+    <div class="card">
       <h2>肥料詳細情報（fertilizer-detail.json）</h2>
       <button class="primary-btn" onclick="location.href='?data=fertilizer-detail'">編集する</button>
+    </div>
+
+    <div class="card">
+      <h2>農薬詳細情報（pesticide-detail.json）</h2>
+      <button class="primary-btn" onclick="location.href='?data=pesticide-detail'">編集する</button>
     </div>
 
     <div class="card">
