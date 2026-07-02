@@ -2,7 +2,7 @@
 // diary/viewCard.js — 閲覧専用カード
 // =========================================================
 
-import { loadDiaryByDate } from "./saveDiary.js";
+import { loadDiaryByDate } from "./loadDiary.js";
 
 /**
  * 閲覧専用カードを描画する
