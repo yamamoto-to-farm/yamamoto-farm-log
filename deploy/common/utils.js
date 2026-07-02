@@ -236,16 +236,19 @@ export async function printInline(selector, title = "印刷") {
   styleEl.appendChild(doc.createTextNode(printCss));
   head.appendChild(styleEl);
 
-  // タイトルヘッダを追加
-  const titleEl = doc.createElement('h1');
-  titleEl.style.fontSize = '20px';
-  titleEl.style.marginBottom = '12px';
-  titleEl.style.borderBottom = '2px solid #333';
-  titleEl.textContent = title;
-  doc.getElementById('print-root').appendChild(titleEl);
-
   // 対象ノードを深くコピーして iframe に挿入
   const clone = target.cloneNode(true);
+
+  const hasVisibleHeading = !!clone.querySelector("h1, .page-title");
+  if (!hasVisibleHeading && title) {
+    const titleEl = doc.createElement("h1");
+    titleEl.style.fontSize = "20px";
+    titleEl.style.marginBottom = "12px";
+    titleEl.style.borderBottom = "2px solid #333";
+    titleEl.textContent = title;
+    doc.getElementById("print-root").appendChild(titleEl);
+  }
+
 
   // フォーム値を明示的に同期する
   const originalFields = target.querySelectorAll("input, textarea, select");

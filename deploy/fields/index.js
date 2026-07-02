@@ -1,6 +1,5 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
-import { printInline } from "/common/utils.js";   // ★ その場印刷に変更
 
 // ▼ デバッグフラグ（true でログ ON）
 const DEBUG_FIELD_LIST = true;
@@ -149,23 +148,6 @@ export async function renderFieldList() {
 
   // ▼ 圃場クリック → 詳細ページへ
   attachEvents();
-
-  // ▼ ★ 印刷ボタン（printInline に変更）
-  // ▼ ★ 印刷ボタン（printInline に変更）
-  const printBtn = document.getElementById("print-btn");
-  if (printBtn) {
-
-    // ★ DOM が完全に描画されるまで待つ
-    setTimeout(() => {
-      printBtn.disabled = false;
-    }, 500); // ← 500ms 待つ（重要）
-
-    printBtn.onclick = () => {
-      const title = document.getElementById("field-name").textContent || "圃場一覧";
-      printInline("#analysis-container", title);
-    };
-  }
-
 
 }
 

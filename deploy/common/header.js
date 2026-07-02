@@ -14,7 +14,7 @@ export function renderHeader(options = {}) {
       <h1 class="app-title">山本農園 OS</h1>
       <div class="header-right">
         <span id="login-user"></span>
-        <button id="print-btn" class="print-btn" title="印刷">印刷</button>
+        <button id="header-print-btn" class="print-btn" title="印刷">印刷</button>
         <button id="logout-btn" class="logout-btn" style="display:none;">ログアウト</button>
       </div>
     </header>
@@ -22,12 +22,13 @@ export function renderHeader(options = {}) {
   document.body.insertAdjacentHTML("afterbegin", headerHTML);
 
   // 印刷ボタンのイベント（現在ページの描画済み DOM をそのまま印刷）
-  const pb = document.getElementById('print-btn');
+  const pb = document.getElementById('header-print-btn');
   if (pb) {
     pb.addEventListener('click', async () => {
       pb.disabled = true;
       try {
-        await printCurrentPage(document.title || '印刷');
+        const pageTitle = document.querySelector('.page-title, #field-name, h1');
+        await printCurrentPage(pageTitle?.textContent?.trim() || document.title || '印刷');
       } catch (e) {
         console.error('header print failed', e);
         window.print();
