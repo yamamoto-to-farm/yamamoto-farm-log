@@ -1,7 +1,81 @@
 [
-  { "folder": "planting",   "dateColumn": "plantDate",   "displayName": "定植" },
-  { "folder": "harvest",    "dateColumn": "harvestDate", "displayName": "収穫" },
-  { "folder": "fertilizer", "dateColumn": "applyDate",   "displayName": "施肥" },
-  { "folder": "pesticide",  "dateColumn": "sprayDate",   "displayName": "防除" },
-  { "folder": "seed",       "dateColumn": "seedDate",    "displayName": "播種" }
+  {
+    "folder": "planting",
+    "dateColumn": "plantDate",
+    "displayName": "定植",
+    "headerName": [
+      "plantDate",
+      "worker",
+      "field",
+      "variety",
+      "seedRef",
+      "quantity",
+      "trayType",
+      "spacingRow",
+      "spacingBed",
+      "harvestPlanYM",
+      "notes",
+      "machine",
+      "human",
+      "plantingRef"
+    ]
+  },
+  {
+    "folder": "harvest",
+    "dateColumn": "harvestDate",
+    "displayName": "収穫",
+    "headerName": [
+      "harvestDate",
+      "shippingDate",
+      "worker",
+      "field",
+      "amount",
+      "issue",
+      "plantingRef",
+      "machine",
+      "human"
+    ]
+  },
+  {
+    "folder": "fertilizer",
+    "dateColumn": "applyDate",
+    "displayName": "施肥",
+    "headerName": [
+      "applyDate",
+      "fertilizerName",
+      "amount",
+      "unit",
+      "worker",
+      "note"
+    ]
+  },
+  {
+    "folder": "pesticide",
+    "dateColumn": "sprayDate",
+    "displayName": "防除",
+    "headerName": [
+      "sprayDate",
+      "chemical",
+      "dilution",
+      "amount",
+      "worker",
+      "note"
+    ]
+  },
+  {
+    "folder": "seed",
+    "dateColumn": "seedDate",
+    "displayName": "播種",
+    "headerName": [
+      "seedRef",
+      "seedDate",
+      "varietyName",
+      "trayType",
+      "trayCount",
+      "seedCount",
+      "source",
+      "memo"
+    ]
+  }
 ]
+

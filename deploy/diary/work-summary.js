@@ -1,5 +1,5 @@
 // =========================================================
-// diary/work-summary.js — list.json + all.csv 存在チェック版（完成）
+// diary/work-summary.js — list.json + headerName 対応版
 // =========================================================
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
@@ -21,7 +21,7 @@ async function loadLogCsv(folder) {
     return normalizeKeys(rows);
   } catch (e) {
     console.warn(`[work-summary] all.csv が見つかりません: ${folder}`);
-    return null; // ← ここが重要（存在しないフォルダは除外）
+    return null; // ← 存在しないフォルダは読み飛ばす
   }
 }
 
@@ -31,14 +31,21 @@ export async function loadLogsByDate(date) {
   const result = [];
 
   for (const item of folderList) {
-    const { folder, dateColumn, displayName } = item;
+    const { folder, dateColumn, displayName, headerName } = item;
 
     const rows = await loadLogCsv(folder);
-    if (!rows) continue; // ← all.csv が無いフォルダは読み飛ばす
+    if (!rows) continue; // all.csv が無いフォルダは除外
 
     rows
       .filter(r => r[dateColumn] === date)
-      .forEach(r => result.push({ folder, displayName, data: r }));
+      .forEach(r => {
+        result.push({
+          folder,
+          displayName,
+          headerName,
+          data: r
+        });
+      });
   }
 
   return result;
@@ -54,10 +61,13 @@ export async function showWorkSummary(date) {
     return;
   }
 
-  box.innerHTML = logs.map(log => `
-    <div class="work-item">
-      <p><strong>${log.displayName}</strong></p>
-      <p>${Object.values(log.data).join(" / ")}</p>
-    </div>
-  `).join("");
+  box.innerHTML = logs.map(log => {
+    const cols = log.headerName.map(col => log.data[col] ?? "");
+    return `
+      <div class="work-item">
+        <p><strong>${log.displayName}</strong></p>
+        <p>${cols.join(" / ")}</p>
+      </div>
+    `;
+  }).join("");
 }
