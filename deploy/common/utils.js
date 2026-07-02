@@ -223,6 +223,9 @@ export async function printInline(selector, title = "印刷") {
     .modal, .modal-bg, .overlay, .filter-modal, script, iframe {
       display: none !important;
     }
+    .print-hide {
+      display: none !important;
+    }
     .collapse-content:not(.print-keep-collapsed), .field-group > div, #form-area, #page-area, #analysis-container, #workContentWrapper {
       display: block !important;
       visibility: visible !important;
