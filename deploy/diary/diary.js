@@ -137,47 +137,5 @@ window.addEventListener("DOMContentLoaded", async () => {
     // ★ モード切り替えボタンも更新（新しい日付を反映）
     renderModeSwitch(mode);
   });
-
-  // ---------------------------------------------------------
-  // 印刷時の表示調整（モーダルやオーバーレイを取り除く）
-  // ---------------------------------------------------------
-  const beforePrint = () => {
-    // 一時的に readonly-mode を外して非表示ルールを解除
-    if (document.body.classList.contains("readonly-mode")) {
-      document.body._hadReadonly = true;
-      document.body.classList.remove("readonly-mode");
-    }
-
-    // 非表示のオーバーレイがあれば隠す
-    const modalBg = document.querySelectorAll('.modal-bg');
-    modalBg.forEach(el => el.style.display = 'none');
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(el => el.style.display = 'none');
-
-    // ensure form-area visible
-    const fa = document.getElementById('form-area');
-    if (fa) fa.style.display = 'block';
-  };
-
-  const afterPrint = () => {
-    // restore readonly-mode if it was present
-    if (document.body._hadReadonly) {
-      document.body.classList.add('readonly-mode');
-      delete document.body._hadReadonly;
-    }
-
-    // remove forced styles on modals (they'll be restored by app logic)
-    const modalBg = document.querySelectorAll('.modal-bg');
-    modalBg.forEach(el => el.style.display = '');
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(el => el.style.display = '');
-  };
-
-  if (window.matchMedia) {
-    window.matchMedia('print').addListener(mql => {
-      if (mql.matches) beforePrint(); else afterPrint();
-    });
-  }
-  window.addEventListener('beforeprint', beforePrint);
-  window.addEventListener('afterprint', afterPrint);
+  // (印刷時の一時処理は削除されました)
 });
