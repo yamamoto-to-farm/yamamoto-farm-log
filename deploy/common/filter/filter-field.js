@@ -1,6 +1,13 @@
 // common/filter/filter-field.js
 
-import { filterState, getFilterData, applyFilter, openModal, closeModal } from "./filter-core.js?v=1";
+import {
+  filterState,
+  getFilterData,
+  applyFilter,
+  openModal,
+  closeModal,
+  bindModalCloseEvents
+} from "./filter-core.js?v=1";
 
 /* ============================================================
    圃場フィルタモーダル（フィルタ／選択モード両対応）
@@ -61,11 +68,7 @@ export function openFieldModal(options = {}) {
    イベント
 ============================================================ */
 function initFieldEvents(children, mode, onSelect) {
-
-  document.getElementById("modal-close").onclick = closeModal;
-  document.getElementById("modal-bg").onclick = e => {
-    if (e.target.classList.contains("modal-bg")) closeModal();
-  };
+  bindModalCloseEvents();
 
   // ▼ 親（area）折りたたみ
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {

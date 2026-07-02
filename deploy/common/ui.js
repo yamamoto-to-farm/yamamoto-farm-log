@@ -2,6 +2,7 @@
 // import（必ずファイル先頭）
 // ===============================
 import { getCurrentPosition, getNearestField } from "./app.js";
+import { openWorkerSelectModal } from "./filter/filter-worker.js";
 
 
 // ===============================
@@ -188,18 +189,69 @@ export async function createWorkerCheckboxes(containerId) {
   const workers = await res.json();
 
   const box = document.getElementById(containerId);
+  if (!box) return;
 
-  workers.forEach(w => {
-    const div = document.createElement("div");
-    div.innerHTML = `
-    <label>
-      <input type="checkbox" name="workers" value="${w.display}">
-      ${w.display}
-    </label>
-  `;
-    box.appendChild(div);
+  // 互換: 既存画面の再描画時に中身を初期化
+  box.innerHTML = "";
+
+  // 既存選択値（あれば維持）
+  const selected = readSelectedWorkers(box);
+
+  const summary = document.createElement("div");
+  summary.className = "info-line";
+
+  const openBtn = document.createElement("button");
+  openBtn.type = "button";
+  openBtn.className = "secondary-btn";
+  openBtn.textContent = "作業者を選択";
+
+  const selectedArea = document.createElement("div");
+  selectedArea.className = "info-block";
+
+  const renderSelected = () => {
+    summary.textContent = "固定作業者";
+    if (!selected.length) {
+      selectedArea.textContent = "未選択";
+      selectedArea.style.color = "#666";
+    } else {
+      selectedArea.textContent = selected.join(" / ");
+      selectedArea.style.color = "#222";
+    }
+    writeSelectedWorkers(box, selected);
+  };
+
+  openBtn.addEventListener("click", () => {
+    openWorkerSelectModal({
+      workers,
+      selected,
+      onApply(next) {
+        selected.length = 0;
+        next.forEach(v => selected.push(v));
+        renderSelected();
+      }
+    });
   });
 
+  box.appendChild(summary);
+  box.appendChild(openBtn);
+  box.appendChild(selectedArea);
+  renderSelected();
+}
+
+function readSelectedWorkers(box) {
+  try {
+    const raw = box?.dataset?.selectedWorkers;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(v => typeof v === "string" && v.trim()).map(v => v.trim());
+  } catch (e) {
+    return [];
+  }
+}
+
+function writeSelectedWorkers(box, selected) {
+  box.dataset.selectedWorkers = JSON.stringify(selected || []);
 }
 
 
@@ -207,15 +259,24 @@ export async function createWorkerCheckboxes(containerId) {
 // 作業者の取得（固定＋単発バイト）
 // ===============================
 export function getSelectedWorkers(boxId, tempId) {
-  const fixed = [...document.querySelectorAll(`#${boxId} input[name='workers']:checked`)]
-    .map(x => x.value);
+  const box = document.getElementById(boxId);
 
-  const temp = document.getElementById(tempId).value
+  // 新方式: data-selected-workers（JSON配列）
+  let fixed = readSelectedWorkers(box);
+
+  // 後方互換: 旧チェックボックス方式
+  if (!fixed.length) {
+    fixed = [...document.querySelectorAll(`#${boxId} input[name='workers']:checked`)]
+      .map(x => x.value);
+  }
+
+  const tempInput = document.getElementById(tempId);
+  const temp = (tempInput?.value || "")
     .split(",")
     .map(x => x.trim())
     .filter(x => x);
 
-  return [...fixed, ...temp].join(",");
+  return [...new Set([...fixed, ...temp])].join(",");
 }
 
 

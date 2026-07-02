@@ -9,6 +9,26 @@ import { openModal, closeModal } from "./filter-ui.js?v=1";
 export { openModal, closeModal };
 
 /* ============================================================
+   モーダルの共通クローズ処理
+   - × ボタン
+   - 背景クリック
+============================================================ */
+export function bindModalCloseEvents({
+  closeId = "modal-close",
+  bgId = "modal-bg"
+} = {}) {
+  const closeBtn = document.getElementById(closeId);
+  const bg = document.getElementById(bgId);
+
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (bg) {
+    bg.onclick = e => {
+      if (e.target.classList.contains("modal-bg")) closeModal();
+    };
+  }
+}
+
+/* ============================================================
    ★ フィルタの選択状態（state）
    - fields
    - fertilizers
