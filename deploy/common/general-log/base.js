@@ -61,15 +61,15 @@ async function loadIndex(type) {
   // 旧構造（互換）
   const pathA = `/data/${type}-index.json`;
 
-  // B を先に試す
-  let data = await loadJSON(pathB);
+  // B を先に試す（404 は空扱い）
+  let data = await safeLoadIndexJson(pathB);
   if (data && Object.keys(data).length !== 0) {
     debugLog(`[loadIndex] loaded from B: ${pathB}`);
     return data;
   }
 
-  // A を試す
-  data = await loadJSON(pathA);
+  // A を試す（404 は空扱い）
+  data = await safeLoadIndexJson(pathA);
   if (data && Object.keys(data).length !== 0) {
     debugLog(`[loadIndex] loaded from A: ${pathA}`);
     return data;
@@ -78,6 +78,16 @@ async function loadIndex(type) {
   // どちらも無い → 初回保存用
   debugLog(`[loadIndex] no index found → empty object`);
   return {};
+}
+
+async function safeLoadIndexJson(path) {
+  try {
+    const data = await loadJSON(path);
+    return data && typeof data === "object" ? data : {};
+  } catch (e) {
+    debugLog(`[loadIndex] missing or unreadable: ${path}`);
+    return {};
+  }
 }
 
 /* ---------------------------------------------------------
