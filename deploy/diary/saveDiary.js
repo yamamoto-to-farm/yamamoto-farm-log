@@ -30,8 +30,9 @@ export async function saveDiary(date, autoList) {
   // -------------------------------
   const newWork = autoList.map((item, idx) => ({
     type: item.type,
-    field: document.getElementById(`field_${idx}`).value || "",   // ★ 圃場IDを保存
-    workers: item.workers,
+    // workers と同じく配列で保存（複数値は "／" でまとめる）
+    field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || ""),
+    workers: normalizeMultiValueAsArray(item.workers),
     start: document.getElementById(`start_${idx}`).value,
     end: document.getElementById(`end_${idx}`).value
   }));
@@ -49,4 +50,18 @@ export async function saveDiary(date, autoList) {
     console.error(e);
     alert("保存に失敗しました");
   }
+}
+
+function normalizeMultiValueAsArray(value) {
+  const raw = Array.isArray(value) ? value.join("／") : String(value || "");
+
+  const parts = raw
+    .split(/[\/／]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) return [];
+
+  // 既存互換のため「配列1要素（／区切り）」形式で保存する
+  return [parts.join("／")];
 }

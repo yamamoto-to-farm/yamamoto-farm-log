@@ -42,14 +42,17 @@ export async function initViewPage() {
 
   workList.forEach(w => {
 
-    // ★ 圃場名は w.field をそのまま使う
-    const fieldName = w.field || "";
+    // 配列/文字列どちらでも表示できるように正規化
+    const fieldName = normalizeMultiText(w.field);
     const title = fieldName ? `${w.type} ${fieldName}` : w.type;
+
+    const workerText = normalizeMultiText(w.workers);
+    const workerLine = workerText || "（未入力）";
 
     html += `
       <div class="card view-card">
         <h3>${title}</h3>
-        <p><strong>従事者：</strong> ${w.workers.join(" / ")}</p>
+        <p><strong>従事者：</strong> ${workerLine}</p>
         <p><strong>開始：</strong> ${w.start}　<strong>終了：</strong> ${w.end}</p>
       </div>
     `;
@@ -66,4 +69,15 @@ export async function initViewPage() {
   `;
 
   area.innerHTML = html;
+}
+
+function normalizeMultiText(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  return String(value || "").trim();
 }
