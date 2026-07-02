@@ -236,5 +236,40 @@ export async function printInline(selector, title = "印刷") {
   }
 }
 
+export async function printCurrentPage(title = document.title || "印刷") {
+  const selector = document.querySelector("main")
+    ? "main"
+    : (document.querySelector("#content") ? "#content" : "body");
+
+  const isMapPage = !!document.querySelector(".leaflet-container");
+  if (isMapPage) {
+    const waitForMapTiles = async (timeout = 5000, interval = 200) => {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        const loadedTiles = document.querySelectorAll(".leaflet-tile-loaded").length;
+        if (loadedTiles > 0) return true;
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+      return false;
+    };
+
+    try {
+      if (window.map && typeof window.map.invalidateSize === "function") {
+        window.map.invalidateSize();
+      }
+    } catch (e) {
+      console.warn("printCurrentPage: map invalidateSize failed", e);
+    }
+
+    await waitForMapTiles();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    window.print();
+    return;
+  }
+
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  await printInline(selector, title);
+}
+
 
 

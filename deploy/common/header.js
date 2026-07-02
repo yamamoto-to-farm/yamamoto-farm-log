@@ -2,7 +2,7 @@
 // 共通ヘッダー + ロール別制御
 // ===============================
 
-import '/common/print-mode.js';
+import { printCurrentPage } from "/common/utils.js";
 
 export function renderHeader(options = {}) {
   const role = window.currentRole;
@@ -21,14 +21,19 @@ export function renderHeader(options = {}) {
   `;
   document.body.insertAdjacentHTML("afterbegin", headerHTML);
 
-  // 印刷ボタンのイベント（新しいウィンドウで ?print=1 を開く）
+  // 印刷ボタンのイベント（現在ページの描画済み DOM をそのまま印刷）
   const pb = document.getElementById('print-btn');
   if (pb) {
-    pb.addEventListener('click', () => {
-      const url = location.pathname + location.search;
-      const has = url.indexOf('?') !== -1;
-      const printUrl = url + (has ? '&' : '?') + 'print=1';
-      window.open(printUrl, '_blank');
+    pb.addEventListener('click', async () => {
+      pb.disabled = true;
+      try {
+        await printCurrentPage(document.title || '印刷');
+      } catch (e) {
+        console.error('header print failed', e);
+        window.print();
+      } finally {
+        pb.disabled = false;
+      }
     });
   }
 
