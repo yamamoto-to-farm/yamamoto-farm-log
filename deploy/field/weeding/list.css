@@ -1,0 +1,56 @@
+.year-block {
+  margin-bottom: 24px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.year-title {
+  background: #f0f0f0;
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+.weed-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.weed-table th,
+.weed-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 14px;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.weed-table th {
+  background: #fafafa;
+  font-weight: bold;
+  text-align: left;
+}
+
+.weed-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.empty-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  color: #666;
+}
+
+@media (max-width: 900px) {
+  .weed-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

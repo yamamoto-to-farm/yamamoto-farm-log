@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>除草・草刈りログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
+</head>
+
+<body>
+
+  <div class="page-container" id="page-area" style="display:none;">
+
+    <h1 class="page-title">除草・草刈りログ</h1>
+
+    <div style="margin:10px 0; display:flex; gap:10px;">
+      <a href="/field/weeding/list.html" class="secondary-btn">除草・草刈り記録一覧</a>
+      <a href="/admin/edit-json/index.html?data=pesticide-index" class="secondary-btn">農薬基本情報を編集</a>
+    </div>
+
+    <h2 class="section-title">作業日</h2>
+    <div class="card">
+      <input type="date" id="date" class="form-input">
+    </div>
+
+    <h2 class="section-title">作業区分</h2>
+    <div class="card">
+      <select id="work-type" class="form-input">
+        <option value="">作業を選択</option>
+        <option value="除草剤散布">除草剤散布</option>
+        <option value="草刈り">草刈り</option>
+      </select>
+    </div>
+
+    <h2 class="section-title">圃場</h2>
+    <div class="card">
+      <button id="open-field-modal" class="primary-btn">圃場を選択</button>
+      <div id="activeFieldFilters" style="margin-top:10px;"></div>
+      <div id="field-area-total" style="margin-top:10px; font-weight:bold; color:#444;">
+        合計面積：0 a
+      </div>
+    </div>
+
+    <div id="pesticide-section" style="display:none;">
+      <h2 class="section-title">農薬（除草剤）</h2>
+      <div class="card">
+        <button id="open-pesticide-modal" class="primary-btn">農薬を選択</button>
+        <div id="activePesticideFilters" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <h2 class="section-title">作業者</h2>
+    <div class="card" id="workers_box"></div>
+
+    <div class="card">
+      <label for="temp_workers">単発バイト（カンマ区切り）</label>
+      <input id="temp_workers" class="form-input" placeholder="例：佐藤さん, 田中さん">
+    </div>
+
+    <h2 class="section-title">備考</h2>
+    <div class="card">
+      <textarea id="notes" class="form-textarea"></textarea>
+    </div>
+
+    <button id="save-btn" class="primary-btn">保存</button>
+
+  </div>
+
+  <div id="modal-container"></div>
+
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
+  <script type="module" src="/common/summary.js?v=1"></script>
+  <script type="module" src="/common/save/index.js?v=1"></script>
+
+  <script type="module" src="/common/filter/filter-core.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-field.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-pesticide.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-active.js?v=1"></script>
+
+  <script type="module">
+    import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js";
+    import { initWeedingPage } from "./weeding.js?v=1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+
+      renderHeader();
+      document.getElementById("page-area").style.display = "block";
+
+      document.getElementById("date").value = new Date().toISOString().slice(0, 10);
+
+      await createWorkerCheckboxes("workers_box");
+
+      const params = new URLSearchParams(location.search);
+      window.__weeding_machine = params.get("machine") || "";
+
+      await initWeedingPage();
+    });
+  </script>
+
+</body>
+
+</html>

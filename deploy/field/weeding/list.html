@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>除草・草刈り記録一覧 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./list.css?v=1">
+</head>
+<body>
+
+  <div id="page-area">
+    <h1 class="page-title">除草・草刈り記録一覧</h1>
+    <div id="weeding-container"></div>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js";
+    import { initWeedingList } from "./list.js?v=1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) {
+        document.getElementById("page-area").style.display = "none";
+        return;
+      }
+
+      renderHeader();
+      initWeedingList();
+    });
+  </script>
+
+</body>
+</html>

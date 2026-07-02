@@ -67,6 +67,16 @@
     ]
   },
   {
+    "folder": "weeding",
+    "dateColumn": "date",
+    "displayName": "除草・草刈り",
+    "headerName": [
+      "date",
+      "worker",
+      "field"
+    ]
+  },
+  {
     "folder": "seed",
     "dateColumn": "seedDate",
     "displayName": "播種",
