@@ -1,15 +1,21 @@
 // =========================================================
 // diary/editCard.js
-// 作業編集カードの生成と保存
+// 作業編集カードの生成と保存（CloudFront + saveJSON API 対応）
 // =========================================================
 
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
+import { saveJSON } from "/common/json.js";
 
+// ---------------------------------------------------------
 // 編集カードを描画
+// ---------------------------------------------------------
 export function renderEditCards(autoList) {
   const area = document.getElementById("editWorkArea");
   area.innerHTML = "";
 
+  // -------------------------------
+  // 自動抽出された作業カード
+  // -------------------------------
   autoList.forEach((item, idx) => {
     const card = document.createElement("div");
     card.className = "edit-card";
@@ -30,15 +36,36 @@ export function renderEditCards(autoList) {
 
     area.appendChild(card);
   });
+
+  // -------------------------------
+  // フリーメモカード（作業ログがなくても必ず表示）
+  // -------------------------------
+  const memoCard = document.createElement("div");
+  memoCard.className = "edit-card";
+
+  memoCard.innerHTML = `
+    <h3>その他メモ</h3>
+    <p>この日の作業ログがない場合や、ログ未実装の作業がある場合はここに記入できます。</p>
+
+    <label>メモ</label>
+    <textarea id="freeMemo" rows="3" class="form-textarea"></textarea>
+  `;
+
+  area.appendChild(memoCard);
 }
 
-// 保存処理
+// ---------------------------------------------------------
+// 保存処理（saveJSON API 使用）
+// ---------------------------------------------------------
 export async function saveDiary(date, autoList) {
   const saveData = {
     date,
     work: []
   };
 
+  // -------------------------------
+  // 自動抽出された作業の保存
+  // -------------------------------
   autoList.forEach((item, idx) => {
     const start = document.getElementById(`start_${idx}`).value;
     const end = document.getElementById(`end_${idx}`).value;
@@ -53,24 +80,30 @@ export async function saveDiary(date, autoList) {
     });
   });
 
+  // -------------------------------
+  // フリーメモの保存
+  // -------------------------------
+  const freeMemo = document.getElementById("freeMemo").value;
+  saveData.memo = freeMemo;
+
+  // -------------------------------
+  // 保存先パス
+  // -------------------------------
   const year = date.slice(0, 4);
   const path = `/diary/data/${year}/${date}.json`;
 
-  const res = await fetch(path, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(saveData, null, 2)
-  });
-
-  if (!res.ok) {
+  try {
+    await saveJSON(path, saveData);
+    alert("保存しました");
+  } catch (e) {
+    console.error(e);
     alert("保存に失敗しました");
-    return;
   }
-
-  alert("保存しました");
 }
 
+// ---------------------------------------------------------
 // 初期化
+// ---------------------------------------------------------
 export async function initEditPage() {
   const dateInput = document.getElementById("diaryDate");
   const date = dateInput.value;
