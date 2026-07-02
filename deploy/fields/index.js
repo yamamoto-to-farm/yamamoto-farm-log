@@ -53,12 +53,14 @@ export async function renderFieldList() {
     let tableHtml = `
       <table class="field-table">
         <colgroup>
-          <col style="width:70%;">
-          <col style="width:30%;">
+          <col style="width:42%;">
+          <col style="width:38%;">
+          <col style="width:20%;">
         </colgroup>
         <thead>
           <tr>
             <th>圃場名</th>
+            <th>所在</th>
             <th style="text-align:right;">耕作面積（反）</th>
           </tr>
         </thead>
@@ -107,9 +109,12 @@ export async function renderFieldList() {
 
       areaTotalHan += sizeHan;
 
+      const address = getFieldAddress(detail);
+
       tableHtml += `
         <tr class="field-row" data-name="${field.name}">
-          <td>${field.name}</td>
+          <td>${escapeHtml(field.name)}</td>
+          <td>${escapeHtml(address)}</td>
           <td style="text-align:right;">${display}</td>
         </tr>
       `;
@@ -161,4 +166,38 @@ function attachEvents() {
       location.href = `/fields/index.html?field=${encodeURIComponent(name)}`;
     });
   });
+}
+
+function getFieldAddress(detail) {
+  if (!detail || typeof detail !== "object") return "未入力";
+
+  // 直接 address がある形式にも対応
+  const direct = String(detail.address || "").trim();
+  if (direct && direct !== "未入力") return direct;
+
+  // field-detail.json の parcels[] から住所を集約
+  if (Array.isArray(detail.parcels)) {
+    const addresses = Array.from(
+      new Set(
+        detail.parcels
+          .map(p => String(p?.address || "").trim())
+          .filter(v => v && v !== "未入力")
+      )
+    );
+
+    if (addresses.length > 0) {
+      return addresses.join("／");
+    }
+  }
+
+  return "未入力";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
