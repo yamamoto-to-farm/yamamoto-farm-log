@@ -2,6 +2,8 @@
 // 共通ヘッダー + ロール別制御
 // ===============================
 
+import '/common/print-mode.js';
+
 export function renderHeader(options = {}) {
   const role = window.currentRole;
   const human = window.currentHuman;
@@ -12,11 +14,23 @@ export function renderHeader(options = {}) {
       <h1 class="app-title">山本農園 OS</h1>
       <div class="header-right">
         <span id="login-user"></span>
+        <button id="print-btn" class="print-btn" title="印刷">印刷</button>
         <button id="logout-btn" class="logout-btn" style="display:none;">ログアウト</button>
       </div>
     </header>
   `;
   document.body.insertAdjacentHTML("afterbegin", headerHTML);
+
+  // 印刷ボタンのイベント（新しいウィンドウで ?print=1 を開く）
+  const pb = document.getElementById('print-btn');
+  if (pb) {
+    pb.addEventListener('click', () => {
+      const url = location.pathname + location.search;
+      const has = url.indexOf('?') !== -1;
+      const printUrl = url + (has ? '&' : '?') + 'print=1';
+      window.open(printUrl, '_blank');
+    });
+  }
 
   // ▼ ログイン情報は全ロールで表示
   document.getElementById("login-user").textContent =
