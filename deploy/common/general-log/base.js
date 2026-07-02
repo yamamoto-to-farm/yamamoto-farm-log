@@ -184,7 +184,67 @@ export async function saveMultiFieldLog({
     await updateIndex(type, safeField, year, fileName);
   }
 
+  // 日誌表示向けの軽量サマリ（all.csv）を同時更新
+  await updateGeneralAllCsv(type, { date, fields, entry });
+
   debugLog("[saveMultiFieldLog] done");
+}
+
+async function updateGeneralAllCsv(type, { date, fields, entry }) {
+  const header = "date,worker,field";
+  const worker = normalizeWorker(entry);
+  const field = Array.isArray(fields) ? fields.join("／") : "";
+  const line = [date, worker, field].map(toCsvCell).join(",");
+
+  const path = `/logs/${type}/all.csv`;
+  let content = `${header}\n${line}\n`;
+
+  try {
+    const res = await fetch(`${path}?ts=${Date.now()}`);
+    if (res.ok) {
+      const text = await res.text();
+      const normalized = String(text || "").replace(/\r\n/g, "\n").trim();
+
+      if (normalized) {
+        if (normalized.startsWith(header)) {
+          content = `${normalized}\n${line}\n`;
+        } else {
+          content = `${header}\n${normalized}\n${line}\n`;
+        }
+      }
+    }
+  } catch (e) {
+    debugLog("[updateGeneralAllCsv] existing all.csv read failed -> create new", e);
+  }
+
+  await saveLog({
+    type,
+    replaceCsv: content,
+    fileName: "all.csv"
+  });
+
+  debugLog("[updateGeneralAllCsv] saved:", `logs/${type}/all.csv`);
+}
+
+function normalizeWorker(entry) {
+  if (!entry) return "";
+
+  // general-log では workers（複数）または worker（単数）の両方があり得る
+  const raw = entry.workers ?? entry.worker ?? "";
+
+  if (Array.isArray(raw)) {
+    return raw.map(v => String(v || "").trim()).filter(Boolean).join("／");
+  }
+
+  return String(raw || "").trim();
+}
+
+function toCsvCell(value) {
+  const s = String(value ?? "");
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
 }
 
 /* ---------------------------------------------------------

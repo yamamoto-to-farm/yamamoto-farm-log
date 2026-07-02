@@ -38,28 +38,22 @@
   },
   {
     "folder": "fertilizer",
-    "dateColumn": "applyDate",
+    "dateColumn": "date",
     "displayName": "施肥",
     "headerName": [
-      "applyDate",
-      "fertilizerName",
-      "amount",
-      "unit",
+      "date",
       "worker",
-      "note"
+      "field"
     ]
   },
   {
     "folder": "pesticide",
-    "dateColumn": "sprayDate",
+    "dateColumn": "date",
     "displayName": "防除",
     "headerName": [
-      "sprayDate",
-      "chemical",
-      "dilution",
-      "amount",
+      "date",
       "worker",
-      "note"
+      "field"
     ]
   },
   {

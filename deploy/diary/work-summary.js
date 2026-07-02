@@ -82,7 +82,7 @@ export function extractWorkForEdit(logs) {
   logs.forEach(log => {
     const type = log.displayName; // 定植・収穫・播種など
 
-    // worker 系列を抽出
+    // worker 系列を抽出（worker1, worker2... / worker 単一列の両対応）
     const workers = [];
     Object.keys(log.data).forEach(key => {
       if (key.startsWith("worker") && log.data[key]) {
@@ -90,12 +90,22 @@ export function extractWorkForEdit(logs) {
       }
     });
 
+    if (workers.length === 0 && log.data.worker) {
+      String(log.data.worker)
+        .split(/[\/／]/)
+        .map(v => v.trim())
+        .filter(Boolean)
+        .forEach(v => workers.push(v));
+    }
+
     if (workers.length === 0) return;
 
     // ★ field 抽出（headerName に field がある場合のみ）
     let field = "";
     if (log.headerName.includes("field")) {
-      field = log.data["field"] ?? "";
+      const rawField = String(log.data["field"] ?? "").trim();
+      // 「圃場A／圃場B」形式の場合は先頭を代表値として編集カードへ反映
+      field = rawField ? rawField.split(/[\/／]/)[0].trim() : "";
     }
 
     autoList.push({
