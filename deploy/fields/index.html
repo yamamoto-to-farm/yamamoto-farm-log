@@ -12,16 +12,18 @@
 
 <body>
 
-  <!-- ★ ページタイトル（動的に変更される） -->
-  <h1 id="field-name" class="page-title"></h1>
+  <div id="page-area">
+    <!-- ★ ページタイトル（動的に変更される） -->
+    <h1 id="field-name" class="page-title"></h1>
 
-  <!-- ★ 分析カード or 圃場一覧 -->
-  <div id="analysis-container">読み込み中…</div>
+    <!-- ★ 分析カード or 圃場一覧 -->
+    <div id="analysis-container">読み込み中…</div>
 
-  <!-- 地図に戻る -->
-  <button class="primary-btn" onclick="location.href='/map/index.html'">
-    地図に戻る
-  </button>
+    <!-- 地図に戻る -->
+    <button class="primary-btn" onclick="location.href='/map/index.html'">
+      地図に戻る
+    </button>
+  </div>
 
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
@@ -57,7 +59,7 @@
         initAnalysisPage(field);
 
       } else {
-        document.getElementById("field-name").textContent = "圃場を選択してください";
+        document.getElementById("field-name").textContent = "圃場一覧";
         await renderFieldList();
       }
     });
