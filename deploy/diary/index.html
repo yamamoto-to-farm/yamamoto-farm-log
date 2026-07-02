@@ -17,7 +17,7 @@
 
   <div class="diary-container" id="form-area" style="display:none;">
 
-    <!-- ★ モード切り替えボタン置き場（ここに移動） -->
+    <!-- モード切り替え -->
     <div id="modeSwitchArea"></div>
 
     <h1 class="page-title">作業日誌</h1>
@@ -28,28 +28,30 @@
       <input type="date" id="diaryDate" class="form-input">
     </div>
 
-    <!-- 天気カード（閲覧専用） -->
+    <!-- 天気カード -->
     <h2 class="section-title">天気</h2>
     <div id="weatherBox">
       <p>日付を選択すると天気が表示されます。</p>
     </div>
 
-    <!-- 作業ログ一覧 -->
-    <h2 class="section-title">作業ログ一覧</h2>
-    <div class="card" id="workList">
+    <!-- 作業ログ一覧（折りたたみ対応） -->
+    <h2 id="workListTitle" class="collapse-title">作業ログ一覧</h2>
+    <div id="workList" class="collapse-content card">
       <p>日付を選択すると作業一覧が表示されます。</p>
     </div>
 
-    <!-- 編集カード or 閲覧カード -->
+    <!-- 作業内容（折りたたみは editCard.js / viewCard.js 側で実装） -->
     <h2 class="section-title">作業内容</h2>
     <div id="editWorkArea"></div>
 
-    <!-- 保存ボタン（編集モードのみ） -->
+    <!-- 保存ボタン -->
     <button id="saveDiaryBtn" class="btn-primary">保存</button>
 
   </div>
 
   <!-- JS -->
+  <script type="module" src="/common/collapse.js"></script>
+
   <script type="module" src="/diary/work-summary.js"></script>
   <script type="module" src="/diary/editCard.js"></script>
   <script type="module" src="/diary/viewCard.js"></script>
