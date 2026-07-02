@@ -1,5 +1,6 @@
 // admin/edit-json/card-edit-workers.js
 import { saveJSON } from "/common/json.js?v=1";
+import { bumpAuthVersion } from "/common/ui.js";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 export function renderEditCard({ dataName, json, container }) {
@@ -115,6 +116,7 @@ export function renderEditCard({ dataName, json, container }) {
 
     const savePath = `data/${dataName}.json`;
     await saveJSON(savePath, newWorkers);
+    await bumpAuthVersion("workers.json saved");
 
     completeSaveModal("保存が完了しました");
   };

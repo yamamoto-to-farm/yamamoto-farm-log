@@ -3,12 +3,25 @@
 // ===============================
 import { getCurrentPosition, getNearestField } from "./app.js";
 import { openWorkerSelectModal } from "./filter/filter-worker.js";
+import { loadJSON, saveJSON } from "./json.js";
+import { saveLog } from "./save/index.js";
 
 
 // ===============================
 // デバッグモード（true で有効）
 // ===============================
 const DEBUG_MODE = false;
+const AUTH_STATE_PATH = "/data/auth-state.json";
+const AUTH_TTL_MS = 8 * 60 * 60 * 1000;
+const AUTH_HEARTBEAT_MS = 5 * 60 * 1000;
+const AUTH_SESSION_KEY = "authSessionId";
+const AUTH_ISSUED_KEY = "authIssuedAt";
+const AUTH_EXPIRES_KEY = "authExpiresAt";
+const AUTH_VERSION_KEY = "authVersion";
+const AUTH_HUMAN_KEY = "human";
+const AUTH_ROLE_KEY = "role";
+
+let authHeartbeatStarted = false;
 
 // ===============================
 // デバッグ表示用UI（自動生成）
@@ -34,6 +47,132 @@ function debugLog(msg) {
   }
 
   box.textContent = msg;
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+async function loadAuthState() {
+  try {
+    const state = await loadJSON(AUTH_STATE_PATH);
+    return {
+      authVersion: Number(state?.authVersion || 1),
+      updatedAt: state?.updatedAt || ""
+    };
+  } catch {
+    return {
+      authVersion: 1,
+      updatedAt: ""
+    };
+  }
+}
+
+async function saveAuthState(state) {
+  await saveJSON("data/auth-state.json", state);
+}
+
+async function appendSecurityAudit(event, detail = "") {
+  try {
+    const line = [
+      nowIso(),
+      event,
+      window.currentHuman || localStorage.getItem(AUTH_HUMAN_KEY) || "",
+      window.currentRole || localStorage.getItem(AUTH_ROLE_KEY) || "",
+      localStorage.getItem(AUTH_SESSION_KEY) || "",
+      detail,
+      location.pathname
+    ].map(csvCell).join(",");
+
+    await saveLog({
+      type: "security",
+      csv: line
+    });
+  } catch (e) {
+    console.warn("[auth] security audit failed:", e);
+  }
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(AUTH_HUMAN_KEY);
+  localStorage.removeItem(AUTH_ROLE_KEY);
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  localStorage.removeItem(AUTH_ISSUED_KEY);
+  localStorage.removeItem(AUTH_EXPIRES_KEY);
+  localStorage.removeItem(AUTH_VERSION_KEY);
+  window.currentHuman = "";
+  window.currentRole = "";
+}
+
+function redirectWithReturnUrl() {
+  sessionStorage.setItem("pendingReturnUrl", location.href);
+  location.href = "/index.html";
+}
+
+async function startAuthHeartbeat() {
+  if (authHeartbeatStarted) return;
+  authHeartbeatStarted = true;
+
+  const tick = async () => {
+    if (location.pathname === "/" || location.pathname === "/index.html") return;
+
+    const ok = await verifyLocalAuth({ silent: true, source: "heartbeat" });
+    if (!ok) return;
+  };
+
+  setInterval(tick, AUTH_HEARTBEAT_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      void tick();
+    }
+  });
+}
+
+async function issueAuthSession(user) {
+  const authState = await loadAuthState();
+  const now = Date.now();
+  const sessionId = (crypto?.randomUUID?.() || `sess-${now}-${Math.random().toString(36).slice(2)}`);
+  const expiresAt = now + AUTH_TTL_MS;
+
+  localStorage.setItem(AUTH_HUMAN_KEY, user.name);
+  localStorage.setItem(AUTH_ROLE_KEY, user.role);
+  localStorage.setItem(AUTH_SESSION_KEY, sessionId);
+  localStorage.setItem(AUTH_ISSUED_KEY, String(now));
+  localStorage.setItem(AUTH_EXPIRES_KEY, String(expiresAt));
+  localStorage.setItem(AUTH_VERSION_KEY, String(authState.authVersion));
+
+  window.currentHuman = user.name;
+  window.currentRole = user.role;
+
+  await appendSecurityAudit("login", `sessionVersion=${authState.authVersion}`);
+}
+
+export async function logoutAndRedirect(reason = "logout") {
+  await appendSecurityAudit(reason, "manual");
+  clearAuthStorage();
+  sessionStorage.removeItem("pendingReturnUrl");
+  location.href = "/index.html";
+}
+
+export async function bumpAuthVersion(reason = "workers-updated") {
+  const authState = await loadAuthState();
+  const nextState = {
+    authVersion: Number(authState.authVersion || 1) + 1,
+    updatedAt: nowIso()
+  };
+
+  await saveAuthState(nextState);
+  await appendSecurityAudit("revoke-all", `${reason};authVersion=${nextState.authVersion}`);
+  return nextState;
 }
 
 
@@ -356,12 +495,7 @@ export function showPinGate(containerId, onSuccess) {
       }
 
       // 認証成功 → グローバル変数に保存
-      window.currentHuman = user.name;
-      window.currentRole = user.role;
-
-      // localStorage に保存
-      localStorage.setItem("human", user.name);
-      localStorage.setItem("role", user.role);
+      await issueAuthSession(user);
 
       // PIN UI を非表示
       container.style.display = "none";
@@ -387,18 +521,29 @@ export function showPinGate(containerId, onSuccess) {
 // ===============================
 // localStorage の認証情報がまだ有効かチェック
 // ===============================
-export async function verifyLocalAuth() {
-  const savedHuman = localStorage.getItem("human");
-  const savedRole = localStorage.getItem("role");
+export async function verifyLocalAuth(options = {}) {
+  const savedHuman = localStorage.getItem(AUTH_HUMAN_KEY);
+  const savedRole = localStorage.getItem(AUTH_ROLE_KEY);
+  const savedIssuedAt = Number(localStorage.getItem(AUTH_ISSUED_KEY) || 0);
+  const savedExpiresAt = Number(localStorage.getItem(AUTH_EXPIRES_KEY) || 0);
+  const savedVersion = Number(localStorage.getItem(AUTH_VERSION_KEY) || 0);
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
-    sessionStorage.setItem("pendingReturnUrl", location.href);
-    location.href = "/index.html";
+    redirectWithReturnUrl();
     return false;
   }
 
   try {
+    const authState = await loadAuthState();
+
+    if (savedIssuedAt && savedExpiresAt && Date.now() > savedExpiresAt) {
+      await appendSecurityAudit("expired", `issuedAt=${savedIssuedAt}`);
+      clearAuthStorage();
+      redirectWithReturnUrl();
+      return false;
+    }
+
     // ★ AWS では絶対ルートパスが正解
     const res = await fetch("/data/workers.json?v=" + Date.now());
     const users = await res.json();
@@ -408,17 +553,31 @@ export async function verifyLocalAuth() {
 
     if (!user) {
       // 退職者 or 削除されたユーザー
-      localStorage.removeItem("human");
-      localStorage.removeItem("role");
-      alert("認証情報が無効になりました。再ログインしてください。");
-      sessionStorage.setItem("pendingReturnUrl", location.href);
-      location.href = "/index.html";
+      await appendSecurityAudit("revoked", "worker-missing");
+      clearAuthStorage();
+      if (!options?.silent) {
+        alert("認証情報が無効になりました。再ログインしてください。");
+      }
+      redirectWithReturnUrl();
+      return false;
+    }
+
+    if (savedVersion && savedVersion !== authState.authVersion) {
+      await appendSecurityAudit("revoked", `version-mismatch:${savedVersion}->${authState.authVersion}`);
+      clearAuthStorage();
+      if (!options?.silent) {
+        alert("ログイン状態が更新されました。再ログインしてください。");
+      }
+      redirectWithReturnUrl();
       return false;
     }
 
     // 認証OK → グローバル変数に反映
     window.currentHuman = savedHuman;
     window.currentRole = savedRole;
+    localStorage.setItem(AUTH_VERSION_KEY, String(authState.authVersion));
+
+    await startAuthHeartbeat();
 
     return true;
 
@@ -447,6 +606,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!ok) return;
 
   // 認証OK → グローバル変数に反映（保険）
-  window.currentRole = localStorage.getItem("role");
-  window.currentHuman = localStorage.getItem("human");
+  window.currentRole = localStorage.getItem(AUTH_ROLE_KEY);
+  window.currentHuman = localStorage.getItem(AUTH_HUMAN_KEY);
 });

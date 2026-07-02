@@ -3,6 +3,7 @@
 // ===============================
 
 import { printCurrentPage } from "/common/utils.js";
+import { logoutAndRedirect } from "/common/ui.js";
 
 export function renderHeader(options = {}) {
   const role = window.currentRole;
@@ -45,9 +46,13 @@ export function renderHeader(options = {}) {
   // ▼ ロール別処理
   if (role === "worker") {
     // ===============================
-    // worker：ナビバーなし・ログアウトなし
+    // worker：ナビバーなし・ログアウトあり
     // ===============================
-    document.getElementById("logout-btn").style.display = "none";
+    const logoutBtn = document.getElementById("logout-btn");
+    logoutBtn.style.display = "inline-block";
+    logoutBtn.addEventListener("click", () => {
+      void logoutAndRedirect("logout");
+    });
 
     // ※ 作業完了ボタンは utils.js 側で attachWorkDoneButton() を呼ぶ
     //   → header.js では一切扱わない
@@ -62,9 +67,7 @@ export function renderHeader(options = {}) {
     const logoutBtn = document.getElementById("logout-btn");
     logoutBtn.style.display = "inline-block";
     logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("human");
-      localStorage.removeItem("role");
-      location.href = "/index.html";
+      void logoutAndRedirect("logout");
     });
 
   } else if (role === "admin") {
@@ -81,9 +84,7 @@ export function renderHeader(options = {}) {
     const logoutBtn = document.getElementById("logout-btn");
     logoutBtn.style.display = "inline-block";
     logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("human");
-      localStorage.removeItem("role");
-      location.href = "/index.html";
+      void logoutAndRedirect("logout");
     });
   }
 }
