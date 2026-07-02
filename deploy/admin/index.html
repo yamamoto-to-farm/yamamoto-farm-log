@@ -11,13 +11,16 @@
 
 <body>
 
-  <div id="admin-area" style="display:none;">
-    <h1>管理ページ</h1>
+  <div id="header"></div>
+
+  <div id="admin-area" class="page-container" style="display:none;">
+    <h1 class="page-title">管理ページ</h1>
     <div id="admin-list"></div>
   </div>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
 
     async function loadPages() {
       const res = await fetch("/data/pages.json");
@@ -38,6 +41,7 @@
       }
 
       // family/admin → 表示
+      renderHeader({ adminPage: true });
       document.getElementById("admin-area").style.display = "block";
 
       // pages.json 読み込み
