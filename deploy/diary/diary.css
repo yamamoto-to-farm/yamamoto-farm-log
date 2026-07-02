@@ -52,24 +52,6 @@
   margin-bottom: 16px;
 }
 
-/* 印刷時は強制展開 */
-@media print {
-  .collapse-content {
-    display: block !important;
-  }
-  .collapse-title {
-    display: none;
-  }
-
-  /* workList がインライン style で閉じられている場合に備え、IDで強制表示 */
-  #workList {
-    display: block !important;
-    visibility: visible !important;
-    overflow: visible !important;
-    max-height: none !important;
-  }
-}
-
 /* --------------------------------
    カード共通（編集カード・閲覧カード・天気カード）
 -------------------------------- */

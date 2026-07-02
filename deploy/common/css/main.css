@@ -42,7 +42,3 @@
 @import url("../../fields/index.css") layer(pages);
 @import url("../../diary/diary.css") layer(pages);
 
-/* ===============================
-   overrides（最後の強制上書き）
-=============================== */
-@import url("./overrides.css") layer(overrides);

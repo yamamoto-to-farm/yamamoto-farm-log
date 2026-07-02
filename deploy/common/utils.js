@@ -125,7 +125,8 @@ export async function printInline(selector, title = "印刷") {
   iframe.style.width = "1000px"; // レイアウト用の幅
   iframe.style.height = "1400px"; // 印刷プレビューを想定した高さ
   iframe.style.border = "0";
-  iframe.style.visibility = 'hidden';
+  iframe.style.opacity = "0";
+  iframe.style.pointerEvents = "none";
   document.body.appendChild(iframe);
 
   const win = iframe.contentWindow;
@@ -136,26 +137,104 @@ export async function printInline(selector, title = "印刷") {
   doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title></head><body><div id="print-root"></div></body></html>`);
   doc.close();
 
-  // 親ドキュメントの <link rel="stylesheet"> を複製する
   const head = doc.head;
-  const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
-  const linkPromises = links.map(l => {
-    return new Promise(resolve => {
-      try {
-        const newLink = doc.createElement('link');
-        newLink.rel = 'stylesheet';
-        newLink.href = l.href;
-        newLink.onload = () => resolve();
-        newLink.onerror = () => resolve();
-        head.appendChild(newLink);
-      } catch (e) { resolve(); }
-    });
-  });
 
-  // 親の <style> 要素（インラインスタイル）もコピー
-  document.querySelectorAll('style').forEach(s => {
-    try { head.appendChild(doc.createElement('style')).textContent = s.textContent; } catch (e) {}
-  });
+  const printCss = `
+    @page { size: A4; margin: 12mm; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #222;
+      font-family: "Helvetica", "Yu Gothic", "Hiragino Sans", sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    #print-root {
+      width: 100%;
+    }
+    h1, h2, h3, h4 {
+      margin: 0 0 10px;
+      color: #222;
+      page-break-after: avoid;
+    }
+    p, li, div, span, label {
+      break-inside: avoid;
+    }
+    .card, .edit-card, .view-card, .month-box, .list, .filter-block, .diary-container {
+      display: block;
+      width: 100%;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: none;
+      overflow: visible;
+      max-height: none;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 12px;
+      font-size: 11px;
+    }
+    th, td {
+      border: 1px solid #777;
+      padding: 4px 6px;
+      vertical-align: top;
+      text-align: left;
+      word-break: break-word;
+    }
+    thead { display: table-header-group; }
+    tr, img { break-inside: avoid; }
+    ul, ol {
+      margin: 0 0 12px 18px;
+      padding: 0;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    input, textarea, select {
+      width: 100%;
+      max-width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #bbb;
+      background: #fff;
+      color: #222;
+      font: inherit;
+    }
+    textarea {
+      min-height: 72px;
+      resize: none;
+    }
+    button, .app-header, .app-footer, header, footer, nav, .topbar,
+    .modal, .modal-bg, .overlay, .filter-modal, script, iframe {
+      display: none !important;
+    }
+    .collapse-content, #workList, .field-group > div, #form-area, #page-area, #analysis-container, #workContentWrapper {
+      display: block !important;
+      visibility: visible !important;
+      overflow: visible !important;
+      max-height: none !important;
+    }
+  `;
+
+  const styleEl = doc.createElement("style");
+  styleEl.id = "print-inline-style";
+  styleEl.appendChild(doc.createTextNode(printCss));
+  head.appendChild(styleEl);
 
   // タイトルヘッダを追加
   const titleEl = doc.createElement('h1');
@@ -167,6 +246,38 @@ export async function printInline(selector, title = "印刷") {
 
   // 対象ノードを深くコピーして iframe に挿入
   const clone = target.cloneNode(true);
+
+  // フォーム値を明示的に同期する
+  const originalFields = target.querySelectorAll("input, textarea, select");
+  const cloneFields = clone.querySelectorAll("input, textarea, select");
+  originalFields.forEach((field, index) => {
+    const cloneField = cloneFields[index];
+    if (!cloneField) return;
+
+    if (field.tagName === "TEXTAREA") {
+      cloneField.value = field.value;
+      cloneField.textContent = field.value;
+      return;
+    }
+
+    if (field.tagName === "SELECT") {
+      cloneField.value = field.value;
+      Array.from(cloneField.options).forEach(option => {
+        option.selected = option.value === field.value;
+      });
+      return;
+    }
+
+    if (field.type === "checkbox" || field.type === "radio") {
+      cloneField.checked = field.checked;
+      return;
+    }
+
+    cloneField.value = field.value;
+    cloneField.setAttribute("value", field.value);
+  });
+
+  clone.querySelectorAll("script, iframe").forEach(el => el.remove());
   // 内部の折りたたみ系を強制展開
   clone.querySelectorAll && clone.querySelectorAll('.collapse-content, .field-group > div, #workList').forEach(el => {
     el.style.display = 'block';
@@ -177,19 +288,8 @@ export async function printInline(selector, title = "印刷") {
 
   doc.getElementById('print-root').appendChild(clone);
 
-  // ヘッダーやフッター等をスタイルで非表示にする
-  const hideCss = `@page{size:A4;margin:12mm;} @media print { .app-header, .app-footer, header, footer, .topbar, .modal, .overlay { display:none !important; } }`;
-  const s = doc.createElement('style'); s.id = 'print-inline-overrides'; s.appendChild(doc.createTextNode(hideCss));
-  head.appendChild(s);
-
-  // スタイル読み込み完了と画像読み込みを待つ
+  // 画像読み込みを待つ
   try {
-    await Promise.race([
-      Promise.all(linkPromises),
-      new Promise(r => setTimeout(r, 3000)) // 最大待ち時間
-    ]);
-
-    // iframe 内の画像があればロード完了を待つ
     const imgs = Array.from(doc.images || []);
     await Promise.race([
       Promise.all(imgs.map(img => new Promise(resolve => {
@@ -237,9 +337,17 @@ export async function printInline(selector, title = "印刷") {
 }
 
 export async function printCurrentPage(title = document.title || "印刷") {
-  const selector = document.querySelector("main")
-    ? "main"
-    : (document.querySelector("#content") ? "#content" : "body");
+  const selector = document.querySelector("#form-area")
+    ? "#form-area"
+    : document.querySelector("#page-area")
+      ? "#page-area"
+      : document.querySelector("#analysis-container")
+        ? "#analysis-container"
+        : document.querySelector("main")
+          ? "main"
+          : document.querySelector("#content")
+            ? "#content"
+            : "body";
 
   const isMapPage = !!document.querySelector(".leaflet-container");
   if (isMapPage) {
