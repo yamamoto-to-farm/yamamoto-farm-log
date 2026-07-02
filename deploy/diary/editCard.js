@@ -36,7 +36,7 @@ export function renderEditCards(autoList, diary) {
 
     card.innerHTML = `
       <h3 class="edit-title">${item.type}</h3>
-      <p class="edit-workers">圃場： ${fieldText}</p>
+      <p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>
       <p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>
 
       <input type="hidden" id="field_${idx}" value="${field}">
