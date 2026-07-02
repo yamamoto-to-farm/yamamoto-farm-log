@@ -19,7 +19,7 @@ export function renderEditCards(autoList, diary) {
   autoList.forEach((item, idx) => {
 
     // ★ 既存日誌に同じ作業があれば上書き
-    const existing = diary?.works?.[idx] || {};
+    const existing = diary?.work?.[idx] || {};
 
     const start = existing.start || "";
     const end = existing.end || "";
