@@ -21,7 +21,7 @@ const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 // CloudFront の /logs/ を fetch すると HTML が返るので、
 // <a href="planting/"> のようなリンクを抽出してフォルダ名にする。
 export async function listLogFolders() {
-  const res = await fetch("/logs/");
+  const res = await fetch(`/logs/?ts=${Date.now()}`);
   const html = await res.text();
 
   const div = document.createElement("div");
@@ -32,7 +32,6 @@ export async function listLogFolders() {
     .filter(href => href.endsWith("/"))
     .map(href => href.replace("/", ""));
 }
-
 
 // ---------------------------------------------------------
 // logs/〇〇/all.csv を読み込む
