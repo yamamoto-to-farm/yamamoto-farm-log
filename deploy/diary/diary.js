@@ -5,7 +5,6 @@
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 
-import { showWeatherBox } from "./weather-box.js";
 import { showWorkSummary } from "./work-summary.js";
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -34,9 +33,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   dateInput.value = today;
 
   // -----------------------------
-  // 初期表示（気象＋作業一覧）
+  // 初期表示（作業一覧のみ）
   // -----------------------------
-  showWeatherBox(today);
   showWorkSummary(today);
 
   // -----------------------------
@@ -44,11 +42,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   // -----------------------------
   dateInput.addEventListener("change", e => {
     const d = e.target.value;
-    showWeatherBox(d);
     showWorkSummary(d);
   });
 
   // -----------------------------
-  // 保存機能は一旦不要なので削除
+  // 保存機能は不要なので何もしない
   // -----------------------------
 });
