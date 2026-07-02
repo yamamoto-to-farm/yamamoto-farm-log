@@ -108,18 +108,16 @@ export async function resolveFieldFromFileName(fileName) {
 /* ============================================================
    印刷ユーティリティ（全ページ共通）
 ============================================================ */
-export function printInline(selector, title = "印刷") {
+export async function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) return;
 
-  // 折りたたみ解除
+  // 親側で折りたたみ解除（念のため）
   document.querySelectorAll(".field-group > div").forEach(w => {
     w.style.display = "block";
   });
 
-  const html = target.innerHTML;
-
-  // iframe 作成
+  // iframe を作り非表示で設置
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -127,38 +125,106 @@ export function printInline(selector, title = "印刷") {
   iframe.style.width = "0";
   iframe.style.height = "0";
   iframe.style.border = "0";
+  iframe.style.visibility = 'hidden';
   document.body.appendChild(iframe);
 
-  const doc = iframe.contentWindow.document;
+  const win = iframe.contentWindow;
+  const doc = win.document;
 
-  // ★ main.css を読み込んで埋め込む
-  fetch("common/css/main.css?v=1")
-    .then(r => r.text())
-    .then(css => {
-      doc.open();
-      doc.write(`
-        <html>
-        <head>
-          <title>${title}</title>
-          <style>${css}</style>
-        </head>
-        <body>
-          <h1 style="font-size:20px; margin-bottom:12px; border-bottom:2px solid #333;">
-            ${title}
-          </h1>
-          ${html}
-        </body>
-        </html>
-      `);
-      doc.close();
+  // ベースHTML
+  doc.open();
+  doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title></head><body><div id="print-root"></div></body></html>`);
+  doc.close();
 
-      // ★ CSS が適用されるまで少し待つ（重要）
-      setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        document.body.removeChild(iframe);
-      }, 150); // ← 150ms で安定
+  // 親ドキュメントの <link rel="stylesheet"> を複製する
+  const head = doc.head;
+  const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+  const linkPromises = links.map(l => {
+    return new Promise(resolve => {
+      try {
+        const newLink = doc.createElement('link');
+        newLink.rel = 'stylesheet';
+        newLink.href = l.href;
+        newLink.onload = () => resolve();
+        newLink.onerror = () => resolve();
+        head.appendChild(newLink);
+      } catch (e) { resolve(); }
     });
+  });
+
+  // 親の <style> 要素（インラインスタイル）もコピー
+  document.querySelectorAll('style').forEach(s => {
+    try { head.appendChild(doc.createElement('style')).textContent = s.textContent; } catch (e) {}
+  });
+
+  // タイトルヘッダを追加
+  const titleEl = doc.createElement('h1');
+  titleEl.style.fontSize = '20px';
+  titleEl.style.marginBottom = '12px';
+  titleEl.style.borderBottom = '2px solid #333';
+  titleEl.textContent = title;
+  doc.getElementById('print-root').appendChild(titleEl);
+
+  // 対象ノードを深くコピーして iframe に挿入
+  const clone = target.cloneNode(true);
+  // 内部の折りたたみ系を強制展開
+  clone.querySelectorAll && clone.querySelectorAll('.collapse-content, .field-group > div, #workList').forEach(el => {
+    el.style.display = 'block';
+    el.style.visibility = 'visible';
+    el.style.overflow = 'visible';
+    el.style.maxHeight = 'none';
+  });
+
+  doc.getElementById('print-root').appendChild(clone);
+
+  // ヘッダーやフッター等をスタイルで非表示にする
+  const hideCss = `@page{size:A4;margin:12mm;} @media print { .app-header, .app-footer, header, footer, .topbar, .modal, .overlay { display:none !important; } }`;
+  const s = doc.createElement('style'); s.id = 'print-inline-overrides'; s.appendChild(doc.createTextNode(hideCss));
+  head.appendChild(s);
+
+  // スタイル読み込み完了と画像読み込みを待つ
+  try {
+    await Promise.race([
+      Promise.all(linkPromises),
+      new Promise(r => setTimeout(r, 3000)) // 最大待ち時間
+    ]);
+
+    // iframe 内の画像があればロード完了を待つ
+    const imgs = Array.from(doc.images || []);
+    await Promise.race([
+      Promise.all(imgs.map(img => new Promise(resolve => {
+        if (img.complete) return resolve();
+        img.onload = img.onerror = () => resolve();
+      }))),
+      new Promise(r => setTimeout(r, 3000))
+    ]);
+
+  } catch (e) {
+    console.warn('printInline: waiting resources failed', e);
+  }
+
+  // 印刷イベントの後処理（iframe 削除）
+  const cleanup = () => {
+    try { if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe); } catch (e) {}
+  };
+
+  // ブラウザ側で afterprint を捕まえて cleanup
+  try {
+    win.addEventListener('afterprint', cleanup);
+  } catch (e) {}
+
+  // フォールバック: print 後に削除
+  const fallbackTimeout = setTimeout(() => { cleanup(); }, 10000);
+
+  try {
+    win.focus();
+    win.print();
+  } catch (e) {
+    console.warn('printInline: print failed', e);
+    cleanup();
+  } finally {
+    clearTimeout(fallbackTimeout);
+  }
 }
 
 
