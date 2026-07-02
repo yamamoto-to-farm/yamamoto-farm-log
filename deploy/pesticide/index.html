@@ -11,7 +11,7 @@
 
 <body>
 
-  <div id="page-area" style="display:none;">
+  <div id="form-area" style="display:none;">
 
     <h1 class="page-title">ログ</h1>
 
@@ -116,7 +116,7 @@
       if (!await verifyLocalAuth()) return;
 
       renderHeader();
-      document.getElementById("page-area").style.display = "block";
+      document.getElementById("form-area").style.display = "block";
 
       // 今日の日付
       document.getElementById("date").value =

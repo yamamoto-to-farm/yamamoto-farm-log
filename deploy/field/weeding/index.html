@@ -11,7 +11,7 @@
 
 <body>
 
-  <div class="page-container" id="page-area" style="display:none;">
+  <div class="page-container" id="form-area" style="display:none;">
 
     <h1 class="page-title">除草・草刈りログ</h1>
 
@@ -99,7 +99,7 @@
       if (!await verifyLocalAuth()) return;
 
       renderHeader();
-      document.getElementById("page-area").style.display = "block";
+      document.getElementById("form-area").style.display = "block";
 
       document.getElementById("date").value = new Date().toISOString().slice(0, 10);
 
