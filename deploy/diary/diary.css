@@ -34,6 +34,35 @@
 }
 
 /* --------------------------------
+   折りたたみタイトル（▶ / ▼）
+-------------------------------- */
+.collapse-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 16px 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* --------------------------------
+   折りたたみコンテンツ
+-------------------------------- */
+.collapse-content {
+  display: none;
+  margin-bottom: 16px;
+}
+
+/* 印刷時は強制展開 */
+@media print {
+  .collapse-content {
+    display: block !important;
+  }
+  .collapse-title {
+    display: none;
+  }
+}
+
+/* --------------------------------
    カード共通（編集カード・閲覧カード・天気カード）
 -------------------------------- */
 .edit-card,
@@ -112,4 +141,39 @@
   display: block;
   margin: 24px auto;
   padding: 10px 20px;
+}
+
+/* --------------------------------
+   スマホ最適化
+-------------------------------- */
+@media (max-width: 600px) {
+
+  .diary-container {
+    padding: 0 8px;
+  }
+
+  .time-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #modeSwitchArea {
+    text-align: left;
+  }
+
+  #modeSwitchArea .mode-btn {
+    display: block;
+    width: 100%;
+    margin: 6px 0;
+  }
+
+  .edit-card,
+  .view-card,
+  .weather-card {
+    padding: 12px;
+  }
+
+  .collapse-title {
+    font-size: 1rem;
+  }
 }

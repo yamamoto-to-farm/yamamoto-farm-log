@@ -9,6 +9,7 @@ import { initEditPage } from "./editCard.js";
 import { initViewPage } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
+import { initCollapse } from "/common/collapse.js";
 
 // ---------------------------------------------------------
 // モード切り替えボタン描画（★ 日付を URL に保持）
@@ -80,11 +81,14 @@ window.addEventListener("DOMContentLoaded", async () => {
   // 作業ログ一覧表示
   showWorkSummary(initialDate);
 
+  // ▼ 折りたたみ（作業ログ一覧）
+  initCollapse("workListTitle", "workList");
+
   // モード別カード表示
   if (mode === "edit") {
-    await initEditPage();
+    await initEditPage();   // 内部で各カードに initCollapse を呼ぶ
   } else {
-    await initViewPage();
+    await initViewPage();   // 内部で各カードに initCollapse を呼ぶ
   }
 
   // ---------------------------------------------------------
@@ -119,6 +123,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // 作業ログ一覧更新
     showWorkSummary(d);
+
+    // ▼ 折りたたみ再適用
+    initCollapse("workListTitle", "workList");
 
     // モード別カード更新
     if (mode === "edit") {
