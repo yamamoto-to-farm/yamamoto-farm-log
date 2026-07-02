@@ -2,12 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>作業日誌（編集）</title>
+  <title>作業日誌</title>
 
   <!-- 共通CSS -->
   <link rel="stylesheet" href="/common/css/main.css">
 
-  <!-- diaryページ専用CSS（pagesレイヤー） -->
+  <!-- diaryページ専用CSS -->
   <link rel="stylesheet" href="/diary/diary.css">
 </head>
 
@@ -17,7 +17,7 @@
 
   <div class="diary-container" id="form-area" style="display:none;">
 
-    <h1 class="page-title">作業日誌（編集）</h1>
+    <h1 class="page-title">作業日誌</h1>
 
     <!-- 日付 -->
     <h2 class="section-title">日付</h2>
@@ -25,30 +25,23 @@
       <input type="date" id="diaryDate" class="form-input">
     </div>
 
-    <!-- 天気カード -->
+    <!-- 天気カード（閲覧専用） -->
     <h2 class="section-title">天気</h2>
     <div id="weatherBox">
       <p>日付を選択すると天気が表示されます。</p>
     </div>
 
-    <!-- 保存用 hidden input -->
-    <input type="hidden" id="weather_type">
-    <input type="hidden" id="weather_tmax">
-    <input type="hidden" id="weather_tmin">
-    <input type="hidden" id="weather_precip">
-    <input type="hidden" id="weather_sunshine">
-
-    <!-- 作業ログ一覧（自動） -->
+    <!-- 作業ログ一覧 -->
     <h2 class="section-title">作業ログ一覧</h2>
     <div class="card" id="workList">
       <p>日付を選択すると作業一覧が表示されます。</p>
     </div>
 
-    <!-- 作業編集カード -->
-    <h2 class="section-title">作業編集</h2>
+    <!-- 編集カード or 閲覧カード（mode によって切り替え） -->
+    <h2 class="section-title">作業内容</h2>
     <div id="editWorkArea"></div>
 
-    <!-- 保存ボタン -->
+    <!-- 保存ボタン（編集モードのみ） -->
     <button id="saveDiaryBtn" class="btn-primary">保存</button>
 
   </div>
@@ -56,6 +49,7 @@
   <!-- JS -->
   <script type="module" src="/diary/work-summary.js"></script>
   <script type="module" src="/diary/editCard.js"></script>
+  <script type="module" src="/diary/viewCard.js"></script>
   <script type="module" src="/diary/weather-box.js"></script>
   <script type="module" src="/diary/diary.js"></script>
 

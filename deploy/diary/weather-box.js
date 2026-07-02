@@ -1,12 +1,12 @@
 // =========================================================
 // diary/weather-box.js
-// 日付の気象データをカード表示（保存は必要最小限）
+// 天気カード（閲覧専用）
 // =========================================================
 
 import { getWeatherByDate, classifyWeather, weatherIcon } from "/common/weather/weather.js";
 
 /**
- * 天気カードを描画する
+ * 天気カードを描画する（保存しない）
  * @param {string} date - "2026-07-02"
  */
 export async function renderWeatherBox(date) {
@@ -40,11 +40,4 @@ export async function renderWeatherBox(date) {
 
     </div>
   `;
-
-  // 保存用 hidden input（アイコンは保存しない）
-  document.getElementById("weather_type").value = type;
-  document.getElementById("weather_tmax").value = data.tmax;
-  document.getElementById("weather_tmin").value = data.tmin;
-  document.getElementById("weather_precip").value = data.precip;
-  document.getElementById("weather_sunshine").value = data.sunshine;
 }
