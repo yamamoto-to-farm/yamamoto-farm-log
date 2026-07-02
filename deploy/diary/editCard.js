@@ -7,33 +7,11 @@ import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 
 // ---------------------------------------------------------
-// 圃場名取得
-// ---------------------------------------------------------
-async function loadFieldDetail() {
-  try {
-    const res = await fetch("/data/field-detail.json");
-    if (!res.ok) return [];
-    return await res.json();
-  } catch {
-    console.warn("field-detail.json が読み込めませんでした");
-    return [];
-  }
-}
-
-function getFieldName(fieldId, fieldDetail) {
-  if (!fieldId) return "";
-  const f = fieldDetail.find(x => x.id === fieldId);
-  return f ? f.name : "";
-}
-
-// ---------------------------------------------------------
 // 編集カードを描画
 // ---------------------------------------------------------
-export async function renderEditCards(autoList, diary) {
+export function renderEditCards(autoList, diary) {
   const area = document.getElementById("editWorkArea");
   area.innerHTML = "";
-
-  const fieldDetail = await loadFieldDetail();
 
   // -------------------------------
   // 自動抽出された作業カード
@@ -46,17 +24,14 @@ export async function renderEditCards(autoList, diary) {
     const start = existing.start || "";
     const end = existing.end || "";
 
-    // ★ 圃場ID（既存日誌にあれば上書き）
+    // ★ 圃場名（既存日誌にあれば上書き）
     const field = existing.field || item.field || "";
-
-    // ★ 圃場名
-    const fieldName = getFieldName(field, fieldDetail);
 
     const card = document.createElement("div");
     card.className = "edit-card";
 
     card.innerHTML = `
-      <h3 class="edit-title">${item.type}${fieldName ? ` ${fieldName}` : ""}</h3>
+      <h3 class="edit-title">${item.type}${field ? ` ${field}` : ""}</h3>
       <p class="edit-workers">従事者: ${item.workers.join("／")}</p>
 
       <input type="hidden" id="field_${idx}" value="${field}">
@@ -108,5 +83,5 @@ export async function initEditPage() {
   const autoList = extractWorkForEdit(logs);
 
   // ★ 既存日誌を反映して描画
-  await renderEditCards(autoList, diary);
+  renderEditCards(autoList, diary);
 }

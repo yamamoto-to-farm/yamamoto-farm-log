@@ -5,26 +5,6 @@
 import { loadDiaryByDate } from "./loadDiary.js";
 
 /**
- * 圃場名を取得する
- */
-async function loadFieldDetail() {
-  try {
-    const res = await fetch("/data/field-detail.json");
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (e) {
-    console.warn("field-detail.json が読み込めませんでした");
-    return [];
-  }
-}
-
-function getFieldName(fieldId, fieldDetail) {
-  if (!fieldId) return "";
-  const f = fieldDetail.find(x => x.id === fieldId);
-  return f ? f.name : "";
-}
-
-/**
  * 閲覧専用カードを描画する
  */
 export async function initViewPage() {
@@ -34,7 +14,6 @@ export async function initViewPage() {
   area.innerHTML = "読み込み中…";
 
   const diary = await loadDiaryByDate(date);
-  const fieldDetail = await loadFieldDetail();
 
   if (!diary) {
     area.innerHTML = `
@@ -63,7 +42,8 @@ export async function initViewPage() {
 
   workList.forEach(w => {
 
-    const fieldName = getFieldName(w.field || "", fieldDetail);
+    // ★ 圃場名は w.field をそのまま使う
+    const fieldName = w.field || "";
     const title = fieldName ? `${w.type} ${fieldName}` : w.type;
 
     html += `
