@@ -7,7 +7,6 @@ import { renderHeader } from "/common/header.js";
 
 import { showWeatherBox } from "./weather-box.js";
 import { showWorkSummary } from "./work-summary.js";
-import { saveDiary } from "./save.js";
 
 window.addEventListener("DOMContentLoaded", async () => {
 
@@ -50,8 +49,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // -----------------------------
-  // 保存ボタン
+  // 保存機能は一旦不要なので削除
   // -----------------------------
-  document.getElementById("saveDiaryBtn")
-    ?.addEventListener("click", saveDiary);
 });
