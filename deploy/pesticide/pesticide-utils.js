@@ -38,7 +38,7 @@ export async function updateSelectedFieldsUI() {
 }
 
 /* ============================================================
-   肥料選択後の UI 更新
+  農薬選択後の UI 更新
 ============================================================ */
 export function updateSelectedpesticidesUI() {
     /*
@@ -49,7 +49,7 @@ export function updateSelectedpesticidesUI() {
 }
 
 /* ============================================================
-   保存処理（複数肥料＋按分対応）
+  保存処理（複数農薬＋按分対応）
 ============================================================ */
 export async function savepesticideLog() {
   debugLog("savepesticideLog start");
@@ -71,7 +71,7 @@ export async function savepesticideLog() {
 
   const pesticides = getpesticideInputData();
   if (pesticides.length === 0) {
-    alert("肥料を選択してください");
+    alert("農薬の倍率・合計散布量を入力してください");
     return;
   }
 

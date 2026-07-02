@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>防除詳細 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./month.css?v=1">
+</head>
+
+<body>
+  <div id="page-area" style="display:none;">
+    <h1 id="page-title" class="page-title">防除詳細</h1>
+
+    <div style="margin-bottom: 15px;">
+      <a href="./list.html" class="back-link">← 防除一覧へ戻る</a>
+    </div>
+
+    <div id="pesticide-detail-container"></div>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js";
+    import "./month.js?v=1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+
+      renderHeader();
+      document.getElementById("page-area").style.display = "block";
+    });
+  </script>
+</body>
+</html>

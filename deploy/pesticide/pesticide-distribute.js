@@ -12,9 +12,9 @@ function debugLog(...args) {
 import { distributeByFieldSize } from "/common/field-utils.js?v=1";
 
 /* ============================================================
-   複数肥料の按分
+   複数農薬の按分
    pesticides = [
-     { pesticide_id, name, bags, total_kg }
+     { pesticide_id, name, dilution_rate, total_spray_amount, unit }
    ]
    fields = ["ぎょうざ東1", "ぎょうざ東2"]
 ============================================================ */
@@ -23,13 +23,19 @@ export async function distributepesticides(fields, pesticides) {
 
   const result = [];
 
-  for (const fert of pesticides) {
-    const { pesticide_id, name, total_kg } = fert;
+  for (const pesticide of pesticides) {
+    const {
+      pesticide_id,
+      name,
+      dilution_rate,
+      total_spray_amount,
+      unit
+    } = pesticide;
 
-    debugLog(`按分開始: ${name} total=${total_kg}`);
+    debugLog(`按分開始: ${name} total=${total_spray_amount}`);
 
     // ★ 面積比で按分（共通ロジック）
-    const distributed = await distributeByFieldSize(fields, total_kg);
+    const distributed = await distributeByFieldSize(fields, total_spray_amount);
 
     debugLog(`按分結果: ${name}`, distributed);
 
@@ -39,7 +45,9 @@ export async function distributepesticides(fields, pesticides) {
         field: d.field,
         pesticide_id,
         name,
-        amount_kg: d.amount
+        dilution_rate,
+        unit,
+        spray_amount: d.amount
       });
     });
   }

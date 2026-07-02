@@ -12,8 +12,8 @@ function debugLog(...args) {
 import { filterState } from "/common/filter/filter-core.js?v=1";
 
 /* ============================================================
-   肥料辞書（name → full object）
-   pesticide-index.json を読み込んだ pesticide.js からセットされる
+    農薬辞書（name → full object）
+    pesticide-index.json を読み込んだ pesticide.js からセットされる
 ============================================================ */
 export let pesticideDict = {};
 
@@ -23,7 +23,7 @@ export function setpesticideDict(dict) {
 }
 
 /* ============================================================
-   複数肥料入力 UI を描画
+    複数農薬入力 UI を描画
 ============================================================ */
 export function renderpesticideInputs() {
     debugLog("renderpesticideInputs start");
@@ -38,7 +38,7 @@ export function renderpesticideInputs() {
     debugLog("selected pesticides:", selected);
 
     if (selected.length === 0) {
-        area.innerHTML = `<p class="no-pesticide">肥料が選択されていません</p>`;
+        area.innerHTML = `<p class="no-pesticide">農薬が選択されていません</p>`;
         debugLog("no pesticides selected");
         return;
     }
@@ -46,7 +46,7 @@ export function renderpesticideInputs() {
     // UI を生成
     area.innerHTML = selected.map(name => {
         const f = pesticideDict[name] || {};
-        const capacity = f.capacity || 0;
+                const unit = f.unit || "L";
 
         debugLog(`render row for ${name}`, f);
 
@@ -55,21 +55,29 @@ export function renderpesticideInputs() {
     <div class="pesticide-title">${name}</div>
 
     <div class="pesticide-line">
-      <input type="text"
-             inputmode="numeric"
-             pattern="[0-9]*"
-             class="bags-input"
+            倍率：
+            <input type="text"
+                         inputmode="decimal"
+                         pattern="[0-9]*(\\.[0-9]+)?"
+                         class="dilution-input"
              data-name="${name}"
-             value="0"> 袋
+                         placeholder="例: 1000"
+                         value=""> 倍
+        </div>
 
-      × ${capacity}kg
+        <div class="pesticide-line" style="margin-top:6px;">
+            合計散布量：
+            <input type="text"
+                         inputmode="decimal"
+                         pattern="[0-9]*(\\.[0-9]+)?"
+                         class="spray-total-input"
+                         data-name="${name}"
+                         placeholder="例: 120"
+                         value=""> ${unit}
+        </div>
 
-      = <span class="total-display" data-name="${name}">0</span> kg
-    </div>
-
-    <!-- ★ /10a 表示欄 -->
-    <div class="per10a" id="per10a-${f.id}" style="margin-top:4px; color:#555;">
-      - kg/10a
+        <div class="per10a" id="per10a-${f.id}" style="margin-top:4px; color:#555;">
+            - ${unit}/10a
     </div>
   </div>
 `;
@@ -81,30 +89,18 @@ export function renderpesticideInputs() {
 }
 
 /* ============================================================
-   入力イベント（袋数 → 合計kg 自動計算）
+   入力イベント（合計散布量入力時に /10a を再計算）
 ============================================================ */
 function initInputEvents() {
     debugLog("initInputEvents start");
 
-    document.querySelectorAll(".bags-input").forEach(input => {
+    document.querySelectorAll(".spray-total-input").forEach(input => {
         input.addEventListener("input", () => {
             const name = input.dataset.name;
-            const bags = Number(input.value);
+            const total = toNumber(input.value);
+            debugLog(`spray total changed for ${name}: total=${total}`);
 
-            const f = pesticideDict[name];
-            const capacity = f.capacity || 0;
-
-            const total = bags * capacity;
-
-            debugLog(`calc total for ${name}: bags=${bags}, capacity=${capacity}, total=${total}`);
-
-            // ★ span 表示に変更
-            const totalDisplay = document.querySelector(
-                `.total-display[data-name="${name}"]`
-            );
-            if (totalDisplay) totalDisplay.textContent = total;
-
-            // ★ /10a 更新（pesticide.js 側で totalA をセットして呼ぶ）
+            // /10a 更新（pesticide.js 側で totalA をセットして呼ぶ）
             if (window.__pesticide_totalA) {
                 updatePer10aAll(window.__pesticide_totalA);
             }
@@ -124,7 +120,13 @@ export function updatePer10aAll(totalA) {
     window.__pesticide_totalA = totalA;
 
     if (!totalA || totalA === 0) {
-        document.querySelectorAll(".per10a").forEach(el => el.textContent = "- kg/10a");
+        document.querySelectorAll(".per10a").forEach(el => {
+            const row = el.closest(".pesticide-row");
+            const pesticideName = row?.dataset?.name || "";
+            const f = pesticideDict[pesticideName] || {};
+            const unit = f.unit || "L";
+            el.textContent = `- ${unit}/10a`;
+        });
         return;
     }
 
@@ -134,17 +136,17 @@ export function updatePer10aAll(totalA) {
         const f = pesticideDict[name];
         if (!f) return;
 
-        const totalDisplay = document.querySelector(
-            `.total-display[data-name="${name}"]`
+        const sprayInput = document.querySelector(
+            `.spray-total-input[data-name="${name}"]`
         );
-        if (!totalDisplay) return;
+        if (!sprayInput) return;
 
-        const totalKg = Number(totalDisplay.textContent);
-
-        const per10a = (totalKg / totalA * 10).toFixed(1);
+        const totalSpray = toNumber(sprayInput.value);
+        const per10a = (totalSpray / totalA * 10).toFixed(1);
+        const unit = f.unit || "L";
 
         const el = document.getElementById(`per10a-${f.id}`);
-        if (el) el.textContent = `${per10a} kg/10a`;
+        if (el) el.textContent = `${per10a} ${unit}/10a`;
     });
 }
 
@@ -158,28 +160,38 @@ export function getpesticideInputData() {
     const result = [];
 
     selected.forEach(name => {
-        const bagsInput = document.querySelector(
-            `.bags-input[data-name="${name}"]`
+        const dilutionInput = document.querySelector(
+            `.dilution-input[data-name="${name}"]`
         );
-        const totalDisplay = document.querySelector(
-            `.total-display[data-name="${name}"]`
+        const sprayTotalInput = document.querySelector(
+            `.spray-total-input[data-name="${name}"]`
         );
 
-        if (!bagsInput || !totalDisplay) {
+        if (!dilutionInput || !sprayTotalInput) {
             debugLog(`inputs not found for ${name}`);
             return;
         }
 
-        const bags = Number(bagsInput.value);
-        const total = Number(totalDisplay.textContent);
+        const dilution_rate = toNumber(dilutionInput.value);
+        const total_spray_amount = toNumber(sprayTotalInput.value);
 
         const f = pesticideDict[name];
+        const unit = f.unit || "L";
+
+        if (dilution_rate <= 0 || total_spray_amount <= 0) {
+            debugLog(`skip ${name} because values are empty or invalid`, {
+                dilution_rate,
+                total_spray_amount
+            });
+            return;
+        }
 
         const row = {
             pesticide_id: f.id,
             name,
-            bags,
-            total_kg: total
+            dilution_rate,
+            total_spray_amount,
+            unit
         };
 
         debugLog("row:", row);
@@ -189,4 +201,9 @@ export function getpesticideInputData() {
 
     debugLog("getpesticideInputData result:", result);
     return result;
+}
+
+function toNumber(value) {
+    const num = Number(String(value ?? "").trim());
+    return Number.isFinite(num) ? num : 0;
 }

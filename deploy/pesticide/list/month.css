@@ -1,0 +1,115 @@
+/* ================================
+   年ブロック
+================================ */
+.year-block {
+  margin-bottom: 30px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.year-title {
+  background: #f0f0f0;
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ================================
+   カテゴリ折りたたみ
+================================ */
+.cat-block summary {
+  background: #e8e8e8;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+  user-select: none;
+}
+
+.cat-block summary:hover {
+  background: #dcdcdc;
+}
+
+/* ================================
+   テーブル
+================================ */
+.pest-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.pest-table th,
+.pest-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+}
+
+.pest-table th {
+  background: #fafafa;
+  font-weight: bold;
+  text-align: center;
+}
+
+.pest-table td {
+  text-align: right;
+}
+
+.pest-table th:nth-child(1),
+.pest-table td:nth-child(1) {
+  width: 200px;
+}
+
+.pest-table th:nth-child(2),
+.pest-table td:nth-child(2) {
+  width: 110px;
+}
+
+.pest-table th:nth-child(3),
+.pest-table td:nth-child(3) {
+  width: 100px;
+}
+
+.pest-table th:nth-child(4),
+.pest-table td:nth-child(4) {
+  width: 160px;
+}
+
+.pest-table th:nth-child(5),
+.pest-table td:nth-child(5) {
+  width: auto;
+}
+
+.pest-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+td.zero {
+  color: #bbb;
+}
+
+td.value {
+  font-weight: bold;
+}
+
+td.total {
+  font-weight: bold;
+  background: #fdfdfd;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+}
+
+.sticky-col2 {
+  position: sticky;
+  left: 120px;
+  background: #fff;
+  z-index: 3;
+}

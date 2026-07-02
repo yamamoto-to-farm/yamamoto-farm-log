@@ -1,0 +1,168 @@
+/* ================================
+   年ブロック
+================================ */
+.year-block {
+  margin-bottom: 30px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.year-title {
+  background: #f0f0f0;
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ================================
+   カテゴリ折りたたみ
+================================ */
+.cat-block summary {
+  background: #e8e8e8;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+  user-select: none;
+}
+
+.cat-block summary:hover {
+  background: #dcdcdc;
+}
+
+/* ================================
+   テーブル（list.html 専用）
+================================ */
+.pest-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.pest-table th,
+.pest-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+}
+
+.pest-table th {
+  background: #fafafa;
+  font-weight: bold;
+  text-align: center;
+}
+
+.pest-table td {
+  text-align: right;
+}
+
+.pest-table th:nth-child(1),
+.pest-table td:nth-child(1) {
+  width: 200px;
+}
+
+.pest-table th:nth-child(n+2):nth-child(-n+13),
+.pest-table td:nth-child(n+2):nth-child(-n+13) {
+  width: 70px;
+}
+
+.pest-table th:nth-child(14),
+.pest-table td:nth-child(14) {
+  width: 80px;
+}
+
+.pest-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+td.zero {
+  color: #bbb;
+}
+
+td.value {
+  font-weight: bold;
+}
+
+td.total {
+  font-weight: bold;
+  background: #fdfdfd;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+}
+
+.pest-table td.clickable {
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pest-table td.clickable:hover {
+  background: #eef6ff;
+  color: #005bbb;
+  font-weight: bold;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  details {
+    display: block !important;
+  }
+
+  details:not([open]) > * {
+    display: block !important;
+  }
+
+  .cat-block summary,
+  .year-title {
+    background: #e8e8e8 !important;
+  }
+
+  .sticky-col {
+    position: static !important;
+  }
+
+  .pest-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  body,
+  table,
+  td,
+  th {
+    font-size: 12px !important;
+  }
+
+  .clickable:hover {
+    background: none !important;
+    color: inherit !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  .cat-block,
+  .year-block {
+    page-break-inside: avoid;
+  }
+
+  * {
+    overflow: visible !important;
+  }
+}
