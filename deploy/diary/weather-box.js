@@ -18,7 +18,7 @@ export async function renderWeatherBox(date) {
 
   if (!data) {
     box.innerHTML = `
-      <div class="weather-card">
+      <div class="card weather-card">
         <p>天気データなし</p>
       </div>
     `;
@@ -31,7 +31,7 @@ export async function renderWeatherBox(date) {
 
   // UI表示（タイトルなし・観測地点なし）
   box.innerHTML = `
-    <div class="weather-card">
+    <div class="card weather-card">
 
       <p class="weather-icon">${icon} ${type}</p>
 

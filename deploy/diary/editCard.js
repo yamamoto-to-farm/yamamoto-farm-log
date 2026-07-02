@@ -28,7 +28,7 @@ export function renderEditCards(autoList, diary) {
     const field = existing.field || item.field || "";
 
     const card = document.createElement("div");
-    card.className = "edit-card";
+    card.className = "card edit-card";
 
     card.innerHTML = `
       <h3 class="edit-title">${item.type}${field ? ` ${field}` : ""}</h3>
@@ -52,7 +52,7 @@ export function renderEditCards(autoList, diary) {
   // 日誌メモ（既存メモを反映）
   // -------------------------------
   const memoCard = document.createElement("div");
-  memoCard.className = "edit-card diary-memo";
+  memoCard.className = "card edit-card diary-memo";
 
   const memo = diary?.memo || "";
 

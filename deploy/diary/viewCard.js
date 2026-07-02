@@ -17,7 +17,7 @@ export async function initViewPage() {
 
   if (!diary) {
     area.innerHTML = `
-      <div class="view-card">
+      <div class="card view-card">
         <p>この日の作業日誌はありません。</p>
       </div>
     `;
@@ -47,7 +47,7 @@ export async function initViewPage() {
     const title = fieldName ? `${w.type} ${fieldName}` : w.type;
 
     html += `
-      <div class="view-card">
+      <div class="card view-card">
         <h3>${title}</h3>
         <p><strong>従事者：</strong> ${w.workers.join(" / ")}</p>
         <p><strong>開始：</strong> ${w.start}　<strong>終了：</strong> ${w.end}</p>
@@ -59,7 +59,7 @@ export async function initViewPage() {
   // メモ（閲覧専用）
   // ---------------------------------------------
   html += `
-    <div class="view-card diary-memo">
+    <div class="card view-card diary-memo">
       <h3>日誌メモ</h3>
       <p>${diary.memo ? diary.memo : "（メモなし）"}</p>
     </div>
