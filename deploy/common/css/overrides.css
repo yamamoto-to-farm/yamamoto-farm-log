@@ -1,3 +1,5 @@
+@page { size: A4; margin: 12mm; }
+
 @media print {
 
   table {
@@ -37,6 +39,7 @@
   /* Ensure body/page use full height for printing */
   html, body {
     height: auto !important;
+    margin: 0 !important;
   }
 
   /* Hide modal/overlay UI in print globally */
