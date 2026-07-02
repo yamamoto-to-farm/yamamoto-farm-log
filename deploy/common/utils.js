@@ -61,9 +61,13 @@ export function attachWorkDoneButton() {
   const formArea = document.getElementById("form-area");
   if (!formArea) return; // 分析ページなど form-area がないページはスキップ
 
+  if (formArea.querySelector("[data-work-done-button='1']")) return;
+
   const btn = document.createElement("button");
   btn.textContent = "作業完了";
   btn.className = "primary-btn";
+  btn.type = "button";
+  btn.dataset.workDoneButton = "1";
 
   btn.addEventListener("click", () => {
     completeAndCloseModal("作業が完了しました。ページを閉じます。");

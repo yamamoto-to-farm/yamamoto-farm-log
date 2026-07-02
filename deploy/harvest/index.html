@@ -121,7 +121,6 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { attachWorkDoneButton } from "/common/utils.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -137,9 +136,6 @@
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("harvestDate").value = today;
       document.getElementById("shippingDate").value = today;
-
-      // 作業完了ボタン
-      attachWorkDoneButton();
 
       // harvest.js をロードして初期化
       const module = await import("./harvest.js");

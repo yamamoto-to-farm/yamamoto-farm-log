@@ -2,7 +2,7 @@
 // 共通ヘッダー + ロール別制御
 // ===============================
 
-import { printCurrentPage } from "/common/utils.js";
+import { printCurrentPage, attachWorkDoneButton } from "/common/utils.js";
 import { logoutAndRedirect } from "/common/ui.js";
 
 export function renderHeader(options = {}) {
@@ -54,8 +54,8 @@ export function renderHeader(options = {}) {
       void logoutAndRedirect("logout");
     });
 
-    // ※ 作業完了ボタンは utils.js 側で attachWorkDoneButton() を呼ぶ
-    //   → header.js では一切扱わない
+    // worker の入力ページでは共通で作業完了ボタンを付ける
+    attachWorkDoneButton();
 
   } else if (role === "family") {
     // ===============================

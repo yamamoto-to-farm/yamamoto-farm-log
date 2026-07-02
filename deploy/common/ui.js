@@ -181,8 +181,14 @@ async function issueAuthSession(user) {
 
 export async function logoutAndRedirect(reason = "logout") {
   await appendSecurityAudit(reason, "manual");
+
+  if (location.pathname !== "/" && location.pathname !== "/index.html") {
+    sessionStorage.setItem("pendingReturnUrl", location.href);
+  } else {
+    sessionStorage.removeItem("pendingReturnUrl");
+  }
+
   clearAuthStorage();
-  sessionStorage.removeItem("pendingReturnUrl");
   location.href = "/index.html";
 }
 
