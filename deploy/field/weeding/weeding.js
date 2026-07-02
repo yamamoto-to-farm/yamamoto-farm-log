@@ -10,7 +10,7 @@ import { openpesticideModal } from "/common/filter/filter-pesticide.js?v=1";
 import { setFilterData, getFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
-import { distributeByFieldSize } from "/common/field-utils.js?v=1";
+import { toNumber, calcPer10a, distributePesticideUsageByField } from "/common/pesticide-calc.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 
@@ -167,7 +167,7 @@ async function saveWeedingLog() {
   if (workType === "除草剤散布") {
     pesticideUsage = getSelectedPesticideUsageData();
     if (pesticideUsage.length === 0) {
-      alert("除草剤散布では、農薬ごとの倍率と合計散布量を入力してください");
+      alert("除草剤散布では、農薬ごとの希釈倍率と合計散布水量を入力してください");
       return;
     }
 
@@ -216,13 +216,13 @@ function renderPesticideAmountInputs() {
 
   const workType = document.getElementById("work-type")?.value || "";
   if (workType !== "除草剤散布") {
-    area.innerHTML = `<p style="color:#777; margin:0;">除草剤散布を選択すると数量入力欄が表示されます</p>`;
+    area.innerHTML = `<p style="color:#777; margin:0;">除草剤散布を選択すると希釈倍率と合計散布水量の入力欄が表示されます</p>`;
     return;
   }
 
   const selected = filterState.pesticides || [];
   if (!selected.length) {
-    area.innerHTML = `<p style="color:#777; margin:0;">農薬を選択すると数量入力欄が表示されます</p>`;
+    area.innerHTML = `<p style="color:#777; margin:0;">農薬を選択すると希釈倍率と合計散布水量の入力欄が表示されます</p>`;
     return;
   }
 
@@ -233,13 +233,13 @@ function renderPesticideAmountInputs() {
       <div class="card" style="margin-top:8px;">
         <div style="font-weight:700; margin-bottom:8px;">${escapeHtml(name)}</div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <label>倍率</label>
+          <label>希釈倍率</label>
           <input type="text" class="form-input weed-dilution-input" data-name="${escapeAttr(name)}" inputmode="decimal" pattern="[0-9]*(\\.[0-9]+)?" placeholder="例: 1000" style="max-width:140px;">
           <span>倍</span>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
-          <label>合計散布量</label>
-          <input type="text" class="form-input weed-spray-total-input" data-name="${escapeAttr(name)}" inputmode="decimal" pattern="[0-9]*(\\.[0-9]+)?" placeholder="例: 120" style="max-width:140px;">
+          <label>合計散布水量</label>
+          <input type="text" class="form-input weed-water-total-input" data-name="${escapeAttr(name)}" inputmode="decimal" pattern="[0-9]*(\\.[0-9]+)?" placeholder="例: 120" style="max-width:140px;">
           <span>${escapeHtml(unit)}</span>
         </div>
         <div class="weeding-per10a" data-name="${escapeAttr(name)}" style="margin-top:8px; color:#555;">- ${escapeHtml(unit)}/10a</div>
@@ -252,7 +252,7 @@ function renderPesticideAmountInputs() {
 }
 
 function bindPesticideAmountInputEvents() {
-  document.querySelectorAll(".weed-spray-total-input").forEach(input => {
+  document.querySelectorAll(".weed-water-total-input").forEach(input => {
     input.addEventListener("input", () => {
       updatePer10aForAll();
     });
@@ -271,9 +271,9 @@ function updatePer10aForAll() {
       return;
     }
 
-    const input = document.querySelector(`.weed-spray-total-input[data-name="${cssEscape(name)}"]`);
+    const input = document.querySelector(`.weed-water-total-input[data-name="${cssEscape(name)}"]`);
     const total = toNumber(input?.value);
-    const per10a = (total / totalA * 10).toFixed(1);
+    const per10a = calcPer10a(total, totalA).toFixed(1);
     el.textContent = `${per10a} ${unit}/10a`;
   });
 }
@@ -285,47 +285,23 @@ function getSelectedPesticideUsageData() {
   selected.forEach(name => {
     const p = pesticideDict[name] || {};
     const dilutionInput = document.querySelector(`.weed-dilution-input[data-name="${cssEscape(name)}"]`);
-    const sprayInput = document.querySelector(`.weed-spray-total-input[data-name="${cssEscape(name)}"]`);
+    const sprayInput = document.querySelector(`.weed-water-total-input[data-name="${cssEscape(name)}"]`);
 
     const dilution_rate = toNumber(dilutionInput?.value);
-    const total_spray_amount = toNumber(sprayInput?.value);
-    if (dilution_rate <= 0 || total_spray_amount <= 0) return;
+    const total_water_amount = toNumber(sprayInput?.value);
+    if (dilution_rate <= 0 || total_water_amount <= 0) return;
 
     rows.push({
       pesticide_id: p.id || "",
       name,
       dilution_rate,
-      total_spray_amount,
+      total_water_amount,
+      total_spray_amount: total_water_amount,
       unit: p.unit || "L"
     });
   });
 
   return rows;
-}
-
-async function distributePesticideUsageByField(fields, pesticideUsage) {
-  const result = [];
-
-  for (const usage of pesticideUsage) {
-    const distributed = await distributeByFieldSize(fields, usage.total_spray_amount);
-    distributed.forEach(d => {
-      result.push({
-        field: d.field,
-        pesticide_id: usage.pesticide_id,
-        name: usage.name,
-        dilution_rate: usage.dilution_rate,
-        unit: usage.unit,
-        spray_amount: d.amount
-      });
-    });
-  }
-
-  return result;
-}
-
-function toNumber(value) {
-  const num = Number(String(value ?? "").trim());
-  return Number.isFinite(num) ? num : 0;
 }
 
 function escapeHtml(value) {

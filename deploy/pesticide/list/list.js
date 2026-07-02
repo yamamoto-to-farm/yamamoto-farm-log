@@ -59,7 +59,7 @@ function buildUsageIndex(logs) {
 
       e.distributed.forEach(p => {
         const name = p.name;
-        const amount = Number(p.spray_amount || 0);
+        const amount = Number(p.water_amount ?? p.spray_amount ?? 0);
 
         if (!usage[year][name]) usage[year][name] = Array(13).fill(0);
         usage[year][name][month] += amount;

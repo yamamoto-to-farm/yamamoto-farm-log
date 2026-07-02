@@ -47,7 +47,7 @@ function createDateBlocks(logs, year, month, pesticideName) {
         rows.push({
           field: field.field,
           date: e.date,
-          spray_amount: Number(p.spray_amount || 0),
+          water_amount: Number(p.water_amount ?? p.spray_amount ?? 0),
           dilution_rate: Number(p.dilution_rate || 0),
           unit: p.unit || "L",
           workers: e.workers || "",
@@ -69,7 +69,7 @@ function createDateBlocks(logs, year, month, pesticideName) {
 
   Object.keys(groups).forEach(date => {
     const list = groups[date];
-    const totalSpray = list.reduce((a, b) => a + Number(b.spray_amount || 0), 0);
+    const totalSpray = list.reduce((a, b) => a + Number(b.water_amount || 0), 0);
     const dilutionValues = Array.from(new Set(list.map(x => x.dilution_rate).filter(v => v > 0)));
     const dilutionText = dilutionValues.length ? `${dilutionValues.join(" / ")}倍` : "-";
 
@@ -89,8 +89,8 @@ function createDateBlocks(logs, year, month, pesticideName) {
       <thead>
         <tr>
           <th>圃場</th>
-          <th>散布量</th>
-          <th>倍率</th>
+          <th>散布水量</th>
+          <th>希釈倍率</th>
           <th>作業者</th>
           <th>メモ</th>
         </tr>
@@ -109,7 +109,7 @@ function createDateBlocks(logs, year, month, pesticideName) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${fieldLink}</td>
-        <td class="value">${formatNumber(r.spray_amount)} ${escapeHtml(r.unit || "L")}</td>
+        <td class="value">${formatNumber(r.water_amount)} ${escapeHtml(r.unit || "L")}</td>
         <td class="value">${r.dilution_rate > 0 ? `${formatNumber(r.dilution_rate)}倍` : "-"}</td>
         <td>${escapeHtml(r.workers)}</td>
         <td>${escapeHtml(r.notes)}</td>
@@ -128,7 +128,7 @@ function createDateBlocks(logs, year, month, pesticideName) {
 function createMonthlyTotal(rows, unit) {
   const dates = new Set(rows.map(r => r.date));
   const totalDays = dates.size;
-  const totalSpray = rows.reduce((sum, r) => sum + Number(r.spray_amount || 0), 0);
+  const totalSpray = rows.reduce((sum, r) => sum + Number(r.water_amount || 0), 0);
 
   const div = document.createElement("div");
   div.style.marginTop = "20px";
@@ -140,7 +140,7 @@ function createMonthlyTotal(rows, unit) {
     <thead>
       <tr>
         <th>月合計日数</th>
-        <th>月合計散布量</th>
+        <th>月合計散布水量</th>
       </tr>
     </thead>
     <tbody>

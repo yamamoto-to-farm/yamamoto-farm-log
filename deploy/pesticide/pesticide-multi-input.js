@@ -10,6 +10,7 @@ function debugLog(...args) {
 }
 
 import { filterState } from "/common/filter/filter-core.js?v=1";
+import { toNumber, calcPer10a } from "/common/pesticide-calc.js?v=1";
 
 /* ============================================================
     農薬辞書（name → full object）
@@ -55,7 +56,7 @@ export function renderpesticideInputs() {
     <div class="pesticide-title">${name}</div>
 
     <div class="pesticide-line">
-            倍率：
+            希釈倍率：
             <input type="text"
                          inputmode="decimal"
                          pattern="[0-9]*(\\.[0-9]+)?"
@@ -66,11 +67,11 @@ export function renderpesticideInputs() {
         </div>
 
         <div class="pesticide-line" style="margin-top:6px;">
-            合計散布量：
+            合計散布水量：
             <input type="text"
                          inputmode="decimal"
                          pattern="[0-9]*(\\.[0-9]+)?"
-                         class="spray-total-input"
+                         class="water-total-input"
                          data-name="${name}"
                          placeholder="例: 120"
                          value=""> ${unit}
@@ -94,11 +95,11 @@ export function renderpesticideInputs() {
 function initInputEvents() {
     debugLog("initInputEvents start");
 
-    document.querySelectorAll(".spray-total-input").forEach(input => {
+    document.querySelectorAll(".water-total-input").forEach(input => {
         input.addEventListener("input", () => {
             const name = input.dataset.name;
             const total = toNumber(input.value);
-            debugLog(`spray total changed for ${name}: total=${total}`);
+            debugLog(`water total changed for ${name}: total=${total}`);
 
             // /10a 更新（pesticide.js 側で totalA をセットして呼ぶ）
             if (window.__pesticide_totalA) {
@@ -137,12 +138,12 @@ export function updatePer10aAll(totalA) {
         if (!f) return;
 
         const sprayInput = document.querySelector(
-            `.spray-total-input[data-name="${name}"]`
+            `.water-total-input[data-name="${name}"]`
         );
         if (!sprayInput) return;
 
-        const totalSpray = toNumber(sprayInput.value);
-        const per10a = (totalSpray / totalA * 10).toFixed(1);
+        const totalWater = toNumber(sprayInput.value);
+        const per10a = calcPer10a(totalWater, totalA).toFixed(1);
         const unit = f.unit || "L";
 
         const el = document.getElementById(`per10a-${f.id}`);
@@ -164,7 +165,7 @@ export function getpesticideInputData() {
             `.dilution-input[data-name="${name}"]`
         );
         const sprayTotalInput = document.querySelector(
-            `.spray-total-input[data-name="${name}"]`
+            `.water-total-input[data-name="${name}"]`
         );
 
         if (!dilutionInput || !sprayTotalInput) {
@@ -173,15 +174,15 @@ export function getpesticideInputData() {
         }
 
         const dilution_rate = toNumber(dilutionInput.value);
-        const total_spray_amount = toNumber(sprayTotalInput.value);
+        const total_water_amount = toNumber(sprayTotalInput.value);
 
         const f = pesticideDict[name];
         const unit = f.unit || "L";
 
-        if (dilution_rate <= 0 || total_spray_amount <= 0) {
+        if (dilution_rate <= 0 || total_water_amount <= 0) {
             debugLog(`skip ${name} because values are empty or invalid`, {
                 dilution_rate,
-                total_spray_amount
+                total_water_amount
             });
             return;
         }
@@ -190,7 +191,8 @@ export function getpesticideInputData() {
             pesticide_id: f.id,
             name,
             dilution_rate,
-            total_spray_amount,
+            total_water_amount,
+            total_spray_amount: total_water_amount,
             unit
         };
 
@@ -201,9 +203,4 @@ export function getpesticideInputData() {
 
     debugLog("getpesticideInputData result:", result);
     return result;
-}
-
-function toNumber(value) {
-    const num = Number(String(value ?? "").trim());
-    return Number.isFinite(num) ? num : 0;
 }

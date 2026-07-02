@@ -14,8 +14,8 @@ import { updatePer10aAll, getpesticideInputData }
   from "./pesticide-multi-input.js?v=1";
 import { distributepesticides } 
   from "./pesticide-distribute.js?v=1";
-import { saveMultiFieldLog } 
-  from "/common/general-log/base.js?v=1";
+import { savePesticideLog } 
+  from "/common/general-log/pesticide.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
 
@@ -71,7 +71,7 @@ export async function savepesticideLog() {
 
   const pesticides = getpesticideInputData();
   if (pesticides.length === 0) {
-    alert("農薬の倍率・合計散布量を入力してください");
+    alert("農薬の希釈倍率・合計散布水量を入力してください");
     return;
   }
 
@@ -84,16 +84,13 @@ export async function savepesticideLog() {
   }
 
   try {
-    await saveMultiFieldLog({
-      type: "pesticide",
+    await savePesticideLog({
       date,
       fields,
-      entry: {
-        distributed,
-        machine,
-        workers,
-        notes
-      }
+      distributed,
+      machine,
+      workers,
+      notes
     });
 
     alert("保存しました！");
