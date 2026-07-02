@@ -1,5 +1,5 @@
 // =========================================================
-// diary/diary.js — 閲覧／編集モード切り替え対応
+// diary/diary.js — 閲覧／編集モード切り替え対応（権限は window.currentRole）
 // =========================================================
 
 import { verifyLocalAuth } from "/common/ui.js";
@@ -13,7 +13,7 @@ import { renderWeatherBox } from "./weather-box.js";
 // ---------------------------------------------------------
 // モード切り替えボタン描画
 // ---------------------------------------------------------
-function renderModeSwitch(mode, user) {
+function renderModeSwitch(mode) {
   const area = document.getElementById("modeSwitchArea");
   if (!area) return;
 
@@ -24,7 +24,8 @@ function renderModeSwitch(mode, user) {
     </button>
   `;
 
-  if (user.role === "admin") {
+  // ★ 権限判定は window.currentRole
+  if (window.currentRole === "admin") {
     html += `
       <button class="mode-btn ${mode === "edit" ? "active" : ""}"
               onclick="location.href='index.html?mode=edit'">
@@ -41,17 +42,16 @@ function renderModeSwitch(mode, user) {
 // ---------------------------------------------------------
 window.addEventListener("DOMContentLoaded", async () => {
 
-  // 認証
-  const user = await verifyLocalAuth();
-  console.log("verifyLocalAuth user:", user); 
-  if (!user) return;
+  // 認証（true/false）
+  const ok = await verifyLocalAuth();
+  if (!ok) return;
 
   // モード判定
   const params = new URLSearchParams(location.search);
   const mode = params.get("mode") || "view";
 
-  // admin 以外は編集モード禁止
-  if (mode === "edit" && user.role !== "admin") {
+  // ★ admin 以外は編集モード禁止
+  if (mode === "edit" && window.currentRole !== "admin") {
     location.href = "index.html?mode=view";
     return;
   }
@@ -60,7 +60,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderHeader();
 
   // モード切り替えボタン描画
-  renderModeSwitch(mode, user);
+  renderModeSwitch(mode);
 
   // ページ表示
   document.getElementById("form-area").style.display = "block";
