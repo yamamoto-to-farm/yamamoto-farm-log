@@ -9,9 +9,10 @@
 
 <body>
 
-<h1>農業OS：次の進化ロードマップ</h1>
+  <div id="page-area" class="page-container" style="display:none;">
+    <h1 class="page-title">農業OS：次の進化ロードマップ</h1>
 
-<div class="card">
+    <div class="card">
   <h2>1. 管理作業ログ（施肥・防除）</h2>
   <p>経営改善・補助金・圃場分析の中心となる最重要領域。</p>
 
@@ -36,10 +37,9 @@
     <li>病害虫リスクの可視化</li>
     <li>反収改善の根拠が揃う</li>
   </ul>
-</div>
+  </div>
 
-
-<div class="card">
+  <div class="card">
   <h2>2. 育苗管理（播種 → 定植 → 収穫）</h2>
   <p>技術の見える化と、品種 × 圃場 × 育苗の相性分析の基盤。</p>
 
@@ -66,10 +66,9 @@
     <li>育苗 → 定植 → 収穫の流れ</li>
     <li>育苗日数 × 反収の散布図</li>
   </ul>
-</div>
+  </div>
 
-
-<div class="card">
+  <div class="card">
   <h2>3. 品種サマリー分析（varieties-detail.json）</h2>
   <p>作付け計画の意思決定エンジン。</p>
 
@@ -106,10 +105,9 @@
     <li>色：品種</li>
     <li>クリック：fields/?field=◯◯</li>
   </ul>
-</div>
+  </div>
 
-
-<div class="card">
+  <div class="card">
   <h2>4. 散布図（面積 × 反収）</h2>
   <p>経営判断の地図になる可視化ツール。</p>
 
@@ -129,10 +127,9 @@
     <li>点：圃場</li>
     <li>色：品種</li>
   </ul>
-</div>
+  </div>
 
-
-<div class="card">
+  <div class="card">
   <h2>5. 天候・積算温度 × 収穫サマリー</h2>
   <p>生育予測の基礎データ。</p>
 
@@ -153,10 +150,9 @@
     <li>気象条件と品種の相性</li>
     <li>異常気象時の反収低下パターン</li>
   </ul>
-</div>
+  </div>
 
-
-<div class="card">
+  <div class="card">
   <h2>6. NARO（農研機構）生育モデル</h2>
   <p>OS の AI 化の入口。</p>
 
@@ -175,10 +171,9 @@
     <li>「病害虫リスク：高」</li>
     <li>「予測収量：◯kg」</li>
   </ul>
-</div>
+  </div>
 
-
-<div class="card">
+  <div class="card">
   <h2>優先順位（収益 × 補助金の軸）</h2>
   <ol>
     <li>施肥・防除ログ（管理作業ログ）</li>
@@ -187,7 +182,22 @@
     <li>天候・積算温度 × 収穫サマリー</li>
     <li>NARO 生育モデル</li>
   </ol>
-</div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      renderHeader({ adminPage: true });
+      document.getElementById("page-area").style.display = "block";
+    });
+  </script>
 
 </body>
 </html>

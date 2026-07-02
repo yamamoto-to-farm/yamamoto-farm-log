@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>管理サマリー - 山本農園</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="/common/css/main.css?v=1">
+</head>
+
+<body>
+
+	<div id="page-area" class="page-container" style="display:none;">
+		<h1 class="page-title">管理サマリー</h1>
+		<div class="card">
+			<p>準備中</p>
+		</div>
+	</div>
+
+	<script type="module">
+		import { verifyLocalAuth } from "/common/ui.js";
+		import { renderHeader } from "/common/header.js?v=1.1";
+
+		window.addEventListener("DOMContentLoaded", async () => {
+			const ok = await verifyLocalAuth();
+			if (!ok) return;
+
+			if (window.currentRole === "worker") {
+				alert("このページは管理者のみ利用できます");
+				location.href = "/admin/index.html";
+				return;
+			}
+
+			renderHeader({ adminPage: true });
+			document.getElementById("page-area").style.display = "block";
+		});
+	</script>
+
+</body>
+</html>

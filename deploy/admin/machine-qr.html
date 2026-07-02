@@ -31,7 +31,7 @@
   <!-- ===============================
        ページ本体
   =============================== -->
-  <div id="page-area" style="display:none;">
+  <div id="page-area" class="page-container" style="display:none;">
 
     <h1 class="page-title">QRコード生成</h1>
 
@@ -157,7 +157,7 @@
     // PIN 認証 → ヘッダー → ページ表示
     window.addEventListener("DOMContentLoaded", () => {
       showPinGate("pin-area", async () => {
-        renderHeader();
+        renderHeader({ adminPage: true });
         document.getElementById("page-area").style.display = "block";
         initPage();
       });

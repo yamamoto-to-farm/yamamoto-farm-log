@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>CSV 編集（管理者）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
   <!-- 外部CSS -->
@@ -11,41 +12,43 @@
 
 <body>
 
-  <h1>CSV 編集（管理者）</h1>
+  <div id="page-area" class="page-container" style="display:none;">
+    <h1 class="page-title">CSV 編集（管理者）</h1>
 
-  <!-- 上段：ファイル操作 -->
-  <div class="row">
-    <label>保存フォルダ：</label>
-    <select id="csvType">
-      <option value="planting">planting</option>
-      <option value="harvest">harvest</option>
-      <option value="weight">weight</option>
-      <option value="seed">seed</option>
-      <option value="nursery">nursery</option>
-      <option value="discard-planting">discard-planting</option>
-      <option value="schedule/seed">schedule/seed</option>
-    </select>
+    <!-- 上段：ファイル操作 -->
+    <div class="row">
+      <label>保存フォルダ：</label>
+      <select id="csvType">
+        <option value="planting">planting</option>
+        <option value="harvest">harvest</option>
+        <option value="weight">weight</option>
+        <option value="seed">seed</option>
+        <option value="nursery">nursery</option>
+        <option value="discard-planting">discard-planting</option>
+        <option value="schedule/seed">schedule/seed</option>
+      </select>
 
-    <label>ファイル名：</label>
-    <select id="csvFile">
-      <option value="all.csv">all.csv</option>
-      <option value="2025.csv">2025.csv</option>
-      <option value="2026.csv">2026.csv</option>
-    </select>
+      <label>ファイル名：</label>
+      <select id="csvFile">
+        <option value="all.csv">all.csv</option>
+        <option value="2025.csv">2025.csv</option>
+        <option value="2026.csv">2026.csv</option>
+      </select>
 
 
-    <button id="loadCsvBtn">読み込む</button>
-    <button id="saveCsvBtn">保存する</button>
+      <button id="loadCsvBtn">読み込む</button>
+      <button id="saveCsvBtn">保存する</button>
+    </div>
+
+    <!-- 中段：行操作 -->
+    <div class="row">
+      <button id="addRowBtn">行を追加</button>
+      <button id="deleteRowBtn">選択行を削除</button>
+    </div>
+
+    <!-- 下段：テーブル -->
+    <div id="csvTableArea"></div>
   </div>
-
-  <!-- 中段：行操作 -->
-  <div class="row">
-    <button id="addRowBtn">行を追加</button>
-    <button id="deleteRowBtn">選択行を削除</button>
-  </div>
-
-  <!-- 下段：テーブル -->
-  <div id="csvTableArea"></div>
 
   <!-- ★ ① PapaParse（summary.js が必要とする） -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -71,6 +74,25 @@
       });
   </script>
   <!-- ★★★★★ ここまで ★★★★★ -->
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      if (window.currentRole === "worker") {
+        alert("このページは管理者のみ利用できます");
+        location.href = "/admin/index.html";
+        return;
+      }
+
+      renderHeader({ adminPage: true });
+      document.getElementById("page-area").style.display = "block";
+    });
+  </script>
 
 </body>
 

@@ -7,26 +7,22 @@
 
   <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-
-  <!-- ナビバー -->
-  <script type="module">
-    import { renderNavbar } from "/common/header.js?v=1.1";
-    renderNavbar();
-  </script>
 </head>
 
 <body>
 
-  <h1 id="page-title">管理データ編集（JSON）</h1>
-  <div id="page-subtitle" class="page-subtitle"></div>
+  <div id="page-area" class="page-container" style="display:none;">
+    <h1 id="page-title" class="page-title">管理データ編集（JSON）</h1>
+    <div id="page-subtitle" class="page-subtitle"></div>
 
-  <!-- ハブ or 編集カード -->
-  <div id="edit-container"></div>
+    <!-- ハブ or 編集カード -->
+    <div id="edit-container"></div>
 
-  <!-- 戻るボタン -->
-  <button class="primary-btn" onclick="location.href='/admin/index.html'">
-    管理ページに戻る
-  </button>
+    <!-- 戻るボタン -->
+    <button class="primary-btn" onclick="location.href='/admin/index.html'">
+      管理ページに戻る
+    </button>
+  </div>
 
   <!-- ★★★★★ 共通保存モーダル ★★★★★ -->
   <div id="modal-container"></div>
@@ -42,6 +38,7 @@
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
 
     import { initEditJson } from "/admin/edit-json/edit-json.js?v=1";
 
@@ -57,6 +54,9 @@
         location.href = "/admin/index.html";
         return;
       }
+
+      renderHeader({ adminPage: true });
+      document.getElementById("page-area").style.display = "block";
 
       // ★ initEditJson を呼ぶのはここだけ（重複防止）
       initEditJson();
