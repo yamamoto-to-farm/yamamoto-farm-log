@@ -71,3 +71,31 @@ export async function showWorkSummary(date) {
     `;
   }).join("");
 }
+// =========================================================
+// 作業編集カード用：作業名＋従事者の自動抽出
+// =========================================================
+
+export function extractWorkForEdit(logs) {
+  const autoList = [];
+
+  logs.forEach(log => {
+    const type = log.displayName; // 定植・収穫・播種など
+
+    // worker 系列を抽出
+    const workers = [];
+    Object.keys(log.data).forEach(key => {
+      if (key.startsWith("worker") && log.data[key]) {
+        workers.push(log.data[key]);
+      }
+    });
+
+    if (workers.length === 0) return;
+
+    autoList.push({
+      type,
+      workers
+    });
+  });
+
+  return autoList;
+}

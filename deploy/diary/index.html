@@ -2,22 +2,19 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>作業日誌</title>
+  <title>作業日誌（編集）</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="/diary/diary.css">
   <link rel="stylesheet" href="/common/css/main.css">
+  <link rel="stylesheet" href="/diary/diary.css">
 </head>
 
 <body>
 
-  <!-- 共通ヘッダー -->
   <div id="header"></div>
 
-  <!-- 本体 -->
   <div id="form-area" style="display:none;">
 
-    <h1 class="page-title">作業日誌</h1>
+    <h1 class="page-title">作業日誌（編集）</h1>
 
     <!-- 日付 -->
     <h2 class="section-title">日付</h2>
@@ -25,23 +22,24 @@
       <input type="date" id="diaryDate" class="form-input">
     </div>
 
-    <!-- 作業一覧 -->
-    <h2 class="section-title">作業一覧</h2>
+    <!-- 作業ログ一覧（自動） -->
+    <h2 class="section-title">作業ログ一覧</h2>
     <div class="card" id="workList">
       <p>日付を選択すると作業一覧が表示されます。</p>
     </div>
 
-    <!-- メモ -->
-    <h2 class="section-title">メモ</h2>
-    <div class="card">
-      <textarea id="workNotes" rows="4" class="form-textarea"></textarea>
-    </div>
+    <!-- 作業編集カード -->
+    <h2 class="section-title">作業編集</h2>
+    <div id="editWorkArea"></div>
+
+    <button id="saveDiaryBtn" class="btn-primary">保存</button>
 
   </div>
 
   <!-- JS -->
-  <script type="module" src="/diary/diary.js"></script>
   <script type="module" src="/diary/work-summary.js"></script>
+  <script type="module" src="/diary/editCard.js"></script>
+  <script type="module" src="/diary/diary.js"></script>
 
 </body>
 </html>
