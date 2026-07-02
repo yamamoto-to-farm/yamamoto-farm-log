@@ -393,6 +393,7 @@ export async function verifyLocalAuth() {
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
+    sessionStorage.setItem("pendingReturnUrl", location.href);
     location.href = "/index.html";
     return false;
   }
@@ -410,6 +411,7 @@ export async function verifyLocalAuth() {
       localStorage.removeItem("human");
       localStorage.removeItem("role");
       alert("認証情報が無効になりました。再ログインしてください。");
+      sessionStorage.setItem("pendingReturnUrl", location.href);
       location.href = "/index.html";
       return false;
     }

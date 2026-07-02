@@ -169,6 +169,13 @@
       showPinGate("pin-area", async () => {
         dlog("PIN OK → renderHeader");
 
+        const pendingReturnUrl = sessionStorage.getItem("pendingReturnUrl");
+        if (pendingReturnUrl) {
+          sessionStorage.removeItem("pendingReturnUrl");
+          location.href = pendingReturnUrl;
+          return;
+        }
+
         renderHeader();
         document.getElementById("menu-area").style.display = "block";
 
