@@ -1,5 +1,5 @@
 // =========================================================
-// diary/work-summary.js — list.json + headerName 対応版
+// diary/work-summary.js — list.json + headerName 対応版（field 抽出対応）
 // =========================================================
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
@@ -71,8 +71,9 @@ export async function showWorkSummary(date) {
     `;
   }).join("");
 }
+
 // =========================================================
-// 作業編集カード用：作業名＋従事者の自動抽出
+// 作業編集カード用：作業名＋従事者＋圃場IDの自動抽出
 // =========================================================
 
 export function extractWorkForEdit(logs) {
@@ -91,9 +92,16 @@ export function extractWorkForEdit(logs) {
 
     if (workers.length === 0) return;
 
+    // ★ field 抽出（headerName に field がある場合のみ）
+    let field = "";
+    if (log.headerName.includes("field")) {
+      field = log.data["field"] ?? "";
+    }
+
     autoList.push({
       type,
-      workers
+      workers,
+      field   // ★ 圃場IDを追加
     });
   });
 

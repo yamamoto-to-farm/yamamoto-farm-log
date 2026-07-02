@@ -86,9 +86,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // モード別カード表示
   if (mode === "edit") {
-    await initEditPage();   // 内部で各カードに initCollapse を呼ぶ
+    await initEditPage();
   } else {
-    await initViewPage();   // 内部で各カードに initCollapse を呼ぶ
+    await initViewPage();
   }
 
   // ---------------------------------------------------------
@@ -102,6 +102,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     saveBtn.addEventListener("click", async () => {
       const date = dateInput.value;
 
+      // ★ 保存時は autoList を再生成（構造維持）
       const logs = await loadLogsByDate(date);
       const autoList = extractWorkForEdit(logs);
 

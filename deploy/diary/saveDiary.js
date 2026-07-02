@@ -1,6 +1,6 @@
 // =========================================================
 // diary/saveDiary.js
-// 保存先を data/diary/ に変更した版
+// 保存先を data/diary/ に変更した版（field 対応）
 // =========================================================
 
 import { loadJSON, saveJSON } from "/common/json.js";
@@ -26,10 +26,11 @@ export async function saveDiary(date, autoList) {
   }
 
   // -------------------------------
-  // 新しい作業データを作成
+  // 新しい作業データを作成（field 対応）
   // -------------------------------
   const newWork = autoList.map((item, idx) => ({
     type: item.type,
+    field: document.getElementById(`field_${idx}`).value || "",   // ★ 圃場IDを保存
     workers: item.workers,
     start: document.getElementById(`start_${idx}`).value,
     end: document.getElementById(`end_${idx}`).value
