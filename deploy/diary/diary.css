@@ -60,6 +60,14 @@
   .collapse-title {
     display: none;
   }
+
+  /* workList がインライン style で閉じられている場合に備え、IDで強制表示 */
+  #workList {
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
 }
 
 /* --------------------------------

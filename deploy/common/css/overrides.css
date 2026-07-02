@@ -38,4 +38,13 @@
   html, body {
     height: auto !important;
   }
+
+  /* Hide modal/overlay UI in print globally */
+  .modal-bg,
+  .modal,
+  .overlay,
+  .filter-modal {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }
