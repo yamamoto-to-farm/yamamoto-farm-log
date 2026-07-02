@@ -246,7 +246,19 @@ function normalizeWorker(entry) {
     return raw.map(v => String(v || "").trim()).filter(Boolean).join("／");
   }
 
-  return String(raw || "").trim();
+  const text = String(raw || "").trim();
+  if (!text) return "";
+
+  // 単一文字列で渡された場合も、カンマ区切りなら作業者区切りとして正規化する
+  if (text.includes(",") || text.includes("、")) {
+    return text
+      .split(/[、,]/)
+      .map(v => v.trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  return text;
 }
 
 function toCsvCell(value) {
