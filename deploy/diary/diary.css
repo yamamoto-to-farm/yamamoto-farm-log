@@ -252,4 +252,10 @@
     margin: 0 !important;
     padding: 0 6px !important;
   }
+
+  /* モーダルやオーバーレイは印刷時に邪魔なので隠す */
+  .modal-bg, .modal {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }
