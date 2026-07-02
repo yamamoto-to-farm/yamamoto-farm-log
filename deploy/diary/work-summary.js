@@ -15,11 +15,11 @@ import { loadCSV, normalizeKeys } from "/common/csv.js";
 // CloudFront のベース URL（common/csv.js と同じ）
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
-// ---------------------------------------------------------
-// logs/ フォルダ一覧を取得
-// ---------------------------------------------------------
-// CloudFront の /logs/ を fetch すると HTML が返るので、
-// <a href="planting/"> のようなリンクを抽出してフォルダ名にする。
+// =========================================================
+// diary/work-summary.js — フォルダ一覧をまず表示する版
+// =========================================================
+
+// ローカルの /logs/ を叩く（CloudFront は使わない）
 export async function listLogFolders() {
   const res = await fetch(`/logs/?ts=${Date.now()}`);
   const html = await res.text();
@@ -27,11 +27,31 @@ export async function listLogFolders() {
   const div = document.createElement("div");
   div.innerHTML = html;
 
+  // <a href="planting/"> のようなリンクを抽出
   return [...div.querySelectorAll("a")]
     .map(a => a.getAttribute("href"))
     .filter(href => href.endsWith("/"))
     .map(href => href.replace("/", ""));
 }
+
+// UI にフォルダ一覧を表示する
+export async function showFolderList() {
+  const box = document.getElementById("workList");
+  const folders = await listLogFolders();
+
+  if (folders.length === 0) {
+    box.innerHTML = "<p>logs フォルダが見つかりません。</p>";
+    return;
+  }
+
+  box.innerHTML = `
+    <h3>フォルダ一覧</h3>
+    <ul>
+      ${folders.map(f => `<li>${f}</li>`).join("")}
+    </ul>
+  `;
+}
+
 
 
 // ---------------------------------------------------------
