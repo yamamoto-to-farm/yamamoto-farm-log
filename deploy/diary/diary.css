@@ -1,0 +1,66 @@
+/* ===============================
+   作業日誌（編集）ページ専用 CSS
+   layer: pages
+=============================== */
+
+.diary-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+
+/* カード */
+.edit-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px auto;
+  max-width: 680px;
+}
+
+/* タイトル */
+.edit-card h3 {
+  margin-bottom: 6px;
+  font-size: 1.1rem;
+}
+
+/* 従事者 */
+.edit-card p {
+  margin-bottom: 10px;
+  color: #444;
+}
+
+/* 時刻を横並びに */
+.time-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.time-row label {
+  width: 60px;
+}
+
+.time-row input {
+  flex: 1;
+}
+
+/* メモ欄（ページ全体のメモのみ） */
+.diary-memo {
+  max-width: 680px;
+  margin: 16px auto;
+}
+
+.diary-memo textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* 保存ボタンを中央に */
+#saveDiaryBtn {
+  display: block;
+  margin: 24px auto;
+  padding: 10px 20px;
+}

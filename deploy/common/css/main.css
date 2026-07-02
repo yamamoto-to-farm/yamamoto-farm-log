@@ -40,6 +40,7 @@
 @import url("../../admin/edit-csv/edit-csv.css") layer(pages);
 @import url("../../fertilizer/fertilizer.css") layer(pages);
 @import url("../../fields/index.css") layer(pages);
+@import url("../../diary/diary.css") layer(pages);
 
 /* ===============================
    overrides（最後の強制上書き）

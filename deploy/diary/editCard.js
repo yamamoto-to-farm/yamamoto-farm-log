@@ -21,34 +21,34 @@ export function renderEditCards(autoList) {
     card.className = "edit-card";
 
     card.innerHTML = `
-      <h3>${item.type}</h3>
-      <p>従事者: ${item.workers.join(", ")}</p>
+      <h3 class="edit-title">${item.type}</h3>
+      <p class="edit-workers">従事者: ${item.workers.join("／")}</p>
 
-      <label>開始時刻</label>
-      <input type="time" id="start_${idx}" class="form-input">
+      <div class="time-row">
+        <label>開始</label>
+        <input type="time" id="start_${idx}" class="form-input">
 
-      <label>終了時刻</label>
-      <input type="time" id="end_${idx}" class="form-input">
-
-      <label>メモ</label>
-      <textarea id="memo_${idx}" rows="2" class="form-textarea"></textarea>
+        <label>終了</label>
+        <input type="time" id="end_${idx}" class="form-input">
+      </div>
     `;
 
     area.appendChild(card);
   });
 
   // -------------------------------
-  // フリーメモカード（作業ログがなくても必ず表示）
+  // 日誌メモ（作業ログがなくても必ず表示）
   // -------------------------------
   const memoCard = document.createElement("div");
-  memoCard.className = "edit-card";
+  memoCard.className = "edit-card diary-memo";
 
   memoCard.innerHTML = `
-    <h3>その他メモ</h3>
-    <p>この日の作業ログがない場合や、ログ未実装の作業がある場合はここに記入できます。</p>
+    <h3 class="edit-title">日誌メモ</h3>
+    <p class="memo-desc">
+      この日の作業ログがない場合や、未実装の作業がある場合はここに記入できます。
+    </p>
 
-    <label>メモ</label>
-    <textarea id="freeMemo" rows="3" class="form-textarea"></textarea>
+    <textarea id="freeMemo" class="form-textarea"></textarea>
   `;
 
   area.appendChild(memoCard);
@@ -69,19 +69,17 @@ export async function saveDiary(date, autoList) {
   autoList.forEach((item, idx) => {
     const start = document.getElementById(`start_${idx}`).value;
     const end = document.getElementById(`end_${idx}`).value;
-    const memo = document.getElementById(`memo_${idx}`).value;
 
     saveData.work.push({
       type: item.type,
       workers: item.workers,
       start,
-      end,
-      memo
+      end
     });
   });
 
   // -------------------------------
-  // フリーメモの保存
+  // 日誌メモの保存
   // -------------------------------
   const freeMemo = document.getElementById("freeMemo").value;
   saveData.memo = freeMemo;
