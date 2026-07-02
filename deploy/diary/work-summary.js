@@ -104,8 +104,17 @@ export function extractWorkForEdit(logs) {
     let field = "";
     if (log.headerName.includes("field")) {
       const rawField = String(log.data["field"] ?? "").trim();
-      // 「圃場A／圃場B」形式の場合は先頭を代表値として編集カードへ反映
-      field = rawField ? rawField.split(/[\/／]/)[0].trim() : "";
+      // 「圃場A／圃場B」形式にも対応して、複数圃場を保持する
+      field = rawField
+        ? Array.from(
+            new Set(
+              rawField
+                .split(/[\/／]/)
+                .map(v => v.trim())
+                .filter(Boolean)
+            )
+          ).join("／")
+        : "";
     }
 
     autoList.push({
