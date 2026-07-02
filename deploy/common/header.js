@@ -103,9 +103,11 @@ export function renderNavbar() {
       font-size: 1.05em;
     ">
       <a href="/" style="margin-right: 15px;">🏠 トップ</a>
+      <a href="/diary/index.html" style="margin-right: 15px;">📘 作業日誌</a>
+      <a href="/list/list.html" style="margin-right: 15px;">🌱 播種・定植一覧</a>
       <a href="/performance/harvest-kpi.html" style="margin-right: 15px;">📊 収穫KPI</a>
-      <a href="/fields/index.html">🗺 圃場詳細</a>
-      <a href="/varieties/index.html">🗺 品種詳細</a>
+      <a href="/fields/index.html" style="margin-right: 15px;">🗺 圃場</a>
+      <a href="/varieties/index.html" style="margin-right: 15px;">🧬 品種</a>
     </nav>
   `;
   document.body.insertAdjacentHTML("afterbegin", html);
