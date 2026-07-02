@@ -5,22 +5,22 @@
 
 import { loadJSON, saveJSON } from "/common/json.js";
 
-/**
- * 作業日誌を保存する
- * @param {string} date - "2026-07-02" の形式
- * @param {Array} autoList - extractWorkForEdit() の結果
- */
 export async function saveDiary(date, autoList) {
 
   const year = date.slice(0, 4);
-  const path = `diary/data/${year}/${date}.json`;
+
+  // CloudFront 用（読み込み）
+  const loadPath = `/diary/data/${year}/${date}.json`;
+
+  // S3 用（保存）
+  const savePath = `diary/data/${year}/${date}.json`;
 
   // -------------------------------
   // 既存 JSON を読み込む（なければ新規作成）
   // -------------------------------
   let current;
   try {
-    current = await loadJSON(path);
+    current = await loadJSON(loadPath);
   } catch {
     current = { date, work: [], memo: "" };
   }
@@ -47,7 +47,7 @@ export async function saveDiary(date, autoList) {
   // 保存（フォルダも自動作成）
   // -------------------------------
   try {
-    await saveJSON(path, current);
+    await saveJSON(savePath, current);
     alert("保存しました");
   } catch (e) {
     console.error(e);
