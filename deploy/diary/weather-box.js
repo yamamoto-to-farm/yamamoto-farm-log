@@ -19,8 +19,7 @@ export async function renderWeatherBox(date) {
   if (!data) {
     box.innerHTML = `
       <div class="weather-card">
-        <h3>天気データ</h3>
-        <p>データなし</p>
+        <p>天気データなし</p>
       </div>
     `;
     return;
@@ -30,16 +29,15 @@ export async function renderWeatherBox(date) {
   const type = classifyWeather(data.precip, data.sunshine);
   const icon = weatherIcon(type);
 
-  // UI表示（リッチ）
+  // UI表示（タイトルなし・観測地点なし）
   box.innerHTML = `
     <div class="weather-card">
-      <h3>天気データ（${date}）</h3>
 
       <p class="weather-icon">${icon} ${type}</p>
 
       <p><strong>最高：</strong> ${data.tmax}℃ / <strong>最低：</strong> ${data.tmin}℃</p>
-      <p><strong>降水量：</strong> ${data.precip}mm / <strong>日照：</strong> ${data.sunshine}h</p>
-      <p><strong>観測地点：</strong> ${data.station}</p>
+      <p><strong>降水量：</strong> ${data.precip}mm / <strong>日照時間：</strong> ${data.sunshine}h</p>
+
     </div>
   `;
 
