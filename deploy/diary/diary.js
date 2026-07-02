@@ -43,6 +43,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // 認証
   const user = await verifyLocalAuth();
+  console.log("verifyLocalAuth user:", user); 
   if (!user) return;
 
   // モード判定
