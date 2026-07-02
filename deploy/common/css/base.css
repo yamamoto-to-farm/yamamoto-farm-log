@@ -61,6 +61,11 @@ body {
 /* ------------------------------
    ページタイトル
 ------------------------------ */
+.page-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
 .page-title {
     font-size: 22px;
     font-weight: 600;

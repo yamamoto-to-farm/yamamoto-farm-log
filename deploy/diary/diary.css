@@ -2,12 +2,6 @@
   作業日誌
 ================================ */
 
-.diary-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0;
-}
-
 /* モード切り替え */
 #modeSwitchArea {
   text-align: right;
