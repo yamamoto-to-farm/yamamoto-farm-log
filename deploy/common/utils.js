@@ -117,13 +117,13 @@ export async function printInline(selector, title = "印刷") {
     w.style.display = "block";
   });
 
-  // iframe を作り非表示で設置
+  // iframe を作り非表示で設置（ゼロサイズだとレイアウトが崩れるので幅を確保）
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
+  iframe.style.left = "-2000px"; // 画面外に置く
+  iframe.style.top = "0";
+  iframe.style.width = "1000px"; // レイアウト用の幅
+  iframe.style.height = "1400px"; // 印刷プレビューを想定した高さ
   iframe.style.border = "0";
   iframe.style.visibility = 'hidden';
   document.body.appendChild(iframe);
@@ -198,6 +198,15 @@ export async function printInline(selector, title = "印刷") {
       }))),
       new Promise(r => setTimeout(r, 3000))
     ]);
+
+    // WebFonts のロードを待つ（対応ブラウザ）
+    try { if (doc.fonts && doc.fonts.ready) await doc.fonts.ready; } catch (e) {}
+
+    // 強制的にリフローさせる（レンダリング安定化）
+    try { void doc.body.offsetHeight; } catch (e) {}
+
+    // 少し余裕を持たせる
+    await new Promise(r => setTimeout(r, 150));
 
   } catch (e) {
     console.warn('printInline: waiting resources failed', e);
