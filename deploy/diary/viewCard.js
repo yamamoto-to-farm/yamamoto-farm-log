@@ -44,7 +44,8 @@ export async function initViewPage() {
 
     // 配列/文字列どちらでも表示できるように正規化
     const fieldName = normalizeMultiText(w.field);
-    const title = fieldName ? `${w.type} ${fieldName}` : w.type;
+    const title = w.type;
+    const fieldLine = fieldName || "（未入力）";
 
     const workerText = normalizeMultiText(w.workers);
     const workerLine = workerText || "（未入力）";
@@ -52,6 +53,7 @@ export async function initViewPage() {
     html += `
       <div class="card view-card">
         <h3>${title}</h3>
+        <p><strong>圃場：</strong> ${fieldLine}</p>
         <p><strong>従事者：</strong> ${workerLine}</p>
         <p><strong>開始：</strong> ${w.start}　<strong>終了：</strong> ${w.end}</p>
       </div>

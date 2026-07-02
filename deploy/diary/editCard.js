@@ -26,13 +26,16 @@ export function renderEditCards(autoList, diary) {
 
     // ★ 圃場名（既存日誌にあれば上書き）
     const field = existing.field || item.field || "";
+    const fieldText = normalizeMultiText(field) || "（未入力）";
+    const workersText = normalizeMultiText(existing.workers || item.workers) || "（未入力）";
 
     const card = document.createElement("div");
     card.className = "card edit-card";
 
     card.innerHTML = `
-      <h3 class="edit-title">${item.type}${field ? ` ${field}` : ""}</h3>
-      <p class="edit-workers">従事者: ${item.workers.join("／")}</p>
+      <h3 class="edit-title">${item.type}</h3>
+      <p class="edit-workers">圃場： ${fieldText}</p>
+      <p class="edit-workers">従事者： ${workersText}</p>
 
       <input type="hidden" id="field_${idx}" value="${field}">
 
@@ -66,6 +69,17 @@ export function renderEditCards(autoList, diary) {
   `;
 
   area.appendChild(memoCard);
+}
+
+function normalizeMultiText(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  return String(value || "").trim();
 }
 
 // ---------------------------------------------------------
