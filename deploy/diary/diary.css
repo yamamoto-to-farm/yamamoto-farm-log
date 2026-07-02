@@ -1,5 +1,5 @@
 /* ===============================
-   作業日誌（編集）ページ専用 CSS
+   作業日誌ページ専用 CSS（編集＋閲覧）
    layer: pages
 =============================== */
 
@@ -10,9 +10,35 @@
 }
 
 /* --------------------------------
-   カード（作業編集カード）
+   モード切り替えボタン
 -------------------------------- */
-.edit-card {
+#modeSwitchArea {
+  text-align: right;
+  margin: 12px 0 4px;
+}
+
+#modeSwitchArea .mode-btn {
+  padding: 6px 12px;
+  margin-left: 6px;
+  background: #f3f3f3;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#modeSwitchArea .mode-btn.active {
+  background: #dfe8ff;
+  border-color: #7da2ff;
+  font-weight: bold;
+}
+
+/* --------------------------------
+   カード共通（編集カード・閲覧カード・天気カード）
+-------------------------------- */
+.edit-card,
+.view-card,
+.weather-card {
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -22,16 +48,24 @@
 }
 
 /* タイトル */
-.edit-card h3 {
-  margin-bottom: 6px;
-  font-size: 1.1rem;
+.edit-card h3,
+.view-card h3,
+.weather-card h3 {
+  margin-bottom: 8px;
+  font-size: 1.15rem;
 }
 
-/* 従事者 */
-.edit-card p {
-  margin-bottom: 10px;
-  color: #444;
+/* テキスト */
+.edit-card p,
+.view-card p,
+.weather-card p {
+  margin: 6px 0;
+  color: #333;
 }
+
+/* --------------------------------
+   編集カード専用
+-------------------------------- */
 
 /* 時刻を横並びに */
 .time-row {
@@ -48,49 +82,34 @@
   flex: 1;
 }
 
-/* メモ欄（ページ全体のメモのみ） */
-.diary-memo {
-  max-width: 680px;
-  margin: 16px auto;
-}
-
+/* メモ欄（編集モードのみ） */
 .diary-memo textarea {
   width: 100%;
   resize: vertical;
   min-height: 80px;
 }
 
-/* 保存ボタンを中央に */
-#saveDiaryBtn {
-  display: block;
-  margin: 24px auto;
-  padding: 10px 20px;
+/* --------------------------------
+   閲覧カード専用
+-------------------------------- */
+.view-card p {
+  margin-bottom: 10px;
+  color: #444;
 }
 
 /* --------------------------------
    天気カード（weatherBox）
 -------------------------------- */
-.weather-card {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 16px auto;
-  max-width: 680px;
-}
-
-.weather-card h3 {
-  margin-bottom: 8px;
-  font-size: 1.15rem;
-}
-
-.weather-card p {
-  margin: 6px 0;
-  color: #333;
-}
-
-/* 天気アイコンを少し大きく */
 .weather-icon {
   font-size: 1.4rem;
   margin-bottom: 10px;
+}
+
+/* --------------------------------
+   保存ボタン（編集モードのみ）
+-------------------------------- */
+#saveDiaryBtn {
+  display: block;
+  margin: 24px auto;
+  padding: 10px 20px;
 }

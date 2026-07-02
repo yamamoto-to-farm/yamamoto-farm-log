@@ -4,13 +4,41 @@
 
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
-import { showWorkSummary } from "./work-summary.js";
+import { showWorkSummary, loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { initEditPage } from "./editCard.js";
-import { initViewPage } from "./viewCard.js";   // ★ 閲覧専用カード
+import { initViewPage } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
-import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { renderWeatherBox } from "./weather-box.js";
 
+// ---------------------------------------------------------
+// モード切り替えボタン描画
+// ---------------------------------------------------------
+function renderModeSwitch(mode, user) {
+  const area = document.getElementById("modeSwitchArea");
+  if (!area) return;
+
+  let html = `
+    <button class="mode-btn ${mode === "view" ? "active" : ""}"
+            onclick="location.href='index.html?mode=view'">
+      閲覧モード
+    </button>
+  `;
+
+  if (user.role === "admin") {
+    html += `
+      <button class="mode-btn ${mode === "edit" ? "active" : ""}"
+              onclick="location.href='index.html?mode=edit'">
+        編集モード
+      </button>
+    `;
+  }
+
+  area.innerHTML = html;
+}
+
+// ---------------------------------------------------------
+// メイン処理
+// ---------------------------------------------------------
 window.addEventListener("DOMContentLoaded", async () => {
 
   // 認証
@@ -30,6 +58,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ヘッダー描画
   renderHeader();
 
+  // モード切り替えボタン描画
+  renderModeSwitch(mode, user);
+
   // ページ表示
   document.getElementById("form-area").style.display = "block";
 
@@ -38,7 +69,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const dateInput = document.getElementById("diaryDate");
   dateInput.value = today;
 
-  // 天気カード表示（閲覧専用）
+  // 天気カード表示
   await renderWeatherBox(today);
 
   // 作業ログ一覧表示
@@ -46,16 +77,20 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // モード別カード表示
   if (mode === "edit") {
-    await initEditPage();   // 編集カード
+    await initEditPage();
   } else {
-    await initViewPage();   // 閲覧カード
+    await initViewPage();
   }
 
-  // -------------------------------
+  // ---------------------------------------------------------
   // 保存イベント（編集モードのみ）
-  // -------------------------------
+  // ---------------------------------------------------------
+  const saveBtn = document.getElementById("saveDiaryBtn");
+
   if (mode === "edit") {
-    document.getElementById("saveDiaryBtn").addEventListener("click", async () => {
+    saveBtn.style.display = "block";
+
+    saveBtn.addEventListener("click", async () => {
       const date = dateInput.value;
 
       // 最新ログを取得
@@ -64,14 +99,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       saveDiary(date, autoList);
     });
+
   } else {
-    // 閲覧モードでは保存ボタン非表示
-    document.getElementById("saveDiaryBtn").style.display = "none";
+    saveBtn.style.display = "none";
   }
 
-  // -------------------------------
+  // ---------------------------------------------------------
   // 日付変更イベント
-  // -------------------------------
+  // ---------------------------------------------------------
   dateInput.addEventListener("change", async e => {
     const d = e.target.value;
 
