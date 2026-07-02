@@ -3,6 +3,7 @@
 // ===============================
 import { getCurrentPosition, getNearestField } from "./app.js";
 import { openWorkerSelectModal } from "./filter/filter-worker.js";
+import { loadCSV } from "./csv.js";
 import { loadJSON, saveJSON } from "./json.js";
 import { saveLog } from "./save/index.js";
 
@@ -61,6 +62,24 @@ function csvCell(value) {
   return text;
 }
 
+const SECURITY_LOG_COLUMNS = [
+  "timestamp",
+  "event",
+  "human",
+  "role",
+  "sessionId",
+  "detail",
+  "path"
+];
+
+function buildSecurityCsv(rows) {
+  const body = rows.map(row => {
+    return SECURITY_LOG_COLUMNS.map(key => csvCell(row[key])).join(",");
+  }).join("\n");
+
+  return [SECURITY_LOG_COLUMNS.join(","), body].filter(Boolean).join("\n") + "\n";
+}
+
 async function loadAuthState() {
   try {
     const state = await loadJSON(AUTH_STATE_PATH);
@@ -82,20 +101,24 @@ async function saveAuthState(state) {
 
 async function appendSecurityAudit(event, detail = "") {
   try {
-    const line = [
-      nowIso(),
-      event,
-      window.currentHuman || localStorage.getItem(AUTH_HUMAN_KEY) || "",
-      window.currentRole || localStorage.getItem(AUTH_ROLE_KEY) || "",
-      localStorage.getItem(AUTH_SESSION_KEY) || "",
-      detail,
-      location.pathname
-    ].map(csvCell).join(",");
+    let rows = [];
+    try {
+      rows = await loadCSV("/logs/security/all.csv");
+    } catch {
+      rows = [];
+    }
 
-    await saveLog({
-      type: "security",
-      csv: line
+    rows.push({
+      timestamp: nowIso(),
+      event,
+      human: window.currentHuman || localStorage.getItem(AUTH_HUMAN_KEY) || "",
+      role: window.currentRole || localStorage.getItem(AUTH_ROLE_KEY) || "",
+      sessionId: localStorage.getItem(AUTH_SESSION_KEY) || "",
+      detail,
+      path: location.pathname
     });
+
+    await saveLog("security", "all", null, "", buildSecurityCsv(rows), "all.csv");
   } catch (e) {
     console.warn("[auth] security audit failed:", e);
   }
