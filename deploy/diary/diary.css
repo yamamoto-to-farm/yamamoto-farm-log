@@ -9,7 +9,9 @@
   padding: 0 12px;
 }
 
-/* カード */
+/* --------------------------------
+   カード（作業編集カード）
+-------------------------------- */
 .edit-card {
   background: #fff;
   border: 1px solid #ddd;
@@ -63,4 +65,32 @@
   display: block;
   margin: 24px auto;
   padding: 10px 20px;
+}
+
+/* --------------------------------
+   天気カード（weatherBox）
+-------------------------------- */
+.weather-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px auto;
+  max-width: 680px;
+}
+
+.weather-card h3 {
+  margin-bottom: 8px;
+  font-size: 1.15rem;
+}
+
+.weather-card p {
+  margin: 6px 0;
+  color: #333;
+}
+
+/* 天気アイコンを少し大きく */
+.weather-icon {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
 }

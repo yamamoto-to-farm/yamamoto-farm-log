@@ -25,6 +25,19 @@
       <input type="date" id="diaryDate" class="form-input">
     </div>
 
+    <!-- 天気カード -->
+    <h2 class="section-title">天気</h2>
+    <div id="weatherBox" class="card">
+      <p>日付を選択すると天気が表示されます。</p>
+    </div>
+
+    <!-- 保存用 hidden input -->
+    <input type="hidden" id="weather_type">
+    <input type="hidden" id="weather_tmax">
+    <input type="hidden" id="weather_tmin">
+    <input type="hidden" id="weather_precip">
+    <input type="hidden" id="weather_sunshine">
+
     <!-- 作業ログ一覧（自動） -->
     <h2 class="section-title">作業ログ一覧</h2>
     <div class="card" id="workList">
@@ -43,6 +56,7 @@
   <!-- JS -->
   <script type="module" src="/diary/work-summary.js"></script>
   <script type="module" src="/diary/editCard.js"></script>
+  <script type="module" src="/diary/weather-box.js"></script>
   <script type="module" src="/diary/diary.js"></script>
 
 </body>
