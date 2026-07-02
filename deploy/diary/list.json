@@ -1,9 +1,7 @@
 [
-  { "folder": "planting",   "dateColumn": "plantDate" },
-  { "folder": "harvest",    "dateColumn": "harvestDate" },
-  { "folder": "fertilizer", "dateColumn": "applyDate" },
-  { "folder": "pesticide",  "dateColumn": "sprayDate" },
-  { "folder": "seed",       "dateColumn": "seedDate" },
-  { "folder": "schedule",   "dateColumn": "planDate" },
-  { "folder": "weight",     "dateColumn": "date" }
+  { "folder": "planting",   "dateColumn": "plantDate",   "displayName": "定植" },
+  { "folder": "harvest",    "dateColumn": "harvestDate", "displayName": "収穫" },
+  { "folder": "fertilizer", "dateColumn": "applyDate",   "displayName": "施肥" },
+  { "folder": "pesticide",  "dateColumn": "sprayDate",   "displayName": "防除" },
+  { "folder": "seed",       "dateColumn": "seedDate",    "displayName": "播種" }
 ]
