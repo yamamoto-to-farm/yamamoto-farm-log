@@ -1,96 +1,50 @@
 // =========================================================
-// diary/work-summary.js
-// ---------------------------------------------------------
-// 役割：
-//   - logs/ フォルダ一覧を自動取得
-//   - 各フォルダの all.csv を CloudFront 経由で読み込む
-//   - 日付一致の行だけ抽出
-//   - 作業日誌ページに一覧表示
-//
-//   ※ diary.js がこのファイルを呼び出す（統合ハブ）
+// diary/work-summary.js — list.json を使う最適解
 // =========================================================
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
-// CloudFront のベース URL（common/csv.js と同じ）
-const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
-
-// =========================================================
-// diary/work-summary.js — フォルダ一覧をまず表示する版
-// =========================================================
-
-// ローカルの /logs/ を叩く（CloudFront は使わない）
-export async function listLogFolders() {
-  const res = await fetch(`/logs/?ts=${Date.now()}`);
-  const html = await res.text();
-
-  const div = document.createElement("div");
-  div.innerHTML = html;
-
-  // <a href="planting/"> のようなリンクを抽出
-  return [...div.querySelectorAll("a")]
-    .map(a => a.getAttribute("href"))
-    .filter(href => href.endsWith("/"))
-    .map(href => href.replace("/", ""));
-}
-
-// UI にフォルダ一覧を表示する
-export async function showFolderList() {
-  const box = document.getElementById("workList");
-  const folders = await listLogFolders();
-
-  if (folders.length === 0) {
-    box.innerHTML = "<p>logs フォルダが見つかりません。</p>";
-    return;
+// list.json を読み込む
+async function loadFolderList() {
+  const res = await fetch("/diary/list.json");
+  if (!res.ok) {
+    console.error("list.json が読み込めませんでした");
+    return [];
   }
-
-  box.innerHTML = `
-    <h3>フォルダ一覧</h3>
-    <ul>
-      ${folders.map(f => `<li>${f}</li>`).join("")}
-    </ul>
-  `;
+  return await res.json();
 }
 
-
-
-// ---------------------------------------------------------
-// logs/〇〇/all.csv を読み込む
-// ---------------------------------------------------------
+// CSV 読み込み
 async function loadLogCsv(folder) {
-  const path = `/logs/${folder}/all.csv`;
-
   try {
-    const rows = await loadCSV(path);  // ← CloudFront + S3 専用ローダー
-    return normalizeKeys(rows);        // ← キー整形（任意）
+    const rows = await loadCSV(`/logs/${folder}/all.csv`);
+    return normalizeKeys(rows);
   } catch (e) {
-    console.warn(`[work-summary] CSV not found in ${folder}`);
+    console.warn(`[work-summary] CSV not found: ${folder}`);
     return null;
   }
 }
 
-// ---------------------------------------------------------
 // 日付一致のログを集約
-// ---------------------------------------------------------
 export async function loadLogsByDate(date) {
-  const folders = await listLogFolders();
+  const folderList = await loadFolderList();
   const result = [];
 
-  for (const folder of folders) {
+  for (const item of folderList) {
+    const { folder, dateColumn } = item;
+
     const rows = await loadLogCsv(folder);
     if (!rows) continue;
 
     rows
-      .filter(r => r.date === date)
+      .filter(r => r[dateColumn] === date)
       .forEach(r => result.push({ folder, data: r }));
   }
 
   return result;
 }
 
-// ---------------------------------------------------------
 // UI 表示
-// ---------------------------------------------------------
 export async function showWorkSummary(date) {
   const box = document.getElementById("workList");
   const logs = await loadLogsByDate(date);

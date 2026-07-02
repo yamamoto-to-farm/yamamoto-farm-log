@@ -1,10 +1,47 @@
-<div id="form-area" style="display:none;">
-  <h1 class="page-title">作業日誌（フォルダ一覧テスト）</h1>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>作業日誌</title>
 
-  <div class="card" id="workList">
-    <p>フォルダ一覧を読み込み中...</p>
+  <!-- CSS -->
+  <link rel="stylesheet" href="/diary/diary.css">
+  <link rel="stylesheet" href="/common/css/main.css">
+</head>
+
+<body>
+
+  <!-- 共通ヘッダー -->
+  <div id="header"></div>
+
+  <!-- 本体 -->
+  <div id="form-area" style="display:none;">
+
+    <h1 class="page-title">作業日誌</h1>
+
+    <!-- 日付 -->
+    <h2 class="section-title">日付</h2>
+    <div class="form-field">
+      <input type="date" id="diaryDate" class="form-input">
+    </div>
+
+    <!-- 作業一覧（list.json → logs/〇〇/all.csv） -->
+    <h2 class="section-title">作業一覧</h2>
+    <div class="card" id="workList">
+      <p>日付を選択すると作業一覧が表示されます。</p>
+    </div>
+
+    <!-- メモ（保存しない） -->
+    <h2 class="section-title">メモ</h2>
+    <div class="card">
+      <textarea id="workNotes" rows="4" class="form-textarea"></textarea>
+    </div>
+
   </div>
-</div>
 
-<script type="module" src="/diary/diary.js"></script>
-<script type="module" src="/diary/work-summary.js"></script>
+  <!-- JS -->
+  <script type="module" src="/diary/diary.js"></script>
+  <script type="module" src="/diary/work-summary.js"></script>
+
+</body>
+</html>

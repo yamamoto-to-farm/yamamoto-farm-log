@@ -1,0 +1,9 @@
+[
+  { "folder": "planting",   "dateColumn": "plantDate" },
+  { "folder": "harvest",    "dateColumn": "harvestDate" },
+  { "folder": "fertilizer", "dateColumn": "applyDate" },
+  { "folder": "pesticide",  "dateColumn": "sprayDate" },
+  { "folder": "seed",       "dateColumn": "seedDate" },
+  { "folder": "schedule",   "dateColumn": "planDate" },
+  { "folder": "weight",     "dateColumn": "date" }
+]
