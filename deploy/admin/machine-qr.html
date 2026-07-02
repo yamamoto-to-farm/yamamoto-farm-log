@@ -13,6 +13,82 @@
   <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
+  <style>
+    #qr-area {
+      text-align: left;
+      padding: 18px;
+    }
+
+    .qr-result-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: center;
+    }
+
+    .qr-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+      min-height: 320px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+    }
+
+    .qr-details {
+      display: grid;
+      gap: 14px;
+      align-content: center;
+    }
+
+    .qr-detail-label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .qr-detail-value {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .qr-url-box {
+      padding: 10px 12px;
+      background: #f9fafb;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-all;
+      color: #1f2937;
+    }
+
+    .qr-meta-box {
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .qr-result-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .qr-preview {
+        min-height: 0;
+      }
+    }
+  </style>
+
   <!-- QRコード生成ライブラリ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -54,10 +130,29 @@
 
     <!-- QR表示エリア -->
     <div id="qr-area" class="card" style="text-align:center;">
-      <img id="qr-icon" style="display:none; width:80px; margin-bottom:10px;">
-      <div id="qr-machine" class="info-line" style="font-size:18px; font-weight:600;"></div>
-      <div id="qrcode"></div>
-      <div id="qr-url" class="url-box"></div>
+      <div class="qr-result-layout">
+        <div class="qr-preview">
+          <img id="qr-icon" style="display:none; width:80px;">
+          <div id="qrcode"></div>
+        </div>
+
+        <div class="qr-details">
+          <div class="qr-meta-box">
+            <span class="qr-detail-label">ページ</span>
+            <div id="qr-page-name" class="qr-detail-value"></div>
+          </div>
+
+          <div class="qr-meta-box">
+            <span class="qr-detail-label">機械</span>
+            <div id="qr-machine" class="qr-detail-value"></div>
+          </div>
+
+          <div class="qr-meta-box">
+            <span class="qr-detail-label">URL</span>
+            <div id="qr-url" class="qr-url-box"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -104,6 +199,7 @@
       document.getElementById("generate-btn").onclick = () => {
         const selected = pageSel.selectedOptions[0];
         const pageId = selected.value;
+        const pageName = selected.textContent;
         const pagePath = selected.dataset.path;
         const openLog = selected.dataset.openLog === "true";
         const machineId = machineSel.value;
@@ -140,6 +236,9 @@
         const machineName = machineSel.selectedOptions[0].textContent;
         document.getElementById("qr-machine").textContent =
           machineId ? machineName : "（機械なし）";
+
+        // ページ名
+        document.getElementById("qr-page-name").textContent = pageName;
 
         // URL表示
         document.getElementById("qr-url").textContent = absUrl;
