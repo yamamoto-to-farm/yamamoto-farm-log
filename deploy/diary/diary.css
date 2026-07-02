@@ -220,3 +220,36 @@
     max-height: 320px;
   }
 }
+
+/* --------------------------------
+   印刷時の表示強制（Chromeで白紙になる対策）
+-------------------------------- */
+@media print {
+  /* コンテナを展開して表示を確実にする */
+  #form-area, #diary-container, #workList, #editWorkArea {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* カードを通常表示にして影や余白を削る */
+  .edit-card, .view-card, .weather-card {
+    box-shadow: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 6px 0 !important;
+    color: #000 !important;
+  }
+
+  /* フォーム系は印刷に不要なので非表示にする */
+  input, textarea, select, button {
+    display: none !important;
+  }
+
+  /* ページ幅を広げる */
+  .diary-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 6px !important;
+  }
+}
