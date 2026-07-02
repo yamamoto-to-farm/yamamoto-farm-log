@@ -277,7 +277,7 @@ tbody tr:nth-child(odd) { background: #fafafa; }
    スマホ最適化
 ------------------------------ */
 @media (max-width: 600px) {
-    body { padding: 70px 14px 14px !important; }
+    body { padding: 70px 10px 10px !important; }
     h2.menu-section-title { font-size: 18px; }
     table { overflow-x: auto; white-space: nowrap; display: block; }
     th, td { font-size: 13px; padding: 6px 8px; }
