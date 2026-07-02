@@ -28,20 +28,55 @@ import { printInline } from '/common/utils.js';
     setTimeout(async () => {
       try {
         // ヘルパ: 指定セレクタの中身が実際に描画されるまでポーリング
-        const waitForContent = async (sel, timeout = 5000, interval = 100) => {
+        const waitForContent = async (sel, timeout = 10000, interval = 100) => {
           const start = Date.now();
-          while (Date.now() - start < timeout) {
-            const el = document.querySelector(sel);
-            if (el) {
-              const text = (el.innerText || '').trim();
-              const imgs = el.querySelectorAll('img');
-              const imgAllLoaded = imgs.length === 0 || Array.from(imgs).every(i => i.complete);
-              // テキストがある、または画像が全て読み込み済み、または leaflet 要素を含む場合は準備完了と見なす
-              if (text.length > 20 || imgAllLoaded || el.querySelector('.leaflet-container')) return true;
-            }
-            await new Promise(r => setTimeout(r, interval));
+
+          // 最低限 document load を待つ（速ければすぐ進む）
+          if (document.readyState !== 'complete') {
+            await new Promise(r => {
+              const onLoad = () => { window.removeEventListener('load', onLoad); r(); };
+              window.addEventListener('load', onLoad);
+              setTimeout(() => { window.removeEventListener('load', onLoad); r(); }, 2000);
+            });
           }
-          return false;
+
+          return await new Promise(resolve => {
+            let finished = false;
+            const checkOnce = () => {
+              if (finished) return;
+              const el = document.querySelector(sel);
+              if (el) {
+                const text = (el.innerText || '').trim();
+                const imgs = el.querySelectorAll('img');
+                const imgAllLoaded = imgs.length === 0 || Array.from(imgs).every(i => i.complete);
+                const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : { height: 0 };
+                // 条件: 十分なテキスト量、または画像がロード済みか、または要素高さがある、または leaflet を含む
+                if (text.length > 20 || imgAllLoaded && el.children.length > 0 || rect.height > 40 || el.querySelector('.leaflet-container')) {
+                  finished = true; return resolve(true);
+                }
+              }
+              if (Date.now() - start >= timeout) {
+                finished = true; return resolve(false);
+              }
+            };
+
+            // MutationObserver で変化を監視
+            const obs = new MutationObserver(() => { checkOnce(); });
+            obs.observe(document.documentElement || document, { childList: true, subtree: true, attributes: true });
+
+            // 定期チェック
+            const id = setInterval(() => { checkOnce(); }, interval);
+
+            // 初回チェック
+            checkOnce();
+
+            // 解除関数
+            const cleanup = () => { clearInterval(id); try{ obs.disconnect(); }catch(e){} };
+
+            // resolve 時にクリーンアップするラッパー
+            const origResolve = resolve;
+            resolve = (v) => { cleanup(); origResolve(v); };
+          });
         };
 
         // マップページなら in-place print を使う（cloneだとタイルが複製されないため）
