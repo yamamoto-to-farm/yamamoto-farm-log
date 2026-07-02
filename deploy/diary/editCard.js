@@ -4,7 +4,6 @@
 // =========================================================
 
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
-import { saveDiary } from "./saveDiary.js";
 
 // ---------------------------------------------------------
 // 編集カードを描画
@@ -55,7 +54,7 @@ export function renderEditCards(autoList) {
 }
 
 // ---------------------------------------------------------
-// 初期化（保存は saveDiary.js に委譲）
+// 初期化（保存イベントは diary.js に集約）
 // ---------------------------------------------------------
 export async function initEditPage() {
   const dateInput = document.getElementById("diaryDate");
@@ -66,7 +65,6 @@ export async function initEditPage() {
 
   renderEditCards(autoList);
 
-  document.getElementById("saveDiaryBtn").addEventListener("click", () => {
-    saveDiary(date, autoList);
-  });
+  // ★ 保存イベントはここでは登録しない
+  //   → diary.js が saveDiary(date, autoList) を1回だけ登録する
 }
