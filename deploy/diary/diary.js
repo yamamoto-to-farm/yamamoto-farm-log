@@ -1,85 +1,57 @@
-// admin/diary/diary.js
-import { verifyLocalAuth } from "../common/ui.js";
+// =========================================================
+// diary/diary.js — 統合ハブ（初期化・イベント登録・他JS呼び出し）
+// =========================================================
 
-import { renderCommonCard, initCommonCard } from "./card-common.js";
-import { renderFertilizerCard } from "./card-fertilizer.js";
-import { renderPesticideCard } from "./card-pesticide.js";
-import { renderOtherCard } from "./card-other.js";
+import { verifyLocalAuth } from "/common/ui.js";
+import { renderHeader } from "/common/header.js";
 
-// ▼ 一覧ページ（analysis/index と同じ思想）
-function renderWorkTypeList() {
-  return `
-    <div class="card">
-      <h2>作業種別を選択</h2>
-      <ul class="link-list">
-        <li><a href="?type=fertilizer">施肥</a></li>
-        <li><a href="?type=pesticide">防除</a></li>
-        <li><a href="?type=other">その他作業</a></li>
-      </ul>
-    </div>
-  `;
-}
+import { showWeatherBox } from "./weather-box.js";
+import { showWorkSummary } from "./work-summary.js";
+import { saveDiary } from "./save.js";
 
-export async function initDiaryPage() {
-  const container = document.getElementById("page-area");
+window.addEventListener("DOMContentLoaded", async () => {
 
-  // ▼ URL パラメータ取得
-  const params = new URLSearchParams(location.search);
-  const type = params.get("type");
-  const fieldParam = params.get("field");
-
-  // ▼ 認証（ログインユーザー名）
+  // -----------------------------
+  // 認証
+  // -----------------------------
   const ok = await verifyLocalAuth();
   if (!ok) return;
 
-  const user = localStorage.getItem("user");
+  // -----------------------------
+  // ヘッダー描画
+  // -----------------------------
+  renderHeader();
 
-  // ===============================
-  // ① パラメータなし → 一覧ページ
-  // ===============================
-  if (!type) {
-    container.innerHTML = renderWorkTypeList();
-    return;
-  }
+  // -----------------------------
+  // ページ表示
+  // -----------------------------
+  document.getElementById("form-area").style.display = "block";
 
-  // ===============================
-  // ② パラメータあり → 専用ページ
-  // ===============================
-  container.innerHTML = "";
+  // -----------------------------
+  // 今日の日付をセット
+  // -----------------------------
+  const today = new Date().toISOString().slice(0, 10);
+  const dateInput = document.getElementById("diaryDate");
+  dateInput.value = today;
 
-  // ▼ 共通カード
-  container.insertAdjacentHTML("beforeend", renderCommonCard());
-  await initCommonCard();
+  // -----------------------------
+  // 初期表示（気象＋作業一覧）
+  // -----------------------------
+  showWeatherBox(today);
+  showWorkSummary(today);
 
-  // ▼ ログインユーザーを自動選択
-  if (user) {
-    const boxes = document.querySelectorAll("#workers_box input[type=checkbox]");
-    boxes.forEach(b => {
-      if (b.value === user) b.checked = true;
-    });
-  }
+  // -----------------------------
+  // 日付変更イベント
+  // -----------------------------
+  dateInput.addEventListener("change", e => {
+    const d = e.target.value;
+    showWeatherBox(d);
+    showWorkSummary(d);
+  });
 
-  // ▼ 圃場の自動選択（URL → GPS → 手動）
-  if (fieldParam) {
-    const areaSel = document.getElementById("field_area");
-    const manualSel = document.getElementById("field_manual");
-
-    // エリアと圃場を探して選択
-    [...manualSel.options].forEach(opt => {
-      if (opt.value === fieldParam) {
-        manualSel.value = fieldParam;
-      }
-    });
-  }
-
-  // ▼ 作業種別ごとのカード
-  if (type === "fertilizer") {
-    container.insertAdjacentHTML("beforeend", renderFertilizerCard());
-  }
-  if (type === "pesticide") {
-    container.insertAdjacentHTML("beforeend", renderPesticideCard());
-  }
-  if (type === "other") {
-    container.insertAdjacentHTML("beforeend", renderOtherCard());
-  }
-}
+  // -----------------------------
+  // 保存ボタン
+  // -----------------------------
+  document.getElementById("saveDiaryBtn")
+    ?.addEventListener("click", saveDiary);
+});
