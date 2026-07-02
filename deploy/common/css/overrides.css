@@ -47,4 +47,24 @@
     display: none !important;
     visibility: hidden !important;
   }
+
+  /* Hide fixed app header/footer and other high-z UI elements in print
+     to avoid them covering page content (some headers use very high z-index). */
+  .app-header,
+  .app-footer,
+  .header,
+  .topbar,
+  .site-header {
+    display: none !important;
+    visibility: hidden !important;
+    position: static !important;
+  }
+
+  /* Ensure collapsed lists are visible in print */
+  #workList, .collapse-content {
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
 }
