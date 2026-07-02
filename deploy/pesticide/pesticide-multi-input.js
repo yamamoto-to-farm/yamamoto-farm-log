@@ -55,30 +55,27 @@ export function renderpesticideInputs() {
   <div class="pesticide-row" data-name="${name}">
     <div class="pesticide-title">${name}</div>
 
-    <div class="pesticide-line">
-            希釈倍率：
+    <div class="pesticide-line" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span>倍率：</span>
             <input type="text"
                          inputmode="decimal"
                          pattern="[0-9]*(\\.[0-9]+)?"
                          class="dilution-input"
              data-name="${name}"
                          placeholder="例: 1000"
-                         value=""> 倍
-        </div>
-
-        <div class="pesticide-line" style="margin-top:6px;">
-            合計散布水量：
+                         value="" style="max-width:140px;"> <span>倍</span>
+            <span>散布液量：</span>
             <input type="text"
                          inputmode="decimal"
                          pattern="[0-9]*(\\.[0-9]+)?"
                          class="water-total-input"
                          data-name="${name}"
                          placeholder="例: 120"
-                         value=""> ${unit}
+                         value="" style="max-width:140px;"> <span>${unit}</span>
         </div>
 
         <div class="per10a" id="per10a-${f.id}" style="margin-top:4px; color:#555;">
-            - ${unit}/10a
+            散布液量：- ${unit}/10a
     </div>
   </div>
 `;
@@ -126,7 +123,7 @@ export function updatePer10aAll(totalA) {
             const pesticideName = row?.dataset?.name || "";
             const f = pesticideDict[pesticideName] || {};
             const unit = f.unit || "L";
-            el.textContent = `- ${unit}/10a`;
+            el.textContent = `散布液量：- ${unit}/10a`;
         });
         return;
     }
@@ -147,7 +144,7 @@ export function updatePer10aAll(totalA) {
         const unit = f.unit || "L";
 
         const el = document.getElementById(`per10a-${f.id}`);
-        if (el) el.textContent = `${per10a} ${unit}/10a`;
+        if (el) el.textContent = `散布液量：${per10a} ${unit}/10a`;
     });
 }
 

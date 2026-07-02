@@ -233,16 +233,14 @@ function renderPesticideAmountInputs() {
       <div class="card" style="margin-top:8px;">
         <div style="font-weight:700; margin-bottom:8px;">${escapeHtml(name)}</div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <label>希釈倍率</label>
+          <span>倍率：</span>
           <input type="text" class="form-input weed-dilution-input" data-name="${escapeAttr(name)}" inputmode="decimal" pattern="[0-9]*(\\.[0-9]+)?" placeholder="例: 1000" style="max-width:140px;">
           <span>倍</span>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
-          <label>合計散布水量</label>
+          <span>散布液量：</span>
           <input type="text" class="form-input weed-water-total-input" data-name="${escapeAttr(name)}" inputmode="decimal" pattern="[0-9]*(\\.[0-9]+)?" placeholder="例: 120" style="max-width:140px;">
           <span>${escapeHtml(unit)}</span>
         </div>
-        <div class="weeding-per10a" data-name="${escapeAttr(name)}" style="margin-top:8px; color:#555;">- ${escapeHtml(unit)}/10a</div>
+        <div class="weeding-per10a" data-name="${escapeAttr(name)}" style="margin-top:8px; color:#555;">散布液量：- ${escapeHtml(unit)}/10a</div>
       </div>
     `;
   }).join("");
@@ -267,14 +265,14 @@ function updatePer10aForAll() {
     const unit = p.unit || "L";
 
     if (!totalA) {
-      el.textContent = `- ${unit}/10a`;
+      el.textContent = `散布液量：- ${unit}/10a`;
       return;
     }
 
     const input = document.querySelector(`.weed-water-total-input[data-name="${cssEscape(name)}"]`);
     const total = toNumber(input?.value);
     const per10a = calcPer10a(total, totalA).toFixed(1);
-    el.textContent = `${per10a} ${unit}/10a`;
+    el.textContent = `散布液量：${per10a} ${unit}/10a`;
   });
 }
 
