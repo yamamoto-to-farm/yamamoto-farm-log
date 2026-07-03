@@ -112,7 +112,6 @@ function renderRows() {
       input.addEventListener("click", ev => {
         ev.stopPropagation();
         state.selectedIndex = idx;
-        renderRows();
       });
     });
 
