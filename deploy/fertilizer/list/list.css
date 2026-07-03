@@ -1,6 +1,21 @@
 /* ================================
    年ブロック
 ================================ */
+.list-filter-card {
+  margin-bottom: 14px;
+}
+
+.list-filter-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.list-filter-row .form-field {
+  min-width: 200px;
+}
+
 .year-block {
   margin-bottom: 30px;
   border: 1px solid #ccc;

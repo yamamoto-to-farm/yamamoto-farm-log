@@ -5,6 +5,7 @@
   <title>施肥記録一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="./list.css?v=1">
 
   <style>
@@ -23,8 +24,30 @@
   <!-- ★ 初期状態で表示しておく（display:none を削除） -->
   <div id="page-area">
     <h1 class="page-title">施肥記録一覧</h1>
+
+    <div class="card list-filter-card">
+      <div class="list-filter-row">
+        <div class="form-field">
+          <label for="year-select">年</label>
+          <select id="year-select" class="form-input"></select>
+        </div>
+        <div class="form-field">
+          <label>圃場フィルタ</label>
+          <button id="open-field-modal" class="primary-btn" type="button">圃場を選択</button>
+        </div>
+        <div class="form-field">
+          <label>肥料フィルタ</label>
+          <button id="open-fertilizer-modal" class="primary-btn" type="button">肥料を選択</button>
+        </div>
+      </div>
+      <div id="activeFieldFilters" style="margin-top:10px;"></div>
+      <div id="activeFertilizerFilters" style="margin-top:10px;"></div>
+    </div>
+
     <div id="fertilizer-container"></div>
   </div>
+
+  <div id="modal-container"></div>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js?v=1";
@@ -42,7 +65,7 @@
       }
 
       renderHeader();
-      initFertilizerList();
+      await initFertilizerList();
     });
   </script>
 
