@@ -117,6 +117,10 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
     <div id="pesticide-detail-list"></div>
 
+    <button id="sort-pesticide-detail-btn" class="secondary-btn" style="margin-top:12px;">
+      ID順に並び替え
+    </button>
+
     <button id="add-pesticide-btn" class="primary-btn" style="margin-top:20px;">
       ＋ 農薬を追加
     </button>
@@ -245,6 +249,75 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
   render();
 
+  function syncCurrentFromInputs() {
+    const cards = container.querySelectorAll(".pesticide-detail-card");
+
+    cards.forEach(card => {
+      const id = card.dataset.id;
+      const getValue = key => card.querySelector(`[data-key=\"${key}\"]`)?.value ?? "";
+      const prev = current[id] || buildEmptyPesticideDetail();
+
+      const next = {
+        ...buildEmptyPesticideDetail(),
+        ...prev,
+        name: getValue("name").trim(),
+        maker: getValue("maker").trim(),
+        category: getValue("category").trim(),
+        unit: getValue("unit").trim() || "ml",
+        registrationNo: getValue("registrationNo").trim(),
+        formulation: getValue("formulation").trim(),
+        price: parsePriceText(getValue("priceText"), id),
+        activeIngredients: parseListText(getValue("activeIngredientsText")),
+        dilution: {
+          min: parseNullableNumber(getValue("dilutionMin")),
+          max: parseNullableNumber(getValue("dilutionMax")),
+          default: parseNullableNumber(getValue("dilutionDefault"))
+        },
+        standardDose: {
+          per10a: parseNullableNumber(getValue("standardDosePer10a")),
+          unit: getValue("standardDoseUnit").trim() || getValue("unit").trim() || "ml"
+        },
+        packaging: {
+          amountPerPack: parseNullableNumber(getValue("packagingAmountPerPack")),
+          unit: getValue("packagingUnit").trim() || getValue("unit").trim() || "ml",
+          packLabel: getValue("packagingPackLabel").trim() || "本"
+        },
+        targetCrops: parseListText(getValue("targetCropsText")),
+        targetPests: parseListText(getValue("targetPestsText")),
+        maxApplicationsPerSeason: parseNullableNumber(getValue("maxApplicationsPerSeason")),
+        preHarvestIntervalDays: parseNullableNumber(getValue("preHarvestIntervalDays")),
+        reentryIntervalHours: parseNullableNumber(getValue("reentryIntervalHours")),
+        resistanceCode: getValue("resistanceCode").trim(),
+        notes: getValue("notes").trim()
+      };
+
+      current[id] = next;
+    });
+  }
+
+  document.getElementById("sort-pesticide-detail-btn").onclick = () => {
+    try {
+      syncCurrentFromInputs();
+    } catch (e) {
+      alert(e.message || "入力形式を確認してください");
+      return;
+    }
+
+    const sorted = {};
+    Object.keys(current)
+      .sort((a, b) => a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" }))
+      .forEach(id => {
+        sorted[id] = current[id];
+      });
+
+    Object.keys(current).forEach(k => {
+      delete current[k];
+    });
+    Object.assign(current, sorted);
+
+    render();
+  };
+
   document.getElementById("add-pesticide-btn").onclick = () => {
     const ids = Object.keys(current);
     let maxNo = 0;
@@ -263,47 +336,9 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     const cards = container.querySelectorAll(".pesticide-detail-card");
 
     try {
-      cards.forEach(card => {
-        const id = card.dataset.id;
-        const getValue = key => card.querySelector(`[data-key=\"${key}\"]`)?.value ?? "";
-        const prev = current[id] || buildEmptyPesticideDetail();
-
-        const next = {
-          ...buildEmptyPesticideDetail(),
-          ...prev,
-          name: getValue("name").trim(),
-          maker: getValue("maker").trim(),
-          category: getValue("category").trim(),
-          unit: getValue("unit").trim() || "ml",
-          registrationNo: getValue("registrationNo").trim(),
-          formulation: getValue("formulation").trim(),
-          price: parsePriceText(getValue("priceText"), id),
-          activeIngredients: parseListText(getValue("activeIngredientsText")),
-          dilution: {
-            min: parseNullableNumber(getValue("dilutionMin")),
-            max: parseNullableNumber(getValue("dilutionMax")),
-            default: parseNullableNumber(getValue("dilutionDefault"))
-          },
-          standardDose: {
-            per10a: parseNullableNumber(getValue("standardDosePer10a")),
-            unit: getValue("standardDoseUnit").trim() || getValue("unit").trim() || "ml"
-          },
-          packaging: {
-            amountPerPack: parseNullableNumber(getValue("packagingAmountPerPack")),
-            unit: getValue("packagingUnit").trim() || getValue("unit").trim() || "ml",
-            packLabel: getValue("packagingPackLabel").trim() || "本"
-          },
-          targetCrops: parseListText(getValue("targetCropsText")),
-          targetPests: parseListText(getValue("targetPestsText")),
-          maxApplicationsPerSeason: parseNullableNumber(getValue("maxApplicationsPerSeason")),
-          preHarvestIntervalDays: parseNullableNumber(getValue("preHarvestIntervalDays")),
-          reentryIntervalHours: parseNullableNumber(getValue("reentryIntervalHours")),
-          resistanceCode: getValue("resistanceCode").trim(),
-          notes: getValue("notes").trim()
-        };
-
-        current[id] = next;
-      });
+      if (cards.length > 0) {
+        syncCurrentFromInputs();
+      }
     } catch (e) {
       alert(e.message || "入力形式を確認してください");
       return;

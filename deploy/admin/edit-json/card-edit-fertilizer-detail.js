@@ -65,6 +65,10 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
     <div id="fertilizer-list"></div>
 
+    <button id="sort-fertilizer-detail-btn" class="secondary-btn" style="margin-top:12px;">
+      ID順に並び替え
+    </button>
+
     <button id="add-fertilizer-btn" class="primary-btn" style="margin-top:20px;">
       ＋ 肥料を追加
     </button>
@@ -124,6 +128,45 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
   render();
 
+  function syncJsonFromInputs() {
+    const cards = container.querySelectorAll(".fertilizer-detail-card");
+
+    cards.forEach(card => {
+      const id = card.dataset.id;
+      const getValue = key => card.querySelector(`[data-key=\"${key}\"]`)?.value ?? "";
+
+      json[id] = {
+        ...(json[id] || {}),
+        name: getValue("name").trim(),
+        maker: getValue("maker").trim(),
+        n: Number(getValue("n")) || 0,
+        p: Number(getValue("p")) || 0,
+        k: Number(getValue("k")) || 0,
+        price: parsePriceText(getValue("priceText"), id),
+        notes: getValue("notes").trim()
+      };
+    });
+  }
+
+  document.getElementById("sort-fertilizer-detail-btn").onclick = () => {
+    try {
+      syncJsonFromInputs();
+    } catch (e) {
+      alert(e.message || "入力形式を確認してください");
+      return;
+    }
+
+    const sorted = {};
+    Object.keys(json)
+      .sort((a, b) => a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" }))
+      .forEach(id => {
+        sorted[id] = json[id];
+      });
+
+    json = sorted;
+    render();
+  };
+
   // -----------------------------
   // 肥料追加
   // -----------------------------
@@ -151,21 +194,9 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     const cards = container.querySelectorAll(".fertilizer-detail-card");
 
     try {
-      cards.forEach(card => {
-        const id = card.dataset.id;
-        const getValue = key => card.querySelector(`[data-key=\"${key}\"]`)?.value ?? "";
-
-        json[id] = {
-          ...(json[id] || {}),
-          name: getValue("name").trim(),
-          maker: getValue("maker").trim(),
-          n: Number(getValue("n")) || 0,
-          p: Number(getValue("p")) || 0,
-          k: Number(getValue("k")) || 0,
-          price: parsePriceText(getValue("priceText"), id),
-          notes: getValue("notes").trim()
-        };
-      });
+      if (cards.length > 0) {
+        syncJsonFromInputs();
+      }
     } catch (e) {
       alert(e.message || "入力形式を確認してください");
       return;

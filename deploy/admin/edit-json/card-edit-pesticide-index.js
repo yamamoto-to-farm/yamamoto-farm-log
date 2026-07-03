@@ -86,6 +86,10 @@ export function renderEditCard({ json, container, finalPath }) {
       </div>
       <div id="pesticide-list"></div>
 
+      <button id="sort-pesticide-btn" class="secondary-btn" style="margin-top:12px;">
+        ID順に並び替え
+      </button>
+
       <button id="add-pesticide-btn" class="primary-btn" style="margin-top:20px;">
         ＋ 農薬を追加
       </button>
@@ -148,6 +152,43 @@ export function renderEditCard({ json, container, finalPath }) {
 
   render();
 
+  function syncListDataFromInputs() {
+    const ids = container.querySelectorAll(".pesticide-id");
+    const names = container.querySelectorAll(".pesticide-name");
+    const categories = container.querySelectorAll(".pesticide-category");
+    const units = container.querySelectorAll(".pesticide-unit");
+
+    const nextList = [];
+
+    ids.forEach((input, i) => {
+      const id = input.value.trim();
+      const name = names[i].value.trim();
+      const category = categories[i].value.trim();
+      const unit = units[i].value.trim();
+
+      if (!id && !name) return;
+
+      nextList.push({
+        id,
+        name,
+        category,
+        unit
+      });
+    });
+
+    listData = nextList;
+  }
+
+  document.getElementById("sort-pesticide-btn").onclick = () => {
+    syncListDataFromInputs();
+
+    listData.sort((a, b) =>
+      String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true, sensitivity: "base" })
+    );
+
+    render();
+  };
+
   document.getElementById("add-pesticide-btn").onclick = () => {
     listData.push({
       id: "",
@@ -161,28 +202,9 @@ export function renderEditCard({ json, container, finalPath }) {
   document.getElementById("save-btn").onclick = async () => {
     showSaveModal("保存しています…");
 
-    const ids = container.querySelectorAll(".pesticide-id");
-    const names = container.querySelectorAll(".pesticide-name");
-    const categories = container.querySelectorAll(".pesticide-category");
-    const units = container.querySelectorAll(".pesticide-unit");
+    syncListDataFromInputs();
 
-    const newList = [];
-
-    ids.forEach((input, i) => {
-      const id = input.value.trim();
-      const name = names[i].value.trim();
-      const category = categories[i].value.trim();
-      const unit = units[i].value.trim();
-
-      if (!id && !name) return;
-
-      newList.push({
-        id,
-        name,
-        category,
-        unit
-      });
-    });
+    const newList = listData;
 
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
     await saveJSON(savePath, newList);

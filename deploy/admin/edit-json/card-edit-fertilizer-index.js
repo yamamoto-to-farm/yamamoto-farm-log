@@ -63,6 +63,10 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       <h2>肥料一覧</h2>
       <div id="fertilizer-list"></div>
 
+      <button id="sort-fertilizer-btn" class="secondary-btn" style="margin-top:12px;">
+        ID順に並び替え
+      </button>
+
       <button id="add-fertilizer-btn" class="primary-btn" style="margin-top:20px;">
         ＋ 肥料を追加
       </button>
@@ -129,6 +133,45 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
   render();
 
+  function syncListDataFromInputs() {
+    const ids = container.querySelectorAll(".fert-id");
+    const categories = container.querySelectorAll(".fert-category");
+    const names = container.querySelectorAll(".fert-name");
+    const capacities = container.querySelectorAll(".fert-capacity");
+
+    const nextList = [];
+
+    ids.forEach((input, i) => {
+      const id = input.value.trim();
+      const category = categories[i].value.trim();
+      const name = names[i].value.trim();
+      const capacityRaw = capacities[i].value.trim();
+
+      if (!id && !name) return;
+
+      const capacity = capacityRaw === "" ? null : Number(capacityRaw);
+
+      nextList.push({
+        id,
+        category,
+        name,
+        capacity
+      });
+    });
+
+    listData = nextList;
+  }
+
+  document.getElementById("sort-fertilizer-btn").onclick = () => {
+    syncListDataFromInputs();
+
+    listData.sort((a, b) =>
+      String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true, sensitivity: "base" })
+    );
+
+    render();
+  };
+
   // -----------------------------
   // 肥料追加
   // -----------------------------
@@ -149,34 +192,9 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
     showSaveModal("保存しています…");
 
-    // 画面の入力値を listData に反映
-    const ids = container.querySelectorAll(".fert-id");
-    const categories = container.querySelectorAll(".fert-category");
-    const names = container.querySelectorAll(".fert-name");
-    const capacities = container.querySelectorAll(".fert-capacity");
+    syncListDataFromInputs();
 
-    const newList = [];
-
-    ids.forEach((input, i) => {
-      const id = input.value.trim();
-      const category = categories[i].value.trim();
-      const name = names[i].value.trim();
-      const capacityRaw = capacities[i].value.trim();
-
-      if (!id && !name) {
-        // ID も名称も空ならスキップ（空行扱い）
-        return;
-      }
-
-      const capacity = capacityRaw === "" ? null : Number(capacityRaw);
-
-      newList.push({
-        id,
-        category,
-        name,
-        capacity
-      });
-    });
+    const newList = listData;
 
     // 保存用パス生成
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
