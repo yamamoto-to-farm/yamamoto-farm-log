@@ -101,20 +101,28 @@ function normalizePesticideId(value) {
   return raw;
 }
 
-function buildPesticideIdSuggestions(list, perPrefix = 8) {
+function buildPesticideIdSuggestions(list, perPrefix = 8, categoryFilter = "") {
   const existing = list
     .map(v => normalizePesticideId(v?.id || ""))
     .filter(Boolean);
 
   const existingSet = new Set(existing);
   const out = [];
+  const category = String(categoryFilter || "").trim();
 
-  PESTICIDE_PREFIXES.forEach(({ prefix, category }) => {
+  const targets = category
+    ? PESTICIDE_PREFIXES.filter(v => v.category === category)
+    : PESTICIDE_PREFIXES;
+
+  // 未定義カテゴリを選択中の場合は候補ゼロより全件表示の方が実用的
+  const prefixTargets = targets.length > 0 ? targets : PESTICIDE_PREFIXES;
+
+  prefixTargets.forEach(({ prefix, category: labelCategory }) => {
     let found = 0;
     for (let n = 1; n <= 9999 && found < perPrefix; n++) {
       const id = `${prefix}${String(n).padStart(4, "0")}`;
       if (existingSet.has(id)) continue;
-      out.push({ id, label: `${id} (${category})` });
+      out.push({ id, label: `${id} (${labelCategory})` });
       found += 1;
     }
   });
@@ -256,7 +264,7 @@ export function renderEditCard({ json, container, finalPath }) {
   }
 
   function refreshIdSuggestions() {
-    const suggestions = buildPesticideIdSuggestions(listData, 8);
+    const suggestions = buildPesticideIdSuggestions(listData, 8, selectedCategory);
 
     candidateEl.innerHTML = suggestions
       .map(v => `<option value="${v.id}">${escapeHtml(v.label)}</option>`)
@@ -377,6 +385,11 @@ export function renderEditCard({ json, container, finalPath }) {
     }
 
     const info = PESTICIDE_PREFIXES.find(v => candidate.startsWith(v.prefix));
+
+    if (selectedCategory && info?.category && info.category !== selectedCategory) {
+      alert(`現在のカテゴリフィルタ（${selectedCategory}）に一致するID候補を選択してください。`);
+      return;
+    }
 
     listData.push({
       id: candidate,
