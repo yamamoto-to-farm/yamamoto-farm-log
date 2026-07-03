@@ -81,6 +81,39 @@
     ]
   },
   {
+    "folder": "watering",
+    "dateColumn": "date",
+    "displayName": "潅水",
+    "headerName": [
+      "date",
+      "worker",
+      "field",
+      "machine"
+    ]
+  },
+  {
+    "folder": "intertill",
+    "dateColumn": "date",
+    "displayName": "中耕",
+    "headerName": [
+      "date",
+      "worker",
+      "field",
+      "machine"
+    ]
+  },
+  {
+    "folder": "bedmaking",
+    "dateColumn": "date",
+    "displayName": "畝立て",
+    "headerName": [
+      "date",
+      "worker",
+      "field",
+      "machine"
+    ]
+  },
+  {
     "folder": "seed",
     "dateColumn": "seedDate",
     "displayName": "播種",
