@@ -1,14 +1,1 @@
-[
-  {
-    "id": "F304",
-    "name": "アファーム乳剤",
-    "category": "殺虫剤",
-    "unit": "ml"
-  },
-  {
-    "id": "F305",
-    "name": "ダコニール",
-    "category": "殺菌剤",
-    "unit": "ml"
-  }
-]
+[{"id":"SL0001","name":"フィールドスターP乳剤","category":"選択制除草剤","unit":"ml"},{"id":"IN0001","name":"モベントフロアブル","category":"殺虫剤","unit":"ml"},{"id":"FG0001","name":"フェリオゴールド","category":"殺菌剤","unit":"ml"},{"id":"FG0002","name":"アニキ乳剤","category":"殺菌剤","unit":"ml"},{"id":"IN0002","name":"リドミルゴールドMZ","category":"殺虫剤","unit":"ml"},{"id":"FG0003","name":"カッパーシン水和剤","category":"殺菌剤","unit":"ｇ"}]
