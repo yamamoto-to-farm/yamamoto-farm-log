@@ -67,7 +67,7 @@ export async function initViewPage() {
   html += `
     <div class="card view-card diary-memo">
       <h3>日誌メモ</h3>
-      <p>${diary.memo ? diary.memo : "（メモなし）"}</p>
+      <p style="white-space: pre-line;">${escapeHtml(diary.memo ? diary.memo : "（メモなし）")}</p>
     </div>
   `;
 
@@ -83,4 +83,13 @@ function normalizeMultiText(value) {
   }
 
   return String(value || "").trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

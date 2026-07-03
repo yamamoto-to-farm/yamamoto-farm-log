@@ -67,6 +67,10 @@ export function renderEditCards(autoList, diary) {
     <p class="memo-desc">
       この日の作業ログがない場合や、未実装の作業がある場合はここに記入できます。
     </p>
+    <p class="memo-desc" style="margin-top:6px; color:#666;">
+      記入例：午前　防鳥ネット張る（直輝／咲子）
+      午後　会合（雅彦）
+    </p>
 
     <textarea id="freeMemo" class="form-textarea">${memo}</textarea>
   `;
