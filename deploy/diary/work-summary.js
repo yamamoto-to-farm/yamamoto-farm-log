@@ -41,6 +41,7 @@ export async function loadLogsByDate(date) {
       .forEach(r => {
         result.push({
           folder,
+          dateColumn,
           displayName,
           headerName,
           data: r
@@ -122,13 +123,54 @@ export function extractWorkForEdit(logs) {
       ? String(log.data["machine"] ?? "").trim()
       : "";
 
+    const sourceDate = String(log.data[log.dateColumn] || "").trim();
+    const sourceKey = buildSourceKey({
+      folder: log.folder,
+      date: sourceDate,
+      type,
+      field,
+      machine,
+      workers,
+      data: log.data
+    });
+
     autoList.push({
       type,
       workers,
       field,
-      machine
+      machine,
+      sourceKey
     });
   });
 
   return autoList;
+}
+
+function buildSourceKey({ folder, date, type, field, machine, workers, data }) {
+  const workerText = Array.isArray(workers)
+    ? workers.map(v => normalizeToken(v)).filter(Boolean).join("/")
+    : normalizeToken(workers);
+
+  const rowText = Object.keys(data || {})
+    .sort((a, b) => a.localeCompare(b))
+    .map(k => `${k}:${normalizeToken(data[k])}`)
+    .join("|");
+
+  return [
+    "v1",
+    normalizeToken(folder),
+    normalizeToken(date),
+    normalizeToken(type),
+    normalizeToken(field),
+    normalizeToken(machine),
+    workerText,
+    rowText
+  ].join("#");
+}
+
+function normalizeToken(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }

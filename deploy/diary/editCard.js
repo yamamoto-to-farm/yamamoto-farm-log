@@ -13,22 +13,30 @@ export function renderEditCards(autoList, diary) {
   const area = document.getElementById("editWorkArea");
   area.innerHTML = "";
 
+  const existingBySourceKey = {};
+  (diary?.work || []).forEach(w => {
+    if (!w || typeof w !== "object") return;
+    const key = String(w.sourceKey || "").trim();
+    if (!key) return;
+    existingBySourceKey[key] = w;
+  });
+
   // -------------------------------
   // 自動抽出された作業カード
   // -------------------------------
   autoList.forEach((item, idx) => {
 
-    // ★ 既存日誌に同じ作業があれば上書き
-    const existing = diary?.work?.[idx] || {};
+    // ★ sourceKey 一致を優先、旧データは index でフォールバック
+    const existing = existingBySourceKey[item.sourceKey] || diary?.work?.[idx] || {};
 
     const start = existing.start || "";
     const end = existing.end || "";
 
-    // ★ 圃場名（既存日誌にあれば上書き）
-    const field = existing.field || item.field || "";
+    // ★ ログ由来の値を優先（同期を維持）
+    const field = item.field || existing.field || "";
     const fieldText = normalizeMultiText(field) || "（未入力）";
-    const workersText = normalizeMultiText(existing.workers || item.workers) || "（未入力）";
-    const machine = String(existing.machine ?? item.machine ?? "").trim();
+    const workersText = normalizeMultiText(item.workers || existing.workers) || "（未入力）";
+    const machine = String(item.machine ?? existing.machine ?? "").trim();
     const machineText = machine || "（未入力）";
 
     const card = document.createElement("div");

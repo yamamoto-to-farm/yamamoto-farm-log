@@ -29,6 +29,7 @@ export async function saveDiary(date, autoList) {
   // 新しい作業データを作成（field 対応）
   // -------------------------------
   const newWork = autoList.map((item, idx) => ({
+    sourceKey: String(item.sourceKey || ""),
     type: item.type,
     // workers と同じく配列で保存（複数値は "／" でまとめる）
     field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || ""),
