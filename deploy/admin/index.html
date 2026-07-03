@@ -23,7 +23,7 @@
     import { renderHeader } from "/common/header.js?v=1.1";
 
     async function loadPages() {
-      const res = await fetch("/data/pages.json");
+      const res = await fetch(`/data/pages.json?ts=${Date.now()}`, { cache: "no-store" });
       return (await res.json()).pages;
     }
 
