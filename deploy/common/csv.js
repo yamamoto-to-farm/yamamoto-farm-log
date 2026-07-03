@@ -39,8 +39,11 @@ export async function loadCSV(path) {
   }
 
   const text = await res.text();
+  if (!text.trim()) return [];
 
   const lines = text.trim().split("\n");
+  if (lines.length === 0 || !lines[0].trim()) return [];
+
   const headers = lines[0].split(",");
 
   return lines.slice(1).map(line => {
