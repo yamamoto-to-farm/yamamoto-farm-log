@@ -40,8 +40,61 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function asJsonText(value) {
-  return JSON.stringify(value ?? {}, null, 2);
+function listToText(value) {
+  return Array.isArray(value) ? value.join("\n") : "";
+}
+
+function parseListText(raw) {
+  return String(raw || "")
+    .split(/[\n,]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function priceToText(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+
+  return Object.entries(value)
+    .map(([month, price]) => `${month}: ${price}`)
+    .join("\n");
+}
+
+function parsePriceText(raw, id) {
+  const out = {};
+  const lines = String(raw || "")
+    .split("\n")
+    .map(v => v.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const sep = line.includes(":") ? ":" : (line.includes("：") ? "：" : null);
+    if (!sep) {
+      throw new Error(`${id} の月別価格は「YYYY-MM: 金額」で入力してください`);
+    }
+
+    const [monthRaw, ...rest] = line.split(sep);
+    const month = String(monthRaw || "").trim();
+    const priceRaw = rest.join(sep).trim();
+
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+      throw new Error(`${id} の月別価格の月は YYYY-MM 形式で入力してください`);
+    }
+    if (!priceRaw) {
+      throw new Error(`${id} の月別価格の金額が空です`);
+    }
+
+    const n = Number(priceRaw);
+    out[month] = Number.isNaN(n) ? priceRaw : n;
+  }
+
+  return out;
+}
+
+function parseNullableNumber(raw) {
+  const text = String(raw ?? "").trim();
+  if (text === "") return null;
+  const n = Number(text);
+  return Number.isNaN(n) ? null : n;
 }
 
 export function renderEditCard({ dataName, json, container, finalPath }) {
@@ -71,7 +124,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       const p = { ...buildEmptyPesticideDetail(), ...(current[id] || {}) };
 
       list.insertAdjacentHTML("beforeend", `
-        <div class="card" style="margin-bottom:20px;">
+        <div class="card pesticide-detail-card" data-id="${escapeHtml(id)}" style="margin-bottom:20px;">
           <h3>${escapeHtml(id)}</h3>
 
           <div class="edit-line">
@@ -106,32 +159,39 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
           <div class="edit-line">
             <label>月別価格（YYYY-MM: 値）</label>
-            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="price" rows="4">${escapeHtml(asJsonText(p.price))}</textarea>
+            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="priceText" rows="4" placeholder="2026-07: 2500">${escapeHtml(priceToText(p.price))}</textarea>
           </div>
 
           <div class="edit-line">
-            <label>有効成分配列（JSON）</label>
-            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="activeIngredients" rows="4">${escapeHtml(asJsonText(p.activeIngredients))}</textarea>
+            <label>有効成分（改行 or カンマ区切り）</label>
+            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="activeIngredientsText" rows="3">${escapeHtml(listToText(p.activeIngredients))}</textarea>
           </div>
 
           <div class="edit-line">
-            <label>希釈倍率（JSON）</label>
-            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="dilution" rows="4">${escapeHtml(asJsonText(p.dilution))}</textarea>
+            <label>希釈倍率</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="dilutionMin" type="number" step="any" placeholder="min" value="${p.dilution?.min ?? ""}">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="dilutionMax" type="number" step="any" placeholder="max" value="${p.dilution?.max ?? ""}">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="dilutionDefault" type="number" step="any" placeholder="default" value="${p.dilution?.default ?? ""}">
+            </div>
           </div>
 
           <div class="edit-line">
-            <label>標準使用量（JSON）</label>
-            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="standardDose" rows="4">${escapeHtml(asJsonText(p.standardDose))}</textarea>
+            <label>標準使用量</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="standardDosePer10a" type="number" step="any" placeholder="per10a" value="${p.standardDose?.per10a ?? ""}">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="standardDoseUnit" placeholder="unit" value="${escapeHtml(p.standardDose?.unit ?? p.unit ?? "ml")}">
+            </div>
           </div>
 
           <div class="edit-line">
-            <label>対象作物（JSON 配列）</label>
-            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetCrops" rows="3">${escapeHtml(asJsonText(p.targetCrops))}</textarea>
+            <label>対象作物（改行 or カンマ区切り）</label>
+            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetCropsText" rows="3">${escapeHtml(listToText(p.targetCrops))}</textarea>
           </div>
 
           <div class="edit-line">
-            <label>対象病害虫/雑草（JSON 配列）</label>
-            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetPests" rows="3">${escapeHtml(asJsonText(p.targetPests))}</textarea>
+            <label>対象病害虫/雑草（改行 or カンマ区切り）</label>
+            <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetPestsText" rows="3">${escapeHtml(listToText(p.targetPests))}</textarea>
           </div>
 
           <div class="edit-line">
@@ -180,36 +240,49 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   document.getElementById("save-btn").onclick = async () => {
     showSaveModal("保存しています…");
 
-    const inputs = container.querySelectorAll("[data-id]");
-    let parseError = false;
+    const cards = container.querySelectorAll(".pesticide-detail-card");
 
-    inputs.forEach(el => {
-      if (parseError) return;
+    try {
+      cards.forEach(card => {
+        const id = card.dataset.id;
+        const getValue = key => card.querySelector(`[data-key=\"${key}\"]`)?.value ?? "";
+        const prev = current[id] || buildEmptyPesticideDetail();
 
-      const id = el.dataset.id;
-      const key = el.dataset.key;
-      let value = el.value;
+        const next = {
+          ...buildEmptyPesticideDetail(),
+          ...prev,
+          name: getValue("name").trim(),
+          maker: getValue("maker").trim(),
+          category: getValue("category").trim(),
+          unit: getValue("unit").trim() || "ml",
+          registrationNo: getValue("registrationNo").trim(),
+          formulation: getValue("formulation").trim(),
+          price: parsePriceText(getValue("priceText"), id),
+          activeIngredients: parseListText(getValue("activeIngredientsText")),
+          dilution: {
+            min: parseNullableNumber(getValue("dilutionMin")),
+            max: parseNullableNumber(getValue("dilutionMax")),
+            default: parseNullableNumber(getValue("dilutionDefault"))
+          },
+          standardDose: {
+            per10a: parseNullableNumber(getValue("standardDosePer10a")),
+            unit: getValue("standardDoseUnit").trim() || getValue("unit").trim() || "ml"
+          },
+          targetCrops: parseListText(getValue("targetCropsText")),
+          targetPests: parseListText(getValue("targetPestsText")),
+          maxApplicationsPerSeason: parseNullableNumber(getValue("maxApplicationsPerSeason")),
+          preHarvestIntervalDays: parseNullableNumber(getValue("preHarvestIntervalDays")),
+          reentryIntervalHours: parseNullableNumber(getValue("reentryIntervalHours")),
+          resistanceCode: getValue("resistanceCode").trim(),
+          notes: getValue("notes").trim()
+        };
 
-      if (!current[id]) current[id] = buildEmptyPesticideDetail();
-
-      if (["price", "activeIngredients", "dilution", "standardDose", "targetCrops", "targetPests"].includes(key)) {
-        try {
-          value = JSON.parse(value || (key === "price" || key === "dilution" || key === "standardDose" ? "{}" : "[]"));
-        } catch {
-          alert(`${id} の ${key} は JSON 形式で入力してください`);
-          parseError = true;
-          return;
-        }
-      }
-
-      if (["maxApplicationsPerSeason", "preHarvestIntervalDays", "reentryIntervalHours"].includes(key)) {
-        value = value === "" ? null : Number(value);
-      }
-
-      current[id][key] = value;
-    });
-
-    if (parseError) return;
+        current[id] = next;
+      });
+    } catch (e) {
+      alert(e.message || "入力形式を確認してください");
+      return;
+    }
 
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
     await saveJSON(savePath, current);
