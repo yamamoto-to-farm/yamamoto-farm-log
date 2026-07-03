@@ -61,6 +61,12 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
         <button class="secondary-btn" type="button" onclick="location.href='?data=fertilizer-detail'">肥料詳細情報へ</button>
       </div>
       <h2>肥料一覧</h2>
+      <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
+        <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
+        <p style="margin:0 0 4px;">ID: <strong>FNNN</strong> 形式（例: F001）</p>
+        <p style="margin:0 0 4px;">カテゴリ: 有機質肥料 / 化成肥料 / 単肥 / 土壌改良材 / 微量要素 / その他</p>
+        <p style="margin:0; font-size:0.92em; color:#555;">ID は重複しない連番で管理し、名称変更時もIDは維持してください。</p>
+      </div>
       <div id="fertilizer-list"></div>
 
       <button id="sort-fertilizer-btn" class="secondary-btn" style="margin-top:12px;">
