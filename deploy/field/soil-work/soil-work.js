@@ -19,12 +19,18 @@ const MODE_CONFIG = {
   intertill: {
     title: "中耕ログ",
     saveType: "intertill",
-    workOptions: ["中耕", "中耕（管理機）"]
+    selectorLabel: "アタッチメント",
+    selectorPlaceholder: "アタッチメントを選択",
+    attachmentOptions: ["ロータリカルチCR33B", "爪カルチ(リッチャー)"],
+    singleAttachment: false
   },
   bedmaking: {
     title: "畝立てログ",
     saveType: "bedmaking",
-    workOptions: ["畝立て", "畝整形"]
+    selectorLabel: "アタッチメント",
+    selectorPlaceholder: "",
+    attachmentOptions: ["スーパー台形成形機"],
+    singleAttachment: true
   }
 };
 
@@ -54,20 +60,33 @@ function applyModeUi(config) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = config.title;
 
-  const workType = document.getElementById("work-type");
-  if (workType) {
-    workType.innerHTML = "";
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = "作業を選択";
-    workType.appendChild(first);
+  const taskLabel = document.getElementById("task-label");
+  if (taskLabel) taskLabel.textContent = config.selectorLabel || "作業内容";
 
-    config.workOptions.forEach(v => {
+  const taskSelect = document.getElementById("task-select");
+  if (taskSelect) {
+    taskSelect.innerHTML = "";
+
+    if (!config.singleAttachment) {
+      const first = document.createElement("option");
+      first.value = "";
+      first.textContent = config.selectorPlaceholder || "選択してください";
+      taskSelect.appendChild(first);
+    }
+
+    config.attachmentOptions.forEach(v => {
       const opt = document.createElement("option");
       opt.value = v;
       opt.textContent = v;
-      workType.appendChild(opt);
+      taskSelect.appendChild(opt);
     });
+
+    if (config.singleAttachment && config.attachmentOptions.length === 1) {
+      taskSelect.value = config.attachmentOptions[0];
+      taskSelect.disabled = true;
+    } else {
+      taskSelect.disabled = false;
+    }
   }
 }
 
@@ -192,7 +211,7 @@ async function updateSelectedFieldsUI() {
 
 async function saveSoilWorkLog(config, mode) {
   const date = document.getElementById("date")?.value || "";
-  const workType = document.getElementById("work-type")?.value || "";
+  const attachment = document.getElementById("task-select")?.value || "";
   const ridgeWidthCm = Number(document.getElementById("ridge-width-cm")?.value || 0);
   const ridgeHeightCm = Number(document.getElementById("ridge-height-cm")?.value || 0);
   const notes = (document.getElementById("notes")?.value || "").trim();
@@ -201,8 +220,8 @@ async function saveSoilWorkLog(config, mode) {
   const machine = window.__soil_work_machine || "machine1";
   const withFertilizer = Boolean(document.getElementById("with-fertilizer")?.checked);
 
-  if (!date || !workType || fields.length === 0) {
-    alert("作業日・作業区分・圃場は必須です");
+  if (!date || !attachment || fields.length === 0) {
+    alert("作業日・アタッチメント・圃場は必須です");
     return;
   }
 
@@ -232,7 +251,8 @@ async function saveSoilWorkLog(config, mode) {
       date,
       fields,
       entry: {
-        workType,
+        workType: attachment,
+        attachment,
         ridgeWidthCm: Number.isFinite(ridgeWidthCm) ? ridgeWidthCm : 0,
         ridgeHeightCm: Number.isFinite(ridgeHeightCm) ? ridgeHeightCm : 0,
         machine,
@@ -251,7 +271,8 @@ async function saveSoilWorkLog(config, mode) {
           machine,
           workers,
           sourceWork: mode,
-          sourceWorkType: workType,
+          sourceWorkType: attachment,
+          attachment,
           sourceRidgeWidthCm: Number.isFinite(ridgeWidthCm) ? ridgeWidthCm : 0,
           sourceRidgeHeightCm: Number.isFinite(ridgeHeightCm) ? ridgeHeightCm : 0,
           notes: notes ? `[${config.title}同時施肥] ${notes}` : `[${config.title}同時施肥]`,
