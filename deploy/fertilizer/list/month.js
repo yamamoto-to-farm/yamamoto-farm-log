@@ -32,10 +32,10 @@ async function init() {
   const container = document.getElementById("fertilizer-detail-container");
   container.innerHTML = "";
 
-  const blocks = createDateBlocks(logs, year, month, fert, fertInfo);
-  blocks.forEach(b => container.appendChild(b));
+  const result = createDateBlocks(logs, year, month, fert, fertInfo);
+  result.blocks.forEach(b => container.appendChild(b));
 
-  container.appendChild(createMonthlyTotal(blocks));
+  container.appendChild(createMonthlyTotal(result.rows, fertInfo));
 }
 
 /* ============================================================
@@ -66,7 +66,7 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
           date: e.date,
           amount,
           bags,
-          workers: e.workers || "",
+          workers: formatWorkers(e.workers),
           notes: e.notes || ""
         });
       });
@@ -89,9 +89,9 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
   Object.keys(groups).forEach(date => {
     const list = groups[date];
 
-    const totalKg = list.reduce((a, b) => a + b.amount, 0);
+    const totalKg = list.reduce((a, b) => a + Number(b.amount || 0), 0);
     const totalBags = fertInfo?.capacity
-      ? list.reduce((a, b) => a + b.bags, 0)
+      ? list.reduce((a, b) => a + Number(b.bags || 0), 0)
       : null;
 
     const details = document.createElement("details");
@@ -100,7 +100,7 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
 
     const summary = document.createElement("summary");
     summary.innerHTML = `
-      ${date}（${list.length}圃場 / ${totalKg}kg${totalBags !== null ? ` / ${totalBags.toFixed(2)}袋` : ""}）
+      ${escapeHtml(date)}（${list.length}圃場 / ${formatAmount(totalKg)}kg${totalBags !== null ? ` / ${formatBags(totalBags)}袋` : ""}）
     `;
     details.appendChild(summary);
 
@@ -123,19 +123,19 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
 
     list.forEach(r => {
       const fieldLink = `
-        <a href="https://d3sscxnlo0qnhe.cloudfront.net/fields/index.html?field=${encodeURIComponent(r.field)}"
+        <a href="/fields/index.html?field=${encodeURIComponent(r.field)}"
            class="field-link">
-          ${r.field}
+          ${escapeHtml(r.field)}
         </a>
       `;
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${fieldLink}</td>
-        <td class="value">${r.amount}</td>
-        <td class="value">${r.bags !== null ? r.bags.toFixed(2) : "-"}</td>
-        <td>${r.workers}</td>
-        <td>${r.notes}</td>
+        <td class="value">${formatAmount(r.amount)}</td>
+        <td class="value">${r.bags !== null ? formatBags(r.bags) : "-"}</td>
+        <td>${escapeHtml(r.workers)}</td>
+        <td>${escapeHtml(r.notes)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -146,28 +146,20 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
     blocks.push(details);
   });
 
-  return blocks;
+  return { blocks, rows };
 }
 
 /* ============================================================
    月全体の合計行（袋数対応）
 ============================================================ */
-function createMonthlyTotal(blocks) {
-  let totalKg = 0;
-  let totalDays = 0;
-  let totalBags = 0;
-
-  blocks.forEach(b => {
-    const summary = b.querySelector("summary").textContent;
-
-    const kgMatch = summary.match(/\/\s*(\d+)kg/);
-    if (kgMatch) totalKg += Number(kgMatch[1]);
-
-    const bagMatch = summary.match(/\/\s*([\d.]+)袋/);
-    if (bagMatch) totalBags += Number(bagMatch[1]);
-
-    totalDays++;
-  });
+function createMonthlyTotal(rows, fertInfo) {
+  const dates = new Set(rows.map(r => r.date).filter(Boolean));
+  const totalDays = dates.size;
+  const totalKg = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const hasBag = Boolean(fertInfo?.capacity);
+  const totalBags = hasBag
+    ? rows.reduce((sum, r) => sum + Number(r.bags || 0), 0)
+    : null;
 
   const div = document.createElement("div");
   div.style.marginTop = "20px";
@@ -186,14 +178,59 @@ function createMonthlyTotal(blocks) {
     <tbody>
       <tr>
         <td class="value">${totalDays} 日</td>
-        <td class="total">${totalKg}</td>
-        <td class="total">${totalBags.toFixed(2)}</td>
+        <td class="total">${formatAmount(totalKg)}</td>
+        <td class="total">${hasBag ? formatBags(totalBags) : "-"}</td>
       </tr>
     </tbody>
   `;
 
   div.appendChild(table);
   return div;
+}
+
+function formatAmount(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return "0";
+
+  const rounded = Math.round(n * 10) / 10;
+  const hasDecimal = Math.abs(rounded % 1) > 0;
+
+  return hasDecimal
+    ? rounded.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : rounded.toLocaleString("ja-JP");
+}
+
+function formatBags(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return "0.00";
+  return n.toLocaleString("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatWorkers(workers) {
+  if (Array.isArray(workers)) {
+    return workers
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  if (workers && typeof workers === "object") {
+    return Object.values(workers)
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  return String(workers || "").trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 init();

@@ -1,119 +1,151 @@
-/* ================================
-   年ブロック
-================================ */
-.year-block {
-  margin-bottom: 30px;
-  border: 1px solid #ccc;
+.month-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.month-back-row {
+  margin-bottom: 14px;
+}
+
+.date-block {
+  margin-bottom: 12px;
+  border: 1px solid #cfd6dc;
   border-radius: 6px;
   background: #fff;
+  overflow: hidden;
 }
 
-.year-title {
-  background: #f0f0f0;
-  padding: 12px 14px;
-  margin: 0;
-  font-size: 18px;
-  font-weight: bold;
-  border-bottom: 1px solid #ddd;
-}
-
-/* ================================
-   カテゴリ折りたたみ
-================================ */
-.cat-block summary {
-  background: #e8e8e8;
-  padding: 8px 10px;
-  font-weight: bold;
+.date-block > summary {
+  background: #f0f3f6;
+  padding: 10px 12px;
+  font-weight: 700;
   cursor: pointer;
-  border-bottom: 1px solid #ccc;
   user-select: none;
+  border-bottom: 1px solid #dbe2e8;
 }
 
-.cat-block summary:hover {
-  background: #dcdcdc;
+.date-block > summary:hover {
+  background: #e8eef4;
 }
 
-/* ================================
-   テーブル
-================================ */
 .fert-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;   /* ★ 列幅を固定してガタつきを防止 */
+  table-layout: fixed;
+  font-size: 14px;
 }
 
 .fert-table th,
 .fert-table td {
-  border: 1px solid #ddd;
-  padding: 6px;
+  border: 1px solid #e2e6ea;
+  padding: 7px 8px;
 }
 
-/* ★ ヘッダーは中央揃え */
 .fert-table th {
-  background: #fafafa;
-  font-weight: bold;
+  background: #f6f8fa;
+  font-weight: 700;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 4;
 }
 
-/* ★ データは右揃え（圃場名含む） */
 .fert-table td {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ★ 列幅指定（安定したレイアウト） */
+.fert-table td:nth-child(1) {
+  text-align: left;
+}
+
 .fert-table th:nth-child(1),
 .fert-table td:nth-child(1) {
-  width: 200px;   /* 圃場名 */
+  width: 220px;
 }
 
 .fert-table th:nth-child(2),
-.fert-table td:nth-child(2) {
-  width: 80px;    /* 施肥量 */
-}
-
+.fert-table td:nth-child(2),
 .fert-table th:nth-child(3),
 .fert-table td:nth-child(3) {
-  width: 80px;    /* 袋数 */
+  width: 120px;
 }
 
 .fert-table th:nth-child(4),
 .fert-table td:nth-child(4) {
-  width: 160px;   /* 作業者 */
+  width: 180px;
 }
 
 .fert-table th:nth-child(5),
 .fert-table td:nth-child(5) {
-  width: auto;    /* メモ（可変） */
+  width: auto;
 }
 
 .fert-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
+  background: #fbfcfd;
 }
 
-td.zero {
-  color: #bbb;
+.fert-table tbody tr:hover td {
+  background: #f3f8ff;
 }
 
 td.value {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 td.total {
-  font-weight: bold;
-  background: #fdfdfd;
+  font-weight: 700;
+  background: #f7fbf7;
 }
 
-/* 左列固定（必要なら） */
-.sticky-col {
-  position: sticky;
-  left: 0;
-  background: #fff;
-  z-index: 3;
+.field-link {
+  color: #0b63c9;
+  text-decoration: none;
 }
 
-.sticky-col2 {
-  position: sticky;
-  left: 120px;
-  background: #fff;
-  z-index: 3;
+.field-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1200px) {
+  .month-shell {
+    max-width: none;
+  }
+
+  .fert-table {
+    font-size: 13px;
+  }
+
+  .fert-table th:nth-child(1),
+  .fert-table td:nth-child(1) {
+    width: 170px;
+  }
+
+  .fert-table th:nth-child(2),
+  .fert-table td:nth-child(2),
+  .fert-table th:nth-child(3),
+  .fert-table td:nth-child(3) {
+    width: 100px;
+  }
+
+  .fert-table th:nth-child(4),
+  .fert-table td:nth-child(4) {
+    width: 140px;
+  }
+}
+
+@media print {
+  #page-area {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .date-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .fert-table th {
+    position: static;
+  }
 }
