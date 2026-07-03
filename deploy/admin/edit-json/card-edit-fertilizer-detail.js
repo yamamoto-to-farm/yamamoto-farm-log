@@ -2,7 +2,7 @@
 import { saveJSON } from "/common/json.js?v=2026031418";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=2026031418";
 
-export function renderEditCard({ dataName, json, container }) {
+export function renderEditCard({ dataName, json, container, finalPath }) {
 
   // タイトル
   const title = document.getElementById("page-title");
@@ -117,7 +117,8 @@ export function renderEditCard({ dataName, json, container }) {
       json[id][key] = value;
     });
 
-    await saveJSON(`data/${dataName}.json`, json);
+    const savePath = "data/" + finalPath.replace(/^\/data\//, "");
+    await saveJSON(savePath, json);
 
     completeSaveModal("保存が完了しました");
   };

@@ -35,7 +35,10 @@ export async function initEditJson() {
   const path3 = `/data/${dataName}/${dataName}.json`;
 
   // チェック順
-  const candidates = [path1, path2, path3];
+  // ハイフン付きデータ（例: pesticide-detail）は /data/<prefix>/ を優先して 404 ノイズを減らす
+  const candidates = dataName.includes("-")
+    ? [path2, path1, path3]
+    : [path1, path2, path3];
 
   let finalPath = null;
 

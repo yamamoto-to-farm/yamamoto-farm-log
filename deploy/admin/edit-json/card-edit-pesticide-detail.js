@@ -44,7 +44,7 @@ function asJsonText(value) {
   return JSON.stringify(value ?? {}, null, 2);
 }
 
-export function renderEditCard({ dataName, json, container }) {
+export function renderEditCard({ dataName, json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "農薬詳細情報（pesticide-detail.json）";
 
@@ -211,7 +211,8 @@ export function renderEditCard({ dataName, json, container }) {
 
     if (parseError) return;
 
-    await saveJSON(`data/${dataName}.json`, current);
+    const savePath = "data/" + finalPath.replace(/^\/data\//, "");
+    await saveJSON(savePath, current);
     completeSaveModal("保存が完了しました");
   };
 }
