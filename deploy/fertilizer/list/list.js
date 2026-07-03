@@ -16,6 +16,7 @@ export async function initFertilizerList() {
 
   // ★ 高速化の核心：全ログを一括集計
   const usage = buildUsageIndex(logs);
+  const categories = groupByCategory(master);
 
   const container = document.getElementById("fertilizer-container");
   container.innerHTML = "";
@@ -26,8 +27,6 @@ export async function initFertilizerList() {
     html += `<div class="year-block">
       <h2 class="year-title">${year}年</h2>
     `;
-
-    const categories = groupByCategory(master);
 
     Object.keys(categories).forEach(cat => {
       const tableHTML = createCategoryTableHTML(year, categories[cat], usage);

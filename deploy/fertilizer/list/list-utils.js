@@ -72,26 +72,33 @@ export async function loadAllFertilizerLogs() {
 
   const logs = [];
 
-  for (const f of fields) {
-    const path = `/logs/fertilizer/${f.safe}.json`;
-
-    try {
+  // 圃場ごとのログ取得は並列化して待ち時間を短縮
+  const results = await Promise.allSettled(
+    fields.map(async f => {
+      const path = `/logs/fertilizer/${f.safe}.json`;
       const data = await loadJSON(path);
+      return { f, data };
+    })
+  );
 
-      debugLog(`Loaded log for ${f.original} (${f.safe})`, data);
-
-      for (const year of Object.keys(data.years)) {
-        logs.push({
-          field: f.original,
-          year: Number(year),
-          entries: data.years[year].entries
-        });
-      }
-
-    } catch (e) {
-      debugWarn(`No log for field: ${f.original} (${f.safe})`);
+  results.forEach(r => {
+    if (r.status !== "fulfilled") {
+      return;
     }
-  }
+
+    const { f, data } = r.value;
+    const years = data?.years && typeof data.years === "object" ? data.years : {};
+
+    debugLog(`Loaded log for ${f.original} (${f.safe})`, data);
+
+    Object.keys(years).forEach(year => {
+      logs.push({
+        field: f.original,
+        year: Number(year),
+        entries: Array.isArray(years[year]?.entries) ? years[year].entries : []
+      });
+    });
+  });
 
   debugLog("All logs loaded:", logs);
   return logs;
