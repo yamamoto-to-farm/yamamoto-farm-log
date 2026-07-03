@@ -11,6 +11,7 @@ const VALID_TYPES = [
   "watering",
   "weeding",
   "tillage",
+  "field-maintenance",
   "hand-weeding"
 ];
 
@@ -75,7 +76,7 @@ async function renderRows({ field, start, end, type }) {
 
   const safeField = safeFieldName(field);
 
-  const [pesticide, fertilizer, intertill, bedmaking, watering, weeding, tillage, handWeeding] = await Promise.all([
+  const [pesticide, fertilizer, intertill, bedmaking, watering, weeding, tillage, fieldMaintenance, handWeeding] = await Promise.all([
     loadFieldLog("pesticide", safeField),
     loadFieldLog("fertilizer", safeField),
     loadFieldLog("intertill", safeField),
@@ -83,6 +84,7 @@ async function renderRows({ field, start, end, type }) {
     loadFieldLog("watering", safeField),
     loadFieldLog("weeding", safeField),
     loadFieldLog("tillage", safeField),
+    loadFieldLog("field-maintenance", safeField),
     loadFieldLog("hand-weeding", safeField)
   ]);
 
@@ -94,6 +96,7 @@ async function renderRows({ field, start, end, type }) {
     ...normalizeWateringRows(watering),
     ...normalizeWeedingRows(weeding),
     ...normalizeTillageRows(tillage),
+    ...normalizeFieldMaintenanceRows(fieldMaintenance),
     ...normalizeHandWeedingRows(handWeeding)
   ];
 
@@ -109,6 +112,7 @@ async function renderRows({ field, start, end, type }) {
   const countWatering = filtered.filter(r => r.type === "watering").length;
   const countWeeding = filtered.filter(r => r.type === "weeding").length;
   const countTillage = filtered.filter(r => r.type === "tillage").length;
+  const countFieldMaintenance = filtered.filter(r => r.type === "field-maintenance").length;
   const countHandWeeding = filtered.filter(r => r.type === "hand-weeding").length;
 
   kpiEl.innerHTML = `
@@ -120,6 +124,7 @@ async function renderRows({ field, start, end, type }) {
     <span class="kpi-chip">潅水: ${countWatering}回</span>
     <span class="kpi-chip">除草: ${countWeeding}回</span>
     <span class="kpi-chip">耕起: ${countTillage}回</span>
+    <span class="kpi-chip">圃場整備: ${countFieldMaintenance}回</span>
     <span class="kpi-chip">手作業除草: ${countHandWeeding}回</span>
   `;
 
@@ -266,6 +271,21 @@ function normalizeTillageRows(logData) {
     date: normalizeDateText(pickDateText(e)),
     subType: "土づくり・耕起",
     workLabel: e.workType || "土づくり・耕起",
+    subLabel: "",
+    machine: e.machine || "",
+    workers: formatWorkers(e.workers),
+    notes: e.notes || ""
+  }));
+}
+
+function normalizeFieldMaintenanceRows(logData) {
+  const entries = flattenEntries(logData);
+
+  return entries.map(e => ({
+    type: "field-maintenance",
+    date: normalizeDateText(pickDateText(e)),
+    subType: "圃場整備",
+    workLabel: e.workType || "圃場整備",
     subLabel: "",
     machine: e.machine || "",
     workers: formatWorkers(e.workers),
@@ -422,6 +442,9 @@ function renderTypeBadge(type, subType) {
   }
   if (type === "tillage") {
     return `<span class="badge badge-tillage">耕起</span>${subType ? `<div class="sub-note">${escapeHtml(subType)}</div>` : ""}`;
+  }
+  if (type === "field-maintenance") {
+    return `<span class="badge badge-tillage">圃場整備</span>${subType ? `<div class="sub-note">${escapeHtml(subType)}</div>` : ""}`;
   }
   if (type === "hand-weeding") {
     return `<span class="badge badge-hand-weeding">手作業除草</span>${subType ? `<div class="sub-note">${escapeHtml(subType)}</div>` : ""}`;

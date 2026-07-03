@@ -81,6 +81,17 @@
     ]
   },
   {
+    "folder": "field-maintenance",
+    "dateColumn": "date",
+    "displayName": "圃場整備",
+    "headerName": [
+      "date",
+      "worker",
+      "field",
+      "machine"
+    ]
+  },
+  {
     "folder": "watering",
     "dateColumn": "date",
     "displayName": "潅水",
