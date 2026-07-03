@@ -12,7 +12,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
-import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData } from "/fertilizer/fertilizer-multi-input.js?v=1";
+import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData, updatePer10aAll } from "/fertilizer/fertilizer-multi-input.js?v=1";
 import { distributeFertilizers } from "/fertilizer/fertilizer-distribute.js?v=1";
 
 const MODE_CONFIG = {
@@ -177,16 +177,21 @@ export async function initSoilWorkPage() {
   if (withFertilizer && fertilizerArea) {
     withFertilizer.addEventListener("change", () => {
       fertilizerArea.style.display = withFertilizer.checked ? "block" : "none";
+      if (withFertilizer.checked) {
+        updateFertilizerPer10aFromCurrentFields();
+      }
     });
   }
 
   window.addEventListener("filter:apply", async () => {
     await updateSelectedFieldsUI();
     renderFertilizerInputs();
+    updateFertilizerPer10aFromCurrentFields();
   });
 
   window.addEventListener("filter:reset", async () => {
     await updateSelectedFieldsUI();
+    updateFertilizerPer10aFromCurrentFields();
   });
 
   await updateSelectedFieldsUI();
@@ -258,6 +263,13 @@ async function updateSelectedFieldsUI() {
   const totalA = await getTotalFieldSize(fields);
   const areaEl = document.getElementById("field-area-total");
   if (areaEl) areaEl.textContent = `合計面積：${totalA.toFixed(1)} a`;
+
+  window.__fertilizer_totalA = totalA;
+}
+
+function updateFertilizerPer10aFromCurrentFields() {
+  const totalA = Number(window.__fertilizer_totalA || 0);
+  updatePer10aAll(totalA);
 }
 
 async function saveSoilWorkLog(config, mode) {
