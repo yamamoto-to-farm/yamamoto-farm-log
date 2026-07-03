@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>畝立てログへ移動中...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <p>畝立てログへ移動しています...</p>
+
+  <script>
+    const src = new URLSearchParams(location.search);
+    const target = new URL("/field/soil-work/index.html", location.origin);
+    target.searchParams.set("mode", "bedmaking");
+
+    const machine = src.get("machine");
+    if (machine) target.searchParams.set("machine", machine);
+
+    location.replace(target.href);
+  </script>
+</body>
+
+</html>
