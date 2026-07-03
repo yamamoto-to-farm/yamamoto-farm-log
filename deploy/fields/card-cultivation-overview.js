@@ -19,7 +19,7 @@ export async function renderCultivationOverviewCard({ fieldName, startDate, endD
 
   const pesticideCount = countEntriesInRange(pesticideLog, startDate, endDate, () => true);
   const intertillCount = countEntriesInRange(intertillLog, startDate, endDate, () => true);
-  const topdressCount = countEntriesInRange(
+  const standaloneFertilizerCount = countEntriesInRange(
     fertilizerLog,
     startDate,
     endDate,
@@ -60,7 +60,7 @@ export async function renderCultivationOverviewCard({ fieldName, startDate, endD
       <div class="info-line">集計期間：${escapeHtml(rangeStartLabel)} ～ ${escapeHtml(endDate)}</div>
       <div class="info-line">防除回数：${pesticideCount} 回</div>
       <div class="info-line">中耕回数：${intertillCount} 回</div>
-      <div class="info-line">施肥（追肥）回数：${topdressCount} 回</div>
+      <div class="info-line">施肥（単独）回数：${standaloneFertilizerCount} 回</div>
 
       <div class="info-line link">
         ↳ <a href="/fields/work-logs.html?${qPesticide}">防除記録を見る</a>

@@ -182,14 +182,14 @@ function normalizeFertilizerRows(logData) {
 
   return entries.map(e => {
     const isLinked = Boolean(e.sourceWork);
-    const subType = isLinked ? "同時施肥" : "追肥";
+    const subType = isLinked ? "同時施肥" : "単独施肥";
     const source = e.sourceWorkType || e.sourceWork || "";
 
     return {
       type: "fertilizer",
       date: normalizeDateText(pickDateText(e)),
       subType,
-      workLabel: isLinked ? `施肥（${source || "連携"}）` : "施肥（追肥）",
+      workLabel: isLinked ? `施肥（${source || "連携"}）` : "施肥（単独）",
       subLabel: getNamesFromDistributed(e.distributed),
       machine: e.machine || "",
       workers: formatWorkers(e.workers),
