@@ -114,12 +114,11 @@ function buildPesticideIdSuggestions(list, perPrefix = 8, categoryFilter = "") {
     ? PESTICIDE_PREFIXES.filter(v => v.category === category)
     : PESTICIDE_PREFIXES;
 
-  // 未定義カテゴリを選択中の場合は候補ゼロより全件表示の方が実用的
   const prefixTargets = targets.length > 0 ? targets : PESTICIDE_PREFIXES;
 
   prefixTargets.forEach(({ prefix, category: labelCategory }) => {
     let found = 0;
-    for (let n = 1; n <= 9999 && found < perPrefix; n++) {
+    for (let n = 1; n <= 9999 && found < perPrefix; n += 1) {
       const id = `${prefix}${String(n).padStart(4, "0")}`;
       if (existingSet.has(id)) continue;
       out.push({ id, label: `${id} (${labelCategory})` });
@@ -148,6 +147,8 @@ export function renderEditCard({ json, container, finalPath }) {
     : Object.values(json || {}).map(v => ({ ...v }));
 
   let selectedCategory = "";
+  let nameKeyword = "";
+  let selectedPesticideId = "";
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
@@ -169,6 +170,14 @@ export function renderEditCard({ json, container, finalPath }) {
           <div>
             <label class="form-label">カテゴリフィルタ</label>
             <select id="pesticide-category-filter" class="form-input" style="min-width:220px;"></select>
+          </div>
+          <div>
+            <label class="form-label">名称検索（部分一致）</label>
+            <input id="pesticide-name-search" class="form-input" style="min-width:240px;" placeholder="名称またはIDで検索">
+          </div>
+          <div>
+            <label class="form-label">登録済み農薬一覧（カテゴリ連動）</label>
+            <select id="pesticide-name-filter" class="form-input" style="min-width:320px;"></select>
           </div>
           <div>
             <label class="form-label">ID候補（未使用）</label>
@@ -198,6 +207,8 @@ export function renderEditCard({ json, container, finalPath }) {
 
   const listEl = document.getElementById("pesticide-list");
   const filterEl = document.getElementById("pesticide-category-filter");
+  const nameSearchEl = document.getElementById("pesticide-name-search");
+  const nameFilterEl = document.getElementById("pesticide-name-filter");
   const candidateEl = document.getElementById("pesticide-id-candidate-select");
   const datalistEl = document.getElementById("pesticide-id-datalist");
   const countEl = document.getElementById("pesticide-visible-count");
@@ -239,13 +250,30 @@ export function renderEditCard({ json, container, finalPath }) {
     });
   }
 
-  function getVisibleRows() {
+  function getCategoryRows() {
     return listData
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => {
         if (!selectedCategory) return true;
         return String(item.category || "").trim() === selectedCategory;
       });
+  }
+
+  function getNameFilteredRows() {
+    const q = String(nameKeyword || "").trim().toLowerCase();
+    if (!q) return getCategoryRows();
+
+    return getCategoryRows().filter(({ item }) => {
+      const id = String(item.id || "").toLowerCase();
+      const name = String(item.name || "").toLowerCase();
+      return id.includes(q) || name.includes(q);
+    });
+  }
+
+  function getVisibleRows() {
+    const rows = getNameFilteredRows();
+    if (!selectedPesticideId) return rows;
+    return rows.filter(({ item }) => normalizePesticideId(item.id || "") === selectedPesticideId);
   }
 
   function refreshFilterOptions() {
@@ -275,18 +303,52 @@ export function renderEditCard({ json, container, finalPath }) {
       .join("");
   }
 
+  function refreshNameFilterOptions() {
+    const rows = getNameFilteredRows()
+      .sort((a, b) => String(a.item.id || "").localeCompare(String(b.item.id || ""), "ja", { numeric: true, sensitivity: "base" }));
+
+    nameFilterEl.innerHTML = rows
+      .map(({ item }) => {
+        const id = normalizePesticideId(item.id || "");
+        const name = String(item.name || "").trim();
+        const label = `${id || "(ID未入力)"}${name ? ` - ${name}` : ""}`;
+        return `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
+      })
+      .join("");
+
+    const ids = rows.map(({ item }) => normalizePesticideId(item.id || ""));
+    if (!selectedPesticideId || !ids.includes(selectedPesticideId)) {
+      selectedPesticideId = ids[0] || "";
+    }
+
+    if (selectedPesticideId) {
+      nameFilterEl.value = selectedPesticideId;
+    }
+  }
+
   function render() {
     normalizeRows();
     refreshFilterOptions();
     refreshIdSuggestions();
+    refreshNameFilterOptions();
 
     const visible = getVisibleRows();
+    const searchableRows = getNameFilteredRows();
 
     if (countEl) {
-      countEl.textContent = `表示中 ${visible.length} 件 / 全体 ${listData.length} 件`;
+      countEl.textContent = `検索対象 ${searchableRows.length} 件 / 全体 ${listData.length} 件`;
     }
 
     listEl.innerHTML = "";
+
+    if (visible.length === 0) {
+      listEl.innerHTML = `
+        <div class="sub-card" style="margin-bottom:12px; color:#666;">
+          表示対象がありません。カテゴリ・名称検索・一覧選択を見直してください。
+        </div>
+      `;
+      return;
+    }
 
     visible.forEach(({ item, index }) => {
       const id = item.id ?? "";
@@ -327,7 +389,12 @@ export function renderEditCard({ json, container, finalPath }) {
       btn.onclick = () => {
         const idx = Number(btn.dataset.index);
         if (!confirm("この農薬を削除しますか？")) return;
+
+        const deletingId = normalizePesticideId(listData[idx]?.id || "");
         listData.splice(idx, 1);
+        if (deletingId && deletingId === selectedPesticideId) {
+          selectedPesticideId = "";
+        }
         render();
       };
     });
@@ -369,6 +436,20 @@ export function renderEditCard({ json, container, finalPath }) {
   filterEl.onchange = () => {
     syncVisibleRowsToListData();
     selectedCategory = filterEl.value || "";
+    selectedPesticideId = "";
+    render();
+  };
+
+  nameSearchEl.oninput = () => {
+    syncVisibleRowsToListData();
+    nameKeyword = nameSearchEl.value || "";
+    selectedPesticideId = "";
+    render();
+  };
+
+  nameFilterEl.onchange = () => {
+    syncVisibleRowsToListData();
+    selectedPesticideId = normalizePesticideId(nameFilterEl.value || "");
     render();
   };
 
@@ -385,7 +466,6 @@ export function renderEditCard({ json, container, finalPath }) {
     }
 
     const info = PESTICIDE_PREFIXES.find(v => candidate.startsWith(v.prefix));
-
     if (selectedCategory && info?.category && info.category !== selectedCategory) {
       alert(`現在のカテゴリフィルタ（${selectedCategory}）に一致するID候補を選択してください。`);
       return;
@@ -398,6 +478,7 @@ export function renderEditCard({ json, container, finalPath }) {
       unit: "ml"
     });
 
+    selectedPesticideId = candidate;
     render();
   };
 
@@ -422,6 +503,7 @@ export function renderEditCard({ json, container, finalPath }) {
       unit: ""
     });
 
+    selectedPesticideId = "";
     render();
   };
 
