@@ -14,15 +14,62 @@
     <h1 class="page-title">ログ編集（管理者）</h1>
 
     <div class="card">
-      <p style="margin-top:0;">
-        このページは準備中です。今後、ログJSONを編集し、all.csvと同期保存する機能を実装します。
+      <p style="margin-top:0; color:#555;">
+        圃場別ログJSONを編集し、保存時に all.csv を再生成します。
       </p>
-      <ul>
-        <li>対象ログタイプ選択</li>
-        <li>圃場・日付で検索</li>
-        <li>JSON編集（追加・更新・削除）</li>
-        <li>all.csv再生成</li>
-      </ul>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div>
+          <label for="log-type">ログタイプ</label>
+          <select id="log-type" class="form-input">
+            <option value="tillage">土づくり・耕起</option>
+            <option value="weeding">除草・草刈り</option>
+            <option value="watering">潅水</option>
+            <option value="intertill">中耕</option>
+            <option value="bedmaking">畝立て</option>
+            <option value="field-maintenance">圃場整備</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="target-field">圃場</label>
+          <select id="target-field" class="form-input"></select>
+        </div>
+
+        <button id="load-btn" class="primary-btn" type="button">読み込む</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <button id="add-row-btn" class="secondary-btn" type="button">行を追加</button>
+        <button id="delete-row-btn" class="secondary-btn" type="button">選択行を削除</button>
+        <button id="save-btn" class="primary-btn" type="button">保存（JSON + all.csv更新）</button>
+      </div>
+
+      <div id="status" style="margin-bottom:8px; color:#555;"></div>
+
+      <div style="overflow-x:auto;">
+        <table id="edit-table" style="width:100%; border-collapse:collapse; min-width:840px;">
+          <thead>
+            <tr>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:50px;">#</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:140px;">日付</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">作業内容</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:180px;">機械</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">作業者（/区切り）</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">備考</th>
+            </tr>
+          </thead>
+          <tbody id="edit-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="margin:0; color:#666;">
+        注意: この画面は圃場別JSONを正本として保存し、同タイプの all.csv を再生成します。
+      </p>
     </div>
 
     <div class="card">
@@ -30,9 +77,19 @@
     </div>
   </div>
 
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
+    import { initEditLogPage } from "./edit-log.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -46,6 +103,7 @@
 
       renderHeader({ adminPage: true });
       document.getElementById("page-area").style.display = "block";
+      await initEditLogPage();
     });
   </script>
 
