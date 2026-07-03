@@ -103,14 +103,12 @@ export function renderEditCard({ json, container, finalPath }) {
     : Object.values(json || {}).map(v => ({ ...v }));
 
   let selectedCategory = "";
+  let nameKeyword = "";
+  let selectedFertilizerId = "";
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-        <button class="secondary-btn" type="button" onclick="location.href='?data=fertilizer-detail'">肥料詳細情報へ</button>
-      </div>
-
-      <h2>肥料一覧</h2>
+      <h2>肥料マスタ（基本情報）</h2>
 
       <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
         <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
@@ -123,13 +121,21 @@ export function renderEditCard({ json, container, finalPath }) {
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
           <div>
             <label class="form-label">カテゴリフィルタ</label>
-            <select id="fert-category-filter" class="form-input" style="min-width:200px;"></select>
+            <select id="fert-category-filter" class="form-input" style="min-width:220px;"></select>
+          </div>
+          <div>
+            <label class="form-label">名称検索（部分一致）</label>
+            <input id="fert-name-search" class="form-input" style="min-width:220px;" placeholder="名称またはIDで検索">
+          </div>
+          <div>
+            <label class="form-label">登録済み肥料一覧（カテゴリ連動）</label>
+            <select id="fert-name-filter" class="form-input" style="min-width:320px;"></select>
           </div>
           <div>
             <label class="form-label">ID候補（未使用）</label>
             <select id="fert-id-candidate-select" class="form-input" style="min-width:180px;"></select>
           </div>
-          <button id="add-fert-from-candidate" class="secondary-btn" type="button">候補IDで追加</button>
+          <button id="add-fert-from-candidate" class="secondary-btn" type="button">候補IDで肥料を追加</button>
         </div>
         <div id="fert-visible-count" style="margin-top:8px; color:#555;"></div>
       </div>
@@ -137,22 +143,17 @@ export function renderEditCard({ json, container, finalPath }) {
       <datalist id="fert-id-datalist"></datalist>
       <div id="fertilizer-list"></div>
 
-      <button id="sort-fertilizer-btn" class="secondary-btn" style="margin-top:12px;">
-        ID順に並び替え
-      </button>
-
-      <button id="add-fertilizer-btn" class="primary-btn" style="margin-top:20px;">
-        ＋ 肥料を追加
-      </button>
-
-      <button id="save-btn" class="primary-btn" style="margin-top:20px;">
-        保存する
-      </button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;">
+        <button class="secondary-btn" type="button" onclick="location.href='?data=fertilizer-detail'">肥料詳細情報へ</button>
+        <button id="save-btn" class="primary-btn">保存する</button>
+      </div>
     </div>
   `);
 
   const listEl = document.getElementById("fertilizer-list");
   const filterEl = document.getElementById("fert-category-filter");
+  const nameSearchEl = document.getElementById("fert-name-search");
+  const nameFilterEl = document.getElementById("fert-name-filter");
   const candidateEl = document.getElementById("fert-id-candidate-select");
   const datalistEl = document.getElementById("fert-id-datalist");
   const countEl = document.getElementById("fert-visible-count");
@@ -199,13 +200,30 @@ export function renderEditCard({ json, container, finalPath }) {
     });
   }
 
-  function getVisibleRows() {
+  function getCategoryRows() {
     return listData
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => {
         if (!selectedCategory) return true;
         return String(item.category || "").trim() === selectedCategory;
       });
+  }
+
+  function getNameFilteredRows() {
+    const q = String(nameKeyword || "").trim().toLowerCase();
+    if (!q) return getCategoryRows();
+
+    return getCategoryRows().filter(({ item }) => {
+      const id = String(item.id || "").toLowerCase();
+      const name = String(item.name || "").toLowerCase();
+      return id.includes(q) || name.includes(q);
+    });
+  }
+
+  function getVisibleRows() {
+    const rows = getNameFilteredRows();
+    if (!selectedFertilizerId) return rows;
+    return rows.filter(({ item }) => normalizeFertilizerId(item.id || "") === selectedFertilizerId);
   }
 
   function refreshFilterOptions() {
@@ -235,18 +253,51 @@ export function renderEditCard({ json, container, finalPath }) {
       .join("");
   }
 
+  function refreshNameFilterOptions() {
+    const rows = getNameFilteredRows()
+      .sort((a, b) => String(a.item.id || "").localeCompare(String(b.item.id || ""), "ja", { numeric: true, sensitivity: "base" }));
+
+    nameFilterEl.innerHTML = rows
+      .map(({ item }) => {
+        const id = normalizeFertilizerId(item.id || "");
+        const name = String(item.name || "").trim();
+        const label = `${id || "(ID未入力)"}${name ? ` - ${name}` : ""}`;
+        return `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
+      })
+      .join("");
+
+    const ids = rows.map(({ item }) => normalizeFertilizerId(item.id || ""));
+    if (!selectedFertilizerId || !ids.includes(selectedFertilizerId)) {
+      selectedFertilizerId = ids[0] || "";
+    }
+    if (selectedFertilizerId) {
+      nameFilterEl.value = selectedFertilizerId;
+    }
+  }
+
   function render() {
     normalizeRows();
     refreshFilterOptions();
     refreshIdSuggestions();
+    refreshNameFilterOptions();
 
     const visible = getVisibleRows();
+    const searchableRows = getNameFilteredRows();
 
     if (countEl) {
-      countEl.textContent = `表示中 ${visible.length} 件 / 全体 ${listData.length} 件`;
+      countEl.textContent = `検索対象 ${searchableRows.length} 件 / 全体 ${listData.length} 件`;
     }
 
     listEl.innerHTML = "";
+
+    if (visible.length === 0) {
+      listEl.innerHTML = `
+        <div class="sub-card" style="margin-bottom:12px; color:#666;">
+          表示対象がありません。カテゴリ・名称検索・一覧選択を見直してください。
+        </div>
+      `;
+      return;
+    }
 
     visible.forEach(({ item, index }) => {
       const id = item.id ?? "";
@@ -287,7 +338,12 @@ export function renderEditCard({ json, container, finalPath }) {
       btn.onclick = () => {
         const idx = Number(btn.dataset.index);
         if (!confirm("この肥料を削除しますか？")) return;
+
+        const deletingId = normalizeFertilizerId(listData[idx]?.id || "");
         listData.splice(idx, 1);
+        if (deletingId && deletingId === selectedFertilizerId) {
+          selectedFertilizerId = "";
+        }
         render();
       };
     });
@@ -334,6 +390,20 @@ export function renderEditCard({ json, container, finalPath }) {
   filterEl.onchange = () => {
     syncVisibleRowsToListData();
     selectedCategory = filterEl.value || "";
+    selectedFertilizerId = "";
+    render();
+  };
+
+  nameSearchEl.oninput = () => {
+    syncVisibleRowsToListData();
+    nameKeyword = nameSearchEl.value || "";
+    selectedFertilizerId = "";
+    render();
+  };
+
+  nameFilterEl.onchange = () => {
+    syncVisibleRowsToListData();
+    selectedFertilizerId = normalizeFertilizerId(nameFilterEl.value || "");
     render();
   };
 
@@ -356,30 +426,7 @@ export function renderEditCard({ json, container, finalPath }) {
       capacity: null
     });
 
-    render();
-  };
-
-  document.getElementById("sort-fertilizer-btn").onclick = () => {
-    syncVisibleRowsToListData();
-    compactListData();
-
-    listData.sort((a, b) =>
-      String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true, sensitivity: "base" })
-    );
-
-    render();
-  };
-
-  document.getElementById("add-fertilizer-btn").onclick = () => {
-    syncVisibleRowsToListData();
-
-    listData.push({
-      id: "",
-      category: selectedCategory || "",
-      name: "",
-      capacity: null
-    });
-
+    selectedFertilizerId = candidate;
     render();
   };
 

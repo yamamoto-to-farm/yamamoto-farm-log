@@ -152,11 +152,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-        <button class="secondary-btn" type="button" onclick="location.href='?data=pesticide-detail'">農薬詳細情報へ</button>
-      </div>
-
-      <h2>農薬一覧</h2>
+      <h2>農薬マスタ（基本情報）</h2>
 
       <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
         <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
@@ -173,7 +169,7 @@ export function renderEditCard({ json, container, finalPath }) {
           </div>
           <div>
             <label class="form-label">名称検索（部分一致）</label>
-            <input id="pesticide-name-search" class="form-input" style="min-width:240px;" placeholder="名称またはIDで検索">
+            <input id="pesticide-name-search" class="form-input" style="min-width:220px;" placeholder="名称またはIDで検索">
           </div>
           <div>
             <label class="form-label">登録済み農薬一覧（カテゴリ連動）</label>
@@ -183,7 +179,7 @@ export function renderEditCard({ json, container, finalPath }) {
             <label class="form-label">ID候補（未使用）</label>
             <select id="pesticide-id-candidate-select" class="form-input" style="min-width:240px;"></select>
           </div>
-          <button id="add-pesticide-from-candidate" class="secondary-btn" type="button">候補IDで追加</button>
+          <button id="add-pesticide-from-candidate" class="secondary-btn" type="button">候補IDで農薬を追加</button>
         </div>
         <div id="pesticide-visible-count" style="margin-top:8px; color:#555;"></div>
       </div>
@@ -191,17 +187,10 @@ export function renderEditCard({ json, container, finalPath }) {
       <datalist id="pesticide-id-datalist"></datalist>
       <div id="pesticide-list"></div>
 
-      <button id="sort-pesticide-btn" class="secondary-btn" style="margin-top:12px;">
-        ID順に並び替え
-      </button>
-
-      <button id="add-pesticide-btn" class="primary-btn" style="margin-top:20px;">
-        ＋ 農薬を追加
-      </button>
-
-      <button id="save-btn" class="primary-btn" style="margin-top:20px;">
-        保存する
-      </button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;">
+        <button class="secondary-btn" type="button" onclick="location.href='?data=pesticide-detail'">農薬詳細情報へ</button>
+        <button id="save-btn" class="primary-btn">保存する</button>
+      </div>
     </div>
   `);
 
@@ -479,31 +468,6 @@ export function renderEditCard({ json, container, finalPath }) {
     });
 
     selectedPesticideId = candidate;
-    render();
-  };
-
-  document.getElementById("sort-pesticide-btn").onclick = () => {
-    syncVisibleRowsToListData();
-    compactListData();
-
-    listData.sort((a, b) =>
-      String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true, sensitivity: "base" })
-    );
-
-    render();
-  };
-
-  document.getElementById("add-pesticide-btn").onclick = () => {
-    syncVisibleRowsToListData();
-
-    listData.push({
-      id: "",
-      name: "",
-      category: selectedCategory || "",
-      unit: ""
-    });
-
-    selectedPesticideId = "";
     render();
   };
 
