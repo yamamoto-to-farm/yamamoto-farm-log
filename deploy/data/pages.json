@@ -283,7 +283,7 @@
     {
       "id": "edit-log",
       "name": "記録データ編集（ログ）",
-      "path": "admin/edit-log/index.html",
+      "path": "edit-log/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/json.png",
