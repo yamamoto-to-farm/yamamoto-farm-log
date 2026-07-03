@@ -48,7 +48,7 @@
     <div style="margin:10px 0; display:flex; gap:10px;">
       <a href="/fertilizer/list/list.html" class="secondary-btn">施肥記録一覧</a>
       <a href="/fertilizer/schedule/schedule.html" class="secondary-btn">施肥計画を見る</a>
-      <a href="/admin/edit-json/index.html?data=fertilizer-index" class="secondary-btn">
+      <a id="edit-fertilizer-master-link" href="/admin/edit-json/index.html?data=fertilizer-index&return=%2Ffertilizer%2Findex.html" class="secondary-btn" style="display:none;">
         肥料基本情報を編集
       </a>
     </div>
@@ -117,6 +117,11 @@
 
       renderHeader();
       document.getElementById("form-area").style.display = "block";
+
+      const editLink = document.getElementById("edit-fertilizer-master-link");
+      if (editLink && window.currentRole === "admin") {
+        editLink.style.display = "inline-flex";
+      }
 
       // 今日の日付
       document.getElementById("date").value =

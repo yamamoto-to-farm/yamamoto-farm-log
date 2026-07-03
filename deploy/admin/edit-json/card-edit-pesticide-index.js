@@ -74,6 +74,9 @@ export function renderEditCard({ json, container, finalPath }) {
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+          <button class="secondary-btn" type="button" onclick="location.href='?data=pesticide-detail'">農薬詳細情報へ</button>
+        </div>
       <h2>農薬一覧</h2>
       <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
         <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>

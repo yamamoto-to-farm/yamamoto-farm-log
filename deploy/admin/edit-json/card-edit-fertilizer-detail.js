@@ -57,6 +57,12 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   if (title) title.textContent = "肥料詳細情報（fertilizer-detail.json）";
 
   container.insertAdjacentHTML("beforeend", `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="secondary-btn" type="button" onclick="location.href='?data=fertilizer-index'">肥料基本情報へ</button>
+      </div>
+    </div>
+
     <div id="fertilizer-list"></div>
 
     <button id="add-fertilizer-btn" class="primary-btn" style="margin-top:20px;">

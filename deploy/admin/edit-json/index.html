@@ -19,7 +19,7 @@
     <div id="edit-container"></div>
 
     <!-- 戻るボタン -->
-    <button class="primary-btn" onclick="location.href='/admin/index.html'">
+    <button id="edit-json-back-btn" class="primary-btn" onclick="location.href='/admin/index.html'">
       管理ページに戻る
     </button>
   </div>
@@ -57,6 +57,16 @@
 
       renderHeader({ adminPage: true });
       document.getElementById("page-area").style.display = "block";
+
+      const params = new URLSearchParams(location.search);
+      const returnPath = params.get("return") || "";
+      const backBtn = document.getElementById("edit-json-back-btn");
+      if (backBtn && returnPath.startsWith("/")) {
+        backBtn.textContent = "元の記録ページに戻る";
+        backBtn.onclick = () => {
+          location.href = returnPath;
+        };
+      }
 
       // ★ initEditJson を呼ぶのはここだけ（重複防止）
       initEditJson();

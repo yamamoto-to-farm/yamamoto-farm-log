@@ -23,7 +23,7 @@
     <h1 class="page-title">防除記録一覧</h1>
 
     <div style="margin:10px 0; display:flex; gap:10px;">
-      <a href="/admin/edit-json/index.html?data=pesticide-index" class="secondary-btn">農薬基本情報を編集</a>
+      <a id="edit-pesticide-master-link" href="/admin/edit-json/index.html?data=pesticide-index&return=%2Fpesticide%2Flist%2Flist.html" class="secondary-btn" style="display:none;">農薬基本情報を編集</a>
     </div>
 
     <div class="list-shell">
@@ -60,6 +60,10 @@
       }
 
       renderHeader();
+      const editLink = document.getElementById("edit-pesticide-master-link");
+      if (editLink && window.currentRole === "admin") {
+        editLink.style.display = "inline-flex";
+      }
       await initPesticideList();
     });
   </script>

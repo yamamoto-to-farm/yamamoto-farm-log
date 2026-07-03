@@ -48,7 +48,7 @@
     <div style="margin:10px 0; display:flex; gap:10px;">
       <a href="/pesticide/list/list.html" class="secondary-btn">防除記録一覧</a>
       <a href="/pesticide/schedule/schedule.html" class="secondary-btn">防除計画を見る</a>
-      <a href="/admin/edit-json/index.html?data=pesticide-index" class="secondary-btn">
+      <a id="edit-pesticide-master-link" href="/admin/edit-json/index.html?data=pesticide-index&return=%2Fpesticide%2Findex.html" class="secondary-btn" style="display:none;">
         農薬基本情報を編集
       </a>
     </div>
@@ -117,6 +117,11 @@
 
       renderHeader();
       document.getElementById("form-area").style.display = "block";
+
+      const editLink = document.getElementById("edit-pesticide-master-link");
+      if (editLink && window.currentRole === "admin") {
+        editLink.style.display = "inline-flex";
+      }
 
       // 今日の日付
       document.getElementById("date").value =

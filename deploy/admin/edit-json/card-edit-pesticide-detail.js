@@ -109,6 +109,12 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   const current = (json && typeof json === "object" && !Array.isArray(json)) ? json : {};
 
   container.insertAdjacentHTML("beforeend", `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="secondary-btn" type="button" onclick="location.href='?data=pesticide-index'">農薬基本情報へ</button>
+      </div>
+    </div>
+
     <div id="pesticide-detail-list"></div>
 
     <button id="add-pesticide-btn" class="primary-btn" style="margin-top:20px;">
