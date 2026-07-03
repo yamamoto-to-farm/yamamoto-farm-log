@@ -131,8 +131,15 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
     const tbody = document.createElement("tbody");
 
     list.forEach(r => {
+      const q = new URLSearchParams({
+        field: String(r.field || ""),
+        start: String(r.date || ""),
+        end: String(r.date || ""),
+        type: "fertilizer"
+      });
+
       const fieldLink = `
-        <a href="/fields/index.html?field=${encodeURIComponent(r.field)}"
+        <a href="/fields/work-logs.html?${q.toString()}"
            class="field-link">
           ${escapeHtml(r.field)}
         </a>
