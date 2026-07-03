@@ -281,6 +281,15 @@
       "openLog": false
     },
     {
+      "id": "edit-log",
+      "name": "記録データ編集（ログ）",
+      "path": "admin/edit-log/index.html",
+      "category": "管理/ツール",
+      "roles": ["admin"],
+      "icon": "assets/icons/json.png",
+      "openLog": false
+    },
+    {
       "id": "machine-qr",
       "name": "QRコード生成ツール",
       "path": "machine-qr.html",

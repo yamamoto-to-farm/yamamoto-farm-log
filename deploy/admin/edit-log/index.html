@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>ログ編集（管理者）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+</head>
+
+<body>
+
+  <div id="page-area" class="page-container" style="display:none;">
+    <h1 class="page-title">ログ編集（管理者）</h1>
+
+    <div class="card">
+      <p style="margin-top:0;">
+        このページは準備中です。今後、ログJSONを編集し、all.csvと同期保存する機能を実装します。
+      </p>
+      <ul>
+        <li>対象ログタイプ選択</li>
+        <li>圃場・日付で検索</li>
+        <li>JSON編集（追加・更新・削除）</li>
+        <li>all.csv再生成</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <a href="/admin/index.html">管理ページへ戻る</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      if (window.currentRole === "worker") {
+        alert("このページは管理者のみ利用できます");
+        location.href = "/admin/index.html";
+        return;
+      }
+
+      renderHeader({ adminPage: true });
+      document.getElementById("page-area").style.display = "block";
+    });
+  </script>
+
+</body>
+
+</html>
