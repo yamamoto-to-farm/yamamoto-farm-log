@@ -44,7 +44,7 @@ export async function initpesticidePage() {
     };
   }
 
-  // 肥料モーダル
+  // 農薬モーダル
   const btnpesticide = document.getElementById("open-pesticide-modal");
   if (btnpesticide) {
     btnpesticide.onclick = () => {
@@ -109,18 +109,30 @@ async function initFieldFilterData() {
 }
 
 /* ============================================================
-   肥料フィルタデータ初期化
+   農薬フィルタデータ初期化
 ============================================================ */
 async function initpesticideFilterData() {
   debugLog("loading pesticide-index.json");
 
-  const res = await fetch("/data/pesticide/pesticide-index.json?v=" + Date.now());
-  const list = await res.json();
+  const [list, detail] = await Promise.all([
+    fetch("/data/pesticide/pesticide-index.json?v=" + Date.now()).then(r => r.json()),
+    fetch("/data/pesticide/pesticide-detail.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}))
+  ]);
 
   // 辞書を作る（name → object）
   const dict = {};
   list.forEach(f => {
-    dict[f.name] = f;
+    const byId = detail?.[f.id] || {};
+    dict[f.name] = {
+      ...byId,
+      ...f,
+      id: f.id,
+      name: f.name,
+      category: f.category,
+      unit: f.unit
+    };
   });
 
   // multi-input に辞書を渡す

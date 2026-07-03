@@ -114,13 +114,25 @@ async function initFieldFilterData() {
 async function initFertilizerFilterData() {
   debugLog("loading fertilizer-index.json");
 
-  const res = await fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now());
-  const list = await res.json();
+  const [list, detail] = await Promise.all([
+    fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now()).then(r => r.json()),
+    fetch("/data/fertilizer/fertilizer-detail.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}))
+  ]);
 
   // 辞書を作る（name → object）
   const dict = {};
   list.forEach(f => {
-    dict[f.name] = f;
+    const byId = detail?.[f.id] || {};
+    dict[f.name] = {
+      ...byId,
+      ...f,
+      id: f.id,
+      name: f.name,
+      category: f.category,
+      unit: f.unit
+    };
   });
 
   // multi-input に辞書を渡す

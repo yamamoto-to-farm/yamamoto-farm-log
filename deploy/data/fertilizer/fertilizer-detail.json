@@ -11,7 +11,44 @@
     "n": 1,
     "p": 1,
     "k": 1,
-    "notes": "地域センターの完熟堆肥。水分多め。"
+    "notes": "地域センターの完熟堆肥。水分多め。",
+    "registration": {
+      "number": "",
+      "fertilizerType": "堆肥",
+      "productName": "完熟堆肥",
+      "legalClassification": "普通肥料",
+      "holder": {
+        "name": "○○堆肥センター",
+        "address": "",
+        "corporateNumber": ""
+      },
+      "registeredAt": ""
+    },
+    "ingredients": [
+      {
+        "name": "窒素全量",
+        "kind": "保証成分",
+        "concentrationPercent": 1
+      },
+      {
+        "name": "りん酸全量",
+        "kind": "保証成分",
+        "concentrationPercent": 1
+      },
+      {
+        "name": "加里全量",
+        "kind": "保証成分",
+        "concentrationPercent": 1
+      }
+    ],
+    "applicationGuidelines": [
+      {
+        "crop": "キャベツ",
+        "timing": "基肥",
+        "amountPer10a": "500-1000kg",
+        "method": "全面施用"
+      }
+    ]
   },
 
   "F002": {
@@ -25,7 +62,44 @@
     "n": 8,
     "p": 8,
     "k": 8,
-    "notes": "標準的な化成肥料。"
+    "notes": "標準的な化成肥料。",
+    "registration": {
+      "number": "",
+      "fertilizerType": "化成肥料",
+      "productName": "化成888",
+      "legalClassification": "普通肥料",
+      "holder": {
+        "name": "△△肥料工業",
+        "address": "",
+        "corporateNumber": ""
+      },
+      "registeredAt": ""
+    },
+    "ingredients": [
+      {
+        "name": "窒素全量",
+        "kind": "保証成分",
+        "concentrationPercent": 8
+      },
+      {
+        "name": "りん酸全量",
+        "kind": "保証成分",
+        "concentrationPercent": 8
+      },
+      {
+        "name": "加里全量",
+        "kind": "保証成分",
+        "concentrationPercent": 8
+      }
+    ],
+    "applicationGuidelines": [
+      {
+        "crop": "キャベツ",
+        "timing": "追肥",
+        "amountPer10a": "20-40kg",
+        "method": "条施用"
+      }
+    ]
   },
 
   "F003": {
@@ -39,6 +113,33 @@
     "n": 46,
     "p": 0,
     "k": 0,
-    "notes": "窒素補給用。"
+    "notes": "窒素補給用。",
+    "registration": {
+      "number": "",
+      "fertilizerType": "窒素肥料",
+      "productName": "尿素",
+      "legalClassification": "普通肥料",
+      "holder": {
+        "name": "□□化学",
+        "address": "",
+        "corporateNumber": ""
+      },
+      "registeredAt": ""
+    },
+    "ingredients": [
+      {
+        "name": "窒素全量",
+        "kind": "保証成分",
+        "concentrationPercent": 46
+      }
+    ],
+    "applicationGuidelines": [
+      {
+        "crop": "キャベツ",
+        "timing": "追肥",
+        "amountPer10a": "10-20kg",
+        "method": "条施用"
+      }
+    ]
   }
 }

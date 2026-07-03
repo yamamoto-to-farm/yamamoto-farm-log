@@ -11,6 +11,7 @@ function debugLog(...args) {
 
 import { filterState } from "/common/filter/filter-core.js?v=1";
 import { toNumber, calcPer10a } from "/common/pesticide-calc.js?v=1";
+import { openPesticideInfoModal } from "/common/materials/pesticide-view-modal.js?v=1";
 
 /* ============================================================
     農薬辞書（name → full object）
@@ -53,7 +54,10 @@ export function renderpesticideInputs() {
 
         return `
   <div class="pesticide-row" data-name="${name}">
-    <div class="pesticide-title">${name}</div>
+        <div class="pesticide-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span>${name}</span>
+            <button type="button" class="secondary-btn open-pesticide-info-btn" data-name="${name}" style="padding:2px 8px; font-size:0.82em;">詳細</button>
+        </div>
 
     <div class="pesticide-line" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span>倍率：</span>
@@ -105,6 +109,14 @@ function initInputEvents() {
             if (window.__pesticide_totalA) {
                 updatePer10aAll(window.__pesticide_totalA);
             }
+        });
+    });
+
+    document.querySelectorAll(".open-pesticide-info-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const name = btn.dataset.name;
+            const detail = pesticideDict[name] || {};
+            openPesticideInfoModal(detail);
         });
     });
 

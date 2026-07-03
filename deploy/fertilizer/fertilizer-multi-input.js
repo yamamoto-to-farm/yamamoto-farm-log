@@ -10,6 +10,7 @@ function debugLog(...args) {
 }
 
 import { filterState } from "/common/filter/filter-core.js?v=1";
+import { openFertilizerInfoModal } from "/common/materials/fertilizer-view-modal.js?v=1";
 
 /* ============================================================
    肥料辞書（name → full object）
@@ -52,7 +53,10 @@ export function renderFertilizerInputs() {
 
         return `
   <div class="fertilizer-row" data-name="${name}">
-    <div class="fertilizer-title">${name}</div>
+        <div class="fertilizer-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span>${name}</span>
+            <button type="button" class="secondary-btn open-fertilizer-info-btn" data-name="${name}" style="padding:2px 8px; font-size:0.82em;">詳細</button>
+        </div>
 
     <div class="fertilizer-line">
       <input type="text"
@@ -108,6 +112,14 @@ function initInputEvents() {
             if (window.__fertilizer_totalA) {
                 updatePer10aAll(window.__fertilizer_totalA);
             }
+        });
+    });
+
+    document.querySelectorAll(".open-fertilizer-info-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const name = btn.dataset.name;
+            const detail = fertilizerDict[name] || {};
+            openFertilizerInfoModal(detail);
         });
     });
 

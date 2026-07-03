@@ -1,29 +1,86 @@
 {
 	"F304": {
 		"name": "アファーム乳剤",
-		"maker": "",
+		"maker": "シンジェンタ ジャパン株式会社",
 		"category": "殺虫剤",
 		"unit": "ml",
-		"registrationNo": "",
+		"registrationNo": "20944",
 		"formulation": "乳剤",
 		"price": {},
-		"activeIngredients": [],
+		"activeIngredients": [
+			"エマメクチン安息香酸塩"
+		],
 		"dilution": {
-			"min": null,
-			"max": null,
-			"default": null
+			"min": 1000,
+			"max": 2000,
+			"default": 1000
 		},
 		"standardDose": {
 			"per10a": null,
 			"unit": "ml"
 		},
-		"targetCrops": [],
-		"targetPests": [],
+		"packaging": {
+			"amountPerPack": null,
+			"unit": "ml",
+			"packLabel": "本"
+		},
+		"targetCrops": [
+			"キャベツ"
+		],
+		"targetPests": [
+			"コナガ",
+			"アオムシ"
+		],
 		"maxApplicationsPerSeason": null,
 		"preHarvestIntervalDays": null,
 		"reentryIntervalHours": null,
-		"resistanceCode": "",
-		"notes": ""
+		"resistanceCode": "IRAC:6",
+		"notes": "登録内容は使用前に最新情報を確認すること。",
+		"registration": {
+			"number": "20944",
+			"pesticideType": "エマメクチン安息香酸塩乳剤",
+			"productName": "アファーム乳剤",
+			"physicalChemicalProperties": "淡黄色澄明可乳化油状液体",
+			"holder": {
+				"name": "シンジェンタ ジャパン株式会社",
+				"address": "東京都中央区",
+				"corporateNumber": ""
+			},
+			"purpose": "殺虫剤",
+			"formulation": "乳剤",
+			"toxicity": "普",
+			"registeredAt": ""
+		},
+		"ingredients": [
+			{
+				"name": "エマメクチン安息香酸塩",
+				"kind": "有効成分",
+				"concentrationPercent": null,
+				"resistance": {
+					"scheme": "IRAC",
+					"code": "6"
+				}
+			}
+		],
+		"applications": [
+			{
+				"crop": "キャベツ",
+				"target": "コナガ",
+				"dilution": "1000-2000倍",
+				"sprayVolume": "100-300L/10a",
+				"timing": "収穫前日まで",
+				"maxProductApplications": null,
+				"method": "散布",
+				"maxActiveIngredientApplications": null
+			}
+		],
+		"resistanceProfile": [
+			{
+				"scheme": "IRAC",
+				"code": "6",
+				"source": "activeIngredient"
+			}
+		]
 	},
 	"F305": {
 		"name": "ダコニール",
@@ -43,12 +100,35 @@
 			"per10a": null,
 			"unit": "ml"
 		},
+		"packaging": {
+			"amountPerPack": null,
+			"unit": "ml",
+			"packLabel": "本"
+		},
 		"targetCrops": [],
 		"targetPests": [],
 		"maxApplicationsPerSeason": null,
 		"preHarvestIntervalDays": null,
 		"reentryIntervalHours": null,
 		"resistanceCode": "",
-		"notes": ""
+		"notes": "",
+		"registration": {
+			"number": "",
+			"pesticideType": "",
+			"productName": "ダコニール",
+			"physicalChemicalProperties": "",
+			"holder": {
+				"name": "",
+				"address": "",
+				"corporateNumber": ""
+			},
+			"purpose": "殺菌剤",
+			"formulation": "",
+			"toxicity": "",
+			"registeredAt": ""
+		},
+		"ingredients": [],
+		"applications": [],
+		"resistanceProfile": []
 	}
 }
