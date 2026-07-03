@@ -81,6 +81,17 @@
     ]
   },
   {
+    "folder": "hand-weeding",
+    "dateColumn": "date",
+    "displayName": "除草（手作業）",
+    "headerName": [
+      "date",
+      "worker",
+      "field",
+      "machine"
+    ]
+  },
+  {
     "folder": "field-maintenance",
     "dateColumn": "date",
     "displayName": "圃場整備",
