@@ -71,7 +71,7 @@ function createDateBlocks(logs, year, month, pesticideName, options = {}) {
           chemical_amount: getChemicalAmountByUnit(p, chemicalUnit),
           chemical_unit: chemicalUnit,
           unit: "L",
-          workers: e.workers || "",
+          workers: formatWorkers(e.workers),
           notes: e.notes || ""
         });
       });
@@ -104,8 +104,18 @@ function createDateBlocks(logs, year, month, pesticideName, options = {}) {
     const summary = document.createElement("summary");
     const unit = list[0]?.unit || "L";
     const chemUnit = list[0]?.chemical_unit || "ml";
-    summary.innerHTML = `${date}（${list.length}圃場 / ${formatNumber(totalSpray)}${unit} / ${dilutionText} / 薬量${formatNumber(chemicalPer10a)}${chemUnit}/10a）`;
+    summary.innerHTML = `${escapeHtml(date)}`;
     details.appendChild(summary);
+
+    const dailyTotals = document.createElement("div");
+    dailyTotals.className = "daily-totals";
+    dailyTotals.innerHTML = `
+      <span class="daily-totals-item">圃場 ${list.length}</span>
+      <span class="daily-totals-item">散布 ${formatAmount(totalSpray)}${escapeHtml(unit)}</span>
+      <span class="daily-totals-item">薬量/10a ${formatAmount(chemicalPer10a)}${escapeHtml(chemUnit)}</span>
+      <span class="daily-totals-item">${escapeHtml(dilutionText)}</span>
+    `;
+    details.appendChild(dailyTotals);
 
     const table = document.createElement("table");
     table.className = "pest-table";
@@ -127,8 +137,15 @@ function createDateBlocks(logs, year, month, pesticideName, options = {}) {
     const tbody = document.createElement("tbody");
 
     list.forEach(r => {
+      const q = new URLSearchParams({
+        field: String(r.field || ""),
+        start: String(r.date || ""),
+        end: String(r.date || ""),
+        type: "pesticide"
+      });
+
       const fieldLink = `
-        <a href="/fields/index.html?field=${encodeURIComponent(r.field)}" class="field-link">
+        <a href="/fields/work-logs.html?${q.toString()}" class="field-link">
           ${escapeHtml(r.field)}
         </a>
       `;
@@ -137,12 +154,12 @@ function createDateBlocks(logs, year, month, pesticideName, options = {}) {
       const chemicalPer10a = r.area_a > 0 ? (r.chemical_amount / r.area_a) * 10 : 0;
       tr.innerHTML = `
         <td>${fieldLink}</td>
-        <td class="value">${formatNumber(r.water_amount)} ${escapeHtml(r.unit || "L")}</td>
-        <td class="value">${formatNumber(r.chemical_amount)} ${escapeHtml(r.chemical_unit || "ml")}</td>
-        <td class="value">${r.area_a > 0 ? `${formatNumber(chemicalPer10a)} ${escapeHtml(r.chemical_unit || "ml")}/10a` : "-"}</td>
-        <td class="value">${r.dilution_rate > 0 ? `${formatNumber(r.dilution_rate)}倍` : "-"}</td>
+        <td class="value">${formatAmount(r.water_amount)} ${escapeHtml(r.unit || "L")}</td>
+        <td class="value">${formatAmount(r.chemical_amount)} ${escapeHtml(r.chemical_unit || "ml")}</td>
+        <td class="value">${r.area_a > 0 ? `${formatAmount(chemicalPer10a)} ${escapeHtml(r.chemical_unit || "ml")}/10a` : "-"}</td>
+        <td class="value">${r.dilution_rate > 0 ? `${formatAmount(r.dilution_rate)}倍` : "-"}</td>
         <td>${escapeHtml(r.workers)}</td>
-        <td>${escapeHtml(r.notes)}</td>
+        <td class="memo-cell" title="${escapeHtml(r.notes)}">${escapeHtml(r.notes)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -188,9 +205,9 @@ function createMonthlyTotal(rows, unit, options = {}) {
     <tbody>
       <tr>
         <td class="value">${totalDays} 日</td>
-        <td class="total">${formatNumber(totalSpray)} ${escapeHtml(unit)}</td>
-        <td class="total">${formatNumber(totalChemical)} ${escapeHtml(chemicalUnit)}</td>
-        <td class="value">${totalArea > 0 ? `${formatNumber(totalChemicalPer10a)} ${escapeHtml(chemicalUnit)}/10a` : "-"}</td>
+        <td class="total">${formatAmount(totalSpray)} ${escapeHtml(unit)}</td>
+        <td class="total">${formatAmount(totalChemical)} ${escapeHtml(chemicalUnit)}</td>
+        <td class="value">${totalArea > 0 ? `${formatAmount(totalChemicalPer10a)} ${escapeHtml(chemicalUnit)}/10a` : "-"}</td>
         <td class="value">${escapeHtml(packText)}</td>
       </tr>
     </tbody>
@@ -258,7 +275,7 @@ function buildPackageEstimateText(totalChemical, totalUnit, packageInfo) {
   if (!(packageInfo.amountPerPack > 0)) return "規格未設定";
 
   const packs = totalInPackUnit / packageInfo.amountPerPack;
-  return `${formatNumber(packs)}${packageInfo.packLabel}（規格 ${formatNumber(packageInfo.amountPerPack)}${packageInfo.unit}）`;
+  return `${formatAmount(packs)}${packageInfo.packLabel}（規格 ${formatAmount(packageInfo.amountPerPack)}${packageInfo.unit}）`;
 }
 
 function convertAmount(amount, fromUnit, toUnit) {
@@ -307,8 +324,34 @@ function fromG(valueG, unit) {
   return null;
 }
 
-function formatNumber(value) {
-  return Number(value || 0).toFixed(1).replace(/\.0$/, "");
+function formatAmount(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return "0";
+
+  const rounded = Math.round(n * 10) / 10;
+  const hasDecimal = Math.abs(rounded % 1) > 0;
+
+  return hasDecimal
+    ? rounded.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : rounded.toLocaleString("ja-JP");
+}
+
+function formatWorkers(workers) {
+  if (Array.isArray(workers)) {
+    return workers
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  if (workers && typeof workers === "object") {
+    return Object.values(workers)
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .join("／");
+  }
+
+  return String(workers || "").trim();
 }
 
 function escapeHtml(value) {

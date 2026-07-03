@@ -1,6 +1,27 @@
 /* ================================
    年ブロック
 ================================ */
+.list-shell {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.list-filter-card {
+  margin-bottom: 14px;
+}
+
+.list-filter-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.list-filter-row .form-field {
+  min-width: 200px;
+}
+
 .year-block {
   margin-bottom: 30px;
   border: 1px solid #ccc;
@@ -40,22 +61,27 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  font-size: 14px;
 }
 
 .pest-table th,
 .pest-table td {
-  border: 1px solid #ddd;
-  padding: 6px;
+  border: 1px solid #e2e6ea;
+  padding: 7px 8px;
 }
 
 .pest-table th {
-  background: #fafafa;
+  background: #f6f8fa;
   font-weight: bold;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 4;
 }
 
 .pest-table td {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .pest-table th:nth-child(1),
@@ -65,29 +91,33 @@
 
 .pest-table th:nth-child(n+2):nth-child(-n+13),
 .pest-table td:nth-child(n+2):nth-child(-n+13) {
-  width: 70px;
+  width: 58px;
 }
 
 .pest-table th:nth-child(14),
 .pest-table td:nth-child(14) {
-  width: 80px;
+  width: 72px;
 }
 
 .pest-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
+  background: #fbfcfd;
+}
+
+.pest-table tbody tr:hover td {
+  background: #f3f8ff;
 }
 
 td.zero {
-  color: #bbb;
+  color: #b8c0c8;
 }
 
 td.value {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 td.total {
-  font-weight: bold;
-  background: #fdfdfd;
+  font-weight: 700;
+  background: #f7fbf7;
 }
 
 .sticky-col {
@@ -95,17 +125,38 @@ td.total {
   left: 0;
   background: #fff;
   z-index: 3;
+  box-shadow: 2px 0 0 rgba(0, 0, 0, 0.04);
 }
 
 .pest-table td.clickable {
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.05s;
 }
 
 .pest-table td.clickable:hover {
-  background: #eef6ff;
+  background: #eaf3ff;
   color: #005bbb;
-  font-weight: bold;
+  font-weight: 700;
+}
+
+.pest-table td.clickable:active {
+  transform: scale(0.99);
+}
+
+@media (max-width: 1200px) {
+  .list-shell {
+    max-width: none;
+  }
+
+  .pest-table th:nth-child(1),
+  .pest-table td:nth-child(1) {
+    width: 180px;
+  }
+
+  .pest-table th:nth-child(n+2):nth-child(-n+13),
+  .pest-table td:nth-child(n+2):nth-child(-n+13) {
+    width: 64px;
+  }
 }
 
 @media print {

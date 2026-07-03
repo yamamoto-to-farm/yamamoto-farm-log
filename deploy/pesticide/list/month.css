@@ -1,115 +1,203 @@
-/* ================================
-   年ブロック
-================================ */
-.year-block {
-  margin-bottom: 30px;
-  border: 1px solid #ccc;
+.month-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.month-back-row {
+  margin-bottom: 14px;
+}
+
+.date-block {
+  margin-bottom: 12px;
+  border: 1px solid #cfd6dc;
   border-radius: 6px;
   background: #fff;
+  overflow: hidden;
 }
 
-.year-title {
-  background: #f0f0f0;
-  padding: 12px 14px;
-  margin: 0;
+.date-block > summary {
+  background: #f0f3f6;
+  padding: 10px 12px;
+  font-weight: 700;
   font-size: 18px;
-  font-weight: bold;
-  border-bottom: 1px solid #ddd;
-}
-
-/* ================================
-   カテゴリ折りたたみ
-================================ */
-.cat-block summary {
-  background: #e8e8e8;
-  padding: 8px 10px;
-  font-weight: bold;
   cursor: pointer;
-  border-bottom: 1px solid #ccc;
   user-select: none;
+  border-bottom: 1px solid #dbe2e8;
 }
 
-.cat-block summary:hover {
-  background: #dcdcdc;
+.date-block > summary:hover {
+  background: #e8eef4;
 }
 
-/* ================================
-   テーブル
-================================ */
+.daily-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e6ea;
+  background: #f8fafc;
+}
+
+.daily-totals-item {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #d4dde5;
+  background: #ffffff;
+  color: #22313f;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .pest-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  font-size: 14px;
 }
 
 .pest-table th,
 .pest-table td {
-  border: 1px solid #ddd;
-  padding: 6px;
+  border: 1px solid #e2e6ea;
+  padding: 7px 8px;
 }
 
 .pest-table th {
-  background: #fafafa;
-  font-weight: bold;
+  background: #f6f8fa;
+  font-weight: 700;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 4;
 }
 
 .pest-table td {
   text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pest-table td:nth-child(1),
+.pest-table td:nth-child(6),
+.pest-table td:nth-child(7) {
+  text-align: left;
 }
 
 .pest-table th:nth-child(1),
 .pest-table td:nth-child(1) {
-  width: 200px;
+  width: 190px;
 }
 
 .pest-table th:nth-child(2),
-.pest-table td:nth-child(2) {
-  width: 110px;
-}
-
+.pest-table td:nth-child(2),
 .pest-table th:nth-child(3),
 .pest-table td:nth-child(3) {
-  width: 100px;
+  width: 120px;
 }
 
 .pest-table th:nth-child(4),
-.pest-table td:nth-child(4) {
-  width: 160px;
-}
-
+.pest-table td:nth-child(4),
 .pest-table th:nth-child(5),
 .pest-table td:nth-child(5) {
-  width: auto;
+  width: 130px;
+}
+
+.pest-table th:nth-child(6),
+.pest-table td:nth-child(6) {
+  width: 170px;
+}
+
+.pest-table th:nth-child(7),
+.pest-table td:nth-child(7) {
+  width: 260px;
 }
 
 .pest-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
+  background: #fbfcfd;
 }
 
-td.zero {
-  color: #bbb;
+.pest-table tbody tr:hover td {
+  background: #f3f8ff;
 }
 
 td.value {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 td.total {
-  font-weight: bold;
-  background: #fdfdfd;
+  font-weight: 700;
+  background: #f7fbf7;
 }
 
-.sticky-col {
-  position: sticky;
-  left: 0;
-  background: #fff;
-  z-index: 3;
+.memo-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sticky-col2 {
-  position: sticky;
-  left: 120px;
-  background: #fff;
-  z-index: 3;
+.field-link {
+  color: #0b63c9;
+  text-decoration: none;
+}
+
+.field-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1200px) {
+  .month-shell {
+    max-width: none;
+  }
+
+  .pest-table {
+    font-size: 13px;
+  }
+
+  .pest-table th:nth-child(1),
+  .pest-table td:nth-child(1) {
+    width: 150px;
+  }
+
+  .pest-table th:nth-child(2),
+  .pest-table td:nth-child(2),
+  .pest-table th:nth-child(3),
+  .pest-table td:nth-child(3) {
+    width: 100px;
+  }
+
+  .pest-table th:nth-child(4),
+  .pest-table td:nth-child(4),
+  .pest-table th:nth-child(5),
+  .pest-table td:nth-child(5) {
+    width: 120px;
+  }
+
+  .pest-table th:nth-child(6),
+  .pest-table td:nth-child(6) {
+    width: 140px;
+  }
+
+  .pest-table th:nth-child(7),
+  .pest-table td:nth-child(7) {
+    width: 220px;
+  }
+}
+
+@media print {
+  #page-area {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .date-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .pest-table th {
+    position: static;
+  }
 }

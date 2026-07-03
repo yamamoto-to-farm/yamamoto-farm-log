@@ -167,6 +167,24 @@
       "icon": "assets/icons/kpi-month.png",
       "openLog": false
     },
+    {
+      "id": "fertilizer-list",
+      "name": "施肥記録一覧",
+      "path": "fertilizer/list/list.html",
+      "category": "作業日誌・記録一覧",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/fertilizer.png",
+      "openLog": false
+    },
+    {
+      "id": "pesticide-list",
+      "name": "防除記録一覧",
+      "path": "pesticide/list/list.html",
+      "category": "作業日誌・記録一覧",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/pesticide.png",
+      "openLog": false
+    },
 
     {
       "id": "nursery-house",

@@ -5,6 +5,7 @@
   <title>防除記録一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="./list.css?v=1">
 
   <style>
@@ -20,8 +21,27 @@
 <body>
   <div id="page-area">
     <h1 class="page-title">防除記録一覧</h1>
-    <div id="pesticide-container"></div>
+
+    <div class="list-shell">
+      <div class="card list-filter-card">
+        <div class="list-filter-row">
+          <div class="form-field">
+            <label for="year-select">年</label>
+            <select id="year-select" class="form-input"></select>
+          </div>
+          <div class="form-field">
+            <label>農薬フィルタ</label>
+            <button id="open-pesticide-modal" class="primary-btn" type="button">農薬を選択</button>
+          </div>
+        </div>
+        <div id="activePesticideFilters" style="margin-top:10px;"></div>
+      </div>
+
+      <div id="pesticide-container"></div>
+    </div>
   </div>
+
+  <div id="modal-container"></div>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js?v=1";
@@ -36,7 +56,7 @@
       }
 
       renderHeader();
-      initPesticideList();
+      await initPesticideList();
     });
   </script>
 </body>

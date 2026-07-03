@@ -34,23 +34,30 @@ export async function loadAllPesticideLogs() {
 
   const logs = [];
 
-  for (const f of fields) {
-    const path = `/logs/pesticide/${f.safe}.json`;
-
-    try {
+  const results = await Promise.allSettled(
+    fields.map(async f => {
+      const path = `/logs/pesticide/${f.safe}.json`;
       const data = await loadJSON(path);
+      return { f, data };
+    })
+  );
 
-      for (const year of Object.keys(data.years || {})) {
-        logs.push({
-          field: f.original,
-          year: Number(year),
-          entries: data.years[year].entries || []
-        });
-      }
-    } catch {
-      debugWarn(`No log for field: ${f.original} (${f.safe})`);
+  results.forEach(r => {
+    if (r.status !== "fulfilled") {
+      return;
     }
-  }
+
+    const { f, data } = r.value;
+    const years = data?.years && typeof data.years === "object" ? data.years : {};
+
+    Object.keys(years).forEach(year => {
+      logs.push({
+        field: f.original,
+        year: Number(year),
+        entries: Array.isArray(years[year]?.entries) ? years[year].entries : []
+      });
+    });
+  });
 
   debugLog("All logs loaded:", logs);
   return logs;
