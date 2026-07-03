@@ -71,7 +71,7 @@ export async function savepesticideLog() {
 
   const pesticides = getpesticideInputData();
   if (pesticides.length === 0) {
-    alert("農薬の希釈倍率・合計散布水量を入力してください");
+    alert("農薬の希釈倍率・合計散布液量（L）を入力してください");
     return;
   }
 

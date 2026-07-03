@@ -21,6 +21,11 @@ function buildEmptyPesticideDetail() {
       per10a: null,
       unit: "ml"
     },
+    packaging: {
+      amountPerPack: null,
+      unit: "ml",
+      packLabel: "本"
+    },
     targetCrops: [],
     targetPests: [],
     maxApplicationsPerSeason: null,
@@ -185,6 +190,15 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
           </div>
 
           <div class="edit-line">
+            <label>規格（1本/1袋あたり）</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="packagingAmountPerPack" type="number" step="any" placeholder="量" value="${p.packaging?.amountPerPack ?? ""}">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="packagingUnit" placeholder="unit" value="${escapeHtml(p.packaging?.unit ?? p.unit ?? "ml")}">
+              <input class="form-input" data-id="${escapeHtml(id)}" data-key="packagingPackLabel" placeholder="本 / 袋" value="${escapeHtml(p.packaging?.packLabel ?? "本")}">
+            </div>
+          </div>
+
+          <div class="edit-line">
             <label>対象作物（改行 or カンマ区切り）</label>
             <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetCropsText" rows="3">${escapeHtml(listToText(p.targetCrops))}</textarea>
           </div>
@@ -267,6 +281,11 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
           standardDose: {
             per10a: parseNullableNumber(getValue("standardDosePer10a")),
             unit: getValue("standardDoseUnit").trim() || getValue("unit").trim() || "ml"
+          },
+          packaging: {
+            amountPerPack: parseNullableNumber(getValue("packagingAmountPerPack")),
+            unit: getValue("packagingUnit").trim() || getValue("unit").trim() || "ml",
+            packLabel: getValue("packagingPackLabel").trim() || "本"
           },
           targetCrops: parseListText(getValue("targetCropsText")),
           targetPests: parseListText(getValue("targetPestsText")),

@@ -47,7 +47,7 @@ export function renderpesticideInputs() {
     // UI を生成
     area.innerHTML = selected.map(name => {
         const f = pesticideDict[name] || {};
-                const unit = f.unit || "L";
+        const chemicalUnit = f.unit || "ml";
 
         debugLog(`render row for ${name}`, f);
 
@@ -71,11 +71,14 @@ export function renderpesticideInputs() {
                          class="water-total-input"
                          data-name="${name}"
                          placeholder="例: 120"
-                         value="" style="max-width:140px;"> <span>${unit}</span>
+                                                 value="" style="max-width:140px;"> <span>L</span>
         </div>
 
         <div class="per10a" id="per10a-${f.id}" style="margin-top:4px; color:#555;">
-            散布液量：- ${unit}/10a
+                        散布液量：- L/10a
+                </div>
+                <div class="chemical-per10a" id="chemical-per10a-${f.id}" style="margin-top:2px; color:#555;">
+                        薬量（倍率換算）：- ${chemicalUnit}/10a
     </div>
   </div>
 `;
@@ -119,11 +122,15 @@ export function updatePer10aAll(totalA) {
 
     if (!totalA || totalA === 0) {
         document.querySelectorAll(".per10a").forEach(el => {
+            el.textContent = "散布液量：- L/10a";
+        });
+
+        document.querySelectorAll(".chemical-per10a").forEach(el => {
             const row = el.closest(".pesticide-row");
             const pesticideName = row?.dataset?.name || "";
             const f = pesticideDict[pesticideName] || {};
-            const unit = f.unit || "L";
-            el.textContent = `散布液量：- ${unit}/10a`;
+            const chemicalUnit = f.unit || "ml";
+            el.textContent = `薬量（倍率換算）：- ${chemicalUnit}/10a`;
         });
         return;
     }
@@ -137,14 +144,33 @@ export function updatePer10aAll(totalA) {
         const sprayInput = document.querySelector(
             `.water-total-input[data-name="${name}"]`
         );
+        const dilutionInput = document.querySelector(
+            `.dilution-input[data-name="${name}"]`
+        );
         if (!sprayInput) return;
 
         const totalWater = toNumber(sprayInput.value);
         const per10a = calcPer10a(totalWater, totalA).toFixed(1);
-        const unit = f.unit || "L";
+        const dilutionRate = toNumber(dilutionInput?.value);
+        const chemicalUnit = f.unit || "ml";
 
         const el = document.getElementById(`per10a-${f.id}`);
-        if (el) el.textContent = `散布液量：${per10a} ${unit}/10a`;
+        if (el) el.textContent = `散布液量：${per10a} L/10a`;
+
+        const chemicalEl = document.getElementById(`chemical-per10a-${f.id}`);
+        if (chemicalEl) {
+            if (dilutionRate > 0) {
+                const per10aL = calcPer10a(totalWater, totalA);
+                const chemicalL = per10aL / dilutionRate;
+                const chemicalAmount = convertLiterToUnit(chemicalL, chemicalUnit);
+                const display = Number.isFinite(chemicalAmount)
+                  ? formatAmount(chemicalAmount)
+                  : "-";
+                chemicalEl.textContent = `薬量（倍率換算）：${display} ${chemicalUnit}/10a`;
+            } else {
+                chemicalEl.textContent = `薬量（倍率換算）：- ${chemicalUnit}/10a`;
+            }
+        }
     });
 }
 
@@ -174,7 +200,7 @@ export function getpesticideInputData() {
         const total_water_amount = toNumber(sprayTotalInput.value);
 
         const f = pesticideDict[name];
-        const unit = f.unit || "L";
+        const chemicalUnit = f.unit || "ml";
 
         if (dilution_rate <= 0 || total_water_amount <= 0) {
             debugLog(`skip ${name} because values are empty or invalid`, {
@@ -190,7 +216,8 @@ export function getpesticideInputData() {
             dilution_rate,
             total_water_amount,
             total_spray_amount: total_water_amount,
-            unit
+            unit: "L",
+            pesticide_unit: chemicalUnit
         };
 
         debugLog("row:", row);
@@ -200,4 +227,14 @@ export function getpesticideInputData() {
 
     debugLog("getpesticideInputData result:", result);
     return result;
+}
+
+function convertLiterToUnit(amountL, unit) {
+    const u = String(unit || "").toLowerCase();
+    if (u === "ml" || u === "cc") return amountL * 1000;
+    return amountL;
+}
+
+function formatAmount(value) {
+    return Number(value || 0).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
 }

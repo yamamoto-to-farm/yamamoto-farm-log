@@ -22,20 +22,34 @@ export async function distributePesticideUsageByField(fields, pesticideUsage) {
 
   for (const usage of pesticideUsage || []) {
     const totalWaterAmount = getTotalWaterAmount(usage);
+    const dilutionRate = toNumber(usage.dilution_rate);
+    const pesticideUnit = usage.pesticide_unit || "ml";
     const distributed = await distributeByFieldSize(fields, totalWaterAmount);
 
     distributed.forEach(d => {
+      const chemicalL = dilutionRate > 0 ? d.amount / dilutionRate : 0;
+      const chemicalAmount = convertLiterToUnit(chemicalL, pesticideUnit);
+
       result.push({
         field: d.field,
         pesticide_id: usage.pesticide_id,
         name: usage.name,
-        dilution_rate: toNumber(usage.dilution_rate),
-        unit: usage.unit || "L",
+        dilution_rate: dilutionRate,
+        unit: "L",
+        water_unit: "L",
         water_amount: d.amount,
-        spray_amount: d.amount
+        spray_amount: d.amount,
+        pesticide_amount: chemicalAmount,
+        pesticide_unit: pesticideUnit
       });
     });
   }
 
   return result;
+}
+
+function convertLiterToUnit(amountL, unit) {
+  const u = String(unit || "").toLowerCase();
+  if (u === "ml" || u === "cc") return amountL * 1000;
+  return amountL;
 }
