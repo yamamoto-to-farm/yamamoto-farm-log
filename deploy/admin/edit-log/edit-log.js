@@ -142,7 +142,9 @@ async function saveCurrentLog() {
   const jsonPath = `logs/${type}/${safe}.json`;
 
   setStatus("all.csv を再生成しています…");
-  const csvText = await rebuildAllCsv(type);
+  const csvText = await rebuildAllCsv(type, {
+    [safe]: fileObj
+  });
 
   await saveLog({
     type: "multi",
@@ -163,14 +165,14 @@ async function saveCurrentLog() {
   setStatus(`保存しました: ${field} / ${type}（${normalizedRows.length}件）`);
 }
 
-async function rebuildAllCsv(type) {
+async function rebuildAllCsv(type, fieldOverrides = {}) {
   const fieldNames = state.fields || [];
   const rows = [];
 
   for (const fieldName of fieldNames) {
     const safe = safeFieldName(fieldName);
-    const path = `/logs/${type}/${safe}.json`;
-    const data = await loadJSON(path).catch(() => null);
+    const override = fieldOverrides[safe] || null;
+    const data = override || await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
     if (!data) continue;
 
     const entries = flattenEntries(data);
