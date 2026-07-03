@@ -25,21 +25,23 @@
   <div id="page-area">
     <h1 class="page-title">施肥記録一覧</h1>
 
-    <div class="card list-filter-card">
-      <div class="list-filter-row">
-        <div class="form-field">
-          <label for="year-select">年</label>
-          <select id="year-select" class="form-input"></select>
+    <div class="list-shell">
+      <div class="card list-filter-card">
+        <div class="list-filter-row">
+          <div class="form-field">
+            <label for="year-select">年</label>
+            <select id="year-select" class="form-input"></select>
+          </div>
+          <div class="form-field">
+            <label>肥料フィルタ</label>
+            <button id="open-fertilizer-modal" class="primary-btn" type="button">肥料を選択</button>
+          </div>
         </div>
-        <div class="form-field">
-          <label>肥料フィルタ</label>
-          <button id="open-fertilizer-modal" class="primary-btn" type="button">肥料を選択</button>
-        </div>
+        <div id="activeFertilizerFilters" style="margin-top:10px;"></div>
       </div>
-      <div id="activeFertilizerFilters" style="margin-top:10px;"></div>
-    </div>
 
-    <div id="fertilizer-container"></div>
+      <div id="fertilizer-container"></div>
+    </div>
   </div>
 
   <div id="modal-container"></div>

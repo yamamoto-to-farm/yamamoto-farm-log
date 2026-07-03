@@ -152,10 +152,10 @@ function createCategoryTableHTML(year, fertList, usage) {
         ${monthly.slice(1).map((v, i) => `
           <td class="${v === 0 ? "zero" : "value"} clickable"
               onclick="location.href='month.html?year=${year}&month=${i+1}&fert=${encodeURIComponent(fert.name)}'">
-            ${v}
+            ${formatAmount(v)}
           </td>
         `).join("")}
-        <td class="total">${total}</td>
+        <td class="total">${formatAmount(total)}</td>
       </tr>
     `;
   });
@@ -186,4 +186,10 @@ function groupByCategory(master) {
     map[f.category].push(f);
   });
   return map;
+}
+
+function formatAmount(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return "0";
+  return n.toLocaleString("ja-JP");
 }

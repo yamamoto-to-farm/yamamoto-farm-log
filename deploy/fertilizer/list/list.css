@@ -1,11 +1,14 @@
 /* ================================
    年ブロック
 ================================ */
-.list-filter-card {
-  margin-bottom: 14px;
+.list-shell {
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.list-filter-card {
+  margin-bottom: 14px;
 }
 
 .list-filter-row {
@@ -21,9 +24,6 @@
 
 .year-block {
   margin-bottom: 30px;
-  max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #fff;
@@ -159,8 +159,7 @@ td.total {
 }
 
 @media (max-width: 1200px) {
-  .list-filter-card,
-  .year-block {
+  .list-shell {
     max-width: none;
   }
 
