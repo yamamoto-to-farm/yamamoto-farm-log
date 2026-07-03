@@ -99,10 +99,19 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
     details.open = true;
 
     const summary = document.createElement("summary");
-    summary.innerHTML = `
-      ${escapeHtml(date)}（${list.length}圃場 / ${formatAmount(totalKg)}kg${totalBags !== null ? ` / ${formatBags(totalBags)}袋` : ""}）
-    `;
+    summary.innerHTML = `${escapeHtml(date)}`;
     details.appendChild(summary);
+
+    const dailyTotals = document.createElement("div");
+    dailyTotals.className = "daily-totals";
+    dailyTotals.innerHTML = `
+      <span class="daily-totals-item">圃場 ${list.length}</span>
+      <span class="daily-totals-item">合計 ${formatAmount(totalKg)}kg</span>
+      ${totalBags !== null
+        ? `<span class="daily-totals-item">${formatBags(totalBags)}袋</span>`
+        : ""}
+    `;
+    details.appendChild(dailyTotals);
 
     const table = document.createElement("table");
     table.className = "fert-table";
@@ -135,7 +144,7 @@ function createDateBlocks(logs, year, month, fertName, fertInfo) {
         <td class="value">${formatAmount(r.amount)}</td>
         <td class="value">${r.bags !== null ? formatBags(r.bags) : "-"}</td>
         <td>${escapeHtml(r.workers)}</td>
-        <td>${escapeHtml(r.notes)}</td>
+        <td class="memo-cell" title="${escapeHtml(r.notes)}">${escapeHtml(r.notes)}</td>
       `;
       tbody.appendChild(tr);
     });

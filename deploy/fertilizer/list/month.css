@@ -19,6 +19,7 @@
   background: #f0f3f6;
   padding: 10px 12px;
   font-weight: 700;
+  font-size: 28px;
   cursor: pointer;
   user-select: none;
   border-bottom: 1px solid #dbe2e8;
@@ -26,6 +27,30 @@
 
 .date-block > summary:hover {
   background: #e8eef4;
+}
+
+.daily-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e6ea;
+  background: #f8fafc;
+}
+
+.daily-totals-item {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #d4dde5;
+  background: #ffffff;
+  color: #22313f;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .fert-table {
@@ -78,7 +103,7 @@
 
 .fert-table th:nth-child(5),
 .fert-table td:nth-child(5) {
-  width: auto;
+  width: 280px;
 }
 
 .fert-table tbody tr:nth-child(even) {
@@ -96,6 +121,13 @@ td.value {
 td.total {
   font-weight: 700;
   background: #f7fbf7;
+}
+
+.memo-cell {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .field-link {
@@ -131,6 +163,11 @@ td.total {
   .fert-table th:nth-child(4),
   .fert-table td:nth-child(4) {
     width: 140px;
+  }
+
+  .fert-table th:nth-child(5),
+  .fert-table td:nth-child(5) {
+    width: 220px;
   }
 }
 
