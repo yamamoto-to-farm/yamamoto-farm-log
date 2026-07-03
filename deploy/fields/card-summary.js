@@ -1,6 +1,7 @@
 // card-summary.js（style.css の h2.section-title に完全対応版）
 import { safeFieldName } from "/common/utils.js";
 import { loadNotesForPlantingRef } from "./notes.js";
+import { renderCultivationOverviewCard } from "./card-cultivation-overview.js";
 
 import {
   calcAreaM2,
@@ -32,22 +33,59 @@ export async function renderSummaryCards(rawFieldName) {
     .then(r => r.json())
     .catch(() => ({ monthly: {} }));
 
+  const tillageDates = await loadTillageDates(fieldName);
+
+  const allItems = [];
+  for (const year of Object.keys(index[fieldName]).sort()) {
+    const files = index[fieldName][year];
+    for (const file of files) {
+      const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
+      const summary = await fetch(url).then(r => r.json());
+      allItems.push({ year: String(year), summary });
+    }
+  }
+
+  allItems.sort((a, b) => {
+    const da = String(a?.summary?.planting?.plantDate || "");
+    const db = String(b?.summary?.planting?.plantDate || "");
+    return da.localeCompare(db);
+  });
+
+  let prevHarvestLastDate = "";
+  allItems.forEach((item, idx) => {
+    const cur = item.summary;
+    const next = allItems[idx + 1]?.summary;
+
+    cur.__prevHarvestLastDate = prevHarvestLastDate;
+    cur.__nextPlantDate = normalizeDate(next?.planting?.plantDate || "");
+    cur.__nextPrepStartDate = findNextPrepStartDate(
+      tillageDates,
+      normalizeDate(cur?.planting?.plantDate || ""),
+      normalizeDate(next?.planting?.plantDate || "")
+    );
+
+    if (cur?.harvest?.lastDate) {
+      prevHarvestLastDate = String(cur.harvest.lastDate);
+    }
+  });
+
+  const grouped = {};
+  allItems.forEach(item => {
+    if (!grouped[item.year]) grouped[item.year] = [];
+    grouped[item.year].push(item.summary);
+  });
+
   let html = "";
 
-  for (const year of Object.keys(index[fieldName]).sort()) {
+  for (const year of Object.keys(grouped).sort()) {
     html += `
       <details>
         <summary>${year} 年</summary>
         <div class="year-block">
     `;
 
-    const files = index[fieldName][year];
-
-    for (const file of files) {
-      const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
-      const summary = await fetch(url).then(r => r.json());
-
-      html += await renderSummaryCard(summary, harvestBase);
+    for (const summary of grouped[year]) {
+      html += await renderSummaryCard(summary, harvestBase, fieldName);
     }
 
     html += `</div></details>`;
@@ -70,7 +108,7 @@ function getRateClass(rate) {
 /* ===============================
    summary.json → カードHTML
 =============================== */
-async function renderSummaryCard(s, harvestBase) {
+async function renderSummaryCard(s, harvestBase, fieldName) {
 
   const seedRef = s.planting.seedRef;
   const seedlingSummary = getSeedlingSummary(seedRef, s.planting.plantDate);
@@ -147,6 +185,38 @@ async function renderSummaryCard(s, harvestBase) {
 
   const notes = await loadNotesForPlantingRef(s.plantingRef);
 
+  const cultivationStart = getCultivationStartDate(
+    s.planting.plantDate,
+    s.__prevHarvestLastDate
+  );
+
+  const today = new Date().toISOString().slice(0, 10);
+  let cultivationEnd = hasHarvest
+    ? s.harvest.lastDate
+    : today;
+
+  // 未収穫でも次作準備の最初の耕うんがある場合は、その前日で打ち切る
+  if (!hasHarvest && s.__nextPrepStartDate) {
+    const beforePrep = addDays(s.__nextPrepStartDate, -1);
+    if (beforePrep) {
+      cultivationEnd = beforePrep < today ? beforePrep : today;
+    }
+  }
+
+  // 未収穫でも次作定植日がある場合は、次作開始の前日で打ち切る
+  if (!hasHarvest && s.__nextPlantDate) {
+    const beforeNextPlant = addDays(s.__nextPlantDate, -1);
+    if (beforeNextPlant) {
+      cultivationEnd = beforeNextPlant < today ? beforeNextPlant : today;
+    }
+  }
+
+  const cultivationOverviewHTML = await renderCultivationOverviewCard({
+    fieldName,
+    startDate: cultivationStart,
+    endDate: cultivationEnd
+  });
+
   const notesHTML =
     notes.length > 0
       ? `
@@ -195,6 +265,8 @@ async function renderSummaryCard(s, harvestBase) {
         </div>
       </div>
 
+      ${cultivationOverviewHTML}
+
       <h2 class="section-title">分析指標</h2>
       <div class="info-block">
         <div class="info-line">
@@ -223,4 +295,78 @@ async function renderSummaryCard(s, harvestBase) {
 
     </div>
   `;
+}
+
+function getCultivationStartDate(plantDate, prevHarvestLastDate) {
+  const plant = normalizeDate(plantDate);
+  const prev = normalizeDate(prevHarvestLastDate);
+
+  if (!plant) return "";
+  // 前作が無い場合は、今作準備として過去分をすべて含める
+  if (!prev) return "";
+
+  const nextDay = addDays(prev, 1);
+  if (!nextDay) return plant;
+
+  // 前作収穫翌日が定植日を超える場合は、従来どおり定植日開始にする
+  return nextDay <= plant ? nextDay : plant;
+}
+
+function normalizeDate(value) {
+  const text = String(value || "").trim();
+  const m = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return "";
+  return `${m[1]}-${m[2]}-${m[3]}`;
+}
+
+function addDays(dateText, days) {
+  const d = new Date(`${dateText}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + days);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+async function loadTillageDates(fieldName) {
+  const path = `${CF_BASE}/logs/tillage/${encodeURIComponent(fieldName)}.json?ts=${Date.now()}`;
+
+  try {
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const years = data?.years || {};
+    const out = [];
+
+    Object.keys(years).forEach(y => {
+      const entries = years[y]?.entries;
+      if (!Array.isArray(entries)) return;
+
+      entries.forEach(e => {
+        const d = normalizeDate(e?.date || "");
+        if (d) out.push(d);
+      });
+    });
+
+    return Array.from(new Set(out)).sort();
+  } catch {
+    return [];
+  }
+}
+
+function findNextPrepStartDate(tillageDates, plantDate, nextPlantDate) {
+  if (!Array.isArray(tillageDates) || tillageDates.length === 0) return "";
+  if (!plantDate) return "";
+
+  // 現作定植日以降で、次作定植日が分かる場合はその前までを候補にする
+  for (const d of tillageDates) {
+    if (d < plantDate) continue;
+    if (nextPlantDate && d >= nextPlantDate) continue;
+    return d;
+  }
+
+  return "";
 }

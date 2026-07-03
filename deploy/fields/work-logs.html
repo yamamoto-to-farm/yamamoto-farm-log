@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>作業記録一覧 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <style>
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .kpi-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .kpi-chip {
+      background: #f4f8ff;
+      border: 1px solid #d9e6ff;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.92em;
+      color: #1f355f;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 860px;
+    }
+
+    .log-table th,
+    .log-table td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.95em;
+    }
+
+    .log-table th {
+      background: #f9fafb;
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+
+    .badge-pesticide {
+      background: #eefcf3;
+      color: #11683a;
+      border: 1px solid #b6e7c8;
+    }
+
+    .badge-fertilizer {
+      background: #fff8e8;
+      color: #8a5d00;
+      border: 1px solid #f4dea8;
+    }
+
+    .badge-intertill {
+      background: #eef4ff;
+      color: #1f3f8f;
+      border: 1px solid #c9d8ff;
+    }
+
+    .badge-bedmaking {
+      background: #fff4f1;
+      color: #9a3412;
+      border: 1px solid #ffd2c2;
+    }
+
+    .badge-watering {
+      background: #ecfeff;
+      color: #155e75;
+      border: 1px solid #b6eef7;
+    }
+
+    .badge-weeding {
+      background: #f5f3ff;
+      color: #5b21b6;
+      border: 1px solid #ddd1ff;
+    }
+
+    .badge-tillage {
+      background: #fffbeb;
+      color: #854d0e;
+      border: 1px solid #fce7a3;
+    }
+
+    .badge-hand-weeding {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #ccefcf;
+    }
+
+    .sub-note {
+      color: #666;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="page-area" class="page-container" style="display:none;">
+    <h1 id="page-title" class="page-title">作業記録一覧</h1>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="form-field">
+          <label for="field">圃場</label>
+          <input id="field" class="form-input" readonly>
+        </div>
+
+        <div class="form-field">
+          <label for="start">開始日</label>
+          <input id="start" type="date" class="form-input">
+        </div>
+
+        <div class="form-field">
+          <label for="end">終了日</label>
+          <input id="end" type="date" class="form-input">
+        </div>
+
+        <div class="form-field">
+          <label for="type">種別</label>
+          <select id="type" class="form-input">
+            <option value="all">全件</option>
+            <option value="pesticide">防除</option>
+            <option value="fertilizer">施肥</option>
+            <option value="intertill">中耕</option>
+            <option value="bedmaking">畝立て</option>
+            <option value="watering">潅水</option>
+            <option value="weeding">除草・草刈り</option>
+            <option value="tillage">土づくり・耕起</option>
+            <option value="hand-weeding">手作業除草</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="apply-btn" class="primary-btn" type="button">再表示</button>
+        <button id="back-field-btn" class="secondary-btn" type="button">圃場詳細へ戻る</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="kpi-line" class="kpi-line"></div>
+      <div class="table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>種別</th>
+              <th>作業内容</th>
+              <th>機械</th>
+              <th>作業者</th>
+              <th>備考</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js?v=1";
+    import { initFieldWorkLogsPage } from "./work-logs.js?v=1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+
+      renderHeader();
+
+      if (window.currentRole !== "family" && window.currentRole !== "admin") {
+        alert("このページは家族のみ閲覧できます");
+        location.href = "/map/index.html";
+        return;
+      }
+
+      document.getElementById("page-area").style.display = "block";
+      await initFieldWorkLogsPage();
+    });
+  </script>
+</body>
+
+</html>
