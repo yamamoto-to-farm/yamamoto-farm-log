@@ -3,140 +3,144 @@ import {
   loadAllPesticideLogs,
   collectYears
 } from "./list-utils.js?v=1";
+import { openpesticideModal } from "/common/filter/filter-pesticide.js?v=1";
+import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
+import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
+
+const viewState = {
+  master: [],
+  usage: {},
+  years: []
+};
 
 export async function initPesticideList() {
-  const master = await loadPesticideMaster();
-  const logs = await loadAllPesticideLogs();
-  const years = collectYears(logs);
+  const [master, logs] = await Promise.all([
+    loadPesticideMaster(),
+    loadAllPesticideLogs()
+  ]);
 
+  const years = collectYears(logs);
   const usage = buildUsageIndex(logs);
 
-  const container = document.getElementById("pesticide-container");
-  container.innerHTML = "";
+  viewState.master = master;
+  viewState.usage = usage;
+  viewState.years = years;
 
-  let html = "";
+  setupFilterUi(master, years);
+  renderList();
+}
 
-  years.forEach(year => {
-    html += `<div class="year-block">
-      <h2 class="year-title">${year}年</h2>
-    `;
+function setupFilterUi(master, years) {
+  const yearSelect = document.getElementById("year-select");
+  const openBtn = document.getElementById("open-pesticide-modal");
 
-    const categories = groupByCategory(master);
-
-    Object.keys(categories).forEach(cat => {
-      const tableHTML = createCategoryTableHTML(year, categories[cat], usage);
-      if (!tableHTML) return;
-
-      html += `
-        <details class="cat-block">
-          <summary>${cat}</summary>
-          ${tableHTML}
-        </details>
-      `;
-    });
-
-    html += `</div>`;
-  });
-
-  if (!html) {
-    html = '<div class="year-block"><h2 class="year-title">記録なし</h2><div style="padding:12px;">防除記録がありません。</div></div>';
-    import { openpesticideModal } from "/common/filter/filter-pesticide.js?v=1";
-    import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
-    import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
-
-    const viewState = {
-      master: [],
-      usage: {},
-      years: []
-    };
+  if (yearSelect) {
+    yearSelect.innerHTML = years
+      .map(y => `<option value="${y}">${y}年</option>`)
+      .join("");
   }
 
-      const [master, logs] = await Promise.all([
-        loadPesticideMaster(),
-        loadAllPesticideLogs()
-      ]);
+  const categories = groupByCategory(master);
+  setFilterData({
+    pesticides: {
+      parents: Object.keys(categories),
+      children: Object.fromEntries(
+        Object.entries(categories).map(([cat, list]) => [cat, list.map(v => v.name)])
+      )
+    }
+  });
+
+  filterState.pesticides = [];
+  initActiveFilterUI();
+
+  if (openBtn) {
+    openBtn.onclick = () => openpesticideModal({ mode: "filter" });
+  }
+
+  if (yearSelect) {
+    yearSelect.onchange = () => renderList();
+  }
+
+  window.addEventListener("filter:apply", () => renderList());
+  window.addEventListener("filter:reset", () => renderList());
+}
+
+function renderList() {
+  const yearSelect = document.getElementById("year-select");
+  const selectedYear = Number(yearSelect?.value || viewState.years[0] || 0);
+  const master = viewState.master;
+  const usage = viewState.usage;
+
+  const selectedNames = new Set(filterState.pesticides || []);
+  const hasFilter = selectedNames.size > 0;
+
+  const container = document.getElementById("pesticide-container");
+  if (!container) return;
+
+  const categories = groupByCategory(master);
+  let html = `<div class="year-block"><h2 class="year-title">${selectedYear}年</h2>`;
+
+  Object.keys(categories).forEach(cat => {
+    const list = hasFilter
+      ? categories[cat].filter(p => selectedNames.has(p.name))
+      : categories[cat];
+
+    const tableHTML = createCategoryTableHTML(selectedYear, list, usage);
+    if (!tableHTML) return;
+
+    html += `
+      <details class="cat-block" open>
+        <summary>${escapeHtml(cat)}</summary>
+        ${tableHTML}
+      </details>
+    `;
+  });
+
+  html += `</div>`;
+
+  if (!html || html === '<div class="year-block"><h2 class="year-title">0年</h2></div>') {
+    html = '<div class="year-block"><h2 class="year-title">記録なし</h2><div style="padding:12px;">防除記録がありません。</div></div>';
+  }
+
+  container.innerHTML = html;
+}
 
 function buildUsageIndex(logs) {
-  const usage = {};
-
-      viewState.master = master;
-      viewState.usage = usage;
-      viewState.years = years;
-
-      setupFilterUi(master, years);
-      renderList();
-    }
-
-    function setupFilterUi(master, years) {
-      const yearSelect = document.getElementById("year-select");
-      const openBtn = document.getElementById("open-pesticide-modal");
-
-      if (yearSelect) {
-        yearSelect.innerHTML = years
-          .map(y => `<option value="${y}">${y}年</option>`)
-          .join("");
-      }
-
-      const categories = groupByCategory(master);
-      setFilterData({
-        pesticides: {
-          parents: Object.keys(categories),
-          children: Object.fromEntries(
-            Object.entries(categories).map(([cat, list]) => [cat, list.map(v => v.name)])
-          )
-        }
-      });
-
-      filterState.pesticides = [];
-      initActiveFilterUI();
-
-      if (openBtn) {
-        openBtn.onclick = () => openpesticideModal({ mode: "filter" });
-      }
-
-      if (yearSelect) {
-        yearSelect.onchange = () => renderList();
-      }
-
-      window.addEventListener("filter:apply", () => renderList());
-      window.addEventListener("filter:reset", () => renderList());
-    }
-
-    function renderList() {
-      const yearSelect = document.getElementById("year-select");
-      const selectedYear = Number(yearSelect?.value || viewState.years[0] || 0);
-      const master = viewState.master;
-      const usage = viewState.usage;
-
-      const selectedNames = new Set(filterState.pesticides || []);
-      const hasFilter = selectedNames.size > 0;
+  const usage = {}; // usage[year][pesticideName][month] = amount
 
   logs.forEach(field => {
-      if (!container) return;
-
-      const categories = groupByCategory(master);
-      let html = `<div class="year-block"><h2 class="year-title">${selectedYear}年</h2>`;
-
-      Object.keys(categories).forEach(cat => {
-        const list = hasFilter
-          ? categories[cat].filter(p => selectedNames.has(p.name))
-          : categories[cat];
-
-        const tableHTML = createCategoryTableHTML(selectedYear, list, usage);
-        if (!tableHTML) return;
-
-        html += `
-          <details class="cat-block" open>
-            <summary>${escapeHtml(cat)}</summary>
-            ${tableHTML}
-          </details>
-        `;
-      });
     const year = field.year;
-      html += `</div>`;
+    if (!usage[year]) usage[year] = {};
+
+    field.entries.forEach(e => {
+      if (!Array.isArray(e.distributed)) return;
+
+      const month = Number(String(e.date || "").slice(5, 7));
+      if (!month) return;
+
+      e.distributed.forEach(p => {
+        const name = p.name;
+        if (!name) return;
+
+        const amount = Number(p.water_amount ?? p.spray_amount ?? 0);
+
+        if (!usage[year][name]) usage[year][name] = Array(13).fill(0);
+        usage[year][name][month] += amount;
+      });
+    });
+  });
+
+  return usage;
+}
+
+function createCategoryTableHTML(year, pesticideList, usage) {
+  let rows = "";
+
+  pesticideList.forEach(pesticide => {
+    const monthly = usage[year]?.[pesticide.name] || Array(13).fill(0);
     const total = monthly.reduce((a, b) => a + b, 0);
     if (total === 0) return;
-        html = '<div class="year-block"><h2 class="year-title">記録なし</h2><div style="padding:12px;">防除記録がありません。</div></div>';
+
     rows += `
       <tr>
         <td class="sticky-col">${escapeHtml(pesticide.name)}</td>
