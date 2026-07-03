@@ -78,56 +78,109 @@ export async function initEditJson() {
 // JSON 一覧
 // -----------------------------
 function renderJsonList(container) {
+  const sections = [
+    {
+      title: "圃場・品種",
+      items: [
+        {
+          label: "圃場基本情報",
+          file: "fields.json",
+          data: "fields",
+          desc: "圃場名・エリアなどの基本マスタ"
+        },
+        {
+          label: "圃場詳細",
+          file: "field-detail.json",
+          data: "field-detail",
+          desc: "面積・所在など圃場の詳細情報"
+        },
+        {
+          label: "品種基本情報",
+          file: "varieties.json",
+          data: "varieties",
+          desc: "品種名と種別の基本マスタ"
+        },
+        {
+          label: "品種詳細情報",
+          file: "variety-detail.json",
+          data: "variety-detail",
+          desc: "品種ごとの補足情報とメモ"
+        }
+      ]
+    },
+    {
+      title: "資材マスタ",
+      items: [
+        {
+          label: "肥料基本情報",
+          file: "fertilizer-index.json",
+          data: "fertilizer-index",
+          desc: "肥料ID・カテゴリ・名称一覧"
+        },
+        {
+          label: "肥料詳細情報",
+          file: "fertilizer-detail.json",
+          data: "fertilizer-detail",
+          desc: "価格履歴・成分・メーカー情報"
+        },
+        {
+          label: "農薬基本情報",
+          file: "pesticide-index.json",
+          data: "pesticide-index",
+          desc: "農薬ID・カテゴリ・名称一覧"
+        },
+        {
+          label: "農薬詳細情報",
+          file: "pesticide-detail.json",
+          data: "pesticide-detail",
+          desc: "登録情報・希釈倍率・使用制限"
+        }
+      ]
+    },
+    {
+      title: "権限・機械",
+      items: [
+        {
+          label: "アクセス権限",
+          file: "workers.json",
+          data: "workers",
+          desc: "ログインユーザーとロール設定"
+        },
+        {
+          label: "機械",
+          file: "machines.json",
+          data: "machines",
+          desc: "機械マスタ（QR連携対象）"
+        }
+      ]
+    }
+  ];
+
+  const sectionHtml = sections.map(section => {
+    const cards = section.items.map(item => `
+      <div class="card" style="margin:0;">
+        <h3 style="margin:0 0 8px;">${item.label}</h3>
+        <p style="margin:0 0 8px; color:#555;">${item.file}</p>
+        <p style="margin:0 0 14px; color:#666; font-size:0.95em;">${item.desc}</p>
+        <button class="primary-btn" onclick="location.href='?data=${item.data}'">編集する</button>
+      </div>
+    `).join("");
+
+    return `
+      <section style="margin-bottom:26px;">
+        <h2 style="margin:0 0 12px;">${section.title}</h2>
+        <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));">
+          ${cards}
+        </div>
+      </section>
+    `;
+  }).join("");
 
   container.insertAdjacentHTML("beforeend", `
-    <div class="card">
-      <h2>圃場基本情報（fields.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=fields'">編集する</button>
+    <div class="card" style="margin-bottom:20px;">
+      <h2 style="margin-bottom:6px;">JSON 編集一覧</h2>
+      <p style="margin:0; color:#666;">編集したいデータをカテゴリから選んでください。</p>
     </div>
-
-    <div class="card">
-      <h2>圃場詳細（field-detail.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=field-detail'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>品種基本情報（varieties.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=varieties'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>品種詳細情報（variety-detail.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=variety-detail'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>肥料基本情報（fertilizer-index.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=fertilizer-index'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>農薬基本情報（pesticide-index.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=pesticide-index'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>肥料詳細情報（fertilizer-detail.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=fertilizer-detail'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>農薬詳細情報（pesticide-detail.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=pesticide-detail'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>アクセス権限（workers.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=workers'">編集する</button>
-    </div>
-
-    <div class="card">
-      <h2>機械（machines.json）</h2>
-      <button class="primary-btn" onclick="location.href='?data=machines'">編集する</button>
-    </div>
+    ${sectionHtml}
   `);
 }
