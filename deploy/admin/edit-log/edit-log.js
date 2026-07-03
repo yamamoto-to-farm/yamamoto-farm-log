@@ -241,10 +241,12 @@ function flattenEntries(data) {
 }
 
 function toEditableRow(entry) {
+  const distributedNames = getDistributedNames(entry.distributed);
+
   return {
     raw: { ...entry },
     date: String(entry.date || "").slice(0, 10),
-    workType: String(entry.workType || ""),
+    workType: String(entry.workType || distributedNames || ""),
     machine: String(entry.machine || ""),
     workersText: formatWorkersForCsv(entry.workers),
     notes: String(entry.notes || "")
@@ -302,6 +304,20 @@ function parseWorkers(text) {
     .filter(Boolean);
 
   return parts;
+}
+
+function getDistributedNames(distributed) {
+  if (!Array.isArray(distributed)) return "";
+
+  const names = Array.from(
+    new Set(
+      distributed
+        .map(d => String(d?.name || "").trim())
+        .filter(Boolean)
+    )
+  );
+
+  return names.join("、");
 }
 
 function toCsvCell(value) {
