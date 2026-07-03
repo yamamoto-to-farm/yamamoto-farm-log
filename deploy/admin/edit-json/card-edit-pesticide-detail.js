@@ -2,6 +2,17 @@
 import { saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
+const PESTICIDE_CATEGORIES = ["殺菌剤", "殺虫剤", "茎葉除草剤", "選択制除草剤", "展着剤", "土壌消毒剤"];
+
+const PESTICIDE_PREFIXES = [
+  { prefix: "FG", category: "殺菌剤" },
+  { prefix: "IN", category: "殺虫剤" },
+  { prefix: "HL", category: "茎葉除草剤" },
+  { prefix: "SL", category: "選択制除草剤" },
+  { prefix: "AD", category: "展着剤" },
+  { prefix: "SD", category: "土壌消毒剤" }
+];
+
 function buildEmptyPesticideDetail() {
   return {
     name: "",
@@ -99,7 +110,73 @@ function parseNullableNumber(raw) {
   const text = String(raw ?? "").trim();
   if (text === "") return null;
   const n = Number(text);
-  return Number.isNaN(n) ? null : n;
+  if (Number.isNaN(n)) {
+    throw new Error("数値項目に不正な値があります");
+  }
+  return n;
+}
+
+function normalizePesticideId(value) {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "";
+
+  const m = raw.match(/^([A-Z]{2})(\d{1,4})$/);
+  if (m) {
+    return `${m[1]}${String(Number(m[2])).padStart(4, "0")}`;
+  }
+  return raw;
+}
+
+function buildPesticideIdSuggestions(ids, perPrefix = 8) {
+  const existing = new Set(ids.map(v => normalizePesticideId(v)).filter(Boolean));
+  const out = [];
+
+  PESTICIDE_PREFIXES.forEach(({ prefix, category }) => {
+    let found = 0;
+    for (let n = 1; n <= 9999 && found < perPrefix; n += 1) {
+      const id = `${prefix}${String(n).padStart(4, "0")}`;
+      if (existing.has(id)) continue;
+      out.push({ id, label: `${id} (${category})` });
+      found += 1;
+    }
+  });
+
+  return out;
+}
+
+function validateBeforeSave(data) {
+  const errors = [];
+  const ids = Object.keys(data);
+
+  if (ids.length === 0) {
+    errors.push("保存対象がありません。1件以上入力してください。");
+    return errors;
+  }
+
+  ids.forEach(id => {
+    const item = data[id] || {};
+
+    if (!/^[A-Z]{2}\d{4}$/.test(id)) {
+      errors.push(`ID ${id}: ID は CCNNNN 形式で入力してください（例: FG0001）。`);
+    }
+    if (!String(item.name || "").trim()) {
+      errors.push(`ID ${id}: 名称は必須です。`);
+    }
+    if (!String(item.category || "").trim()) {
+      errors.push(`ID ${id}: カテゴリは必須です。`);
+    }
+    if (!String(item.unit || "").trim()) {
+      errors.push(`ID ${id}: 単位は必須です。`);
+    }
+
+    const min = item.dilution?.min;
+    const max = item.dilution?.max;
+    if (min != null && max != null && Number(min) > Number(max)) {
+      errors.push(`ID ${id}: 希釈倍率は min <= max で入力してください。`);
+    }
+  });
+
+  return errors;
 }
 
 export function renderEditCard({ dataName, json, container, finalPath }) {
@@ -107,12 +184,28 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   if (title) title.textContent = "農薬詳細情報（pesticide-detail.json）";
 
   const current = (json && typeof json === "object" && !Array.isArray(json)) ? json : {};
+  let selectedCategory = "";
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="secondary-btn" type="button" onclick="location.href='?data=pesticide-index'">農薬基本情報へ</button>
       </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div>
+          <label class="form-label">カテゴリフィルタ</label>
+          <select id="pesticide-detail-category-filter" class="form-input" style="min-width:220px;"></select>
+        </div>
+        <div>
+          <label class="form-label">ID候補（未使用）</label>
+          <select id="pesticide-detail-id-candidate" class="form-input" style="min-width:240px;"></select>
+        </div>
+        <button id="add-pesticide-detail-from-candidate" class="secondary-btn" type="button">候補IDで追加</button>
+      </div>
+      <div id="pesticide-detail-visible-count" style="margin-top:8px; color:#555;"></div>
     </div>
 
     <div id="pesticide-detail-list"></div>
@@ -131,11 +224,53 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   `);
 
   const list = document.getElementById("pesticide-detail-list");
+  const filterEl = document.getElementById("pesticide-detail-category-filter");
+  const candidateEl = document.getElementById("pesticide-detail-id-candidate");
+  const countEl = document.getElementById("pesticide-detail-visible-count");
+
+  function getVisibleIds() {
+    return Object.keys(current)
+      .map(v => normalizePesticideId(v))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" }))
+      .filter(id => {
+        if (!selectedCategory) return true;
+        return String(current[id]?.category || "").trim() === selectedCategory;
+      });
+  }
+
+  function refreshFilterOptions() {
+    const catSet = new Set(PESTICIDE_CATEGORIES);
+    Object.keys(current).forEach(id => {
+      const cat = String(current[id]?.category || "").trim();
+      if (cat) catSet.add(cat);
+    });
+
+    const options = ["", ...Array.from(catSet)];
+    filterEl.innerHTML = options
+      .map(v => `<option value="${escapeHtml(v)}">${v ? escapeHtml(v) : "全カテゴリ"}</option>`)
+      .join("");
+    filterEl.value = selectedCategory;
+  }
+
+  function refreshIdSuggestions() {
+    const suggestions = buildPesticideIdSuggestions(Object.keys(current), 8);
+    candidateEl.innerHTML = suggestions
+      .map(v => `<option value="${v.id}">${escapeHtml(v.label)}</option>`)
+      .join("");
+  }
 
   function render() {
     list.innerHTML = "";
+    refreshFilterOptions();
+    refreshIdSuggestions();
 
-    for (const id of Object.keys(current)) {
+    const ids = getVisibleIds();
+    if (countEl) {
+      countEl.textContent = `表示中 ${ids.length} 件 / 全体 ${Object.keys(current).length} 件`;
+    }
+
+    for (const id of ids) {
       const p = { ...buildEmptyPesticideDetail(), ...(current[id] || {}) };
 
       list.insertAdjacentHTML("beforeend", `
@@ -249,11 +384,12 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
   render();
 
-  function syncCurrentFromInputs() {
+  function syncVisibleFromInputs() {
     const cards = container.querySelectorAll(".pesticide-detail-card");
 
     cards.forEach(card => {
-      const id = card.dataset.id;
+      const id = normalizePesticideId(card.dataset.id || "");
+      if (!id) return;
       const getValue = key => card.querySelector(`[data-key=\"${key}\"]`)?.value ?? "";
       const prev = current[id] || buildEmptyPesticideDetail();
 
@@ -295,9 +431,47 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     });
   }
 
+  filterEl.onchange = () => {
+    try {
+      syncVisibleFromInputs();
+    } catch (e) {
+      alert(e.message || "入力形式を確認してください");
+      return;
+    }
+    selectedCategory = filterEl.value || "";
+    render();
+  };
+
+  document.getElementById("add-pesticide-detail-from-candidate").onclick = () => {
+    try {
+      syncVisibleFromInputs();
+    } catch (e) {
+      alert(e.message || "入力形式を確認してください");
+      return;
+    }
+
+    const candidate = normalizePesticideId(candidateEl.value || "");
+    if (!candidate) return;
+
+    if (current[candidate]) {
+      alert(`ID ${candidate} は既に存在します。`);
+      return;
+    }
+
+    const info = PESTICIDE_PREFIXES.find(v => candidate.startsWith(v.prefix));
+
+    current[candidate] = {
+      ...buildEmptyPesticideDetail(),
+      category: selectedCategory || info?.category || "",
+      unit: "ml"
+    };
+
+    render();
+  };
+
   document.getElementById("sort-pesticide-detail-btn").onclick = () => {
     try {
-      syncCurrentFromInputs();
+      syncVisibleFromInputs();
     } catch (e) {
       alert(e.message || "入力形式を確認してください");
       return;
@@ -319,30 +493,40 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   };
 
   document.getElementById("add-pesticide-btn").onclick = () => {
-    const ids = Object.keys(current);
-    let maxNo = 0;
-    ids.forEach(id => {
-      const m = /^F(\d+)$/.exec(id);
-      if (m) maxNo = Math.max(maxNo, Number(m[1]));
-    });
-    const newId = `F${String(maxNo + 1).padStart(3, "0")}`;
-    current[newId] = buildEmptyPesticideDetail();
-    render();
-  };
-
-  document.getElementById("save-btn").onclick = async () => {
-    showSaveModal("保存しています…");
-
-    const cards = container.querySelectorAll(".pesticide-detail-card");
-
     try {
-      if (cards.length > 0) {
-        syncCurrentFromInputs();
-      }
+      syncVisibleFromInputs();
     } catch (e) {
       alert(e.message || "入力形式を確認してください");
       return;
     }
+
+    const suggestion = buildPesticideIdSuggestions(Object.keys(current), 1)[0];
+    const newId = suggestion?.id || "FG0001";
+    const info = PESTICIDE_PREFIXES.find(v => newId.startsWith(v.prefix));
+
+    current[newId] = {
+      ...buildEmptyPesticideDetail(),
+      category: selectedCategory || info?.category || ""
+    };
+
+    render();
+  };
+
+  document.getElementById("save-btn").onclick = async () => {
+    try {
+      syncVisibleFromInputs();
+    } catch (e) {
+      alert(e.message || "入力形式を確認してください");
+      return;
+    }
+
+    const errors = validateBeforeSave(current);
+    if (errors.length > 0) {
+      alert(`保存できません。\n${errors.join("\n")}`);
+      return;
+    }
+
+    showSaveModal("保存しています…");
 
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
     await saveJSON(savePath, current);
