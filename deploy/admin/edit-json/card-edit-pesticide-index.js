@@ -1,6 +1,68 @@
 // admin/edit-json/card-edit-pesticide-index.js
-import { saveJSON } from "/common/json.js?v=1";
+import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+
+function createEmptyPesticideDetail(item = {}) {
+  return {
+    name: item.name || "",
+    maker: "",
+    category: item.category || "",
+    unit: item.unit || "ml",
+    registrationNo: "",
+    formulation: "",
+    price: {},
+    activeIngredients: [],
+    dilution: {
+      min: null,
+      max: null,
+      default: null
+    },
+    standardDose: {
+      per10a: null,
+      unit: item.unit || "ml"
+    },
+    targetCrops: [],
+    targetPests: [],
+    maxApplicationsPerSeason: null,
+    preHarvestIntervalDays: null,
+    reentryIntervalHours: null,
+    resistanceCode: "",
+    notes: ""
+  };
+}
+
+function toDetailPath(indexSavePath) {
+  return indexSavePath.replace(/-index\.json$/, "-detail.json");
+}
+
+async function syncPesticideDetail(indexSavePath, indexList) {
+  const detailSavePath = toDetailPath(indexSavePath);
+
+  let currentDetail = {};
+  try {
+    currentDetail = await loadJSON(`/${detailSavePath}`);
+  } catch {
+    currentDetail = {};
+  }
+
+  const nextDetail = {};
+
+  indexList.forEach(item => {
+    const id = (item.id || "").trim();
+    if (!id) return;
+
+    const prev = currentDetail[id] || {};
+    nextDetail[id] = {
+      ...createEmptyPesticideDetail(item),
+      ...prev,
+      name: item.name || prev.name || "",
+      category: item.category || prev.category || "",
+      unit: item.unit || prev.unit || "ml"
+    };
+  });
+
+  await saveJSON(detailSavePath, nextDetail);
+}
 
 export function renderEditCard({ json, container, finalPath }) {
   const title = document.getElementById("page-title");
@@ -121,6 +183,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
     await saveJSON(savePath, newList);
+    await syncPesticideDetail(savePath, newList);
 
     completeSaveModal("保存が完了しました");
   };

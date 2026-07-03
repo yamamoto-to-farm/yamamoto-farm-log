@@ -1,6 +1,49 @@
 // admin/edit-json/card-edit-fertilizer-index.js
-import { saveJSON } from "/common/json.js?v=1";
+import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+
+function createEmptyFertilizerDetail(name = "") {
+  return {
+    name,
+    maker: "",
+    price: {},
+    n: 0,
+    p: 0,
+    k: 0,
+    notes: ""
+  };
+}
+
+function toDetailPath(indexSavePath) {
+  return indexSavePath.replace(/-index\.json$/, "-detail.json");
+}
+
+async function syncFertilizerDetail(indexSavePath, indexList) {
+  const detailSavePath = toDetailPath(indexSavePath);
+
+  let currentDetail = {};
+  try {
+    currentDetail = await loadJSON(`/${detailSavePath}`);
+  } catch {
+    currentDetail = {};
+  }
+
+  const nextDetail = {};
+
+  indexList.forEach(item => {
+    const id = (item.id || "").trim();
+    if (!id) return;
+
+    const prev = currentDetail[id] || {};
+    nextDetail[id] = {
+      ...createEmptyFertilizerDetail(item.name || ""),
+      ...prev,
+      name: item.name || prev.name || ""
+    };
+  });
+
+  await saveJSON(detailSavePath, nextDetail);
+}
 
 export function renderEditCard({ dataName, json, container, finalPath }) {
 
@@ -136,6 +179,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
 
     await saveJSON(savePath, newList);
+    await syncFertilizerDetail(savePath, newList);
 
     completeSaveModal("保存が完了しました");
   };
