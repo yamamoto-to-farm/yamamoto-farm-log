@@ -189,6 +189,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
     s.planting.plantDate,
     s.__prevHarvestLastDate
   );
+  const plantDate = normalizeDate(s.planting.plantDate || "");
 
   const today = new Date().toISOString().slice(0, 10);
   let cultivationEnd = hasHarvest
@@ -198,7 +199,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
   // 未収穫でも次作準備の最初の耕うんがある場合は、その前日で打ち切る
   if (!hasHarvest && s.__nextPrepStartDate) {
     const beforePrep = addDays(s.__nextPrepStartDate, -1);
-    if (beforePrep) {
+    if (beforePrep && (!plantDate || beforePrep >= plantDate)) {
       cultivationEnd = beforePrep < today ? beforePrep : today;
     }
   }
@@ -206,9 +207,14 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
   // 未収穫でも次作定植日がある場合は、次作開始の前日で打ち切る
   if (!hasHarvest && s.__nextPlantDate) {
     const beforeNextPlant = addDays(s.__nextPlantDate, -1);
-    if (beforeNextPlant) {
+    if (beforeNextPlant && (!plantDate || beforeNextPlant >= plantDate)) {
       cultivationEnd = beforeNextPlant < today ? beforeNextPlant : today;
     }
+  }
+
+  // 期間逆転を防ぐ（未収穫で候補日が誤検出された場合の保険）
+  if (!hasHarvest && plantDate && cultivationEnd < plantDate) {
+    cultivationEnd = today;
   }
 
   const cultivationOverviewHTML = await renderCultivationOverviewCard({
@@ -361,9 +367,9 @@ function findNextPrepStartDate(tillageDates, plantDate, nextPlantDate) {
   if (!Array.isArray(tillageDates) || tillageDates.length === 0) return "";
   if (!plantDate) return "";
 
-  // 現作定植日以降で、次作定植日が分かる場合はその前までを候補にする
+  // 現作定植日より後で、次作定植日が分かる場合はその前までを候補にする
   for (const d of tillageDates) {
-    if (d < plantDate) continue;
+    if (d <= plantDate) continue;
     if (nextPlantDate && d >= nextPlantDate) continue;
     return d;
   }
