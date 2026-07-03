@@ -22,7 +22,11 @@ const MODE_CONFIG = {
     selectorLabel: "アタッチメント",
     selectorPlaceholder: "アタッチメントを選択",
     attachmentOptions: ["ロータリカルチCR33B", "爪カルチ(リッチャー)"],
-    singleAttachment: false
+    singleAttachment: false,
+    ridgeWidthMode: "hidden",
+    ridgeHeightMode: "hidden",
+    ridgeCountMode: "hidden",
+    defaultRidgeWidthCm: null
   },
   bedmaking: {
     title: "畝立てログ",
@@ -30,7 +34,11 @@ const MODE_CONFIG = {
     selectorLabel: "アタッチメント",
     selectorPlaceholder: "",
     attachmentOptions: ["スーパー台形成形機"],
-    singleAttachment: true
+    singleAttachment: true,
+    ridgeWidthMode: "fixed",
+    ridgeHeightMode: "optional",
+    ridgeCountMode: "optional",
+    defaultRidgeWidthCm: 60
   }
 };
 
@@ -86,6 +94,49 @@ function applyModeUi(config) {
       taskSelect.disabled = true;
     } else {
       taskSelect.disabled = false;
+    }
+  }
+
+  const ridgeWidthField = document.getElementById("ridge-width-field");
+  const ridgeWidthInput = document.getElementById("ridge-width-cm");
+  if (ridgeWidthField && ridgeWidthInput) {
+    if (config.ridgeWidthMode === "hidden") {
+      ridgeWidthField.style.display = "none";
+      ridgeWidthInput.value = "";
+      ridgeWidthInput.disabled = true;
+    } else if (config.ridgeWidthMode === "fixed") {
+      ridgeWidthField.style.display = "block";
+      ridgeWidthInput.value = String(config.defaultRidgeWidthCm ?? 60);
+      ridgeWidthInput.disabled = true;
+    } else {
+      ridgeWidthField.style.display = "block";
+      ridgeWidthInput.disabled = false;
+    }
+  }
+
+  const ridgeHeightField = document.getElementById("ridge-height-field");
+  const ridgeHeightInput = document.getElementById("ridge-height-cm");
+  if (ridgeHeightField && ridgeHeightInput) {
+    if (config.ridgeHeightMode === "hidden") {
+      ridgeHeightField.style.display = "none";
+      ridgeHeightInput.value = "";
+      ridgeHeightInput.disabled = true;
+    } else {
+      ridgeHeightField.style.display = "block";
+      ridgeHeightInput.disabled = false;
+    }
+  }
+
+  const ridgeCountField = document.getElementById("ridge-count-field");
+  const ridgeCountInput = document.getElementById("ridge-count");
+  if (ridgeCountField && ridgeCountInput) {
+    if (config.ridgeCountMode === "hidden") {
+      ridgeCountField.style.display = "none";
+      ridgeCountInput.value = "";
+      ridgeCountInput.disabled = true;
+    } else {
+      ridgeCountField.style.display = "block";
+      ridgeCountInput.disabled = false;
     }
   }
 }
@@ -212,8 +263,21 @@ async function updateSelectedFieldsUI() {
 async function saveSoilWorkLog(config, mode) {
   const date = document.getElementById("date")?.value || "";
   const attachment = document.getElementById("task-select")?.value || "";
-  const ridgeWidthCm = Number(document.getElementById("ridge-width-cm")?.value || 0);
-  const ridgeHeightCm = Number(document.getElementById("ridge-height-cm")?.value || 0);
+  const ridgeWidthRaw = document.getElementById("ridge-width-cm")?.value || "";
+  const ridgeHeightRaw = document.getElementById("ridge-height-cm")?.value || "";
+  const ridgeCountRaw = document.getElementById("ridge-count")?.value || "";
+    const ridgeWidthCm = config.ridgeWidthMode === "fixed"
+      ? Number(config.defaultRidgeWidthCm ?? 60)
+      : (config.ridgeWidthMode === "hidden" ? null : (ridgeWidthRaw === "" ? null : Number(ridgeWidthRaw)));
+
+    const ridgeHeightCm = config.ridgeHeightMode === "hidden"
+      ? null
+      : (ridgeHeightRaw === "" ? null : Number(ridgeHeightRaw));
+
+    const ridgeCount = config.ridgeCountMode === "hidden"
+      ? null
+      : (ridgeCountRaw === "" ? null : Number(ridgeCountRaw));
+
   const notes = (document.getElementById("notes")?.value || "").trim();
   const fields = filterState.fields || [];
   const workers = getSelectedWorkers("workers_box", "temp_workers");
@@ -253,8 +317,9 @@ async function saveSoilWorkLog(config, mode) {
       entry: {
         workType: attachment,
         attachment,
-        ridgeWidthCm: Number.isFinite(ridgeWidthCm) ? ridgeWidthCm : 0,
-        ridgeHeightCm: Number.isFinite(ridgeHeightCm) ? ridgeHeightCm : 0,
+        ridgeWidthCm: Number.isFinite(ridgeWidthCm) ? ridgeWidthCm : null,
+        ridgeHeightCm: Number.isFinite(ridgeHeightCm) ? ridgeHeightCm : null,
+        ridgeCount: Number.isFinite(ridgeCount) ? ridgeCount : null,
         machine,
         workers,
         notes
@@ -273,8 +338,9 @@ async function saveSoilWorkLog(config, mode) {
           sourceWork: mode,
           sourceWorkType: attachment,
           attachment,
-          sourceRidgeWidthCm: Number.isFinite(ridgeWidthCm) ? ridgeWidthCm : 0,
-          sourceRidgeHeightCm: Number.isFinite(ridgeHeightCm) ? ridgeHeightCm : 0,
+          sourceRidgeWidthCm: Number.isFinite(ridgeWidthCm) ? ridgeWidthCm : null,
+          sourceRidgeHeightCm: Number.isFinite(ridgeHeightCm) ? ridgeHeightCm : null,
+          sourceRidgeCount: Number.isFinite(ridgeCount) ? ridgeCount : null,
           notes: notes ? `[${config.title}同時施肥] ${notes}` : `[${config.title}同時施肥]`,
           fertilizerItems: fertilizers
         }

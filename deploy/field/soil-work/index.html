@@ -38,14 +38,19 @@
         <select id="task-select" class="form-input"></select>
       </div>
 
-      <div class="form-field" style="margin-top:10px;">
+      <div class="form-field" id="ridge-width-field" style="margin-top:10px;">
         <label for="ridge-width-cm">畝幅（cm）</label>
         <input type="number" id="ridge-width-cm" class="form-input" inputmode="decimal" placeholder="例：120">
       </div>
 
-      <div class="form-field" style="margin-top:10px;">
+      <div class="form-field" id="ridge-height-field" style="margin-top:10px;">
         <label for="ridge-height-cm">畝高（cm）</label>
         <input type="number" id="ridge-height-cm" class="form-input" inputmode="decimal" placeholder="例：20">
+      </div>
+
+      <div class="form-field" id="ridge-count-field" style="margin-top:10px;">
+        <label for="ridge-count">畝数</label>
+        <input type="number" id="ridge-count" class="form-input" inputmode="numeric" min="1" placeholder="例：8">
       </div>
     </div>
 
