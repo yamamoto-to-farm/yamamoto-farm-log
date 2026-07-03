@@ -13,6 +13,12 @@ export function renderEditCard({ json, container, finalPath }) {
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
       <h2>農薬一覧</h2>
+      <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
+        <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
+        <p style="margin:0 0 4px;">ID: <strong>CCNNNN</strong> 形式（例: FG0001）</p>
+        <p style="margin:0 0 4px;">カテゴリ: 殺菌剤 / 殺虫剤 / 茎葉除草剤 / 選択制除草剤 / 展着剤 / 土壌消毒剤</p>
+        <p style="margin:0; font-size:0.92em; color:#555;">プレフィックス例: FG=殺菌剤, IN=殺虫剤, HL=茎葉除草剤, SL=選択制除草剤, AD=展着剤, SD=土壌消毒剤</p>
+      </div>
       <div id="pesticide-list"></div>
 
       <button id="add-pesticide-btn" class="primary-btn" style="margin-top:20px;">
