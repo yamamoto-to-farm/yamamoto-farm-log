@@ -7,9 +7,6 @@
 		"registrationNo": "20944",
 		"formulation": "乳剤",
 		"price": {},
-		"activeIngredients": [
-			"エマメクチン安息香酸塩"
-		],
 		"dilution": {
 			"min": 1000,
 			"max": 2000,
@@ -24,33 +21,11 @@
 			"unit": "ml",
 			"packLabel": "本"
 		},
-		"targetCrops": [
-			"キャベツ"
-		],
-		"targetPests": [
-			"コナガ",
-			"アオムシ"
-		],
 		"maxApplicationsPerSeason": null,
 		"preHarvestIntervalDays": null,
 		"reentryIntervalHours": null,
 		"resistanceCode": "IRAC:6",
 		"notes": "登録内容は使用前に最新情報を確認すること。",
-		"registration": {
-			"number": "20944",
-			"pesticideType": "エマメクチン安息香酸塩乳剤",
-			"productName": "アファーム乳剤",
-			"physicalChemicalProperties": "淡黄色澄明可乳化油状液体",
-			"holder": {
-				"name": "シンジェンタ ジャパン株式会社",
-				"address": "東京都中央区",
-				"corporateNumber": ""
-			},
-			"purpose": "殺虫剤",
-			"formulation": "乳剤",
-			"toxicity": "普",
-			"registeredAt": ""
-		},
 		"ingredients": [
 			{
 				"name": "エマメクチン安息香酸塩",
@@ -74,12 +49,14 @@
 				"maxActiveIngredientApplications": null
 			}
 		],
-		"resistanceProfile": [
-			{
-				"scheme": "IRAC",
-				"code": "6",
-				"source": "activeIngredient"
-			}
+		"activeIngredients": [
+			"エマメクチン安息香酸塩"
+		],
+		"targetCrops": [
+			"キャベツ"
+		],
+		"targetPests": [
+			"コナガ"
 		]
 	},
 	"F305": {
@@ -90,7 +67,6 @@
 		"registrationNo": "",
 		"formulation": "",
 		"price": {},
-		"activeIngredients": [],
 		"dilution": {
 			"min": null,
 			"max": null,
@@ -105,30 +81,15 @@
 			"unit": "ml",
 			"packLabel": "本"
 		},
-		"targetCrops": [],
-		"targetPests": [],
 		"maxApplicationsPerSeason": null,
 		"preHarvestIntervalDays": null,
 		"reentryIntervalHours": null,
 		"resistanceCode": "",
 		"notes": "",
-		"registration": {
-			"number": "",
-			"pesticideType": "",
-			"productName": "ダコニール",
-			"physicalChemicalProperties": "",
-			"holder": {
-				"name": "",
-				"address": "",
-				"corporateNumber": ""
-			},
-			"purpose": "殺菌剤",
-			"formulation": "",
-			"toxicity": "",
-			"registeredAt": ""
-		},
 		"ingredients": [],
 		"applications": [],
-		"resistanceProfile": []
+		"activeIngredients": [],
+		"targetCrops": [],
+		"targetPests": []
 	}
 }

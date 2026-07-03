@@ -29,7 +29,6 @@ function createEmptyPesticideDetail(item = {}) {
     registrationNo: "",
     formulation: "",
     price: {},
-    activeIngredients: [],
     dilution: {
       min: null,
       max: null,
@@ -39,6 +38,14 @@ function createEmptyPesticideDetail(item = {}) {
       per10a: null,
       unit: item.unit || "ml"
     },
+    packaging: {
+      amountPerPack: null,
+      unit: item.unit || "ml",
+      packLabel: "本"
+    },
+    ingredients: [],
+    applications: [],
+    activeIngredients: [],
     targetCrops: [],
     targetPests: [],
     maxApplicationsPerSeason: null,
@@ -144,7 +151,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
       <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
         <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
-        <p style="margin:0 0 4px;">ID: <strong>CCNNNN</strong> 形式（例: FG0001）</p>
+        <p style="margin:0 0 4px;">ID: <strong>CCNNNN</strong> または <strong>FNNN</strong> 形式（例: FG0001 / F304）</p>
         <p style="margin:0 0 4px;">カテゴリ: 殺菌剤 / 殺虫剤 / 茎葉除草剤 / 選択制除草剤 / 展着剤 / 土壌消毒剤</p>
         <p style="margin:0; font-size:0.92em; color:#555;">プレフィックス例: FG=殺菌剤, IN=殺虫剤, HL=茎葉除草剤, SL=選択制除草剤, AD=展着剤, SD=土壌消毒剤</p>
       </div>
@@ -335,8 +342,8 @@ export function renderEditCard({ json, container, finalPath }) {
       const unit = String(row.unit || "").trim();
 
       if (!id) errors.push(`${line}行目: ID は必須です。`);
-      if (id && !/^[A-Z]{2}\d{4}$/.test(id)) {
-        errors.push(`${line}行目: ID は CCNNNN 形式で入力してください（例: FG0001）。`);
+      if (id && !/^(?:[A-Z]{2}\d{4}|F\d{3})$/.test(id)) {
+        errors.push(`${line}行目: ID は CCNNNN または FNNN 形式で入力してください（例: FG0001 / F304）。`);
       }
       if (id && usedIds.has(id)) {
         errors.push(`${line}行目: ID ${id} が重複しています。`);

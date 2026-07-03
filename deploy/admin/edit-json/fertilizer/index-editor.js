@@ -20,20 +20,10 @@ function createEmptyFertilizerDetail(name = "") {
     p: 0,
     k: 0,
     notes: "",
-    registration: {
-      number: "",
-      fertilizerType: "",
-      productName: name,
-      legalClassification: "",
-      holder: {
-        name: "",
-        address: "",
-        corporateNumber: ""
-      },
-      registeredAt: ""
-    },
     ingredients: [],
-    applicationGuidelines: []
+    applications: [],
+    activeIngredients: [],
+    targetCrops: []
   };
 }
 

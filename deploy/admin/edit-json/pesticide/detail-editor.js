@@ -22,7 +22,6 @@ function buildEmptyPesticideDetail() {
     registrationNo: "",
     formulation: "",
     price: {},
-    activeIngredients: [],
     dilution: {
       min: null,
       max: null,
@@ -39,29 +38,14 @@ function buildEmptyPesticideDetail() {
     },
     targetCrops: [],
     targetPests: [],
+    activeIngredients: [],
     maxApplicationsPerSeason: null,
     preHarvestIntervalDays: null,
     reentryIntervalHours: null,
     resistanceCode: "",
     notes: "",
-    registration: {
-      number: "",
-      pesticideType: "",
-      productName: "",
-      physicalChemicalProperties: "",
-      holder: {
-        name: "",
-        address: "",
-        corporateNumber: ""
-      },
-      purpose: "",
-      formulation: "",
-      toxicity: "",
-      registeredAt: ""
-    },
     ingredients: [],
-    applications: [],
-    resistanceProfile: []
+    applications: []
   };
 }
 
@@ -72,17 +56,6 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function listToText(value) {
-  return Array.isArray(value) ? value.join("\n") : "";
-}
-
-function parseListText(raw) {
-  return String(raw || "")
-    .split(/[\n,]/)
-    .map(v => v.trim())
-    .filter(Boolean);
 }
 
 function priceToText(value) {
@@ -134,47 +107,133 @@ function parseNullableNumber(raw) {
   return n;
 }
 
-function toPrettyJson(value, fallback) {
-  const v = value ?? fallback;
-  try {
-    return JSON.stringify(v, null, 2);
-  } catch {
-    return JSON.stringify(fallback, null, 2);
+function parseOptionalNumberOrThrow(raw, label, id) {
+  const text = String(raw ?? "").trim();
+  if (text === "") return null;
+  const n = Number(text);
+  if (!Number.isFinite(n)) {
+    throw new Error(`${id} の${label}は数値で入力してください`);
   }
+  return n;
 }
 
-function parseJsonObjectText(raw, label, id) {
-  const text = String(raw || "").trim();
-  if (!text) return {};
-
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error(`${id} の${label}はJSON形式で入力してください`);
+function normalizeIngredientRows(value) {
+  const rows = Array.isArray(value) ? value : [];
+  if (rows.length === 0) {
+    return [{ name: "", kind: "", concentrationPercent: "", resistanceScheme: "", resistanceCode: "", source: "" }];
   }
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`${id} の${label}はオブジェクト形式で入力してください`);
-  }
-  return parsed;
+  return rows.map(row => {
+    const concentration = row?.concentrationPercent;
+    return {
+      name: String(row?.name || ""),
+      kind: String(row?.kind || ""),
+      concentrationPercent: concentration == null ? "" : String(concentration),
+      resistanceScheme: String(row?.resistance?.scheme || ""),
+      resistanceCode: String(row?.resistance?.code || ""),
+      source: String(row?.source || "")
+    };
+  });
 }
 
-function parseJsonArrayText(raw, label, id) {
-  const text = String(raw || "").trim();
-  if (!text) return [];
-
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error(`${id} の${label}はJSON形式で入力してください`);
+function normalizeApplicationRows(value) {
+  const rows = Array.isArray(value) ? value : [];
+  if (rows.length === 0) {
+    return [{
+      crop: "",
+      target: "",
+      dilution: "",
+      sprayVolume: "",
+      timing: "",
+      maxProductApplications: "",
+      method: "",
+      maxActiveIngredientApplications: "",
+      note: ""
+    }];
   }
 
-  if (!Array.isArray(parsed)) {
-    throw new Error(`${id} の${label}は配列形式で入力してください`);
+  return rows.map(row => ({
+    crop: String(row?.crop || ""),
+    target: String(row?.target || ""),
+    dilution: String(row?.dilution || ""),
+    sprayVolume: String(row?.sprayVolume || ""),
+    timing: String(row?.timing || ""),
+    maxProductApplications: row?.maxProductApplications == null ? "" : String(row.maxProductApplications),
+    method: String(row?.method || ""),
+    maxActiveIngredientApplications: row?.maxActiveIngredientApplications == null ? "" : String(row.maxActiveIngredientApplications),
+    note: String(row?.note || "")
+  }));
+}
+
+function uniqueNonEmpty(values) {
+  return Array.from(new Set((Array.isArray(values) ? values : [])
+    .map(v => String(v || "").trim())
+    .filter(Boolean)));
+}
+
+function buildResistanceCodeFromIngredients(ingredients) {
+  const parts = (Array.isArray(ingredients) ? ingredients : [])
+    .map(row => {
+      const scheme = String(row?.resistance?.scheme || "").trim().toUpperCase();
+      const code = String(row?.resistance?.code || "").trim();
+      if (!scheme || !code) return "";
+      return `${scheme}:${code}`;
+    })
+    .filter(Boolean);
+  return uniqueNonEmpty(parts).join(", ");
+}
+
+function toCanonicalPesticideDetail(item = {}) {
+  const base = buildEmptyPesticideDetail();
+  const next = {
+    ...base,
+    ...item,
+    name: String(item.name || "").trim(),
+    maker: String(item.maker || "").trim(),
+    category: String(item.category || "").trim(),
+    unit: String(item.unit || "ml").trim() || "ml",
+    registrationNo: String(item.registrationNo || "").trim(),
+    formulation: String(item.formulation || "").trim(),
+    notes: String(item.notes || "").trim(),
+    price: item.price && typeof item.price === "object" && !Array.isArray(item.price) ? item.price : {},
+    dilution: {
+      min: item.dilution?.min ?? null,
+      max: item.dilution?.max ?? null,
+      default: item.dilution?.default ?? null
+    },
+    standardDose: {
+      per10a: item.standardDose?.per10a ?? null,
+      unit: String(item.standardDose?.unit || item.unit || "ml").trim() || "ml"
+    },
+    packaging: {
+      amountPerPack: item.packaging?.amountPerPack ?? null,
+      unit: String(item.packaging?.unit || item.unit || "ml").trim() || "ml",
+      packLabel: String(item.packaging?.packLabel || "本").trim() || "本"
+    },
+    maxApplicationsPerSeason: item.maxApplicationsPerSeason ?? null,
+    preHarvestIntervalDays: item.preHarvestIntervalDays ?? null,
+    reentryIntervalHours: item.reentryIntervalHours ?? null,
+    ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+    applications: Array.isArray(item.applications) ? item.applications : []
+  };
+
+  next.activeIngredients = uniqueNonEmpty(
+    next.ingredients.map(v => v?.name)
+  );
+  next.targetCrops = uniqueNonEmpty(
+    next.applications.map(v => v?.crop)
+  );
+  next.targetPests = uniqueNonEmpty(
+    next.applications.map(v => v?.target)
+  );
+
+  if (!next.resistanceCode) {
+    next.resistanceCode = buildResistanceCodeFromIngredients(next.ingredients);
+  } else {
+    next.resistanceCode = String(next.resistanceCode || "").trim();
   }
-  return parsed;
+
+  return next;
 }
 
 function normalizePesticideId(value) {
@@ -217,8 +276,8 @@ function validateBeforeSave(data) {
   ids.forEach(id => {
     const item = data[id] || {};
 
-    if (!/^[A-Z]{2}\d{4}$/.test(id)) {
-      errors.push(`ID ${id}: ID は CCNNNN 形式で入力してください（例: FG0001）。`);
+    if (!/^(?:[A-Z]{2}\d{4}|F\d{3})$/.test(id)) {
+      errors.push(`ID ${id}: ID は CCNNNN または FNNN 形式で入力してください（例: FG0001 / F304）。`);
     }
     if (!String(item.name || "").trim()) {
       errors.push(`ID ${id}: 名称は必須です。`);
@@ -236,11 +295,11 @@ function validateBeforeSave(data) {
       errors.push(`ID ${id}: 希釈倍率は min <= max で入力してください。`);
     }
 
-    const profile = Array.isArray(item.resistanceProfile) ? item.resistanceProfile : [];
-    profile.forEach((row, i) => {
-      const scheme = String(row?.scheme || "").toUpperCase();
+    const ingredients = Array.isArray(item.ingredients) ? item.ingredients : [];
+    ingredients.forEach((row, i) => {
+      const scheme = String(row?.resistance?.scheme || "").toUpperCase();
       if (scheme && !["IRAC", "FRAC", "HRAC"].includes(scheme)) {
-        errors.push(`ID ${id}: resistanceProfile[${i}] の scheme は IRAC/FRAC/HRAC のいずれかで入力してください。`);
+        errors.push(`ID ${id}: ingredients[${i}] の resistance.scheme は IRAC/FRAC/HRAC のいずれかで入力してください。`);
       }
     });
   });
@@ -376,11 +435,8 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
     const id = selectedId;
     const p = { ...buildEmptyPesticideDetail(), ...(current[id] || {}) };
-    const registration = { ...buildEmptyPesticideDetail().registration, ...(p.registration || {}) };
-    registration.holder = {
-      ...buildEmptyPesticideDetail().registration.holder,
-      ...(registration.holder || {})
-    };
+    const ingredientRows = normalizeIngredientRows(p.ingredients);
+    const applicationRows = normalizeApplicationRows(p.applications);
 
     editorEl.insertAdjacentHTML("beforeend", `
       <div class="card pesticide-detail-card" data-id="${escapeHtml(id)}" style="margin-bottom:20px;">
@@ -422,11 +478,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
         </div>
 
         <div class="edit-line">
-          <label>有効成分（改行 or カンマ区切り）</label>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="activeIngredientsText" rows="3">${escapeHtml(listToText(p.activeIngredients))}</textarea>
-        </div>
-
-        <div class="edit-line">
           <label>希釈倍率</label>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <input class="form-input" data-id="${escapeHtml(id)}" data-key="dilutionMin" type="number" step="any" placeholder="min" value="${p.dilution?.min ?? ""}">
@@ -450,16 +501,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
             <input class="form-input" data-id="${escapeHtml(id)}" data-key="packagingUnit" placeholder="unit" value="${escapeHtml(p.packaging?.unit ?? p.unit ?? "ml")}">
             <input class="form-input" data-id="${escapeHtml(id)}" data-key="packagingPackLabel" placeholder="本 / 袋" value="${escapeHtml(p.packaging?.packLabel ?? "本")}">
           </div>
-        </div>
-
-        <div class="edit-line">
-          <label>対象作物（改行 or カンマ区切り）</label>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetCropsText" rows="3">${escapeHtml(listToText(p.targetCrops))}</textarea>
-        </div>
-
-        <div class="edit-line">
-          <label>対象病害虫/雑草（改行 or カンマ区切り）</label>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="targetPestsText" rows="3">${escapeHtml(listToText(p.targetPests))}</textarea>
         </div>
 
         <div class="edit-line">
@@ -488,40 +529,120 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
         </div>
 
         <div class="edit-line">
-          <label>登録情報（農水省ベース）</label>
-          <div style="display:grid; gap:8px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regNumber" placeholder="登録番号" value="${escapeHtml(registration.number)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regPesticideType" placeholder="農薬の種類" value="${escapeHtml(registration.pesticideType)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regProductName" placeholder="農薬の名称" value="${escapeHtml(registration.productName)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regPurpose" placeholder="用途" value="${escapeHtml(registration.purpose)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regFormulation" placeholder="剤型" value="${escapeHtml(registration.formulation)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regToxicity" placeholder="製剤毒性" value="${escapeHtml(registration.toxicity)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regRegisteredAt" placeholder="登録年月日" value="${escapeHtml(registration.registeredAt)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regHolderName" placeholder="登録者名称" value="${escapeHtml(registration.holder.name)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regHolderAddress" placeholder="登録者所在地" value="${escapeHtml(registration.holder.address)}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="regHolderCorp" placeholder="法人番号" value="${escapeHtml(registration.holder.corporateNumber)}">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <label style="margin:0;">成分情報（1行1レコード）</label>
+            <button type="button" class="secondary-btn" data-action="add-ingredient">成分行を追加</button>
           </div>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="regPhysical" rows="2" placeholder="物理的化学的性状" style="margin-top:8px;">${escapeHtml(registration.physicalChemicalProperties)}</textarea>
+          <div style="display:grid; gap:6px; margin-top:8px;">
+            ${ingredientRows.map((row, i) => `
+              <div class="ingredient-row" data-index="${i}" style="display:grid; grid-template-columns: 1.1fr 0.9fr 0.8fr 0.8fr 0.8fr 1.1fr auto; gap:6px; align-items:center;">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="name" placeholder="成分名" value="${escapeHtml(row.name)}">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="kind" placeholder="区分" value="${escapeHtml(row.kind)}">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="concentrationPercent" type="number" step="any" placeholder="含有率%" value="${escapeHtml(row.concentrationPercent)}">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="resistanceScheme" placeholder="IRAC/FRAC/HRAC" value="${escapeHtml(row.resistanceScheme)}">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="resistanceCode" placeholder="コード" value="${escapeHtml(row.resistanceCode)}">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="source" placeholder="備考/由来" value="${escapeHtml(row.source)}">
+                <button type="button" class="secondary-btn" data-action="remove-ingredient" data-index="${i}">削除</button>
+              </div>
+            `).join("")}
+          </div>
         </div>
 
         <div class="edit-line">
-          <label>成分情報（JSON配列）</label>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="ingredientsJson" rows="8" placeholder='[{"name":"レピメクチン","kind":"有効成分","concentrationPercent":1.0,"resistance":{"scheme":"IRAC","code":"6"}}]'>${escapeHtml(toPrettyJson(p.ingredients, []))}</textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <label style="margin:0;">適用表（1行1レコード）</label>
+            <button type="button" class="secondary-btn" data-action="add-application">適用行を追加</button>
+          </div>
+          <div style="display:grid; gap:6px; margin-top:8px;">
+            ${applicationRows.map((row, i) => `
+              <div class="application-row" data-index="${i}" style="display:grid; grid-template-columns: 1fr 1fr 0.9fr 1fr 1fr 0.8fr 0.8fr 0.8fr 1fr auto; gap:6px; align-items:center;">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="crop" placeholder="作物" value="${escapeHtml(row.crop)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="target" placeholder="対象" value="${escapeHtml(row.target)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="dilution" placeholder="希釈" value="${escapeHtml(row.dilution)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="sprayVolume" placeholder="散布液量" value="${escapeHtml(row.sprayVolume)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="timing" placeholder="使用時期" value="${escapeHtml(row.timing)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="maxProductApplications" type="number" placeholder="製品回数" value="${escapeHtml(row.maxProductApplications)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="method" placeholder="方法" value="${escapeHtml(row.method)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="maxActiveIngredientApplications" type="number" placeholder="有効成分回数" value="${escapeHtml(row.maxActiveIngredientApplications)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="note" placeholder="備考" value="${escapeHtml(row.note)}">
+                <button type="button" class="secondary-btn" data-action="remove-application" data-index="${i}">削除</button>
+              </div>
+            `).join("")}
+          </div>
         </div>
 
-        <div class="edit-line">
-          <label>適用表（JSON配列）</label>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="applicationsJson" rows="10" placeholder='[{"crop":"キャベツ","target":"コナガ","dilution":"1000倍","sprayVolume":"100-300L/10a","timing":"収穫前日まで","maxProductApplications":2,"method":"散布","maxActiveIngredientApplications":2}]'>${escapeHtml(toPrettyJson(p.applications, []))}</textarea>
-        </div>
-
-        <div class="edit-line">
-          <label>耐性プロファイル（JSON配列）</label>
-          <textarea class="form-input" data-id="${escapeHtml(id)}" data-key="resistanceProfileJson" rows="5" placeholder='[{"scheme":"IRAC","code":"6","source":"activeIngredient"}]'>${escapeHtml(toPrettyJson(p.resistanceProfile, []))}</textarea>
-        </div>
       </div>
     `);
 
     const card = editorEl.querySelector(".pesticide-detail-card");
+    card?.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      if (!action) return;
+
+      e.preventDefault();
+
+      try {
+        syncSelectedFromInputs();
+      } catch (err) {
+        alert(err.message || "入力形式を確認してください");
+        return;
+      }
+
+      if (action === "add-ingredient") {
+        const nextRows = normalizeIngredientRows(current[selectedId]?.ingredients);
+        nextRows.push({ name: "", kind: "", concentrationPercent: "", resistanceScheme: "", resistanceCode: "", source: "" });
+        current[selectedId].ingredients = nextRows;
+        renderEditor();
+        hasUnsavedChanges = true;
+        return;
+      }
+
+      if (action === "remove-ingredient") {
+        const idx = Number(btn.dataset.index);
+        const nextRows = normalizeIngredientRows(current[selectedId]?.ingredients);
+        if (Number.isInteger(idx) && idx >= 0 && idx < nextRows.length) {
+          nextRows.splice(idx, 1);
+          current[selectedId].ingredients = nextRows.length > 0 ? nextRows : [];
+          renderEditor();
+          hasUnsavedChanges = true;
+        }
+        return;
+      }
+
+      if (action === "add-application") {
+        const nextRows = normalizeApplicationRows(current[selectedId]?.applications);
+        nextRows.push({
+          crop: "",
+          target: "",
+          dilution: "",
+          sprayVolume: "",
+          timing: "",
+          maxProductApplications: "",
+          method: "",
+          maxActiveIngredientApplications: "",
+          note: ""
+        });
+        current[selectedId].applications = nextRows;
+        renderEditor();
+        hasUnsavedChanges = true;
+        return;
+      }
+
+      if (action === "remove-application") {
+        const idx = Number(btn.dataset.index);
+        const nextRows = normalizeApplicationRows(current[selectedId]?.applications);
+        if (Number.isInteger(idx) && idx >= 0 && idx < nextRows.length) {
+          nextRows.splice(idx, 1);
+          current[selectedId].applications = nextRows.length > 0 ? nextRows : [];
+          renderEditor();
+          hasUnsavedChanges = true;
+        }
+      }
+    });
+
     card?.querySelectorAll("input, textarea, select").forEach(el => {
       el.addEventListener("input", () => {
         hasUnsavedChanges = true;
@@ -563,7 +684,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       registrationNo: getValue("registrationNo").trim(),
       formulation: getValue("formulation").trim(),
       price: parsePriceText(getValue("priceText"), id),
-      activeIngredients: parseListText(getValue("activeIngredientsText")),
       dilution: {
         min: parseNullableNumber(getValue("dilutionMin")),
         max: parseNullableNumber(getValue("dilutionMax")),
@@ -578,8 +698,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
         unit: getValue("packagingUnit").trim() || getValue("unit").trim() || "ml",
         packLabel: getValue("packagingPackLabel").trim() || "本"
       },
-      targetCrops: parseListText(getValue("targetCropsText")),
-      targetPests: parseListText(getValue("targetPestsText")),
       maxApplicationsPerSeason: parseNullableNumber(getValue("maxApplicationsPerSeason")),
       preHarvestIntervalDays: parseNullableNumber(getValue("preHarvestIntervalDays")),
       reentryIntervalHours: parseNullableNumber(getValue("reentryIntervalHours")),
@@ -587,48 +705,84 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       notes: getValue("notes").trim()
     };
 
-    const registration = {
-      ...buildEmptyPesticideDetail().registration,
-      ...(prev.registration || {}),
-      number: getValue("regNumber").trim(),
-      pesticideType: getValue("regPesticideType").trim(),
-      productName: getValue("regProductName").trim(),
-      physicalChemicalProperties: getValue("regPhysical").trim(),
-      holder: {
-        ...buildEmptyPesticideDetail().registration.holder,
-        ...(prev.registration?.holder || {}),
-        name: getValue("regHolderName").trim(),
-        address: getValue("regHolderAddress").trim(),
-        corporateNumber: getValue("regHolderCorp").trim()
-      },
-      purpose: getValue("regPurpose").trim(),
-      formulation: getValue("regFormulation").trim(),
-      toxicity: getValue("regToxicity").trim(),
-      registeredAt: getValue("regRegisteredAt").trim()
-    };
+    const ingredients = Array.from(card.querySelectorAll(".ingredient-row"))
+      .map(row => {
+        const getRowValue = field => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
+        const name = getRowValue("name").trim();
+        const kind = getRowValue("kind").trim();
+        const concentrationPercentRaw = getRowValue("concentrationPercent").trim();
+        const resistanceScheme = getRowValue("resistanceScheme").trim().toUpperCase();
+        const resistanceCode = getRowValue("resistanceCode").trim();
+        const source = getRowValue("source").trim();
 
-    next.registration = registration;
-    next.ingredients = parseJsonArrayText(getValue("ingredientsJson"), "成分情報", id);
-    next.applications = parseJsonArrayText(getValue("applicationsJson"), "適用表", id);
-    next.resistanceProfile = parseJsonArrayText(getValue("resistanceProfileJson"), "耐性プロファイル", id);
+        if (!name && !kind && !concentrationPercentRaw && !resistanceScheme && !resistanceCode && !source) {
+          return null;
+        }
 
-    if (!next.registrationNo && registration.number) {
-      next.registrationNo = registration.number;
-    }
-    if (!next.formulation && registration.formulation) {
-      next.formulation = registration.formulation;
-    }
-    if (!next.category && registration.purpose) {
-      next.category = registration.purpose;
-    }
-    if (!next.maker && registration.holder?.name) {
-      next.maker = registration.holder.name;
-    }
-    if (!next.name && registration.productName) {
-      next.name = registration.productName;
-    }
+        const out = {
+          name,
+          kind
+        };
 
-    current[id] = next;
+        if (concentrationPercentRaw !== "") {
+          out.concentrationPercent = parseOptionalNumberOrThrow(concentrationPercentRaw, "成分情報の含有率", id);
+        }
+        if (resistanceScheme || resistanceCode) {
+          out.resistance = {
+            scheme: resistanceScheme,
+            code: resistanceCode
+          };
+        }
+        if (source) {
+          out.source = source;
+        }
+        return out;
+      })
+      .filter(Boolean);
+
+    const applications = Array.from(card.querySelectorAll(".application-row"))
+      .map(row => {
+        const getRowValue = field => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
+        const crop = getRowValue("crop").trim();
+        const target = getRowValue("target").trim();
+        const dilution = getRowValue("dilution").trim();
+        const sprayVolume = getRowValue("sprayVolume").trim();
+        const timing = getRowValue("timing").trim();
+        const maxProductApplicationsRaw = getRowValue("maxProductApplications").trim();
+        const method = getRowValue("method").trim();
+        const maxActiveIngredientApplicationsRaw = getRowValue("maxActiveIngredientApplications").trim();
+        const note = getRowValue("note").trim();
+
+        if (!crop && !target && !dilution && !sprayVolume && !timing && !maxProductApplicationsRaw && !method && !maxActiveIngredientApplicationsRaw && !note) {
+          return null;
+        }
+
+        const out = {
+          crop,
+          target,
+          dilution,
+          sprayVolume,
+          timing,
+          method
+        };
+
+        if (maxProductApplicationsRaw !== "") {
+          out.maxProductApplications = parseOptionalNumberOrThrow(maxProductApplicationsRaw, "適用表の製品使用回数", id);
+        }
+        if (maxActiveIngredientApplicationsRaw !== "") {
+          out.maxActiveIngredientApplications = parseOptionalNumberOrThrow(maxActiveIngredientApplicationsRaw, "適用表の有効成分使用回数", id);
+        }
+        if (note) {
+          out.note = note;
+        }
+
+        return out;
+      })
+      .filter(Boolean);
+
+    next.ingredients = ingredients;
+    next.applications = applications;
+    current[id] = toCanonicalPesticideDetail(next);
   }
 
   searchEl.oninput = () => {
@@ -710,7 +864,12 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       return;
     }
 
-    const errors = validateBeforeSave(current);
+    const normalized = {};
+    Object.keys(current).forEach(id => {
+      normalized[id] = toCanonicalPesticideDetail(current[id]);
+    });
+
+    const errors = validateBeforeSave(normalized);
     if (errors.length > 0) {
       alert(`保存できません。\n${errors.join("\n")}`);
       return;
@@ -719,7 +878,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     showSaveModal("保存しています…");
 
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
-    await saveJSON(savePath, current);
+    await saveJSON(savePath, normalized);
     completeSaveModal("保存が完了しました");
     hasUnsavedChanges = false;
   };

@@ -12,18 +12,6 @@
     "p": 1,
     "k": 1,
     "notes": "地域センターの完熟堆肥。水分多め。",
-    "registration": {
-      "number": "",
-      "fertilizerType": "堆肥",
-      "productName": "完熟堆肥",
-      "legalClassification": "普通肥料",
-      "holder": {
-        "name": "○○堆肥センター",
-        "address": "",
-        "corporateNumber": ""
-      },
-      "registeredAt": ""
-    },
     "ingredients": [
       {
         "name": "窒素全量",
@@ -41,13 +29,21 @@
         "concentrationPercent": 1
       }
     ],
-    "applicationGuidelines": [
+    "applications": [
       {
         "crop": "キャベツ",
         "timing": "基肥",
         "amountPer10a": "500-1000kg",
         "method": "全面施用"
       }
+    ],
+    "activeIngredients": [
+      "窒素全量",
+      "りん酸全量",
+      "加里全量"
+    ],
+    "targetCrops": [
+      "キャベツ"
     ]
   },
 
@@ -63,18 +59,6 @@
     "p": 8,
     "k": 8,
     "notes": "標準的な化成肥料。",
-    "registration": {
-      "number": "",
-      "fertilizerType": "化成肥料",
-      "productName": "化成888",
-      "legalClassification": "普通肥料",
-      "holder": {
-        "name": "△△肥料工業",
-        "address": "",
-        "corporateNumber": ""
-      },
-      "registeredAt": ""
-    },
     "ingredients": [
       {
         "name": "窒素全量",
@@ -92,13 +76,21 @@
         "concentrationPercent": 8
       }
     ],
-    "applicationGuidelines": [
+    "applications": [
       {
         "crop": "キャベツ",
         "timing": "追肥",
         "amountPer10a": "20-40kg",
         "method": "条施用"
       }
+    ],
+    "activeIngredients": [
+      "窒素全量",
+      "りん酸全量",
+      "加里全量"
+    ],
+    "targetCrops": [
+      "キャベツ"
     ]
   },
 
@@ -114,18 +106,6 @@
     "p": 0,
     "k": 0,
     "notes": "窒素補給用。",
-    "registration": {
-      "number": "",
-      "fertilizerType": "窒素肥料",
-      "productName": "尿素",
-      "legalClassification": "普通肥料",
-      "holder": {
-        "name": "□□化学",
-        "address": "",
-        "corporateNumber": ""
-      },
-      "registeredAt": ""
-    },
     "ingredients": [
       {
         "name": "窒素全量",
@@ -133,13 +113,19 @@
         "concentrationPercent": 46
       }
     ],
-    "applicationGuidelines": [
+    "applications": [
       {
         "crop": "キャベツ",
         "timing": "追肥",
         "amountPer10a": "10-20kg",
         "method": "条施用"
       }
+    ],
+    "activeIngredients": [
+      "窒素全量"
+    ],
+    "targetCrops": [
+      "キャベツ"
     ]
   }
 }
