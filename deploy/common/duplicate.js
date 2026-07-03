@@ -11,6 +11,8 @@ export async function checkDuplicate(category, entry) {
 
   if (category === "planting") {
     path = "logs/planting/all.csv";
+  } else if (category === "seed") {
+    path = "logs/seed/all.csv";
   } else if (category === "harvest") {
     path = "logs/harvest/all.csv";
   } else if (category === "shipping") {
@@ -27,6 +29,9 @@ export async function checkDuplicate(category, entry) {
   if (category === "planting") {
     return checkPlanting(rows, entry);
   }
+  if (category === "seed") {
+    return checkSeed(rows, entry);
+  }
   if (category === "harvest") {
     return checkHarvest(rows, entry);
   }
@@ -34,6 +39,22 @@ export async function checkDuplicate(category, entry) {
     return checkShipping(rows, entry);
   }
 
+  return { ok: true };
+}
+
+// =======================================
+// seed
+// =======================================
+function checkSeed(rows, e) {
+  const dup = rows.find(r =>
+    r.seedDate === e.date &&
+    r.varietyName === e.variety &&
+    Number(r.trayCount || 0) === Number(e.trayCount || 0)
+  );
+
+  if (dup) {
+    return { ok: false, message: "同じ播種ログが既に存在します。" };
+  }
   return { ok: true };
 }
 

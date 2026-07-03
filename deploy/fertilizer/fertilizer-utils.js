@@ -101,7 +101,7 @@ export async function saveFertilizerLog() {
 
   } catch (e) {
     console.error(e);
-    alert("保存に失敗しました");
+    alert(e?.message || "保存に失敗しました");
   } finally {
     if (btn) {
       btn.disabled = false;

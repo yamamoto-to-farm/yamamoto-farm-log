@@ -50,6 +50,58 @@ function ensureYear(data, year) {
   }
 }
 
+class DuplicateLogError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "DuplicateLogError";
+    this.code = "DUPLICATE_LOG";
+  }
+}
+
+function normalizeScalarForDuplicate(value) {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return 0;
+    return Math.round(value * 1000) / 1000;
+  }
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return value;
+}
+
+function normalizeForDuplicate(value) {
+  if (value == null) return null;
+
+  if (Array.isArray(value)) {
+    const arr = value.map(v => normalizeForDuplicate(v));
+    return arr.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  }
+
+  if (typeof value === "object") {
+    const out = {};
+    Object.keys(value)
+      .sort()
+      .forEach(key => {
+        out[key] = normalizeForDuplicate(value[key]);
+      });
+    return out;
+  }
+
+  return normalizeScalarForDuplicate(value);
+}
+
+function isDuplicateEntry(existingEntry, newEntry) {
+  const lhs = JSON.stringify(normalizeForDuplicate(existingEntry));
+  const rhs = JSON.stringify(normalizeForDuplicate(newEntry));
+  return lhs === rhs;
+}
+
 /* ---------------------------------------------------------
    3. インデックス読み込み（正規構造を優先）
 --------------------------------------------------------- */
@@ -148,6 +200,8 @@ export async function saveMultiFieldLog({
   entry      // { distributed, machine, worker, notes } など完成形
 }) {
   const year = date.substring(0, 4);
+  const savedFields = [];
+  const skippedFields = [];
 
   debugLog("[saveMultiFieldLog] start", { type, date, fields, entry });
 
@@ -174,6 +228,13 @@ export async function saveMultiFieldLog({
       ...(perFieldDistributed !== undefined ? { distributed: perFieldDistributed } : {})
     };
 
+    const exists = data.years[year].entries.some(e => isDuplicateEntry(e, storedEntry));
+    if (exists) {
+      skippedFields.push(field);
+      debugLog("[saveMultiFieldLog] duplicate skipped:", { type, field, date });
+      continue;
+    }
+
     data.years[year].entries.push(storedEntry);
 
     // 保存
@@ -188,16 +249,26 @@ export async function saveMultiFieldLog({
     });
 
     debugLog("[saveMultiFieldLog] saved:", filePath);
+    savedFields.push(field);
 
     // インデックス更新
     const fileName = `${date}-${safeFileName(type)}.json`;
     await updateIndex(type, safeField, year, fileName);
   }
 
-  // 日誌表示向けの軽量サマリ（all.csv）を同時更新
-  await updateGeneralAllCsv(type, { date, fields, entry });
+  if (savedFields.length === 0 && skippedFields.length > 0) {
+    throw new DuplicateLogError("同じ内容のログが既に存在します（重複保存はスキップしました）。");
+  }
 
-  debugLog("[saveMultiFieldLog] done");
+  // 日誌表示向けの軽量サマリ（all.csv）を同時更新
+  if (savedFields.length > 0) {
+    await updateGeneralAllCsv(type, { date, fields: savedFields, entry });
+  }
+
+  debugLog("[saveMultiFieldLog] done", {
+    savedFields,
+    skippedFields
+  });
 }
 
 async function updateGeneralAllCsv(type, { date, fields, entry }) {
