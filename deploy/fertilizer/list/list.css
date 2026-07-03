@@ -3,6 +3,9 @@
 ================================ */
 .list-filter-card {
   margin-bottom: 14px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .list-filter-row {
@@ -18,6 +21,9 @@
 
 .year-block {
   margin-bottom: 30px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #fff;
@@ -55,24 +61,29 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  font-size: 14px;
 }
 
 .fert-table th,
 .fert-table td {
-  border: 1px solid #ddd;
-  padding: 6px;
+  border: 1px solid #e2e6ea;
+  padding: 7px 8px;
 }
 
 /* ヘッダーは中央揃え */
 .fert-table th {
-  background: #fafafa;
+  background: #f6f8fa;
   font-weight: bold;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 4;
 }
 
 /* データは右揃え */
 .fert-table td {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ================================
@@ -82,36 +93,40 @@
 /* 肥料名（sticky） */
 .fert-table th:nth-child(1),
 .fert-table td:nth-child(1) {
-  width: 200px;
+  width: 220px;
 }
 
 /* 月別（1〜12月） */
 .fert-table th:nth-child(n+2):nth-child(-n+13),
 .fert-table td:nth-child(n+2):nth-child(-n+13) {
-  width: 70px;
+  width: 58px;
 }
 
 /* 合計列 */
 .fert-table th:nth-child(14),
 .fert-table td:nth-child(14) {
-  width: 80px;
+  width: 72px;
 }
 
 .fert-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
+  background: #fbfcfd;
+}
+
+.fert-table tbody tr:hover td {
+  background: #f3f8ff;
 }
 
 td.zero {
-  color: #bbb;
+  color: #b8c0c8;
 }
 
 td.value {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 td.total {
-  font-weight: bold;
-  background: #fdfdfd;
+  font-weight: 700;
+  background: #f7fbf7;
 }
 
 /* ================================
@@ -122,6 +137,7 @@ td.total {
   left: 0;
   background: #fff;
   z-index: 3;
+  box-shadow: 2px 0 0 rgba(0, 0, 0, 0.04);
 }
 
 /* ================================
@@ -129,13 +145,34 @@ td.total {
 ================================ */
 .fert-table td.clickable {
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.05s;
 }
 
 .fert-table td.clickable:hover {
-  background: #eef6ff;
+  background: #eaf3ff;
   color: #005bbb;
-  font-weight: bold;
+  font-weight: 700;
+}
+
+.fert-table td.clickable:active {
+  transform: scale(0.99);
+}
+
+@media (max-width: 1200px) {
+  .list-filter-card,
+  .year-block {
+    max-width: none;
+  }
+
+  .fert-table th:nth-child(1),
+  .fert-table td:nth-child(1) {
+    width: 180px;
+  }
+
+  .fert-table th:nth-child(n+2):nth-child(-n+13),
+  .fert-table td:nth-child(n+2):nth-child(-n+13) {
+    width: 64px;
+  }
 }
 
 /* ================================
