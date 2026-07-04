@@ -19,7 +19,10 @@ function renderModeSwitch(mode) {
   if (!area) return;
 
   const date = document.getElementById("diaryDate").value;
-  const monthUrl = `/schedule/monthly-work/index.html?date=${date}`;
+  const ym = date ? date.slice(0, 7) : "";
+  const monthUrl = ym
+    ? `/schedule/monthly-work/index.html?mode=around2&ym=${ym}`
+    : "/schedule/monthly-work/index.html?mode=latest4";
 
   let rightButtons = `
     <button class="mode-btn ${mode === "view" ? "active" : ""}"

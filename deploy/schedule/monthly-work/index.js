@@ -357,7 +357,7 @@ function renderVisibleMonths(months, monthDataMap, mode, referenceYm) {
     const label = mode === "latest4"
       ? "直近4か月を表示しています。"
       : mode === "sameMonth"
-        ? `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} と同じ月のカードを年をまたいで表示しています。`
+        ? `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} と同じ月のカードを、データがある年だけ表示しています。`
         : `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} の前後2か月を表示しています。`;
     filterNote.textContent = `${label} 月数を絞ると、表示カードとカレンダー描画が軽くなります。`;
   }
