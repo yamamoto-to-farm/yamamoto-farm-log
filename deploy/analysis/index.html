@@ -3,11 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>圃場分析 - 山本農園</title>
+  <title>圃場詳細 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- ★ 共通デザイン -->
-  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/style.css?v=1">
 
   <!-- ★ ナビバー -->
   <script type="module">
@@ -25,9 +25,11 @@
   <div id="analysis-container">読み込み中…</div>
 
   <!-- 地図に戻る -->
-  <button class="primary-btn" onclick="location.href='/map/index.html'">
-    地図に戻る
-  </button>
+  <div class="back-action-slot">
+    <button class="secondary-btn unified-back-btn" type="button" onclick="location.href='/map/index.html'">
+      地図に戻る
+    </button>
+  </div>
 
   <!-- 認証チェック & メイン処理 -->
   <script type="module">
@@ -70,6 +72,3 @@
 
 </body>
 </html>
-
-
-

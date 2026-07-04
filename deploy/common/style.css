@@ -281,6 +281,24 @@ textarea { resize: vertical; }
 }
 .primary-btn + .secondary-btn { margin-top: 14px; }
 
+.back-action-slot {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+}
+
+.unified-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0 !important;
+  color: #111 !important;
+  border: 1px solid #cbd5e0;
+  text-decoration: none;
+  margin-top: 0 !important;
+}
+
 /* ===============================
    モード切り替え
 =============================== */
