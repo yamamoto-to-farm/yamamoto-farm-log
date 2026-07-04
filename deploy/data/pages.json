@@ -29,15 +29,6 @@
       "openLog": true
     },
     {
-      "id": "tillage-list",
-      "name": "土づくり・耕起一覧",
-      "path": "field/tillage/list.html",
-      "category": "作業日誌・記録一覧/記録一覧",
-      "roles": ["family", "admin"],
-      "icon": "assets/icons/tillage.png",
-      "openLog": false
-    },
-    {
       "id": "weeding-machine",
       "name": "除草・草刈りログ",
       "path": "field/weeding/index.html",
@@ -159,12 +150,12 @@
       "openLog": false
     },
     {
-      "id": "harvest-kpi",
-      "name": "収穫KPI",
-      "path": "performance/harvest-kpi.html",
+      "id": "tillage-list",
+      "name": "土づくり・耕起一覧",
+      "path": "field/tillage/list.html",
       "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
-      "icon": "assets/icons/harvest-kpi.png",
+      "icon": "assets/icons/tillage.png",
       "openLog": false
     },
     {
@@ -192,6 +183,15 @@
       "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/pesticide.png",
+      "openLog": false
+    },
+    {
+      "id": "harvest-kpi",
+      "name": "収穫KPI",
+      "path": "performance/harvest-kpi.html",
+      "category": "作業日誌・記録一覧/記録一覧",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/harvest-kpi.png",
       "openLog": false
     },
 
