@@ -120,6 +120,42 @@
       line-height: 1.6;
     }
 
+    .source-filter-card h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .source-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .source-chip {
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .source-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+    }
+
+    .source-chip.off {
+      opacity: 0.45;
+      filter: grayscale(0.18);
+    }
+
+    .pill.off {
+      opacity: 0.45;
+    }
+
     .month-list {
       display: grid;
       gap: 14px;
@@ -332,6 +368,12 @@
         </div>
 
         <div id="filter-note" class="filter-note"></div>
+      </div>
+
+      <div class="filter-card source-filter-card">
+        <h3>表示する作業</h3>
+        <div id="source-filter-chips" class="source-filter-row"></div>
+        <div class="filter-note">複数選択できます。初期状態はすべて表示です。</div>
       </div>
 
       <div id="month-list" class="month-list"></div>
