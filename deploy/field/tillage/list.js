@@ -14,6 +14,23 @@ const state = {
   fieldAreaMap: {}
 };
 
+function formatDateISO(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function getDefaultPeriodRange() {
+  const end = new Date();
+  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  start.setMonth(start.getMonth() - 1);
+  return {
+    start: formatDateISO(start),
+    end: formatDateISO(end)
+  };
+}
+
 function normalizeDateText(value) {
   const text = String(value || "").trim();
   const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -320,7 +337,7 @@ function renderAreaList() {
   });
 
   areaList.innerHTML = areaEntries.map(area => `
-    <details class="area-group ${area.groupClass}" open>
+    <details class="area-group ${area.groupClass}">
       <summary class="area-title">
         <div class="area-title-main">
           <h3>${escapeHtml(area.areaName)}</h3>
@@ -491,6 +508,9 @@ async function main() {
   document.getElementById("page-area").style.display = "block";
 
   await loadRows();
+  const defaults = getDefaultPeriodRange();
+  state.periodStart = defaults.start;
+  state.periodEnd = defaults.end;
   bindPeriodControls();
   renderPeriodSummary();
   renderAreaList();
