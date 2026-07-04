@@ -32,7 +32,7 @@
       "id": "tillage-list",
       "name": "土づくり・耕起一覧",
       "path": "field/tillage/list.html",
-      "category": "作業日誌・記録一覧/種別一覧",
+      "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/tillage.png",
       "openLog": false
@@ -144,7 +144,7 @@
       "id": "diary",
       "name": "作業日誌",
       "path": "diary/index.html",
-      "category": "作業日誌・記録一覧/日誌・俯瞰",
+      "category": "作業日誌・記録一覧/作業日誌",
       "roles": ["worker", "family", "admin"],
       "icon": "assets/icons/diary.png",
       "openLog": false
@@ -153,7 +153,7 @@
       "id": "list",
       "name": "播種・定植一覧",
       "path": "list/list.html",
-      "category": "作業日誌・記録一覧/種別一覧",
+      "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/planting.png",
       "openLog": false
@@ -162,16 +162,16 @@
       "id": "harvest-kpi",
       "name": "収穫KPI",
       "path": "performance/harvest-kpi.html",
-      "category": "作業日誌・記録一覧/種別一覧",
+      "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/harvest-kpi.png",
       "openLog": false
     },
     {
       "id": "monthly-work",
-      "name": "月別作業一覧",
+      "name": "作業カレンダー",
       "path": "schedule/monthly-work/index.html",
-      "category": "作業日誌・記録一覧/日誌・俯瞰",
+      "category": "作業日誌・記録一覧/作業日誌",
       "roles": ["family", "admin"],
       "icon": "assets/icons/kpi-month.png",
       "openLog": false
@@ -180,7 +180,7 @@
       "id": "fertilizer-list",
       "name": "施肥記録一覧",
       "path": "fertilizer/list/list.html",
-      "category": "作業日誌・記録一覧/種別一覧",
+      "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/fertilizer.png",
       "openLog": false
@@ -189,7 +189,7 @@
       "id": "pesticide-list",
       "name": "防除記録一覧",
       "path": "pesticide/list/list.html",
-      "category": "作業日誌・記録一覧/種別一覧",
+      "category": "作業日誌・記録一覧/記録一覧",
       "roles": ["family", "admin"],
       "icon": "assets/icons/pesticide.png",
       "openLog": false

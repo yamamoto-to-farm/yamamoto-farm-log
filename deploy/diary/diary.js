@@ -43,7 +43,7 @@ function renderModeSwitch(mode) {
   area.innerHTML = `
     <div class="mode-switch-left">
       <button class="mode-btn" onclick="location.href='${monthUrl}'">
-        月別作業一覧
+        作業カレンダー
       </button>
     </div>
     <div class="mode-switch-right">
