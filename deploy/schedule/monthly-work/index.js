@@ -365,7 +365,7 @@ async function main() {
 
   const monthSet = new Set();
   for (const source of sourceCounts) {
-    for (const ym of source.counts.keys()) {
+    for (const ym of source.monthCounts.keys()) {
       monthSet.add(ym);
     }
   }
