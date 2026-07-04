@@ -27,7 +27,38 @@ export async function initPesticideList() {
   viewState.years = years;
 
   setupFilterUi(master, years);
+  setupBackButton();
   renderList();
+}
+
+function resolveBackUrl() {
+  const params = new URLSearchParams(location.search);
+  const returnParam = params.get("return");
+  if (returnParam && returnParam.startsWith("/")) {
+    return returnParam;
+  }
+
+  const ref = document.referrer || "";
+  if (ref.startsWith(location.origin)) {
+    const path = ref.slice(location.origin.length);
+    if (path.startsWith("/")) return path;
+  }
+
+  return "/pesticide/index.html";
+}
+
+function setupBackButton() {
+  const btn = document.getElementById("pesticide-back-btn");
+  if (!btn) return;
+
+  const backUrl = resolveBackUrl();
+  if (backUrl.includes("/pesticide/index.html")) {
+    btn.textContent = "防除ログへ戻る";
+  }
+
+  btn.onclick = () => {
+    location.href = backUrl;
+  };
 }
 
 function setupFilterUi(master, years) {
