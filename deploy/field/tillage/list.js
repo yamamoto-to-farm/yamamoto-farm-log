@@ -493,6 +493,26 @@ function bindPeriodControls() {
     });
   }
 }
+
+function resolveBackUrl() {
+  const params = new URLSearchParams(location.search);
+  const returnPath = params.get("return") || "";
+  if (returnPath.startsWith("/")) return returnPath;
+
+  const referrer = document.referrer || "";
+  if (referrer) {
+    try {
+      const refUrl = new URL(referrer);
+      if (refUrl.origin === location.origin) {
+        return `${refUrl.pathname}${refUrl.search}${refUrl.hash}`;
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  return "/field/tillage/index.html";
+}
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -516,6 +536,9 @@ async function main() {
   renderAreaList();
   updateSortHeaderLabels();
   renderTable();
+
+  const backBtn = document.getElementById("tillage-back-btn");
+  if (backBtn) backBtn.setAttribute("href", resolveBackUrl());
 
   document.getElementById("date-sort-header")?.addEventListener("click", () => setSort("date"));
   document.getElementById("gap-sort-header")?.addEventListener("click", () => setSort("gap"));
