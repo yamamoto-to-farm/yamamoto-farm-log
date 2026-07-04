@@ -513,6 +513,12 @@ function resolveBackUrl() {
 
   return "/field/tillage/index.html";
 }
+
+function getBackButtonLabel(backUrl) {
+  return backUrl === "/field/tillage/index.html"
+    ? "耕起ログへ戻る"
+    : "元のページへ戻る";
+}
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -538,7 +544,11 @@ async function main() {
   renderTable();
 
   const backBtn = document.getElementById("tillage-back-btn");
-  if (backBtn) backBtn.setAttribute("href", resolveBackUrl());
+  if (backBtn) {
+    const backUrl = resolveBackUrl();
+    backBtn.setAttribute("href", backUrl);
+    backBtn.textContent = getBackButtonLabel(backUrl);
+  }
 
   document.getElementById("date-sort-header")?.addEventListener("click", () => setSort("date"));
   document.getElementById("gap-sort-header")?.addEventListener("click", () => setSort("gap"));
