@@ -407,8 +407,9 @@ function renderVisibleMonths(months, monthDataMap, mode, referenceYm, selectedSo
     return;
   }
 
+  const openYm = visibleMonths.includes(referenceYm) ? referenceYm : visibleMonths[0];
   monthList.innerHTML = visibleMonths
-    .map(ym => renderMonthCard(ym, monthDataMap[ym] || {}, ym === visibleMonths[0], selectedSourceKeys))
+    .map(ym => renderMonthCard(ym, monthDataMap[ym] || {}, ym === openYm, selectedSourceKeys))
     .join("");
 }
 
