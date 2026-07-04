@@ -1,6 +1,7 @@
 import { loadJSON } from "/common/json.js?v=1";
 import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName } from "/common/utils.js?v=1";
+import { rebuildMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
 
 let state = {
   fields: [],
@@ -158,6 +159,10 @@ async function saveCurrentLog() {
         content: csvText
       }
     ]
+  });
+
+  await rebuildMonthlyWorkSummary().catch(e => {
+    console.warn("[edit-log] monthly work summary rebuild failed:", e);
   });
 
   state.loadedType = type;

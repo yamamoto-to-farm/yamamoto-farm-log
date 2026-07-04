@@ -5,6 +5,7 @@ import {
   updateSaveModal,
   completeSaveModal
 } from "../save-modal.js?v=2026031418";
+import { recordMonthlyWorkEntries } from "../monthly-work-summary.js?v=1";
 
 const PRESIGN_URL =
   "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
@@ -82,6 +83,12 @@ async function saveToS3(payload) {
     dbg("append result:", json);
 
     if (!res.ok) throw new Error("append failed");
+
+    if (payload.summary) {
+      await recordMonthlyWorkEntries(payload.summary).catch(e => {
+        console.warn("[saveLog] monthly work summary update failed:", e);
+      });
+    }
 
     dbg("=== saveToS3 END (append) ===");
 
@@ -178,6 +185,12 @@ async function saveToS3(payload) {
       dbg("PUT failed body:", text);
       throw new Error("PUT failed: " + putRes.status);
     }
+  }
+
+  if (payload.summary) {
+    await recordMonthlyWorkEntries(payload.summary).catch(e => {
+      console.warn("[saveLog] monthly work summary update failed:", e);
+    });
   }
 
   dbg("=== saveToS3 END ===");

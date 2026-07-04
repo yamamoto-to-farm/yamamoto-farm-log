@@ -76,6 +76,50 @@
       border-color: #94a3b8;
     }
 
+    .filter-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .filter-field select {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .filter-note {
+      margin-top: 10px;
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
     .month-list {
       display: grid;
       gap: 14px;
@@ -220,36 +264,16 @@
       white-space: nowrap;
     }
 
-    .tone-seed { background: #dcfce7; border-color: #86efac; color: #166534; }
-    .tone-nursery { background: #e0f2fe; border-color: #7dd3fc; color: #075985; }
-    .tone-tillage { background: #e0e7ff; border-color: #a5b4fc; color: #3730a3; }
-    .tone-weeding { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
-    .tone-maintenance { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
-    .tone-pesticide { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
-    .tone-fertilizer { background: #ffedd5; border-color: #fdba74; color: #c2410c; }
-    .tone-watering { background: #cffafe; border-color: #67e8f9; color: #0e7490; }
-    .tone-hand-weeding { background: #fce7f3; border-color: #f9a8d4; color: #be185d; }
-    .tone-intertill { background: #ccfbf1; border-color: #5eead4; color: #0f766e; }
-    .tone-bedmaking { background: #fef9c3; border-color: #fde047; color: #a16207; }
-    .tone-planting { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+    .tone-start { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+    .tone-field { background: #e0e7ff; border-color: #a5b4fc; color: #3730a3; }
+    .tone-care { background: #ffedd5; border-color: #fdba74; color: #c2410c; }
     .tone-harvest { background: #fef3c7; border-color: #fbbf24; color: #b45309; }
-    .tone-shipping { background: #ffe4e6; border-color: #fda4af; color: #be123c; }
     .tone-discard { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
 
-    .day-dot.tone-seed { background: #16a34a; }
-    .day-dot.tone-nursery { background: #0284c7; }
-    .day-dot.tone-tillage { background: #4f46e5; }
-    .day-dot.tone-weeding { background: #9333ea; }
-    .day-dot.tone-maintenance { background: #475569; }
-    .day-dot.tone-pesticide { background: #ef4444; }
-    .day-dot.tone-fertilizer { background: #f97316; }
-    .day-dot.tone-watering { background: #06b6d4; }
-    .day-dot.tone-hand-weeding { background: #ec4899; }
-    .day-dot.tone-intertill { background: #14b8a6; }
-    .day-dot.tone-bedmaking { background: #eab308; }
-    .day-dot.tone-planting { background: #3b82f6; }
-    .day-dot.tone-harvest { background: #f59e0b; }
-    .day-dot.tone-shipping { background: #f43f5e; }
+    .day-dot.tone-start { background: #2563eb; }
+    .day-dot.tone-field { background: #4f46e5; }
+    .day-dot.tone-care { background: #ea580c; }
+    .day-dot.tone-harvest { background: #d97706; }
     .day-dot.tone-discard { background: #8b5cf6; }
 
     .empty-state {
@@ -287,7 +311,28 @@
         <a class="shortcut-pill" href="/fertilizer/list/list.html">施肥記録一覧</a>
         <a class="shortcut-pill" href="/pesticide/list/list.html">防除記録一覧</a>
         <a class="shortcut-pill" href="/performance/harvest-kpi.html">収穫KPI</a>
-        <a class="shortcut-pill" href="/shipping/index.html">出荷ログ</a>
+        <a class="shortcut-pill" href="/field/tillage/list.html">土作り・耕起一覧</a>
+      </div>
+
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="month-mode">表示方法</label>
+            <select id="month-mode">
+              <option value="latest4">直近4か月</option>
+              <option value="single">指定月のみ</option>
+              <option value="around1">指定月の前後1か月</option>
+              <option value="around2">指定月の前後2か月</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="reference-month">基準月</label>
+            <select id="reference-month"></select>
+          </div>
+        </div>
+
+        <div id="filter-note" class="filter-note"></div>
       </div>
 
       <div id="month-list" class="month-list"></div>

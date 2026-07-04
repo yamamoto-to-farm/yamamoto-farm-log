@@ -2,6 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
+import { loadMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
 
 const SOURCES = [
   {
@@ -10,7 +11,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/seed/all.csv",
     dateFields: ["seedDate", "date", "workDate"],
-    className: "tone-seed"
+    className: "tone-start"
   },
   {
     key: "nursery",
@@ -18,70 +19,70 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/nursery/all.csv",
     dateFields: ["date", "nurseryDate", "workDate", "createdAt"],
-    className: "tone-nursery"
+    className: "tone-start"
   },
   {
     key: "tillage",
     label: "耕起",
     kind: "json",
     type: "tillage",
-    className: "tone-tillage"
+    className: "tone-field"
   },
   {
     key: "weeding",
     label: "除草・草刈り",
     kind: "json",
     type: "weeding",
-    className: "tone-weeding"
+    className: "tone-care"
   },
   {
     key: "field-maintenance",
     label: "圃場整備",
     kind: "json",
     type: "field-maintenance",
-    className: "tone-maintenance"
+    className: "tone-field"
   },
   {
     key: "pesticide",
     label: "防除",
     kind: "json",
     type: "pesticide",
-    className: "tone-pesticide"
+    className: "tone-care"
   },
   {
     key: "fertilizer",
     label: "施肥",
     kind: "json",
     type: "fertilizer",
-    className: "tone-fertilizer"
+    className: "tone-care"
   },
   {
     key: "watering",
     label: "潅水",
     kind: "json",
     type: "watering",
-    className: "tone-watering"
+    className: "tone-care"
   },
   {
     key: "hand-weeding",
     label: "手作業除草",
     kind: "json",
     type: "hand-weeding",
-    className: "tone-hand-weeding"
+    className: "tone-care"
   },
   {
     key: "intertill",
     label: "中耕",
     kind: "json",
     type: "intertill",
-    className: "tone-intertill"
+    className: "tone-field"
   },
   {
     key: "bedmaking",
     label: "畝立て",
     kind: "json",
     type: "bedmaking",
-    className: "tone-bedmaking"
+    className: "tone-field"
   },
   {
     key: "planting",
@@ -89,7 +90,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/planting/all.csv",
     dateFields: ["plantDate", "date", "workDate"],
-    className: "tone-planting"
+    className: "tone-start"
   },
   {
     key: "harvest",
@@ -105,7 +106,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/weight/all.csv",
     dateFields: ["shippingDate", "date", "workDate"],
-    className: "tone-shipping"
+    className: "tone-harvest"
   },
   {
     key: "discard-planting",
@@ -116,6 +117,8 @@ const SOURCES = [
     className: "tone-discard"
   }
 ]
+
+const SOURCE_LOOKUP = Object.fromEntries(SOURCES.map(source => [source.key, source]));
 
 function toMonthKey(dateText) {
   if (!dateText) return "";
@@ -192,6 +195,35 @@ function buildSourceStats(rows, dateFields) {
 
 function countLabel(count) {
   return `${count}件`;
+}
+
+function addMonths(ym, offset) {
+  const [yearText, monthText] = ym.split("-");
+  const date = new Date(Number(yearText), Number(monthText) - 1 + offset, 1);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function getFilterState() {
+  const params = new URLSearchParams(location.search);
+  return {
+    mode: params.get("mode") || "latest4",
+    referenceYm: params.get("ym") || ""
+  };
+}
+
+function setFilterState(mode, referenceYm) {
+  const params = new URLSearchParams(location.search);
+  params.set("mode", mode);
+  if (referenceYm) {
+    params.set("ym", referenceYm);
+  } else {
+    params.delete("ym");
+  }
+
+  const nextUrl = `${location.pathname}?${params.toString()}`;
+  history.replaceState(null, "", nextUrl);
 }
 
 function getCurrentMonthKey() {
@@ -276,32 +308,76 @@ function buildCalendarDays(ym) {
   return cells;
 }
 
-function renderMonthCard(ym, sourceCounts, isOpen) {
-  const totals = sourceCounts.map(({ label, className, monthCounts }) => ({
+function getVisibleMonths(allMonths, mode, referenceYm) {
+  const available = new Set(allMonths);
+
+  if (mode === "latest4") {
+    return allMonths.slice(0, 4);
+  }
+
+  const baseYm = referenceYm && available.has(referenceYm)
+    ? referenceYm
+    : allMonths[0] || "";
+
+  if (!baseYm) return [];
+
+  if (mode === "single") {
+    return [baseYm];
+  }
+
+  const radius = mode === "around2" ? 2 : 1;
+  const months = [];
+
+  for (let offset = -radius; offset <= radius; offset += 1) {
+    const ym = addMonths(baseYm, offset);
+    if (available.has(ym)) months.push(ym);
+  }
+
+  months.sort((a, b) => b.localeCompare(a, "ja"));
+  return months;
+}
+
+function renderMonthOptions(months, referenceYm) {
+  const select = document.getElementById("reference-month");
+  if (!select) return;
+
+  select.innerHTML = months.map(ym => {
+    const selected = ym === referenceYm ? " selected" : "";
+    return `<option value="${ym}"${selected}>${formatMonthLabel(ym)}</option>`;
+  }).join("");
+}
+
+function renderVisibleMonths(months, monthDataMap, mode, referenceYm) {
+  const visibleMonths = getVisibleMonths(months, mode, referenceYm);
+  const monthList = document.getElementById("month-list");
+  const filterNote = document.getElementById("filter-note");
+
+  if (filterNote) {
+    const label = mode === "latest4"
+      ? "直近4か月を表示しています。"
+      : mode === "single"
+        ? `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} を1か月だけ表示しています。`
+        : `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} の前後${mode === "around2" ? 2 : 1}か月を表示しています。`;
+    filterNote.textContent = `${label} 月数を絞ると、表示カードとカレンダー描画が軽くなります。`;
+  }
+
+  if (visibleMonths.length === 0) {
+    monthList.innerHTML = '<div class="empty-state">表示できる記録がまだありません。</div>';
+    return;
+  }
+
+  monthList.innerHTML = visibleMonths.map(ym => renderMonthCard(ym, monthDataMap[ym] || {}, ym === visibleMonths[0])).join("");
+}
+
+function renderMonthCard(ym, monthData, isOpen) {
+  const totals = SOURCES.map(({ key, label, className }) => ({
     label,
     className,
-    count: monthCounts.get(ym) || 0
+    count: Number(monthData.sources?.[key] || 0)
   }));
 
-  const totalCount = totals.reduce((sum, item) => sum + item.count, 0);
-  const dayMap = new Map();
-
-  for (const source of sourceCounts) {
-    const days = source.dayBuckets.get(ym);
-    if (!days) continue;
-
-    for (const [dateKey, count] of days.entries()) {
-      if (!dayMap.has(dateKey)) {
-        dayMap.set(dateKey, []);
-      }
-
-      dayMap.get(dateKey).push({
-        label: source.label,
-        className: source.className,
-        count
-      });
-    }
-  }
+  const totalCount = Number(monthData.total || 0);
+  const dayMap = monthData.days || {};
 
   const calendarCells = buildCalendarDays(ym);
 
@@ -326,11 +402,20 @@ function renderMonthCard(ym, sourceCounts, isOpen) {
           ${calendarCells.map(cell => {
             if (!cell) return '<div class="calendar-cell is-empty"></div>';
 
-            const daySources = dayMap.get(cell.dateKey) || [];
+            const daySources = dayMap[cell.dateKey] || {};
             const href = `/diary/index.html?date=${cell.dateKey}`;
-            const dots = daySources
-              .sort((a, b) => a.label.localeCompare(b.label, "ja"))
-              .map(source => `<span class="day-dot ${source.className}" title="${cell.dateKey} ${source.label} ${countLabel(source.count)}"></span>`)
+            const dots = Object.entries(daySources)
+              .sort((a, b) => {
+                const aInfo = SOURCE_LOOKUP[a[0]] || { label: a[0] };
+                const bInfo = SOURCE_LOOKUP[b[0]] || { label: b[0] };
+                return aInfo.label.localeCompare(bInfo.label, "ja");
+              })
+              .map(([sourceKey, count]) => {
+                const source = SOURCE_LOOKUP[sourceKey];
+                const className = source?.className || "";
+                const label = source?.label || sourceKey;
+                return `<span class="day-dot ${className}" title="${cell.dateKey} ${label} ${countLabel(count)}"></span>`;
+              })
               .join("");
 
             return `
@@ -359,39 +444,40 @@ async function main() {
   }
 
   document.getElementById("page-area").style.display = "block";
-
-  const sourceRows = await Promise.all(
-    SOURCES.map(async source => ({
-      ...source,
-      rows: source.kind === "json"
-        ? await loadJsonTypeRows(source.type)
-        : await loadCSV(source.csv).catch(() => [])
-    }))
-  );
-
-  const sourceCounts = sourceRows.map(source => ({
-    label: source.label,
-    className: source.className,
-    ...buildSourceStats(source.rows, source.dateFields)
-  }));
-
-  const monthSet = new Set();
-  for (const source of sourceCounts) {
-    for (const ym of source.monthCounts.keys()) {
-      monthSet.add(ym);
-    }
-  }
-
-  const months = [...monthSet].sort((a, b) => b.localeCompare(a, "ja"));
   const monthList = document.getElementById("month-list");
+  const monthMode = document.getElementById("month-mode");
+  const referenceMonth = document.getElementById("reference-month");
+
+  const summary = await loadMonthlyWorkSummary({ rebuildIfMissing: true });
+  const months = Object.keys(summary.months || {}).sort((a, b) => b.localeCompare(a, "ja"));
 
   if (months.length === 0) {
     monthList.innerHTML = '<div class="empty-state">記録がまだありません。</div>';
     return;
   }
 
-  const currentYm = getInitialMonthKey();
-  monthList.innerHTML = months.map(ym => renderMonthCard(ym, sourceCounts, ym === currentYm || ym === months[0])).join("");
+  const initialReferenceYm = getInitialMonthKey();
+  const initialFilter = getFilterState();
+  const defaultReferenceYm = months.includes(initialReferenceYm) ? initialReferenceYm : months[0];
+  const supportedModes = new Set(["latest4", "single", "around1", "around2"]);
+  const initialMode = supportedModes.has(initialFilter.mode) ? initialFilter.mode : "latest4";
+
+  renderMonthOptions(months, defaultReferenceYm);
+
+  const applyFilter = () => {
+    const mode = monthMode.value;
+    const ym = referenceMonth.value || defaultReferenceYm;
+    setFilterState(mode, ym);
+    renderVisibleMonths(months, sourceCounts, mode, ym);
+  };
+
+  monthMode.value = initialMode;
+  referenceMonth.value = defaultReferenceYm;
+
+  monthMode.addEventListener("change", applyFilter);
+  referenceMonth.addEventListener("change", applyFilter);
+
+  renderVisibleMonths(months, summary.months, monthMode.value, referenceMonth.value);
 }
 
 main();

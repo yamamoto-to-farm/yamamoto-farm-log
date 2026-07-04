@@ -6,6 +6,7 @@
 import { loadJSON } from "/common/json.js?v=1";
 import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName, safeFileName } from "/common/utils.js?v=1";
+import { recordMonthlyWorkEntries } from "/common/monthly-work-summary.js?v=1";
 
 const DEBUG = true;
 function debugLog(...args) {
@@ -263,6 +264,14 @@ export async function saveMultiFieldLog({
   // 日誌表示向けの軽量サマリ（all.csv）を同時更新
   if (savedFields.length > 0) {
     await updateGeneralAllCsv(type, { date, fields: savedFields, entry });
+
+    await recordMonthlyWorkEntries({
+      date,
+      sourceKey: type,
+      count: savedFields.length
+    }).catch(e => {
+      console.warn("[saveMultiFieldLog] monthly work summary update failed:", e);
+    });
   }
 
   debugLog("[saveMultiFieldLog] done", {

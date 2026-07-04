@@ -179,7 +179,12 @@ export async function saveDiscard() {
 
   const csvText = Papa.unparse(rows);
 
-  await saveLog("discard-planting", "all", {}, "", csvText);
+  await saveLog({
+    type: "discard-planting",
+    replaceCsv: csvText,
+    fileName: "all.csv",
+    summary: { date: discardDate, sourceKey: "discard-planting", count: 1 }
+  });
 
   updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(plantingRef);

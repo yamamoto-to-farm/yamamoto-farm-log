@@ -4,12 +4,28 @@
 
 /* モード切り替え */
 #modeSwitchArea {
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 12px 0 4px;
 }
 
+.mode-switch-left,
+.mode-switch-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-switch-right {
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 #modeSwitchArea .mode-btn {
-  margin-left: 6px;
+  margin-left: 0;
 }
 
 /* 折りたたみ */

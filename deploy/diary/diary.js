@@ -21,19 +21,15 @@ function renderModeSwitch(mode) {
   const date = document.getElementById("diaryDate").value;
   const monthUrl = `/schedule/monthly-work/index.html?date=${date}`;
 
-  let html = `
+  let rightButtons = `
     <button class="mode-btn ${mode === "view" ? "active" : ""}"
             onclick="location.href='index.html?mode=view&date=${date}'">
       閲覧モード
     </button>
-    <button class="mode-btn"
-            onclick="location.href='${monthUrl}'">
-      月別作業一覧
-    </button>
   `;
 
   if (window.currentRole === "admin") {
-    html += `
+    rightButtons += `
       <button class="mode-btn ${mode === "edit" ? "active" : ""}"
               onclick="location.href='index.html?mode=edit&date=${date}'">
         編集モード
@@ -41,7 +37,16 @@ function renderModeSwitch(mode) {
     `;
   }
 
-  area.innerHTML = html;
+  area.innerHTML = `
+    <div class="mode-switch-left">
+      <button class="mode-btn" onclick="location.href='${monthUrl}'">
+        月別作業一覧
+      </button>
+    </div>
+    <div class="mode-switch-right">
+      ${rightButtons}
+    </div>
+  `;
 }
 
 // ---------------------------------------------------------

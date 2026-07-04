@@ -273,7 +273,12 @@ async function saveHarvestInner() {
   });
 
   // ★ replace 保存
-  await saveLog("harvest", "all", {}, "", csvText);
+  await saveLog({
+    type: "harvest",
+    replaceCsv: csvText,
+    fileName: "all.csv",
+    summary: { date: data.harvestDate, sourceKey: "harvest", count: 1 }
+  });
 
   // ★ summaryUpdate
   updateSaveModal("サマリーを更新しています…");

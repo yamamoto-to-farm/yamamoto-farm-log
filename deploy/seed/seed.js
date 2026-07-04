@@ -194,7 +194,12 @@ async function saveSeedInner() {
     data.memo.replace(/[\r\n,]/g, " ")
   ].join(",");
 
-  await saveLog("seed", dateStr, { seedRef: data.seedRef }, csvLine + "\n");
+  await saveLog({
+    type: "seed",
+    dateStr,
+    csv: csvLine + "\n",
+    summary: { date: data.seedDate, sourceKey: "seed", count: 1 }
+  });
 
   alert("GitHubに保存しました");
 }
