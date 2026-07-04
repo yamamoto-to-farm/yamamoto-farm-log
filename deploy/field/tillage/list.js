@@ -6,7 +6,12 @@ import { safeFieldName } from "/common/utils.js?v=1";
 const state = {
   fields: [],
   rows: [],
-  fieldCards: []
+  fieldCards: [],
+  sortKey: "date",
+  sortDirection: "desc",
+  periodStart: "",
+  periodEnd: "",
+  fieldAreaMap: {}
 };
 
 function normalizeDateText(value) {
@@ -87,6 +92,12 @@ function pickDateText(entry) {
   return entry?.date || entry?.workDate || entry?.timestamp || entry?.createdAt || "";
 }
 
+function toYearMonth(dateText) {
+  const normalized = normalizeDateText(dateText);
+  if (!normalized) return "";
+  return normalized.slice(0, 7);
+}
+
 function formatWorkers(workers) {
   if (Array.isArray(workers)) {
     return workers.map(v => String(v || "").trim()).filter(Boolean).join("、");
@@ -117,9 +128,21 @@ function ageClass(days) {
   return "old";
 }
 
+function groupAgeClass(days) {
+  if (days === null || days === undefined) return "fresh";
+  if (days < 45) return "fresh";
+  if (days < 90) return "warm";
+  return "old";
+}
+
 async function loadFieldList() {
   const data = await loadJSON("/data/fields.json");
   return Array.isArray(data) ? data : [];
+}
+
+async function loadFieldAreas() {
+  const data = await loadJSON("/data/field-detail.json");
+  return data && typeof data === "object" ? data : {};
 }
 
 async function loadTillageLog(fieldName) {
@@ -156,6 +179,7 @@ function normalizeEntry(fieldMeta, entry) {
 
 async function loadRows() {
   const fields = await loadFieldList();
+  const fieldDetail = await loadFieldAreas();
   const loaded = await Promise.all(fields.map(async field => ({
     meta: field,
     log: await loadTillageLog(field.name)
@@ -218,61 +242,114 @@ async function loadRows() {
   state.fields = fields;
   state.rows = rows;
   state.fieldCards = fieldCards;
+  state.fieldAreaMap = Object.fromEntries(fields.map(field => {
+    const sizeA = Number(fieldDetail?.[field.name]?.size || 0);
+    return [field.name, Number.isFinite(sizeA) ? sizeA / 10 : 0];
+  }));
 }
 
-function renderSummary() {
-  const cards = state.fieldCards;
-  const rows = state.rows;
-  const withLogs = cards.filter(card => card.count > 0);
+function filterRowsByPeriod(rows) {
+  const start = state.periodStart ? toDateValue(state.periodStart) : 0;
+  const end = state.periodEnd ? toDateValue(state.periodEnd) : 0;
 
-  document.getElementById("summary-field-count").textContent = String(withLogs.length);
-  document.getElementById("summary-log-count").textContent = String(rows.length);
-
-  const latestCard = withLogs
-    .filter(card => card.latestDate)
-    .sort((a, b) => b.latestDate.localeCompare(a.latestDate))[0];
-
-  const maxGapCard = withLogs
-    .filter(card => card.latestAgeDays !== null)
-    .sort((a, b) => (b.latestAgeDays || 0) - (a.latestAgeDays || 0))[0];
-
-  document.getElementById("summary-latest-date").textContent = latestCard?.latestDate || "-";
-  document.getElementById("summary-latest-field").textContent = latestCard
-    ? `${latestCard.field} / ${formatDaysAgo(latestCard.latestAgeDays)} / ${latestCard.latestWorkType}`
-    : "-";
-
-  document.getElementById("summary-max-gap").textContent = maxGapCard
-    ? `${formatDaysAgo(maxGapCard.latestAgeDays)}`
-    : "-";
-  document.getElementById("summary-max-gap-field").textContent = maxGapCard
-    ? `${maxGapCard.field} / ${maxGapCard.area || "圃場未設定"}`
-    : "-";
+  return rows.filter(row => {
+    if (start && row.dateValue < start) return false;
+    if (end && row.dateValue > end) return false;
+    return true;
+  });
 }
 
-function renderFieldGrid() {
-  const grid = document.getElementById("field-grid");
-  if (!grid) return;
+function renderPeriodSummary() {
+  const filteredRows = filterRowsByPeriod(state.rows);
+  const fieldSet = new Set(filteredRows.map(row => row.field));
 
-  const cards = [...state.fieldCards].sort((a, b) => {
-    if (a.count === 0 && b.count > 0) return 1;
-    if (a.count > 0 && b.count === 0) return -1;
-    if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
-    return a.field.localeCompare(b.field, "ja");
+  const totalArea = filteredRows.reduce((sum, row) => sum + (state.fieldAreaMap[row.field] || 0), 0);
+
+  const areaTotalEl = document.getElementById("period-area-total");
+  const areaCountEl = document.getElementById("period-area-count");
+  const fieldCountEl = document.getElementById("period-field-count");
+
+  if (areaTotalEl) areaTotalEl.textContent = `${totalArea.toFixed(2)}反`;
+  if (areaCountEl) areaCountEl.textContent = `${filteredRows.length}件の耕うん記録`;
+  if (fieldCountEl) fieldCountEl.textContent = String(fieldSet.size);
+}
+
+function renderAreaList() {
+  const areaList = document.getElementById("area-list");
+  if (!areaList) return;
+
+  const grouped = new Map();
+  for (const card of state.fieldCards) {
+    const areaName = card.area || "その他";
+    if (!grouped.has(areaName)) grouped.set(areaName, []);
+    grouped.get(areaName).push(card);
+  }
+
+  const areaEntries = [...grouped.entries()].map(([areaName, cards]) => {
+    const visibleCards = [...cards].filter(card => card.count > 0);
+    const latestAgeDays = visibleCards.length > 0
+      ? Math.max(...visibleCards.map(card => card.latestAgeDays ?? 0))
+      : null;
+    const latestDate = visibleCards.length > 0
+      ? visibleCards
+          .filter(card => card.latestDate)
+          .sort((a, b) => b.latestDate.localeCompare(a.latestDate))[0]?.latestDate || ""
+      : "";
+    const groupClass = groupAgeClass(latestAgeDays);
+
+    return {
+      areaName,
+      cards: [...cards].sort((a, b) => {
+        if (a.count === 0 && b.count > 0) return 1;
+        if (a.count > 0 && b.count === 0) return -1;
+        if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
+        return a.field.localeCompare(b.field, "ja");
+      }),
+      groupClass,
+      latestAgeDays,
+      latestDate,
+      count: cards.reduce((sum, card) => sum + (card.count || 0), 0)
+    };
   });
 
-  grid.innerHTML = cards.map(card => {
-    const age = card.latestAgeDays === null ? "fresh" : ageClass(card.latestAgeDays);
-    const cardClass = card.hasRecent ? "has-recent" : (card.count === 0 ? "" : "stale");
-    const detailLink = `/fields/index.html?field=${encodeURIComponent(card.field)}`;
+  areaEntries.sort((a, b) => {
+    const aScore = a.latestAgeDays ?? -1;
+    const bScore = b.latestAgeDays ?? -1;
+    if (aScore !== bScore) return bScore - aScore;
+    return a.areaName.localeCompare(b.areaName, "ja");
+  });
 
-    return `
-      <article class="field-card ${cardClass}">
+  areaList.innerHTML = areaEntries.map(area => `
+    <details class="area-group ${area.groupClass}" open>
+      <summary class="area-title">
+        <div class="area-title-main">
+          <h3>${escapeHtml(area.areaName)}</h3>
+          <span class="area-badge ${area.groupClass}">${area.latestAgeDays === null ? "未記録" : `最終耕うんから ${formatDaysAgo(area.latestAgeDays)}`}</span>
+          <span class="pill pill-count">${area.count}件</span>
+        </div>
+        <div class="area-sub">${escapeHtml(area.latestDate || "未記録")}</div>
+      </summary>
+
+      <div class="field-list">
+        ${area.cards.map(card => renderFieldCard(card)).join("")}
+      </div>
+    </details>
+  `).join("");
+}
+
+function renderFieldCard(card) {
+  const age = card.latestAgeDays === null ? "fresh" : ageClass(card.latestAgeDays);
+  const detailLink = `/fields/index.html?field=${encodeURIComponent(card.field)}`;
+
+  return `
+    <article class="field-card ${age}">
+      <div class="field-main">
         <div class="field-name">
           <h3><a href="${detailLink}">${escapeHtml(card.field)}</a></h3>
-          <span class="area-text">${escapeHtml(card.area || "圃場")}</span>
+          <span class="field-area ${age}">${escapeHtml(card.area || "圃場")}</span>
         </div>
         <div class="field-meta">
-          <div class="meta-row">
+          <div class="field-meta-line">
             <span class="pill pill-date">最終耕うん: ${escapeHtml(card.latestDate || "未記録")}</span>
             <span class="pill pill-count">件数: ${card.count}</span>
           </div>
@@ -280,35 +357,31 @@ function renderFieldGrid() {
           <div>直近: ${escapeHtml(card.latestWorkType)}</div>
           <div>前回との差: ${card.latestGapDays === null ? "初回" : `${card.latestGapLabel}`}</div>
         </div>
-      </article>
-    `;
-  }).join("");
+      </div>
+      <a class="secondary-btn field-link" href="${detailLink}">圃場詳細</a>
+    </article>
+  `;
 }
 
 function renderTable() {
   const body = document.getElementById("log-body");
   if (!body) return;
 
-  const query = String(document.getElementById("search-input")?.value || "").trim().toLowerCase();
-  const sort = String(document.getElementById("sort-select")?.value || "recent");
+  let rows = filterRowsByPeriod([...state.rows]);
 
-  let rows = [...state.rows];
-
-  if (query) {
-    rows = rows.filter(row => {
-      const haystack = [row.field, row.area, row.workType, row.machine, row.workers, row.notes]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
+  const direction = state.sortDirection === "asc" ? 1 : -1;
+  if (state.sortKey === "gap") {
+    rows.sort((a, b) => {
+      const av = a.gapDays ?? -1;
+      const bv = b.gapDays ?? -1;
+      if (av !== bv) return (av - bv) * direction;
+      return direction * b.date.localeCompare(a.date);
     });
-  }
-
-  if (sort === "field") {
-    rows.sort((a, b) => a.field.localeCompare(b.field, "ja") || b.date.localeCompare(a.date));
-  } else if (sort === "gap") {
-    rows.sort((a, b) => (b.gapDays ?? -1) - (a.gapDays ?? -1) || b.date.localeCompare(a.date));
   } else {
-    rows.sort((a, b) => b.date.localeCompare(a.date));
+    rows.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date) * direction;
+      return direction * b.field.localeCompare(a.field, "ja");
+    });
   }
 
   if (rows.length === 0) {
@@ -335,6 +408,74 @@ function renderTable() {
   `).join("");
 }
 
+function updateSortHeaderLabels() {
+  const dateHeader = document.getElementById("date-sort-header");
+  const gapHeader = document.getElementById("gap-sort-header");
+  const dateLabel = state.sortKey === "date"
+    ? `日付 ${state.sortDirection === "asc" ? "▲" : "▼"}`
+    : "日付";
+  const gapLabel = state.sortKey === "gap"
+    ? `前回から ${state.sortDirection === "asc" ? "▲" : "▼"}`
+    : "前回から";
+
+  if (dateHeader) dateHeader.textContent = dateLabel;
+  if (gapHeader) gapHeader.textContent = gapLabel;
+}
+
+function setSort(key) {
+  if (state.sortKey === key) {
+    state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+  } else {
+    state.sortKey = key;
+    state.sortDirection = "desc";
+  }
+
+  const select = document.getElementById("sort-select");
+  if (select && (key === "date" || key === "gap")) {
+    select.value = "recent";
+  }
+
+  updateSortHeaderLabels();
+  renderTable();
+}
+
+function bindPeriodControls() {
+  const startInput = document.getElementById("period-start");
+  const endInput = document.getElementById("period-end");
+  const resetBtn = document.getElementById("period-reset");
+
+  if (startInput) {
+    startInput.value = state.periodStart;
+    startInput.addEventListener("change", () => {
+      state.periodStart = startInput.value || "";
+      renderPeriodSummary();
+      renderAreaList();
+      renderTable();
+    });
+  }
+
+  if (endInput) {
+    endInput.value = state.periodEnd;
+    endInput.addEventListener("change", () => {
+      state.periodEnd = endInput.value || "";
+      renderPeriodSummary();
+      renderAreaList();
+      renderTable();
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      state.periodStart = "";
+      state.periodEnd = "";
+      if (startInput) startInput.value = "";
+      if (endInput) endInput.value = "";
+      renderPeriodSummary();
+      renderAreaList();
+      renderTable();
+    });
+  }
+}
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -350,12 +491,14 @@ async function main() {
   document.getElementById("page-area").style.display = "block";
 
   await loadRows();
-  renderSummary();
-  renderFieldGrid();
+  bindPeriodControls();
+  renderPeriodSummary();
+  renderAreaList();
+  updateSortHeaderLabels();
   renderTable();
 
-  document.getElementById("search-input").addEventListener("input", renderTable);
-  document.getElementById("sort-select").addEventListener("change", renderTable);
+  document.getElementById("date-sort-header")?.addEventListener("click", () => setSort("date"));
+  document.getElementById("gap-sort-header")?.addEventListener("click", () => setSort("gap"));
 }
 
 main();

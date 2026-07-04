@@ -17,8 +17,7 @@
     }
 
     .hero-card,
-    .toolbar-card,
-    .summary-card,
+    .action-card,
     .field-card,
     .log-card {
       background: #fff;
@@ -43,45 +42,9 @@
       line-height: 1.7;
     }
 
-    .toolbar-card {
+    .action-card {
       padding: 14px;
-      margin-bottom: 16px;
-    }
-
-    .toolbar-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      align-items: end;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .summary-card {
-      padding: 14px;
-    }
-
-    .summary-label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 6px;
-    }
-
-    .summary-value {
-      font-size: 28px;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .summary-sub {
-      font-size: 13px;
-      color: #4b5563;
+      margin: 16px 0;
     }
 
     .content-grid {
@@ -89,31 +52,168 @@
       gap: 16px;
     }
 
-    .field-grid {
+    .area-list {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 12px;
-      margin-bottom: 10px;
+      gap: 14px;
     }
+
+    .area-group {
+      padding: 14px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .area-group.fresh { border-left: 6px solid #2f855a; }
+    .area-group.warm { border-left: 6px solid #c05621; }
+    .area-group.old { border-left: 6px solid #b91c1c; }
+
+    .area-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+
+    .area-title::-webkit-details-marker {
+      display: none;
+    }
+
+    .area-title-main {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .area-title h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .area-group.fresh .area-title h3,
+    .field-card.fresh .field-name h3 a {
+      color: #166534;
+    }
+
+    .area-group.warm .area-title h3,
+    .field-card.warm .field-name h3 a {
+      color: #9a3412;
+    }
+
+    .area-group.old .area-title h3,
+    .field-card.old .field-name h3 a {
+      color: #991b1b;
+    }
+
+    .field-name h3 a {
+      text-decoration: none;
+    }
+
+    .field-name h3 a:hover {
+      text-decoration: underline;
+    }
+
+    .area-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .area-badge.fresh { background: #ecfdf5; color: #166534; }
+    .area-badge.warm { background: #fff7ed; color: #9a3412; }
+    .area-badge.old { background: #fef2f2; color: #991b1b; }
+
+    .area-sub {
+      color: #6b7280;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .field-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+      .period-card {
+        margin: 16px 0;
+        padding: 14px;
+      }
+    
+      .period-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        align-items: end;
+      }
+    
+      .period-summary {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+      }
+    
+      .period-summary-card {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+      }
+    
+      .period-summary-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 6px;
+      }
+    
+      .period-summary-value {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+      }
+    
+      .period-summary-sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #6b7280;
+      }
 
     .field-card {
-      padding: 14px;
-      border-left: 5px solid #d1d5db;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #fbfbfa;
+      border-left: 6px solid #d1d5db;
     }
 
-    .field-card.has-recent {
-      border-left-color: #2f855a;
-    }
+    .field-card.fresh { border-left-color: #2f855a; }
+    .field-card.warm { border-left-color: #c05621; }
+    .field-card.old { border-left-color: #b91c1c; }
 
-    .field-card.stale {
-      border-left-color: #b45309;
+    .field-main {
+      min-width: 240px;
+      flex: 1 1 340px;
     }
 
     .field-name {
       display: flex;
       align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 8px;
     }
 
@@ -121,6 +221,19 @@
       margin: 0;
       font-size: 18px;
     }
+
+    .field-area {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field-area.fresh { background: #ecfdf5; color: #166534; }
+    .field-area.warm { background: #fff7ed; color: #9a3412; }
+    .field-area.old { background: #fef2f2; color: #991b1b; }
 
     .area-text {
       color: #6b7280;
@@ -133,6 +246,13 @@
       gap: 8px;
       font-size: 13px;
       color: #374151;
+    }
+
+    .field-meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
     }
 
     .meta-row {
@@ -169,8 +289,20 @@
     .age-chip.warm { background: #fff7ed; color: #9a3412; }
     .age-chip.old { background: #fef2f2; color: #991b1b; }
 
+    .field-link {
+      align-self: center;
+      white-space: nowrap;
+    }
+
     .table-wrap {
       overflow-x: auto;
+    }
+
+    .log-scroll {
+      max-height: 66vh;
+      overflow: auto;
+      border-top: 1px solid #e5e7eb;
+      border-radius: 0 0 16px 16px;
     }
 
     .log-table {
@@ -192,6 +324,28 @@
       background: #f9fafb;
       font-weight: 700;
       white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .sort-header-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      font-weight: 700;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .sort-header-btn:hover {
+      text-decoration: underline;
     }
 
     .badge {
@@ -232,56 +386,44 @@
         <h1 class="hero-title">土づくり・耕起一覧</h1>
         <p class="hero-copy">いつ、どの圃場を耕うんしたかを時系列で確認できます。圃場ごとの最終耕うん日と、前回から何日空いたかを並べて見られるようにしています。</p>
       </div>
-
-      <div class="toolbar-card">
-        <div class="toolbar-grid">
-          <div class="form-field">
-            <label for="search-input">圃場・作業内容で絞り込み</label>
-            <input id="search-input" class="form-input" placeholder="例：三角畑、ロータリー">
+      
+        <div class="card period-card">
+          <div class="period-grid">
+            <div class="form-field">
+              <label for="period-start">開始日</label>
+              <input id="period-start" type="date" class="form-input">
+            </div>
+            <div class="form-field">
+              <label for="period-end">終了日</label>
+              <input id="period-end" type="date" class="form-input">
+            </div>
+            <div class="form-field">
+              <button id="period-reset" class="secondary-btn" type="button">期間をクリア</button>
+            </div>
           </div>
-
-          <div class="form-field">
-            <label for="sort-select">並び順</label>
-            <select id="sort-select" class="form-input">
-              <option value="recent">新しい順</option>
-              <option value="field">圃場名順</option>
-              <option value="gap">前回からの空きが長い順</option>
-            </select>
+        
+          <div class="period-summary">
+            <div class="period-summary-card">
+              <div class="period-summary-label">期間内の延べ耕うん面積</div>
+              <div class="period-summary-value" id="period-area-total">0.00反</div>
+              <div class="period-summary-sub" id="period-area-count">0件の耕うん記録</div>
+            </div>
+            <div class="period-summary-card">
+              <div class="period-summary-label">対象圃場</div>
+              <div class="period-summary-value" id="period-field-count">0</div>
+              <div class="period-summary-sub">期間内に1回以上耕うんした圃場数</div>
+            </div>
           </div>
-
-          <div class="form-field">
-            <a href="/field/tillage/index.html" class="secondary-btn">耕起ログを入力</a>
-          </div>
         </div>
-      </div>
-
-      <div class="summary-grid">
-        <div class="summary-card">
-          <div class="summary-label">対象圃場</div>
-          <div class="summary-value" id="summary-field-count">0</div>
-          <div class="summary-sub">耕起ログのある圃場数</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">記録件数</div>
-          <div class="summary-value" id="summary-log-count">0</div>
-          <div class="summary-sub">全圃場の耕起記録合計</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">最新の耕うん</div>
-          <div class="summary-value" id="summary-latest-date">-</div>
-          <div class="summary-sub" id="summary-latest-field">-</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">最大の空き</div>
-          <div class="summary-value" id="summary-max-gap">-</div>
-          <div class="summary-sub" id="summary-max-gap-field">-</div>
-        </div>
-      </div>
 
       <div class="content-grid">
         <section>
-          <h2 class="page-title" style="font-size:20px; margin-bottom:10px;">圃場ごとの最終耕うん</h2>
-          <div id="field-grid" class="field-grid"></div>
+          <h2 class="page-title" style="font-size:20px; margin-bottom:10px;">エリアごとの最終耕うん</h2>
+          <div id="area-list" class="area-list"></div>
+        </section>
+
+        <section class="action-card">
+          <a href="/field/tillage/index.html" class="secondary-btn">耕起ログを入力</a>
         </section>
 
         <section class="log-card">
@@ -289,14 +431,14 @@
             <h2 class="page-title" style="font-size:20px; margin-bottom:6px;">記録一覧</h2>
             <p style="margin:0 0 10px; color:#6b7280;">前回の耕うんから何日空いたかを見ながら並べています。</p>
           </div>
-          <div class="table-wrap">
+          <div class="table-wrap log-scroll">
             <table class="log-table">
               <thead>
                 <tr>
-                  <th>日付</th>
+                  <th><button id="date-sort-header" class="sort-header-btn" type="button">日付</button></th>
                   <th>圃場</th>
                   <th>区分</th>
-                  <th>前回から</th>
+                  <th><button id="gap-sort-header" class="sort-header-btn" type="button">前回から</button></th>
                   <th>深さ</th>
                   <th>速度</th>
                   <th>機械</th>
