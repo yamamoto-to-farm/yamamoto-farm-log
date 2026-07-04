@@ -321,11 +321,12 @@ function getVisibleMonths(allMonths, mode, referenceYm) {
 
   if (!baseYm) return [];
 
-  if (mode === "single") {
-    return [baseYm];
+  if (mode === "sameMonth") {
+    const monthNo = baseYm.slice(5, 7);
+    return allMonths.filter(ym => ym.slice(5, 7) === monthNo);
   }
 
-  const radius = mode === "around2" ? 2 : 1;
+  const radius = 2;
   const months = [];
 
   for (let offset = -radius; offset <= radius; offset += 1) {
@@ -355,9 +356,9 @@ function renderVisibleMonths(months, monthDataMap, mode, referenceYm) {
   if (filterNote) {
     const label = mode === "latest4"
       ? "直近4か月を表示しています。"
-      : mode === "single"
-        ? `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} を1か月だけ表示しています。`
-        : `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} の前後${mode === "around2" ? 2 : 1}か月を表示しています。`;
+      : mode === "sameMonth"
+        ? `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} と同じ月のカードを年をまたいで表示しています。`
+        : `${referenceYm ? formatMonthLabel(referenceYm) : "指定月"} の前後2か月を表示しています。`;
     filterNote.textContent = `${label} 月数を絞ると、表示カードとカレンダー描画が軽くなります。`;
   }
 
@@ -459,7 +460,7 @@ async function main() {
   const initialReferenceYm = getInitialMonthKey();
   const initialFilter = getFilterState();
   const defaultReferenceYm = months.includes(initialReferenceYm) ? initialReferenceYm : months[0];
-  const supportedModes = new Set(["latest4", "single", "around1", "around2"]);
+  const supportedModes = new Set(["latest4", "around2", "sameMonth"]);
   const initialMode = supportedModes.has(initialFilter.mode) ? initialFilter.mode : "latest4";
 
   renderMonthOptions(months, defaultReferenceYm);
@@ -468,7 +469,7 @@ async function main() {
     const mode = monthMode.value;
     const ym = referenceMonth.value || defaultReferenceYm;
     setFilterState(mode, ym);
-    renderVisibleMonths(months, sourceCounts, mode, ym);
+    renderVisibleMonths(months, summary.months, mode, ym);
   };
 
   monthMode.value = initialMode;
