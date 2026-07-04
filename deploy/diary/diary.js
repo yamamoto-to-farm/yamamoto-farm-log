@@ -19,11 +19,16 @@ function renderModeSwitch(mode) {
   if (!area) return;
 
   const date = document.getElementById("diaryDate").value;
+  const monthUrl = `/schedule/monthly-work/index.html?date=${date}`;
 
   let html = `
     <button class="mode-btn ${mode === "view" ? "active" : ""}"
             onclick="location.href='index.html?mode=view&date=${date}'">
       閲覧モード
+    </button>
+    <button class="mode-btn"
+            onclick="location.href='${monthUrl}'">
+      月別作業一覧
     </button>
   `;
 

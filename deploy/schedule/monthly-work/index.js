@@ -10,7 +10,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/seed/all.csv",
     dateFields: ["seedDate", "date", "workDate"],
-    className: "pill-seed"
+    className: "tone-seed"
   },
   {
     key: "nursery",
@@ -18,70 +18,70 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/nursery/all.csv",
     dateFields: ["date", "nurseryDate", "workDate", "createdAt"],
-    className: "pill-seed"
+    className: "tone-nursery"
   },
   {
     key: "tillage",
     label: "耕起",
     kind: "json",
     type: "tillage",
-    className: "pill-field"
+    className: "tone-tillage"
   },
   {
     key: "weeding",
     label: "除草・草刈り",
     kind: "json",
     type: "weeding",
-    className: "pill-field"
+    className: "tone-weeding"
   },
   {
     key: "field-maintenance",
     label: "圃場整備",
     kind: "json",
     type: "field-maintenance",
-    className: "pill-field"
+    className: "tone-maintenance"
   },
   {
     key: "pesticide",
     label: "防除",
     kind: "json",
     type: "pesticide",
-    className: "pill-cultivation"
+    className: "tone-pesticide"
   },
   {
     key: "fertilizer",
     label: "施肥",
     kind: "json",
     type: "fertilizer",
-    className: "pill-cultivation"
+    className: "tone-fertilizer"
   },
   {
     key: "watering",
     label: "潅水",
     kind: "json",
     type: "watering",
-    className: "pill-cultivation"
+    className: "tone-watering"
   },
   {
     key: "hand-weeding",
     label: "手作業除草",
     kind: "json",
     type: "hand-weeding",
-    className: "pill-cultivation"
+    className: "tone-hand-weeding"
   },
   {
     key: "intertill",
     label: "中耕",
     kind: "json",
     type: "intertill",
-    className: "pill-cultivation"
+    className: "tone-intertill"
   },
   {
     key: "bedmaking",
     label: "畝立て",
     kind: "json",
     type: "bedmaking",
-    className: "pill-cultivation"
+    className: "tone-bedmaking"
   },
   {
     key: "planting",
@@ -89,7 +89,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/planting/all.csv",
     dateFields: ["plantDate", "date", "workDate"],
-    className: "pill-planting"
+    className: "tone-planting"
   },
   {
     key: "harvest",
@@ -97,7 +97,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/harvest/all.csv",
     dateFields: ["harvestDate", "date", "workDate"],
-    className: "pill-harvest"
+    className: "tone-harvest"
   },
   {
     key: "shipping",
@@ -105,7 +105,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/weight/all.csv",
     dateFields: ["shippingDate", "date", "workDate"],
-    className: "pill-harvest"
+    className: "tone-shipping"
   },
   {
     key: "discard-planting",
@@ -113,7 +113,7 @@ const SOURCES = [
     kind: "csv",
     csv: "/logs/discard-planting/all.csv",
     dateFields: ["discardDate", "date", "workDate"],
-    className: "pill-planting"
+    className: "tone-discard"
   }
 ]
 
@@ -199,6 +199,18 @@ function getCurrentMonthKey() {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
+}
+
+function getInitialMonthKey() {
+  const params = new URLSearchParams(location.search);
+  const ym = params.get("ym");
+  if (ym && /^\d{4}-\d{2}$/.test(ym)) return ym;
+
+  const date = params.get("date");
+  const dateKey = toDateKey(date);
+  if (dateKey) return dateKey.slice(0, 7);
+
+  return getCurrentMonthKey();
 }
 
 async function loadJsonTypeRows(type) {
@@ -378,7 +390,7 @@ async function main() {
     return;
   }
 
-  const currentYm = getCurrentMonthKey();
+  const currentYm = getInitialMonthKey();
   monthList.innerHTML = months.map(ym => renderMonthCard(ym, sourceCounts, ym === currentYm || ym === months[0])).join("");
 }
 

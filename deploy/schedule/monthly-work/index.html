@@ -41,28 +41,39 @@
       line-height: 1.7;
     }
 
-    .quick-links {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .link-card {
-      padding: 14px;
-      margin-bottom: 18px;
-    }
-
-    .link-card h2,
     .month-card h3 {
       margin: 0 0 10px;
       font-size: 16px;
     }
 
-    .link-row {
+    .shortcut-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .shortcut-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #1f2937;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .shortcut-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      border-color: #94a3b8;
     }
 
     .month-list {
@@ -196,7 +207,6 @@
       height: 10px;
       border-radius: 999px;
       display: inline-block;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75) inset;
     }
 
     .pill {
@@ -210,13 +220,37 @@
       white-space: nowrap;
     }
 
-    .pill-seed { background: #ecfdf5; border-color: #bbf7d0; color: #166534; }
-    .pill-field { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
-    .pill-cultivation { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
-    .pill-planting { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
-    .pill-harvest { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
-    .pill-shipping { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
-    .pill-discard { background: #f5f3ff; border-color: #ddd6fe; color: #6d28d9; }
+    .tone-seed { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .tone-nursery { background: #e0f2fe; border-color: #7dd3fc; color: #075985; }
+    .tone-tillage { background: #e0e7ff; border-color: #a5b4fc; color: #3730a3; }
+    .tone-weeding { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
+    .tone-maintenance { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
+    .tone-pesticide { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+    .tone-fertilizer { background: #ffedd5; border-color: #fdba74; color: #c2410c; }
+    .tone-watering { background: #cffafe; border-color: #67e8f9; color: #0e7490; }
+    .tone-hand-weeding { background: #fce7f3; border-color: #f9a8d4; color: #be185d; }
+    .tone-intertill { background: #ccfbf1; border-color: #5eead4; color: #0f766e; }
+    .tone-bedmaking { background: #fef9c3; border-color: #fde047; color: #a16207; }
+    .tone-planting { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+    .tone-harvest { background: #fef3c7; border-color: #fbbf24; color: #b45309; }
+    .tone-shipping { background: #ffe4e6; border-color: #fda4af; color: #be123c; }
+    .tone-discard { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+
+    .day-dot.tone-seed { background: #16a34a; }
+    .day-dot.tone-nursery { background: #0284c7; }
+    .day-dot.tone-tillage { background: #4f46e5; }
+    .day-dot.tone-weeding { background: #9333ea; }
+    .day-dot.tone-maintenance { background: #475569; }
+    .day-dot.tone-pesticide { background: #ef4444; }
+    .day-dot.tone-fertilizer { background: #f97316; }
+    .day-dot.tone-watering { background: #06b6d4; }
+    .day-dot.tone-hand-weeding { background: #ec4899; }
+    .day-dot.tone-intertill { background: #14b8a6; }
+    .day-dot.tone-bedmaking { background: #eab308; }
+    .day-dot.tone-planting { background: #3b82f6; }
+    .day-dot.tone-harvest { background: #f59e0b; }
+    .day-dot.tone-shipping { background: #f43f5e; }
+    .day-dot.tone-discard { background: #8b5cf6; }
 
     .empty-state {
       padding: 20px;
@@ -247,16 +281,13 @@
         <p>月ごとの作業量を俯瞰しながら、必要な一覧へすぐ移動できます。播種・育苗から耕起、防除、施肥、定植、収穫・出荷まで、すべての作業ログを1画面で確認する入口です。</p>
       </div>
 
-      <div class="link-card">
-        <h2>すぐ開く一覧</h2>
-        <div class="link-row">
-          <a class="secondary-btn" href="/diary/index.html">作業日誌</a>
-          <a class="secondary-btn" href="/list/list.html">播種・定植一覧</a>
-          <a class="secondary-btn" href="/fertilizer/list/list.html">施肥記録一覧</a>
-          <a class="secondary-btn" href="/pesticide/list/list.html">防除記録一覧</a>
-          <a class="secondary-btn" href="/performance/harvest-kpi.html">収穫KPI</a>
-          <a class="secondary-btn" href="/shipping/index.html">出荷ログ</a>
-        </div>
+      <div class="shortcut-row" aria-label="すぐ開く一覧">
+        <a class="shortcut-pill" href="/diary/index.html">作業日誌</a>
+        <a class="shortcut-pill" href="/list/list.html">播種・定植一覧</a>
+        <a class="shortcut-pill" href="/fertilizer/list/list.html">施肥記録一覧</a>
+        <a class="shortcut-pill" href="/pesticide/list/list.html">防除記録一覧</a>
+        <a class="shortcut-pill" href="/performance/harvest-kpi.html">収穫KPI</a>
+        <a class="shortcut-pill" href="/shipping/index.html">出荷ログ</a>
       </div>
 
       <div id="month-list" class="month-list"></div>
