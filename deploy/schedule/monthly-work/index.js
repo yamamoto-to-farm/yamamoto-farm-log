@@ -101,14 +101,6 @@ const SOURCES = [
     className: "tone-harvest"
   },
   {
-    key: "shipping",
-    label: "出荷",
-    kind: "csv",
-    csv: "/logs/weight/all.csv",
-    dateFields: ["shippingDate", "date", "workDate"],
-    className: "tone-harvest"
-  },
-  {
     key: "discard-planting",
     label: "廃棄定植",
     kind: "csv",

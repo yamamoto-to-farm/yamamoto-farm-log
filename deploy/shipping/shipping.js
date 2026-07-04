@@ -346,8 +346,7 @@ async function saveShipping() {
   await saveLog({
     type: "weight",
     replaceCsv: csvText,
-    fileName: "all.csv",
-    summary: { date: shippingDate, sourceKey: "shipping", count: targets.length }
+    fileName: "all.csv"
   });
 
   // ★ サマリー更新
