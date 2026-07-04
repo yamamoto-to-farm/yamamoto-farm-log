@@ -19,7 +19,7 @@
     <div id="edit-container"></div>
 
     <!-- 戻るボタン -->
-    <button id="edit-json-back-btn" class="primary-btn" onclick="location.href='/admin/index.html'">
+    <button id="edit-json-back-btn" class="primary-btn" type="button">
       管理ページに戻る
     </button>
   </div>
@@ -58,13 +58,30 @@
       renderHeader({ adminPage: true });
       document.getElementById("page-area").style.display = "block";
 
-      const params = new URLSearchParams(location.search);
-      const returnPath = params.get("return") || "";
       const backBtn = document.getElementById("edit-json-back-btn");
-      if (backBtn && returnPath.startsWith("/")) {
-        backBtn.textContent = "元の記録ページに戻る";
+      if (backBtn) {
+        const params = new URLSearchParams(location.search);
+        const returnPath = params.get("return") || "";
+
+        let backUrl = "/admin/index.html";
+        if (returnPath.startsWith("/")) {
+          backUrl = returnPath;
+        } else {
+          const ref = document.referrer || "";
+          if (ref.startsWith(location.origin)) {
+            const refPath = ref.slice(location.origin.length);
+            if (refPath.startsWith("/")) {
+              backUrl = refPath;
+            }
+          }
+        }
+
+        backBtn.textContent = backUrl.includes("/admin/index.html")
+          ? "管理ページに戻る"
+          : "戻る";
+
         backBtn.onclick = () => {
-          location.href = returnPath;
+          location.href = backUrl;
         };
       }
 
