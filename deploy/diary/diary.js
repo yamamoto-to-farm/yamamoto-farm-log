@@ -15,11 +15,11 @@ import { loadJSON } from "/common/json.js";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
-const DEFAULT_SEARCH_DAYS = 90;
-const MIN_SEARCH_DAYS = 7;
-const MAX_SEARCH_DAYS = 365;
+const DIARY_BLOCK_DAYS = 90;
+const MAX_DIARY_SEARCH_DAYS = 720;
 
 let diaryIndexDatesCache = null;
+let activeSearchState = null;
 
 function shiftDateByDays(dateStr, diffDays) {
   if (!dateStr) return "";
@@ -35,13 +35,13 @@ function shiftDateByDays(dateStr, diffDays) {
 // ---------------------------------------------------------
 // モード切り替えボタン描画（★ 日付を URL に保持）
 // ---------------------------------------------------------
-function renderModeSwitch(mode, keyword = "", searchDays = DEFAULT_SEARCH_DAYS) {
+function renderModeSwitch(mode, keyword = "") {
   const area = document.getElementById("modeSwitchArea");
   if (!area) return;
 
   const date = document.getElementById("diaryDate").value;
-  const modeUrlView = buildDiaryUrl("view", date, keyword, searchDays);
-  const modeUrlEdit = buildDiaryUrl("edit", date, keyword, searchDays);
+  const modeUrlView = buildDiaryUrl("view", date, keyword);
+  const modeUrlEdit = buildDiaryUrl("edit", date, keyword);
   const ym = date ? date.slice(0, 7) : "";
   const monthUrl = ym
     ? `/schedule/monthly-work/index.html?mode=around2&ym=${ym}`
@@ -70,11 +70,6 @@ function renderModeSwitch(mode, keyword = "", searchDays = DEFAULT_SEARCH_DAYS) 
       </button>
       <div class="diary-search-bar">
         <input id="diarySearchInput" class="form-input diary-search-input" type="search" placeholder="作業者・圃場・作業種別で検索" value="${escapeAttr(keyword)}">
-        <label class="diary-search-days-label" for="diarySearchDays">前</label>
-        <select id="diarySearchDays" class="form-input diary-search-days-input">
-          ${[30, 60, 90, 180, 365].map(v => `<option value="${v}" ${Number(searchDays) === v ? "selected" : ""}>${v}</option>`).join("")}
-        </select>
-        <span class="diary-search-days-suffix">日</span>
         <button id="diarySearchBtn" type="button" class="secondary-btn mode-btn">検索</button>
         <button id="diarySearchClearBtn" type="button" class="secondary-btn mode-btn">クリア</button>
       </div>
@@ -85,19 +80,12 @@ function renderModeSwitch(mode, keyword = "", searchDays = DEFAULT_SEARCH_DAYS) 
   `;
 }
 
-function buildDiaryUrl(mode, date, keyword = "", searchDays = DEFAULT_SEARCH_DAYS) {
+function buildDiaryUrl(mode, date, keyword = "") {
   const params = new URLSearchParams();
   params.set("mode", mode);
   if (date) params.set("date", date);
   if (keyword) params.set("q", keyword);
-  params.set("days", String(normalizeSearchDays(searchDays)));
   return `index.html?${params.toString()}`;
-}
-
-function normalizeSearchDays(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return DEFAULT_SEARCH_DAYS;
-  return Math.max(MIN_SEARCH_DAYS, Math.min(MAX_SEARCH_DAYS, Math.floor(n)));
 }
 
 function normalizeToken(value) {
@@ -141,6 +129,16 @@ async function loadDiaryIndexDates() {
   }
 
   return diaryIndexDatesCache;
+}
+
+async function canLoadMoreDiaryRange(anchorDate, searchedDays) {
+  const indexDates = await loadDiaryIndexDates();
+  if (indexDates.length) {
+    const currentStart = buildRangeStartDate(anchorDate, searchedDays);
+    return indexDates.some(date => date < currentStart);
+  }
+
+  return searchedDays < MAX_DIARY_SEARCH_DAYS;
 }
 
 function buildDiarySearchText(diary) {
@@ -193,7 +191,7 @@ function buildDiarySnippet(diary) {
   return joined;
 }
 
-async function searchDiaryJsonByKeyword(keyword, anchorDate, searchDays) {
+async function searchDiaryJsonByKeywordRange(keyword, anchorDate, startOffsetDays, spanDays) {
   const query = normalizeToken(keyword);
   if (!query || !anchorDate) {
     return {
@@ -204,11 +202,12 @@ async function searchDiaryJsonByKeyword(keyword, anchorDate, searchDays) {
     };
   }
 
-  const rangeStart = buildRangeStartDate(anchorDate, searchDays);
+  const rangeEnd = shiftDateByDays(anchorDate, -Math.max(0, startOffsetDays));
+  const rangeStart = buildRangeStartDate(rangeEnd, spanDays);
   let candidates = await loadDiaryIndexDates();
 
   if (!candidates.length) {
-    candidates = Array.from({ length: searchDays }, (_, i) => shiftDateByDays(anchorDate, -i));
+    candidates = Array.from({ length: spanDays }, (_, i) => shiftDateByDays(rangeEnd, -i));
   }
 
   const targetDates = candidates
@@ -240,15 +239,18 @@ async function searchDiaryJsonByKeyword(keyword, anchorDate, searchDays) {
     total: hits.length,
     hits,
     rangeStart,
-    rangeEnd: anchorDate
+    rangeEnd
   };
 }
 
-async function searchAllSources(keyword, anchorDate, searchDays) {
+async function searchAllSources(keyword, anchorDate, searchedDays) {
+  const diaryStartOffset = Math.max(0, searchedDays - DIARY_BLOCK_DAYS);
   const [logResult, diaryResult] = await Promise.all([
     searchLogsByKeyword(keyword, { limit: SEARCH_LIMIT }),
-    searchDiaryJsonByKeyword(keyword, anchorDate, searchDays)
+    searchDiaryJsonByKeywordRange(keyword, anchorDate, diaryStartOffset, DIARY_BLOCK_DAYS)
   ]);
+
+  const hasMoreDiaryRange = await canLoadMoreDiaryRange(anchorDate, searchedDays);
 
   const combinedHits = [...logResult.hits, ...diaryResult.hits]
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
@@ -260,10 +262,21 @@ async function searchAllSources(keyword, anchorDate, searchDays) {
     diaryTotal: diaryResult.total,
     hits: combinedHits,
     anchorDate,
-    searchDays,
-    rangeStart: diaryResult.rangeStart,
-    rangeEnd: diaryResult.rangeEnd
+    searchDays: searchedDays,
+    rangeStart: buildRangeStartDate(anchorDate, searchedDays),
+    rangeEnd: anchorDate,
+    hasMoreDiaryRange
   };
+}
+
+function mergeByDateAndSource(baseHits, extraHits) {
+  const map = new Map();
+  [...baseHits, ...extraHits].forEach(hit => {
+    const key = `${hit.source || "log"}#${hit.date || ""}#${hit.displayName || ""}#${hit.snippet || ""}`;
+    if (!map.has(key)) map.set(key, hit);
+  });
+
+  return [...map.values()].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
 }
 
 function escapeHtml(value) {
@@ -339,28 +352,55 @@ function renderSearchLoading(keyword, anchorDate, searchDays) {
   box.innerHTML = `<p class="diary-search-empty">検索しています…</p>`;
 }
 
+function renderLoadMoreControl(state) {
+  const area = document.getElementById("diarySearchMoreArea");
+  if (!area) return;
+
+  if (!state?.keyword || !state?.hasMoreDiaryRange) {
+    area.style.display = "none";
+    area.innerHTML = "";
+    return;
+  }
+
+  area.style.display = "block";
+  area.innerHTML = `
+    <button id="diarySearchMoreBtn" type="button" class="secondary-btn">さらに90日検索しますか？</button>
+  `;
+}
+
 function bindSearchEvents({ mode, dateInput }) {
   const input = document.getElementById("diarySearchInput");
-  const daysInput = document.getElementById("diarySearchDays");
   const searchBtn = document.getElementById("diarySearchBtn");
   const clearBtn = document.getElementById("diarySearchClearBtn");
   const resultsBox = document.getElementById("diarySearchResults");
-  if (!input || !daysInput || !searchBtn || !clearBtn || !resultsBox) return;
+  const moreArea = document.getElementById("diarySearchMoreArea");
+  if (!input || !searchBtn || !clearBtn || !resultsBox || !moreArea) return;
 
   const performSearch = async () => {
     const keyword = input.value.trim();
-    const searchDays = normalizeSearchDays(daysInput.value);
-    daysInput.value = String(searchDays);
-    history.replaceState({}, "", buildDiaryUrl(mode, dateInput.value, keyword, searchDays));
+    history.replaceState({}, "", buildDiaryUrl(mode, dateInput.value, keyword));
 
     if (!keyword) {
+      activeSearchState = null;
       renderSearchState("", { total: 0, hits: [] });
+      renderLoadMoreControl(null);
       return;
     }
 
-    renderSearchLoading(keyword, dateInput.value, searchDays);
-    const result = await searchAllSources(keyword, dateInput.value, searchDays);
+    renderSearchLoading(keyword, dateInput.value, DIARY_BLOCK_DAYS);
+    const result = await searchAllSources(keyword, dateInput.value, DIARY_BLOCK_DAYS);
+    activeSearchState = {
+      keyword,
+      anchorDate: dateInput.value,
+      searchedDays: DIARY_BLOCK_DAYS,
+      logTotal: result.logTotal,
+      logHits: result.hits.filter(v => v.source !== "diary"),
+      diaryTotal: result.diaryTotal,
+      diaryHits: result.hits.filter(v => v.source === "diary"),
+      hasMoreDiaryRange: result.hasMoreDiaryRange
+    };
     renderSearchState(keyword, result);
+    renderLoadMoreControl(activeSearchState);
   };
 
   searchBtn.addEventListener("click", () => {
@@ -369,9 +409,10 @@ function bindSearchEvents({ mode, dateInput }) {
 
   clearBtn.addEventListener("click", () => {
     input.value = "";
-    const searchDays = normalizeSearchDays(daysInput.value);
-    history.replaceState({}, "", buildDiaryUrl(mode, dateInput.value, "", searchDays));
+    activeSearchState = null;
+    history.replaceState({}, "", buildDiaryUrl(mode, dateInput.value, ""));
     renderSearchState("", { total: 0, hits: [] });
+    renderLoadMoreControl(null);
   });
 
   input.addEventListener("keydown", e => {
@@ -395,6 +436,53 @@ function bindSearchEvents({ mode, dateInput }) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
+
+  if (!moreArea.dataset.boundSearchMore) {
+    moreArea.dataset.boundSearchMore = "1";
+    moreArea.addEventListener("click", async e => {
+      const btn = e.target.closest("#diarySearchMoreBtn");
+      if (!btn) return;
+      if (!activeSearchState?.keyword || !activeSearchState?.hasMoreDiaryRange) return;
+
+      const ok = confirm("さらに90日分を追加で検索しますか？");
+      if (!ok) return;
+
+      const nextDays = activeSearchState.searchedDays + DIARY_BLOCK_DAYS;
+      renderSearchLoading(activeSearchState.keyword, activeSearchState.anchorDate, nextDays);
+
+      const nextDiary = await searchDiaryJsonByKeywordRange(
+        activeSearchState.keyword,
+        activeSearchState.anchorDate,
+        activeSearchState.searchedDays,
+        DIARY_BLOCK_DAYS
+      );
+
+      activeSearchState.searchedDays = nextDays;
+      activeSearchState.diaryTotal += nextDiary.total;
+      activeSearchState.diaryHits = mergeByDateAndSource(activeSearchState.diaryHits, nextDiary.hits);
+      activeSearchState.hasMoreDiaryRange = await canLoadMoreDiaryRange(
+        activeSearchState.anchorDate,
+        activeSearchState.searchedDays
+      );
+
+      const mergedHits = [...activeSearchState.logHits, ...activeSearchState.diaryHits]
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+        .slice(0, SEARCH_LIMIT);
+
+      renderSearchState(activeSearchState.keyword, {
+        total: activeSearchState.logTotal + activeSearchState.diaryTotal,
+        logTotal: activeSearchState.logTotal,
+        diaryTotal: activeSearchState.diaryTotal,
+        hits: mergedHits,
+        anchorDate: activeSearchState.anchorDate,
+        searchDays: activeSearchState.searchedDays,
+        rangeStart: buildRangeStartDate(activeSearchState.anchorDate, activeSearchState.searchedDays),
+        rangeEnd: activeSearchState.anchorDate,
+        hasMoreDiaryRange: activeSearchState.hasMoreDiaryRange
+      });
+      renderLoadMoreControl(activeSearchState);
+    });
+  }
 }
 
 // ---------------------------------------------------------
@@ -411,7 +499,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   const mode = params.get("mode") || "view";
   const urlDate = params.get("date");
   const urlQuery = (params.get("q") || "").trim();
-  const urlSearchDays = normalizeSearchDays(params.get("days") || DEFAULT_SEARCH_DAYS);
 
   // ★ admin 以外は編集モード禁止
   if (mode === "edit" && window.currentRole !== "admin") {
@@ -449,7 +536,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   // モード切り替えボタン描画（★ initialDate を反映）
-  renderModeSwitch(mode, urlQuery, urlSearchDays);
+  renderModeSwitch(mode, urlQuery);
   bindSearchEvents({ mode, dateInput });
 
   // 天気カード表示
@@ -458,11 +545,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // 作業ログ一覧表示
   await showWorkSummary(initialDate);
 
-  if (urlQuery) {
-    renderSearchLoading(urlQuery, initialDate, urlSearchDays);
-    const result = await searchAllSources(urlQuery, initialDate, urlSearchDays);
-    renderSearchState(urlQuery, result);
-  }
+  renderLoadMoreControl(null);
 
   // ▼ 折りたたみ（作業ログ一覧）
   initCollapse("workListTitle", "workList");
@@ -519,10 +602,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // ★ モード切り替えボタンも更新（新しい日付を反映）
     const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
-    const currentDays = normalizeSearchDays(document.getElementById("diarySearchDays")?.value || DEFAULT_SEARCH_DAYS);
-    renderModeSwitch(mode, currentSearch, currentDays);
+    renderModeSwitch(mode, currentSearch);
     bindSearchEvents({ mode, dateInput });
-    history.replaceState({}, "", buildDiaryUrl(mode, d, currentSearch, currentDays));
+    activeSearchState = null;
+    renderSearchState("", { total: 0, hits: [] });
+    renderLoadMoreControl(null);
+    history.replaceState({}, "", buildDiaryUrl(mode, d, currentSearch));
   });
   // (印刷時の一時処理は削除されました)
 });
