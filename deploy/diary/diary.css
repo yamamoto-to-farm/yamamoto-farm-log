@@ -129,7 +129,7 @@
 
 #diaryDateNav {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   width: 100%;
   gap: 12px;
@@ -161,6 +161,10 @@
   justify-self: end;
 }
 
+#todayBtn {
+  justify-self: end;
+}
+
 @media (max-width: 640px) {
   .diary-search-bar {
     width: 100%;
@@ -179,6 +183,7 @@
   }
 
   #prevDayBtn,
+  #todayBtn,
   #nextDayBtn,
   #diaryDateNav #diaryDate {
     justify-self: center;

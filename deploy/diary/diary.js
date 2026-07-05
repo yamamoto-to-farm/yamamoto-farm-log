@@ -68,11 +68,6 @@ function renderModeSwitch(mode, keyword = "") {
       <button class="mode-btn" onclick="location.href='${monthUrl}'">
         作業カレンダー
       </button>
-      <div class="diary-search-bar">
-        <input id="diarySearchInput" class="form-input diary-search-input" type="search" placeholder="作業者・圃場・作業種別で検索" value="${escapeAttr(keyword)}">
-        <button id="diarySearchBtn" type="button" class="secondary-btn mode-btn">検索</button>
-        <button id="diarySearchClearBtn" type="button" class="secondary-btn mode-btn">クリア</button>
-      </div>
     </div>
     <div class="mode-switch-right">
       ${rightButtons}
@@ -376,6 +371,9 @@ function bindSearchEvents({ mode, dateInput }) {
   const moreArea = document.getElementById("diarySearchMoreArea");
   if (!input || !searchBtn || !clearBtn || !resultsBox || !moreArea) return;
 
+  if (input.dataset.boundSearchUi === "1") return;
+  input.dataset.boundSearchUi = "1";
+
   const performSearch = async () => {
     const keyword = input.value.trim();
     history.replaceState({}, "", buildDiaryUrl(mode, dateInput.value, keyword));
@@ -518,6 +516,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const dateInput = document.getElementById("diaryDate");
   const prevDayBtn = document.getElementById("prevDayBtn");
+  const todayBtn = document.getElementById("todayBtn");
   const nextDayBtn = document.getElementById("nextDayBtn");
   dateInput.value = initialDate;
 
@@ -535,8 +534,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  if (todayBtn) {
+    todayBtn.addEventListener("click", () => {
+      const today = new Date().toISOString().slice(0, 10);
+      dateInput.value = today;
+      dateInput.dispatchEvent(new Event("change"));
+    });
+  }
+
   // モード切り替えボタン描画（★ initialDate を反映）
   renderModeSwitch(mode, urlQuery);
+  const searchInput = document.getElementById("diarySearchInput");
+  if (searchInput) searchInput.value = urlQuery;
   bindSearchEvents({ mode, dateInput });
 
   // 天気カード表示
@@ -546,6 +555,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   await showWorkSummary(initialDate);
 
   renderLoadMoreControl(null);
+  initCollapse("diarySearchTitle", "diarySearchPanel");
 
   // ▼ 折りたたみ（作業ログ一覧）
   initCollapse("workListTitle", "workList");
@@ -603,7 +613,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     // ★ モード切り替えボタンも更新（新しい日付を反映）
     const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
     renderModeSwitch(mode, currentSearch);
-    bindSearchEvents({ mode, dateInput });
     activeSearchState = null;
     renderSearchState("", { total: 0, hits: [] });
     renderLoadMoreControl(null);
