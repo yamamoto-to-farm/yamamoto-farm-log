@@ -154,6 +154,12 @@ function renderJsonList(container) {
           file: "machines.json",
           data: "machines",
           desc: "機械マスタ（QR連携対象）"
+        },
+        {
+          label: "認証設定",
+          file: "auth-config.json",
+          data: "auth-config",
+          desc: "セッション時間・無操作タイムアウト・重要操作再認証の設定"
         }
       ]
     }

@@ -45,7 +45,7 @@
       if (DEBUG) console.log("[DEBUG]", ...msg);
     }
 
-    import { showPinGate } from "./common/ui.js?v=1";
+    import { showPinGate, verifyLocalAuth } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
 
     const TOP_CATEGORY_ORDER = [
@@ -167,48 +167,61 @@
       });
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
+    async function bootTopMenu() {
+      dlog("PIN OK → renderHeader");
+
+      const pendingReturnUrl = sessionStorage.getItem("pendingReturnUrl");
+      if (pendingReturnUrl) {
+        sessionStorage.removeItem("pendingReturnUrl");
+        location.href = pendingReturnUrl;
+        return;
+      }
+
+      renderHeader();
+      document.getElementById("menu-area").style.display = "block";
+
+      const role = window.currentRole;
+      dlog("currentRole =", role);
+
+      let pages = await loadPages();
+      pages = sortPages(pages);
+
+      pages.forEach(page => {
+        dlog("check page:", page.name, "roles:", page.roles);
+
+        if (!page.roles.includes(role)) return;
+        if (page.category.startsWith("管理/")) return;
+
+        const section = ensureTopCategory(page.category.split("/")[0]);
+
+        if (page.category.includes("/")) {
+          const [, sub] = page.category.split("/");
+          const grid = ensureSubCategory(section, sub);
+          grid.appendChild(createCard(page));
+        } else {
+          const directGrid = section.querySelector(".direct-grid");
+          directGrid.appendChild(createCard(page));
+        }
+      });
+
+      dlog("menu rendering complete");
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
       dlog("DOMContentLoaded start");
 
-      showPinGate("pin-area", async () => {
-        dlog("PIN OK → renderHeader");
-
-        const pendingReturnUrl = sessionStorage.getItem("pendingReturnUrl");
-        if (pendingReturnUrl) {
-          sessionStorage.removeItem("pendingReturnUrl");
-          location.href = pendingReturnUrl;
-          return;
-        }
-
-        renderHeader();
-        document.getElementById("menu-area").style.display = "block";
-
-        const role = window.currentRole;
-        dlog("currentRole =", role);
-
-        let pages = await loadPages();
-        pages = sortPages(pages);
-
-        pages.forEach(page => {
-          dlog("check page:", page.name, "roles:", page.roles);
-
-          if (!page.roles.includes(role)) return;
-          if (page.category.startsWith("管理/")) return;
-
-          const section = ensureTopCategory(page.category.split("/")[0]);
-
-          if (page.category.includes("/")) {
-            const [, sub] = page.category.split("/");
-            const grid = ensureSubCategory(section, sub);
-            grid.appendChild(createCard(page));
-          } else {
-            const directGrid = section.querySelector(".direct-grid");
-            directGrid.appendChild(createCard(page));
-          }
-        });
-
-        dlog("menu rendering complete");
+      const hasValidSession = await verifyLocalAuth({
+        silent: true,
+        noRedirect: true,
+        source: "top-page"
       });
+
+      if (hasValidSession) {
+        document.getElementById("pin-area").style.display = "none";
+        await bootTopMenu();
+      } else {
+        showPinGate("pin-area", bootTopMenu);
+      }
 
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("category-title")) {

@@ -13,16 +13,26 @@ import { saveLog } from "./save/index.js";
 // ===============================
 const DEBUG_MODE = false;
 const AUTH_STATE_PATH = "/data/auth-state.json";
-const AUTH_TTL_MS = 8 * 60 * 60 * 1000;
-const AUTH_HEARTBEAT_MS = 5 * 60 * 1000;
+const AUTH_CONFIG_PATH = "/data/auth-config.json";
+const DEFAULT_AUTH_CONFIG = {
+  sessionTtlMs: 8 * 60 * 60 * 1000,
+  heartbeatMs: 5 * 60 * 1000,
+  idleTimeoutMs: 60 * 60 * 1000,
+  stepupTtlMs: 30 * 60 * 1000,
+  sensitivePathPrefixes: ["/admin/"]
+};
 const AUTH_SESSION_KEY = "authSessionId";
 const AUTH_ISSUED_KEY = "authIssuedAt";
 const AUTH_EXPIRES_KEY = "authExpiresAt";
 const AUTH_VERSION_KEY = "authVersion";
 const AUTH_HUMAN_KEY = "human";
 const AUTH_ROLE_KEY = "role";
+const AUTH_LAST_ACTIVE_KEY = "authLastActiveAt";
+const AUTH_STEPUP_AT_KEY = "authStepupAt";
 
 let authHeartbeatStarted = false;
+let authActivityBound = false;
+let authConfigCache = null;
 
 // ===============================
 // デバッグ表示用UI（自動生成）
@@ -52,6 +62,79 @@ function debugLog(msg) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function nowMs() {
+  return Date.now();
+}
+
+function normalizeMs(value, fallbackMs, minMs = 60 * 1000) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallbackMs;
+  return Math.max(minMs, Math.floor(n));
+}
+
+function normalizePathPrefixes(list) {
+  if (!Array.isArray(list)) return [...DEFAULT_AUTH_CONFIG.sensitivePathPrefixes];
+
+  const normalized = list
+    .map(v => String(v || "").trim())
+    .filter(Boolean)
+    .filter(v => v.startsWith("/"));
+
+  return normalized.length ? [...new Set(normalized)] : [...DEFAULT_AUTH_CONFIG.sensitivePathPrefixes];
+}
+
+function normalizeAuthConfig(raw) {
+  return {
+    sessionTtlMs: normalizeMs(raw?.sessionTtlMs, DEFAULT_AUTH_CONFIG.sessionTtlMs),
+    heartbeatMs: normalizeMs(raw?.heartbeatMs, DEFAULT_AUTH_CONFIG.heartbeatMs),
+    idleTimeoutMs: normalizeMs(raw?.idleTimeoutMs, DEFAULT_AUTH_CONFIG.idleTimeoutMs),
+    stepupTtlMs: normalizeMs(raw?.stepupTtlMs, DEFAULT_AUTH_CONFIG.stepupTtlMs),
+    sensitivePathPrefixes: normalizePathPrefixes(raw?.sensitivePathPrefixes)
+  };
+}
+
+async function ensureAuthConfigLoaded() {
+  if (authConfigCache) return authConfigCache;
+
+  try {
+    const raw = await loadJSON(AUTH_CONFIG_PATH);
+    authConfigCache = normalizeAuthConfig(raw);
+  } catch {
+    authConfigCache = { ...DEFAULT_AUTH_CONFIG };
+  }
+
+  return authConfigCache;
+}
+
+function isSensitivePath(pathname = location.pathname, sensitivePathPrefixes = DEFAULT_AUTH_CONFIG.sensitivePathPrefixes) {
+  return sensitivePathPrefixes.some(prefix => pathname.startsWith(prefix));
+}
+
+function touchAuthActivity() {
+  const role = localStorage.getItem(AUTH_ROLE_KEY);
+  const human = localStorage.getItem(AUTH_HUMAN_KEY);
+  if (!role || !human) return;
+
+  localStorage.setItem(AUTH_LAST_ACTIVE_KEY, String(nowMs()));
+}
+
+function bindAuthActivityTracking() {
+  if (authActivityBound) return;
+  authActivityBound = true;
+
+  let lastTouch = 0;
+  const onActivity = () => {
+    const t = nowMs();
+    if (t - lastTouch < 5000) return;
+    lastTouch = t;
+    touchAuthActivity();
+  };
+
+  ["pointerdown", "keydown", "touchstart"].forEach(type => {
+    window.addEventListener(type, onActivity, true);
+  });
 }
 
 function csvCell(value) {
@@ -136,18 +219,21 @@ function clearAuthStorage() {
   localStorage.removeItem(AUTH_ISSUED_KEY);
   localStorage.removeItem(AUTH_EXPIRES_KEY);
   localStorage.removeItem(AUTH_VERSION_KEY);
+  localStorage.removeItem(AUTH_LAST_ACTIVE_KEY);
+  localStorage.removeItem(AUTH_STEPUP_AT_KEY);
   window.currentHuman = "";
   window.currentRole = "";
 }
 
-function redirectWithReturnUrl() {
-  sessionStorage.setItem("pendingReturnUrl", location.href);
+function redirectWithReturnUrl(target = location.href) {
+  sessionStorage.setItem("pendingReturnUrl", target);
   location.href = "/index.html";
 }
 
 async function startAuthHeartbeat() {
   if (authHeartbeatStarted) return;
   authHeartbeatStarted = true;
+  const authConfig = await ensureAuthConfigLoaded();
 
   const tick = async () => {
     if (location.pathname === "/" || location.pathname === "/index.html") return;
@@ -156,7 +242,7 @@ async function startAuthHeartbeat() {
     if (!ok) return;
   };
 
-  setInterval(tick, AUTH_HEARTBEAT_MS);
+  setInterval(tick, authConfig.heartbeatMs);
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
@@ -166,10 +252,11 @@ async function startAuthHeartbeat() {
 }
 
 async function issueAuthSession(user) {
+  const authConfig = await ensureAuthConfigLoaded();
   const authState = await loadAuthState();
-  const now = Date.now();
+  const now = nowMs();
   const sessionId = (crypto?.randomUUID?.() || `sess-${now}-${Math.random().toString(36).slice(2)}`);
-  const expiresAt = now + AUTH_TTL_MS;
+  const expiresAt = now + authConfig.sessionTtlMs;
 
   localStorage.setItem(AUTH_HUMAN_KEY, user.name);
   localStorage.setItem(AUTH_ROLE_KEY, user.role);
@@ -177,6 +264,8 @@ async function issueAuthSession(user) {
   localStorage.setItem(AUTH_ISSUED_KEY, String(now));
   localStorage.setItem(AUTH_EXPIRES_KEY, String(expiresAt));
   localStorage.setItem(AUTH_VERSION_KEY, String(authState.authVersion));
+  localStorage.setItem(AUTH_LAST_ACTIVE_KEY, String(now));
+  localStorage.setItem(AUTH_STEPUP_AT_KEY, String(now));
 
   window.currentHuman = user.name;
   window.currentRole = user.role;
@@ -556,25 +645,42 @@ export function showPinGate(containerId, onSuccess) {
 // localStorage の認証情報がまだ有効かチェック
 // ===============================
 export async function verifyLocalAuth(options = {}) {
+  const authConfig = await ensureAuthConfigLoaded();
   const savedHuman = localStorage.getItem(AUTH_HUMAN_KEY);
   const savedRole = localStorage.getItem(AUTH_ROLE_KEY);
   const savedIssuedAt = Number(localStorage.getItem(AUTH_ISSUED_KEY) || 0);
   const savedExpiresAt = Number(localStorage.getItem(AUTH_EXPIRES_KEY) || 0);
   const savedVersion = Number(localStorage.getItem(AUTH_VERSION_KEY) || 0);
+  const savedLastActiveAt = Number(localStorage.getItem(AUTH_LAST_ACTIVE_KEY) || 0);
+  const savedStepupAt = Number(localStorage.getItem(AUTH_STEPUP_AT_KEY) || 0);
+  const shouldRedirect = !options?.noRedirect;
 
   // localStorage に何もない → index に戻す
   if (!savedHuman || !savedRole) {
-    redirectWithReturnUrl();
+    if (shouldRedirect) redirectWithReturnUrl();
     return false;
   }
 
   try {
     const authState = await loadAuthState();
 
-    if (savedIssuedAt && savedExpiresAt && Date.now() > savedExpiresAt) {
+    const computedExpiresAt = savedIssuedAt ? (savedIssuedAt + authConfig.sessionTtlMs) : 0;
+    const effectiveExpiresAt = savedExpiresAt && computedExpiresAt
+      ? Math.min(savedExpiresAt, computedExpiresAt)
+      : (savedExpiresAt || computedExpiresAt);
+
+    if (effectiveExpiresAt && Date.now() > effectiveExpiresAt) {
       await appendSecurityAudit("expired", `issuedAt=${savedIssuedAt}`);
       clearAuthStorage();
-      redirectWithReturnUrl();
+      if (shouldRedirect) redirectWithReturnUrl();
+      return false;
+    }
+
+    const lastActiveAt = savedLastActiveAt || savedIssuedAt;
+    if (lastActiveAt && nowMs() - lastActiveAt > authConfig.idleTimeoutMs) {
+      await appendSecurityAudit("expired", `idle-timeout:${authConfig.idleTimeoutMs}`);
+      clearAuthStorage();
+      if (shouldRedirect) redirectWithReturnUrl();
       return false;
     }
 
@@ -592,7 +698,7 @@ export async function verifyLocalAuth(options = {}) {
       if (!options?.silent) {
         alert("認証情報が無効になりました。再ログインしてください。");
       }
-      redirectWithReturnUrl();
+      if (shouldRedirect) redirectWithReturnUrl();
       return false;
     }
 
@@ -602,7 +708,21 @@ export async function verifyLocalAuth(options = {}) {
       if (!options?.silent) {
         alert("ログイン状態が更新されました。再ログインしてください。");
       }
-      redirectWithReturnUrl();
+      if (shouldRedirect) redirectWithReturnUrl();
+      return false;
+    }
+
+    if (
+      savedRole === "admin" &&
+      isSensitivePath(options?.path ?? location.pathname, authConfig.sensitivePathPrefixes) &&
+      (!savedStepupAt || nowMs() - savedStepupAt > authConfig.stepupTtlMs)
+    ) {
+      await appendSecurityAudit("stepup-required", `path=${location.pathname}`);
+      clearAuthStorage();
+      if (!options?.silent) {
+        alert("重要操作のため再認証してください。");
+      }
+      if (shouldRedirect) redirectWithReturnUrl();
       return false;
     }
 
@@ -610,6 +730,8 @@ export async function verifyLocalAuth(options = {}) {
     window.currentHuman = savedHuman;
     window.currentRole = savedRole;
     localStorage.setItem(AUTH_VERSION_KEY, String(authState.authVersion));
+    localStorage.setItem(AUTH_LAST_ACTIVE_KEY, String(nowMs()));
+    bindAuthActivityTracking();
 
     await startAuthHeartbeat();
 
