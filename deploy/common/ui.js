@@ -118,7 +118,12 @@ async function appendSecurityAudit(event, detail = "") {
       path: location.pathname
     });
 
-    await saveLog("security", "all", null, "", buildSecurityCsv(rows), "all.csv");
+    await saveLog({
+      type: "security",
+      replaceCsv: buildSecurityCsv(rows),
+      fileName: "all.csv",
+      suppressModal: true
+    });
   } catch (e) {
     console.warn("[auth] security audit failed:", e);
   }
