@@ -143,19 +143,56 @@ function uniqueNonEmpty(values) {
   return Array.from(new Set((Array.isArray(values) ? values : []).map(v => String(v || "").trim()).filter(Boolean)));
 }
 
+function roundNutrient(value) {
+  return Math.round(Number(value || 0) * 1000) / 1000;
+}
+
+function detectNutrientType(row = {}) {
+  const text = `${row?.name || ""} ${row?.kind || ""} ${row?.source || ""}`.toLowerCase();
+
+  if (/(^|[^a-z])n([^a-z]|$)|窒素|アンモニア/.test(text)) return "n";
+  if (/(^|[^a-z])p([^a-z]|$)|p2o5|りん|リン|燐|リン酸/.test(text)) return "p";
+  if (/(^|[^a-z])k([^a-z]|$)|k2o|加里|カリ|カリウム|potash/.test(text)) return "k";
+
+  return "";
+}
+
+function calcNpkFromIngredients(ingredients = []) {
+  const totals = { n: 0, p: 0, k: 0 };
+
+  (Array.isArray(ingredients) ? ingredients : []).forEach(row => {
+    const key = detectNutrientType(row);
+    if (!key) return;
+
+    const val = Number(row?.concentrationPercent);
+    if (!Number.isFinite(val)) return;
+    totals[key] += val;
+  });
+
+  return {
+    n: roundNutrient(totals.n),
+    p: roundNutrient(totals.p),
+    k: roundNutrient(totals.k)
+  };
+}
+
 function toCanonicalFertilizerDetail(item = {}) {
+  const ingredients = Array.isArray(item.ingredients) ? item.ingredients : [];
+  const applications = Array.isArray(item.applications) ? item.applications : (Array.isArray(item.applicationGuidelines) ? item.applicationGuidelines : []);
+  const npk = calcNpkFromIngredients(ingredients);
+
   const next = {
     ...buildEmptyFertilizerDetail(),
     ...item,
     name: String(item.name || "").trim(),
     maker: String(item.maker || "").trim(),
-    n: Number(item.n ?? 0),
-    p: Number(item.p ?? 0),
-    k: Number(item.k ?? 0),
+    n: npk.n,
+    p: npk.p,
+    k: npk.k,
     notes: String(item.notes || "").trim(),
     price: item.price && typeof item.price === "object" && !Array.isArray(item.price) ? item.price : {},
-    ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-    applications: Array.isArray(item.applications) ? item.applications : (Array.isArray(item.applicationGuidelines) ? item.applicationGuidelines : [])
+    ingredients,
+    applications
   };
   next.activeIngredients = uniqueNonEmpty([...(Array.isArray(item.activeIngredients) ? item.activeIngredients : []), ...next.ingredients.map(v => v?.name)]);
   next.targetCrops = uniqueNonEmpty([...(Array.isArray(item.targetCrops) ? item.targetCrops : []), ...next.applications.map(v => v?.crop)]);
@@ -324,11 +361,11 @@ export function renderEditCard({ json, container, finalPath }) {
         <div class="edit-line"><label>名称</label><input class="form-input" data-key="name" value="${escapeHtml(f.name || "")}"></div>
         <div class="edit-line"><label>メーカー</label><input class="form-input" data-key="maker" value="${escapeHtml(f.maker || "")}"></div>
         <div class="edit-line">
-          <label>N / P / K</label>
+          <label>N / P / K（成分情報から自動算出）</label>
           <div style="display:flex; gap:10px;">
-            <input class="form-input" data-key="n" type="number" step="any" value="${f.n ?? 0}">
-            <input class="form-input" data-key="p" type="number" step="any" value="${f.p ?? 0}">
-            <input class="form-input" data-key="k" type="number" step="any" value="${f.k ?? 0}">
+            <input class="form-input" data-key="n" type="number" step="any" value="${f.n ?? 0}" readonly>
+            <input class="form-input" data-key="p" type="number" step="any" value="${f.p ?? 0}" readonly>
+            <input class="form-input" data-key="k" type="number" step="any" value="${f.k ?? 0}" readonly>
           </div>
         </div>
         <div class="edit-line"><label>月別価格（YYYY-MM: 値）</label><textarea class="form-input" data-key="priceText" rows="4" placeholder="2026-07: 2500">${escapeHtml(priceToText(f.price))}</textarea></div>
@@ -451,9 +488,6 @@ export function renderEditCard({ json, container, finalPath }) {
       ...prev,
       name: getValue("name").trim(),
       maker: getValue("maker").trim(),
-      n: parseNumberOrThrow(getValue("n"), "N", id),
-      p: parseNumberOrThrow(getValue("p"), "P", id),
-      k: parseNumberOrThrow(getValue("k"), "K", id),
       price: parsePriceText(getValue("priceText"), id),
       notes: getValue("notes").trim()
     };
@@ -487,6 +521,29 @@ export function renderEditCard({ json, container, finalPath }) {
     next.ingredients = ingredients;
     next.applications = applications;
     current[id] = toCanonicalFertilizerDetail(next);
+  }
+
+  function syncNpkPreviewFromIngredientRows() {
+    const card = editorEl.querySelector(".fertilizer-detail-card");
+    if (!card) return;
+
+    const ingredients = Array.from(card.querySelectorAll(".ingredient-row")).map(row => {
+      const getRowValue = field => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
+      return {
+        name: getRowValue("name").trim(),
+        kind: getRowValue("kind").trim(),
+        concentrationPercent: getRowValue("concentrationPercent").trim(),
+        source: getRowValue("source").trim()
+      };
+    });
+
+    const npk = calcNpkFromIngredients(ingredients);
+    const nEl = card.querySelector('[data-key="n"]');
+    const pEl = card.querySelector('[data-key="p"]');
+    const kEl = card.querySelector('[data-key="k"]');
+    if (nEl) nEl.value = String(npk.n);
+    if (pEl) pEl.value = String(npk.p);
+    if (kEl) kEl.value = String(npk.k);
   }
 
   categoryEl.onchange = () => {
@@ -559,5 +616,10 @@ export function renderEditCard({ json, container, finalPath }) {
   (async () => {
     categoryMap = await loadFertilizerIndexCategoryMap();
     render();
+
+    editorEl.addEventListener("input", e => {
+      if (!e.target?.closest?.(".ingredient-row")) return;
+      syncNpkPreviewFromIngredientRows();
+    });
   })();
 }
