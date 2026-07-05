@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 12px 0 4px;
+  margin: 8px 0 16px;
 }
 
 .mode-switch-left,
@@ -26,6 +26,15 @@
 
 #modeSwitchArea .mode-btn {
   margin-left: 0;
+}
+
+#diaryDateNav {
+  margin-bottom: 0;
+}
+
+.diary-date-card {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 #diaryDateNav {
