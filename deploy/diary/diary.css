@@ -52,6 +52,9 @@
   min-height: 42px;
   box-sizing: border-box;
   text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 #diaryDateNav .day-nav-btn {
