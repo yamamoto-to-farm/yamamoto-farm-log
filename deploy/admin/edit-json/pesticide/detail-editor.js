@@ -311,9 +311,13 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "農薬詳細情報（pesticide-detail.json）";
 
+  const params = new URLSearchParams(location.search);
+  const initialPid = normalizePesticideId(params.get("pid") || "");
+
   const current = (json && typeof json === "object" && !Array.isArray(json)) ? json : {};
+  let selectedCategory = "";
   let searchKeyword = "";
-  let selectedId = Object.keys(current)
+  let selectedId = initialPid || Object.keys(current)
     .map(v => normalizePesticideId(v))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" }))[0] || "";
@@ -322,12 +326,16 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   container.insertAdjacentHTML("beforeend", `
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="secondary-btn" type="button" onclick="location.href='?data=pesticide-index'">農薬基本情報へ</button>
+        <button id="go-pesticide-index-btn" class="secondary-btn" type="button">農薬基本情報へ</button>
       </div>
     </div>
 
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div>
+          <label class="form-label">カテゴリフィルタ</label>
+          <select id="pesticide-detail-category-filter" class="form-input" style="min-width:220px;"></select>
+        </div>
         <div>
           <label class="form-label">検索（ID/名称）</label>
           <input id="pesticide-detail-search" class="form-input" style="min-width:260px;" placeholder="FG0001 / アニキ など">
@@ -336,12 +344,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
           <label class="form-label">編集対象</label>
           <select id="pesticide-detail-target" class="form-input" style="min-width:320px;"></select>
         </div>
-        <div>
-          <label class="form-label">新規ID候補（未使用）</label>
-          <select id="pesticide-detail-id-candidate" class="form-input" style="min-width:220px;"></select>
-        </div>
-        <button id="add-pesticide-detail-from-candidate" class="secondary-btn" type="button">候補IDで追加</button>
-        <button id="delete-pesticide-detail-btn" class="secondary-btn" type="button">選択中を削除</button>
       </div>
       <div id="pesticide-detail-visible-count" style="margin-top:8px; color:#555;"></div>
     </div>
@@ -353,9 +355,10 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     </button>
   `);
 
+  const backBtn = document.getElementById("go-pesticide-index-btn");
+  const categoryEl = document.getElementById("pesticide-detail-category-filter");
   const searchEl = document.getElementById("pesticide-detail-search");
   const targetEl = document.getElementById("pesticide-detail-target");
-  const candidateEl = document.getElementById("pesticide-detail-id-candidate");
   const countEl = document.getElementById("pesticide-detail-visible-count");
   const editorEl = document.getElementById("pesticide-detail-editor");
 
@@ -366,11 +369,31 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
       .sort((a, b) => a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" }));
   }
 
+  function refreshCategoryOptions() {
+    const categories = new Set(PESTICIDE_CATEGORIES);
+    sortedIds().forEach(id => {
+      const cat = String(current[id]?.category || "").trim();
+      if (cat) categories.add(cat);
+    });
+
+    const options = ["", ...Array.from(categories)];
+    categoryEl.innerHTML = options
+      .map(v => `<option value="${escapeHtml(v)}">${v ? escapeHtml(v) : "全カテゴリ"}</option>`)
+      .join("");
+    categoryEl.value = selectedCategory;
+  }
+
+  function categoryFilteredIds() {
+    if (!selectedCategory) return sortedIds();
+    return sortedIds().filter(id => String(current[id]?.category || "").trim() === selectedCategory);
+  }
+
   function filteredIds() {
     const q = String(searchKeyword || "").trim().toLowerCase();
-    if (!q) return sortedIds();
+    const base = categoryFilteredIds();
+    if (!q) return base;
 
-    return sortedIds().filter(id => {
+    return base.filter(id => {
       const item = current[id] || {};
       const name = String(item.name || "").toLowerCase();
       return id.toLowerCase().includes(q) || name.includes(q);
@@ -379,9 +402,10 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
   function filteredIdsByKeyword(keyword) {
     const q = String(keyword || "").trim().toLowerCase();
-    if (!q) return sortedIds();
+    const base = categoryFilteredIds();
+    if (!q) return base;
 
-    return sortedIds().filter(id => {
+    return base.filter(id => {
       const item = current[id] || {};
       const name = String(item.name || "").toLowerCase();
       return id.toLowerCase().includes(q) || name.includes(q);
@@ -391,13 +415,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   function confirmDiscardChanges() {
     if (!hasUnsavedChanges) return true;
     return confirm("保存していない変更があります。破棄して続行しますか？");
-  }
-
-  function refreshIdSuggestions() {
-    const suggestions = buildPesticideIdSuggestions(Object.keys(current), 8);
-    candidateEl.innerHTML = suggestions
-      .map(v => `<option value="${v.id}">${escapeHtml(v.label)}</option>`)
-      .join("");
   }
 
   function refreshTargetOptions() {
@@ -656,8 +673,18 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   }
 
   function render() {
-    refreshIdSuggestions();
+    refreshCategoryOptions();
     refreshTargetOptions();
+
+    if (backBtn) {
+      const q = new URLSearchParams();
+      q.set("data", "pesticide-index");
+      if (selectedId) q.set("pid", selectedId);
+      backBtn.onclick = () => {
+        location.href = `?${q.toString()}`;
+      };
+    }
+
     renderEditor();
   }
 
@@ -785,6 +812,23 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     current[id] = toCanonicalPesticideDetail(next);
   }
 
+  categoryEl.onchange = () => {
+    const nextCategory = categoryEl.value || "";
+    const nextIds = filteredIdsByKeyword(searchKeyword).filter(id => {
+      if (!nextCategory) return true;
+      return String(current[id]?.category || "").trim() === nextCategory;
+    });
+    const nextSelected = nextIds.includes(selectedId) ? selectedId : (nextIds[0] || "");
+
+    if (nextSelected !== selectedId && !confirmDiscardChanges()) {
+      categoryEl.value = selectedCategory;
+      return;
+    }
+
+    selectedCategory = nextCategory;
+    render();
+  };
+
   searchEl.oninput = () => {
     const nextKeyword = searchEl.value || "";
     const nextIds = filteredIdsByKeyword(nextKeyword);
@@ -810,50 +854,6 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
     selectedId = nextId;
     renderEditor();
-  };
-
-  document.getElementById("add-pesticide-detail-from-candidate").onclick = () => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-
-    const candidate = normalizePesticideId(candidateEl.value || "");
-    if (!candidate) return;
-
-    if (current[candidate]) {
-      alert(`ID ${candidate} は既に存在します。`);
-      return;
-    }
-
-    const info = PESTICIDE_PREFIXES.find(v => candidate.startsWith(v.prefix));
-
-    current[candidate] = {
-      ...buildEmptyPesticideDetail(),
-      category: info?.category || "",
-      unit: "ml"
-    };
-
-    selectedId = candidate;
-    searchKeyword = "";
-    searchEl.value = "";
-    render();
-  };
-
-  document.getElementById("delete-pesticide-detail-btn").onclick = () => {
-    if (!selectedId || !current[selectedId]) return;
-
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-
-    const name = String(current[selectedId]?.name || "").trim();
-    const ok = confirm(`ID ${selectedId}${name ? ` (${name})` : ""} を削除しますか？\nこの操作は保存時に確定されます。`);
-    if (!ok) return;
-
-    delete current[selectedId];
-    selectedId = "";
-
-    render();
   };
 
   document.getElementById("save-btn").onclick = async () => {
