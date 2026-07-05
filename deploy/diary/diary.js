@@ -71,7 +71,9 @@ function renderModeSwitch(mode, keyword = "", searchDays = DEFAULT_SEARCH_DAYS) 
       <div class="diary-search-bar">
         <input id="diarySearchInput" class="form-input diary-search-input" type="search" placeholder="作業者・圃場・作業種別で検索" value="${escapeAttr(keyword)}">
         <label class="diary-search-days-label" for="diarySearchDays">前</label>
-        <input id="diarySearchDays" class="form-input diary-search-days-input" type="number" min="${MIN_SEARCH_DAYS}" max="${MAX_SEARCH_DAYS}" value="${searchDays}">
+        <select id="diarySearchDays" class="form-input diary-search-days-input">
+          ${[30, 60, 90, 180, 365].map(v => `<option value="${v}" ${Number(searchDays) === v ? "selected" : ""}>${v}</option>`).join("")}
+        </select>
         <span class="diary-search-days-suffix">日</span>
         <button id="diarySearchBtn" type="button" class="secondary-btn mode-btn">検索</button>
         <button id="diarySearchClearBtn" type="button" class="secondary-btn mode-btn">クリア</button>
@@ -314,7 +316,7 @@ function renderSearchState(keyword, result) {
   }
 
   summary.style.display = "block";
-  summary.textContent = `「${keyword}」: 合計${result.total}件（作業ログ ${result.logTotal}件 / 日誌JSON ${result.diaryTotal}件） 起点 ${result.anchorDate}・前${result.searchDays}日 (${result.rangeStart}〜${result.rangeEnd})`;
+  summary.textContent = `「${keyword}」: 合計${result.total}件（作業ログ ${result.logTotal}件 / 日誌JSON ${result.diaryTotal}件） 起点 ${result.anchorDate} から前${result.searchDays}日 (${result.rangeStart}〜${result.rangeEnd})`;
 
   box.style.display = "block";
   if (!result.hits.length) {
@@ -323,6 +325,18 @@ function renderSearchState(keyword, result) {
   }
 
   box.innerHTML = `<ul class="diary-search-list">${result.hits.map(renderSearchResult).join("")}</ul>`;
+}
+
+function renderSearchLoading(keyword, anchorDate, searchDays) {
+  const summary = document.getElementById("diarySearchSummary");
+  const box = document.getElementById("diarySearchResults");
+  if (!summary || !box) return;
+
+  summary.style.display = "block";
+  summary.textContent = `「${keyword}」を検索中… 起点 ${anchorDate} から前${searchDays}日`;
+
+  box.style.display = "block";
+  box.innerHTML = `<p class="diary-search-empty">検索しています…</p>`;
 }
 
 function bindSearchEvents({ mode, dateInput }) {
@@ -344,16 +358,7 @@ function bindSearchEvents({ mode, dateInput }) {
       return;
     }
 
-    renderSearchState(keyword, {
-      total: 0,
-      logTotal: 0,
-      diaryTotal: 0,
-      hits: [],
-      anchorDate: dateInput.value,
-      searchDays,
-      rangeStart: buildRangeStartDate(dateInput.value, searchDays),
-      rangeEnd: dateInput.value
-    });
+    renderSearchLoading(keyword, dateInput.value, searchDays);
     const result = await searchAllSources(keyword, dateInput.value, searchDays);
     renderSearchState(keyword, result);
   };
@@ -454,6 +459,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   await showWorkSummary(initialDate);
 
   if (urlQuery) {
+    renderSearchLoading(urlQuery, initialDate, urlSearchDays);
     const result = await searchAllSources(urlQuery, initialDate, urlSearchDays);
     renderSearchState(urlQuery, result);
   }

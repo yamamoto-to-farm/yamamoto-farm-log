@@ -48,9 +48,9 @@
 }
 
 .diary-search-days-input {
-  width: 78px;
+  width: 92px;
   height: 38px;
-  text-align: right;
+  text-align: center;
 }
 
 .diary-search-summary {
@@ -183,7 +183,7 @@
   }
 
   .diary-search-days-input {
-    width: 96px;
+    width: 110px;
   }
 
   #diaryDateNav {
