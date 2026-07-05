@@ -12,6 +12,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
+import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData } from "/fertilizer/fertilizer-multi-input.js?v=1";
 import { distributeFertilizers } from "/fertilizer/fertilizer-distribute.js?v=1";
 
@@ -164,6 +165,7 @@ async function saveBedmakingLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
+  showSaveModal("保存しています…");
 
   try {
     await saveMultiFieldLog({
@@ -199,11 +201,12 @@ async function saveBedmakingLog() {
       });
     }
 
-    alert(withFertilizer ? "保存しました（畝立て・施肥）" : "保存しました（畝立て）");
+    completeSaveModal("保存が完了しました");
 
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";
   } catch (e) {
+    closeSaveModal();
     console.error(e);
     alert(e?.message || "保存に失敗しました");
   } finally {

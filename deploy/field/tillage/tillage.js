@@ -11,7 +11,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal } from "/common/save-modal.js?v=1";
+import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 export async function initTillagePage() {
   debugLog("initTillagePage start");
@@ -118,6 +118,7 @@ async function saveTillageLog() {
         notes
       }
     });
+    completeSaveModal("保存が完了しました");
 
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";

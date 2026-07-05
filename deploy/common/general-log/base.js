@@ -180,6 +180,7 @@ async function updateIndex(type, field, year, fileName) {
 
   await saveLog({
     type: "multi",
+    suppressModal: true,
     files: [
       {
         path: savePath,
@@ -241,6 +242,7 @@ export async function saveMultiFieldLog({
     // 保存
     await saveLog({
       type: "multi",
+      suppressModal: true,
       files: [
         {
           path: filePath,
@@ -303,6 +305,7 @@ async function updateGeneralAllCsv(type, { date, fields, entry }) {
 
   await saveLog({
     type,
+    suppressModal: true,
     replaceCsv: content,
     fileName: "all.csv"
   });

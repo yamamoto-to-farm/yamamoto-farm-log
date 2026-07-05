@@ -13,7 +13,7 @@ import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { toNumber, calcPer10a, distributePesticideUsageByField } from "/common/pesticide-calc.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal } from "/common/save-modal.js?v=1";
+import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 let pesticideDict = {};
 
@@ -201,6 +201,7 @@ async function saveWeedingLog() {
         notes
       }
     });
+    completeSaveModal("保存が完了しました");
 
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";

@@ -16,7 +16,7 @@ import { distributepesticides }
   from "./pesticide-distribute.js?v=1";
 import { savePesticideLog } 
   from "/common/general-log/pesticide.js?v=1";
-import { showSaveModal, closeSaveModal }
+import { showSaveModal, closeSaveModal, completeSaveModal }
   from "/common/save-modal.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
@@ -99,6 +99,7 @@ export async function savepesticideLog() {
       workers,
       notes
     });
+    completeSaveModal("保存が完了しました");
 
     document.getElementById("notes").value = "";
 

@@ -16,7 +16,7 @@ import { distributeFertilizers }
   from "./fertilizer-distribute.js?v=1";
 import { saveMultiFieldLog } 
   from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal }
+import { showSaveModal, closeSaveModal, completeSaveModal }
   from "/common/save-modal.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
@@ -102,6 +102,7 @@ export async function saveFertilizerLog() {
         notes
       }
     });
+    completeSaveModal("保存が完了しました");
 
     document.getElementById("notes").value = "";
 

@@ -12,7 +12,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal } from "/common/save-modal.js?v=1";
+import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData, updatePer10aAll } from "/fertilizer/fertilizer-multi-input.js?v=1";
 import { distributeFertilizers } from "/fertilizer/fertilizer-distribute.js?v=1";
 
@@ -364,6 +364,8 @@ async function saveSoilWorkLog(config, mode) {
         }
       });
     }
+
+    completeSaveModal("保存が完了しました");
 
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";

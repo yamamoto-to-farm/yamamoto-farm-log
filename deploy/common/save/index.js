@@ -53,7 +53,9 @@ export async function saveLog(
   dbg("=== saveLog START ===");
   dbg("payload:", payload);
 
-  showSaveModal("保存しています…");
+  if (!payload.suppressModal) {
+    showSaveModal("保存しています…");
+  }
 
   return saveToS3(payload);
 }
@@ -92,7 +94,9 @@ async function saveToS3(payload) {
 
     dbg("=== saveToS3 END (append) ===");
 
-    completeSaveModal("保存が完了しました");
+    if (!payload.suppressModal) {
+      completeSaveModal("保存が完了しました");
+    }
     return;
   }
 
@@ -195,7 +199,9 @@ async function saveToS3(payload) {
 
   dbg("=== saveToS3 END ===");
 
-  completeSaveModal("保存が完了しました");
+  if (!payload.suppressModal) {
+    completeSaveModal("保存が完了しました");
+  }
 }
 
 /* ---------------------------------------------------------
