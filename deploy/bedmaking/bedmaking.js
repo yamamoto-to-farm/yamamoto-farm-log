@@ -140,6 +140,10 @@ async function saveBedmakingLog() {
     alert("作業日・作業区分・圃場は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   let fertilizers = [];
   let distributed = [];

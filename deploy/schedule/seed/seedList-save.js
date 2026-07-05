@@ -122,7 +122,6 @@ export async function saveSeedList() {
     );
 
     dbg("saveLog completed");
-    alert(`播種計画を保存しました（logs/schedule/seed/${year}.csv に上書き）`);
 
   } catch (e) {
     console.error("❌ saveSeedList error:", e);

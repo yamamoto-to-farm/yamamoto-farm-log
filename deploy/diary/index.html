@@ -56,6 +56,15 @@
 
   </div>
 
+  <div id="modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
   <!-- JS -->
   <script type="module" src="/common/collapse.js"></script>
 

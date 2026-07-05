@@ -169,6 +169,10 @@ async function saveSeedInner() {
     alert("トレイ枚数を入力してください");
     return;
   }
+  if (!String(data.worker || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const dup = await checkDuplicate("seed", {
     date: data.seedDate,
@@ -201,7 +205,6 @@ async function saveSeedInner() {
     summary: { date: data.seedDate, sourceKey: "seed", count: 1 }
   });
 
-  alert("GitHubに保存しました");
 }
 
 window.saveSeed = saveSeedInner;

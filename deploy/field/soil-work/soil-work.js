@@ -301,6 +301,10 @@ async function saveSoilWorkLog(config, mode) {
     alert("作業日・アタッチメント・圃場は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   let fertilizers = [];
   let distributed = [];
@@ -360,8 +364,6 @@ async function saveSoilWorkLog(config, mode) {
         }
       });
     }
-
-    alert(withFertilizer ? "保存しました（作業・施肥）" : "保存しました（作業）");
 
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";

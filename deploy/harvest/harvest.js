@@ -212,6 +212,10 @@ async function saveHarvestInner() {
     alert("定植記録を選択してください");
     return;
   }
+  if (!String(data.worker || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const dup = await checkDuplicate("harvest", {
     plantingRef: data.plantingRef,

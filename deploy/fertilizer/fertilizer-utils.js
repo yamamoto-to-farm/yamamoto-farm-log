@@ -70,6 +70,10 @@ export async function saveFertilizerLog() {
     alert("日付・圃場は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const fertilizers = getFertilizerInputData();
   if (fertilizers.length === 0) {
@@ -99,7 +103,6 @@ export async function saveFertilizerLog() {
       }
     });
 
-    alert("保存しました！");
     document.getElementById("notes").value = "";
 
   } catch (e) {

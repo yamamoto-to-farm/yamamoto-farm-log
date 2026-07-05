@@ -83,6 +83,10 @@ async function saveHandWeedingLog() {
     alert("作業日・圃場は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const btn = document.getElementById("save-btn");
   if (btn) {
@@ -104,7 +108,6 @@ async function saveHandWeedingLog() {
       }
     });
 
-    alert("保存しました！");
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";
   } catch (e) {

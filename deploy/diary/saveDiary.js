@@ -4,6 +4,11 @@
 // =========================================================
 
 import { loadJSON, saveJSON } from "/common/json.js";
+import {
+  showSaveModal,
+  completeSaveModal,
+  closeSaveModal
+} from "/common/save-modal.js?v=1";
 
 export async function saveDiary(date, autoList) {
 
@@ -46,9 +51,11 @@ export async function saveDiary(date, autoList) {
   // 保存（data/diary/ 配下なので確実に保存される）
   // -------------------------------
   try {
+    showSaveModal("保存しています…");
     await saveJSON(savePath, current);
-    alert("保存しました");
+    completeSaveModal("保存が完了しました");
   } catch (e) {
+    closeSaveModal();
     console.error(e);
     alert("保存に失敗しました");
   }

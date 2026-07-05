@@ -155,6 +155,10 @@ async function saveWeedingLog() {
     alert("作業日・作業区分・圃場は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const pesticides = filterState.pesticides || [];
   if (workType === "除草剤散布" && pesticides.length === 0) {
@@ -198,7 +202,6 @@ async function saveWeedingLog() {
       }
     });
 
-    alert("保存しました！");
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";
   } catch (e) {

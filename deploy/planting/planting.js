@@ -313,6 +313,10 @@ async function savePlantingInner() {
     alert("播種ロット（seedRef）を選択してください");
     return;
   }
+  if (!String(data.worker || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const notes = data.notes ? data.notes.replace(/[\r\n,]/g, " ") : "";
 

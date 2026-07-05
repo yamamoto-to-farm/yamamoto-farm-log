@@ -117,6 +117,10 @@ async function saveWateringLog() {
     alert("作業日・圃場・潅水時間（分 or 開始終了時刻）は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const btn = document.getElementById("save-btn");
   if (btn) {
@@ -140,8 +144,6 @@ async function saveWateringLog() {
         notes
       }
     });
-
-    alert("保存しました！");
 
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";

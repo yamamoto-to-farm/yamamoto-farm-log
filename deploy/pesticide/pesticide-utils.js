@@ -70,6 +70,10 @@ export async function savepesticideLog() {
     alert("日付・圃場は必須です");
     return;
   }
+  if (!String(workers || "").trim()) {
+    alert("作業者は必須です");
+    return;
+  }
 
   const pesticides = getpesticideInputData();
   if (pesticides.length === 0) {
@@ -96,7 +100,6 @@ export async function savepesticideLog() {
       notes
     });
 
-    alert("保存しました！");
     document.getElementById("notes").value = "";
 
   } catch (e) {
