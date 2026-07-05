@@ -230,7 +230,7 @@ export async function printInline(selector, title = "印刷") {
     .print-hide {
       display: none !important;
     }
-    .collapse-content:not(.print-keep-collapsed), .field-group > div, #form-area, #page-area, #analysis-container, #workContentWrapper {
+    .collapse-content:not(.print-keep-collapsed):not(.print-hide), .field-group > div:not(.print-hide), #form-area, #page-area, #analysis-container, #workContentWrapper {
       display: block !important;
       visibility: visible !important;
       overflow: visible !important;
@@ -289,7 +289,7 @@ export async function printInline(selector, title = "印刷") {
 
   clone.querySelectorAll("script, iframe").forEach(el => el.remove());
   // 内部の折りたたみ系を強制展開
-  clone.querySelectorAll && clone.querySelectorAll('.collapse-content:not(.print-keep-collapsed), .field-group > div').forEach(el => {
+  clone.querySelectorAll && clone.querySelectorAll('.collapse-content:not(.print-keep-collapsed):not(.print-hide), .field-group > div:not(.print-hide)').forEach(el => {
     el.style.display = 'block';
     el.style.visibility = 'visible';
     el.style.overflow = 'visible';
