@@ -12,6 +12,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
+import { showSaveModal, closeSaveModal } from "/common/save-modal.js?v=1";
 import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData, updatePer10aAll } from "/fertilizer/fertilizer-multi-input.js?v=1";
 import { distributeFertilizers } from "/fertilizer/fertilizer-distribute.js?v=1";
 
@@ -320,6 +321,7 @@ async function saveSoilWorkLog(config, mode) {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
+  await showSaveModal("保存しています…");
 
   try {
     await saveMultiFieldLog({
@@ -364,6 +366,7 @@ async function saveSoilWorkLog(config, mode) {
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";
   } catch (e) {
+    await closeSaveModal();
     console.error(e);
     alert(e?.message || "保存に失敗しました");
   } finally {

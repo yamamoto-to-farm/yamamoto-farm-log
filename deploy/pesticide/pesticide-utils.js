@@ -16,6 +16,8 @@ import { distributepesticides }
   from "./pesticide-distribute.js?v=1";
 import { savePesticideLog } 
   from "/common/general-log/pesticide.js?v=1";
+import { showSaveModal, closeSaveModal }
+  from "/common/save-modal.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
 
@@ -82,6 +84,7 @@ export async function savepesticideLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
+  await showSaveModal("保存しています…");
 
   try {
     await savePesticideLog({
@@ -97,6 +100,7 @@ export async function savepesticideLog() {
     document.getElementById("notes").value = "";
 
   } catch (e) {
+    await closeSaveModal();
     console.error(e);
     alert("保存に失敗しました");
   } finally {

@@ -9,6 +9,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
+import { showSaveModal, closeSaveModal } from "/common/save-modal.js?v=1";
 
 export async function initHandWeedingPage() {
   debugLog("initHandWeedingPage start");
@@ -88,6 +89,7 @@ async function saveHandWeedingLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
+  await showSaveModal("保存しています…");
 
   try {
     await saveMultiFieldLog({
@@ -106,6 +108,7 @@ async function saveHandWeedingLog() {
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";
   } catch (e) {
+    await closeSaveModal();
     console.error(e);
     alert(e?.message || "保存に失敗しました");
   } finally {

@@ -16,6 +16,8 @@ import { distributeFertilizers }
   from "./fertilizer-distribute.js?v=1";
 import { saveMultiFieldLog } 
   from "/common/general-log/base.js?v=1";
+import { showSaveModal, closeSaveModal }
+  from "/common/save-modal.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
 
@@ -82,6 +84,7 @@ export async function saveFertilizerLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
+  await showSaveModal("保存しています…");
 
   try {
     await saveMultiFieldLog({
@@ -100,6 +103,7 @@ export async function saveFertilizerLog() {
     document.getElementById("notes").value = "";
 
   } catch (e) {
+    await closeSaveModal();
     console.error(e);
     alert(e?.message || "保存に失敗しました");
   } finally {
