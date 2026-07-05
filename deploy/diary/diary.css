@@ -28,6 +28,27 @@
   margin-left: 0;
 }
 
+#diaryDateNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#diaryDateNav #diaryDate {
+  width: 220px;
+  min-width: 200px;
+  max-width: 240px;
+  text-align: center;
+}
+
+#diaryDateNav .day-nav-btn {
+  min-width: 76px;
+  padding: 10px 14px;
+  margin-top: 0;
+}
+
 /* 折りたたみ */
 .collapse-title {
   font-size: 1.1rem;

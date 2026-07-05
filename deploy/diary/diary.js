@@ -11,6 +11,17 @@ import { saveDiary } from "./saveDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js";
 
+function shiftDateByDays(dateStr, diffDays) {
+  if (!dateStr) return "";
+  const base = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return dateStr;
+  base.setDate(base.getDate() + diffDays);
+  const y = base.getFullYear();
+  const m = String(base.getMonth() + 1).padStart(2, "0");
+  const d = String(base.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // ---------------------------------------------------------
 // モード切り替えボタン描画（★ 日付を URL に保持）
 // ---------------------------------------------------------
@@ -83,7 +94,23 @@ window.addEventListener("DOMContentLoaded", async () => {
   const initialDate = urlDate || today;
 
   const dateInput = document.getElementById("diaryDate");
+  const prevDayBtn = document.getElementById("prevDayBtn");
+  const nextDayBtn = document.getElementById("nextDayBtn");
   dateInput.value = initialDate;
+
+  if (prevDayBtn) {
+    prevDayBtn.addEventListener("click", () => {
+      dateInput.value = shiftDateByDays(dateInput.value, -1);
+      dateInput.dispatchEvent(new Event("change"));
+    });
+  }
+
+  if (nextDayBtn) {
+    nextDayBtn.addEventListener("click", () => {
+      dateInput.value = shiftDateByDays(dateInput.value, 1);
+      dateInput.dispatchEvent(new Event("change"));
+    });
+  }
 
   // モード切り替えボタン描画（★ initialDate を反映）
   renderModeSwitch(mode);
