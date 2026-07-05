@@ -38,17 +38,19 @@
 }
 
 #diaryDateNav {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: center;
+  width: 100%;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 #diaryDateNav #diaryDate {
-  width: 220px;
-  min-width: 200px;
-  max-width: 240px;
+  justify-self: center;
+  width: 280px;
+  max-width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
   text-align: center;
 }
 
@@ -56,6 +58,27 @@
   min-width: 76px;
   padding: 10px 14px;
   margin-top: 0;
+}
+
+#prevDayBtn {
+  justify-self: start;
+}
+
+#nextDayBtn {
+  justify-self: end;
+}
+
+@media (max-width: 640px) {
+  #diaryDateNav {
+    grid-template-columns: 1fr;
+  }
+
+  #prevDayBtn,
+  #nextDayBtn,
+  #diaryDateNav #diaryDate {
+    justify-self: center;
+    width: min(280px, 100%);
+  }
 }
 
 /* 折りたたみ */
