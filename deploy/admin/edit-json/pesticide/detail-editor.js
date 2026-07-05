@@ -514,10 +514,10 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
         </div>
 
         <div class="edit-line">
-          <label>標準使用量</label>
+          <label>使用液量</label>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="standardDosePer10a" type="number" step="any" placeholder="per10a" value="${p.standardDose?.per10a ?? ""}">
-            <input class="form-input" data-id="${escapeHtml(id)}" data-key="standardDoseUnit" placeholder="unit" value="${escapeHtml(p.standardDose?.unit ?? p.unit ?? "ml")}">
+            <input class="form-input" data-id="${escapeHtml(id)}" data-key="standardDosePer10a" type="number" step="any" placeholder="10a当たり" value="${p.standardDose?.per10a ?? ""}">
+            <input class="form-input" data-id="${escapeHtml(id)}" data-key="standardDoseUnit" placeholder="単位" value="${escapeHtml(p.standardDose?.unit ?? p.unit ?? "ml")}">
           </div>
         </div>
 
