@@ -23,6 +23,27 @@ export async function distributepesticides(fields, pesticides) {
 
   const result = await distributePesticideUsageByField(fields, pesticides);
 
-  debugLog("distributepesticides result:", result);
-  return result;
+  const sourceMap = new Map();
+  (Array.isArray(pesticides) ? pesticides : []).forEach(item => {
+    const key = String(item?.name || "").trim();
+    if (!key) return;
+    sourceMap.set(key, {
+      category: String(item?.category || "").trim(),
+      materialType: String(item?.materialType || "pesticide"),
+      sourceMaster: String(item?.sourceMaster || "pesticide-index")
+    });
+  });
+
+  const enriched = (Array.isArray(result) ? result : []).map(row => {
+    const source = sourceMap.get(String(row?.name || "").trim()) || {};
+    return {
+      ...row,
+      ...(source.category ? { category: source.category } : {}),
+      ...(source.materialType ? { materialType: source.materialType } : {}),
+      ...(source.sourceMaster ? { sourceMaster: source.sourceMaster } : {})
+    };
+  });
+
+  debugLog("distributepesticides result:", enriched);
+  return enriched;
 }

@@ -24,7 +24,7 @@ export async function distributeFertilizers(fields, fertilizers) {
   const result = [];
 
   for (const fert of fertilizers) {
-    const { fertilizer_id, name, total_kg } = fert;
+    const { fertilizer_id, name, total_kg, category, materialType, sourceMaster } = fert;
 
     debugLog(`按分開始: ${name} total=${total_kg}`);
 
@@ -39,7 +39,10 @@ export async function distributeFertilizers(fields, fertilizers) {
         field: d.field,
         fertilizer_id,
         name,
-        amount_kg: d.amount
+        amount_kg: d.amount,
+        ...(category ? { category } : {}),
+        ...(materialType ? { materialType } : {}),
+        ...(sourceMaster ? { sourceMaster } : {})
       });
     });
   }

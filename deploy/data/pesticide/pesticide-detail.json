@@ -1,1 +1,1029 @@
-{"SL0001":{"name":"フィールドスターP乳剤","maker":"","category":"選択制除草剤","unit":"ml","registrationNo":"","formulation":"","price":{},"activeIngredients":[],"dilution":{"min":null,"max":null,"default":null},"standardDose":{"per10a":null,"unit":"ml"},"targetCrops":[],"targetPests":[],"maxApplicationsPerSeason":null,"preHarvestIntervalDays":null,"reentryIntervalHours":null,"resistanceCode":"","notes":""},"IN0001":{"name":"モベントフロアブル","maker":"","category":"殺虫剤","unit":"ml","registrationNo":"","formulation":"","price":{},"activeIngredients":[],"dilution":{"min":null,"max":null,"default":null},"standardDose":{"per10a":null,"unit":"ml"},"targetCrops":[],"targetPests":[],"maxApplicationsPerSeason":null,"preHarvestIntervalDays":null,"reentryIntervalHours":null,"resistanceCode":"","notes":""},"FG0001":{"name":"フェリオゴールド","maker":"","category":"殺菌剤","unit":"ml","registrationNo":"","formulation":"","price":{},"activeIngredients":[],"dilution":{"min":null,"max":null,"default":null},"standardDose":{"per10a":null,"unit":"ml"},"targetCrops":[],"targetPests":[],"maxApplicationsPerSeason":null,"preHarvestIntervalDays":null,"reentryIntervalHours":null,"resistanceCode":"","notes":""},"FG0002":{"name":"アニキ乳剤","maker":"","category":"殺菌剤","unit":"ml","registrationNo":"","formulation":"","price":{},"activeIngredients":[],"dilution":{"min":null,"max":null,"default":null},"standardDose":{"per10a":null,"unit":"ml"},"targetCrops":[],"targetPests":[],"maxApplicationsPerSeason":null,"preHarvestIntervalDays":null,"reentryIntervalHours":null,"resistanceCode":"","notes":""},"IN0002":{"name":"リドミルゴールドMZ","maker":"","category":"殺虫剤","unit":"ml","registrationNo":"","formulation":"","price":{},"activeIngredients":[],"dilution":{"min":null,"max":null,"default":null},"standardDose":{"per10a":null,"unit":"ml"},"targetCrops":[],"targetPests":[],"maxApplicationsPerSeason":null,"preHarvestIntervalDays":null,"reentryIntervalHours":null,"resistanceCode":"","notes":""},"FG0003":{"name":"カッパーシン水和剤","maker":"","category":"殺菌剤","unit":"ｇ","registrationNo":"","formulation":"","price":{},"activeIngredients":[],"dilution":{"min":null,"max":null,"default":null},"standardDose":{"per10a":null,"unit":"ｇ"},"targetCrops":[],"targetPests":[],"maxApplicationsPerSeason":null,"preHarvestIntervalDays":null,"reentryIntervalHours":null,"resistanceCode":"","notes":""}}
+{
+  "SL0001": {
+    "name": "フィールドスターP乳剤",
+    "maker": "",
+    "category": "選択制除草剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0001": {
+    "name": "フェリオゴールド",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0001": {
+    "name": "モベントフロアブル",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0002": {
+    "name": "アニキ乳剤",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0002": {
+    "name": "リドミルゴールドMZ",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0003": {
+    "name": "カッパーシン水和剤",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0003": {
+    "name": "リーフガード顆粒水和剤",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "g",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "g"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "g",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0004": {
+    "name": "スクレアフロアブル",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0004": {
+    "name": "グレーシア乳剤",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0005": {
+    "name": "リゾレックス水和剤",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "g",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "g"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "g",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0005": {
+    "name": "スピノエース顆粒水和剤",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "g",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "g"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "g",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0006": {
+    "name": "ウララドライフロアブル",
+    "maker": "石原産業株式会社",
+    "category": "殺虫剤",
+    "unit": "g",
+    "registrationNo": "21812",
+    "formulation": "淡褐色水和性細粒",
+    "price": {
+      "2026-04": 2490
+    },
+    "dilution": {
+      "min": 2000,
+      "max": 3000,
+      "default": 2000
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "g"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "g",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [
+      "N-ｼｱﾉﾒﾁﾙ-4-(ﾄﾘﾌﾙｵﾛﾒﾁﾙ)ﾆｺﾁﾝｱﾐﾄﾞ"
+    ],
+    "maxApplicationsPerSeason": 2,
+    "preHarvestIntervalDays": 1,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [
+      {
+        "name": "N-ｼｱﾉﾒﾁﾙ-4-(ﾄﾘﾌﾙｵﾛﾒﾁﾙ)ﾆｺﾁﾝｱﾐﾄﾞ",
+        "kind": "",
+        "concentrationPercent": 10
+      }
+    ],
+    "applications": []
+  },
+  "FG0006": {
+    "name": "クプロシールド",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0007": {
+    "name": "ディアナSC",
+    "maker": "住友化学株式会社",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "22910",
+    "formulation": "類白色水和性粘稠懸濁液体",
+    "price": {
+      "2026-04": 5500
+    },
+    "dilution": {
+      "min": 2500,
+      "max": 5000,
+      "default": 2500
+    },
+    "standardDose": {
+      "per10a": 200,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": 200,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [
+      "ｽﾋﾟﾈﾄﾗﾑ"
+    ],
+    "maxApplicationsPerSeason": 2,
+    "preHarvestIntervalDays": 1,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [
+      {
+        "name": "ｽﾋﾟﾈﾄﾗﾑ",
+        "kind": "",
+        "concentrationPercent": 11.7
+      }
+    ],
+    "applications": []
+  },
+  "FG0007": {
+    "name": "マイコシールド",
+    "maker": "日本曹達株式会社",
+    "category": "殺菌剤",
+    "unit": "g",
+    "registrationNo": "16152",
+    "formulation": "水和剤",
+    "price": {
+      "2026-04": 5946
+    },
+    "dilution": {
+      "min": 1000,
+      "max": 2000,
+      "default": 1000
+    },
+    "standardDose": {
+      "per10a": 200,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": 500,
+      "unit": "g",
+      "packLabel": "袋"
+    },
+    "targetCrops": [],
+    "targetPests": [
+      "黒腐病"
+    ],
+    "activeIngredients": [
+      "ｱﾙｷﾙﾄﾘﾒﾁﾙｱﾝﾓﾆｳﾑｶﾙｼｳﾑｵｷｼﾃﾄﾗｻｲｸﾘﾝ"
+    ],
+    "maxApplicationsPerSeason": 2,
+    "preHarvestIntervalDays": 7,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [
+      {
+        "name": "ｱﾙｷﾙﾄﾘﾒﾁﾙｱﾝﾓﾆｳﾑｶﾙｼｳﾑｵｷｼﾃﾄﾗｻｲｸﾘﾝ",
+        "kind": "",
+        "concentrationPercent": 31.5
+      }
+    ],
+    "applications": [
+      {
+        "crop": "",
+        "target": "黒腐病",
+        "dilution": "",
+        "sprayVolume": "",
+        "timing": "",
+        "method": ""
+      }
+    ]
+  },
+  "FG0008": {
+    "name": "ロブラール水和剤",
+    "maker": "エフエムシー・ケミカルズ株式会社",
+    "category": "殺菌剤",
+    "unit": "g",
+    "registrationNo": "14212",
+    "formulation": "水和剤",
+    "price": {
+      "2026-04": 5228
+    },
+    "dilution": {
+      "min": 1000,
+      "max": null,
+      "default": 1000
+    },
+    "standardDose": {
+      "per10a": 200,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": 500,
+      "unit": "g",
+      "packLabel": "袋"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [
+      "3-(3,5-ｼﾞｸﾛﾛﾌｪﾆﾙ)-N-ｲｿﾌﾟﾛﾋﾟﾙ-2,4-ｼﾞｵｷｿｲﾐﾀﾞｿﾞﾘｼﾞﾝ-1-ｶﾙﾎﾞｷｻﾐﾄﾞ"
+    ],
+    "maxApplicationsPerSeason": 4,
+    "preHarvestIntervalDays": 7,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [
+      {
+        "name": "3-(3,5-ｼﾞｸﾛﾛﾌｪﾆﾙ)-N-ｲｿﾌﾟﾛﾋﾟﾙ-2,4-ｼﾞｵｷｿｲﾐﾀﾞｿﾞﾘｼﾞﾝ-1-ｶﾙﾎﾞｷｻﾐﾄﾞ",
+        "kind": "イプロジオン水和剤",
+        "concentrationPercent": 50
+      }
+    ],
+    "applications": []
+  },
+  "IN0008": {
+    "name": "ブロフレアSC",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0009": {
+    "name": "コルト顆粒水和剤",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "g",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "g"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "g",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0009": {
+    "name": "カナメフロアブル",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0010": {
+    "name": "ジオゼット水和剤",
+    "maker": "科研製薬株式会社",
+    "category": "殺菌剤",
+    "unit": "g",
+    "registrationNo": "23575",
+    "formulation": "水和剤",
+    "price": {},
+    "dilution": {
+      "min": 1000,
+      "max": null,
+      "default": 1000
+    },
+    "standardDose": {
+      "per10a": 200,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": 500,
+      "unit": "g",
+      "packLabel": "袋"
+    },
+    "targetCrops": [],
+    "targetPests": [
+      "株腐病"
+    ],
+    "activeIngredients": [
+      "ﾎﾟﾘｵｷｼﾝD亜鉛塩"
+    ],
+    "maxApplicationsPerSeason": 3,
+    "preHarvestIntervalDays": 14,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [
+      {
+        "name": "ﾎﾟﾘｵｷｼﾝD亜鉛塩",
+        "kind": "ポリオキシン水和剤",
+        "concentrationPercent": 2.25
+      }
+    ],
+    "applications": [
+      {
+        "crop": "",
+        "target": "株腐病",
+        "dilution": "",
+        "sprayVolume": "",
+        "timing": "",
+        "method": ""
+      }
+    ]
+  },
+  "IN0010": {
+    "name": "アファーム乳剤",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "IN0011": {
+    "name": "パダン粒剤４",
+    "maker": "",
+    "category": "殺虫剤",
+    "unit": "ml",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "ml"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "ml",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "FG0011": {
+    "name": "バリダシン液剤５",
+    "maker": "",
+    "category": "殺菌剤",
+    "unit": "cc",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "cc"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "cc",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "HL0001": {
+    "name": "ザクサ液剤",
+    "maker": "",
+    "category": "茎葉除草剤",
+    "unit": "L",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "L",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "HL0002": {
+    "name": "バスタ液剤",
+    "maker": "",
+    "category": "茎葉除草剤",
+    "unit": "L",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "L",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "HL0003": {
+    "name": "ラウンドアップマックスロード",
+    "maker": "",
+    "category": "茎葉除草剤",
+    "unit": "L",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "L",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "HL0004": {
+    "name": "草枯らしプラボトル",
+    "maker": "",
+    "category": "茎葉除草剤",
+    "unit": "L",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "L"
+    },
+    "packaging": {
+      "amountPerPack": null,
+      "unit": "L",
+      "packLabel": "本"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "SD0001": {
+    "name": "フロンサイド粉剤",
+    "maker": "",
+    "category": "土壌消毒剤",
+    "unit": "kg",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "kg"
+    },
+    "packaging": {
+      "amountPerPack": 20,
+      "unit": "kg",
+      "packLabel": "袋"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  },
+  "SD0002": {
+    "name": "ネビジン粉剤",
+    "maker": "",
+    "category": "土壌消毒剤",
+    "unit": "kg",
+    "registrationNo": "",
+    "formulation": "",
+    "price": {},
+    "dilution": {
+      "min": null,
+      "max": null,
+      "default": null
+    },
+    "standardDose": {
+      "per10a": null,
+      "unit": "kg"
+    },
+    "packaging": {
+      "amountPerPack": 10,
+      "unit": "kg",
+      "packLabel": "袋"
+    },
+    "targetCrops": [],
+    "targetPests": [],
+    "activeIngredients": [],
+    "maxApplicationsPerSeason": null,
+    "preHarvestIntervalDays": null,
+    "reentryIntervalHours": null,
+    "resistanceCode": "",
+    "notes": "",
+    "ingredients": [],
+    "applications": []
+  }
+}

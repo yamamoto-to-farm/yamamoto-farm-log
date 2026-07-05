@@ -229,7 +229,10 @@ export function getpesticideInputData() {
             total_water_amount,
             total_spray_amount: total_water_amount,
             unit: "L",
-            pesticide_unit: chemicalUnit
+            pesticide_unit: chemicalUnit,
+            category: String(f.category || "").trim(),
+            materialType: String(f.materialType || "pesticide"),
+            sourceMaster: String(f.sourceMaster || "pesticide-index")
         };
 
         debugLog("row:", row);

@@ -8,8 +8,12 @@ const FERTILIZER_CATEGORIES = [
   "窒素肥料",
   "改良材",
   "堆肥",
-  "土壌消毒剤"
+  "液肥",
+  "葉面散布剤",
+  "BS資材"
 ];
+
+const DISALLOWED_FERTILIZER_CATEGORIES = ["土壌消毒剤"];
 
 function createEmptyFertilizerDetail(name = "") {
   return {
@@ -116,7 +120,8 @@ export function renderEditCard({ json, container, finalPath }) {
       <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
         <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
         <p style="margin:0 0 4px;">ID: <strong>FNNN</strong> 形式（例: F001）</p>
-        <p style="margin:0 0 4px;">カテゴリ: BB / 化成 / 窒素肥料 / 改良材 / 堆肥 / 土壌消毒剤</p>
+        <p style="margin:0 0 4px;">カテゴリ: BB / 化成 / 窒素肥料 / 改良材 / 堆肥 / 液肥 / 葉面散布剤 / BS資材</p>
+        <p style="margin:0 0 4px; color:#8a5a00;">土壌消毒剤は農薬マスタで管理してください。</p>
         <p style="margin:0; font-size:0.92em; color:#555;">ID は重複しない連番で管理し、名称変更時もIDは維持してください。</p>
       </div>
 
@@ -327,7 +332,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
           <div class="form-row">
             <label class="form-label">カテゴリ</label>
-            <input class="form-input fert-category" data-index="${index}" value="${escapeHtml(category)}" placeholder="BB / 化成 ...">
+            <input class="form-input fert-category" data-index="${index}" value="${escapeHtml(category)}" placeholder="BB / 化成 / 液肥 ...">
           </div>
 
           <div class="form-row">
@@ -387,6 +392,9 @@ export function renderEditCard({ json, container, finalPath }) {
       if (id) usedIds.add(id);
 
       if (!category) errors.push(`${line}行目: カテゴリは必須です。`);
+      if (DISALLOWED_FERTILIZER_CATEGORIES.includes(category)) {
+        errors.push(`${line}行目: カテゴリ「${category}」は肥料マスタでは使えません（農薬マスタで管理してください）。`);
+      }
       if (!name) errors.push(`${line}行目: 名称は必須です。`);
 
       if (row.capacity != null && row.capacity !== "") {

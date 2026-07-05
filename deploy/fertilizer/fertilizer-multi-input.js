@@ -191,7 +191,10 @@ export function getFertilizerInputData() {
             fertilizer_id: f.id,
             name,
             bags,
-            total_kg: total
+            total_kg: total,
+            category: String(f.category || "").trim(),
+            materialType: String(f.materialType || "fertilizer"),
+            sourceMaster: String(f.sourceMaster || "fertilizer-index")
         };
 
         debugLog("row:", row);

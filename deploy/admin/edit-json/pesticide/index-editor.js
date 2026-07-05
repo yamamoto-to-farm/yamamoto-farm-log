@@ -20,6 +20,8 @@ const PESTICIDE_PREFIXES = [
   { prefix: "SD", category: "土壌消毒剤" }
 ];
 
+const DISALLOWED_PESTICIDE_CATEGORIES = ["液肥", "葉面散布剤", "BS資材"];
+
 function createEmptyPesticideDetail(item = {}) {
   return {
     name: item.name || "",
@@ -161,6 +163,7 @@ export function renderEditCard({ json, container, finalPath }) {
         <p style="margin:0 0 6px;"><strong>入力ルール（README抜粋）</strong></p>
         <p style="margin:0 0 4px;">ID: <strong>CCNNNN</strong> または <strong>FNNN</strong> 形式（例: FG0001 / F304）</p>
         <p style="margin:0 0 4px;">カテゴリ: 殺菌剤 / 殺虫剤 / 茎葉除草剤 / 選択制除草剤 / 展着剤 / 土壌消毒剤</p>
+        <p style="margin:0 0 4px; color:#8a5a00;">液肥・葉面散布剤・BS資材は肥料マスタで管理してください。</p>
         <p style="margin:0; font-size:0.92em; color:#555;">プレフィックス例: FG=殺菌剤, IN=殺虫剤, HL=茎葉除草剤, SL=選択制除草剤, AD=展着剤, SD=土壌消毒剤</p>
       </div>
 
@@ -429,6 +432,9 @@ export function renderEditCard({ json, container, finalPath }) {
 
       if (!name) errors.push(`${line}行目: 名称は必須です。`);
       if (!category) errors.push(`${line}行目: カテゴリは必須です。`);
+      if (DISALLOWED_PESTICIDE_CATEGORIES.includes(category)) {
+        errors.push(`${line}行目: カテゴリ「${category}」は農薬マスタでは使えません（肥料マスタで管理してください）。`);
+      }
       if (!unit) errors.push(`${line}行目: 単位は必須です。`);
     });
 

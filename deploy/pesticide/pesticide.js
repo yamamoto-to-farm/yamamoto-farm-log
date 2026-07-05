@@ -22,6 +22,8 @@ import {
   savepesticideLog
 } from "./pesticide-utils.js?v=1";
 
+const CROSS_FERTILIZER_CATEGORIES_FOR_PESTICIDE = ["液肥", "葉面散布剤", "BS資材"];
+
 /* ============================================================
    初期化（フィルタ構造＋モーダル構造）
 ============================================================ */
@@ -114,9 +116,15 @@ async function initFieldFilterData() {
 async function initpesticideFilterData() {
   debugLog("loading pesticide-index.json");
 
-  const [list, detail] = await Promise.all([
+  const [list, detail, fertilizerList, fertilizerDetail] = await Promise.all([
     fetch("/data/pesticide/pesticide-index.json?v=" + Date.now()).then(r => r.json()),
     fetch("/data/pesticide/pesticide-detail.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({})),
+    fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : []))
+      .catch(() => ([])),
+    fetch("/data/fertilizer/fertilizer-detail.json?v=" + Date.now())
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}))
   ]);
@@ -131,7 +139,28 @@ async function initpesticideFilterData() {
       id: f.id,
       name: f.name,
       category: f.category,
-      unit: f.unit
+      unit: f.unit,
+      materialType: "pesticide",
+      sourceMaster: "pesticide-index"
+    };
+  });
+
+  const crossTargets = Array.isArray(fertilizerList)
+    ? fertilizerList.filter(v => CROSS_FERTILIZER_CATEGORIES_FOR_PESTICIDE.includes(String(v?.category || "").trim()))
+    : [];
+
+  crossTargets.forEach(f => {
+    const byId = fertilizerDetail?.[f.id] || {};
+    const unit = String(byId?.packaging?.unit || byId?.unit || "ml").trim() || "ml";
+    dict[f.name] = {
+      ...byId,
+      ...f,
+      id: f.id,
+      name: f.name,
+      category: f.category,
+      unit,
+      materialType: "fertilizer",
+      sourceMaster: "fertilizer-index"
     };
   });
 
@@ -147,6 +176,16 @@ async function initpesticideFilterData() {
       parents.push(f.category);
     }
     children[f.category].push(f.name);
+  });
+
+  crossTargets.forEach(f => {
+    if (!children[f.category]) {
+      children[f.category] = [];
+      parents.push(f.category);
+    }
+    if (!children[f.category].includes(f.name)) {
+      children[f.category].push(f.name);
+    }
   });
 
   const current = getFilterData();

@@ -1,1 +1,86 @@
-[{"id":"F001","category":"BB","name":"BBグリーンワイド","capacity":20},{"id":"F002","category":"BB","name":"BBB元肥","capacity":20},{"id":"F003","category":"BB","name":"BBわかばの友追肥","capacity":20},{"id":"F101","category":"化成","name":"野菜追肥S842","capacity":20},{"id":"F201","category":"窒素肥料","name":"石灰窒素（粒）","capacity":20},{"id":"F202","category":"窒素肥料","name":"ペルカ","capacity":20},{"id":"F301","category":"改良材","name":"エコまぜくん","capacity":20},{"id":"F302","category":"改良材","name":"炭酸苦土石灰（マグカル）","capacity":20},{"id":"F303","category":"改良材","name":"苦土石灰（粒）","capacity":20},{"id":"F304","category":"改良材","name":"ライムエース（粒状消石灰）","capacity":20},{"id":"F305","category":"改良材","name":"F T E","capacity":2},{"id":"F306","category":"改良材","name":"ゼオライト特級","capacity":20},{"id":"F401","category":"堆肥","name":"新ふりかけ堆肥eco","capacity":20},{"id":"F402","category":"堆肥","name":"JA畜産課 牛糞堆肥","capacity":1000},{"id":"F501","category":"土壌消毒剤","name":"フロンサイド粉剤","capacity":20},{"id":"F502","category":"土壌消毒剤","name":"ネビジン粉剤","capacity":10}]
+[
+  {
+    "id": "F001",
+    "category": "BB",
+    "name": "BBグリーンワイド",
+    "capacity": 20
+  },
+  {
+    "id": "F002",
+    "category": "BB",
+    "name": "BBB元肥",
+    "capacity": 20
+  },
+  {
+    "id": "F003",
+    "category": "BB",
+    "name": "BBわかばの友追肥",
+    "capacity": 20
+  },
+  {
+    "id": "F101",
+    "category": "化成",
+    "name": "野菜追肥S842",
+    "capacity": 20
+  },
+  {
+    "id": "F201",
+    "category": "窒素肥料",
+    "name": "石灰窒素（粒）",
+    "capacity": 20
+  },
+  {
+    "id": "F202",
+    "category": "窒素肥料",
+    "name": "ペルカ",
+    "capacity": 20
+  },
+  {
+    "id": "F301",
+    "category": "改良材",
+    "name": "エコまぜくん",
+    "capacity": 20
+  },
+  {
+    "id": "F302",
+    "category": "改良材",
+    "name": "炭酸苦土石灰（マグカル）",
+    "capacity": 20
+  },
+  {
+    "id": "F303",
+    "category": "改良材",
+    "name": "苦土石灰（粒）",
+    "capacity": 20
+  },
+  {
+    "id": "F304",
+    "category": "改良材",
+    "name": "ライムエース（粒状消石灰）",
+    "capacity": 20
+  },
+  {
+    "id": "F305",
+    "category": "改良材",
+    "name": "F T E",
+    "capacity": 2
+  },
+  {
+    "id": "F306",
+    "category": "改良材",
+    "name": "ゼオライト特級",
+    "capacity": 20
+  },
+  {
+    "id": "F401",
+    "category": "堆肥",
+    "name": "新ふりかけ堆肥eco",
+    "capacity": 20
+  },
+  {
+    "id": "F402",
+    "category": "堆肥",
+    "name": "JA畜産課 牛糞堆肥",
+    "capacity": 1000
+  }
+]

@@ -1,1 +1,176 @@
-[{"id":"SL0001","name":"フィールドスターP乳剤","category":"選択制除草剤","unit":"ml"},{"id":"IN0001","name":"モベントフロアブル","category":"殺虫剤","unit":"ml"},{"id":"FG0001","name":"フェリオゴールド","category":"殺菌剤","unit":"ml"},{"id":"FG0002","name":"アニキ乳剤","category":"殺菌剤","unit":"ml"},{"id":"IN0002","name":"リドミルゴールドMZ","category":"殺虫剤","unit":"ml"},{"id":"FG0003","name":"カッパーシン水和剤","category":"殺菌剤","unit":"ｇ"}]
+[
+  {
+    "id": "SL0001",
+    "name": "フィールドスターP乳剤",
+    "category": "選択制除草剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0001",
+    "name": "フェリオゴールド",
+    "category": "殺菌剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0001",
+    "name": "モベントフロアブル",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0002",
+    "name": "アニキ乳剤",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0002",
+    "name": "リドミルゴールドMZ",
+    "category": "殺菌剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0003",
+    "name": "カッパーシン水和剤",
+    "category": "殺菌剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0003",
+    "name": "リーフガード顆粒水和剤",
+    "category": "殺虫剤",
+    "unit": "g"
+  },
+  {
+    "id": "FG0004",
+    "name": "スクレアフロアブル",
+    "category": "殺菌剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0004",
+    "name": "グレーシア乳剤",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0005",
+    "name": "リゾレックス水和剤",
+    "category": "殺菌剤",
+    "unit": "g"
+  },
+  {
+    "id": "IN0005",
+    "name": "スピノエース顆粒水和剤",
+    "category": "殺虫剤",
+    "unit": "g"
+  },
+  {
+    "id": "IN0006",
+    "name": "ウララドライフロアブル",
+    "category": "殺虫剤",
+    "unit": "g"
+  },
+  {
+    "id": "FG0006",
+    "name": "クプロシールド",
+    "category": "殺菌剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0007",
+    "name": "ディアナSC",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0007",
+    "name": "マイコシールド",
+    "category": "殺菌剤",
+    "unit": "g"
+  },
+  {
+    "id": "FG0008",
+    "name": "ロブラール水和剤",
+    "category": "殺菌剤",
+    "unit": "g"
+  },
+  {
+    "id": "IN0008",
+    "name": "ブロフレアSC",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0009",
+    "name": "コルト顆粒水和剤",
+    "category": "殺虫剤",
+    "unit": "g"
+  },
+  {
+    "id": "FG0009",
+    "name": "カナメフロアブル",
+    "category": "殺菌剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0010",
+    "name": "ジオゼット水和剤",
+    "category": "殺菌剤",
+    "unit": "g"
+  },
+  {
+    "id": "IN0010",
+    "name": "アファーム乳剤",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "IN0011",
+    "name": "パダン粒剤４",
+    "category": "殺虫剤",
+    "unit": "ml"
+  },
+  {
+    "id": "FG0011",
+    "name": "バリダシン液剤５",
+    "category": "殺菌剤",
+    "unit": "cc"
+  },
+  {
+    "id": "HL0001",
+    "name": "ザクサ液剤",
+    "category": "茎葉除草剤",
+    "unit": "L"
+  },
+  {
+    "id": "HL0002",
+    "name": "バスタ液剤",
+    "category": "茎葉除草剤",
+    "unit": "L"
+  },
+  {
+    "id": "HL0003",
+    "name": "ラウンドアップマックスロード",
+    "category": "茎葉除草剤",
+    "unit": "L"
+  },
+  {
+    "id": "HL0004",
+    "name": "草枯らしプラボトル",
+    "category": "茎葉除草剤",
+    "unit": "L"
+  },
+  {
+    "id": "SD0001",
+    "name": "フロンサイド粉剤",
+    "category": "土壌消毒剤",
+    "unit": "kg"
+  },
+  {
+    "id": "SD0002",
+    "name": "ネビジン粉剤",
+    "category": "土壌消毒剤",
+    "unit": "kg"
+  }
+]
