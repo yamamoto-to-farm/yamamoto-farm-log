@@ -16,13 +16,19 @@ import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-m
 import { setFertilizerDict, renderFertilizerInputs, getFertilizerInputData, updatePer10aAll } from "/fertilizer/fertilizer-multi-input.js?v=1";
 import { distributeFertilizers } from "/fertilizer/fertilizer-distribute.js?v=1";
 
+const DEFAULT_ATTACHMENT_INDEX = {
+  intertill: ["ロータリカルチCR33B", "爪カルチ(リッチャー)", "手押し"],
+  bedmaking: ["スーパー台形成形機"],
+  tillage: ["耕うん（ロータリー）", "サブソイラー"]
+};
+
 const MODE_CONFIG = {
   intertill: {
     title: "中耕ログ",
     saveType: "intertill",
-    selectorLabel: "アタッチメント",
+    selectorLabel: "作業内容",
     selectorPlaceholder: "アタッチメントを選択",
-    attachmentOptions: ["ロータリカルチCR33B", "爪カルチ(リッチャー)"],
+    attachmentOptions: ["ロータリカルチCR33B", "爪カルチ(リッチャー)", "手押し"],
     singleAttachment: false,
     ridgeWidthMode: "hidden",
     ridgeHeightMode: "hidden",
@@ -32,7 +38,7 @@ const MODE_CONFIG = {
   bedmaking: {
     title: "畝立てログ",
     saveType: "bedmaking",
-    selectorLabel: "アタッチメント",
+    selectorLabel: "作業内容",
     selectorPlaceholder: "",
     attachmentOptions: ["スーパー台形成形機"],
     singleAttachment: true,
@@ -142,6 +148,36 @@ function applyModeUi(config) {
   }
 }
 
+function normalizeAttachmentList(value, fallback) {
+  if (!Array.isArray(value)) return [...fallback];
+  const list = value
+    .map(v => String(v || "").trim())
+    .filter(Boolean);
+  return list.length ? [...new Set(list)] : [...fallback];
+}
+
+async function loadAttachmentIndex() {
+  try {
+    const res = await fetch(`/data/attachment-index.json?v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json && typeof json === "object" ? json : null;
+  } catch {
+    return null;
+  }
+}
+
+async function buildModeConfig(baseConfig) {
+  const index = await loadAttachmentIndex();
+  const key = String(baseConfig?.saveType || "").trim();
+  const fallback = Array.isArray(baseConfig?.attachmentOptions) ? baseConfig.attachmentOptions : [];
+  const dynamic = normalizeAttachmentList(index?.[key], fallback);
+  return {
+    ...baseConfig,
+    attachmentOptions: dynamic
+  };
+}
+
 export async function initSoilWorkPage() {
   const mode = getMode();
   if (!mode) {
@@ -149,7 +185,7 @@ export async function initSoilWorkPage() {
     return;
   }
 
-  const config = MODE_CONFIG[mode];
+  const config = await buildModeConfig(MODE_CONFIG[mode]);
 
   document.getElementById("form-area").style.display = "block";
   applyModeUi(config);

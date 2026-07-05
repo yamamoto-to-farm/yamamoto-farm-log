@@ -160,6 +160,12 @@ function renderJsonList(container) {
           file: "auth-config.json",
           data: "auth-config",
           desc: "セッション時間・無操作タイムアウト・重要操作再認証の設定"
+        },
+        {
+          label: "アタッチメント設定",
+          file: "attachment-index.json",
+          data: "attachment-index",
+          desc: "ログページごとのアタッチメント候補（中耕・畝立て・土づくり等）"
         }
       ]
     }

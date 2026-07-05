@@ -13,10 +13,13 @@ import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
+const DEFAULT_TILLAGE_ATTACHMENTS = ["耕うん（ロータリー）", "サブソイラー"];
+
 export async function initTillagePage() {
   debugLog("initTillagePage start");
 
   await initFieldFilterData();
+  await applyTillageAttachmentOptions();
 
   initActiveFilterUI();
 
@@ -43,6 +46,46 @@ export async function initTillagePage() {
   }
 
   debugLog("initTillagePage done");
+}
+
+function normalizeAttachmentList(value, fallback) {
+  if (!Array.isArray(value)) return [...fallback];
+  const list = value
+    .map(v => String(v || "").trim())
+    .filter(Boolean);
+  return list.length ? [...new Set(list)] : [...fallback];
+}
+
+async function loadAttachmentIndex() {
+  try {
+    const res = await fetch(`/data/attachment-index.json?v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json && typeof json === "object" ? json : null;
+  } catch {
+    return null;
+  }
+}
+
+async function applyTillageAttachmentOptions() {
+  const select = document.getElementById("work-type");
+  if (!select) return;
+
+  const index = await loadAttachmentIndex();
+  const options = normalizeAttachmentList(index?.tillage, DEFAULT_TILLAGE_ATTACHMENTS);
+
+  select.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = "アタッチメントを選択";
+  select.appendChild(first);
+
+  options.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
 }
 
 async function initFieldFilterData() {
@@ -89,7 +132,7 @@ async function saveTillageLog() {
   const machine = window.__tillage_machine || "machine1";
 
   if (!date || !type || fields.length === 0) {
-    alert("作業日・作業区分・圃場は必須です");
+    alert("作業日・作業内容・圃場は必須です");
     return;
   }
   if (!String(workers || "").trim()) {
