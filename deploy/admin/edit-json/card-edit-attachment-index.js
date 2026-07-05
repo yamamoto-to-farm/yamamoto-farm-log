@@ -24,7 +24,8 @@ export function renderEditCard({ json, container }) {
   const current = {
     intertill: normalizeList(json?.intertill),
     bedmaking: normalizeList(json?.bedmaking),
-    tillage: normalizeList(json?.tillage)
+    tillage: normalizeList(json?.tillage),
+    weeding: normalizeList(json?.weeding)
   };
 
   container.insertAdjacentHTML("beforeend", `
@@ -47,6 +48,11 @@ export function renderEditCard({ json, container }) {
         <textarea id="attachment-tillage" class="form-input" rows="4">${current.tillage.join("\n")}</textarea>
       </div>
 
+      <div class="form-row">
+        <label class="form-label" for="attachment-weeding">除草・草刈りログ（weeding / 草刈り方式）</label>
+        <textarea id="attachment-weeding" class="form-input" rows="4">${current.weeding.join("\n")}</textarea>
+      </div>
+
       <button id="save-attachment-index-btn" class="primary-btn" style="margin-top:20px;">保存する</button>
     </div>
   `);
@@ -56,8 +62,9 @@ export function renderEditCard({ json, container }) {
     const intertill = parseTextareaLines(document.getElementById("attachment-intertill")?.value || "");
     const bedmaking = parseTextareaLines(document.getElementById("attachment-bedmaking")?.value || "");
     const tillage = parseTextareaLines(document.getElementById("attachment-tillage")?.value || "");
+    const weeding = parseTextareaLines(document.getElementById("attachment-weeding")?.value || "");
 
-    if (!intertill.length || !bedmaking.length || !tillage.length) {
+    if (!intertill.length || !bedmaking.length || !tillage.length || !weeding.length) {
       alert("各ログの候補を1件以上入力してください");
       return;
     }
@@ -66,6 +73,7 @@ export function renderEditCard({ json, container }) {
       intertill,
       bedmaking,
       tillage,
+      weeding,
       updatedAt: new Date().toISOString()
     };
 

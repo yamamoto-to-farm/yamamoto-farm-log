@@ -36,6 +36,7 @@ export async function initWeedingList() {
     `;
 
     list.forEach(r => {
+      const machineLabel = [r.mowingMethod, r.machine].map(v => String(v || "").trim()).filter(Boolean).join(" / ") || "-";
       html += `
         <tr>
           <td>${escapeHtml(r.date)}</td>
@@ -43,7 +44,7 @@ export async function initWeedingList() {
           <td>${escapeHtml(r.fieldText)}</td>
           <td>${escapeHtml(r.workers || "-")}</td>
           <td>${escapeHtml(r.pesticides || "-")}</td>
-          <td>${escapeHtml(r.machine || "-")}</td>
+          <td>${escapeHtml(machineLabel)}</td>
           <td>${escapeHtml(r.notes || "")}</td>
         </tr>
       `;

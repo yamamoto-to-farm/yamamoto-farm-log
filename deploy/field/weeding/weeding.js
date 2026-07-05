@@ -16,12 +16,14 @@ import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 let pesticideDict = {};
+const DEFAULT_MOWING_METHODS = ["背負い式刈払機", "フレールモア", "オフセットモア"];
 
 export async function initWeedingPage() {
   debugLog("initWeedingPage start");
 
   await initFieldFilterData();
   await initPesticideFilterData();
+  await applyMowingMethodOptions();
 
   initActiveFilterUI();
 
@@ -67,11 +69,17 @@ export async function initWeedingPage() {
 function updateWorkTypeUI() {
   const type = document.getElementById("work-type")?.value || "";
   const pesticideSection = document.getElementById("pesticide-section");
+  const mowingMethodSection = document.getElementById("mowing-method-section");
+  const mowingMethodEl = document.getElementById("mowing-method");
 
   const needsPesticide = type === "除草剤散布";
+  const needsMowingMethod = type === "草刈り";
 
   if (pesticideSection) {
     pesticideSection.style.display = needsPesticide ? "block" : "none";
+  }
+  if (mowingMethodSection) {
+    mowingMethodSection.style.display = needsMowingMethod ? "block" : "none";
   }
 
   // 草刈りに切り替えた時は農薬選択をクリア
@@ -80,9 +88,53 @@ function updateWorkTypeUI() {
     window.dispatchEvent(new CustomEvent("filter:apply"));
   }
 
+  if (!needsMowingMethod && mowingMethodEl) {
+    mowingMethodEl.value = "";
+  }
+
   if (needsPesticide) {
     renderPesticideAmountInputs();
   }
+}
+
+function normalizeAttachmentList(value, fallback) {
+  if (!Array.isArray(value)) return [...fallback];
+  const list = value
+    .map(v => String(v || "").trim())
+    .filter(Boolean);
+  return list.length ? [...new Set(list)] : [...fallback];
+}
+
+async function loadAttachmentIndex() {
+  try {
+    const res = await fetch(`/data/attachment-index.json?v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json && typeof json === "object" ? json : null;
+  } catch {
+    return null;
+  }
+}
+
+async function applyMowingMethodOptions() {
+  const select = document.getElementById("mowing-method");
+  if (!select) return;
+
+  const index = await loadAttachmentIndex();
+  const options = normalizeAttachmentList(index?.weeding, DEFAULT_MOWING_METHODS);
+
+  select.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = "方式を選択";
+  select.appendChild(first);
+
+  options.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
 }
 
 async function initFieldFilterData() {
@@ -147,6 +199,7 @@ async function saveWeedingLog() {
   const date = document.getElementById("date")?.value || "";
   const workType = document.getElementById("work-type")?.value || "";
   const notes = (document.getElementById("notes")?.value || "").trim();
+  const mowingMethod = (document.getElementById("mowing-method")?.value || "").trim();
   const fields = filterState.fields || [];
   const workers = getSelectedWorkers("workers_box", "temp_workers");
   const machine = window.__weeding_machine || "machine1";
@@ -163,6 +216,10 @@ async function saveWeedingLog() {
   const pesticides = filterState.pesticides || [];
   if (workType === "除草剤散布" && pesticides.length === 0) {
     alert("除草剤散布を選択した場合は農薬を選択してください");
+    return;
+  }
+  if (workType === "草刈り" && !mowingMethod) {
+    alert("草刈りを選択した場合は草刈り方式を選択してください");
     return;
   }
 
@@ -196,6 +253,7 @@ async function saveWeedingLog() {
         pesticides,
         ...(pesticideUsage.length ? { pesticideUsage } : {}),
         ...(distributed ? { distributed } : {}),
+        ...(mowingMethod ? { mowingMethod } : {}),
         machine,
         workers,
         notes

@@ -34,10 +34,11 @@ export async function loadAllWeedingLogs() {
         const workType = String(entry.workType || "");
         const workers = normalizeWorkers(entry.workers || entry.worker || "");
         const machine = String(entry.machine || "");
+        const mowingMethod = String(entry.mowingMethod || "");
         const notes = String(entry.notes || "");
         const pesticides = normalizePesticides(entry.pesticides || []);
 
-        const key = [date, workType, workers, machine, notes, pesticides].join("||") + `||${idx}`;
+        const key = [date, workType, workers, machine, mowingMethod, notes, pesticides].join("||") + `||${idx}`;
         // idx を入れることで同日同条件の別作業を潰さない
 
         if (!merged.has(key)) {
@@ -47,6 +48,7 @@ export async function loadAllWeedingLogs() {
             workType,
             workers,
             machine,
+            mowingMethod,
             notes,
             pesticides,
             fields: new Set([f.original])
