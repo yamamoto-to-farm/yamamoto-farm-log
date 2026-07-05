@@ -362,6 +362,16 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
   const countEl = document.getElementById("pesticide-detail-visible-count");
   const editorEl = document.getElementById("pesticide-detail-editor");
 
+  function updateBackButton() {
+    if (!backBtn) return;
+    const q = new URLSearchParams();
+    q.set("data", "pesticide-index");
+    if (selectedId) q.set("pid", selectedId);
+    backBtn.onclick = () => {
+      location.href = `?${q.toString()}`;
+    };
+  }
+
   function sortedIds() {
     return Object.keys(current)
       .map(v => normalizePesticideId(v))
@@ -676,14 +686,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     refreshCategoryOptions();
     refreshTargetOptions();
 
-    if (backBtn) {
-      const q = new URLSearchParams();
-      q.set("data", "pesticide-index");
-      if (selectedId) q.set("pid", selectedId);
-      backBtn.onclick = () => {
-        location.href = `?${q.toString()}`;
-      };
-    }
+    updateBackButton();
 
     renderEditor();
   }
@@ -853,6 +856,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     }
 
     selectedId = nextId;
+    updateBackButton();
     renderEditor();
   };
 
