@@ -18,7 +18,6 @@ import {
   completeSaveModal
 } from "../common/save-modal.js";
 import { enqueueSummaryUpdate } from "../common/summary.js";
-import { showSaveAlert } from "../common/alert-utils.js";
 
 
 
@@ -448,19 +447,6 @@ async function savePlantingInner() {
     "summaryQueueEmpty",
     () => {
       completeSaveModal("保存が完了しました");
-
-      // ★ 保存内容のアラート（共通関数）
-      showSaveAlert("定植ログを保存しました", [
-        { label: "定植日", value: data.plantDate },
-        { label: "圃場", value: data.field },
-        { label: "品種", value: data.variety },
-        { label: "播種ロット", value: data.seedRefs.join(" → ") },
-        { label: "株数", value: data.quantity },
-        { label: "作業者", value: data.worker },
-        { label: "備考", value: notes || "なし" }
-      ]);
-
-
     },
     { once: true }
   );

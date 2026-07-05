@@ -7,9 +7,6 @@ import { getMachineParam } from "../common/utils.js";
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
 
-// ★ alert-utils（共通アラート）
-import { showSaveAlert } from "../common/alert-utils.js";
-
 // ★ 保存モーダル
 import {
   showSaveModal,
@@ -362,25 +359,6 @@ async function saveShipping() {
     "summaryQueueEmpty",
     () => {
       completeSaveModal("保存が完了しました");
-
-      // ★ 共通アラート（alert-utils）
-      const items = [];
-      targets.forEach(t => {
-        const shippedBins = t.originalRemain - t.remainBins;
-
-        items.push(
-          { label: "定植", value: t.plantingRef },
-          { label: "出荷日", value: shippingDate },
-          { label: "圃場", value: t.field },
-          { label: "出荷基数", value: `${shippedBins} 基` },
-          { label: "重量", value: `${t.totalWeight.toFixed(1)} kg` },
-          { label: "作業者", value: cleanHuman },
-          { label: "備考", value: notes || "なし" },
-          { label: "", value: "" } // 空行
-        );
-      });
-
-      showSaveAlert("出荷ログを保存しました", items);
     },
     { once: true }
   );
