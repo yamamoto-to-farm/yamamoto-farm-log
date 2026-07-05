@@ -84,7 +84,7 @@ export async function savepesticideLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
-  await showSaveModal("保存しています…");
+  showSaveModal("保存しています…");
 
   try {
     await savePesticideLog({
@@ -100,7 +100,7 @@ export async function savepesticideLog() {
     document.getElementById("notes").value = "";
 
   } catch (e) {
-    await closeSaveModal();
+    closeSaveModal();
     console.error(e);
     alert("保存に失敗しました");
   } finally {

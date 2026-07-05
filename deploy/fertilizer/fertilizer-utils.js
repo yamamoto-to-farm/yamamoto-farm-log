@@ -84,7 +84,7 @@ export async function saveFertilizerLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
-  await showSaveModal("保存しています…");
+  showSaveModal("保存しています…");
 
   try {
     await saveMultiFieldLog({
@@ -103,7 +103,7 @@ export async function saveFertilizerLog() {
     document.getElementById("notes").value = "";
 
   } catch (e) {
-    await closeSaveModal();
+    closeSaveModal();
     console.error(e);
     alert(e?.message || "保存に失敗しました");
   } finally {

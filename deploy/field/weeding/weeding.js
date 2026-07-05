@@ -180,7 +180,7 @@ async function saveWeedingLog() {
     btn.disabled = true;
     btn.textContent = "保存中…";
   }
-  await showSaveModal("保存しています…");
+  showSaveModal("保存しています…");
 
   try {
     await saveMultiFieldLog({
@@ -202,7 +202,7 @@ async function saveWeedingLog() {
     const notesEl = document.getElementById("notes");
     if (notesEl) notesEl.value = "";
   } catch (e) {
-    await closeSaveModal();
+    closeSaveModal();
     console.error(e);
     alert(e?.message || "保存に失敗しました");
   } finally {
