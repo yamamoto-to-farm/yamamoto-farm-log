@@ -41,18 +41,6 @@
   height: 38px;
 }
 
-.diary-search-days-label,
-.diary-search-days-suffix {
-  color: #334155;
-  font-size: 0.9rem;
-}
-
-.diary-search-days-input {
-  width: 92px;
-  height: 38px;
-  text-align: center;
-}
-
 .diary-search-summary {
   margin: 0 0 14px;
   color: #334155;
@@ -62,6 +50,10 @@
 .diary-search-results {
   margin-bottom: 16px;
   padding: 10px 14px;
+}
+
+.diary-search-more-area {
+  margin: -4px 0 14px;
 }
 
 .diary-search-empty {
@@ -180,10 +172,6 @@
   .diary-search-input {
     width: 100%;
     min-width: 0;
-  }
-
-  .diary-search-days-input {
-    width: 110px;
   }
 
   #diaryDateNav {

@@ -2,13 +2,40 @@
 
 export async function loadWeatherYear(year) {
   const url = `/data/weather/${year}.json`;
-  const res = await fetch(url);
-  return await res.json();
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      return {};
+    }
+
+    const contentType = String(res.headers.get("content-type") || "").toLowerCase();
+    if (!contentType.includes("application/json")) {
+      const text = await res.text();
+      if (!text.trim().startsWith("{")) {
+        return {};
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return {};
+      }
+    }
+
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 export async function getWeatherByDate(date) {
+  if (!date || typeof date !== "string" || date.length < 10) {
+    return null;
+  }
+
   const year = date.slice(0, 4);
   const data = await loadWeatherYear(year);
+  if (!data || typeof data !== "object") return null;
   return data[date] || null;
 }
 

@@ -14,7 +14,12 @@ export async function renderWeatherBox(date) {
   const box = document.getElementById("weatherBox");
   box.innerHTML = "天気データを読み込み中…";
 
-  const data = await getWeatherByDate(date);
+  let data = null;
+  try {
+    data = await getWeatherByDate(date);
+  } catch {
+    data = null;
+  }
 
   if (!data) {
     box.innerHTML = `
