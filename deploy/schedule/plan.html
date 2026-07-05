@@ -70,13 +70,14 @@
   <!-- モーダル -->
   <div id="modal-container"></div>
 
-  <!-- 保存モーダル -->
-  <div id="saveModal" class="save-modal" style="display:none;">
-    <div class="save-modal-content">
-      <span id="saveModalMessage">保存しています…</span>
-      <button id="saveModalCloseBtn" style="display:none;">OK</button>
-    </div>
-  </div>
+  <div id="save-modal-container"></div>
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("save-modal-container").innerHTML = html;
+      });
+  </script>
 
   <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
