@@ -591,6 +591,7 @@ export function getFinalField(
 export function showPinGate(containerId, onSuccess) {
   const container = document.getElementById(containerId);
   if (!container) return;
+  container.style.display = "block";
 
   const input = document.getElementById("pin-input");
   const button = document.getElementById("pin-submit");
