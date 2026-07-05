@@ -1,6 +1,30 @@
 // admin/edit-json/edit-json.js
 import { loadJSON } from "/common/json.js?v=1";
 
+function resolveEditorModulePath(dataName) {
+  const explicitMap = {
+    "fertilizer-index": "./fertilizer/index-editor.js",
+    "fertilizer-detail": "./fertilizer/detail-editor.js",
+    "pesticide-index": "./pesticide/index-editor.js",
+    "pesticide-detail": "./pesticide/detail-editor.js"
+  };
+
+  return explicitMap[dataName] || `./card-edit-${dataName}.js`;
+}
+
+async function loadEditorModule(dataName) {
+  const primaryPath = resolveEditorModulePath(dataName);
+  try {
+    return await import(primaryPath);
+  } catch (e) {
+    const fallbackPath = `./card-edit-${dataName}.js`;
+    if (primaryPath !== fallbackPath) {
+      return import(fallbackPath);
+    }
+    throw e;
+  }
+}
+
 export async function initEditJson() {
 
   const params = new URLSearchParams(location.search);
@@ -63,7 +87,19 @@ export async function initEditJson() {
   const json = await loadJSON(finalPath);
 
   // ⑤ 編集カード読み込み
-  const module = await import(`./card-edit-${dataName}.js`);
+  let module;
+  try {
+    module = await loadEditorModule(dataName);
+  } catch (e) {
+    console.error("[edit-json] editor module load failed", { dataName, error: e });
+    alert("編集モジュールの読み込みに失敗しました: " + dataName);
+    return;
+  }
+
+  if (!module || typeof module.renderEditCard !== "function") {
+    alert("編集モジュールが不正です: " + dataName);
+    return;
+  }
 
   // ⑥ 編集カードへ渡す
   module.renderEditCard({
