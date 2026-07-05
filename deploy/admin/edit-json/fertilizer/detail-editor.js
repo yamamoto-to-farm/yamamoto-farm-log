@@ -2,6 +2,17 @@
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
+const FERTILIZER_CATEGORIES = [
+  "BB",
+  "化成",
+  "窒素肥料",
+  "改良材",
+  "堆肥",
+  "液肥",
+  "葉面散布剤",
+  "BS資材"
+];
+
 function buildEmptyFertilizerDetail(name = "") {
   return {
     name,
