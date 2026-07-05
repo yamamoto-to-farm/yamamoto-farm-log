@@ -4,6 +4,8 @@
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 
+let searchIndexCache = null;
+
 // list.json を読み込む
 async function loadFolderList() {
   const res = await fetch("/diary/list.json");
@@ -23,6 +25,48 @@ async function loadLogCsv(folder) {
     console.warn(`[work-summary] all.csv が見つかりません: ${folder}`);
     return null; // ← 存在しないフォルダは読み飛ばす
   }
+}
+
+async function buildSearchIndex() {
+  const folderList = await loadFolderList();
+  const rows = [];
+
+  for (const item of folderList) {
+    const { folder, dateColumn, displayName, headerName } = item;
+    const csvRows = await loadLogCsv(folder);
+    if (!csvRows) continue;
+
+    csvRows.forEach((data, idx) => {
+      rows.push({
+        id: `${folder}-${idx}`,
+        folder,
+        dateColumn,
+        displayName,
+        headerName,
+        data,
+        date: String(data?.[dateColumn] || "").trim(),
+        worker: extractWorkerText(data),
+        field: String(data?.field || "").trim(),
+        machine: String(data?.machine || "").trim(),
+        snippet: buildSnippet(headerName, dateColumn, data),
+        searchText: buildSearchText(displayName, headerName, data)
+      });
+    });
+  }
+
+  rows.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return a.displayName.localeCompare(b.displayName, "ja");
+  });
+
+  return rows;
+}
+
+async function loadSearchIndex() {
+  if (!searchIndexCache) {
+    searchIndexCache = await buildSearchIndex();
+  }
+  return searchIndexCache;
 }
 
 // 日付一致のログを集約
@@ -71,6 +115,27 @@ export async function showWorkSummary(date) {
       </div>
     `;
   }).join("");
+}
+
+export async function searchLogsByKeyword(keyword, options = {}) {
+  const query = normalizeToken(keyword);
+  const limit = Number(options?.limit || 80);
+  if (!query) {
+    return {
+      query: "",
+      total: 0,
+      hits: []
+    };
+  }
+
+  const rows = await loadSearchIndex();
+  const filtered = rows.filter(row => row.searchText.includes(query));
+
+  return {
+    query,
+    total: filtered.length,
+    hits: filtered.slice(0, Math.max(1, limit))
+  };
 }
 
 // =========================================================
@@ -173,4 +238,47 @@ function normalizeToken(value) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function extractWorkerText(data) {
+  const values = [];
+
+  Object.keys(data || {}).forEach(key => {
+    if (key.startsWith("worker") && data[key]) {
+      values.push(String(data[key]).trim());
+    }
+  });
+
+  if (!values.length && data?.worker) {
+    String(data.worker)
+      .split(/[\/／]/)
+      .map(v => v.trim())
+      .filter(Boolean)
+      .forEach(v => values.push(v));
+  }
+
+  return Array.from(new Set(values)).join("／");
+}
+
+function buildSnippet(headerName, dateColumn, data) {
+  const keys = (Array.isArray(headerName) ? headerName : Object.keys(data || {}))
+    .filter(key => key !== dateColumn)
+    .filter(key => key !== "human")
+    .slice(0, 6);
+
+  const values = keys
+    .map(key => String(data?.[key] || "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return values.join(" / ");
+}
+
+function buildSearchText(displayName, headerName, data) {
+  const values = [displayName];
+  (Array.isArray(headerName) ? headerName : Object.keys(data || {})).forEach(key => {
+    values.push(String(data?.[key] || ""));
+  });
+
+  return normalizeToken(values.join(" "));
 }

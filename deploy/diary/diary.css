@@ -28,6 +28,83 @@
   margin-left: 0;
 }
 
+.diary-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+.diary-search-input {
+  width: min(340px, 42vw);
+  min-width: 180px;
+  height: 38px;
+}
+
+.diary-search-summary {
+  margin: 0 0 14px;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.diary-search-results {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+}
+
+.diary-search-empty {
+  margin: 0;
+  color: #555;
+}
+
+.diary-search-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.diary-search-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #d8dee7;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.diary-search-item:hover {
+  background: #f8fafc;
+}
+
+.diary-search-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.diary-search-date {
+  font-weight: 700;
+}
+
+.diary-search-type {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.diary-search-meta {
+  color: #475569;
+  font-size: 0.92em;
+}
+
+.diary-search-snippet {
+  color: #1f2937;
+}
+
 #diaryDateNav {
   margin-bottom: 0;
 }
@@ -72,6 +149,18 @@
 }
 
 @media (max-width: 640px) {
+  .diary-search-bar {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .diary-search-input {
+    width: 100%;
+    min-width: 0;
+  }
+
   #diaryDateNav {
     grid-template-columns: 1fr;
   }
