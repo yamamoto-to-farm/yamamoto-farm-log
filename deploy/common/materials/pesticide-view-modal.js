@@ -7,7 +7,14 @@ function formatLatestPrice(price) {
   if (entries.length === 0) return "";
   entries.sort((a, b) => String(a[0]).localeCompare(String(b[0]), "ja"));
   const [month, value] = entries[entries.length - 1];
-  return `${month}: ${value}`;
+
+  const monthLabel = month.replace(/^(\d{4})-(\d{2})$/, (_, y, m) => `${y}年${Number(m)}月`);
+  const num = Number(value);
+  const priceLabel = Number.isFinite(num)
+    ? `${num.toLocaleString("ja-JP")}円`
+    : `${value}`;
+
+  return `${monthLabel}: ${priceLabel}`;
 }
 
 function formatDilution(dilution) {
