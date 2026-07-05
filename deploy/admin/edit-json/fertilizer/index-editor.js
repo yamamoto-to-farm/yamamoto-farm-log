@@ -98,13 +98,16 @@ export function renderEditCard({ json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "肥料基本情報（fertilizer-index.json）";
 
+  const params = new URLSearchParams(location.search);
+  const initialPid = normalizeFertilizerId(params.get("pid") || "");
+
   let listData = Array.isArray(json)
     ? json.map(v => ({ ...v }))
     : Object.values(json || {}).map(v => ({ ...v }));
 
   let selectedCategory = "";
   let nameKeyword = "";
-  let selectedFertilizerId = "";
+  let selectedFertilizerId = initialPid;
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
@@ -144,7 +147,7 @@ export function renderEditCard({ json, container, finalPath }) {
       <div id="fertilizer-list"></div>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;">
-        <button class="secondary-btn" type="button" onclick="location.href='?data=fertilizer-detail'">肥料詳細情報へ</button>
+        <button id="go-fertilizer-detail-btn" class="secondary-btn" type="button">肥料詳細情報へ</button>
         <button id="save-btn" class="primary-btn">保存する</button>
       </div>
     </div>
@@ -157,6 +160,7 @@ export function renderEditCard({ json, container, finalPath }) {
   const candidateEl = document.getElementById("fert-id-candidate-select");
   const datalistEl = document.getElementById("fert-id-datalist");
   const countEl = document.getElementById("fert-visible-count");
+  const goDetailBtn = document.getElementById("go-fertilizer-detail-btn");
 
   function normalizeRows() {
     listData = listData.map(v => ({
@@ -283,6 +287,15 @@ export function renderEditCard({ json, container, finalPath }) {
 
     const visible = getVisibleRows();
     const searchableRows = getNameFilteredRows();
+
+    if (goDetailBtn) {
+      const q = new URLSearchParams();
+      q.set("data", "fertilizer-detail");
+      if (selectedFertilizerId) q.set("pid", selectedFertilizerId);
+      goDetailBtn.onclick = () => {
+        location.href = `?${q.toString()}`;
+      };
+    }
 
     if (countEl) {
       countEl.textContent = `検索対象 ${searchableRows.length} 件 / 全体 ${listData.length} 件`;

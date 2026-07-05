@@ -177,9 +177,13 @@ export function renderEditCard({ json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "肥料詳細情報（fertilizer-detail.json）";
 
+  const params = new URLSearchParams(location.search);
+  const initialPid = normalizeFertilizerId(params.get("pid") || "");
+
   const current = (json && typeof json === "object" && !Array.isArray(json)) ? json : {};
+  let selectedCategory = "";
   let searchKeyword = "";
-  let selectedId = Object.keys(current).map(v => normalizeFertilizerId(v)).filter(Boolean)
+  let selectedId = initialPid || Object.keys(current).map(v => normalizeFertilizerId(v)).filter(Boolean)
     .sort((a, b) => a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" }))[0] || "";
   let categoryMap = {};
   let hasUnsavedChanges = false;
@@ -187,12 +191,16 @@ export function renderEditCard({ json, container, finalPath }) {
   container.insertAdjacentHTML("beforeend", `
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="secondary-btn" type="button" onclick="location.href='?data=fertilizer-index'">肥料基本情報へ</button>
+        <button id="go-fertilizer-index-btn" class="secondary-btn" type="button">肥料基本情報へ</button>
       </div>
     </div>
 
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div>
+          <label class="form-label">カテゴリフィルタ</label>
+          <select id="fert-detail-category-filter" class="form-input" style="min-width:220px;"></select>
+        </div>
         <div>
           <label class="form-label">検索（ID/名称）</label>
           <input id="fert-detail-search" class="form-input" style="min-width:240px;" placeholder="F001 / 苦土 など">
@@ -201,12 +209,6 @@ export function renderEditCard({ json, container, finalPath }) {
           <label class="form-label">編集対象</label>
           <select id="fert-detail-target" class="form-input" style="min-width:260px;"></select>
         </div>
-        <div>
-          <label class="form-label">新規ID候補（未使用）</label>
-          <select id="fert-detail-id-candidate" class="form-input" style="min-width:180px;"></select>
-        </div>
-        <button id="add-fert-detail-from-candidate" class="secondary-btn" type="button">候補IDで追加</button>
-        <button id="delete-fert-detail-btn" class="secondary-btn" type="button">選択中を削除</button>
       </div>
       <div id="fert-detail-visible-count" style="margin-top:8px; color:#555;"></div>
     </div>
@@ -216,13 +218,43 @@ export function renderEditCard({ json, container, finalPath }) {
     <button id="save-btn" class="primary-btn" style="margin-top:20px;">保存する</button>
   `);
 
+  const backBtn = document.getElementById("go-fertilizer-index-btn");
+  const categoryEl = document.getElementById("fert-detail-category-filter");
   const searchEl = document.getElementById("fert-detail-search");
   const targetEl = document.getElementById("fert-detail-target");
-  const candidateEl = document.getElementById("fert-detail-id-candidate");
   const countEl = document.getElementById("fert-detail-visible-count");
   const editorEl = document.getElementById("fertilizer-editor");
 
   const getCategoryById = id => String(categoryMap[normalizeFertilizerId(id)] || "").trim();
+
+  function updateBackButton() {
+    if (!backBtn) return;
+    const q = new URLSearchParams();
+    q.set("data", "fertilizer-index");
+    if (selectedId) q.set("pid", selectedId);
+    backBtn.onclick = () => {
+      location.href = `?${q.toString()}`;
+    };
+  }
+
+  function refreshCategoryOptions() {
+    const categories = new Set(FERTILIZER_CATEGORIES);
+    sortedIds().forEach(id => {
+      const cat = String(getCategoryById(id) || "").trim();
+      if (cat) categories.add(cat);
+    });
+
+    const options = ["", ...Array.from(categories)];
+    categoryEl.innerHTML = options
+      .map(v => `<option value="${escapeHtml(v)}">${v ? escapeHtml(v) : "全カテゴリ"}</option>`)
+      .join("");
+    categoryEl.value = selectedCategory;
+  }
+
+  function categoryFilteredIds() {
+    if (!selectedCategory) return sortedIds();
+    return sortedIds().filter(id => String(getCategoryById(id) || "").trim() === selectedCategory);
+  }
 
   function sortedIds() {
     return Object.keys(current).map(v => normalizeFertilizerId(v)).filter(Boolean)
@@ -231,8 +263,9 @@ export function renderEditCard({ json, container, finalPath }) {
 
   function filteredIdsByKeyword(keyword) {
     const q = String(keyword || "").trim().toLowerCase();
-    if (!q) return sortedIds();
-    return sortedIds().filter(id => {
+    const base = categoryFilteredIds();
+    if (!q) return base;
+    return base.filter(id => {
       const name = String(current[id]?.name || "").toLowerCase();
       return id.toLowerCase().includes(q) || name.includes(q);
     });
@@ -258,16 +291,11 @@ export function renderEditCard({ json, container, finalPath }) {
     if (countEl) countEl.textContent = `検索結果 ${ids.length} 件 / 全体 ${Object.keys(current).length} 件`;
   }
 
-  function refreshIdSuggestions() {
-    const suggestions = buildFertilizerIdSuggestions(Object.keys(current), 40);
-    candidateEl.innerHTML = suggestions.map(v => `<option value="${v}">${v}</option>`).join("");
-  }
-
   function renderEditor() {
     editorEl.innerHTML = "";
     if (!selectedId) {
       hasUnsavedChanges = false;
-      editorEl.innerHTML = `<div class="card"><p style="margin:0; color:#666;">対象がありません。検索条件を変更するか、候補IDで新規追加してください。</p></div>`;
+      editorEl.innerHTML = `<div class="card"><p style="margin:0; color:#666;">対象がありません。カテゴリ・検索条件・一覧選択を見直してください。</p></div>`;
       return;
     }
 
@@ -391,8 +419,9 @@ export function renderEditCard({ json, container, finalPath }) {
   }
 
   function render() {
-    refreshIdSuggestions();
+    refreshCategoryOptions();
     refreshTargetOptions();
+    updateBackButton();
     renderEditor();
   }
 
@@ -449,6 +478,23 @@ export function renderEditCard({ json, container, finalPath }) {
     current[id] = toCanonicalFertilizerDetail(next);
   }
 
+  categoryEl.onchange = () => {
+    const nextCategory = categoryEl.value || "";
+    const nextIds = filteredIdsByKeyword(searchKeyword).filter(id => {
+      if (!nextCategory) return true;
+      return String(getCategoryById(id) || "").trim() === nextCategory;
+    });
+    const nextSelected = nextIds.includes(selectedId) ? selectedId : (nextIds[0] || "");
+
+    if (nextSelected !== selectedId && !confirmDiscardChanges()) {
+      categoryEl.value = selectedCategory;
+      return;
+    }
+
+    selectedCategory = nextCategory;
+    render();
+  };
+
   searchEl.oninput = () => {
     const nextKeyword = searchEl.value || "";
     const nextIds = filteredIdsByKeyword(nextKeyword);
@@ -469,33 +515,8 @@ export function renderEditCard({ json, container, finalPath }) {
       return;
     }
     selectedId = nextId;
+    updateBackButton();
     renderEditor();
-  };
-
-  document.getElementById("add-fert-detail-from-candidate").onclick = () => {
-    if (!confirmDiscardChanges()) return;
-    const candidate = normalizeFertilizerId(candidateEl.value || "");
-    if (!candidate) return;
-    if (current[candidate]) {
-      alert(`ID ${candidate} は既に存在します。`);
-      return;
-    }
-    current[candidate] = { ...buildEmptyFertilizerDetail() };
-    selectedId = candidate;
-    searchKeyword = "";
-    searchEl.value = "";
-    render();
-  };
-
-  document.getElementById("delete-fert-detail-btn").onclick = () => {
-    if (!selectedId || !current[selectedId]) return;
-    if (!confirmDiscardChanges()) return;
-    const name = String(current[selectedId]?.name || "").trim();
-    const ok = confirm(`ID ${selectedId}${name ? ` (${name})` : ""} を削除しますか？\nこの操作は保存時に確定されます。`);
-    if (!ok) return;
-    delete current[selectedId];
-    selectedId = "";
-    render();
   };
 
   document.getElementById("save-btn").onclick = async () => {
