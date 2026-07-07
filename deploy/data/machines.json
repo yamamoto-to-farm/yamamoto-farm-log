@@ -1,6 +1,10 @@
 {
   "machines": [
-    { "id": "SL350", "name": "トラクター35ps SL350" },
+    {
+      "id": "SL350",
+      "name": "トラクター35ps SL350",
+      "allowedPageIds": ["tillage", "weeding-machine", "intertill", "bedmaking", "field-maintenance"]
+    },
     { "id": "T4", "name": "トラクター75ps T4 7.5" },
     { "id": "EG330", "name": "トラクター30ps EG330" },
     { "id": "SKP200", "name": "乗用移植機 SKP200" },

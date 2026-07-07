@@ -135,8 +135,23 @@
       const machineLabel = machine ? `${machine.name} (${machine.id})` : machineId;
       document.getElementById("machine-name").textContent = `機械: ${machineLabel}`;
 
-      const workPages = (pages || []).filter(p => p && p.openLog === true && p.path);
+      const hasAllowList = Array.isArray(machine?.allowedPageIds);
+      const allowSet = hasAllowList
+        ? new Set(machine.allowedPageIds.map(v => String(v || "").trim()).filter(Boolean))
+        : null;
+
+      const workPages = (pages || []).filter(p => {
+        if (!p || p.openLog !== true || !p.path) return false;
+        if (!allowSet) return true;
+        return allowSet.has(String(p.id || ""));
+      });
+
       const grid = document.getElementById("work-grid");
+      if (workPages.length === 0) {
+        grid.innerHTML = "<p>この機械に割り当てられた作業ページはありません。</p>";
+        return;
+      }
+
       workPages.forEach(page => {
         grid.appendChild(buildWorkButton(page, machineId));
       });
