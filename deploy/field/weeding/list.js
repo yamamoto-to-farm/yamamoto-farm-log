@@ -1,11 +1,80 @@
 import { loadAllWeedingLogs, collectYears } from "./list-utils.js?v=1";
 
-export async function initWeedingList() {
-  const items = await loadAllWeedingLogs();
-  const years = collectYears(items);
+const MODES = {
+  spray: {
+    label: "除草剤散布",
+    match: row => row.workType === "除草剤散布",
+    note: "除草剤散布のみ表示中"
+  },
+  mowing: {
+    label: "草刈り",
+    match: row => row.workType === "草刈り",
+    note: "草刈りのみ表示中"
+  }
+};
 
+const state = {
+  items: [],
+  mode: "spray"
+};
+
+function getModeFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const mode = String(params.get("mode") || "spray").trim();
+  return MODES[mode] ? mode : "spray";
+}
+
+function setModeToUrl(mode) {
+  const url = new URL(location.href);
+  url.searchParams.set("mode", mode);
+  history.replaceState({}, "", url.pathname + url.search);
+}
+
+function bindModeButtons() {
+  const sprayBtn = document.getElementById("mode-spray");
+  const mowingBtn = document.getElementById("mode-mowing");
+
+  if (sprayBtn) {
+    sprayBtn.onclick = () => {
+      if (state.mode === "spray") return;
+      state.mode = "spray";
+      setModeToUrl(state.mode);
+      render();
+    };
+  }
+
+  if (mowingBtn) {
+    mowingBtn.onclick = () => {
+      if (state.mode === "mowing") return;
+      state.mode = "mowing";
+      setModeToUrl(state.mode);
+      render();
+    };
+  }
+}
+
+function renderModeUi(filteredCount) {
+  const sprayBtn = document.getElementById("mode-spray");
+  const mowingBtn = document.getElementById("mode-mowing");
+  const note = document.getElementById("mode-note");
+
+  if (sprayBtn) sprayBtn.classList.toggle("active", state.mode === "spray");
+  if (mowingBtn) mowingBtn.classList.toggle("active", state.mode === "mowing");
+
+  if (note) {
+    note.textContent = `${MODES[state.mode].note}（${filteredCount}件）`;
+  }
+}
+
+function render() {
   const container = document.getElementById("weeding-container");
   container.innerHTML = "";
+
+  const modeDef = MODES[state.mode];
+  const items = state.items.filter(modeDef.match);
+  const years = collectYears(items);
+
+  renderModeUi(items.length);
 
   if (!items.length) {
     container.innerHTML = '<div class="empty-box">記録がありません。</div>';
@@ -19,6 +88,7 @@ export async function initWeedingList() {
 
     html += `<div class="year-block">`;
     html += `<h2 class="year-title">${year}年</h2>`;
+    html += `<div class="list-card">`;
     html += `<table class="weed-table">`;
     html += `
       <thead>
@@ -50,10 +120,17 @@ export async function initWeedingList() {
       `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table></div></div>`;
   });
 
   container.innerHTML = html;
+}
+
+export async function initWeedingList() {
+  state.mode = getModeFromUrl();
+  bindModeButtons();
+  state.items = await loadAllWeedingLogs();
+  render();
 }
 
 function escapeHtml(value) {

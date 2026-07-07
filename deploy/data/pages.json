@@ -159,6 +159,15 @@
       "openLog": false
     },
     {
+      "id": "weeding-list",
+      "name": "除草・草刈り記録一覧",
+      "path": "field/weeding/list.html",
+      "category": "作業日誌・記録一覧/記録一覧",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/weeding.png",
+      "openLog": false
+    },
+    {
       "id": "monthly-work",
       "name": "作業カレンダー",
       "path": "schedule/monthly-work/index.html",

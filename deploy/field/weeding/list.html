@@ -5,12 +5,134 @@
   <title>除草・草刈り記録一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./list.css?v=1">
+  <style>
+    body {
+      background: linear-gradient(180deg, #f7f7f2 0%, #ffffff 28%);
+    }
+
+    .page-wrap {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 12px 16px 28px;
+    }
+
+    .hero-card,
+    .list-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .hero-card {
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .hero-copy {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+
+    .mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0 8px;
+    }
+
+    .mode-btn {
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #fff;
+      color: #374151;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .mode-btn.active {
+      border-color: #0f766e;
+      background: #ccfbf1;
+      color: #115e59;
+    }
+
+    .meta-note {
+      color: #6b7280;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .year-block {
+      margin-bottom: 14px;
+    }
+
+    .year-title {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+
+    .list-card {
+      overflow-x: auto;
+      padding: 10px;
+    }
+
+    .weed-table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .weed-table th,
+    .weed-table td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 9px 8px;
+      font-size: 14px;
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .weed-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .empty-box {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px;
+      color: #6b7280;
+    }
+  </style>
 </head>
 <body>
 
-  <div id="page-area">
-    <h1 class="page-title">除草・草刈り記録一覧</h1>
+  <div id="page-area" class="page-wrap" style="display:none;">
+    <section class="hero-card">
+      <h1 class="hero-title">除草・草刈り記録一覧</h1>
+      <p class="hero-copy">土づくり一覧と同じ見え方で、除草剤散布と草刈りを切り替えて確認できます。</p>
+
+      <div class="mode-row">
+        <button id="mode-spray" class="mode-btn" type="button">除草剤散布</button>
+        <button id="mode-mowing" class="mode-btn" type="button">草刈り</button>
+      </div>
+
+      <div id="mode-note" class="meta-note"></div>
+    </section>
+
     <div id="weeding-container"></div>
   </div>
 
@@ -22,11 +144,11 @@
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
       if (!ok) {
-        document.getElementById("page-area").style.display = "none";
         return;
       }
 
       renderHeader();
+      document.getElementById("page-area").style.display = "block";
       initWeedingList();
     });
   </script>

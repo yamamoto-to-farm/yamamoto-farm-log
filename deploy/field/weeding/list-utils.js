@@ -15,18 +15,22 @@ export async function loadAllWeedingLogs() {
 
   const merged = new Map();
 
-  for (const f of fields) {
+  const results = await Promise.allSettled(fields.map(async f => {
     const path = `/logs/weeding/${f.safe}.json`;
-    let data;
     try {
-      data = await loadJSON(path);
+      const data = await loadJSON(path);
+      return { field: f, data };
     } catch {
-      continue;
+      return null;
     }
+  }));
 
-    if (!data || !data.years) continue;
+  results.forEach(result => {
+    if (result.status !== "fulfilled" || !result.value) return;
+    const { field: f, data } = result.value;
+    if (!data || !data.years) return;
 
-    for (const year of Object.keys(data.years)) {
+    Object.keys(data.years).forEach(year => {
       const entries = data.years[year]?.entries || [];
 
       entries.forEach((entry, idx) => {
@@ -39,7 +43,6 @@ export async function loadAllWeedingLogs() {
         const pesticides = normalizePesticides(entry.pesticides || []);
 
         const key = [date, workType, workers, machine, mowingMethod, notes, pesticides].join("||") + `||${idx}`;
-        // idx を入れることで同日同条件の別作業を潰さない
 
         if (!merged.has(key)) {
           merged.set(key, {
@@ -57,8 +60,8 @@ export async function loadAllWeedingLogs() {
           merged.get(key).fields.add(f.original);
         }
       });
-    }
-  }
+    });
+  });
 
   const list = Array.from(merged.values()).map(v => ({
     ...v,
