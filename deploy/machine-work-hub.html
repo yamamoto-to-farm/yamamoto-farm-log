@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>機械別 作業選択 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <style>
+    .hub-subtitle {
+      margin: 8px 0 14px;
+      color: #555;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .machine-chip {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f2f7ff;
+      border: 1px solid #d8e5ff;
+      color: #1f4f9f;
+      font-weight: 700;
+    }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .work-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid #d8d8d8;
+      border-radius: 10px;
+      background: #fff;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    .work-btn:hover {
+      border-color: #88aef0;
+      background: #f8fbff;
+    }
+
+    .work-name {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .work-path {
+      display: block;
+      margin-top: 4px;
+      color: #6b7280;
+      font-size: 12px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-container" id="form-area" style="display:none;">
+    <h1 class="page-title">機械別 作業選択</h1>
+
+    <div class="card">
+      <div id="machine-name" class="machine-chip">機械: -</div>
+      <p class="hub-subtitle">
+        作業を選ぶと、機械情報を引き継いだまま入力ページへ移動します。
+      </p>
+      <div id="work-grid" class="work-grid"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js?v=1";
+
+    async function loadJSON(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`Failed to load ${path}`);
+      return await res.json();
+    }
+
+    function withMachine(path, machineId) {
+      const url = new URL(path, location.origin);
+      url.searchParams.set("machine", machineId);
+      return `${url.pathname}${url.search}`;
+    }
+
+    function buildWorkButton(page, machineId) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "work-btn";
+
+      const name = document.createElement("span");
+      name.className = "work-name";
+      name.textContent = page.name;
+
+      const targetPath = withMachine(page.path, machineId);
+
+      const hint = document.createElement("span");
+      hint.className = "work-path";
+      hint.textContent = targetPath;
+
+      btn.appendChild(name);
+      btn.appendChild(hint);
+      btn.addEventListener("click", () => {
+        location.href = targetPath;
+      });
+
+      return btn;
+    }
+
+    async function init() {
+      const params = new URLSearchParams(location.search);
+      const machineId = String(params.get("machine") || "").trim();
+
+      if (!machineId) {
+        document.body.innerHTML = "<div class='page-container'><div class='card'><h2>機械IDが未指定です</h2><p>機械付きQRコードから開いてください。</p></div></div>";
+        return;
+      }
+
+      const [{ pages }, { machines }] = await Promise.all([
+        loadJSON("/data/pages.json"),
+        loadJSON("/data/machines.json")
+      ]);
+
+      const machine = (machines || []).find(m => m.id === machineId);
+      const machineLabel = machine ? `${machine.name} (${machine.id})` : machineId;
+      document.getElementById("machine-name").textContent = `機械: ${machineLabel}`;
+
+      const workPages = (pages || []).filter(p => p && p.openLog === true && p.path);
+      const grid = document.getElementById("work-grid");
+      workPages.forEach(page => {
+        grid.appendChild(buildWorkButton(page, machineId));
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+      renderHeader();
+      document.getElementById("form-area").style.display = "block";
+
+      try {
+        await init();
+      } catch (e) {
+        console.error(e);
+        document.getElementById("work-grid").innerHTML = "<p>読み込みに失敗しました。</p>";
+      }
+    });
+  </script>
+</body>
+
+</html>

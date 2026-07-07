@@ -177,14 +177,24 @@
       const pageSel = document.getElementById("page-select");
       const machineSel = document.getElementById("machine-select");
 
+      const machineHubOption = {
+        id: "machine-work-hub",
+        name: "機械別 作業選択ページ",
+        icon: "assets/icons/qr.png",
+        path: "machine-work-hub.html",
+        openLog: false,
+        requireMachine: true
+      };
+
       // ページ一覧
-      pages.forEach(p => {
+      [machineHubOption, ...pages].forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.id;
         opt.textContent = p.name;
         opt.dataset.icon = p.icon || "";
         opt.dataset.path = p.path || "";
         opt.dataset.openLog = p.openLog ? "true" : "false";
+        opt.dataset.requireMachine = p.requireMachine ? "true" : "false";
         pageSel.appendChild(opt);
       });
 
@@ -202,9 +212,15 @@
         const pageName = selected.textContent;
         const pagePath = selected.dataset.path;
         const openLog = selected.dataset.openLog === "true";
+        const requireMachine = selected.dataset.requireMachine === "true";
         const machineId = machineSel.value;
 
         const siteRoot = "https://d3sscxnlo0qnhe.cloudfront.net/";
+
+        if (requireMachine && !machineId) {
+          alert("このページのQRは機械選択が必須です");
+          return;
+        }
 
         let absUrl;
 
