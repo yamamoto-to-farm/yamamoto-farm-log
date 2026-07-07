@@ -369,6 +369,39 @@ function buildSprayFieldRows(rows) {
   return out;
 }
 
+function filterSprayFieldRows(rows) {
+  const keyword = state.keyword.toLowerCase();
+  const selectedFields = filterState.fields || [];
+
+  return rows.filter(row => {
+    const fieldName = String(row.fieldName || "").trim();
+    if (selectedFields.length > 0 && !selectedFields.includes(fieldName)) {
+      return false;
+    }
+
+    const sprayMethod = String(row.sprayMethod || "").trim();
+    if (state.method && sprayMethod !== state.method) {
+      return false;
+    }
+
+    if (keyword) {
+      const hay = [
+        row.workType,
+        row.fieldName,
+        row.pesticideName,
+        row.dilutionRate,
+        row.waterAmount,
+        row.sprayMethod,
+        row.workers,
+        row.notes
+      ].map(v => String(v || "").toLowerCase()).join(" ");
+      if (!hay.includes(keyword)) return false;
+    }
+
+    return true;
+  });
+}
+
 function renderPeriodSummary(rows) {
   const summaryEl = document.getElementById("period-summary");
   if (!summaryEl) return;
@@ -390,25 +423,35 @@ function render() {
 
   syncMethodFilterOptions();
 
+  const isSpray = state.mode === "spray";
+  const isSprayFieldView = isSpray && state.sprayView === "field";
   const modeDef = MODES[state.mode];
   const modeItems = state.items.filter(modeDef.match);
   const periodItems = filterRowsByPeriod(modeItems);
   const items = filterRowsByAdvanced(periodItems);
 
-  renderModeUi(items.length);
-  renderPeriodSummary(items);
-
-  if (!items.length) {
-    container.innerHTML = '<div class="empty-box">記録がありません。</div>';
-    return;
+  let sprayFieldRows = [];
+  if (isSprayFieldView) {
+    sprayFieldRows = filterSprayFieldRows(buildSprayFieldRows(periodItems))
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    renderModeUi(sprayFieldRows.length);
+    renderPeriodSummary(sprayFieldRows);
+    if (!sprayFieldRows.length) {
+      container.innerHTML = '<div class="empty-box">記録がありません。</div>';
+      return;
+    }
+  } else {
+    renderModeUi(items.length);
+    renderPeriodSummary(items);
+    if (!items.length) {
+      container.innerHTML = '<div class="empty-box">記録がありません。</div>';
+      return;
+    }
   }
 
   const today = getTodayValue();
 
   const list = [...items].sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-  const isSpray = state.mode === "spray";
-  const sprayFieldRows = isSpray && state.sprayView === "field" ? buildSprayFieldRows(list) : [];
 
   let html = `<div class="list-card"><table class="weed-table">`;
   if (isSpray && state.sprayView === "aggregate") {
