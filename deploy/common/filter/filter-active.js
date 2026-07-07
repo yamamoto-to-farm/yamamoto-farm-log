@@ -13,6 +13,7 @@ export function updateActiveFilterUI() {
   const fieldBox = document.getElementById("activeFieldFilters");
   const fertBox  = document.getElementById("activeFertilizerFilters");
   const pestBox  = document.getElementById("activePesticideFilters");
+  const machineBox = document.getElementById("activeMachineFilters");
 
   const state = getFilter();
 
@@ -108,6 +109,37 @@ export function updateActiveFilterUI() {
       window.dispatchEvent(new CustomEvent("filter:apply"));
     };
   }
+
+  /* -------------------------------
+     機械タグ
+  -------------------------------- */
+  if (machineBox) {
+    let html = "";
+    const tagList = [];
+
+    state.machines.forEach(m => {
+      const id = "tag-" + Math.random().toString(36).slice(2);
+      html += createTag(m, id);
+      tagList.push({ id, handler: () => removeMachine(m) });
+    });
+
+    if (state.machines.length) {
+      html += `<button id="machineFilterReset" class="filter-reset-btn">全解除</button>`;
+    }
+
+    machineBox.innerHTML = html;
+
+    tagList.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) el.onclick = t.handler;
+    });
+
+    const resetBtn = document.getElementById("machineFilterReset");
+    if (resetBtn) resetBtn.onclick = () => {
+      filterState.machines = [];
+      window.dispatchEvent(new CustomEvent("filter:apply"));
+    };
+  }
 }
 
 /* ------------------------------------------------------------
@@ -137,5 +169,10 @@ function removeFertilizer(f) {
 
 function removePesticide(p) {
   filterState.pesticides = filterState.pesticides.filter(v => v !== p);
+  window.dispatchEvent(new CustomEvent("filter:apply"));
+}
+
+function removeMachine(m) {
+  filterState.machines = filterState.machines.filter(v => v !== m);
   window.dispatchEvent(new CustomEvent("filter:apply"));
 }

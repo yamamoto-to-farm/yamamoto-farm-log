@@ -5,6 +5,7 @@
   <title>除草・草刈り記録一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
   <style>
     body {
       background: linear-gradient(180deg, #f7f7f2 0%, #ffffff 28%);
@@ -47,6 +48,17 @@
       margin: 14px 0 8px;
     }
 
+    .spray-view-row {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0 8px;
+    }
+
+    .spray-view-row.active {
+      display: flex;
+    }
+
     .mode-btn {
       border: 1px solid #d1d5db;
       border-radius: 999px;
@@ -63,19 +75,67 @@
       color: #115e59;
     }
 
+    .submode-btn {
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #fff;
+      color: #374151;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .submode-btn.active {
+      border-color: #0f766e;
+      background: #ecfeff;
+      color: #155e75;
+    }
+
     .meta-note {
       color: #6b7280;
       font-size: 13px;
       margin-top: 6px;
     }
 
-    .year-block {
-      margin-bottom: 14px;
+    .period-card {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f8fafc;
     }
 
-    .year-title {
-      margin: 0 0 8px;
-      font-size: 22px;
+    .period-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .summary-row {
+      margin-top: 10px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .filter-card {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .summary-row strong {
+      color: #1f2937;
     }
 
     .list-card {
@@ -109,6 +169,30 @@
       text-transform: uppercase;
     }
 
+    .recent-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .recent-badge.fresh {
+      background: #ecfdf5;
+      color: #166534;
+    }
+
+    .recent-badge.warm {
+      background: #fff7ed;
+      color: #9a3412;
+    }
+
+    .recent-badge.old {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
     .empty-box {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -130,11 +214,57 @@
         <button id="mode-mowing" class="mode-btn" type="button">草刈り</button>
       </div>
 
+      <div id="spray-view-row" class="spray-view-row">
+        <button id="spray-view-aggregate" class="submode-btn" type="button">集約表示</button>
+        <button id="spray-view-field" class="submode-btn" type="button">圃場別表示</button>
+      </div>
+
       <div id="mode-note" class="meta-note"></div>
+
+      <div class="period-card">
+        <div class="period-grid">
+          <div class="form-field">
+            <label for="period-start">開始日</label>
+            <input id="period-start" type="date" class="form-input">
+          </div>
+          <div class="form-field">
+            <label for="period-end">終了日</label>
+            <input id="period-end" type="date" class="form-input">
+          </div>
+          <div class="form-field">
+            <button id="period-reset" class="secondary-btn" type="button">期間リセット</button>
+          </div>
+        </div>
+        <div id="period-summary" class="summary-row"></div>
+      </div>
+
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="form-field">
+            <label>圃場フィルタ</label>
+            <button id="open-field-modal" class="primary-btn" type="button">圃場を選択</button>
+            <div id="activeFieldFilters" style="margin-top:8px;"></div>
+          </div>
+          <div class="form-field">
+            <label>機械フィルタ</label>
+            <button id="open-machine-modal" class="primary-btn" type="button">機械を選択</button>
+            <div id="activeMachineFilters" style="margin-top:8px;"></div>
+          </div>
+          <div class="form-field">
+            <label for="filter-keyword">キーワード</label>
+            <input id="filter-keyword" class="form-input" placeholder="作業者・備考など">
+          </div>
+          <div class="form-field">
+            <button id="filter-reset" class="secondary-btn" type="button">絞り込みリセット</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <div id="weeding-container"></div>
   </div>
+
+  <div id="modal-container"></div>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js?v=1";

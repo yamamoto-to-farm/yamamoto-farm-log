@@ -41,6 +41,8 @@ export async function loadAllWeedingLogs() {
         const mowingMethod = String(entry.mowingMethod || "");
         const notes = String(entry.notes || "");
         const pesticides = normalizePesticides(entry.pesticides || []);
+        const pesticideUsage = Array.isArray(entry.pesticideUsage) ? entry.pesticideUsage : [];
+        const distributed = Array.isArray(entry.distributed) ? entry.distributed : [];
 
         const key = [date, workType, workers, machine, mowingMethod, notes, pesticides].join("||") + `||${idx}`;
 
@@ -54,10 +56,16 @@ export async function loadAllWeedingLogs() {
             mowingMethod,
             notes,
             pesticides,
+            pesticideUsage,
+            distributed,
             fields: new Set([f.original])
           });
         } else {
-          merged.get(key).fields.add(f.original);
+          const current = merged.get(key);
+          current.fields.add(f.original);
+          if (distributed.length) {
+            current.distributed = [...(current.distributed || []), ...distributed];
+          }
         }
       });
     });

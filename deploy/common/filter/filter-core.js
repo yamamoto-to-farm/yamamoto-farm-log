@@ -40,7 +40,8 @@ export const filterState = {
   fields: [],
   varieties: [],
   fertilizers: [],
-  pesticides: []   // ★ 農薬フィルタの選択状態を追加
+  pesticides: [],   // ★ 農薬フィルタの選択状態を追加
+  machines: []
 };
 
 /* ============================================================
@@ -84,6 +85,7 @@ export function resetFilter() {
   filterState.varieties = [];
   filterState.fertilizers = [];
   filterState.pesticides = [];   // ★ 農薬フィルタもリセット
+  filterState.machines = [];
 
   window.dispatchEvent(new Event("filter:reset"));
   updateActiveFilterUI();
