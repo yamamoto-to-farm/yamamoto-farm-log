@@ -17,13 +17,14 @@ import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-m
 
 let pesticideDict = {};
 const DEFAULT_MOWING_METHODS = ["背負い式刈払機", "フレールモア", "オフセットモア"];
+const DEFAULT_SPRAY_METHODS = ["背負動力噴霧機", "エンジン動噴", "小型ブームスプレーヤ(BSM201)"];
 
 export async function initWeedingPage() {
   debugLog("initWeedingPage start");
 
   await initFieldFilterData();
   await initPesticideFilterData();
-  await applyMowingMethodOptions();
+  await applyMethodOptions();
 
   initActiveFilterUI();
 
@@ -70,16 +71,22 @@ function updateWorkTypeUI() {
   const type = document.getElementById("work-type")?.value || "";
   const pesticideSection = document.getElementById("pesticide-section");
   const mowingMethodSection = document.getElementById("mowing-method-section");
+  const sprayMethodSection = document.getElementById("spray-method-section");
   const mowingMethodEl = document.getElementById("mowing-method");
+  const sprayMethodEl = document.getElementById("spray-method");
 
   const needsPesticide = type === "除草剤散布";
   const needsMowingMethod = type === "草刈り";
+  const needsSprayMethod = type === "除草剤散布";
 
   if (pesticideSection) {
     pesticideSection.style.display = needsPesticide ? "block" : "none";
   }
   if (mowingMethodSection) {
     mowingMethodSection.style.display = needsMowingMethod ? "block" : "none";
+  }
+  if (sprayMethodSection) {
+    sprayMethodSection.style.display = needsSprayMethod ? "block" : "none";
   }
 
   // 草刈りに切り替えた時は農薬選択をクリア
@@ -90,6 +97,9 @@ function updateWorkTypeUI() {
 
   if (!needsMowingMethod && mowingMethodEl) {
     mowingMethodEl.value = "";
+  }
+  if (!needsSprayMethod && sprayMethodEl) {
+    sprayMethodEl.value = "";
   }
 
   if (needsPesticide) {
@@ -116,17 +126,13 @@ async function loadAttachmentIndex() {
   }
 }
 
-async function applyMowingMethodOptions() {
-  const select = document.getElementById("mowing-method");
+function applyOptionsToSelect(select, options, placeholder) {
   if (!select) return;
-
-  const index = await loadAttachmentIndex();
-  const options = normalizeAttachmentList(index?.weeding, DEFAULT_MOWING_METHODS);
 
   select.innerHTML = "";
   const first = document.createElement("option");
   first.value = "";
-  first.textContent = "方式を選択";
+  first.textContent = placeholder;
   select.appendChild(first);
 
   options.forEach(v => {
@@ -135,6 +141,21 @@ async function applyMowingMethodOptions() {
     opt.textContent = v;
     select.appendChild(opt);
   });
+}
+
+async function applyMethodOptions() {
+  const mowingSelect = document.getElementById("mowing-method");
+  const spraySelect = document.getElementById("spray-method");
+
+  const index = await loadAttachmentIndex();
+  const mowingOptions = normalizeAttachmentList(index?.weeding, DEFAULT_MOWING_METHODS);
+  const sprayOptions = normalizeAttachmentList(
+    index?.weedingSpray || index?.weeding_spray || index?.spray,
+    DEFAULT_SPRAY_METHODS
+  );
+
+  applyOptionsToSelect(mowingSelect, mowingOptions, "方式を選択");
+  applyOptionsToSelect(spraySelect, sprayOptions, "除草方式を選択");
 }
 
 async function initFieldFilterData() {
@@ -200,6 +221,7 @@ async function saveWeedingLog() {
   const workType = document.getElementById("work-type")?.value || "";
   const notes = (document.getElementById("notes")?.value || "").trim();
   const mowingMethod = (document.getElementById("mowing-method")?.value || "").trim();
+  const sprayMethod = (document.getElementById("spray-method")?.value || "").trim();
   const fields = filterState.fields || [];
   const workers = getSelectedWorkers("workers_box", "temp_workers");
   const machine = window.__weeding_machine || "machine1";
@@ -216,6 +238,10 @@ async function saveWeedingLog() {
   const pesticides = filterState.pesticides || [];
   if (workType === "除草剤散布" && pesticides.length === 0) {
     alert("除草剤散布を選択した場合は農薬を選択してください");
+    return;
+  }
+  if (workType === "除草剤散布" && !sprayMethod) {
+    alert("除草剤散布を選択した場合は除草方式を選択してください");
     return;
   }
   if (workType === "草刈り" && !mowingMethod) {
@@ -253,6 +279,7 @@ async function saveWeedingLog() {
         pesticides,
         ...(pesticideUsage.length ? { pesticideUsage } : {}),
         ...(distributed ? { distributed } : {}),
+        ...(sprayMethod ? { sprayMethod } : {}),
         ...(mowingMethod ? { mowingMethod } : {}),
         machine,
         workers,

@@ -1,7 +1,6 @@
 import { loadAllWeedingLogs } from "./list-utils.js?v=1";
 import { loadJSON } from "/common/json.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { openMachineModal } from "/common/filter/filter-machine.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 
@@ -25,6 +24,7 @@ const state = {
   periodStart: "",
   periodEnd: "",
   keyword: "",
+  method: "",
   fieldAreaMap: {}
 };
 
@@ -156,7 +156,7 @@ function bindPeriodControls() {
 
 function bindFilterControls() {
   const fieldBtn = document.getElementById("open-field-modal");
-  const machineBtn = document.getElementById("open-machine-modal");
+  const methodSelect = document.getElementById("filter-method");
   const keywordInput = document.getElementById("filter-keyword");
   const resetBtn = document.getElementById("filter-reset");
 
@@ -164,8 +164,11 @@ function bindFilterControls() {
     fieldBtn.onclick = () => openFieldModal({ mode: "filter" });
   }
 
-  if (machineBtn) {
-    machineBtn.onclick = () => openMachineModal({ mode: "filter" });
+  if (methodSelect) {
+    methodSelect.addEventListener("change", () => {
+      state.method = String(methodSelect.value || "").trim();
+      render();
+    });
   }
 
   if (keywordInput) {
@@ -179,8 +182,9 @@ function bindFilterControls() {
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       filterState.fields = [];
-      filterState.machines = [];
       state.keyword = "";
+      state.method = "";
+      if (methodSelect) methodSelect.value = "";
       if (keywordInput) keywordInput.value = "";
       window.dispatchEvent(new CustomEvent("filter:apply"));
       render();
@@ -206,7 +210,6 @@ function filterRowsByPeriod(rows) {
 function filterRowsByAdvanced(rows) {
   const keyword = state.keyword.toLowerCase();
   const selectedFields = filterState.fields || [];
-  const selectedMachines = filterState.machines || [];
 
   return rows.filter(row => {
     if (selectedFields.length > 0) {
@@ -214,9 +217,11 @@ function filterRowsByAdvanced(rows) {
       if (!selectedFields.some(f => fields.includes(f))) return false;
     }
 
-    if (selectedMachines.length > 0 && !selectedMachines.includes(String(row.machine || ""))) {
-      return false;
-    }
+    const rowMethod = row.workType === "除草剤散布"
+      ? String(row.sprayMethod || "").trim()
+      : String(row.mowingMethod || "").trim();
+
+    if (state.method && rowMethod !== state.method) return false;
 
     if (keyword) {
       const hay = [
@@ -224,8 +229,8 @@ function filterRowsByAdvanced(rows) {
         row.fieldText,
         row.workers,
         row.pesticides,
+        row.sprayMethod,
         row.mowingMethod,
-        row.machine,
         row.notes
       ].map(v => String(v || "").toLowerCase()).join(" ");
       if (!hay.includes(keyword)) return false;
@@ -233,6 +238,33 @@ function filterRowsByAdvanced(rows) {
 
     return true;
   });
+}
+
+function getMethodCandidatesByMode(mode, rows) {
+  if (mode === "spray") {
+    return rows.map(r => String(r.sprayMethod || "").trim()).filter(Boolean);
+  }
+  return rows.map(r => String(r.mowingMethod || "").trim()).filter(Boolean);
+}
+
+function syncMethodFilterOptions() {
+  const select = document.getElementById("filter-method");
+  if (!select) return;
+
+  const modeRows = state.items.filter(MODES[state.mode].match);
+  const unique = [...new Set(getMethodCandidatesByMode(state.mode, modeRows))]
+    .sort((a, b) => a.localeCompare(b, "ja"));
+
+  if (state.method && !unique.includes(state.method)) {
+    state.method = "";
+  }
+
+  const title = state.mode === "spray" ? "除草方式" : "草刈り方式";
+  select.innerHTML = [
+    `<option value="">${title}を選択（全件）</option>`,
+    ...unique.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+  ].join("");
+  select.value = state.method;
 }
 
 function renderModeUi(filteredCount) {
@@ -356,6 +388,8 @@ function render() {
   const container = document.getElementById("weeding-container");
   container.innerHTML = "";
 
+  syncMethodFilterOptions();
+
   const modeDef = MODES[state.mode];
   const modeItems = state.items.filter(modeDef.match);
   const periodItems = filterRowsByPeriod(modeItems);
@@ -388,7 +422,7 @@ function render() {
           <th>倍率</th>
           <th>散布液量</th>
           <th>10a換算</th>
-          <th>機械</th>
+          <th>除草方式</th>
           <th>作業者</th>
           <th>備考</th>
         </tr>
@@ -397,7 +431,7 @@ function render() {
     `;
 
     list.forEach(r => {
-      const machineLabel = String(r.machine || "").trim() || "-";
+      const sprayMethod = String(r.sprayMethod || "").trim() || "-";
       const days = Math.max(0, Math.round((today - toDateValue(r.date)) / 86400000));
       const cls = ageClass(days);
       const spray = buildSprayAggregateSummary(r);
@@ -410,7 +444,7 @@ function render() {
           <td>${escapeHtml(spray.dilution)}</td>
           <td>${escapeHtml(spray.spray)}</td>
           <td>${escapeHtml(spray.per10a)}</td>
-          <td>${escapeHtml(machineLabel)}</td>
+          <td>${escapeHtml(sprayMethod)}</td>
           <td>${escapeHtml(r.workers || "-")}</td>
           <td>${escapeHtml(r.notes || "")}</td>
         </tr>
@@ -426,7 +460,7 @@ function render() {
           <th>使用農薬</th>
           <th>倍率</th>
           <th>圃場別散布量</th>
-          <th>機械</th>
+          <th>除草方式</th>
           <th>作業者</th>
           <th>備考</th>
         </tr>
@@ -435,7 +469,7 @@ function render() {
     `;
 
     sprayFieldRows.forEach(r => {
-      const machineLabel = String(r.machine || "").trim() || "-";
+      const sprayMethod = String(r.sprayMethod || "").trim() || "-";
       const days = Math.max(0, Math.round((today - toDateValue(r.date)) / 86400000));
       const cls = ageClass(days);
       html += `
@@ -446,7 +480,7 @@ function render() {
           <td>${escapeHtml(r.pesticideName)}</td>
           <td>${escapeHtml(r.dilutionRate)}</td>
           <td>${escapeHtml(r.waterAmount)}</td>
-          <td>${escapeHtml(machineLabel)}</td>
+          <td>${escapeHtml(sprayMethod)}</td>
           <td>${escapeHtml(r.workers || "-")}</td>
           <td>${escapeHtml(r.notes || "")}</td>
         </tr>
@@ -501,9 +535,8 @@ export async function initWeedingList() {
   bindPeriodControls();
   state.items = await loadAllWeedingLogs();
 
-  const [fieldsData, machinesData, fieldDetail] = await Promise.all([
+  const [fieldsData, fieldDetail] = await Promise.all([
     loadJSON("/data/fields.json?v=1"),
-    loadJSON("/data/machines.json?v=1"),
     loadJSON("/data/field-detail.json?v=1").catch(() => ({}))
   ]);
 
@@ -518,22 +551,16 @@ export async function initWeedingList() {
     children[f.area].push(f.name);
   });
 
-  const machineNames = (machinesData?.machines || [])
-    .map(m => String(m?.name || "").trim())
-    .filter(Boolean);
-
   state.fieldAreaMap = Object.fromEntries((fieldsData || []).map(field => {
     const sizeA = Number(fieldDetail?.[field?.name]?.size || 0);
     return [field?.name, Number.isFinite(sizeA) ? sizeA : 0];
   }));
 
   setFilterData({
-    fields: { parents, children },
-    machines: { parents: ["機械"], children: { "機械": machineNames } }
+    fields: { parents, children }
   });
 
   filterState.fields = [];
-  filterState.machines = [];
   initActiveFilterUI();
   bindFilterControls();
   render();

@@ -39,12 +39,13 @@ export async function loadAllWeedingLogs() {
         const workers = normalizeWorkers(entry.workers || entry.worker || "");
         const machine = String(entry.machine || "");
         const mowingMethod = String(entry.mowingMethod || "");
+        const sprayMethod = String(entry.sprayMethod || "");
         const notes = String(entry.notes || "");
         const pesticides = normalizePesticides(entry.pesticides || []);
         const pesticideUsage = Array.isArray(entry.pesticideUsage) ? entry.pesticideUsage : [];
         const distributed = Array.isArray(entry.distributed) ? entry.distributed : [];
 
-        const key = [date, workType, workers, machine, mowingMethod, notes, pesticides].join("||") + `||${idx}`;
+        const key = [date, workType, workers, machine, mowingMethod, sprayMethod, notes, pesticides].join("||") + `||${idx}`;
 
         if (!merged.has(key)) {
           merged.set(key, {
@@ -54,6 +55,7 @@ export async function loadAllWeedingLogs() {
             workers,
             machine,
             mowingMethod,
+            sprayMethod,
             notes,
             pesticides,
             pesticideUsage,
