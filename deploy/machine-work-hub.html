@@ -71,7 +71,7 @@
     <div class="card">
       <div id="machine-name" class="machine-chip">機械: -</div>
       <p class="hub-subtitle">
-        作業を選ぶと、機械情報を引き継いだまま入力ページへ移動します。
+        行った作業を選択してください。
       </p>
       <div id="work-grid" class="work-grid"></div>
     </div>
@@ -149,6 +149,11 @@
       const grid = document.getElementById("work-grid");
       if (workPages.length === 0) {
         grid.innerHTML = "<p>この機械に割り当てられた作業ページはありません。</p>";
+        return;
+      }
+
+      if (workPages.length === 1) {
+        location.replace(withMachine(workPages[0].path, machineId));
         return;
       }
 
