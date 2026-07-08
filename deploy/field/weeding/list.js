@@ -26,6 +26,7 @@ const state = {
   periodEnd: "",
   keyword: "",
   method: "",
+  pesticide: "",
   fieldAreaMap: {}
 };
 
@@ -158,6 +159,7 @@ function bindPeriodControls() {
 function bindFilterControls() {
   const fieldBtn = document.getElementById("open-field-modal");
   const methodSelect = document.getElementById("filter-method");
+  const pesticideSelect = document.getElementById("filter-pesticide");
   const keywordInput = document.getElementById("filter-keyword");
   const resetBtn = document.getElementById("filter-reset");
 
@@ -168,6 +170,13 @@ function bindFilterControls() {
   if (methodSelect) {
     methodSelect.addEventListener("change", () => {
       state.method = String(methodSelect.value || "").trim();
+      render();
+    });
+  }
+
+  if (pesticideSelect) {
+    pesticideSelect.addEventListener("change", () => {
+      state.pesticide = String(pesticideSelect.value || "").trim();
       render();
     });
   }
@@ -185,7 +194,9 @@ function bindFilterControls() {
       filterState.fields = [];
       state.keyword = "";
       state.method = "";
+      state.pesticide = "";
       if (methodSelect) methodSelect.value = "";
+      if (pesticideSelect) pesticideSelect.value = "";
       if (keywordInput) keywordInput.value = "";
       window.dispatchEvent(new CustomEvent("filter:apply"));
       render();
@@ -194,6 +205,20 @@ function bindFilterControls() {
 
   window.addEventListener("filter:apply", () => render());
   window.addEventListener("filter:reset", () => render());
+}
+
+function rowContainsPesticide(row, pesticideName) {
+  const target = String(pesticideName || "").trim();
+  if (!target) return true;
+
+  const usageRows = Array.isArray(row.pesticideUsage) ? row.pesticideUsage : [];
+  if (usageRows.some(u => String(u?.name || "").trim() === target)) return true;
+
+  const distributedRows = Array.isArray(row.distributed) ? row.distributed : [];
+  if (distributedRows.some(u => String(u?.name || "").trim() === target)) return true;
+
+  const textNames = String(row.pesticides || "").split("／").map(v => v.trim()).filter(Boolean);
+  return textNames.includes(target);
 }
 
 function filterRowsByPeriod(rows) {
@@ -223,6 +248,7 @@ function filterRowsByAdvanced(rows) {
       : String(row.mowingMethod || "").trim();
 
     if (state.method && rowMethod !== state.method) return false;
+    if (row.workType === "除草剤散布" && state.pesticide && !rowContainsPesticide(row, state.pesticide)) return false;
 
     if (keyword) {
       const hay = [
@@ -248,6 +274,21 @@ function getMethodCandidatesByMode(mode, rows) {
   return rows.map(r => String(r.mowingMethod || "").trim()).filter(Boolean);
 }
 
+function collectPesticideNames(rows) {
+  const names = new Set();
+
+  rows.forEach(row => {
+    (Array.isArray(row.pesticideUsage) ? row.pesticideUsage : []).forEach(u => {
+      const n = String(u?.name || "").trim();
+      if (n) names.add(n);
+    });
+
+    String(row.pesticides || "").split("／").map(v => v.trim()).filter(Boolean).forEach(n => names.add(n));
+  });
+
+  return [...names].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
 function syncMethodFilterOptions() {
   const select = document.getElementById("filter-method");
   if (!select) return;
@@ -266,6 +307,31 @@ function syncMethodFilterOptions() {
     ...unique.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
   ].join("");
   select.value = state.method;
+}
+
+function syncPesticideFilterOptions(rows) {
+  const select = document.getElementById("filter-pesticide");
+  if (!select) return;
+
+  if (state.mode !== "spray") {
+    state.pesticide = "";
+    select.innerHTML = '<option value="">農薬を選択（除草剤散布で利用）</option>';
+    select.value = "";
+    select.disabled = true;
+    return;
+  }
+
+  const unique = collectPesticideNames(rows);
+  if (state.pesticide && !unique.includes(state.pesticide)) {
+    state.pesticide = "";
+  }
+
+  select.innerHTML = [
+    '<option value="">農薬を選択（全件）</option>',
+    ...unique.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+  ].join("");
+  select.value = state.pesticide;
+  select.disabled = false;
 }
 
 function renderModeUi(filteredCount) {
@@ -385,6 +451,12 @@ function filterSprayFieldRows(rows) {
       return false;
     }
 
+    const pesticideName = String(row.pesticideName || "").trim();
+    if (state.pesticide) {
+      const names = pesticideName.split("／").map(v => v.trim()).filter(Boolean);
+      if (!names.includes(state.pesticide)) return false;
+    }
+
     if (keyword) {
       const hay = [
         row.workType,
@@ -401,6 +473,123 @@ function filterSprayFieldRows(rows) {
 
     return true;
   });
+}
+
+function parseWaterText(value) {
+  const text = String(value || "").replace(/[^0-9.\-]/g, "");
+  const n = Number(text);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function calcAreaFromAggregateRows(rows) {
+  return rows.reduce((sum, row) => {
+    const names = parseFieldNames(row.fieldText);
+    const areaA = names.reduce((s, f) => s + Number(state.fieldAreaMap[f] || 0), 0);
+    return sum + areaA;
+  }, 0);
+}
+
+function calcAreaFromFieldRows(rows) {
+  const seen = new Set();
+  let total = 0;
+
+  rows.forEach(row => {
+    const fieldName = String(row.fieldName || "").trim();
+    if (!fieldName) return;
+    const key = [row.date, row.workers, row.notes, row.sprayMethod, fieldName].join("||");
+    if (seen.has(key)) return;
+    seen.add(key);
+    total += Number(state.fieldAreaMap[fieldName] || 0);
+  });
+
+  return total;
+}
+
+function aggregatePesticideTotalsFromRows(rows, isFieldView) {
+  const totals = new Map();
+
+  if (isFieldView) {
+    rows.forEach(row => {
+      const name = String(row.pesticideName || "").trim();
+      if (!name || name === "-") return;
+      const water = parseWaterText(row.waterAmount);
+      if (!totals.has(name)) totals.set(name, { water: 0, count: 0 });
+      const curr = totals.get(name);
+      curr.water += water;
+      curr.count += 1;
+    });
+    return totals;
+  }
+
+  rows.forEach(row => {
+    const usageRows = Array.isArray(row.pesticideUsage) ? row.pesticideUsage : [];
+    if (usageRows.length) {
+      usageRows.forEach(u => {
+        const name = String(u?.name || "").trim();
+        if (!name) return;
+        if (state.pesticide && name !== state.pesticide) return;
+        const water = Number(u?.total_water_amount || 0);
+        if (!totals.has(name)) totals.set(name, { water: 0, count: 0 });
+        const curr = totals.get(name);
+        curr.water += water;
+        curr.count += 1;
+      });
+      return;
+    }
+
+    (Array.isArray(row.distributed) ? row.distributed : []).forEach(u => {
+      const name = String(u?.name || "").trim();
+      if (!name) return;
+      if (state.pesticide && name !== state.pesticide) return;
+      const water = Number(u?.water_amount ?? u?.spray_amount ?? 0);
+      if (!totals.has(name)) totals.set(name, { water: 0, count: 0 });
+      const curr = totals.get(name);
+      curr.water += water;
+      curr.count += 1;
+    });
+  });
+
+  return totals;
+}
+
+function renderSprayMetrics({ aggregateRows = [], fieldRows = [], isFieldView = false }) {
+  const metricsBox = document.getElementById("spray-metrics");
+  const summaryBox = document.getElementById("pesticide-summary");
+  const areaEl = document.getElementById("metric-area-total");
+  const waterEl = document.getElementById("metric-water-total");
+  const per10aEl = document.getElementById("metric-per10a");
+
+  if (!metricsBox || !summaryBox || !areaEl || !waterEl || !per10aEl) return;
+
+  if (state.mode !== "spray") {
+    metricsBox.classList.remove("active");
+    summaryBox.classList.remove("active");
+    summaryBox.textContent = "";
+    return;
+  }
+
+  const areaA = isFieldView ? calcAreaFromFieldRows(fieldRows) : calcAreaFromAggregateRows(aggregateRows);
+  const areaTan = areaA / 10;
+  const pesticideTotals = aggregatePesticideTotalsFromRows(isFieldView ? fieldRows : aggregateRows, isFieldView);
+  const totalWater = [...pesticideTotals.values()].reduce((sum, v) => sum + Number(v.water || 0), 0);
+  const per10a = areaA > 0 ? (totalWater / areaA) * 10 : 0;
+
+  areaEl.textContent = `${formatNumber(areaA, 1)}a / ${formatNumber(areaTan, 2)}反`;
+  waterEl.textContent = `${formatNumber(totalWater, 1)}L`;
+  per10aEl.textContent = areaA > 0 ? `${formatNumber(per10a, 1)}L/10a` : "-";
+  metricsBox.classList.add("active");
+
+  const lines = [...pesticideTotals.entries()]
+    .sort((a, b) => b[1].water - a[1].water)
+    .map(([name, v]) => `${escapeHtml(name)}: ${formatNumber(v.water, 1)}L（${v.count}件）`);
+
+  if (lines.length) {
+    summaryBox.innerHTML = `薬剤別合計: ${lines.join(" / ")}`;
+    summaryBox.classList.add("active");
+  } else {
+    summaryBox.textContent = "";
+    summaryBox.classList.remove("active");
+  }
 }
 
 function renderPeriodSummary(rows) {
@@ -422,13 +611,15 @@ function render() {
   const container = document.getElementById("weeding-container");
   container.innerHTML = "";
 
-  syncMethodFilterOptions();
-
   const isSpray = state.mode === "spray";
   const isSprayFieldView = isSpray && state.sprayView === "field";
   const modeDef = MODES[state.mode];
   const modeItems = state.items.filter(modeDef.match);
   const periodItems = filterRowsByPeriod(modeItems);
+
+  syncMethodFilterOptions();
+  syncPesticideFilterOptions(periodItems);
+
   const items = filterRowsByAdvanced(periodItems);
 
   let sprayFieldRows = [];
@@ -437,6 +628,7 @@ function render() {
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
     renderModeUi(sprayFieldRows.length);
     renderPeriodSummary(sprayFieldRows);
+    renderSprayMetrics({ fieldRows: sprayFieldRows, isFieldView: true });
     if (!sprayFieldRows.length) {
       container.innerHTML = '<div class="empty-box">記録がありません。</div>';
       return;
@@ -444,6 +636,7 @@ function render() {
   } else {
     renderModeUi(items.length);
     renderPeriodSummary(items);
+    renderSprayMetrics({ aggregateRows: items, isFieldView: false });
     if (!items.length) {
       container.innerHTML = '<div class="empty-box">記録がありません。</div>';
       return;
