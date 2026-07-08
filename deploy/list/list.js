@@ -5,10 +5,16 @@
 import { renderPlantingList } from "./plantingList.js";
 import { renderSeedList } from "./seedList.js";
 import { setFilterData } from "/common/filter.js";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
 let currentMode = "planting";
 
 export function initListPage() {
+  setupSmartBackButton({
+    elementId: "list-back-btn",
+    fallbackPath: "/",
+    defaultLabel: "元のページへ戻る"
+  });
 
   const params = new URLSearchParams(location.search);
   const modeParam = params.get("mode");

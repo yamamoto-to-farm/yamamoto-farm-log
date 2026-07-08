@@ -8,6 +8,7 @@ import {
 import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
 const viewState = {
   master: [],
@@ -37,34 +38,13 @@ export async function initFertilizerList() {
   renderList();
 }
 
-function resolveBackUrl() {
-  const params = new URLSearchParams(location.search);
-  const returnParam = params.get("return");
-  if (returnParam && returnParam.startsWith("/")) {
-    return returnParam;
-  }
-
-  const ref = document.referrer || "";
-  if (ref.startsWith(location.origin)) {
-    const path = ref.slice(location.origin.length);
-    if (path.startsWith("/")) return path;
-  }
-
-  return "/fertilizer/index.html";
-}
-
 function setupBackButton() {
-  const btn = document.getElementById("fertilizer-back-btn");
-  if (!btn) return;
-
-  const backUrl = resolveBackUrl();
-  if (backUrl.includes("/fertilizer/index.html")) {
-    btn.textContent = "施肥ログへ戻る";
-  }
-
-  btn.onclick = () => {
-    location.href = backUrl;
-  };
+  setupSmartBackButton({
+    elementId: "fertilizer-back-btn",
+    fallbackPath: "/fertilizer/index.html",
+    logInputPath: "/fertilizer/index.html",
+    logInputLabel: "施肥ログへ戻る"
+  });
 }
 
 function setupFilterUi(master, years) {

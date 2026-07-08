@@ -2,6 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js";
 import { loadJSON } from "/common/json.js";
 import { safeFieldName } from "/common/utils.js?v=1";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
 const state = {
   fields: [],
@@ -494,31 +495,6 @@ function bindPeriodControls() {
   }
 }
 
-function resolveBackUrl() {
-  const params = new URLSearchParams(location.search);
-  const returnPath = params.get("return") || "";
-  if (returnPath.startsWith("/")) return returnPath;
-
-  const referrer = document.referrer || "";
-  if (referrer) {
-    try {
-      const refUrl = new URL(referrer);
-      if (refUrl.origin === location.origin) {
-        return `${refUrl.pathname}${refUrl.search}${refUrl.hash}`;
-      }
-    } catch {
-      // noop
-    }
-  }
-
-  return "/field/tillage/index.html";
-}
-
-function getBackButtonLabel(backUrl) {
-  return backUrl === "/field/tillage/index.html"
-    ? "耕起ログへ戻る"
-    : "元のページへ戻る";
-}
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -543,12 +519,12 @@ async function main() {
   updateSortHeaderLabels();
   renderTable();
 
-  const backBtn = document.getElementById("tillage-back-btn");
-  if (backBtn) {
-    const backUrl = resolveBackUrl();
-    backBtn.setAttribute("href", backUrl);
-    backBtn.textContent = getBackButtonLabel(backUrl);
-  }
+  setupSmartBackButton({
+    elementId: "tillage-back-btn",
+    fallbackPath: "/field/tillage/index.html",
+    logInputPath: "/field/tillage/index.html",
+    logInputLabel: "耕起ログへ戻る"
+  });
 
   document.getElementById("date-sort-header")?.addEventListener("click", () => setSort("date"));
   document.getElementById("gap-sort-header")?.addEventListener("click", () => setSort("gap"));

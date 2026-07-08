@@ -3,6 +3,7 @@ import { loadJSON } from "/common/json.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
 const MODES = {
   spray: {
@@ -569,6 +570,13 @@ function render() {
 }
 
 export async function initWeedingList() {
+  setupSmartBackButton({
+    elementId: "weeding-back-btn",
+    fallbackPath: "/field/weeding/index.html",
+    logInputPath: "/field/weeding/index.html",
+    logInputLabel: "除草・草刈りログへ戻る"
+  });
+
   state.mode = getModeFromUrl();
   const defaults = getDefaultPeriodRange();
   state.periodStart = defaults.start;
