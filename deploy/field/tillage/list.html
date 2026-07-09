@@ -60,9 +60,9 @@
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
     }
 
-    .area-group.fresh { border-left: 6px solid #2f855a; }
-    .area-group.warm { border-left: 6px solid #c05621; }
-    .area-group.old { border-left: 6px solid #b91c1c; }
+    .area-group.in-period { border-left: 6px solid #2f855a; }
+    .area-group.out-period { border-left: 6px solid #c05621; }
+    .area-group.no-record { border-left: 6px solid #9ca3af; }
 
     .area-title {
       display: flex;
@@ -90,19 +90,19 @@
       font-size: 20px;
     }
 
-    .area-group.fresh .area-title h3,
-    .field-card.fresh .field-name h3 a {
+    .area-group.in-period .area-title h3,
+    .field-card.in-period .field-name h3 a {
       color: #166534;
     }
 
-    .area-group.warm .area-title h3,
-    .field-card.warm .field-name h3 a {
+    .area-group.out-period .area-title h3,
+    .field-card.out-period .field-name h3 a {
       color: #9a3412;
     }
 
-    .area-group.old .area-title h3,
-    .field-card.old .field-name h3 a {
-      color: #991b1b;
+    .area-group.no-record .area-title h3,
+    .field-card.no-record .field-name h3 a {
+      color: #4b5563;
     }
 
     .field-name h3 a {
@@ -122,9 +122,9 @@
       font-weight: 700;
     }
 
-    .area-badge.fresh { background: #ecfdf5; color: #166534; }
-    .area-badge.warm { background: #fff7ed; color: #9a3412; }
-    .area-badge.old { background: #fef2f2; color: #991b1b; }
+    .area-badge.in-period { background: #ecfdf5; color: #166534; }
+    .area-badge.out-period { background: #fff7ed; color: #9a3412; }
+    .area-badge.no-record { background: #f3f4f6; color: #4b5563; }
 
     .area-sub {
       color: #6b7280;
@@ -134,6 +134,7 @@
 
     .field-list {
       display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 10px;
       margin-top: 12px;
     }
@@ -198,25 +199,21 @@
       }
 
     .field-card {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: stretch;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
       border-radius: 14px;
       border: 1px solid #e5e7eb;
       background: #fbfbfa;
       border-left: 6px solid #d1d5db;
     }
 
-    .field-card.fresh { border-left-color: #2f855a; }
-    .field-card.warm { border-left-color: #c05621; }
-    .field-card.old { border-left-color: #b91c1c; }
+    .field-card.in-period { border-left-color: #2f855a; }
+    .field-card.out-period { border-left-color: #c05621; }
+    .field-card.no-record { border-left-color: #9ca3af; }
 
     .field-main {
-      min-width: 240px;
-      flex: 1 1 340px;
+      min-width: 0;
     }
 
     .field-name {
@@ -224,12 +221,12 @@
       align-items: baseline;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .field-name h3 {
       margin: 0;
-      font-size: 18px;
+      font-size: 17px;
     }
 
     .field-area {
@@ -241,9 +238,23 @@
       font-weight: 700;
     }
 
-    .field-area.fresh { background: #ecfdf5; color: #166534; }
-    .field-area.warm { background: #fff7ed; color: #9a3412; }
-    .field-area.old { background: #fef2f2; color: #991b1b; }
+    .field-area.in-period { background: #ecfdf5; color: #166534; }
+    .field-area.out-period { background: #fff7ed; color: #9a3412; }
+    .field-area.no-record { background: #f3f4f6; color: #4b5563; }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-chip.in-period { background: #ecfdf5; color: #166534; }
+    .status-chip.out-period { background: #fff7ed; color: #9a3412; }
+    .status-chip.no-record { background: #f3f4f6; color: #4b5563; }
 
     .area-text {
       color: #6b7280;
@@ -253,8 +264,8 @@
 
     .field-meta {
       display: grid;
-      gap: 8px;
-      font-size: 13px;
+      gap: 6px;
+      font-size: 12px;
       color: #374151;
     }
 
@@ -284,6 +295,7 @@
     .pill-date { background: #eff6ff; color: #1d4ed8; }
     .pill-gap { background: #fef3c7; color: #92400e; }
     .pill-count { background: #ecfdf5; color: #166534; }
+    .pill-out { background: #fff7ed; color: #9a3412; }
 
     .age-chip {
       display: inline-flex;
@@ -295,13 +307,20 @@
       width: fit-content;
     }
 
-    .age-chip.fresh { background: #ecfdf5; color: #166534; }
-    .age-chip.warm { background: #fff7ed; color: #9a3412; }
-    .age-chip.old { background: #fef2f2; color: #991b1b; }
+    .age-chip.in-period { background: #ecfdf5; color: #166534; }
+    .age-chip.out-period { background: #fff7ed; color: #9a3412; }
+    .age-chip.no-record { background: #f3f4f6; color: #4b5563; }
 
-    .field-link {
-      align-self: center;
-      white-space: nowrap;
+    .area-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .area-sort-wrap {
+      min-width: 180px;
     }
 
     .table-wrap {
@@ -386,6 +405,8 @@
     @media (max-width: 640px) {
       .page-wrap { padding: 10px 12px 20px; }
       .hero-title { font-size: 24px; }
+      .area-head { flex-direction: column; align-items: stretch; }
+      .area-sort-wrap { min-width: 0; }
     }
   </style>
 </head>
@@ -451,7 +472,16 @@
 
       <div class="content-grid">
         <section>
-          <h2 class="page-title" style="font-size:20px; margin-bottom:10px;">エリアごとの最終耕うん</h2>
+          <div class="area-head">
+            <h2 class="page-title" style="font-size:20px; margin-bottom:0;">エリアごとの最終耕うん</h2>
+            <div class="form-field area-sort-wrap">
+              <label for="area-sort">並び順</label>
+              <select id="area-sort" class="form-input">
+                <option value="new">新しい順</option>
+                <option value="old">古い順</option>
+              </select>
+            </div>
+          </div>
           <div id="area-list" class="area-list"></div>
         </section>
 

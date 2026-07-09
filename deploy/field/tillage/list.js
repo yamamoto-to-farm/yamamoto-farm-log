@@ -16,6 +16,7 @@ const state = {
   fieldCards: [],
   sortKey: "date",
   sortDirection: "desc",
+  areaSort: "new",
   periodStart: "",
   periodEnd: "",
   method: "",
@@ -368,6 +369,17 @@ function bindFilterControls() {
   });
 }
 
+function bindAreaSortControl() {
+  const select = document.getElementById("area-sort");
+  if (!select) return;
+
+  select.value = state.areaSort;
+  select.addEventListener("change", () => {
+    state.areaSort = String(select.value || "new").trim() === "old" ? "old" : "new";
+    renderAreaList();
+  });
+}
+
 function renderPeriodSummary() {
   const filteredRows = getVisibleRows();
   const fieldSet = new Set(filteredRows.map(row => row.field));
@@ -395,12 +407,71 @@ function renderAreaList() {
   const areaList = document.getElementById("area-list");
   if (!areaList) return;
 
-  const visibleFieldSet = new Set(getVisibleRows().map(row => row.field));
+  const filteredRows = filterRowsByAdvanced(state.rows);
+  const byField = new Map();
+  filteredRows.forEach(row => {
+    if (!byField.has(row.field)) byField.set(row.field, []);
+    byField.get(row.field).push(row);
+  });
+
+  const selectedFields = filterState.fields || [];
+  const targetFields = selectedFields.length > 0
+    ? state.fields.filter(f => selectedFields.includes(f.name))
+    : state.fields;
+
+  if (targetFields.length === 0) {
+    areaList.innerHTML = '<div class="empty-state">表示対象の圃場がありません。</div>';
+    return;
+  }
+
+  const start = state.periodStart ? toDateValue(state.periodStart) : 0;
+  const end = state.periodEnd ? toDateValue(state.periodEnd) : 0;
+
+  const cards = [];
+  const todayValue = getTodayValue();
+
+  targetFields.forEach(fieldMeta => {
+    const fieldName = String(fieldMeta?.name || "").trim();
+    if (!fieldName) return;
+
+    const rows = [...(byField.get(fieldName) || [])].sort((a, b) => a.dateValue - b.dateValue);
+    const periodRows = rows.filter(row => {
+      if (start && row.dateValue < start) return false;
+      if (end && row.dateValue > end) return false;
+      return true;
+    });
+
+    let status = "no-record";
+    if (rows.length > 0) {
+      status = periodRows.length > 0 ? "in-period" : "out-period";
+    }
+
+    const latestAll = rows.length ? rows[rows.length - 1] : null;
+    const latestPeriod = periodRows.length ? periodRows[periodRows.length - 1] : null;
+    const latestForSort = latestPeriod || latestAll;
+
+    const latestDate = latestForSort?.date || "";
+    const latestDateValue = latestForSort?.dateValue || 0;
+    const latestAgeDays = latestForSort ? diffDays(todayValue, latestForSort.dateValue) : null;
+    const latestGapDays = rows.length > 1 ? diffDays(rows[rows.length - 1].dateValue, rows[rows.length - 2].dateValue) : null;
+
+    cards.push({
+      field: fieldName,
+      area: String(fieldMeta?.area || ""),
+      status,
+      countAll: rows.length,
+      countInPeriod: periodRows.length,
+      latestDate,
+      latestDateValue,
+      latestAgeDays,
+      latestWorkType: latestForSort?.workType || "未記録",
+      latestGapDays,
+      latestGapLabel: formatDaysGap(latestGapDays)
+    });
+  });
 
   const grouped = new Map();
-  for (const card of state.fieldCards) {
-    if (!visibleFieldSet.has(card.field)) continue;
-
+  for (const card of cards) {
     const areaName = card.area || "その他";
     if (!grouped.has(areaName)) grouped.set(areaName, []);
     grouped.get(areaName).push(card);
@@ -412,48 +483,70 @@ function renderAreaList() {
   }
 
   const areaEntries = [...grouped.entries()].map(([areaName, cards]) => {
-    const visibleCards = [...cards].filter(card => card.count > 0);
-    const latestAgeDays = visibleCards.length > 0
-      ? Math.max(...visibleCards.map(card => card.latestAgeDays ?? 0))
-      : null;
-    const latestDate = visibleCards.length > 0
-      ? visibleCards
-          .filter(card => card.latestDate)
-          .sort((a, b) => b.latestDate.localeCompare(a.latestDate))[0]?.latestDate || ""
-      : "";
-    const groupClass = groupAgeClass(latestAgeDays);
+    const inPeriodCount = cards.filter(card => card.status === "in-period").length;
+    const outPeriodCount = cards.filter(card => card.status === "out-period").length;
+    const noRecordCount = cards.filter(card => card.status === "no-record").length;
+    const latestCard = [...cards].sort((a, b) => b.latestDateValue - a.latestDateValue)[0] || null;
+
+    const groupClass = inPeriodCount > 0
+      ? "in-period"
+      : outPeriodCount > 0
+        ? "out-period"
+        : "no-record";
+
+    const latestAgeDays = latestCard?.latestAgeDays ?? null;
+    const latestDate = latestCard?.latestDate || "";
+
+    const sortedCards = [...cards].sort((a, b) => {
+      if (a.status !== b.status) {
+        const order = { "in-period": 0, "out-period": 1, "no-record": 2 };
+        return order[a.status] - order[b.status];
+      }
+
+      if (state.areaSort === "old") {
+        if (a.latestDateValue !== b.latestDateValue) return a.latestDateValue - b.latestDateValue;
+      } else {
+        if (a.latestDateValue !== b.latestDateValue) return b.latestDateValue - a.latestDateValue;
+      }
+      return a.field.localeCompare(b.field, "ja");
+    });
 
     return {
       areaName,
-      cards: [...cards].sort((a, b) => {
-        if (a.count === 0 && b.count > 0) return 1;
-        if (a.count > 0 && b.count === 0) return -1;
-        if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
-        return a.field.localeCompare(b.field, "ja");
-      }),
+      cards: sortedCards,
       groupClass,
       latestAgeDays,
       latestDate,
-      count: cards.reduce((sum, card) => sum + (card.count || 0), 0)
+      countAll: cards.reduce((sum, card) => sum + (card.countAll || 0), 0),
+      inPeriodCount,
+      outPeriodCount,
+      noRecordCount
     };
   });
 
   areaEntries.sort((a, b) => {
-    const aScore = a.latestAgeDays ?? -1;
-    const bScore = b.latestAgeDays ?? -1;
-    if (aScore !== bScore) return bScore - aScore;
+    const aScore = a.latestDate ? toDateValue(a.latestDate) : 0;
+    const bScore = b.latestDate ? toDateValue(b.latestDate) : 0;
+    if (aScore !== bScore) {
+      return state.areaSort === "old" ? aScore - bScore : bScore - aScore;
+    }
     return a.areaName.localeCompare(b.areaName, "ja");
   });
+
+  const startLabel = state.periodStart || "開始日未指定";
+  const endLabel = state.periodEnd || "終了日未指定";
 
   areaList.innerHTML = areaEntries.map(area => `
     <details class="area-group ${area.groupClass}">
       <summary class="area-title">
         <div class="area-title-main">
           <h3>${escapeHtml(area.areaName)}</h3>
-          <span class="area-badge ${area.groupClass}">${area.latestAgeDays === null ? "未記録" : `最終耕うんから ${formatDaysAgo(area.latestAgeDays)}`}</span>
-          <span class="pill pill-count">${area.count}件</span>
+          <span class="area-badge ${area.groupClass}">${area.groupClass === "in-period" ? "期間内あり" : area.groupClass === "out-period" ? "期間外のみ" : "未記録"}</span>
+          <span class="pill pill-count">全体${area.countAll}件</span>
+          <span class="pill pill-date">期間内${area.inPeriodCount}件</span>
+          ${area.outPeriodCount > 0 ? `<span class="pill pill-out">期間外${area.outPeriodCount}圃場</span>` : ""}
         </div>
-        <div class="area-sub">${escapeHtml(area.latestDate || "未記録")}</div>
+        <div class="area-sub">${escapeHtml(startLabel)}〜${escapeHtml(endLabel)} / 最終: ${escapeHtml(area.latestDate || "未記録")}</div>
       </summary>
 
       <div class="field-list">
@@ -464,27 +557,33 @@ function renderAreaList() {
 }
 
 function renderFieldCard(card) {
-  const age = card.latestAgeDays === null ? "fresh" : ageClass(card.latestAgeDays);
+  const statusClass = card.status;
   const detailLink = `/fields/index.html?field=${encodeURIComponent(card.field)}`;
+  const statusLabel = card.status === "in-period"
+    ? "期間内あり"
+    : card.status === "out-period"
+      ? "期間外のみ"
+      : "未記録";
 
   return `
-    <article class="field-card ${age}">
+    <article class="field-card ${statusClass}">
       <div class="field-main">
         <div class="field-name">
           <h3><a href="${detailLink}">${escapeHtml(card.field)}</a></h3>
-          <span class="field-area ${age}">${escapeHtml(card.area || "圃場")}</span>
+          <span class="field-area ${statusClass}">${escapeHtml(card.area || "圃場")}</span>
+          <span class="status-chip ${statusClass}">${statusLabel}</span>
         </div>
         <div class="field-meta">
           <div class="field-meta-line">
             <span class="pill pill-date">最終耕うん: ${escapeHtml(card.latestDate || "未記録")}</span>
-            <span class="pill pill-count">件数: ${card.count}</span>
+            <span class="pill pill-count">全体: ${card.countAll}件</span>
+            <span class="pill pill-date">期間内: ${card.countInPeriod}件</span>
           </div>
-          <div class="age-chip ${age}">${card.latestAgeDays === null ? "未記録" : `最終耕うんから ${formatDaysAgo(card.latestAgeDays)}`}</div>
+          <div class="age-chip ${statusClass}">${card.latestAgeDays === null ? "未記録" : `最終耕うんから ${formatDaysAgo(card.latestAgeDays)}`}</div>
           <div>直近: ${escapeHtml(card.latestWorkType)}</div>
           <div>前回との差: ${card.latestGapDays === null ? "初回" : `${card.latestGapLabel}`}</div>
         </div>
       </div>
-      <a class="secondary-btn field-link" href="${detailLink}">圃場詳細</a>
     </article>
   `;
 }
@@ -645,6 +744,7 @@ async function main() {
 
   bindPeriodControls();
   bindFilterControls();
+  bindAreaSortControl();
   syncMethodFilterOptions();
   renderPeriodSummary();
   renderAreaList();
