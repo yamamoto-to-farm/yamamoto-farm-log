@@ -84,13 +84,11 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     card.className = "card edit-card";
     card.dataset.groupIndex = String(idx);
     card.dataset.workType = String(item.type || "").trim();
+    card.dataset.selected = "false";
 
     card.innerHTML = `
       <div class="merge-card-head">
-        <label class="merge-check-label">
-          <input type="checkbox" class="merge-work-check" data-group-index="${idx}">
-          <span>選択</span>
-        </label>
+        <div class="merge-select-indicator" aria-hidden="true">クリックで選択</div>
         ${unmergeButtonHtml}
       </div>
       <h3 class="edit-title">${item.type}</h3>
@@ -244,23 +242,30 @@ function bindManualMergeControls(diary, timestampRows) {
   const mergeBtn = document.getElementById("merge-selected-btn");
   const clearBtn = document.getElementById("merge-clear-btn");
   const guideEl = document.getElementById("merge-type-guide");
-  const checks = [...document.querySelectorAll(".merge-work-check")];
+  const cards = [...document.querySelectorAll(".edit-card[data-group-index]")];
   const unmergeButtons = [...document.querySelectorAll(".merge-unmerge-btn")];
-  if (!mergeBtn || !clearBtn || !checks.length) return;
+  if (!mergeBtn || !clearBtn || !cards.length) return;
+
+  const isInteractiveTarget = target => {
+    return Boolean(target.closest("input, button, textarea, select, option, summary, details, label, a"));
+  };
+
+  const getSelectedCards = () => cards.filter(card => card.dataset.selected === "true");
 
   const updateButtonState = () => {
-    const selectedChecks = checks.filter(check => check.checked);
-    const count = selectedChecks.length;
+    const selectedCards = getSelectedCards();
+    const count = selectedCards.length;
     const selectedType = count > 0
-      ? String(document.querySelector(`.edit-card[data-group-index="${selectedChecks[0].dataset.groupIndex}"]`)?.dataset.workType || "").trim()
+      ? String(selectedCards[0]?.dataset.workType || "").trim()
       : "";
 
-    checks.forEach(check => {
-      const card = document.querySelector(`.edit-card[data-group-index="${check.dataset.groupIndex}"]`);
+    cards.forEach(card => {
       const workType = String(card?.dataset.workType || "").trim();
-      const shouldDisable = Boolean(selectedType) && !check.checked && workType !== selectedType;
-      check.disabled = shouldDisable;
-      card?.classList.toggle("merge-card-disabled", shouldDisable);
+      const isSelected = card.dataset.selected === "true";
+      const shouldDisable = Boolean(selectedType) && !isSelected && workType !== selectedType;
+      card.classList.toggle("merge-card-disabled", shouldDisable);
+      card.classList.toggle("merge-card-selected", isSelected);
+      card.dataset.mergeDisabled = shouldDisable ? "true" : "false";
     });
 
     if (guideEl) {
@@ -272,21 +277,26 @@ function bindManualMergeControls(diary, timestampRows) {
     mergeBtn.disabled = count < 2;
   };
 
-  checks.forEach(check => {
-    check.addEventListener("change", updateButtonState);
+  cards.forEach(card => {
+    card.addEventListener("click", event => {
+      if (isInteractiveTarget(event.target)) return;
+      if (card.dataset.mergeDisabled === "true") return;
+      card.dataset.selected = card.dataset.selected === "true" ? "false" : "true";
+      updateButtonState();
+    });
   });
 
   clearBtn.addEventListener("click", () => {
-    checks.forEach(check => {
-      check.checked = false;
+    cards.forEach(card => {
+      card.dataset.selected = "false";
     });
     updateButtonState();
   });
 
   mergeBtn.addEventListener("click", () => {
-    const selectedIndexes = checks
-      .filter(check => check.checked)
-      .map(check => Number(check.dataset.groupIndex))
+    const selectedIndexes = cards
+      .filter(card => card.dataset.selected === "true")
+      .map(card => Number(card.dataset.groupIndex))
       .filter(Number.isFinite)
       .sort((a, b) => a - b);
 
@@ -313,6 +323,9 @@ function bindManualMergeControls(diary, timestampRows) {
   });
 
   unmergeButtons.forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+    });
     button.addEventListener("click", () => {
       const index = Number(button.dataset.groupIndex);
       if (!Number.isFinite(index)) return;
