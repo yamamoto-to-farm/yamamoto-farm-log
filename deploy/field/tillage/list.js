@@ -436,52 +436,55 @@ function renderAreaList() {
     areaList.innerHTML = '<div class="empty-state">該当する圃場がありません。</div>';
     return;
   }
-    <details class="area-group ${area.groupClass}">
+
   areaList.innerHTML = model.areaEntries.map(area => {
     const groupMeta = getAreaStatusMeta(area.groupStatus);
 
     return `
-    <details class="area-group ${groupMeta.className}">
-          <h3>${escapeHtml(area.areaName)}</h3>
-          <span class="area-badge ${area.groupClass}">${area.groupClass === "in-period" ? "期間内あり" : area.groupClass === "out-period" ? "期間外のみ" : "未記録"}</span>
-          <span class="pill pill-count">全体${area.countAll}件</span>
-          <span class="area-badge ${groupMeta.className}">${groupMeta.label}</span>
-          ${area.outPeriodCount > 0 ? `<span class="pill pill-out">期間外${area.outPeriodCount}圃場</span>` : ""}
+      <details class="area-group ${groupMeta.className}">
+        <summary class="area-title">
+          <div class="area-title-main">
+            <h3>${escapeHtml(area.areaName)}</h3>
+            <span class="area-badge ${groupMeta.className}">${groupMeta.label}</span>
+            <span class="pill pill-count">全体${area.countAll}件</span>
+            <span class="pill pill-date">期間内${area.inPeriodCount}件</span>
+            ${area.outPeriodCount > 0 ? `<span class="pill pill-out">期間外${area.outPeriodCount}圃場</span>` : ""}
+          </div>
+          <div class="area-sub">${escapeHtml(model.startLabel)}〜${escapeHtml(model.endLabel)} / 最終: ${escapeHtml(area.latestDate || "未記録")}</div>
+        </summary>
+
+        <div class="field-list">
+          ${area.cards.map(card => renderFieldCard(card)).join("")}
         </div>
-        <div class="area-sub">${escapeHtml(startLabel)}〜${escapeHtml(endLabel)} / 最終: ${escapeHtml(area.latestDate || "未記録")}</div>
-      </summary>
-        <div class="area-sub">${escapeHtml(model.startLabel)}〜${escapeHtml(model.endLabel)} / 最終: ${escapeHtml(area.latestDate || "未記録")}</div>
-      <div class="field-list">
-        ${area.cards.map(card => renderFieldCard(card)).join("")}
-      </div>
-    </details>
-  `).join("");
-}
-  `;
+      </details>
+    `;
   }).join("");
+}
+
 function renderFieldCard(card) {
-  const statusClass = card.status;
   const detailLink = `/fields/index.html?field=${encodeURIComponent(card.field)}`;
   const statusMeta = getAreaStatusMeta(card.status);
-    ? "期間内あり"
-    <article class="field-card ${statusClass}">
-      <div class="field-main">
+
+  return `
     <article class="field-card ${statusMeta.className}">
+      <div class="field-main">
+        <div class="field-name">
           <h3><a href="${detailLink}">${escapeHtml(card.field)}</a></h3>
-          <span class="field-area ${statusClass}">${escapeHtml(card.area || "圃場")}</span>
-          <span class="status-chip ${statusClass}">${statusLabel}</span>
           <span class="field-area ${statusMeta.className}">${escapeHtml(card.area || "圃場")}</span>
           <span class="status-chip ${statusMeta.className}">${statusMeta.label}</span>
+        </div>
+
+        <div class="field-meta">
           <div class="field-meta-line">
             <span class="pill pill-date">最終耕うん: ${escapeHtml(card.latestDate || "未記録")}</span>
             <span class="pill pill-count">全体: ${card.countAll}件</span>
             <span class="pill pill-date">期間内: ${card.countInPeriod}件</span>
           </div>
-          <div class="age-chip ${statusClass}">${card.latestAgeDays === null ? "未記録" : `最終耕うんから ${formatDaysAgo(card.latestAgeDays)}`}</div>
-          <div>直近: ${escapeHtml(card.latestWorkType)}</div>
-          <div class="age-chip ${statusMeta.className}">${card.latestAgeDays === null ? "未記録" : `最終耕うんから ${formatDaysAgo(card.latestAgeDays)}`}</div>
-        </div>
+          <div class="age-chip ${statusMeta.className}">${card.latestAgeDays === null ? "未記録" : `最終耕うんから ${escapeHtml(formatDaysAgo(card.latestAgeDays))}`}</div>
+          <div>直近: ${escapeHtml(card.latestWorkType || "未記録")}</div>
           <div>前回との差: ${escapeHtml(card.latestGapLabel || "初回")}</div>
+        </div>
+      </div>
     </article>
   `;
 }
