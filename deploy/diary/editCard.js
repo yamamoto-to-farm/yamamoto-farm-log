@@ -5,6 +5,7 @@
 
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
+import { mergeWorkEntries } from "./work-summary.js";
 import { buildTimestampDefaults, loadTimestampRows } from "/common/timestamp.js?v=1";
 
 // ---------------------------------------------------------
@@ -42,6 +43,22 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const workersText = normalizeMultiText(item.workers || existing.workers) || "（未入力）";
     const machine = String(item.machine ?? existing.machine ?? "").trim();
     const machineText = machine || "（未入力）";
+    const subItems = Array.isArray(item.items) ? item.items : [];
+    const subItemHtml = subItems.length > 1
+      ? `
+        <details class="merged-work-details">
+          <summary>内訳 ${subItems.length}件</summary>
+          <ul class="merged-work-list">
+            ${subItems.map(subItem => `
+              <li>
+                <span>${escapeHtml(normalizeMultiText(subItem.field) || "未入力圃場")}</span>
+                <span>${escapeHtml(subItem.timestampTime || subItem.start || "-")}</span>
+              </li>
+            `).join("")}
+          </ul>
+        </details>
+      `
+      : "";
 
     const card = document.createElement("div");
     card.className = "card edit-card";
@@ -50,6 +67,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
       <h3 class="edit-title">${item.type}</h3>
       <p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>
       <p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>
+      ${subItemHtml}
 
       <input type="hidden" id="field_${idx}" value="${field}">
       <input type="hidden" id="machine_${idx}" value="${machine}">
@@ -101,6 +119,15 @@ function normalizeMultiText(value) {
   return String(value || "").trim();
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ---------------------------------------------------------
 // 初期化（保存イベントは diary.js に集約）
 // ---------------------------------------------------------
@@ -113,9 +140,12 @@ export async function initEditPage() {
 
   // ★ 作業ログから自動抽出（type, workers, field, machine）
   const logs = await loadLogsByDate(date);
-  const autoList = extractWorkForEdit(logs);
   const timestampRows = await loadTimestampRows(date);
+  const autoList = extractWorkForEdit(logs, timestampRows);
+  const mergedList = mergeWorkEntries(autoList, timestampRows);
+
+  window.__currentDiaryWorkGroups = mergedList;
 
   // ★ 既存日誌を反映して描画
-  renderEditCards(autoList, diary, timestampRows);
+  renderEditCards(mergedList, diary, timestampRows);
 }

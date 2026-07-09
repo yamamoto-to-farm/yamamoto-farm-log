@@ -143,8 +143,9 @@ export async function searchLogsByKeyword(keyword, options = {}) {
 // 作業編集カード用：作業名＋従事者＋圃場ID＋機械の自動抽出
 // =========================================================
 
-export function extractWorkForEdit(logs) {
+export function extractWorkForEdit(logs, timestampRows = []) {
   const autoList = [];
+  const timestampMap = buildTimestampMap(timestampRows);
 
   logs.forEach(log => {
     const type = log.displayName; // 定植・収穫・播種など
@@ -190,6 +191,15 @@ export function extractWorkForEdit(logs) {
       : "";
 
     const sourceDate = String(log.data[log.dateColumn] || "").trim();
+    const timestampKey = buildTimestampKey({
+      date: sourceDate,
+      folder: log.folder,
+      workType: String(log.data.workType || log.displayName || "").trim(),
+      field,
+      workers,
+      machine
+    });
+    const timestampRow = timestampMap.get(timestampKey) || null;
     const sourceKey = buildSourceKey({
       folder: log.folder,
       date: sourceDate,
@@ -206,18 +216,93 @@ export function extractWorkForEdit(logs) {
       field,
       machine,
       sourceKey,
-      timestampKey: buildTimestampKey({
-        date: sourceDate,
-        folder: log.folder,
-        workType: String(log.data.workType || log.displayName || "").trim(),
-        field,
-        workers,
-        machine
-      })
+      timestampKey,
+      sessionKey: timestampRow?.sessionKey || "",
+      timestampTime: timestampRow?.time || ""
     });
   });
 
   return autoList;
+}
+
+export function mergeWorkEntries(autoList, timestampRows = []) {
+  const timestampMap = buildTimestampMap(timestampRows);
+  const groups = new Map();
+
+  autoList.forEach((item, index) => {
+    const match = timestampMap.get(String(item.timestampKey || "").trim().toLowerCase()) || null;
+    const sessionKey = String(item.sessionKey || match?.sessionKey || "").trim();
+    const groupKey = sessionKey || String(item.sourceKey || `fallback-${index}`).trim();
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        groupKey,
+        sessionKey,
+        type: item.type,
+        sourceKey: item.sourceKey,
+        items: [],
+        fieldSet: new Set(),
+        workerSet: new Set(),
+        machine: String(item.machine || "").trim(),
+        start: "",
+        end: "",
+        timestampTimes: []
+      });
+    }
+
+    const group = groups.get(groupKey);
+    group.items.push({ ...item, __index: index });
+
+    normalizeMultiText(item.field).split("／").map(v => v.trim()).filter(Boolean).forEach(v => group.fieldSet.add(v));
+    normalizeMultiText(item.workers).split("／").map(v => v.trim()).filter(Boolean).forEach(v => group.workerSet.add(v));
+
+    if (!group.machine && item.machine) {
+      group.machine = String(item.machine || "").trim();
+    }
+
+    const time = String(match?.time || item.timestampTime || "").trim();
+    if (time) group.timestampTimes.push(time);
+  });
+
+  return [...groups.values()].map(group => {
+    const times = group.timestampTimes.slice().sort((a, b) => a.localeCompare(b));
+    const start = times[0] || "";
+    const end = times.length ? times[times.length - 1] : "";
+
+    return {
+      groupKey: group.groupKey,
+      sessionKey: group.sessionKey,
+      type: group.type,
+      sourceKey: group.sourceKey,
+      field: [...group.fieldSet].join("／"),
+      workers: [...group.workerSet].join("／"),
+      machine: group.machine,
+      start,
+      end,
+      items: group.items.sort((a, b) => String(a.timestampTime || "").localeCompare(String(b.timestampTime || "")) || (a.__index - b.__index))
+    };
+  }).sort((a, b) => {
+    const aStart = a.start || a.end || "99:99";
+    const bStart = b.start || b.end || "99:99";
+    return aStart.localeCompare(bStart) || String(a.type || "").localeCompare(String(b.type || ""), "ja");
+  });
+}
+
+function buildTimestampMap(timestampRows) {
+  const map = new Map();
+  (Array.isArray(timestampRows) ? timestampRows : []).forEach(row => {
+    const key = String(row?.workKey || "").trim().toLowerCase();
+    if (!key || map.has(key)) return;
+    map.set(key, row);
+  });
+  return map;
+}
+
+function normalizeMultiText(value) {
+  if (Array.isArray(value)) {
+    return value.map(v => String(v || "").trim()).filter(Boolean).join("／");
+  }
+  return String(value || "").trim();
 }
 
 function buildSourceKey({ folder, date, type, field, machine, workers, data }) {

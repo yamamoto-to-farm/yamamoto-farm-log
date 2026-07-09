@@ -206,7 +206,7 @@ export function buildTimestampDefaults(autoList, timestampRows) {
   const groupedTimestampRows = new Map();
 
   autoList.forEach((item, index) => {
-    const key = normalizeText(item?.timestampKey || "").toLowerCase();
+    const key = normalizeText(item?.sessionKey || item?.timestampKey || item?.groupKey || item?.sourceKey || "").toLowerCase();
     if (!key) return;
     if (!groupedAutoIndexes.has(key)) groupedAutoIndexes.set(key, []);
     groupedAutoIndexes.get(key).push(index);
@@ -235,9 +235,12 @@ export function buildTimestampDefaults(autoList, timestampRows) {
       const targetIndex = indexes[pos];
       if (targetIndex === undefined) return;
 
+      const targetItem = autoList[targetIndex] || {};
+      const isMergedGroup = Array.isArray(targetItem.items) && targetItem.items.length > 1;
+
       defaults[targetIndex] = {
-        start: pos > 0 ? rows[pos - 1].time || "" : "",
-        end: row.time || ""
+        start: isMergedGroup ? "" : (pos > 0 ? rows[pos - 1].time || "" : ""),
+        end: isMergedGroup ? (rows[rows.length - 1]?.time || row.time || "") : (row.time || "")
       };
     });
   }

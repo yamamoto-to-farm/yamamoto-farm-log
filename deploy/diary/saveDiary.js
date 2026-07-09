@@ -35,13 +35,24 @@ export async function saveDiary(date, autoList) {
   // -------------------------------
   const newWork = autoList.map((item, idx) => ({
     sourceKey: String(item.sourceKey || ""),
+    sessionKey: String(item.sessionKey || "").trim(),
     type: item.type,
     // workers と同じく配列で保存（複数値は "／" でまとめる）
-    field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || ""),
+    field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || item.field || ""),
     workers: normalizeMultiValueAsArray(item.workers),
     machine: String(document.getElementById(`machine_${idx}`)?.value || item.machine || "").trim(),
-    start: document.getElementById(`start_${idx}`).value,
-    end: document.getElementById(`end_${idx}`).value
+    start: document.getElementById(`start_${idx}`)?.value || "",
+    end: document.getElementById(`end_${idx}`)?.value || "",
+    items: Array.isArray(item.items) ? item.items.map(subItem => ({
+      sourceKey: String(subItem.sourceKey || ""),
+      sessionKey: String(subItem.sessionKey || item.sessionKey || "").trim(),
+      type: subItem.type,
+      field: normalizeMultiValueAsArray(subItem.field || ""),
+      workers: normalizeMultiValueAsArray(subItem.workers || ""),
+      machine: String(subItem.machine || item.machine || "").trim(),
+      start: String(subItem.start || "").trim(),
+      end: String(subItem.end || "").trim()
+    })) : []
   }));
 
   current.work = newWork;

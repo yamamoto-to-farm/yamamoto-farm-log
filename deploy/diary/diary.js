@@ -4,7 +4,7 @@
 
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
-import { showWorkSummary, loadLogsByDate, extractWorkForEdit, searchLogsByKeyword } from "./work-summary.js";
+import { showWorkSummary, searchLogsByKeyword } from "./work-summary.js";
 import { initEditPage } from "./editCard.js";
 import { initViewPage } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
@@ -578,10 +578,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     saveBtn.addEventListener("click", async () => {
       const date = dateInput.value;
 
-      const logs = await loadLogsByDate(date);
-      const autoList = extractWorkForEdit(logs);
-
-      saveDiary(date, autoList);
+      saveDiary(date, window.__currentDiaryWorkGroups || []);
     });
 
   } else {
