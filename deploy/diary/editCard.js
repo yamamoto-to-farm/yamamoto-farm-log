@@ -6,7 +6,7 @@
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 import { mergeWorkEntries } from "./work-summary.js";
-import { buildTimestampDefaults, loadTimestampRows } from "/common/timestamp.js?v=1";
+import { buildTimestampDefaults, createSessionKey, loadTimestampRows } from "/common/timestamp.js?v=1";
 
 // ---------------------------------------------------------
 // 編集カードを描画
@@ -14,6 +14,23 @@ import { buildTimestampDefaults, loadTimestampRows } from "/common/timestamp.js?
 export function renderEditCards(autoList, diary, timestampRows = []) {
   const area = document.getElementById("editWorkArea");
   area.innerHTML = "";
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "card merge-toolbar";
+  toolbar.innerHTML = `
+    <div class="merge-toolbar-row">
+      <div>
+        <h3 class="edit-title">作業カード</h3>
+        <p class="memo-desc">時刻が無い過去データは、複数選択して1件にまとめられます。</p>
+        <p id="merge-type-guide" class="merge-type-guide">同じ作業種類のカードを選択するとマージできます。</p>
+      </div>
+      <div class="merge-toolbar-actions">
+        <button id="merge-selected-btn" class="secondary-btn" type="button" disabled>選択カードをマージ</button>
+        <button id="merge-clear-btn" class="secondary-btn" type="button">選択解除</button>
+      </div>
+    </div>
+  `;
+  area.appendChild(toolbar);
 
   const existingBySourceKey = {};
   (diary?.work || []).forEach(w => {
@@ -44,6 +61,9 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const machine = String(item.machine ?? existing.machine ?? "").trim();
     const machineText = machine || "（未入力）";
     const subItems = Array.isArray(item.items) ? item.items : [];
+    const unmergeButtonHtml = subItems.length > 1
+      ? `<button type="button" class="secondary-btn merge-unmerge-btn" data-group-index="${idx}">マージ解除</button>`
+      : "";
     const subItemHtml = subItems.length > 1
       ? `
         <details class="merged-work-details">
@@ -62,8 +82,17 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
 
     const card = document.createElement("div");
     card.className = "card edit-card";
+    card.dataset.groupIndex = String(idx);
+    card.dataset.workType = String(item.type || "").trim();
 
     card.innerHTML = `
+      <div class="merge-card-head">
+        <label class="merge-check-label">
+          <input type="checkbox" class="merge-work-check" data-group-index="${idx}">
+          <span>選択</span>
+        </label>
+        ${unmergeButtonHtml}
+      </div>
       <h3 class="edit-title">${item.type}</h3>
       <p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>
       <p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>
@@ -106,6 +135,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
   `;
 
   area.appendChild(memoCard);
+  bindManualMergeControls(diary, timestampRows);
 }
 
 function normalizeMultiText(value) {
@@ -143,9 +173,241 @@ export async function initEditPage() {
   const timestampRows = await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
   const mergedList = mergeWorkEntries(autoList, timestampRows);
+  const hydratedList = mergeSavedDiaryGroups(diary, mergedList);
 
-  window.__currentDiaryWorkGroups = mergedList;
+  window.__currentDiaryWorkGroups = hydratedList;
 
   // ★ 既存日誌を反映して描画
-  renderEditCards(mergedList, diary, timestampRows);
+  renderEditCards(hydratedList, diary, timestampRows);
+}
+
+function mergeSavedDiaryGroups(diary, fallbackGroups) {
+  const savedGroups = Array.isArray(diary?.work) ? diary.work.map((item, index) => normalizeSavedGroup(item, index)) : [];
+  if (!savedGroups.length) return fallbackGroups;
+
+  const coveredSourceKeys = new Set();
+  savedGroups.forEach(group => {
+    getGroupSourceKeys(group).forEach(key => coveredSourceKeys.add(key));
+  });
+
+  const extraGroups = (Array.isArray(fallbackGroups) ? fallbackGroups : []).filter(group => {
+    const keys = getGroupSourceKeys(group);
+    return keys.every(key => !coveredSourceKeys.has(key));
+  });
+
+  return [...savedGroups, ...extraGroups];
+}
+
+function normalizeSavedGroup(item, index) {
+  const normalizedItems = Array.isArray(item?.items) && item.items.length
+    ? item.items.map((subItem, subIndex) => normalizeSavedSubItem(subItem, subIndex, item))
+    : [normalizeSavedSubItem(item, 0, item)];
+
+  return {
+    groupKey: String(item?.sessionKey || item?.sourceKey || `saved-${index}`).trim(),
+    sessionKey: String(item?.sessionKey || "").trim(),
+    sourceKey: String(item?.sourceKey || normalizedItems[0]?.sourceKey || `saved-${index}`).trim(),
+    type: String(item?.type || normalizedItems[0]?.type || "作業").trim(),
+    field: normalizeMultiText(item?.field || normalizedItems.map(v => v.field).join("／")),
+    workers: normalizeMultiText(item?.workers || normalizedItems.map(v => v.workers).join("／")),
+    machine: String(item?.machine || normalizedItems.map(v => v.machine).filter(Boolean).join("／") || "").trim(),
+    start: String(item?.start || "").trim(),
+    end: String(item?.end || "").trim(),
+    items: normalizedItems
+  };
+}
+
+function normalizeSavedSubItem(item, index, parent) {
+  return {
+    sourceKey: String(item?.sourceKey || parent?.sourceKey || `sub-${index}`).trim(),
+    sessionKey: String(item?.sessionKey || parent?.sessionKey || "").trim(),
+    type: String(item?.type || parent?.type || "作業").trim(),
+    field: normalizeMultiText(item?.field || ""),
+    workers: normalizeMultiText(item?.workers || ""),
+    machine: String(item?.machine || parent?.machine || "").trim(),
+    start: String(item?.start || "").trim(),
+    end: String(item?.end || "").trim(),
+    timestampTime: String(item?.end || item?.start || "").trim()
+  };
+}
+
+function getGroupSourceKeys(group) {
+  const keys = new Set();
+  if (group?.sourceKey) keys.add(String(group.sourceKey).trim());
+  (Array.isArray(group?.items) ? group.items : []).forEach(item => {
+    if (item?.sourceKey) keys.add(String(item.sourceKey).trim());
+  });
+  return [...keys].filter(Boolean);
+}
+
+function bindManualMergeControls(diary, timestampRows) {
+  const mergeBtn = document.getElementById("merge-selected-btn");
+  const clearBtn = document.getElementById("merge-clear-btn");
+  const guideEl = document.getElementById("merge-type-guide");
+  const checks = [...document.querySelectorAll(".merge-work-check")];
+  const unmergeButtons = [...document.querySelectorAll(".merge-unmerge-btn")];
+  if (!mergeBtn || !clearBtn || !checks.length) return;
+
+  const updateButtonState = () => {
+    const selectedChecks = checks.filter(check => check.checked);
+    const count = selectedChecks.length;
+    const selectedType = count > 0
+      ? String(document.querySelector(`.edit-card[data-group-index="${selectedChecks[0].dataset.groupIndex}"]`)?.dataset.workType || "").trim()
+      : "";
+
+    checks.forEach(check => {
+      const card = document.querySelector(`.edit-card[data-group-index="${check.dataset.groupIndex}"]`);
+      const workType = String(card?.dataset.workType || "").trim();
+      const shouldDisable = Boolean(selectedType) && !check.checked && workType !== selectedType;
+      check.disabled = shouldDisable;
+      card?.classList.toggle("merge-card-disabled", shouldDisable);
+    });
+
+    if (guideEl) {
+      guideEl.textContent = selectedType
+        ? `選択中: ${selectedType} のカードのみ追加選択できます。`
+        : "同じ作業種類のカードを選択するとマージできます。";
+    }
+
+    mergeBtn.disabled = count < 2;
+  };
+
+  checks.forEach(check => {
+    check.addEventListener("change", updateButtonState);
+  });
+
+  clearBtn.addEventListener("click", () => {
+    checks.forEach(check => {
+      check.checked = false;
+    });
+    updateButtonState();
+  });
+
+  mergeBtn.addEventListener("click", () => {
+    const selectedIndexes = checks
+      .filter(check => check.checked)
+      .map(check => Number(check.dataset.groupIndex))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+
+    if (selectedIndexes.length < 2) return;
+
+    syncGroupsFromCurrentInputs();
+
+    const currentGroups = Array.isArray(window.__currentDiaryWorkGroups) ? [...window.__currentDiaryWorkGroups] : [];
+    const selectedGroups = selectedIndexes.map(index => currentGroups[index]).filter(Boolean);
+    const typeSet = [...new Set(selectedGroups.map(group => String(group?.type || "").trim()).filter(Boolean))];
+
+    if (typeSet.length > 1) {
+      alert("異なる作業種類は一度にマージできません。同じ作業種類で選択してください。");
+      return;
+    }
+
+    const mergedGroup = buildManualMergedGroup(selectedGroups);
+    const nextGroups = currentGroups.filter((_, index) => !selectedIndexes.includes(index));
+    nextGroups.splice(selectedIndexes[0], 0, mergedGroup);
+
+    window.__currentDiaryWorkGroups = nextGroups;
+    const memo = document.getElementById("freeMemo")?.value || diary?.memo || "";
+    renderEditCards(nextGroups, { ...(diary || {}), memo }, timestampRows);
+  });
+
+  unmergeButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.groupIndex);
+      if (!Number.isFinite(index)) return;
+
+      syncGroupsFromCurrentInputs();
+
+      const currentGroups = Array.isArray(window.__currentDiaryWorkGroups) ? [...window.__currentDiaryWorkGroups] : [];
+      const group = currentGroups[index];
+      if (!group) return;
+
+      const expandedGroups = expandMergedGroup(group);
+      if (expandedGroups.length <= 1) return;
+
+      const nextGroups = currentGroups.filter((_, groupIndex) => groupIndex !== index);
+      nextGroups.splice(index, 0, ...expandedGroups);
+
+      window.__currentDiaryWorkGroups = nextGroups;
+      const memo = document.getElementById("freeMemo")?.value || diary?.memo || "";
+      renderEditCards(nextGroups, { ...(diary || {}), memo }, timestampRows);
+    });
+  });
+
+  updateButtonState();
+}
+
+function syncGroupsFromCurrentInputs() {
+  const groups = Array.isArray(window.__currentDiaryWorkGroups) ? window.__currentDiaryWorkGroups : [];
+  groups.forEach((group, index) => {
+    const startInput = document.getElementById(`start_${index}`);
+    const endInput = document.getElementById(`end_${index}`);
+    const fieldInput = document.getElementById(`field_${index}`);
+    const machineInput = document.getElementById(`machine_${index}`);
+
+    group.start = startInput?.value || group.start || "";
+    group.end = endInput?.value || group.end || "";
+    group.field = fieldInput?.value || group.field || "";
+    group.machine = machineInput?.value || group.machine || "";
+  });
+}
+
+function buildManualMergedGroup(groups) {
+  const sessionKey = createSessionKey();
+  const items = groups.flatMap(group => Array.isArray(group?.items) && group.items.length ? group.items : [group]);
+  const fieldSet = new Set();
+  const workerSet = new Set();
+  const machineSet = new Set();
+
+  items.forEach(item => {
+    normalizeMultiText(item?.field || "").split("／").map(v => v.trim()).filter(Boolean).forEach(v => fieldSet.add(v));
+    normalizeMultiText(item?.workers || "").split("／").map(v => v.trim()).filter(Boolean).forEach(v => workerSet.add(v));
+    const machine = String(item?.machine || "").trim();
+    if (machine) machineSet.add(machine);
+  });
+
+  const sortedGroups = groups.slice().sort((a, b) => {
+    const ta = String(a?.start || a?.end || "99:99");
+    const tb = String(b?.start || b?.end || "99:99");
+    return ta.localeCompare(tb);
+  });
+
+  return {
+    groupKey: sessionKey,
+    sessionKey,
+    sourceKey: String(sortedGroups[0]?.sourceKey || sessionKey).trim(),
+    type: String(sortedGroups[0]?.type || "作業").trim(),
+    field: [...fieldSet].join("／"),
+    workers: [...workerSet].join("／"),
+    machine: [...machineSet].join("／"),
+    start: String(sortedGroups[0]?.start || "").trim(),
+    end: String(sortedGroups[sortedGroups.length - 1]?.end || "").trim(),
+    items: items.map(item => ({
+      ...item,
+      sessionKey: String(item?.sessionKey || sessionKey).trim()
+    }))
+  };
+}
+
+function expandMergedGroup(group) {
+  const items = Array.isArray(group?.items) ? group.items : [];
+  if (items.length <= 1) return [group];
+
+  return items.map((item, index) => ({
+    groupKey: String(item?.sourceKey || `${group?.groupKey || "group"}-${index}`).trim(),
+    sessionKey: String(item?.sessionKey || "").trim(),
+    sourceKey: String(item?.sourceKey || `${group?.sourceKey || "group"}-${index}`).trim(),
+    type: String(item?.type || group?.type || "作業").trim(),
+    field: normalizeMultiText(item?.field || group?.field || ""),
+    workers: normalizeMultiText(item?.workers || group?.workers || ""),
+    machine: String(item?.machine || group?.machine || "").trim(),
+    start: String(item?.start || "").trim(),
+    end: String(item?.end || "").trim(),
+    items: [{
+      ...item,
+      start: String(item?.start || "").trim(),
+      end: String(item?.end || "").trim()
+    }]
+  }));
 }

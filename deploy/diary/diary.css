@@ -220,6 +220,55 @@
   line-height: 1.55;
 }
 
+.merge-toolbar {
+  margin-bottom: 12px;
+}
+
+.merge-toolbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.merge-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.merge-type-guide {
+  margin: 6px 0 0;
+  color: #2563eb;
+  font-size: 0.92rem;
+}
+
+.merge-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.merge-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.merge-unmerge-btn {
+  margin-left: auto;
+}
+
+.merge-card-disabled {
+  opacity: 0.5;
+  border-color: #d1d5db;
+}
+
 /* 編集カード */
 .time-row {
   display: flex;
@@ -271,6 +320,12 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .merge-toolbar-actions {
+    width: 100%;
+  }
 }
 
 .weather-icon {

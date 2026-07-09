@@ -19,7 +19,9 @@ export async function initViewPage() {
   const logs = await loadLogsByDate(date);
   const timestampRows = await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
-  const workList = normalizeViewGroups(mergeWorkEntries(autoList, timestampRows));
+  const workList = Array.isArray(diary?.work) && diary.work.length
+    ? normalizeViewGroups(diary.work)
+    : normalizeViewGroups(mergeWorkEntries(autoList, timestampRows));
 
   if (!diary) {
     area.innerHTML = `
