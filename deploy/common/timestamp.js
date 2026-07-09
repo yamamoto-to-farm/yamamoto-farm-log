@@ -11,6 +11,7 @@ const TIMESTAMP_HEADERS = [
   "machine",
   "time",
   "savedAt",
+  "sessionKey",
   "workKey"
 ];
 
@@ -66,6 +67,10 @@ function nowSavedAtText() {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 }
 
+export function createSessionKey() {
+  return (crypto?.randomUUID?.() || `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+}
+
 export function buildTimestampKey({
   date,
   folder,
@@ -92,7 +97,8 @@ export function createTimestampRecord({
   workers,
   machine,
   time,
-  savedAt
+  savedAt,
+  sessionKey
 }) {
   const normalizedDate = normalizeDate(date);
   const normalizedTime = normalizeTime(time) || nowTimeText();
@@ -102,6 +108,7 @@ export function createTimestampRecord({
   const normalizedField = normalizeText(field);
   const normalizedWorkers = normalizeText(workers);
   const normalizedMachine = normalizeText(machine);
+  const normalizedSessionKey = normalizeText(sessionKey) || createSessionKey();
 
   return {
     date: normalizedDate,
@@ -112,6 +119,7 @@ export function createTimestampRecord({
     machine: normalizedMachine,
     time: normalizedTime,
     savedAt: normalizedSavedAt,
+    sessionKey: normalizedSessionKey,
     workKey: buildTimestampKey({
       date: normalizedDate,
       folder: normalizedFolder,
@@ -152,6 +160,7 @@ export async function loadTimestampRows(date = "") {
       machine: normalizeText(row?.machine),
       time: normalizeTime(row?.time),
       savedAt: normalizeText(row?.savedAt),
+      sessionKey: normalizeText(row?.sessionKey),
       workKey: normalizeText(row?.workKey)
     })).filter(row => row.date && row.time && row.workKey);
 
@@ -169,8 +178,12 @@ export async function loadTimestampRows(date = "") {
 }
 
 export async function saveTimestampRows(records) {
+  const batchSessionKey = createSessionKey();
   const incoming = (Array.isArray(records) ? records : [])
-    .map(createTimestampRecord)
+    .map(record => createTimestampRecord({
+      ...record,
+      sessionKey: record?.sessionKey || batchSessionKey
+    }))
     .filter(row => row.date && row.time && row.workKey);
 
   if (!incoming.length) return;
@@ -200,7 +213,7 @@ export function buildTimestampDefaults(autoList, timestampRows) {
   });
 
   (Array.isArray(timestampRows) ? timestampRows : []).forEach((row, index) => {
-    const key = normalizeText(row?.workKey || "").toLowerCase();
+    const key = normalizeText(row?.sessionKey || row?.workKey || "").toLowerCase();
     if (!key) return;
     if (!groupedTimestampRows.has(key)) groupedTimestampRows.set(key, []);
     groupedTimestampRows.get(key).push({
