@@ -181,8 +181,30 @@
     }
 
     .list-card {
-      overflow-x: auto;
-      padding: 10px;
+      margin-top: 12px;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .list-head {
+      padding: 14px 14px 0;
+    }
+
+    .list-head h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .list-head p {
+      margin: 6px 0 10px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .log-scroll {
+      max-height: min(68vh, 760px);
+      overflow: auto;
+      padding: 0 10px 10px;
     }
 
     .weed-table {
@@ -441,6 +463,10 @@
       .area-sort-wrap {
         min-width: 0;
       }
+      .log-scroll {
+        max-height: 62vh;
+        padding: 0 8px 8px;
+      }
     }
   </style>
 </head>
@@ -458,10 +484,6 @@
 
       <div id="mode-note" class="meta-note"></div>
 
-      <div class="back-action-slot" style="margin:8px 0 0;">
-        <button id="weeding-back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
-      </div>
-
       <div class="period-card">
         <div class="period-grid">
           <div class="form-field">
@@ -473,7 +495,7 @@
             <input id="period-end" type="date" class="form-input">
           </div>
           <div class="form-field">
-            <button id="period-reset" class="secondary-btn" type="button">期間リセット</button>
+            <button id="period-reset" class="secondary-btn" type="button">期間をクリア</button>
           </div>
         </div>
         <div id="period-summary" class="summary-row"></div>
@@ -539,6 +561,10 @@
     </section>
 
     <div id="weeding-container"></div>
+
+    <div class="back-action-slot">
+      <button id="weeding-back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
+    </div>
   </div>
 
   <div id="modal-container"></div>

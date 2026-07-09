@@ -739,7 +739,15 @@ function render() {
 
   const list = [...items].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
-  let html = `<div class="list-card"><table class="weed-table">`;
+  let html = `
+    <section class="list-card">
+      <div class="list-head">
+        <h2 class="page-title">記録一覧</h2>
+        <p>期間条件に一致する記録を新しい順で表示しています。</p>
+      </div>
+      <div class="log-scroll">
+        <table class="weed-table">
+  `;
   if (isSpray) {
     html += `
       <thead>
@@ -812,7 +820,7 @@ function render() {
     });
   }
 
-  html += `</tbody></table></div>`;
+  html += `</tbody></table></div></section>`;
 
   container.innerHTML = html;
 }
