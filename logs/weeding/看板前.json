@@ -1,0 +1,52 @@
+{
+  "field": "看板前",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-01",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-08",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 30,
+              "total_spray_amount": 30,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "看板前",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 30,
+              "spray_amount": 30,
+              "pesticide_amount": 300,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "土井 琉羽,若月 道昭,山本 直輝",
+          "notes": "周りのみ"
+        }
+      ]
+    }
+  }
+}

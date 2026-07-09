@@ -1,0 +1,69 @@
+{
+  "field": "七根伊古部",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-12",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-02",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,石原 孝晋",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-24",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-08",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 100,
+              "total_spray_amount": 100,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "七根(伊古部)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 100,
+              "spray_amount": 100,
+              "pesticide_amount": 1000,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,土井 琉羽",
+          "notes": "周りのみ\n中腰丈のイタリアン"
+        }
+      ]
+    }
+  }
+}

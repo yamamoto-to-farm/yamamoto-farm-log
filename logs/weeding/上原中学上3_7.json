@@ -1,0 +1,51 @@
+{
+  "field": "上原中学上3_7",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-22",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 25,
+              "total_water_amount": 70,
+              "total_spray_amount": 70,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 25,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 28,
+              "spray_amount": 28,
+              "pesticide_amount": 1120,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-24",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

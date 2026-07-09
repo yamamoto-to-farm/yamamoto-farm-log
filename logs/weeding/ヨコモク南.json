@@ -1,0 +1,44 @@
+{
+  "field": "ヨコモク南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-09",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 80,
+              "total_spray_amount": 80,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "ヨコモク(南)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 18.1,
+              "spray_amount": 18.1,
+              "pesticide_amount": 181.00000000000003,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "土井 琉羽,若月 道昭,山本 直輝",
+          "notes": "周りのみ"
+        }
+      ]
+    }
+  }
+}

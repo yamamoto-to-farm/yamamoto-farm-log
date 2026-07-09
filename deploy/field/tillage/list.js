@@ -3,6 +3,12 @@ import { renderHeader } from "/common/header.js";
 import { loadJSON } from "/common/json.js";
 import { safeFieldName } from "/common/utils.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
+import { getDefaultPeriodRange } from "/common/date-range.js?v=1";
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
+import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
+import { collectUniqueMethods, matchesSharedListFilters } from "/common/list-filter-utils.js?v=1";
+import { buildPeriodCountSummaryHtml } from "/common/period-summary.js?v=1";
 
 const state = {
   fields: [],
@@ -12,25 +18,10 @@ const state = {
   sortDirection: "desc",
   periodStart: "",
   periodEnd: "",
+  method: "",
+  keyword: "",
   fieldAreaMap: {}
 };
-
-function formatDateISO(date) {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function getDefaultPeriodRange() {
-  const end = new Date();
-  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-  start.setMonth(start.getMonth() - 1);
-  return {
-    start: formatDateISO(start),
-    end: formatDateISO(end)
-  };
-}
 
 function normalizeDateText(value) {
   const text = String(value || "").trim();
@@ -277,8 +268,108 @@ function filterRowsByPeriod(rows) {
   });
 }
 
+function filterRowsByAdvanced(rows) {
+  const selectedFields = filterState.fields || [];
+
+  return rows.filter(row => matchesSharedListFilters({
+    selectedFields,
+    selectedMethod: state.method,
+    keyword: state.keyword,
+    rowFields: [row.field],
+    rowMethod: row.workType,
+    searchValues: [
+      row.field,
+      row.area,
+      row.workType,
+      row.machine,
+      row.workers,
+      row.notes,
+      row.depthCm,
+      row.speedKmh
+    ]
+  }));
+}
+
+function getVisibleRows() {
+  return filterRowsByAdvanced(filterRowsByPeriod(state.rows));
+}
+
+function syncMethodFilterOptions() {
+  const select = document.getElementById("filter-method");
+  if (!select) return;
+
+  const methods = collectUniqueMethods(filterRowsByPeriod(state.rows), row => row.workType);
+  if (state.method && !methods.includes(state.method)) {
+    state.method = "";
+  }
+
+  select.innerHTML = [
+    '<option value="">方式を選択（全件）</option>',
+    ...methods.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+  ].join("");
+  select.value = state.method;
+}
+
+function bindFilterControls() {
+  const fieldBtn = document.getElementById("open-field-modal");
+  const methodSelect = document.getElementById("filter-method");
+  const keywordInput = document.getElementById("filter-keyword");
+  const resetBtn = document.getElementById("filter-reset");
+
+  if (fieldBtn) {
+    fieldBtn.onclick = () => openFieldModal({ mode: "filter" });
+  }
+
+  if (methodSelect) {
+    methodSelect.addEventListener("change", () => {
+      state.method = String(methodSelect.value || "").trim();
+      renderPeriodSummary();
+      renderAreaList();
+      renderTable();
+    });
+  }
+
+  if (keywordInput) {
+    keywordInput.value = state.keyword;
+    keywordInput.addEventListener("input", () => {
+      state.keyword = String(keywordInput.value || "").trim();
+      renderPeriodSummary();
+      renderAreaList();
+      renderTable();
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      filterState.fields = [];
+      state.method = "";
+      state.keyword = "";
+
+      if (methodSelect) methodSelect.value = "";
+      if (keywordInput) keywordInput.value = "";
+
+      window.dispatchEvent(new CustomEvent("filter:apply"));
+      renderPeriodSummary();
+      renderAreaList();
+      renderTable();
+    });
+  }
+
+  window.addEventListener("filter:apply", () => {
+    renderPeriodSummary();
+    renderAreaList();
+    renderTable();
+  });
+
+  window.addEventListener("filter:reset", () => {
+    renderPeriodSummary();
+    renderAreaList();
+    renderTable();
+  });
+}
+
 function renderPeriodSummary() {
-  const filteredRows = filterRowsByPeriod(state.rows);
+  const filteredRows = getVisibleRows();
   const fieldSet = new Set(filteredRows.map(row => row.field));
 
   const totalArea = filteredRows.reduce((sum, row) => sum + (state.fieldAreaMap[row.field] || 0), 0);
@@ -288,7 +379,15 @@ function renderPeriodSummary() {
   const fieldCountEl = document.getElementById("period-field-count");
 
   if (areaTotalEl) areaTotalEl.textContent = `${totalArea.toFixed(2)}反`;
-  if (areaCountEl) areaCountEl.textContent = `${filteredRows.length}件の耕うん記録`;
+  if (areaCountEl) {
+    areaCountEl.innerHTML = buildPeriodCountSummaryHtml({
+      rows: filteredRows,
+      periodStart: state.periodStart,
+      periodEnd: state.periodEnd,
+      countSuffix: "件の耕うん記録",
+      getDate: row => row?.date
+    });
+  }
   if (fieldCountEl) fieldCountEl.textContent = String(fieldSet.size);
 }
 
@@ -296,11 +395,20 @@ function renderAreaList() {
   const areaList = document.getElementById("area-list");
   if (!areaList) return;
 
+  const visibleFieldSet = new Set(getVisibleRows().map(row => row.field));
+
   const grouped = new Map();
   for (const card of state.fieldCards) {
+    if (!visibleFieldSet.has(card.field)) continue;
+
     const areaName = card.area || "その他";
     if (!grouped.has(areaName)) grouped.set(areaName, []);
     grouped.get(areaName).push(card);
+  }
+
+  if (grouped.size === 0) {
+    areaList.innerHTML = '<div class="empty-state">該当する圃場がありません。</div>';
+    return;
   }
 
   const areaEntries = [...grouped.entries()].map(([areaName, cards]) => {
@@ -385,7 +493,8 @@ function renderTable() {
   const body = document.getElementById("log-body");
   if (!body) return;
 
-  let rows = filterRowsByPeriod([...state.rows]);
+  syncMethodFilterOptions();
+  let rows = [...getVisibleRows()];
 
   const direction = state.sortDirection === "asc" ? 1 : -1;
   if (state.sortKey === "gap") {
@@ -466,6 +575,7 @@ function bindPeriodControls() {
     startInput.value = state.periodStart;
     startInput.addEventListener("change", () => {
       state.periodStart = startInput.value || "";
+      syncMethodFilterOptions();
       renderPeriodSummary();
       renderAreaList();
       renderTable();
@@ -476,6 +586,7 @@ function bindPeriodControls() {
     endInput.value = state.periodEnd;
     endInput.addEventListener("change", () => {
       state.periodEnd = endInput.value || "";
+      syncMethodFilterOptions();
       renderPeriodSummary();
       renderAreaList();
       renderTable();
@@ -488,6 +599,7 @@ function bindPeriodControls() {
       state.periodEnd = "";
       if (startInput) startInput.value = "";
       if (endInput) endInput.value = "";
+      syncMethodFilterOptions();
       renderPeriodSummary();
       renderAreaList();
       renderTable();
@@ -513,7 +625,27 @@ async function main() {
   const defaults = getDefaultPeriodRange();
   state.periodStart = defaults.start;
   state.periodEnd = defaults.end;
+
+  const parents = [];
+  const children = {};
+  (state.fields || []).forEach(f => {
+    if (!f || !f.area || !f.name) return;
+    if (!children[f.area]) {
+      children[f.area] = [];
+      parents.push(f.area);
+    }
+    children[f.area].push(f.name);
+  });
+
+  setFilterData({
+    fields: { parents, children }
+  });
+  filterState.fields = [];
+  initActiveFilterUI();
+
   bindPeriodControls();
+  bindFilterControls();
+  syncMethodFilterOptions();
   renderPeriodSummary();
   renderAreaList();
   updateSortHeaderLabels();

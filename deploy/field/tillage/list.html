@@ -5,6 +5,7 @@
   <title>土づくり・耕起一覧 - 山本農園</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
   <style>
     body {
       background: linear-gradient(180deg, #f7f7f2 0%, #ffffff 28%);
@@ -179,6 +180,21 @@
         margin-top: 4px;
         font-size: 12px;
         color: #6b7280;
+      }
+
+      .filter-card {
+        margin: 0 0 16px;
+        padding: 14px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+      }
+
+      .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        align-items: end;
       }
 
     .field-card {
@@ -406,6 +422,29 @@
               <div class="period-summary-label">対象圃場</div>
               <div class="period-summary-value" id="period-field-count">0</div>
               <div class="period-summary-sub">期間内に1回以上耕うんした圃場数</div>
+            </div>
+          </div>
+
+          <div class="filter-card">
+            <div class="filter-grid">
+              <div class="form-field">
+                <label>圃場フィルタ</label>
+                <button id="open-field-modal" class="primary-btn" type="button">圃場を選択</button>
+                <div id="activeFieldFilters" style="margin-top:8px;"></div>
+              </div>
+              <div class="form-field">
+                <label for="filter-method">方式フィルタ</label>
+                <select id="filter-method" class="form-input">
+                  <option value="">方式を選択（全件）</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="filter-keyword">キーワード</label>
+                <input id="filter-keyword" class="form-input" placeholder="圃場・機械・作業者・備考など">
+              </div>
+              <div class="form-field">
+                <button id="filter-reset" class="secondary-btn" type="button">絞り込みリセット</button>
+              </div>
             </div>
           </div>
         </div>

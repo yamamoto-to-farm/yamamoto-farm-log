@@ -1,0 +1,44 @@
+{
+  "field": "明輝南_40a",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-09",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 45,
+              "total_spray_amount": 45,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "明輝(南・40a)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 45,
+              "spray_amount": 45,
+              "pesticide_amount": 450,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,土井 琉羽",
+          "notes": "周りのみ"
+        }
+      ]
+    }
+  }
+}

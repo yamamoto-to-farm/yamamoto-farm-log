@@ -1,0 +1,34 @@
+{
+  "field": "三角畑下",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-01",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-10",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "若月 道昭",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-27",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

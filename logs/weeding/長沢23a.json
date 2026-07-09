@@ -1,0 +1,61 @@
+{
+  "field": "長沢23a",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-05-02",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,石原 孝晋",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-24",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,石原 孝晋",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-08",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 90,
+              "total_spray_amount": 90,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "長沢(23a)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 90,
+              "spray_amount": 90,
+              "pesticide_amount": 900,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "土井 琉羽,若月 道昭,山本 直輝",
+          "notes": "長沢（27a）法面含む\n畑の中含め全体"
+        }
+      ]
+    }
+  }
+}

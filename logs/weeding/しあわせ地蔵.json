@@ -1,0 +1,102 @@
+{
+  "field": "しあわせ地蔵",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-01",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-10",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "若月 道昭",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-20",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "total_water_amount": 120,
+              "total_spray_amount": 120,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 43.1,
+              "spray_amount": 43.1,
+              "pesticide_amount": 862,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-19",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "total_water_amount": 80,
+              "total_spray_amount": 80,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 28.7,
+              "spray_amount": 28.7,
+              "pesticide_amount": 574,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-27",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

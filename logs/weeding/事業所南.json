@@ -1,0 +1,25 @@
+{
+  "field": "事業所南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-01",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

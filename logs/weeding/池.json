@@ -1,0 +1,43 @@
+{
+  "field": "池",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-13",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 50,
+              "total_water_amount": 30,
+              "total_spray_amount": 30,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "池",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 17.6,
+              "spray_amount": 17.6,
+              "pesticide_amount": 352.00000000000006,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

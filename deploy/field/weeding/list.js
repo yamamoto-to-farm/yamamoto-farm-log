@@ -4,6 +4,9 @@ import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
+import { getDefaultPeriodRange } from "/common/date-range.js?v=1";
+import { collectUniqueMethods, matchesSharedListFilters } from "/common/list-filter-utils.js?v=1";
+import { buildPeriodCountSummaryHtml } from "/common/period-summary.js?v=1";
 
 const MODES = {
   spray: {
@@ -21,7 +24,6 @@ const MODES = {
 const state = {
   items: [],
   mode: "spray",
-  sprayView: "aggregate",
   periodStart: "",
   periodEnd: "",
   keyword: "",
@@ -29,23 +31,6 @@ const state = {
   pesticide: "",
   fieldAreaMap: {}
 };
-
-function formatDateISO(date) {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function getDefaultPeriodRange() {
-  const end = new Date();
-  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-  start.setMonth(start.getMonth() - 1);
-  return {
-    start: formatDateISO(start),
-    end: formatDateISO(end)
-  };
-}
 
 function toDateValue(dateText) {
   const date = new Date(`${dateText}T00:00:00`);
@@ -98,27 +83,6 @@ function bindModeButtons() {
       if (state.mode === "mowing") return;
       state.mode = "mowing";
       setModeToUrl(state.mode);
-      render();
-    };
-  }
-}
-
-function bindSprayViewButtons() {
-  const aggregateBtn = document.getElementById("spray-view-aggregate");
-  const fieldBtn = document.getElementById("spray-view-field");
-
-  if (aggregateBtn) {
-    aggregateBtn.onclick = () => {
-      if (state.sprayView === "aggregate") return;
-      state.sprayView = "aggregate";
-      render();
-    };
-  }
-
-  if (fieldBtn) {
-    fieldBtn.onclick = () => {
-      if (state.sprayView === "field") return;
-      state.sprayView = "field";
       render();
     };
   }
@@ -234,24 +198,22 @@ function filterRowsByPeriod(rows) {
 }
 
 function filterRowsByAdvanced(rows) {
-  const keyword = state.keyword.toLowerCase();
   const selectedFields = filterState.fields || [];
 
   return rows.filter(row => {
-    if (selectedFields.length > 0) {
-      const fields = String(row.fieldText || "").split("／").map(v => v.trim());
-      if (!selectedFields.some(f => fields.includes(f))) return false;
-    }
-
     const rowMethod = row.workType === "除草剤散布"
       ? String(row.sprayMethod || "").trim()
       : String(row.mowingMethod || "").trim();
 
-    if (state.method && rowMethod !== state.method) return false;
-    if (row.workType === "除草剤散布" && state.pesticide && !rowContainsPesticide(row, state.pesticide)) return false;
+    const rowFields = String(row.fieldText || "").split("／").map(v => v.trim()).filter(Boolean);
 
-    if (keyword) {
-      const hay = [
+    const matched = matchesSharedListFilters({
+      selectedFields,
+      selectedMethod: state.method,
+      keyword: state.keyword,
+      rowFields,
+      rowMethod,
+      searchValues: [
         row.workType,
         row.fieldText,
         row.workers,
@@ -259,9 +221,12 @@ function filterRowsByAdvanced(rows) {
         row.sprayMethod,
         row.mowingMethod,
         row.notes
-      ].map(v => String(v || "").toLowerCase()).join(" ");
-      if (!hay.includes(keyword)) return false;
-    }
+      ]
+    });
+
+    if (!matched) return false;
+
+    if (row.workType === "除草剤散布" && state.pesticide && !rowContainsPesticide(row, state.pesticide)) return false;
 
     return true;
   });
@@ -269,9 +234,9 @@ function filterRowsByAdvanced(rows) {
 
 function getMethodCandidatesByMode(mode, rows) {
   if (mode === "spray") {
-    return rows.map(r => String(r.sprayMethod || "").trim()).filter(Boolean);
+    return collectUniqueMethods(rows, r => r.sprayMethod);
   }
-  return rows.map(r => String(r.mowingMethod || "").trim()).filter(Boolean);
+  return collectUniqueMethods(rows, r => r.mowingMethod);
 }
 
 function collectPesticideNames(rows) {
@@ -294,8 +259,7 @@ function syncMethodFilterOptions() {
   if (!select) return;
 
   const modeRows = state.items.filter(MODES[state.mode].match);
-  const unique = [...new Set(getMethodCandidatesByMode(state.mode, modeRows))]
-    .sort((a, b) => a.localeCompare(b, "ja"));
+  const unique = getMethodCandidatesByMode(state.mode, modeRows);
 
   if (state.method && !unique.includes(state.method)) {
     state.method = "";
@@ -338,16 +302,9 @@ function renderModeUi(filteredCount) {
   const sprayBtn = document.getElementById("mode-spray");
   const mowingBtn = document.getElementById("mode-mowing");
   const note = document.getElementById("mode-note");
-  const sprayViewRow = document.getElementById("spray-view-row");
-  const aggregateBtn = document.getElementById("spray-view-aggregate");
-  const fieldBtn = document.getElementById("spray-view-field");
 
   if (sprayBtn) sprayBtn.classList.toggle("active", state.mode === "spray");
   if (mowingBtn) mowingBtn.classList.toggle("active", state.mode === "mowing");
-
-  if (sprayViewRow) sprayViewRow.classList.toggle("active", state.mode === "spray");
-  if (aggregateBtn) aggregateBtn.classList.toggle("active", state.sprayView === "aggregate");
-  if (fieldBtn) fieldBtn.classList.toggle("active", state.sprayView === "field");
 
   if (note) {
     note.textContent = `${MODES[state.mode].note}（${filteredCount}件）`;
@@ -410,12 +367,14 @@ function buildSprayFieldRows(rows) {
   rows.forEach(row => {
     const distributed = Array.isArray(row.distributed) ? row.distributed : [];
     if (!distributed.length) {
+      const fieldName = row.fieldText;
       out.push({
         ...row,
-        fieldName: row.fieldText,
+        fieldName,
         pesticideName: row.pesticides || "-",
         dilutionRate: "-",
-        waterAmount: "-"
+        waterAmount: "-",
+        per10a: "-"
       });
       return;
     }
@@ -423,12 +382,16 @@ function buildSprayFieldRows(rows) {
     distributed.forEach(d => {
       const dilution = Number(d?.dilution_rate || 0);
       const water = Number(d?.water_amount ?? d?.spray_amount ?? 0);
+      const fieldName = String(d?.field || "").trim() || row.fieldText;
+      const areaA = Number(state.fieldAreaMap[fieldName] || 0);
+      const per10a = areaA > 0 && Number.isFinite(water) ? (water / areaA) * 10 : 0;
       out.push({
         ...row,
-        fieldName: String(d?.field || "").trim() || row.fieldText,
+        fieldName,
         pesticideName: String(d?.name || "").trim() || "-",
         dilutionRate: dilution ? `${dilution}倍` : "-",
-        waterAmount: Number.isFinite(water) ? `${formatNumber(water, 1)}L` : "-"
+        waterAmount: Number.isFinite(water) ? `${formatNumber(water, 1)}L` : "-",
+        per10a: areaA > 0 && Number.isFinite(water) ? `${formatNumber(per10a, 1)}L/10a` : "-"
       });
     });
   });
@@ -561,6 +524,18 @@ function renderSprayMetrics({ aggregateRows = [], fieldRows = [], isFieldView = 
 
   if (!metricsBox || !summaryBox || !areaEl || !waterEl || !per10aEl) return;
 
+  const areaA = isFieldView ? calcAreaFromFieldRows(fieldRows) : calcAreaFromAggregateRows(aggregateRows);
+
+  if (state.mode === "mowing") {
+    areaEl.textContent = `${formatNumber(areaA / 10, 2)}反`;
+    waterEl.textContent = "-";
+    per10aEl.textContent = "-";
+    metricsBox.classList.add("active");
+    summaryBox.classList.remove("active");
+    summaryBox.textContent = "";
+    return;
+  }
+
   if (state.mode !== "spray") {
     metricsBox.classList.remove("active");
     summaryBox.classList.remove("active");
@@ -568,13 +543,11 @@ function renderSprayMetrics({ aggregateRows = [], fieldRows = [], isFieldView = 
     return;
   }
 
-  const areaA = isFieldView ? calcAreaFromFieldRows(fieldRows) : calcAreaFromAggregateRows(aggregateRows);
-  const areaTan = areaA / 10;
   const pesticideTotals = aggregatePesticideTotalsFromRows(isFieldView ? fieldRows : aggregateRows, isFieldView);
   const totalWater = [...pesticideTotals.values()].reduce((sum, v) => sum + Number(v.water || 0), 0);
   const per10a = areaA > 0 ? (totalWater / areaA) * 10 : 0;
 
-  areaEl.textContent = `${formatNumber(areaA, 1)}a / ${formatNumber(areaTan, 2)}反`;
+  areaEl.textContent = `${formatNumber(areaA / 10, 2)}反`;
   waterEl.textContent = `${formatNumber(totalWater, 1)}L`;
   per10aEl.textContent = areaA > 0 ? `${formatNumber(per10a, 1)}L/10a` : "-";
   metricsBox.classList.add("active");
@@ -596,15 +569,12 @@ function renderPeriodSummary(rows) {
   const summaryEl = document.getElementById("period-summary");
   if (!summaryEl) return;
 
-  const recent = { fresh: 0, warm: 0, old: 0 };
-  const today = getTodayValue();
-
-  rows.forEach(row => {
-    const days = Math.max(0, Math.round((today - toDateValue(row.date)) / 86400000));
-    recent[ageClass(days)] += 1;
+  summaryEl.innerHTML = buildPeriodCountSummaryHtml({
+    rows,
+    periodStart: state.periodStart,
+    periodEnd: state.periodEnd,
+    getDate: row => row?.date
   });
-
-  summaryEl.innerHTML = `表示件数 <strong>${rows.length}</strong> 件 / 直近: <strong>${recent.fresh}</strong> 件 / 中間: <strong>${recent.warm}</strong> 件 / 旧: <strong>${recent.old}</strong> 件`;
 }
 
 function render() {
@@ -612,7 +582,6 @@ function render() {
   container.innerHTML = "";
 
   const isSpray = state.mode === "spray";
-  const isSprayFieldView = isSpray && state.sprayView === "field";
   const modeDef = MODES[state.mode];
   const modeItems = state.items.filter(modeDef.match);
   const periodItems = filterRowsByPeriod(modeItems);
@@ -623,7 +592,7 @@ function render() {
   const items = filterRowsByAdvanced(periodItems);
 
   let sprayFieldRows = [];
-  if (isSprayFieldView) {
+  if (isSpray) {
     sprayFieldRows = filterSprayFieldRows(buildSprayFieldRows(periodItems))
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
     renderModeUi(sprayFieldRows.length);
@@ -648,7 +617,7 @@ function render() {
   const list = [...items].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
   let html = `<div class="list-card"><table class="weed-table">`;
-  if (isSpray && state.sprayView === "aggregate") {
+  if (isSpray) {
     html += `
       <thead>
         <tr>
@@ -657,46 +626,8 @@ function render() {
           <th>圃場</th>
           <th>使用農薬</th>
           <th>倍率</th>
-          <th>散布液量</th>
-          <th>10a換算</th>
-          <th>除草方式</th>
-          <th>作業者</th>
-          <th>備考</th>
-        </tr>
-      </thead>
-      <tbody>
-    `;
-
-    list.forEach(r => {
-      const sprayMethod = String(r.sprayMethod || "").trim() || "-";
-      const days = Math.max(0, Math.round((today - toDateValue(r.date)) / 86400000));
-      const cls = ageClass(days);
-      const spray = buildSprayAggregateSummary(r);
-      html += `
-        <tr>
-          <td>${escapeHtml(r.date)}</td>
-          <td><span class="recent-badge ${cls}">${escapeHtml(formatDaysAgo(days))}</span></td>
-          <td>${escapeHtml(r.fieldText)}</td>
-          <td>${escapeHtml(spray.names)}</td>
-          <td>${escapeHtml(spray.dilution)}</td>
-          <td>${escapeHtml(spray.spray)}</td>
-          <td>${escapeHtml(spray.per10a)}</td>
-          <td>${escapeHtml(sprayMethod)}</td>
-          <td>${escapeHtml(r.workers || "-")}</td>
-          <td>${escapeHtml(r.notes || "")}</td>
-        </tr>
-      `;
-    });
-  } else if (isSpray && state.sprayView === "field") {
-    html += `
-      <thead>
-        <tr>
-          <th>日付</th>
-          <th>直近</th>
-          <th>圃場</th>
-          <th>使用農薬</th>
-          <th>倍率</th>
-          <th>圃場別散布量</th>
+          <th>散布水量（L）</th>
+          <th>散布水量/10a</th>
           <th>除草方式</th>
           <th>作業者</th>
           <th>備考</th>
@@ -717,6 +648,7 @@ function render() {
           <td>${escapeHtml(r.pesticideName)}</td>
           <td>${escapeHtml(r.dilutionRate)}</td>
           <td>${escapeHtml(r.waterAmount)}</td>
+          <td>${escapeHtml(r.per10a)}</td>
           <td>${escapeHtml(sprayMethod)}</td>
           <td>${escapeHtml(r.workers || "-")}</td>
           <td>${escapeHtml(r.notes || "")}</td>
@@ -775,7 +707,6 @@ export async function initWeedingList() {
   state.periodStart = defaults.start;
   state.periodEnd = defaults.end;
   bindModeButtons();
-  bindSprayViewButtons();
   bindPeriodControls();
   state.items = await loadAllWeedingLogs();
 

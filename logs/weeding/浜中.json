@@ -1,0 +1,45 @@
+{
+  "field": "浜中",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-13",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "total_water_amount": 75,
+              "total_spray_amount": 75,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "浜中",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 15.5,
+              "spray_amount": 15.5,
+              "pesticide_amount": 310,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": [
+            "山本 咲子"
+          ],
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

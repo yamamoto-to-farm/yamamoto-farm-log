@@ -1,0 +1,17 @@
+{
+  "field": "事業所西_4",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-02-07",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

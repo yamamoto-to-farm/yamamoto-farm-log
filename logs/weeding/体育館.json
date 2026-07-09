@@ -1,0 +1,17 @@
+{
+  "field": "体育館",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-11",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 直輝,石原 孝晋",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

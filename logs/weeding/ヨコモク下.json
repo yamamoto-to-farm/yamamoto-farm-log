@@ -1,0 +1,32 @@
+{
+  "field": "ヨコモク下",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-05-26",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EG330",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": ""
+        },
+        {
+          "date": "2026-05-28",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": [
+            "山本 直輝",
+            "若月 道昭"
+          ],
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

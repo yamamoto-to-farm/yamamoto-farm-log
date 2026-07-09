@@ -1,0 +1,88 @@
+{
+  "field": "浜大",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-13",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "total_water_amount": 75,
+              "total_spray_amount": 75,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "浜(大)",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 21.7,
+              "spray_amount": 21.7,
+              "pesticide_amount": 434,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": [
+            "山本 咲子"
+          ],
+          "notes": ""
+        },
+        {
+          "date": "2026-05-02",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,石原 孝晋",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-08",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 45,
+              "total_spray_amount": 45,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "浜(大)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 29.9,
+              "spray_amount": 29.9,
+              "pesticide_amount": 299,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,土井 琉羽,若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

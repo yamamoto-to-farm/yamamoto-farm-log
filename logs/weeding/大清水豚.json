@@ -1,0 +1,17 @@
+{
+  "field": "大清水豚",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-28",
+          "workType": "草刈り",
+          "pesticides": [],
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}
