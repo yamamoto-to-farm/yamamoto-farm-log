@@ -147,7 +147,7 @@ export function extractWorkForEdit(logs, timestampRows = []) {
   const autoList = [];
   const timestampMap = buildTimestampMap(timestampRows);
 
-  logs.forEach(log => {
+  logs.forEach((log, logIndex) => {
     const type = log.displayName; // 定植・収穫・播種など
 
     // worker 系列を抽出（worker1, worker2... / worker 単一列の両対応）
@@ -211,8 +211,12 @@ export function extractWorkForEdit(logs, timestampRows = []) {
     });
 
     autoList.push({
+      logIndex,
+      folder: log.folder,
+      date: sourceDate,
       type,
       workers,
+      workersKey: buildWorkersSetKey(workers),
       field,
       machine,
       sourceKey,
@@ -227,17 +231,29 @@ export function extractWorkForEdit(logs, timestampRows = []) {
 
 export function mergeWorkEntries(autoList, timestampRows = []) {
   const timestampMap = buildTimestampMap(timestampRows);
-  const groups = new Map();
+  const groups = [];
 
   autoList.forEach((item, index) => {
     const match = timestampMap.get(String(item.timestampKey || "").trim().toLowerCase()) || null;
     const sessionKey = String(item.sessionKey || match?.sessionKey || "").trim();
-    const groupKey = sessionKey || String(item.sourceKey || `fallback-${index}`).trim();
+    const fallbackKey = buildFallbackMergeKey(item);
 
-    if (!groups.has(groupKey)) {
-      groups.set(groupKey, {
+    let group = null;
+    if (sessionKey) {
+      group = groups.find(entry => entry.groupKey === sessionKey);
+    } else {
+      const lastGroup = groups[groups.length - 1] || null;
+      if (lastGroup && !lastGroup.sessionKey && lastGroup.fallbackKey === fallbackKey) {
+        group = lastGroup;
+      }
+    }
+
+    if (!group) {
+      const groupKey = sessionKey || `${fallbackKey}#${index}`;
+      group = {
         groupKey,
         sessionKey,
+        fallbackKey,
         type: item.type,
         sourceKey: item.sourceKey,
         items: [],
@@ -247,10 +263,10 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
         start: "",
         end: "",
         timestampTimes: []
-      });
+      };
+      groups.push(group);
     }
 
-    const group = groups.get(groupKey);
     group.items.push({ ...item, __index: index });
 
     normalizeMultiText(item.field).split("／").map(v => v.trim()).filter(Boolean).forEach(v => group.fieldSet.add(v));
@@ -264,7 +280,7 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
     if (time) group.timestampTimes.push(time);
   });
 
-  return [...groups.values()].map(group => {
+  return groups.map(group => {
     const times = group.timestampTimes.slice().sort((a, b) => a.localeCompare(b));
     const start = times[0] || "";
     const end = times.length ? times[times.length - 1] : "";
@@ -286,6 +302,28 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
     const bStart = b.start || b.end || "99:99";
     return aStart.localeCompare(bStart) || String(a.type || "").localeCompare(String(b.type || ""), "ja");
   });
+}
+
+function buildFallbackMergeKey(item) {
+  return [
+    normalizeToken(item?.date || ""),
+    normalizeToken(item?.folder || ""),
+    normalizeToken(item?.type || ""),
+    normalizeToken(item?.machine || ""),
+    normalizeToken(item?.workersKey || buildWorkersSetKey(item?.workers || []))
+  ].join("#");
+}
+
+function buildWorkersSetKey(workers) {
+  const values = Array.isArray(workers)
+    ? workers
+    : String(workers || "").split(/[\/／]/);
+
+  return values
+    .map(v => normalizeToken(v))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "ja"))
+    .join("/");
 }
 
 function buildTimestampMap(timestampRows) {
