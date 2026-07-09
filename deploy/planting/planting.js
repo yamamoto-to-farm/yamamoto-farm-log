@@ -11,6 +11,7 @@ import {
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { checkDuplicate } from "../common/duplicate.js";
+import { saveTimestampRows } from "../common/timestamp.js?v=1";
 import { loadCSV } from "../common/csv.js";
 import {
   showSaveModal,
@@ -440,6 +441,18 @@ async function savePlantingInner() {
     summary: { date: data.plantDate, sourceKey: "planting", count: 1 }
   });
 
+  await saveTimestampRows([{
+    date: data.plantDate,
+    folder: "planting",
+    workType: "定植",
+    field: data.field,
+    workers: data.worker,
+    machine,
+    time: getCurrentTimeText()
+  }]).catch(e => {
+    console.warn("[planting] timestamp update failed:", e);
+  });
+
   updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(plantingRef);
 
@@ -453,3 +466,10 @@ async function savePlantingInner() {
 }
 
 window.savePlanting = savePlantingInner;
+
+function getCurrentTimeText() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}

@@ -4,6 +4,7 @@
 import { saveLog } from "../common/save/index.js";
 import { checkDuplicate } from "../common/duplicate.js";
 import { loadCSV } from "../common/csv.js";
+import { saveTimestampRows } from "/common/timestamp.js?v=1";
 
 // 品種リスト
 let VARIETY_LIST = [];
@@ -205,6 +206,25 @@ async function saveSeedInner() {
     summary: { date: data.seedDate, sourceKey: "seed", count: 1 }
   });
 
+  await saveTimestampRows([{
+    date: data.seedDate,
+    folder: "seed",
+    workType: "播種",
+    field: "",
+    workers: data.worker,
+    machine: "",
+    time: getCurrentTimeText()
+  }]).catch(e => {
+    console.warn("[seed] timestamp update failed:", e);
+  });
+
 }
 
 window.saveSeed = saveSeedInner;
+
+function getCurrentTimeText() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}

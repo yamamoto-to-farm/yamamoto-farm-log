@@ -14,6 +14,7 @@ const DEBUG = false;
 // ===============================
 import { loadCSV } from "/common/csv.js";
 import { saveLog } from "/common/save/index.js";
+import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import {
   showSaveModal,
   updateSaveModal,
@@ -186,6 +187,18 @@ export async function saveDiscard() {
     summary: { date: discardDate, sourceKey: "discard-planting", count: 1 }
   });
 
+  await saveTimestampRows([{
+    date: discardDate,
+    folder: "discard-planting",
+    workType: "廃棄定植",
+    field: "",
+    workers: window.currentHuman ?? "",
+    machine: window.currentMachine ?? "",
+    time: getCurrentTimeText()
+  }]).catch(e => {
+    console.warn("[discard-planting] timestamp update failed:", e);
+  });
+
   updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(plantingRef);
 
@@ -208,4 +221,11 @@ export async function saveDiscard() {
     },
     { once: true }
   );
+}
+
+function getCurrentTimeText() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
 }

@@ -3,6 +3,7 @@
 // =========================================================
 
 import { loadCSV, normalizeKeys } from "/common/csv.js";
+import { buildTimestampKey } from "/common/timestamp.js?v=1";
 
 let searchIndexCache = null;
 
@@ -204,7 +205,15 @@ export function extractWorkForEdit(logs) {
       workers,
       field,
       machine,
-      sourceKey
+      sourceKey,
+      timestampKey: buildTimestampKey({
+        date: sourceDate,
+        folder: log.folder,
+        workType: String(log.data.workType || log.displayName || "").trim(),
+        field,
+        workers,
+        machine
+      })
     });
   });
 

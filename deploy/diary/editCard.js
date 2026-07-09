@@ -5,11 +5,12 @@
 
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
+import { buildTimestampDefaults, loadTimestampRows } from "/common/timestamp.js?v=1";
 
 // ---------------------------------------------------------
 // 編集カードを描画
 // ---------------------------------------------------------
-export function renderEditCards(autoList, diary) {
+export function renderEditCards(autoList, diary, timestampRows = []) {
   const area = document.getElementById("editWorkArea");
   area.innerHTML = "";
 
@@ -21,6 +22,8 @@ export function renderEditCards(autoList, diary) {
     existingBySourceKey[key] = w;
   });
 
+  const timestampDefaults = buildTimestampDefaults(autoList, timestampRows);
+
   // -------------------------------
   // 自動抽出された作業カード
   // -------------------------------
@@ -29,8 +32,9 @@ export function renderEditCards(autoList, diary) {
     // ★ sourceKey 一致を優先、旧データは index でフォールバック
     const existing = existingBySourceKey[item.sourceKey] || diary?.work?.[idx] || {};
 
-    const start = existing.start || "";
-    const end = existing.end || "";
+    const defaults = timestampDefaults[idx] || { start: "", end: "" };
+    const start = existing.start || defaults.start || "";
+    const end = existing.end || defaults.end || "";
 
     // ★ ログ由来の値を優先（同期を維持）
     const field = item.field || existing.field || "";
@@ -110,7 +114,8 @@ export async function initEditPage() {
   // ★ 作業ログから自動抽出（type, workers, field, machine）
   const logs = await loadLogsByDate(date);
   const autoList = extractWorkForEdit(logs);
+  const timestampRows = await loadTimestampRows(date);
 
   // ★ 既存日誌を反映して描画
-  renderEditCards(autoList, diary);
+  renderEditCards(autoList, diary, timestampRows);
 }

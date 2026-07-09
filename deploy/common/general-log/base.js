@@ -7,6 +7,7 @@ import { loadJSON } from "/common/json.js?v=1";
 import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName, safeFileName } from "/common/utils.js?v=1";
 import { recordMonthlyWorkEntries } from "/common/monthly-work-summary.js?v=1";
+import { saveTimestampRows } from "/common/timestamp.js?v=1";
 
 const DEBUG = true;
 function debugLog(...args) {
@@ -267,6 +268,20 @@ export async function saveMultiFieldLog({
   if (savedFields.length > 0) {
     await updateGeneralAllCsv(type, { date, fields: savedFields, entry });
 
+    const currentTime = getCurrentTimeText();
+
+    await saveTimestampRows(savedFields.map(field => ({
+      date,
+      folder: type,
+      workType: entry.workType || type,
+      field,
+      workers: normalizeWorker(entry),
+      machine: normalizeMachine(entry),
+      time: currentTime
+    }))).catch(e => {
+      console.warn("[saveMultiFieldLog] timestamp update failed:", e);
+    });
+
     await recordMonthlyWorkEntries({
       date,
       sourceKey: type,
@@ -280,6 +295,13 @@ export async function saveMultiFieldLog({
     savedFields,
     skippedFields
   });
+}
+
+function getCurrentTimeText() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
 }
 
 async function updateGeneralAllCsv(type, { date, fields, entry }) {

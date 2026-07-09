@@ -3,6 +3,7 @@
 // ===============================
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
+import { saveTimestampRows } from "/common/timestamp.js?v=1";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
@@ -346,6 +347,18 @@ async function saveShipping() {
     fileName: "all.csv"
   });
 
+  await saveTimestampRows(rows.map(r => ({
+    date: r.shippingDate,
+    folder: "weight",
+    workType: "出荷",
+    field: r.field,
+    workers: r.human,
+    machine: r.machine,
+    time: getCurrentTimeText()
+  }))).catch(e => {
+    console.warn("[shipping] timestamp update failed:", e);
+  });
+
   // ★ サマリー更新
   targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
 
@@ -362,6 +375,13 @@ async function saveShipping() {
     },
     { once: true }
   );
+}
+
+function getCurrentTimeText() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
 }
 
 window.saveShipping = saveShipping;

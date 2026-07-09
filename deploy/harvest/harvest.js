@@ -11,6 +11,7 @@ import {
 
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
+import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import { checkDuplicate } from "../common/duplicate.js";
 
 // ★ サマリー自動更新
@@ -283,6 +284,18 @@ async function saveHarvestInner() {
     summary: { date: data.harvestDate, sourceKey: "harvest", count: 1 }
   });
 
+  await saveTimestampRows([{
+    date: data.harvestDate,
+    folder: "harvest",
+    workType: "収穫",
+    field: data.field,
+    workers: data.worker,
+    machine,
+    time: getCurrentTimeText()
+  }]).catch(e => {
+    console.warn("[harvest] timestamp update failed:", e);
+  });
+
   // ★ summaryUpdate
   updateSaveModal("サマリーを更新しています…");
   enqueueSummaryUpdate(data.plantingRef);
@@ -298,3 +311,10 @@ async function saveHarvestInner() {
 }
 
 window.saveHarvest = saveHarvestInner;
+
+function getCurrentTimeText() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
