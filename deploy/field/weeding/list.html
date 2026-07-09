@@ -242,6 +242,206 @@
       padding: 16px;
       color: #6b7280;
     }
+
+    .area-card {
+      margin-bottom: 16px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+      padding: 12px;
+    }
+
+    .area-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .area-sort-wrap {
+      min-width: 180px;
+    }
+
+    .area-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .area-group {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .area-group.in-period { border-left: 6px solid #2f855a; }
+    .area-group.out-period { border-left: 6px solid #c05621; }
+    .area-group.no-record { border-left: 6px solid #9ca3af; }
+
+    .area-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+
+    .area-title::-webkit-details-marker {
+      display: none;
+    }
+
+    .area-title-main {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .area-title h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .area-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .area-badge.in-period { background: #ecfdf5; color: #166534; }
+    .area-badge.out-period { background: #fff7ed; color: #9a3412; }
+    .area-badge.no-record { background: #f3f4f6; color: #4b5563; }
+
+    .area-sub {
+      color: #6b7280;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .field-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .field-card {
+      display: grid;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #fbfbfa;
+      border-left: 6px solid #d1d5db;
+    }
+
+    .field-card.in-period { border-left-color: #2f855a; }
+    .field-card.out-period { border-left-color: #c05621; }
+    .field-card.no-record { border-left-color: #9ca3af; }
+
+    .field-name {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field-name h4 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .field-name h4 a {
+      text-decoration: none;
+    }
+
+    .field-name h4 a:hover {
+      text-decoration: underline;
+    }
+
+    .field-area {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .field-area.in-period { background: #ecfdf5; color: #166534; }
+    .field-area.out-period { background: #fff7ed; color: #9a3412; }
+    .field-area.no-record { background: #f3f4f6; color: #4b5563; }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-chip.in-period { background: #ecfdf5; color: #166534; }
+    .status-chip.out-period { background: #fff7ed; color: #9a3412; }
+    .status-chip.no-record { background: #f3f4f6; color: #4b5563; }
+
+    .field-meta {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+      color: #374151;
+    }
+
+    .field-meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .pill-date { background: #eff6ff; color: #1d4ed8; }
+    .pill-count { background: #ecfdf5; color: #166534; }
+    .pill-out { background: #fff7ed; color: #9a3412; }
+
+    .age-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      width: fit-content;
+    }
+
+    .age-chip.in-period { background: #ecfdf5; color: #166534; }
+    .age-chip.out-period { background: #fff7ed; color: #9a3412; }
+    .age-chip.no-record { background: #f3f4f6; color: #4b5563; }
+
+    @media (max-width: 640px) {
+      .area-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .area-sort-wrap {
+        min-width: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -322,6 +522,20 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="area-card">
+      <div class="area-head">
+        <h2 class="page-title" style="font-size:20px; margin:0;">エリアごとの最終作業</h2>
+        <div class="form-field area-sort-wrap">
+          <label for="area-sort">並び順</label>
+          <select id="area-sort" class="form-input">
+            <option value="new">新しい順</option>
+            <option value="old">古い順</option>
+          </select>
+        </div>
+      </div>
+      <div id="weeding-area-list" class="area-list"></div>
     </section>
 
     <div id="weeding-container"></div>

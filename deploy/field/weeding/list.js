@@ -7,6 +7,7 @@ import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { getDefaultPeriodRange } from "/common/date-range.js?v=1";
 import { collectUniqueMethods, matchesSharedListFilters } from "/common/list-filter-utils.js?v=1";
 import { buildPeriodCountSummaryHtml } from "/common/period-summary.js?v=1";
+import { buildAreaLatestModel, getAreaStatusMeta } from "/common/area-latest.js?v=1";
 
 const MODES = {
   spray: {
@@ -24,11 +25,13 @@ const MODES = {
 const state = {
   items: [],
   mode: "spray",
+  areaSort: "new",
   periodStart: "",
   periodEnd: "",
   keyword: "",
   method: "",
   pesticide: "",
+  fieldsData: [],
   fieldAreaMap: {}
 };
 
@@ -118,6 +121,17 @@ function bindPeriodControls() {
       render();
     });
   }
+}
+
+function bindAreaSortControl() {
+  const select = document.getElementById("area-sort");
+  if (!select) return;
+
+  select.value = state.areaSort;
+  select.addEventListener("change", () => {
+    state.areaSort = String(select.value || "new").trim() === "old" ? "old" : "new";
+    render();
+  });
 }
 
 function bindFilterControls() {
@@ -577,6 +591,114 @@ function renderPeriodSummary(rows) {
   });
 }
 
+function buildAreaSourceRows(modeItems) {
+  if (state.mode === "spray") {
+    return filterSprayFieldRows(buildSprayFieldRows(modeItems)).map(row => ({
+      field: String(row.fieldName || "").trim(),
+      date: String(row.date || "").trim(),
+      dateValue: toDateValue(row.date),
+      workType: String(row.sprayMethod || "").trim() || "除草剤散布"
+    })).filter(row => row.field && row.date && row.dateValue);
+  }
+
+  const rows = filterRowsByAdvanced(modeItems);
+  const out = [];
+
+  rows.forEach(row => {
+    const date = String(row.date || "").trim();
+    const dateValue = toDateValue(date);
+    const workType = String(row.mowingMethod || "").trim() || "草刈り";
+
+    parseFieldNames(row.fieldText).forEach(field => {
+      if (!field || !date || !dateValue) return;
+      out.push({ field, date, dateValue, workType });
+    });
+  });
+
+  return out;
+}
+
+function renderAreaList(modeItems) {
+  const container = document.getElementById("weeding-area-list");
+  if (!container) return;
+
+  const selectedFields = filterState.fields || [];
+  const targetFields = selectedFields.length > 0
+    ? state.fieldsData.filter(f => selectedFields.includes(f.name))
+    : state.fieldsData;
+
+  if (!targetFields.length) {
+    container.innerHTML = '<div class="empty-box">表示対象の圃場がありません。</div>';
+    return;
+  }
+
+  const areaRows = buildAreaSourceRows(modeItems);
+  const model = buildAreaLatestModel({
+    fields: targetFields,
+    rows: areaRows,
+    periodStart: state.periodStart,
+    periodEnd: state.periodEnd,
+    areaSort: state.areaSort,
+    todayValue: getTodayValue(),
+    getField: row => row.field,
+    getDate: row => row.date,
+    getDateValue: row => row.dateValue,
+    getWorkType: row => row.workType
+  });
+
+  if (!model.areaEntries.length) {
+    container.innerHTML = '<div class="empty-box">該当する圃場がありません。</div>';
+    return;
+  }
+
+  container.innerHTML = model.areaEntries.map(area => {
+    const groupMeta = getAreaStatusMeta(area.groupStatus);
+    return `
+      <details class="area-group ${groupMeta.className}">
+        <summary class="area-title">
+          <div class="area-title-main">
+            <h3>${escapeHtml(area.areaName)}</h3>
+            <span class="area-badge ${groupMeta.className}">${groupMeta.label}</span>
+            <span class="pill pill-count">全体${area.countAll}件</span>
+            <span class="pill pill-date">期間内${area.inPeriodCount}件</span>
+            ${area.outPeriodCount > 0 ? `<span class="pill pill-out">期間外${area.outPeriodCount}圃場</span>` : ""}
+          </div>
+          <div class="area-sub">${escapeHtml(model.startLabel)}〜${escapeHtml(model.endLabel)} / 最終: ${escapeHtml(area.latestDate || "未記録")}</div>
+        </summary>
+
+        <div class="field-list">
+          ${area.cards.map(card => renderAreaFieldCard(card)).join("")}
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
+function renderAreaFieldCard(card) {
+  const statusMeta = getAreaStatusMeta(card.status);
+  const detailLink = `/fields/index.html?field=${encodeURIComponent(card.field)}`;
+
+  return `
+    <article class="field-card ${statusMeta.className}">
+      <div class="field-name">
+        <h4><a href="${detailLink}">${escapeHtml(card.field)}</a></h4>
+        <span class="field-area ${statusMeta.className}">${escapeHtml(card.area || "圃場")}</span>
+        <span class="status-chip ${statusMeta.className}">${statusMeta.label}</span>
+      </div>
+      <div class="field-meta">
+        <div class="field-meta-line">
+          <span class="pill pill-date">最終作業: ${escapeHtml(card.latestDate || "未記録")}</span>
+          <span class="pill pill-count">全体: ${card.countAll}件</span>
+          <span class="pill pill-date">期間内: ${card.countInPeriod}件</span>
+        </div>
+        <div class="age-chip ${statusMeta.className}">${card.latestAgeDays === null ? "未記録" : `最終作業から ${escapeHtml(formatDaysAgo(card.latestAgeDays))}`}</div>
+        <div>直近: ${escapeHtml(card.latestWorkType || "未記録")}</div>
+        <div>前回との差: ${escapeHtml(card.latestGapLabel || "初回")}</div>
+      </div>
+    </article>
+  `;
+}
+
 function render() {
   const container = document.getElementById("weeding-container");
   container.innerHTML = "";
@@ -584,6 +706,7 @@ function render() {
   const isSpray = state.mode === "spray";
   const modeDef = MODES[state.mode];
   const modeItems = state.items.filter(modeDef.match);
+  renderAreaList(modeItems);
   const periodItems = filterRowsByPeriod(modeItems);
 
   syncMethodFilterOptions();
@@ -707,6 +830,7 @@ export async function initWeedingList() {
   state.periodStart = defaults.start;
   state.periodEnd = defaults.end;
   bindModeButtons();
+  bindAreaSortControl();
   bindPeriodControls();
   state.items = await loadAllWeedingLogs();
 
@@ -717,6 +841,7 @@ export async function initWeedingList() {
 
   const parents = [];
   const children = {};
+  state.fieldsData = fieldsData || [];
   (fieldsData || []).forEach(f => {
     if (!f || !f.area || !f.name) return;
     if (!children[f.area]) {
