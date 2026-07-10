@@ -451,6 +451,20 @@
     gap: 8px;
   }
 
+  /* 印刷時は内訳を常に展開表示 */
+  .merged-work-details > summary {
+    list-style: none;
+    cursor: default;
+  }
+
+  .merged-work-details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .merged-work-details:not([open]) > *:not(summary) {
+    display: block !important;
+  }
+
   .time-row {
     gap: 8px;
     margin-bottom: 0;
