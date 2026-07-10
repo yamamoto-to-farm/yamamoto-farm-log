@@ -425,6 +425,21 @@ function buildManualMergedGroup(groups) {
     return ta.localeCompare(tb);
   });
 
+  const nonEmptyStarts = sortedGroups
+    .map(group => String(group?.start || "").trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+
+  const nonEmptyEnds = sortedGroups
+    .map(group => String(group?.end || "").trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+
+  const mergedStart = nonEmptyStarts[0] || String(sortedGroups[0]?.start || "").trim();
+  const mergedEnd = nonEmptyEnds.length
+    ? nonEmptyEnds[nonEmptyEnds.length - 1]
+    : String(sortedGroups[sortedGroups.length - 1]?.end || "").trim();
+
   return {
     groupKey: sessionKey,
     sessionKey,
@@ -433,8 +448,8 @@ function buildManualMergedGroup(groups) {
     field: [...fieldSet].join("／"),
     workers: [...workerSet].join("／"),
     machine: [...machineSet].join("／"),
-    start: String(sortedGroups[0]?.start || "").trim(),
-    end: String(sortedGroups[sortedGroups.length - 1]?.end || "").trim(),
+    start: mergedStart,
+    end: mergedEnd,
     items: items.map(item => ({
       ...item,
       sessionKey: String(item?.sessionKey || sessionKey).trim()
