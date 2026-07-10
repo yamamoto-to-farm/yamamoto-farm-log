@@ -50,8 +50,8 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const existing = existingBySourceKey[item.sourceKey] || diary?.work?.[idx] || {};
 
     const defaults = timestampDefaults[idx] || { start: "", end: "" };
-    const start = String(existing.start || item.start || defaults.start || "").trim();
-    const end = String(existing.end || item.end || defaults.end || "").trim();
+    const start = String(item.start || existing.start || defaults.start || "").trim();
+    const end = String(item.end || existing.end || defaults.end || "").trim();
 
     // ★ ログ由来の値を優先（同期を維持）
     const field = item.field || existing.field || "";
