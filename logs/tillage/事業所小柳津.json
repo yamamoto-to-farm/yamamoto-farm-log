@@ -1,0 +1,18 @@
+{
+  "field": "事業所小柳津",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-29",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 20,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

@@ -199,7 +199,14 @@ export function extractWorkForEdit(logs, timestampRows = []) {
       workers,
       machine
     });
-    const timestampRow = timestampMap.get(timestampKey) || null;
+    const timestampRow = timestampMap.get(timestampKey) || findRelaxedTimestampRow({
+      sourceDate,
+      folder: log.folder,
+      workType: String(log.data.workType || "").trim(),
+      field,
+      workers,
+      machine
+    }, timestampRows);
     const sourceKey = buildSourceKey({
       folder: log.folder,
       date: sourceDate,
@@ -318,6 +325,55 @@ function buildTimestampMap(timestampRows) {
     map.set(key, row);
   });
   return map;
+}
+
+function findRelaxedTimestampRow(base, timestampRows) {
+  const date = String(base?.sourceDate || "").trim();
+  const folder = normalizeToken(base?.folder || "");
+  const workType = normalizeToken(base?.workType || "");
+  const machine = normalizeToken(base?.machine || "");
+  const workersText = normalizeToken(normalizeMultiText(base?.workers || ""));
+  const fieldSet = new Set(
+    normalizeMultiText(base?.field || "")
+      .split("／")
+      .map(v => normalizeToken(v))
+      .filter(Boolean)
+  );
+
+  const candidates = (Array.isArray(timestampRows) ? timestampRows : []).filter(row => {
+    if (String(row?.date || "").trim() !== date) return false;
+    if (normalizeToken(row?.folder || "") !== folder) return false;
+    if (machine && normalizeToken(row?.machine || "") !== machine) return false;
+    if (workersText && normalizeToken(row?.workers || "") !== workersText) return false;
+
+    if (fieldSet.size > 0) {
+      const rowField = normalizeToken(row?.field || "");
+      if (!rowField || !fieldSet.has(rowField)) return false;
+    }
+
+    return true;
+  });
+
+  if (!candidates.length) return null;
+
+  const scored = candidates.map((row, index) => {
+    let score = 0;
+    const rowType = normalizeToken(row?.workType || "");
+    if (workType && rowType === workType) score += 2;
+    if (row?.sessionKey) score += 1;
+    return { row, score, index };
+  });
+
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    const ta = String(a.row?.time || "");
+    const tb = String(b.row?.time || "");
+    const timeCmp = ta.localeCompare(tb);
+    if (timeCmp !== 0) return timeCmp;
+    return a.index - b.index;
+  });
+
+  return scored[0]?.row || null;
 }
 
 function normalizeMultiText(value) {

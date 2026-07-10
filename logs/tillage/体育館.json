@@ -1,0 +1,18 @@
+{
+  "field": "体育館",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-01",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 20,
+          "speedKmh": 2.5,
+          "machine": "",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

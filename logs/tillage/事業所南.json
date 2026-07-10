@@ -1,0 +1,27 @@
+{
+  "field": "事業所南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-29",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 20,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-16",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 2.8,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

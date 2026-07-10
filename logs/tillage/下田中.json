@@ -1,0 +1,18 @@
+{
+  "field": "下田中",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-19",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "field": "ハウス跡下",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-13",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-16",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 2.8,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

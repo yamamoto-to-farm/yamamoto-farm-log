@@ -18,7 +18,7 @@ function unquote(v) {
 
 /**
  * CSV を読み込む
- * @param {string} csvType - planting / harvest / weight / schedule-seed など
+ * @param {string} csvType - planting / harvest / weightど
  * @param {string} csvFile - all.csv など
  */
 export async function loadCSV(csvType, csvFile) {

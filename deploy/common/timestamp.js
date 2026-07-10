@@ -231,6 +231,17 @@ export function buildTimestampDefaults(autoList, timestampRows) {
       return a.__index - b.__index;
     });
 
+    // 1カードに複数 timestamp 行が対応する場合（例: 連結圃場1行）
+    // は最小/最大を開始/終了に設定する。
+    if (indexes.length === 1 && rows.length > 1) {
+      const onlyIndex = indexes[0];
+      defaults[onlyIndex] = {
+        start: rows[0]?.time || "",
+        end: rows[rows.length - 1]?.time || rows[0]?.time || ""
+      };
+      continue;
+    }
+
     rows.forEach((row, pos) => {
       const targetIndex = indexes[pos];
       if (targetIndex === undefined) return;

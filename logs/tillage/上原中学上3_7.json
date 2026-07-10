@@ -1,0 +1,27 @@
+{
+  "field": "上原中学上3_7",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-10",
+          "workType": "プラソイラー",
+          "depthCm": 40,
+          "speedKmh": 3.8,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-10",
+          "workType": "スタブルカルチ",
+          "depthCm": 20,
+          "speedKmh": 3,
+          "machine": "EG330",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}
