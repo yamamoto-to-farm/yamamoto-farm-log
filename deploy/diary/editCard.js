@@ -171,9 +171,11 @@ export async function initEditPage() {
   const timestampRows = await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
   const mergedList = mergeWorkEntries(autoList, timestampRows);
-  const hydratedList = mergeSavedDiaryGroups(diary, mergedList);
+  const sourceKeySet = new Set(autoList.map(item => String(item.sourceKey || "").trim()).filter(Boolean));
+  const hydratedList = sanitizeWorkGroups(mergeSavedDiaryGroups(diary, mergedList), sourceKeySet);
 
   window.__currentDiaryWorkGroups = hydratedList;
+  window.__currentDiarySourceKeys = [...sourceKeySet];
 
   // ★ 既存日誌を反映して描画
   renderEditCards(hydratedList, diary, timestampRows);
@@ -317,9 +319,10 @@ function bindManualMergeControls(diary, timestampRows) {
     const nextGroups = currentGroups.filter((_, index) => !selectedIndexes.includes(index));
     nextGroups.splice(selectedIndexes[0], 0, mergedGroup);
 
-    window.__currentDiaryWorkGroups = nextGroups;
+    const sourceKeySet = new Set(window.__currentDiarySourceKeys || []);
+    window.__currentDiaryWorkGroups = sanitizeWorkGroups(nextGroups, sourceKeySet);
     const memo = document.getElementById("freeMemo")?.value || diary?.memo || "";
-    renderEditCards(nextGroups, { ...(diary || {}), memo }, timestampRows);
+    renderEditCards(window.__currentDiaryWorkGroups, { ...(diary || {}), memo }, timestampRows);
   });
 
   unmergeButtons.forEach(button => {
@@ -342,9 +345,10 @@ function bindManualMergeControls(diary, timestampRows) {
       const nextGroups = currentGroups.filter((_, groupIndex) => groupIndex !== index);
       nextGroups.splice(index, 0, ...expandedGroups);
 
-      window.__currentDiaryWorkGroups = nextGroups;
+      const sourceKeySet = new Set(window.__currentDiarySourceKeys || []);
+      window.__currentDiaryWorkGroups = sanitizeWorkGroups(nextGroups, sourceKeySet);
       const memo = document.getElementById("freeMemo")?.value || diary?.memo || "";
-      renderEditCards(nextGroups, { ...(diary || {}), memo }, timestampRows);
+      renderEditCards(window.__currentDiaryWorkGroups, { ...(diary || {}), memo }, timestampRows);
     });
   });
 
@@ -423,4 +427,43 @@ function expandMergedGroup(group) {
       end: String(item?.end || "").trim()
     }]
   }));
+}
+
+function sanitizeWorkGroups(groups, allowedSourceKeys = new Set()) {
+  const seen = new Set();
+  const sanitized = [];
+
+  (Array.isArray(groups) ? groups : []).forEach((group, groupIndex) => {
+    const normalizedItems = (Array.isArray(group?.items) ? group.items : [group])
+      .filter(Boolean)
+      .filter(item => {
+        const key = String(item?.sourceKey || "").trim();
+        if (!key) return false;
+        if (allowedSourceKeys.size > 0 && !allowedSourceKeys.has(key)) return false;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((item, itemIndex) => ({
+        ...item,
+        sourceKey: String(item?.sourceKey || `${groupIndex}-${itemIndex}`).trim()
+      }));
+
+    if (!normalizedItems.length) return;
+
+    const field = normalizedItems.map(item => normalizeMultiText(item.field || "")).filter(Boolean).join("／");
+    const workers = normalizedItems.map(item => normalizeMultiText(item.workers || "")).filter(Boolean).join("／");
+    const machine = normalizedItems.map(item => String(item.machine || "").trim()).filter(Boolean)[0] || String(group?.machine || "").trim();
+
+    sanitized.push({
+      ...group,
+      sourceKey: String(group?.sourceKey || normalizedItems[0]?.sourceKey || `group-${groupIndex}`).trim(),
+      field: normalizeMultiText(group?.field || field),
+      workers: normalizeMultiText(group?.workers || workers),
+      machine,
+      items: normalizedItems
+    });
+  });
+
+  return sanitized;
 }
