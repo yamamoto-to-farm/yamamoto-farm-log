@@ -377,3 +377,91 @@
   margin: 24px auto 0;
 }
 
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff;
+    color: #111;
+    font-size: 12px;
+    line-height: 1.4;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #header,
+  #modeSwitchArea,
+  #saveDiaryBtn,
+  #diaryDateNav,
+  #diarySearchTitle,
+  #diarySearchPanel,
+  #workListTitle,
+  #workList,
+  .merge-toolbar,
+  .merge-select-indicator,
+  .merge-unmerge-btn,
+  .secondary-btn,
+  .btn-primary {
+    display: none !important;
+  }
+
+  .page-container,
+  #form-area {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: 0;
+  }
+
+  .section-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+  }
+
+  #weatherBox {
+    margin-bottom: 8px;
+  }
+
+  #workContentWrapper {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0;
+    margin-bottom: 0;
+  }
+
+  .card,
+  .edit-card,
+  .view-card,
+  .diary-memo,
+  .merged-work-details {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border: 1px solid #d6d6d6;
+    box-shadow: none;
+  }
+
+  .merged-work-list li {
+    gap: 8px;
+  }
+
+  .time-row {
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .time-row input {
+    border: 0;
+    padding: 0;
+    height: auto;
+    min-height: 0;
+    background: transparent;
+  }
+}
+
