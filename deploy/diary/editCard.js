@@ -402,6 +402,14 @@ function syncGroupsFromCurrentInputs() {
     group.end = endInput?.value || group.end || "";
     group.field = fieldInput?.value || group.field || "";
     group.machine = machineInput?.value || group.machine || "";
+
+    const items = Array.isArray(group?.items) ? group.items : [];
+    if (items.length === 1) {
+      items[0].start = group.start;
+      items[0].end = group.end;
+      items[0].field = group.field || items[0].field || "";
+      items[0].machine = group.machine || items[0].machine || "";
+    }
   });
 }
 
