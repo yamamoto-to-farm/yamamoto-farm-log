@@ -181,8 +181,10 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
   const savedGroups = Array.isArray(diary?.work) ? diary.work.map((item, index) => normalizeSavedGroup(item, index)) : [];
   if (!savedGroups.length) return fallbackGroups;
 
+  const manualOnlyGroups = savedGroups.flatMap((group, groupIndex) => expandGroupForManualOnly(group, groupIndex));
+
   const coveredSourceKeys = new Set();
-  savedGroups.forEach(group => {
+  manualOnlyGroups.forEach(group => {
     getGroupSourceKeys(group).forEach(key => coveredSourceKeys.add(key));
   });
 
@@ -191,7 +193,25 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
     return keys.every(key => !coveredSourceKeys.has(key));
   });
 
-  return [...savedGroups, ...extraGroups];
+  return [...manualOnlyGroups, ...extraGroups];
+}
+
+function expandGroupForManualOnly(group, groupIndex) {
+  const items = Array.isArray(group?.items) ? group.items : [];
+  if (items.length <= 1) return [group];
+
+  return items.map((item, itemIndex) => ({
+    groupKey: String(item?.sourceKey || `${group.groupKey || `saved-${groupIndex}`}-${itemIndex}`).trim(),
+    sessionKey: String(item?.sessionKey || "").trim(),
+    sourceKey: String(item?.sourceKey || `${group.groupKey || `saved-${groupIndex}`}-${itemIndex}`).trim(),
+    type: String(item?.type || group?.type || "作業").trim(),
+    field: normalizeMultiText(item?.field || ""),
+    workers: normalizeMultiText(item?.workers || ""),
+    machine: String(item?.machine || group?.machine || "").trim(),
+    start: String(item?.start || group?.start || "").trim(),
+    end: String(item?.end || group?.end || "").trim(),
+    items: [{ ...item }]
+  }));
 }
 
 function normalizeSavedGroup(item, index) {
