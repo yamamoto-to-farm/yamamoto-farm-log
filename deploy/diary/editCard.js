@@ -262,9 +262,9 @@ function normalizeSavedSubItem(item, index, parent) {
     field: normalizeMultiText(item?.field || ""),
     workers: normalizeMultiText(item?.workers || ""),
     machine: String(item?.machine || parent?.machine || "").trim(),
-    start: String(item?.start || "").trim(),
-    end: String(item?.end || "").trim(),
-    timestampTime: String(item?.end || item?.start || "").trim()
+    start: String(item?.start || parent?.start || "").trim(),
+    end: String(item?.end || parent?.end || "").trim(),
+    timestampTime: String(item?.end || item?.start || parent?.end || parent?.start || "").trim()
   };
 }
 
@@ -407,7 +407,17 @@ function syncGroupsFromCurrentInputs() {
 
 function buildManualMergedGroup(groups) {
   const sessionKey = createSessionKey();
-  const items = groups.flatMap(group => Array.isArray(group?.items) && group.items.length ? group.items : [group]);
+  const items = groups.flatMap(group => {
+    const groupStart = String(group?.start || "").trim();
+    const groupEnd = String(group?.end || "").trim();
+    const sourceItems = Array.isArray(group?.items) && group.items.length ? group.items : [group];
+
+    return sourceItems.map(item => ({
+      ...item,
+      start: String(item?.start || groupStart || "").trim(),
+      end: String(item?.end || groupEnd || "").trim()
+    }));
+  });
   const fieldSet = new Set();
   const workerSet = new Set();
   const machineSet = new Set();

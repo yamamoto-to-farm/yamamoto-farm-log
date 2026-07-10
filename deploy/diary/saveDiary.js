@@ -50,8 +50,8 @@ export async function saveDiary(date, autoList) {
       field: normalizeMultiValueAsArray(subItem.field || ""),
       workers: normalizeMultiValueAsArray(subItem.workers || ""),
       machine: String(subItem.machine || item.machine || "").trim(),
-      start: String(subItem.start || "").trim(),
-      end: String(subItem.end || "").trim()
+      start: String(subItem.start || item.start || "").trim(),
+      end: String(subItem.end || item.end || "").trim()
     })) : []
   }));
 
