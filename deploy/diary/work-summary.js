@@ -148,7 +148,10 @@ export function extractWorkForEdit(logs, timestampRows = []) {
   const timestampMap = buildTimestampMap(timestampRows);
 
   logs.forEach((log, logIndex) => {
-    const type = String(log.data?.workType || log.displayName || "").trim(); // 定植・収穫・播種など
+    const displayName = String(log.displayName || "").trim();
+    const rowWorkType = String(log.data?.workType || "").trim();
+    const sourceTypeKey = String(log.data?.workType || log.displayName || "").trim();
+    const type = buildDiaryTypeLabel(displayName, rowWorkType);
 
     // worker 系列を抽出（worker1, worker2... / worker 単一列の両対応）
     const workers = [];
@@ -210,7 +213,7 @@ export function extractWorkForEdit(logs, timestampRows = []) {
     const sourceKey = buildSourceKey({
       folder: log.folder,
       date: sourceDate,
-      type,
+      type: sourceTypeKey,
       field,
       machine,
       workers,
@@ -453,4 +456,15 @@ function buildSearchText(displayName, headerName, data) {
   });
 
   return normalizeToken(values.join(" "));
+}
+
+function buildDiaryTypeLabel(displayName, workType) {
+  const base = String(displayName || "").trim();
+  const detail = String(workType || "").trim();
+
+  if (!base && !detail) return "";
+  if (!base) return detail;
+  if (!detail) return base;
+  if (normalizeToken(base) === normalizeToken(detail)) return base;
+  return `${base}：${detail}`;
 }

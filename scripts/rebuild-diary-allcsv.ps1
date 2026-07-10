@@ -20,8 +20,9 @@ function Parse-FieldTokens([string]$fieldText){
 
 function Build-EntryMap([string]$folder){
   $map = @{}
+  $mapLoose = @{}
   $dir = "logs/$folder"
-  if(-not (Test-Path $dir)){ return $map }
+  if(-not (Test-Path $dir)){ return [pscustomobject]@{ strict=$map; loose=$mapLoose } }
 
   Get-ChildItem $dir -File -Filter '*.json' | ForEach-Object {
     $fieldName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
@@ -47,11 +48,17 @@ function Build-EntryMap([string]$folder){
         if(-not $map.ContainsKey($key)){
           $map[$key] = [pscustomobject]@{ workType=$workType; method=$method }
         }
+
+        $looseKey = "{0}|{1}|{2}" -f $date,$worker,$machine
+        if(-not $mapLoose.ContainsKey($looseKey)) {
+          $mapLoose[$looseKey] = @()
+        }
+        $mapLoose[$looseKey] += [pscustomobject]@{ workType=$workType; method=$method }
       }
     }
   }
 
-  return $map
+  return [pscustomobject]@{ strict=$map; loose=$mapLoose }
 }
 
 function Get-ResolvedInfo($row, $entryMap, [string]$folder){
@@ -63,7 +70,14 @@ function Get-ResolvedInfo($row, $entryMap, [string]$folder){
   $hits = @()
   foreach($f in $fields){
     $k = "{0}|{1}|{2}|{3}" -f $date,$worker,$machine,$f
-    if($entryMap.ContainsKey($k)){ $hits += $entryMap[$k] }
+    if($entryMap.strict.ContainsKey($k)){ $hits += $entryMap.strict[$k] }
+  }
+
+  if($hits.Count -eq 0){
+    $looseKey = "{0}|{1}|{2}" -f $date,$worker,$machine
+    if($entryMap.loose.ContainsKey($looseKey)){
+      $hits += @($entryMap.loose[$looseKey])
+    }
   }
 
   $workType = "$($row.workType)".Trim()
@@ -120,3 +134,4 @@ function Rewrite-AllCsv([string]$folder){
 
 Rewrite-AllCsv 'tillage'
 Rewrite-AllCsv 'weeding'
+Rewrite-AllCsv 'field-maintenance'

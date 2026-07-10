@@ -101,6 +101,8 @@
     "displayName": "圃場整備",
     "headerName": [
       "date",
+      "workType",
+      "method",
       "worker",
       "field",
       "machine"
