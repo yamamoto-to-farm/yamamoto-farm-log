@@ -236,24 +236,17 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
   autoList.forEach((item, index) => {
     const match = timestampMap.get(String(item.timestampKey || "").trim().toLowerCase()) || null;
     const sessionKey = String(item.sessionKey || match?.sessionKey || "").trim();
-    const fallbackKey = buildFallbackMergeKey(item);
 
     let group = null;
     if (sessionKey) {
       group = groups.find(entry => entry.groupKey === sessionKey);
-    } else {
-      const lastGroup = groups[groups.length - 1] || null;
-      if (lastGroup && !lastGroup.sessionKey && lastGroup.fallbackKey === fallbackKey) {
-        group = lastGroup;
-      }
     }
 
     if (!group) {
-      const groupKey = sessionKey || `${fallbackKey}#${index}`;
+      const groupKey = sessionKey || `${item.sourceKey || item.type || "work"}#${index}`;
       group = {
         groupKey,
         sessionKey,
-        fallbackKey,
         type: item.type,
         sourceKey: item.sourceKey,
         items: [],
@@ -304,15 +297,6 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
   });
 }
 
-function buildFallbackMergeKey(item) {
-  return [
-    normalizeToken(item?.date || ""),
-    normalizeToken(item?.folder || ""),
-    normalizeToken(item?.type || ""),
-    normalizeToken(item?.machine || ""),
-    normalizeToken(item?.workersKey || buildWorkersSetKey(item?.workers || []))
-  ].join("#");
-}
 
 function buildWorkersSetKey(workers) {
   const values = Array.isArray(workers)
