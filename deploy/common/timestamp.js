@@ -224,22 +224,36 @@ export function buildTimestampDefaults(autoList, timestampRows) {
 
   const defaults = autoList.map(() => ({ start: "", end: "" }));
 
-  for (const [key, indexes] of groupedAutoIndexes.entries()) {
+  const orderedGroups = [...groupedAutoIndexes.entries()]
+    .map(([key, indexes]) => ({
+      key,
+      indexes: indexes.slice().sort((a, b) => a - b)
+    }))
+    .sort((a, b) => (a.indexes[0] ?? 0) - (b.indexes[0] ?? 0));
+
+  let previousEnd = "";
+
+  orderedGroups.forEach(({ key, indexes }) => {
     const rows = (groupedTimestampRows.get(key) || []).slice().sort((a, b) => {
       const timeDiff = String(a.time || "").localeCompare(String(b.time || ""));
       if (timeDiff !== 0) return timeDiff;
       return a.__index - b.__index;
     });
 
-    // 1カードに複数 timestamp 行が対応する場合（例: 連結圃場1行）
-    // は最小/最大を開始/終了に設定する。
-    if (indexes.length === 1 && rows.length > 1) {
+    if (!rows.length || !indexes.length) return;
+
+    if (indexes.length === 1) {
       const onlyIndex = indexes[0];
+      const startTime = rows[0]?.time || "";
+      const endTime = rows[rows.length - 1]?.time || startTime;
+
       defaults[onlyIndex] = {
-        start: rows[0]?.time || "",
-        end: rows[rows.length - 1]?.time || rows[0]?.time || ""
+        start: startTime && endTime && startTime !== endTime ? startTime : (previousEnd || ""),
+        end: endTime || ""
       };
-      continue;
+
+      if (endTime) previousEnd = endTime;
+      return;
     }
 
     rows.forEach((row, pos) => {
@@ -248,13 +262,17 @@ export function buildTimestampDefaults(autoList, timestampRows) {
 
       const targetItem = autoList[targetIndex] || {};
       const isMergedGroup = Array.isArray(targetItem.items) && targetItem.items.length > 1;
+      const rowTime = String(row.time || "");
+      const priorTime = pos > 0 ? String(rows[pos - 1]?.time || "") : (previousEnd || "");
 
       defaults[targetIndex] = {
-        start: isMergedGroup ? "" : (pos > 0 ? rows[pos - 1].time || "" : ""),
-        end: isMergedGroup ? (rows[rows.length - 1]?.time || row.time || "") : (row.time || "")
+        start: isMergedGroup ? "" : priorTime,
+        end: isMergedGroup ? (rows[rows.length - 1]?.time || rowTime) : rowTime
       };
+
+      if (rowTime) previousEnd = rowTime;
     });
-  }
+  });
 
   return defaults;
 }
