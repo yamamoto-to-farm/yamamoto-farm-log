@@ -1,1 +1,645 @@
-{}
+{
+  "2026": {
+    "year": "2026",
+    "step1": {
+      "months": [
+        {
+          "month": "2026-11",
+          "targetUnits": "180",
+          "unitsPer10a": "18",
+          "yieldPer10a": "5600",
+          "needArea": "10.00"
+        },
+        {
+          "month": "2026-12",
+          "targetUnits": "340",
+          "unitsPer10a": "20",
+          "yieldPer10a": "6600",
+          "needArea": "17.00"
+        },
+        {
+          "month": "2027-01",
+          "targetUnits": "410",
+          "unitsPer10a": "20",
+          "yieldPer10a": "8500",
+          "needArea": "20.50"
+        },
+        {
+          "month": "2027-02",
+          "targetUnits": "410",
+          "unitsPer10a": "20",
+          "yieldPer10a": "8500",
+          "needArea": "20.50"
+        },
+        {
+          "month": "2027-03",
+          "targetUnits": "480",
+          "unitsPer10a": "22",
+          "yieldPer10a": "9000",
+          "needArea": "21.82"
+        },
+        {
+          "month": "2027-04",
+          "targetUnits": "480",
+          "unitsPer10a": "24",
+          "yieldPer10a": "9000",
+          "needArea": "20.00"
+        },
+        {
+          "month": "2027-05",
+          "targetUnits": "350",
+          "unitsPer10a": "18",
+          "yieldPer10a": "8500",
+          "needArea": "19.44"
+        },
+        {
+          "month": "2027-06",
+          "targetUnits": "350",
+          "unitsPer10a": "20",
+          "yieldPer10a": "8500",
+          "needArea": "17.50"
+        }
+      ]
+    },
+    "step2": {
+      "rows": [
+        {
+          "month": "2026-11",
+          "harvestWeek": "1",
+          "variety": "藍天",
+          "targetUnits": "18",
+          "per10a": "18",
+          "needArea": "1.00",
+          "sowDate": "2026-07-16",
+          "plantDate": "2026-08-16"
+        },
+        {
+          "month": "2026-11",
+          "harvestWeek": "2",
+          "variety": "藍天",
+          "targetUnits": "36",
+          "per10a": "18",
+          "needArea": "2.00",
+          "sowDate": "2026-07-20",
+          "plantDate": "2026-08-20"
+        },
+        {
+          "month": "2026-11",
+          "harvestWeek": "3",
+          "variety": "おかわり",
+          "targetUnits": "18",
+          "per10a": "18",
+          "needArea": "1.00",
+          "sowDate": "2026-07-20",
+          "plantDate": "2026-08-20"
+        },
+        {
+          "month": "2026-11",
+          "harvestWeek": "3",
+          "variety": "ないと",
+          "targetUnits": "36",
+          "per10a": "18",
+          "needArea": "2.00",
+          "sowDate": "2026-07-18",
+          "plantDate": "2026-08-18"
+        },
+        {
+          "month": "2026-11",
+          "harvestWeek": "4",
+          "variety": "ないと",
+          "targetUnits": "36",
+          "per10a": "18",
+          "needArea": "2.00",
+          "sowDate": "2026-07-20",
+          "plantDate": "2026-08-20"
+        },
+        {
+          "month": "2026-11",
+          "harvestWeek": "4",
+          "variety": "YR888",
+          "targetUnits": "36",
+          "per10a": "18",
+          "needArea": "2.00",
+          "sowDate": "2026-07-20",
+          "plantDate": "2026-08-20"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "1",
+          "variety": "ないと",
+          "targetUnits": "108",
+          "per10a": "18",
+          "needArea": "6.00",
+          "sowDate": "2026-07-26",
+          "plantDate": "2026-08-24"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "1",
+          "variety": "YR888",
+          "targetUnits": "72",
+          "per10a": "18",
+          "needArea": "4.00",
+          "sowDate": "2026-07-26",
+          "plantDate": "2026-08-26"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "3",
+          "variety": "藍宝ひかり",
+          "targetUnits": "66",
+          "per10a": "22",
+          "needArea": "3.00",
+          "sowDate": "2026-08-05",
+          "plantDate": "2026-09-03"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "4",
+          "variety": "風あすか",
+          "targetUnits": "36",
+          "per10a": "18",
+          "needArea": "2.00",
+          "sowDate": "2026-07-28",
+          "plantDate": "2026-08-28"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "4",
+          "variety": "CTみかさ",
+          "targetUnits": "60",
+          "per10a": "20",
+          "needArea": "3.00",
+          "sowDate": "2026-08-01",
+          "plantDate": "2026-08-30"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "1",
+          "variety": "風あすか",
+          "targetUnits": "80",
+          "per10a": "20",
+          "needArea": "4.00",
+          "sowDate": "2026-07-28",
+          "plantDate": "2026-08-31"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "1",
+          "variety": "冬藍",
+          "targetUnits": "60",
+          "per10a": "20",
+          "needArea": "3.00",
+          "sowDate": "2026-08-05",
+          "plantDate": "2026-09-05"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "1",
+          "variety": "CTみかさ",
+          "targetUnits": "40",
+          "per10a": "20",
+          "needArea": "2.00",
+          "sowDate": "2026-08-05",
+          "plantDate": "2026-09-05"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "3",
+          "variety": "たいと",
+          "targetUnits": "40",
+          "per10a": "20",
+          "needArea": "2.00",
+          "sowDate": "2026-08-05",
+          "plantDate": "2026-09-05"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "1",
+          "variety": "風あすか",
+          "targetUnits": "50",
+          "per10a": "20",
+          "needArea": "2.50",
+          "sowDate": "2026-08-12",
+          "plantDate": "2026-09-12"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "2",
+          "variety": "風あすか",
+          "targetUnits": "50",
+          "per10a": "20",
+          "needArea": "2.50",
+          "sowDate": "2026-08-16",
+          "plantDate": "2026-09-16"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "3",
+          "variety": "たいと",
+          "targetUnits": "80",
+          "per10a": "20",
+          "needArea": "4.00",
+          "sowDate": "2026-08-05",
+          "plantDate": "2026-09-05"
+        },
+        {
+          "month": "2027-03",
+          "harvestWeek": "1",
+          "variety": "N-831",
+          "targetUnits": "90",
+          "per10a": "22",
+          "needArea": "4.09",
+          "sowDate": "2026-08-10",
+          "plantDate": "2026-09-12"
+        },
+        {
+          "month": "2027-03",
+          "harvestWeek": "1",
+          "variety": "N-831",
+          "targetUnits": "90",
+          "per10a": "22",
+          "needArea": "4.09",
+          "sowDate": "2026-08-17",
+          "plantDate": "2026-09-17"
+        },
+        {
+          "month": "2027-03",
+          "harvestWeek": "2",
+          "variety": "TS-C2010",
+          "targetUnits": "60",
+          "per10a": "22",
+          "needArea": "2.73",
+          "sowDate": "2026-08-10",
+          "plantDate": "2026-09-10"
+        },
+        {
+          "month": "2027-03",
+          "harvestWeek": "3",
+          "variety": "冬親方",
+          "targetUnits": "60",
+          "per10a": "24",
+          "needArea": "2.50",
+          "sowDate": "2026-08-10",
+          "plantDate": "2026-09-10"
+        },
+        {
+          "month": "2027-03",
+          "harvestWeek": "3",
+          "variety": "そらと",
+          "targetUnits": "120",
+          "per10a": "22",
+          "needArea": "5.45",
+          "sowDate": "2026-08-08",
+          "plantDate": "2026-09-08"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "1",
+          "variety": "N-831",
+          "targetUnits": "80",
+          "per10a": "24",
+          "needArea": "3.33",
+          "sowDate": "2026-08-20",
+          "plantDate": "2026-09-20"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "1",
+          "variety": "冬勝利",
+          "targetUnits": "80",
+          "per10a": "24",
+          "needArea": "3.33",
+          "sowDate": "2026-08-19",
+          "plantDate": "2026-09-19"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "1",
+          "variety": "そらと",
+          "targetUnits": "50",
+          "per10a": "24",
+          "needArea": "2.08",
+          "sowDate": "2026-08-20",
+          "plantDate": "2026-09-20"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "2",
+          "variety": "YRたかみね",
+          "targetUnits": "70",
+          "per10a": "24",
+          "needArea": "2.92",
+          "sowDate": "2026-08-20",
+          "plantDate": "2026-09-20"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "3",
+          "variety": "青龍345",
+          "targetUnits": "40",
+          "per10a": "24",
+          "needArea": "1.67",
+          "sowDate": "2026-08-23",
+          "plantDate": "2026-09-23"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "4",
+          "variety": "りくよう",
+          "targetUnits": "80",
+          "per10a": "24",
+          "needArea": "3.33",
+          "sowDate": "2026-08-14",
+          "plantDate": "2026-09-14"
+        },
+        {
+          "month": "2027-05",
+          "harvestWeek": "2",
+          "variety": "ことみ",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-10-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-05",
+          "harvestWeek": "3",
+          "variety": "初夏9009",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-10-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-05",
+          "harvestWeek": "3",
+          "variety": "ときめき",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-10-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-06",
+          "harvestWeek": "1",
+          "variety": "初恋",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-11-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-06",
+          "harvestWeek": "2",
+          "variety": "おきなSP",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-11-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-06",
+          "harvestWeek": "2",
+          "variety": "恋舞",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-11-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-06",
+          "harvestWeek": "3",
+          "variety": "改良愛輝(THY104)",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-11-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2027-05",
+          "harvestWeek": "4",
+          "variety": "初恋",
+          "targetUnits": "",
+          "per10a": "",
+          "needArea": "",
+          "sowDate": "2026-10-30",
+          "plantDate": ""
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "4",
+          "variety": "たいと",
+          "targetUnits": "18",
+          "per10a": "18",
+          "needArea": "1.00",
+          "sowDate": "2026-07-30",
+          "plantDate": "2026-07-30"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "3",
+          "variety": "みぞれ雪",
+          "targetUnits": "18",
+          "per10a": "18",
+          "needArea": "1.00",
+          "sowDate": "2026-08-10",
+          "plantDate": "2026-09-10"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "4",
+          "variety": "N-831",
+          "targetUnits": "70",
+          "per10a": "22",
+          "needArea": "3.18",
+          "sowDate": "2026-08-08",
+          "plantDate": "2026-09-08"
+        },
+        {
+          "month": "2027-03",
+          "harvestWeek": "4",
+          "variety": "冬五郎",
+          "targetUnits": "60",
+          "per10a": "24",
+          "needArea": "2.50",
+          "sowDate": "2026-08-17",
+          "plantDate": "2026-09-17"
+        },
+        {
+          "month": "2027-04",
+          "harvestWeek": "4",
+          "variety": "りくよう",
+          "targetUnits": "80",
+          "per10a": "24",
+          "needArea": "3.33",
+          "sowDate": "2026-08-18",
+          "plantDate": "2026-08-18"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "3",
+          "variety": "N-831",
+          "targetUnits": "130",
+          "per10a": "22",
+          "needArea": "5.91",
+          "sowDate": "2026-08-10",
+          "plantDate": "2026-09-10"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "2",
+          "variety": "風あすか",
+          "targetUnits": "80",
+          "per10a": "20",
+          "needArea": "4.00",
+          "sowDate": "2026-08-03",
+          "plantDate": "2026-09-03"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "4",
+          "variety": "みぞれ雪",
+          "targetUnits": "36",
+          "per10a": "18",
+          "needArea": "2.00",
+          "sowDate": "2026-08-06",
+          "plantDate": "2026-09-06"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "4",
+          "variety": "風あすか",
+          "targetUnits": "80",
+          "per10a": "20",
+          "needArea": "4.00",
+          "sowDate": "2026-08-03",
+          "plantDate": "2026-09-07"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "3",
+          "variety": "風あすか",
+          "targetUnits": "18",
+          "per10a": "18",
+          "needArea": "1.00",
+          "sowDate": "2026-07-20",
+          "plantDate": "2026-08-20"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "4",
+          "variety": "TS-C2010",
+          "targetUnits": "20",
+          "per10a": "20",
+          "needArea": "1.00",
+          "sowDate": "2026-08-10",
+          "plantDate": "2026-09-06"
+        },
+        {
+          "month": "2026-12",
+          "harvestWeek": "4",
+          "variety": "レッドコメット(MKS-C901)",
+          "targetUnits": "16",
+          "per10a": "16",
+          "needArea": "1.00",
+          "sowDate": "2026-07-27",
+          "plantDate": "2026-08-24"
+        },
+        {
+          "month": "2027-01",
+          "harvestWeek": "1",
+          "variety": "レッドコメット(MKS-C901)",
+          "targetUnits": "32",
+          "per10a": "16",
+          "needArea": "2.00",
+          "sowDate": "2026-07-27",
+          "plantDate": "2026-08-30"
+        },
+        {
+          "month": "2027-02",
+          "harvestWeek": "1",
+          "variety": "レッドコメット(MKS-C901)",
+          "targetUnits": "32",
+          "per10a": "16",
+          "needArea": "2.00",
+          "sowDate": "2026-07-27",
+          "plantDate": "2026-09-03"
+        }
+      ]
+    }
+  },
+  "2027": {
+    "year": "2027",
+    "step1": {
+      "months": [
+        {
+          "month": "2027-11",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2027-12",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2028-01",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2028-02",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2028-03",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2028-04",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2028-05",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        },
+        {
+          "month": "2028-06",
+          "targetUnits": "",
+          "unitsPer10a": "",
+          "yieldPer10a": "",
+          "needArea": ""
+        }
+      ]
+    },
+    "step2": {
+      "rows": []
+    }
+  }
+}

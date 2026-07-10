@@ -1,0 +1,16 @@
+{
+  "field": "高田崖上_中",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-05-19",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "山本 雅彦,若月 道昭,土井 琉羽",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

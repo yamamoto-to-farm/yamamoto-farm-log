@@ -1,0 +1,19 @@
+{
+  "field": "三角畑",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-17",
+          "workType": "潅水",
+          "startTime": "",
+          "endTime": "",
+          "irrigationMinutes": 180,
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

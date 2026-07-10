@@ -1,0 +1,101 @@
+{
+  "field": "浜小",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-12-28",
+          "distributed": [
+            {
+              "field": "浜(小)",
+              "fertilizer_id": "F501",
+              "name": "フロンサイド粉剤",
+              "amount_kg": 673
+            },
+            {
+              "field": "浜(小)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 74
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-01",
+          "distributed": [
+            {
+              "field": "浜(小)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 29.7
+            },
+            {
+              "field": "浜(小)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 19.4
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 6.5,
+              "total_kg": 130
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 4.25,
+              "total_kg": 85
+            }
+          ]
+        },
+        {
+          "date": "2026-03-30",
+          "distributed": [
+            {
+              "field": "浜(小)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 14
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 0.7,
+              "total_kg": 14
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

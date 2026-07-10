@@ -1,0 +1,77 @@
+{
+  "field": "事業所南",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-08-08",
+          "distributed": [
+            {
+              "field": "事業所(南)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 220
+            },
+            {
+              "field": "事業所(南)",
+              "fertilizer_id": "F306",
+              "name": "ゼオライト特級",
+              "amount_kg": 220
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-18",
+          "distributed": [
+            {
+              "field": "事業所(南)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 290
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-05",
+          "distributed": [
+            {
+              "field": "事業所(南)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 130
+            },
+            {
+              "field": "事業所(南)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 90
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-29",
+          "distributed": [
+            {
+              "field": "事業所(南)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 120
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

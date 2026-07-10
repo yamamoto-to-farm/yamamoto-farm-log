@@ -1,0 +1,49 @@
+{
+  "field": "赤沢下",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-02",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 72.1
+            },
+            {
+              "field": "赤沢(下)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 30.9
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 7,
+              "total_kg": 140
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 3,
+              "total_kg": 60
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

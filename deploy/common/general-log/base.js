@@ -305,11 +305,13 @@ function getCurrentTimeText() {
 }
 
 async function updateGeneralAllCsv(type, { date, fields, entry }) {
-  const header = "date,worker,field,machine";
+  const header = "date,worker,field,machine,workType,method";
   const worker = normalizeWorker(entry);
   const field = Array.isArray(fields) ? fields.join("／") : "";
   const machine = normalizeMachine(entry);
-  const newRow = { date, worker, field, machine };
+  const workType = normalizeWorkType(entry);
+  const method = normalizeMethod(entry);
+  const newRow = { date, worker, field, machine, workType, method };
 
   const path = `/logs/${type}/all.csv`;
   let content = buildAllCsvContent(header, [], newRow);
@@ -337,7 +339,7 @@ async function updateGeneralAllCsv(type, { date, fields, entry }) {
 
 function buildAllCsvContent(header, rows, appendedRow) {
   const allRows = [...rows, appendedRow]
-    .map(r => [r.date, r.worker, r.field, r.machine].map(toCsvCell).join(","))
+    .map(r => [r.date, r.worker, r.field, r.machine, r.workType, r.method].map(toCsvCell).join(","))
     .join("\n");
 
   return `${header}\n${allRows}\n`;
@@ -357,7 +359,7 @@ function parseAllCsvRows(csvText) {
   const firstCols = parseCsvLine(lines[0]).map(v => String(v || "").trim().toLowerCase());
   const looksHeader = firstCols.includes("date") && firstCols.includes("worker") && firstCols.includes("field");
 
-  let colIndex = { date: 0, worker: 1, field: 2, machine: -1 };
+  let colIndex = { date: 0, worker: 1, field: 2, machine: -1, workType: -1, method: -1 };
   let startLine = 0;
 
   if (looksHeader) {
@@ -365,7 +367,9 @@ function parseAllCsvRows(csvText) {
       date: firstCols.indexOf("date"),
       worker: firstCols.indexOf("worker"),
       field: firstCols.indexOf("field"),
-      machine: firstCols.indexOf("machine")
+      machine: firstCols.indexOf("machine"),
+      workType: firstCols.indexOf("worktype"),
+      method: firstCols.indexOf("method")
     };
     startLine = 1;
   }
@@ -377,9 +381,11 @@ function parseAllCsvRows(csvText) {
     const worker = pickCsvCol(cols, colIndex.worker);
     const field = pickCsvCol(cols, colIndex.field);
     const machine = pickCsvCol(cols, colIndex.machine);
+    const workType = pickCsvCol(cols, colIndex.workType);
+    const method = pickCsvCol(cols, colIndex.method);
 
-    if (!date && !worker && !field && !machine) continue;
-    rows.push({ date, worker, field, machine });
+    if (!date && !worker && !field && !machine && !workType && !method) continue;
+    rows.push({ date, worker, field, machine, workType, method });
   }
 
   return rows;
@@ -456,6 +462,18 @@ function normalizeMachine(entry) {
   }
 
   return String(raw || "").trim();
+}
+
+function normalizeWorkType(entry) {
+  if (!entry) return "";
+  return String(entry.workType || "").trim();
+}
+
+function normalizeMethod(entry) {
+  if (!entry) return "";
+  const spray = String(entry.sprayMethod || "").trim();
+  const mowing = String(entry.mowingMethod || "").trim();
+  return spray || mowing;
 }
 
 function toCsvCell(value) {

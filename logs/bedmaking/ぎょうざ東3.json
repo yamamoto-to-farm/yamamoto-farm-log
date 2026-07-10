@@ -1,0 +1,35 @@
+{
+  "field": "ぎょうざ東3",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-02-21",
+          "workType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "ridgeWidthCm": 60,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": [
+            "山本 直輝"
+          ],
+          "notes": ""
+        },
+        {
+          "date": "2026-02-20",
+          "workType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "ridgeWidthCm": 60,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": [
+            "山本 直輝"
+          ],
+          "notes": "ぎょうざ東３　2.5反くらい"
+        }
+      ]
+    }
+  }
+}

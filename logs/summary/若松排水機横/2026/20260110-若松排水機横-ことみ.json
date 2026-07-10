@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260110-若松(排水機横)-ことみ",
+  "planting": {
+    "plantDate": "2026-01-10",
+    "field": "若松(排水機横)",
+    "variety": "ことみ",
+    "seedRef": "20251101-ことみ-01/20251103-ことみ-02",
+    "quantity": 2022.4,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:56:06.391Z"
+}

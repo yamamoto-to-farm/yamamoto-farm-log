@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250924-高田(崖上・大)-そらと",
+  "planting": {
+    "plantDate": "2025-09-24",
+    "field": "高田(崖上・大)",
+    "variety": "そらと",
+    "seedRef": "20250816-そらと-02",
+    "quantity": 9728,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 6,
+    "totalAmount": 73,
+    "firstDate": "2026-03-28",
+    "lastDate": "2026-04-02"
+  },
+  "shipping": {
+    "count": 4,
+    "totalWeight": 25309.5,
+    "firstDate": "2026-03-30",
+    "lastDate": "2026-04-03"
+  },
+  "lastUpdated": "2026-07-05T08:56:01.164Z"
+}

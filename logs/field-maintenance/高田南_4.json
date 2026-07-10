@@ -1,0 +1,16 @@
+{
+  "field": "高田南_4",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-08",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": "笹・竹伐採"
+        }
+      ]
+    }
+  }
+}

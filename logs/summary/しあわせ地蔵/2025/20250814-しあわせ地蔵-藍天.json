@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250814-しあわせ地蔵-藍天",
+  "planting": {
+    "plantDate": "2025-08-14",
+    "field": "しあわせ地蔵",
+    "variety": "藍天",
+    "seedRef": "20250711-藍天-01",
+    "quantity": 10688,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-11"
+  },
+  "harvest": {
+    "count": 10,
+    "totalAmount": 53.5,
+    "firstDate": "2025-10-26",
+    "lastDate": "2025-11-15"
+  },
+  "shipping": {
+    "count": 9,
+    "totalWeight": 17299,
+    "firstDate": "2025-10-26",
+    "lastDate": "2025-11-16"
+  },
+  "lastUpdated": "2026-07-05T08:55:44.385Z"
+}

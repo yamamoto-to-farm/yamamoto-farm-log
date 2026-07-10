@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250904-中学横-YR万代",
+  "planting": {
+    "plantDate": "2025-09-04",
+    "field": "中学横",
+    "variety": "YR万代",
+    "seedRef": "20250807-YR万代-01",
+    "quantity": 4352,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 23.5,
+    "firstDate": "2026-02-09",
+    "lastDate": "2026-02-10"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 8016.75,
+    "firstDate": "2026-02-11",
+    "lastDate": "2026-02-11"
+  },
+  "lastUpdated": "2026-07-05T08:55:53.007Z"
+}

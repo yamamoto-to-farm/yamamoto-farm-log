@@ -1,0 +1,77 @@
+{
+  "field": "明輝",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-26",
+          "distributed": [
+            {
+              "field": "明輝",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 160
+            },
+            {
+              "field": "明輝",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 160
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-16",
+          "distributed": [
+            {
+              "field": "明輝",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 180
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-08",
+          "distributed": [
+            {
+              "field": "明輝",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 80
+            },
+            {
+              "field": "明輝",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 60
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-27",
+          "distributed": [
+            {
+              "field": "明輝",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 80
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

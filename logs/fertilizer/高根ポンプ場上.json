@@ -1,0 +1,65 @@
+{
+  "field": "高根ポンプ場上",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-11",
+          "distributed": [
+            {
+              "field": "高根ポンプ場(上)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 67.2
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 6,
+              "total_kg": 120
+            }
+          ]
+        },
+        {
+          "date": "2026-04-17",
+          "distributed": [
+            {
+              "field": "高根ポンプ場(上)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 16.8
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "sourceWork": "intertill",
+          "sourceWorkType": "手押し",
+          "attachment": "手押し",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 1.5,
+              "total_kg": 30
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250916-小島(上)-冬藍",
+  "planting": {
+    "plantDate": "2025-09-16",
+    "field": "小島(上)",
+    "variety": "冬藍",
+    "seedRef": "20250805-冬藍-01",
+    "quantity": 1920,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 10.5,
+    "firstDate": "2026-01-26",
+    "lastDate": "2026-01-26"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 3195.25,
+    "firstDate": "2026-01-28",
+    "lastDate": "2026-01-28"
+  },
+  "lastUpdated": "2026-07-05T08:55:58.236Z"
+}

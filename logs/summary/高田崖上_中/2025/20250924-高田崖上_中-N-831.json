@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250924-高田(崖上・中)-N-831",
+  "planting": {
+    "plantDate": "2025-09-24",
+    "field": "高田(崖上・中)",
+    "variety": "N-831",
+    "seedRef": "20250820-N-831-03",
+    "quantity": 7040,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 4,
+    "totalAmount": 31,
+    "firstDate": "2026-03-27",
+    "lastDate": "2026-03-28"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 11359.5,
+    "firstDate": "2026-03-27",
+    "lastDate": "2026-03-30"
+  },
+  "lastUpdated": "2026-07-05T08:56:01.560Z"
+}

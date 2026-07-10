@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260221-ぎょうざ東３-改良愛輝(THY104)",
+  "planting": {
+    "plantDate": "2026-02-21",
+    "field": "ぎょうざ東３",
+    "variety": "改良愛輝(THY104)",
+    "seedRef": "20251225-改良愛輝(THY104)-01",
+    "quantity": 6000,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 37,
+    "firstDate": "2026-06-08",
+    "lastDate": "2026-06-10"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 12211,
+    "firstDate": "2026-06-08",
+    "lastDate": "2026-06-10"
+  },
+  "lastUpdated": "2026-07-05T08:56:07.999Z"
+}

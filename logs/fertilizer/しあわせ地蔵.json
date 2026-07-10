@@ -1,0 +1,175 @@
+{
+  "field": "しあわせ地蔵",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-25",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 320
+            },
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 320
+            },
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 300
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-13",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 360
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-29",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 120
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-08",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 10
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "はやとよ草あるあた"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-10",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 340
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-10",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 260
+            },
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F501",
+              "name": "フロンサイド粉剤",
+              "amount_kg": 40
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "bedmaking",
+          "sourceWorkType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "sourceRidgeWidthCm": 60,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[畝立てログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "bags": 13,
+              "total_kg": 260
+            },
+            {
+              "fertilizer_id": "F501",
+              "name": "フロンサイド粉剤",
+              "bags": 2,
+              "total_kg": 40
+            }
+          ]
+        },
+        {
+          "date": "2026-03-30",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 110
+            },
+            {
+              "field": "しあわせ地蔵",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 80
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 5.5,
+              "total_kg": 110
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 4,
+              "total_kg": 80
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

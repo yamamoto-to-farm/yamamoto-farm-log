@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250814-三角畑-はやとよ",
+  "planting": {
+    "plantDate": "2025-08-14",
+    "field": "三角畑",
+    "variety": "はやとよ",
+    "seedRef": "20250711-はやとよ-01",
+    "quantity": 3046.4,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-11"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 1,
+    "firstDate": "2025-11-13",
+    "lastDate": "2025-11-13"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 312.5,
+    "firstDate": "2025-11-13",
+    "lastDate": "2025-11-13"
+  },
+  "lastUpdated": "2026-07-05T08:55:44.939Z"
+}

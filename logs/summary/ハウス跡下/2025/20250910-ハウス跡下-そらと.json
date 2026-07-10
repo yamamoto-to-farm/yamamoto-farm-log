@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250910-ハウス跡(下)-そらと",
+  "planting": {
+    "plantDate": "2025-09-10",
+    "field": "ハウス跡(下)",
+    "variety": "そらと",
+    "seedRef": "20250810-そらと-01",
+    "quantity": 1000,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 8,
+    "firstDate": "2026-03-08",
+    "lastDate": "2026-03-09"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 2692.5,
+    "firstDate": "2026-03-09",
+    "lastDate": "2026-03-11"
+  },
+  "lastUpdated": "2026-07-05T08:55:55.397Z"
+}

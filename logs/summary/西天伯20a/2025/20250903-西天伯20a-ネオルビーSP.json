@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250903-西天伯(20a)-ネオルビーSP",
+  "planting": {
+    "plantDate": "2025-09-03",
+    "field": "西天伯(20a)",
+    "variety": "ネオルビーSP",
+    "seedRef": "20250803-ネオルビーSP-01",
+    "quantity": 2048,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 4,
+    "firstDate": "2026-02-17",
+    "lastDate": "2026-02-17"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 1519,
+    "firstDate": "2026-02-18",
+    "lastDate": "2026-02-18"
+  },
+  "lastUpdated": "2026-07-05T08:55:51.857Z"
+}

@@ -1,0 +1,19 @@
+{
+  "field": "ぎょうざ東1",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-02-16",
+          "workType": "潅水",
+          "startTime": "",
+          "endTime": "",
+          "irrigationMinutes": 60,
+          "machine": "",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

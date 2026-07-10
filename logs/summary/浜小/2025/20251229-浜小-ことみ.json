@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251229-浜(小)-ことみ",
+  "planting": {
+    "plantDate": "2025-12-29",
+    "field": "浜(小)",
+    "variety": "ことみ",
+    "seedRef": "20251103-ことみ-02",
+    "quantity": 3328,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 15,
+    "firstDate": "2026-05-18",
+    "lastDate": "2026-05-18"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 4561,
+    "firstDate": "2026-05-18",
+    "lastDate": "2026-05-18"
+  },
+  "lastUpdated": "2026-07-05T08:56:05.046Z"
+}

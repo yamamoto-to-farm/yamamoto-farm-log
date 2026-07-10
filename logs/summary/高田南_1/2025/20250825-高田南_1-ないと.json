@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250825-高田(南・1)-ないと",
+  "planting": {
+    "plantDate": "2025-08-25",
+    "field": "高田(南・1)",
+    "variety": "ないと",
+    "seedRef": "20250726-ないと-01",
+    "quantity": 5120,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 18,
+    "firstDate": "2025-12-12",
+    "lastDate": "2025-12-12"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 6012,
+    "firstDate": "2025-12-14",
+    "lastDate": "2025-12-14"
+  },
+  "lastUpdated": "2026-07-05T08:55:48.718Z"
+}

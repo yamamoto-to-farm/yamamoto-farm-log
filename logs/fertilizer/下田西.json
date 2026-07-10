@@ -1,0 +1,23 @@
+{
+  "field": "下田西",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-09-21",
+          "distributed": [
+            {
+              "field": "下田(西)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 40
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

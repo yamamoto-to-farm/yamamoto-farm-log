@@ -1,0 +1,43 @@
+{
+  "field": "上原うずら角",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-08-04",
+          "distributed": [
+            {
+              "field": "上原(うずら角)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 120
+            },
+            {
+              "field": "上原(うずら角)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 100
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-12",
+          "distributed": [
+            {
+              "field": "上原(うずら角)",
+              "fertilizer_id": "F002",
+              "name": "BBB元肥",
+              "amount_kg": 100
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

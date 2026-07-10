@@ -1,0 +1,157 @@
+{
+  "field": "豊栄町東",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-02-23",
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 1300,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 327,
+              "spray_amount": 327,
+              "pesticide_amount": 251.53846153846155,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-24",
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "IN0002",
+              "name": "リドミルゴールドMZ",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 304.3,
+              "spray_amount": 304.3,
+              "pesticide_amount": 304.3,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "FG0002",
+              "name": "アニキ乳剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 304.3,
+              "spray_amount": 304.3,
+              "pesticide_amount": 304.3,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-03",
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "FG0004",
+              "name": "スクレアフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 293.4,
+              "spray_amount": 293.4,
+              "pesticide_amount": 146.7,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "IN0003",
+              "name": "リーフガード顆粒水和剤",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 293.4,
+              "spray_amount": 293.4,
+              "pesticide_amount": 0.1956,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-13",
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 278.8,
+              "spray_amount": 278.8,
+              "pesticide_amount": 0.2788,
+              "pesticide_unit": "g"
+            },
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 278.8,
+              "spray_amount": 278.8,
+              "pesticide_amount": 139.4,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-20",
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "FG0006",
+              "name": "クプロシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 284.9,
+              "spray_amount": 284.9,
+              "pesticide_amount": 284.9,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "IN0005",
+              "name": "スピノエース顆粒水和剤",
+              "dilution_rate": 5000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 284.9,
+              "spray_amount": 284.9,
+              "pesticide_amount": 0.056979999999999996,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260311-しあわせ地蔵-おきなSP",
+  "planting": {
+    "plantDate": "2026-03-11",
+    "field": "しあわせ地蔵",
+    "variety": "おきなSP",
+    "seedRef": "20260107-おきなSP-01",
+    "quantity": 450,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:56:08.933Z"
+}

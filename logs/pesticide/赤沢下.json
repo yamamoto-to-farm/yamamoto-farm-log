@@ -1,0 +1,192 @@
+{
+  "field": "赤沢下",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-13",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "IN0001",
+              "name": "モベントフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 180.3,
+              "spray_amount": 180.3,
+              "pesticide_amount": 90.15,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "FG0001",
+              "name": "フェリオゴールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 180.3,
+              "spray_amount": 180.3,
+              "pesticide_amount": 180.3,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-22",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "IN0002",
+              "name": "リドミルゴールドMZ",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 208.5,
+              "spray_amount": 208.5,
+              "pesticide_amount": 208.5,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "FG0002",
+              "name": "アニキ乳剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 208.5,
+              "spray_amount": 208.5,
+              "pesticide_amount": 208.5,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-03",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "FG0004",
+              "name": "スクレアフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 228.8,
+              "spray_amount": 228.8,
+              "pesticide_amount": 114.4,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "IN0003",
+              "name": "リーフガード顆粒水和剤",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 228.8,
+              "spray_amount": 228.8,
+              "pesticide_amount": 0.15253333333333335,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-14",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 225,
+              "spray_amount": 225,
+              "pesticide_amount": 112.5,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 225,
+              "spray_amount": 225,
+              "pesticide_amount": 0.225,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-21",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "IN0006",
+              "name": "ウララドライフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 200.9,
+              "spray_amount": 200.9,
+              "pesticide_amount": 0.10045,
+              "pesticide_unit": "g"
+            },
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "FG0006",
+              "name": "クプロシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 200.9,
+              "spray_amount": 200.9,
+              "pesticide_amount": 200.9,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-29",
+          "distributed": [
+            {
+              "field": "赤沢(下)",
+              "pesticide_id": "FG0009",
+              "name": "カナメフロアブル",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 297.8,
+              "spray_amount": 297.8,
+              "pesticide_amount": 74.45,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

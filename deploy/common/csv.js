@@ -39,19 +39,60 @@ export async function loadCSV(path) {
   }
 
   const text = await res.text();
-  if (!text.trim()) return [];
+  const normalized = String(text || "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) return [];
 
-  const lines = text.trim().split("\n");
+  const lines = normalized
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
+
   if (lines.length === 0 || !lines[0].trim()) return [];
 
-  const headers = lines[0].split(",");
+  const headers = parseCsvLine(lines[0]).map((h, i) => {
+    const head = String(h || "").trim();
+    return i === 0 ? head.replace(/^\uFEFF/, "") : head;
+  });
 
   return lines.slice(1).map(line => {
-    const cols = line.split(",");
+    const cols = parseCsvLine(line);
     const obj = {};
-    headers.forEach((h, i) => obj[h] = cols[i]);
+    headers.forEach((h, i) => {
+      obj[h] = String(cols[i] ?? "");
+    });
     return obj;
   });
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === "," && !inQuotes) {
+      out.push(cur);
+      cur = "";
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  out.push(cur);
+  return out;
 }
 
 // ---------------------------------------------------------

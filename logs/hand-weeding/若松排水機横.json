@@ -1,0 +1,30 @@
+{
+  "field": "若松排水機横",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-04-14",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "若月 道昭",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-18",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "山本 直輝,石原 孝晋",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-22",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

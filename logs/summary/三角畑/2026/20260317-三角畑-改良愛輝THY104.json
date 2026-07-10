@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260317-三角畑-改良愛輝(THY104)",
+  "planting": {
+    "plantDate": "2026-03-17",
+    "field": "三角畑",
+    "variety": "改良愛輝(THY104)",
+    "seedRef": "20260121-改良愛輝(THY104)-02",
+    "quantity": 4912,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:56:09.689Z"
+}

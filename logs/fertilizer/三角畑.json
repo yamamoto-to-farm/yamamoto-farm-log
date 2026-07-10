@@ -1,0 +1,191 @@
+{
+  "field": "三角畑",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-25",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 600
+            },
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 600
+            },
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 580
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-13",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 100
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "南側10a分"
+        },
+        {
+          "date": "2025-08-17",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 500
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-24",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 100
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-08",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 200
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-10",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 538.5
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-15",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 560
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-16",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 300
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "bedmaking",
+          "sourceWorkType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "sourceRidgeWidthCm": 60,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[畝立てログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "bags": 15,
+              "total_kg": 300
+            }
+          ]
+        },
+        {
+          "date": "2026-04-20",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 230
+            },
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 110
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 11.5,
+              "total_kg": 230
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 5.5,
+              "total_kg": 110
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250903-事業所(西・２)-藍宝ひかり",
+  "planting": {
+    "plantDate": "2025-09-03",
+    "field": "事業所(西・２)",
+    "variety": "藍宝ひかり",
+    "seedRef": "20250805-藍宝ひかり-01",
+    "quantity": 3264,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 19.5,
+    "firstDate": "2025-12-18",
+    "lastDate": "2025-12-20"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 5941.5,
+    "firstDate": "2025-12-19",
+    "lastDate": "2025-12-22"
+  },
+  "lastUpdated": "2026-07-05T08:55:52.630Z"
+}

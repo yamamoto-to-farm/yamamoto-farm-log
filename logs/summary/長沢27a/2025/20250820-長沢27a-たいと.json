@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250820-長沢(27a)-たいと",
+  "planting": {
+    "plantDate": "2025-08-20",
+    "field": "長沢(27a)",
+    "variety": "たいと",
+    "seedRef": "20250722-たいと-01",
+    "quantity": 10304,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 4,
+    "totalAmount": 53,
+    "firstDate": "2026-01-17",
+    "lastDate": "2026-01-20"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 17879,
+    "firstDate": "2026-01-18",
+    "lastDate": "2026-01-21"
+  },
+  "lastUpdated": "2026-07-05T08:55:46.450Z"
+}

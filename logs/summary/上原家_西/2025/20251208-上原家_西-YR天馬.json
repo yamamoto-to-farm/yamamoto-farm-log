@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251208-上原(家・西)-YR天馬",
+  "planting": {
+    "plantDate": "2025-12-08",
+    "field": "上原(家・西)",
+    "variety": "YR天馬",
+    "seedRef": "20251020-YR天馬-01",
+    "quantity": 7296,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 24,
+    "firstDate": "2026-05-17",
+    "lastDate": "2026-05-17"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 8121,
+    "firstDate": "2026-05-17",
+    "lastDate": "2026-05-17"
+  },
+  "lastUpdated": "2026-07-05T08:56:03.499Z"
+}

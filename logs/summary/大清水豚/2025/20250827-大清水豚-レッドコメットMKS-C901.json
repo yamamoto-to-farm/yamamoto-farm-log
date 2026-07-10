@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250827-大清水(豚)-レッドコメット(MKS-C901)",
+  "planting": {
+    "plantDate": "2025-08-27",
+    "field": "大清水(豚)",
+    "variety": "レッドコメット(MKS-C901)",
+    "seedRef": "20250727-レッドコメット(MKS-C901)-01",
+    "quantity": 3840,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:55:49.297Z"
+}

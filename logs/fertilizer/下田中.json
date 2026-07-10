@@ -1,0 +1,43 @@
+{
+  "field": "下田中",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-08-04",
+          "distributed": [
+            {
+              "field": "下田(中)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 160
+            },
+            {
+              "field": "下田(中)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 120
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-21",
+          "distributed": [
+            {
+              "field": "下田(中)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 180
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

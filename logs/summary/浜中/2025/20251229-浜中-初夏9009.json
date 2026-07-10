@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251229-浜中-初夏9009",
+  "planting": {
+    "plantDate": "2025-12-29",
+    "field": "浜中",
+    "variety": "初夏9009",
+    "seedRef": "20251031-初夏9009-01",
+    "quantity": 4608,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 14,
+    "firstDate": "2026-05-25",
+    "lastDate": "2026-05-27"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 4669,
+    "firstDate": "2026-05-25",
+    "lastDate": "2026-05-27"
+  },
+  "lastUpdated": "2026-07-05T08:56:05.263Z"
+}

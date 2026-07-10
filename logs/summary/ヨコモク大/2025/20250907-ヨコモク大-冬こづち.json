@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250907-ヨコモク(大)-冬こづち",
+  "planting": {
+    "plantDate": "2025-09-07",
+    "field": "ヨコモク(大)",
+    "variety": "冬こづち",
+    "seedRef": "20250803-冬こづち-01",
+    "quantity": 9600,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 43,
+    "firstDate": "2026-02-01",
+    "lastDate": "2026-02-08"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 13641.5,
+    "firstDate": "2026-02-02",
+    "lastDate": "2026-02-09"
+  },
+  "lastUpdated": "2026-07-05T08:55:53.383Z"
+}

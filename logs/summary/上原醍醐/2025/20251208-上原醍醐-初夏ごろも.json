@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251208-上原(醍醐)-初夏ごろも",
+  "planting": {
+    "plantDate": "2025-12-08",
+    "field": "上原(醍醐)",
+    "variety": "初夏ごろも",
+    "seedRef": "20251020-初夏ごろも-01",
+    "quantity": 192,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 2,
+    "firstDate": "2026-05-07",
+    "lastDate": "2026-05-07"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 524,
+    "firstDate": "2026-05-08",
+    "lastDate": "2026-05-08"
+  },
+  "lastUpdated": "2026-07-05T08:56:03.062Z"
+}

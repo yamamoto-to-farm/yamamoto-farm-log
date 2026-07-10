@@ -1,0 +1,29 @@
+{
+  "field": "上原欠33",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-08-04",
+          "distributed": [
+            {
+              "field": "上原(欠33)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 120
+            },
+            {
+              "field": "上原(欠33)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 100
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

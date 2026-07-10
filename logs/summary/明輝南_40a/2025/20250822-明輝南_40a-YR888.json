@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250822-明輝(南・40a)-YR888",
+  "planting": {
+    "plantDate": "2025-08-22",
+    "field": "明輝(南・40a)",
+    "variety": "YR888",
+    "seedRef": "20250726-YR888-02",
+    "quantity": 10624,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 5,
+    "firstDate": "2025-12-09",
+    "lastDate": "2025-12-09"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 1758.5,
+    "firstDate": "2025-12-11",
+    "lastDate": "2025-12-11"
+  },
+  "lastUpdated": "2026-07-05T08:55:47.279Z"
+}

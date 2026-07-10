@@ -1,0 +1,237 @@
+{
+  "field": "上原兵藤",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-13",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "IN0001",
+              "name": "モベントフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 222.7,
+              "spray_amount": 222.7,
+              "pesticide_amount": 111.35,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0001",
+              "name": "フェリオゴールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 222.7,
+              "spray_amount": 222.7,
+              "pesticide_amount": 222.7,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-22",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "IN0002",
+              "name": "リドミルゴールドMZ",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 257.5,
+              "spray_amount": 257.5,
+              "pesticide_amount": 257.5,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0002",
+              "name": "アニキ乳剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 257.5,
+              "spray_amount": 257.5,
+              "pesticide_amount": 257.5,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-03",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0004",
+              "name": "スクレアフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 282.7,
+              "spray_amount": 282.7,
+              "pesticide_amount": 141.35,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "IN0003",
+              "name": "リーフガード顆粒水和剤",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 282.7,
+              "spray_amount": 282.7,
+              "pesticide_amount": 0.18846666666666667,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-13",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 268.5,
+              "spray_amount": 268.5,
+              "pesticide_amount": 0.2685,
+              "pesticide_unit": "g"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 268.5,
+              "spray_amount": 268.5,
+              "pesticide_amount": 134.25,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-20",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "IN0006",
+              "name": "ウララドライフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 220,
+              "spray_amount": 220,
+              "pesticide_amount": 0.11,
+              "pesticide_unit": "g"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0006",
+              "name": "クプロシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 220,
+              "spray_amount": 220,
+              "pesticide_amount": 220,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-29",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 235.6,
+              "spray_amount": 235.6,
+              "pesticide_amount": 94.24000000000001,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0007",
+              "name": "マイコシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 235.6,
+              "spray_amount": 235.6,
+              "pesticide_amount": 0.2356,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 235.6,
+              "spray_amount": 235.6,
+              "pesticide_amount": 0.2356,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "上原(兵藤)",
+              "pesticide_id": "F004",
+              "name": "GAXY",
+              "dilution_rate": 10000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 235.6,
+              "spray_amount": 235.6,
+              "pesticide_amount": 23.560000000000002,
+              "pesticide_unit": "ml",
+              "category": "BS資材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

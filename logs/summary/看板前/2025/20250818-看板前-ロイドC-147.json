@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250818-看板前-ロイド(C-147)",
+  "planting": {
+    "plantDate": "2025-08-18",
+    "field": "看板前",
+    "variety": "ロイド(C-147)",
+    "seedRef": "20250718-ロイド(C-147)-01",
+    "quantity": 3776,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 4.5,
+    "firstDate": "2025-12-02",
+    "lastDate": "2025-12-02"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 1510.5,
+    "firstDate": "2025-12-03",
+    "lastDate": "2025-12-03"
+  },
+  "lastUpdated": "2026-07-05T08:55:46.074Z"
+}

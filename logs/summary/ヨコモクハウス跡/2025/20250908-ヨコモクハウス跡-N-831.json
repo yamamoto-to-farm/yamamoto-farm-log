@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250908-ヨコモク(ハウス跡)-N-831",
+  "planting": {
+    "plantDate": "2025-09-08",
+    "field": "ヨコモク(ハウス跡)",
+    "variety": "N-831",
+    "seedRef": "20250806-N-831-02",
+    "quantity": 4200,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 5,
+    "totalAmount": 45.5,
+    "firstDate": "2026-02-23",
+    "lastDate": "2026-02-26"
+  },
+  "shipping": {
+    "count": 4,
+    "totalWeight": 13485.25,
+    "firstDate": "2026-02-23",
+    "lastDate": "2026-02-27"
+  },
+  "lastUpdated": "2026-07-05T08:55:54.021Z"
+}

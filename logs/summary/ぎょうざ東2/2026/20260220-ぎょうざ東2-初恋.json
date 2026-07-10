@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260220-ぎょうざ東２-初恋",
+  "planting": {
+    "plantDate": "2026-02-20",
+    "field": "ぎょうざ東２",
+    "variety": "初恋",
+    "seedRef": "20251215-初恋-01",
+    "quantity": 10140,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 55,
+    "firstDate": "2026-06-01",
+    "lastDate": "2026-06-04"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 17583.5,
+    "firstDate": "2026-06-01",
+    "lastDate": "2026-06-04"
+  },
+  "lastUpdated": "2026-07-05T08:56:07.213Z"
+}

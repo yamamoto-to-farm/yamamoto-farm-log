@@ -148,7 +148,7 @@ export function extractWorkForEdit(logs, timestampRows = []) {
   const timestampMap = buildTimestampMap(timestampRows);
 
   logs.forEach((log, logIndex) => {
-    const type = log.displayName; // 定植・収穫・播種など
+    const type = String(log.data?.workType || log.displayName || "").trim(); // 定植・収穫・播種など
 
     // worker 系列を抽出（worker1, worker2... / worker 単一列の両対応）
     const workers = [];

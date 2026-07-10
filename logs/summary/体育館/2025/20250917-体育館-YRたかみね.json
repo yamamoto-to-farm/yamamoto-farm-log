@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250917-体育館-YRたかみね",
+  "planting": {
+    "plantDate": "2025-09-17",
+    "field": "体育館",
+    "variety": "YRたかみね",
+    "seedRef": "20250812-YRたかみね-01",
+    "quantity": 14700,
+    "trayType": 200,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:55:58.803Z"
+}

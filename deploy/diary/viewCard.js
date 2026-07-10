@@ -56,7 +56,7 @@ export async function initViewPage() {
             ${subItems.map(subItem => `
               <li>
                 <span>${escapeHtml(normalizeMultiText(subItem.field) || "未入力圃場")}</span>
-                <span>${escapeHtml(subItem.start || subItem.end || "-")}</span>
+                <span>${escapeHtml(subItem.end || subItem.start || subItem.timestampTime || "-")}</span>
               </li>
             `).join("")}
           </ul>

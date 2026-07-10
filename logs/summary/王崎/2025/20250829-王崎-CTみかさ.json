@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250829-王崎-CTみかさ",
+  "planting": {
+    "plantDate": "2025-08-29",
+    "field": "王崎",
+    "variety": "CTみかさ",
+    "seedRef": "20250801-CTみかさ-01",
+    "quantity": 10304,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 5,
+    "totalAmount": 46,
+    "firstDate": "2026-01-05",
+    "lastDate": "2026-01-11"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 16074,
+    "firstDate": "2026-01-07",
+    "lastDate": "2026-01-12"
+  },
+  "lastUpdated": "2026-07-05T08:55:49.684Z"
+}

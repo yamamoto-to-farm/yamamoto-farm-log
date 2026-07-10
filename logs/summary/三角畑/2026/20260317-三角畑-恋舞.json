@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260317-三角畑-恋舞",
+  "planting": {
+    "plantDate": "2026-03-17",
+    "field": "三角畑",
+    "variety": "恋舞",
+    "seedRef": "20260107-恋舞-02/20260121-恋舞-03",
+    "quantity": 10500,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:56:09.502Z"
+}

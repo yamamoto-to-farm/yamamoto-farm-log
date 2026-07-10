@@ -1,0 +1,23 @@
+{
+  "field": "三角畑",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-05-11",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "山本 直輝,山本 咲子,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-12",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "山本 直輝,山本 咲子,山本 雅彦,若月 道昭,土井 琉羽",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251219-排水機-ことみ",
+  "planting": {
+    "plantDate": "2025-12-19",
+    "field": "排水機",
+    "variety": "ことみ",
+    "seedRef": "20251101-ことみ-01",
+    "quantity": 4710.4,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 15,
+    "firstDate": "2026-05-14",
+    "lastDate": "2026-05-15"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 4837,
+    "firstDate": "2026-05-15",
+    "lastDate": "2026-05-15"
+  },
+  "lastUpdated": "2026-07-05T08:56:04.628Z"
+}

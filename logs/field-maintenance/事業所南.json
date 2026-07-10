@@ -1,0 +1,16 @@
+{
+  "field": "事業所南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-05-17",
+          "workType": "溝ざらい",
+          "machine": "machine1",
+          "workers": "若月 道昭,石原 孝晋,土井 琉羽",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

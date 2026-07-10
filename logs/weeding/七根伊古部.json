@@ -62,6 +62,15 @@
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
           "notes": "周りのみ\n中腰丈のイタリアン"
+        },
+        {
+          "date": "2026-07-09",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "オフセットモア",
+          "machine": "EF228",
+          "workers": "山本 雅彦",
+          "notes": ""
         }
       ]
     }

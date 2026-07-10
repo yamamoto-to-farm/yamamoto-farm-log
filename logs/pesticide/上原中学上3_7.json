@@ -1,0 +1,260 @@
+{
+  "field": "上原中学上3_7",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-13",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0001",
+              "name": "モベントフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 286.4,
+              "spray_amount": 286.4,
+              "pesticide_amount": 143.2,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "FG0001",
+              "name": "フェリオゴールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 286.4,
+              "spray_amount": 286.4,
+              "pesticide_amount": 286.4,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-03-22",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0002",
+              "name": "リドミルゴールドMZ",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 331.1,
+              "spray_amount": 331.1,
+              "pesticide_amount": 331.1,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "FG0002",
+              "name": "アニキ乳剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 331.1,
+              "spray_amount": 331.1,
+              "pesticide_amount": 331.1,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-03",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "FG0004",
+              "name": "スクレアフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 363.4,
+              "spray_amount": 363.4,
+              "pesticide_amount": 181.7,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0003",
+              "name": "リーフガード顆粒水和剤",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 363.4,
+              "spray_amount": 363.4,
+              "pesticide_amount": 0.24226666666666666,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-13",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 345.3,
+              "spray_amount": 345.3,
+              "pesticide_amount": 0.3453,
+              "pesticide_unit": "g"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 345.3,
+              "spray_amount": 345.3,
+              "pesticide_amount": 172.65,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-20",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "FG0006",
+              "name": "クプロシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 352.8,
+              "spray_amount": 352.8,
+              "pesticide_amount": 352.8,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0005",
+              "name": "スピノエース顆粒水和剤",
+              "dilution_rate": 5000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 352.8,
+              "spray_amount": 352.8,
+              "pesticide_amount": 0.07056,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-29",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 247,
+              "spray_amount": 247,
+              "pesticide_amount": 123.5,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0009",
+              "name": "コルト顆粒水和剤",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 247,
+              "spray_amount": 247,
+              "pesticide_amount": 0.06175,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-08",
+          "distributed": [
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 290,
+              "spray_amount": 290,
+              "pesticide_amount": 145,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "IN0009",
+              "name": "コルト顆粒水和剤",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 290,
+              "spray_amount": 290,
+              "pesticide_amount": 0.0725,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "上原(中学上3.7)",
+              "pesticide_id": "FG0009",
+              "name": "カナメフロアブル",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 290,
+              "spray_amount": 290,
+              "pesticide_amount": 72.5,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

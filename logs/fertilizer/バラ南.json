@@ -1,0 +1,89 @@
+{
+  "field": "バラ南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-06",
+          "distributed": [
+            {
+              "field": "バラ南",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 90
+            },
+            {
+              "field": "バラ南",
+              "fertilizer_id": "F501",
+              "name": "フロンサイド粉剤",
+              "amount_kg": 16
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "bedmaking",
+          "sourceWorkType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "sourceRidgeWidthCm": 60,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[畝立てログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "bags": 4.5,
+              "total_kg": 90
+            },
+            {
+              "fertilizer_id": "F501",
+              "name": "フロンサイド粉剤",
+              "bags": 0.8,
+              "total_kg": 16
+            }
+          ]
+        },
+        {
+          "date": "2026-04-14",
+          "distributed": [
+            {
+              "field": "バラ南",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 40
+            },
+            {
+              "field": "バラ南",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 20
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 2,
+              "total_kg": 40
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 1,
+              "total_kg": 20
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250901-大清水(北)-りくと",
+  "planting": {
+    "plantDate": "2025-09-01",
+    "field": "大清水(北)",
+    "variety": "りくと",
+    "seedRef": "20250801-りくと-01",
+    "quantity": 5696,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 30,
+    "firstDate": "2026-01-27",
+    "lastDate": "2026-01-28"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 9591,
+    "firstDate": "2026-01-29",
+    "lastDate": "2026-01-30"
+  },
+  "lastUpdated": "2026-07-05T08:55:51.275Z"
+}

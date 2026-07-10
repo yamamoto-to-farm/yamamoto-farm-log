@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250825-高田(南・1)-YR888",
+  "planting": {
+    "plantDate": "2025-08-25",
+    "field": "高田(南・1)",
+    "variety": "YR888",
+    "seedRef": "20250726-YR888-02",
+    "quantity": 896,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 2,
+    "firstDate": "2025-12-12",
+    "lastDate": "2025-12-12"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 633,
+    "firstDate": "2025-12-12",
+    "lastDate": "2025-12-12"
+  },
+  "lastUpdated": "2026-07-05T08:55:48.532Z"
+}

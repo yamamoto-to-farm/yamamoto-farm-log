@@ -1,0 +1,16 @@
+{
+  "field": "しあわせ地蔵",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-05-06",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

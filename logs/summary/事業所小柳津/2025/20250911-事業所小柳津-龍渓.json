@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250911-事業所(小柳津)-龍渓",
+  "planting": {
+    "plantDate": "2025-09-11",
+    "field": "事業所(小柳津)",
+    "variety": "龍渓",
+    "seedRef": "20250812-龍渓-01",
+    "quantity": 8400,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 36,
+    "firstDate": "2026-04-19",
+    "lastDate": "2026-04-21"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 11564,
+    "firstDate": "2026-04-19",
+    "lastDate": "2026-04-22"
+  },
+  "lastUpdated": "2026-07-05T08:55:56.171Z"
+}

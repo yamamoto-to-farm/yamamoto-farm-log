@@ -1,0 +1,258 @@
+{
+  "field": "排水機",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-13",
+          "distributed": [
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0001",
+              "name": "モベントフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 106.1,
+              "spray_amount": 106.1,
+              "pesticide_amount": 53.05,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0001",
+              "name": "フェリオゴールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 106.1,
+              "spray_amount": 106.1,
+              "pesticide_amount": 106.1,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-03",
+          "distributed": [
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0004",
+              "name": "スクレアフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 134.6,
+              "spray_amount": 134.6,
+              "pesticide_amount": 67.3,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0003",
+              "name": "リーフガード顆粒水和剤",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 134.6,
+              "spray_amount": 134.6,
+              "pesticide_amount": 0.08973333333333333,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-14",
+          "distributed": [
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 132.4,
+              "spray_amount": 132.4,
+              "pesticide_amount": 66.2,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 132.4,
+              "spray_amount": 132.4,
+              "pesticide_amount": 0.13240000000000002,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-20",
+          "distributed": [
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0006",
+              "name": "クプロシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 130.7,
+              "spray_amount": 130.7,
+              "pesticide_amount": 130.7,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0005",
+              "name": "スピノエース顆粒水和剤",
+              "dilution_rate": 5000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 130.7,
+              "spray_amount": 130.7,
+              "pesticide_amount": 0.026139999999999997,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-02",
+          "distributed": [
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 120.3,
+              "spray_amount": 120.3,
+              "pesticide_amount": 48.12,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0007",
+              "name": "マイコシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 120.3,
+              "spray_amount": 120.3,
+              "pesticide_amount": 0.12029999999999999,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 120.3,
+              "spray_amount": 120.3,
+              "pesticide_amount": 0.12029999999999999,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "F004",
+              "name": "GAXY",
+              "dilution_rate": 10000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 120.3,
+              "spray_amount": 120.3,
+              "pesticide_amount": 12.03,
+              "pesticide_unit": "ml",
+              "category": "BS資材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-08",
+          "distributed": [
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 107.4,
+              "spray_amount": 107.4,
+              "pesticide_amount": 53.7,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "IN0009",
+              "name": "コルト顆粒水和剤",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 107.4,
+              "spray_amount": 107.4,
+              "pesticide_amount": 0.026850000000000002,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "排水機",
+              "pesticide_id": "FG0009",
+              "name": "カナメフロアブル",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 107.4,
+              "spray_amount": 107.4,
+              "pesticide_amount": 26.85,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

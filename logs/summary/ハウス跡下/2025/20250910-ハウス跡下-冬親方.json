@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250910-ハウス跡(下)-冬親方",
+  "planting": {
+    "plantDate": "2025-09-10",
+    "field": "ハウス跡(下)",
+    "variety": "冬親方",
+    "seedRef": "20250810-冬親方-01",
+    "quantity": 5000,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 37,
+    "firstDate": "2026-03-06",
+    "lastDate": "2026-03-08"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 12798,
+    "firstDate": "2026-03-08",
+    "lastDate": "2026-03-09"
+  },
+  "lastUpdated": "2026-07-05T08:55:55.204Z"
+}

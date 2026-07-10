@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260104-高根ポンプ場(上)-初夏9009",
+  "planting": {
+    "plantDate": "2026-01-04",
+    "field": "高根ポンプ場(上)",
+    "variety": "初夏9009",
+    "seedRef": "20251031-初夏9009-01/20251103-初夏9009-02",
+    "quantity": 6451.2,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 4,
+    "totalAmount": 49,
+    "firstDate": "2026-05-21",
+    "lastDate": "2026-05-24"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 15800.5,
+    "firstDate": "2026-05-21",
+    "lastDate": "2026-05-25"
+  },
+  "lastUpdated": "2026-07-05T08:56:05.655Z"
+}

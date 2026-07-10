@@ -1,0 +1,83 @@
+{
+  "field": "上原変形2_5",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-08-04",
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 240
+            },
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 200
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-04",
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 60
+            },
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 20
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-12",
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F002",
+              "name": "BBB元肥",
+              "amount_kg": 300
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-07",
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 80
+            },
+            {
+              "field": "上原(変形2.5)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 140
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

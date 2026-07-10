@@ -1,0 +1,83 @@
+{
+  "field": "八雲だんご",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-28",
+          "distributed": [
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 200
+            },
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 180
+            },
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 180
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-30",
+          "distributed": [
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 190
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-22",
+          "distributed": [
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 80
+            },
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 60
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "草多くペルカ多め"
+        },
+        {
+          "date": "2025-10-12",
+          "distributed": [
+            {
+              "field": "八雲だんご",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 90
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

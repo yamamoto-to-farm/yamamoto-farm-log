@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250912-上原(うずら角)-冬勝利",
+  "planting": {
+    "plantDate": "2025-09-12",
+    "field": "上原(うずら角)",
+    "variety": "冬勝利",
+    "seedRef": "20250810-冬勝利-01",
+    "quantity": 3328,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 22,
+    "firstDate": "2026-04-07",
+    "lastDate": "2026-04-08"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 8253,
+    "firstDate": "2026-04-08",
+    "lastDate": "2026-04-09"
+  },
+  "lastUpdated": "2026-07-05T08:55:56.800Z"
+}

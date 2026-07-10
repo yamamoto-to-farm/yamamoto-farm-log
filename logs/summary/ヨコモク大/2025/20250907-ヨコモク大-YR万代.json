@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250907-ヨコモク(大)-YR万代",
+  "planting": {
+    "plantDate": "2025-09-07",
+    "field": "ヨコモク(大)",
+    "variety": "YR万代",
+    "seedRef": "20250807-YR万代-01",
+    "quantity": 3776,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 19,
+    "firstDate": "2026-02-01",
+    "lastDate": "2026-02-01"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 6055.5,
+    "firstDate": "2026-02-02",
+    "lastDate": "2026-02-02"
+  },
+  "lastUpdated": "2026-07-05T08:55:53.194Z"
+}

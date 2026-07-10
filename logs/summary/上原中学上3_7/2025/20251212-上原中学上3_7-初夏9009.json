@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251212-上原(中学上3.7)-初夏9009",
+  "planting": {
+    "plantDate": "2025-12-12",
+    "field": "上原(中学上3.7)",
+    "variety": "初夏9009",
+    "seedRef": "20251031-初夏9009-01",
+    "quantity": 4864,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 12.5,
+    "firstDate": "2026-05-13",
+    "lastDate": "2026-05-14"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 3255,
+    "firstDate": "2026-05-14",
+    "lastDate": "2026-05-15"
+  },
+  "lastUpdated": "2026-07-05T08:56:03.881Z"
+}

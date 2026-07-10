@@ -64,6 +64,8 @@
     "displayName": "土づくり・耕起",
     "headerName": [
       "date",
+      "workType",
+      "method",
       "worker",
       "field",
       "machine"
@@ -75,6 +77,8 @@
     "displayName": "除草・草刈り",
     "headerName": [
       "date",
+      "workType",
+      "method",
       "worker",
       "field",
       "machine"

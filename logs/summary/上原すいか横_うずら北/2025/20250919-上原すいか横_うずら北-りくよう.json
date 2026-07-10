@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250919-上原(すいか横、うずら北)-りくよう",
+  "planting": {
+    "plantDate": "2025-09-19",
+    "field": "上原(すいか横、うずら北)",
+    "variety": "りくよう",
+    "seedRef": "20250818-りくよう-02",
+    "quantity": 11584,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-04"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 3,
+    "firstDate": "2026-04-08",
+    "lastDate": "2026-04-08"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 1190,
+    "firstDate": "2026-04-09",
+    "lastDate": "2026-04-09"
+  },
+  "lastUpdated": "2026-07-05T08:55:59.909Z"
+}

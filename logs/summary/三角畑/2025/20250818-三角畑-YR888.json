@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250818-三角畑-YR888",
+  "planting": {
+    "plantDate": "2025-08-18",
+    "field": "三角畑",
+    "variety": "YR888",
+    "seedRef": "20250720-YR888-01",
+    "quantity": 10112,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 4,
+    "totalAmount": 45,
+    "firstDate": "2025-11-26",
+    "lastDate": "2025-12-02"
+  },
+  "shipping": {
+    "count": 4,
+    "totalWeight": 14999,
+    "firstDate": "2025-11-26",
+    "lastDate": "2025-12-03"
+  },
+  "lastUpdated": "2026-07-05T08:55:45.500Z"
+}

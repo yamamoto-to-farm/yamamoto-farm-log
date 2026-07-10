@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260311-しあわせ地蔵-改良愛輝(THY104)",
+  "planting": {
+    "plantDate": "2026-03-11",
+    "field": "しあわせ地蔵",
+    "variety": "改良愛輝(THY104)",
+    "seedRef": "20251225-改良愛輝(THY104)-01",
+    "quantity": 12750,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 74,
+    "firstDate": "2026-06-14",
+    "lastDate": "2026-06-17"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 5352,
+    "firstDate": "2026-06-14",
+    "lastDate": "2026-06-14"
+  },
+  "lastUpdated": "2026-07-05T08:56:08.747Z"
+}

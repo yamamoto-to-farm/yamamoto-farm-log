@@ -1,0 +1,83 @@
+{
+  "field": "若松大",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-31",
+          "distributed": [
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 200
+            },
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F302",
+              "name": "炭酸苦土石灰（マグカル）",
+              "amount_kg": 200
+            },
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 200
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-18",
+          "distributed": [
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 230
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-03",
+          "distributed": [
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 160
+            },
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 90
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-19",
+          "distributed": [
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 90
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

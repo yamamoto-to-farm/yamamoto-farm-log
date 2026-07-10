@@ -1,0 +1,616 @@
+{
+  "field": "しあわせ地蔵",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-13",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 1300,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 423.3,
+              "spray_amount": 423.3,
+              "pesticide_amount": 325.61538461538464,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-03",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0004",
+              "name": "スクレアフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 376.9,
+              "spray_amount": 376.9,
+              "pesticide_amount": 188.45,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0003",
+              "name": "リーフガード顆粒水和剤",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 376.9,
+              "spray_amount": 376.9,
+              "pesticide_amount": 0.25126666666666664,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-14",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 370.6,
+              "spray_amount": 370.6,
+              "pesticide_amount": 185.3,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 370.6,
+              "spray_amount": 370.6,
+              "pesticide_amount": 0.37060000000000004,
+              "pesticide_unit": "g"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-21",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0005",
+              "name": "スピノエース顆粒水和剤",
+              "dilution_rate": 5000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 382.4,
+              "spray_amount": 382.4,
+              "pesticide_amount": 0.07647999999999999,
+              "pesticide_unit": "g"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0006",
+              "name": "クプロシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 382.4,
+              "spray_amount": 382.4,
+              "pesticide_amount": 382.4,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-02",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 336.7,
+              "spray_amount": 336.7,
+              "pesticide_amount": 134.68,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0007",
+              "name": "マイコシールド",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 336.7,
+              "spray_amount": 336.7,
+              "pesticide_amount": 0.3367,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 336.7,
+              "spray_amount": 336.7,
+              "pesticide_amount": 0.3367,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "F004",
+              "name": "GAXY",
+              "dilution_rate": 10000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 336.7,
+              "spray_amount": 336.7,
+              "pesticide_amount": 33.67,
+              "pesticide_unit": "ml",
+              "category": "BS資材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-08",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 388.2,
+              "spray_amount": 388.2,
+              "pesticide_amount": 194.1,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0009",
+              "name": "コルト顆粒水和剤",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 388.2,
+              "spray_amount": 388.2,
+              "pesticide_amount": 0.09705,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0010",
+              "name": "ジオゼット水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 388.2,
+              "spray_amount": 388.2,
+              "pesticide_amount": 0.3882,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "F004",
+              "name": "GAXY",
+              "dilution_rate": 10000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 388.2,
+              "spray_amount": 388.2,
+              "pesticide_amount": 38.82,
+              "pesticide_unit": "ml",
+              "category": "BS資材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-16",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0010",
+              "name": "アファーム乳剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 382.7,
+              "spray_amount": 382.7,
+              "pesticide_amount": 382.7,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 382.7,
+              "spray_amount": 382.7,
+              "pesticide_amount": 0.3827,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-23",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "F005",
+              "name": "スイカル",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 409.6,
+              "spray_amount": 409.6,
+              "pesticide_amount": 409.6,
+              "pesticide_unit": "ml",
+              "category": "葉面散布剤",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 409.6,
+              "spray_amount": 409.6,
+              "pesticide_amount": 204.8,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0011",
+              "name": "パダン粒剤４",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 409.6,
+              "spray_amount": 409.6,
+              "pesticide_amount": 273.06666666666666,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 409.6,
+              "spray_amount": 409.6,
+              "pesticide_amount": 0.4096,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0011",
+              "name": "バリダシン液剤５",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 409.6,
+              "spray_amount": 409.6,
+              "pesticide_amount": 409.6,
+              "pesticide_unit": "cc",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-05-30",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 402.8,
+              "spray_amount": 402.8,
+              "pesticide_amount": 100.7,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0009",
+              "name": "コルト顆粒水和剤",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 402.8,
+              "spray_amount": 402.8,
+              "pesticide_amount": 0.1007,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0014",
+              "name": "モンカットフロアブル４０",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 402.8,
+              "spray_amount": 402.8,
+              "pesticide_amount": 201.4,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0011",
+              "name": "バリダシン液剤５",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 402.8,
+              "spray_amount": 402.8,
+              "pesticide_amount": 402.8,
+              "pesticide_unit": "cc",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "F005",
+              "name": "スイカル",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 402.8,
+              "spray_amount": 402.8,
+              "pesticide_amount": 402.8,
+              "pesticide_unit": "ml",
+              "category": "葉面散布剤",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-06-06",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0012",
+              "name": "日産トランスフォームフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 394.9,
+              "spray_amount": 394.9,
+              "pesticide_amount": 197.45,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0005",
+              "name": "スピノエース顆粒水和剤",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 394.9,
+              "spray_amount": 394.9,
+              "pesticide_amount": 0.15796,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0016",
+              "name": "ホクコーカスミンバリダシン液剤",
+              "dilution_rate": 800,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 394.9,
+              "spray_amount": 394.9,
+              "pesticide_amount": 493.625,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0015",
+              "name": "メジャーフロアブル",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 394.9,
+              "spray_amount": 394.9,
+              "pesticide_amount": 197.45,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "F004",
+              "name": "GAXY",
+              "dilution_rate": 10000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 394.9,
+              "spray_amount": 394.9,
+              "pesticide_amount": 39.489999999999995,
+              "pesticide_unit": "ml",
+              "category": "BS資材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-06-13",
+          "distributed": [
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 414.2,
+              "spray_amount": 414.2,
+              "pesticide_amount": 207.1,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "FG0018",
+              "name": "ケンジャフロアブル",
+              "dilution_rate": 1500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 414.2,
+              "spray_amount": 414.2,
+              "pesticide_amount": 276.1333333333333,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "IN0009",
+              "name": "コルト顆粒水和剤",
+              "dilution_rate": 4000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 414.2,
+              "spray_amount": 414.2,
+              "pesticide_amount": 0.10355,
+              "pesticide_unit": "g",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "しあわせ地蔵",
+              "pesticide_id": "F004",
+              "name": "GAXY",
+              "dilution_rate": 10000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 414.2,
+              "spray_amount": 414.2,
+              "pesticide_amount": 41.42,
+              "pesticide_unit": "ml",
+              "category": "BS資材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

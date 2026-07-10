@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250903-事業所(西・２)-NK889",
+  "planting": {
+    "plantDate": "2025-09-03",
+    "field": "事業所(西・２)",
+    "variety": "NK889",
+    "seedRef": "20250805-NK889-01",
+    "quantity": 4864,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 17,
+    "firstDate": "2025-12-19",
+    "lastDate": "2025-12-19"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 4891.5,
+    "firstDate": "2025-12-21",
+    "lastDate": "2025-12-21"
+  },
+  "lastUpdated": "2026-07-05T08:55:52.441Z"
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260104-東道天下5-ときめき",
+  "planting": {
+    "plantDate": "2026-01-04",
+    "field": "東道天下5",
+    "variety": "ときめき",
+    "seedRef": "20251103-ときめき-01",
+    "quantity": 4864,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 5,
+    "firstDate": "2026-05-30",
+    "lastDate": "2026-05-31"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 1773.5,
+    "firstDate": "2026-05-31",
+    "lastDate": "2026-05-31"
+  },
+  "lastUpdated": "2026-07-05T08:56:06.023Z"
+}

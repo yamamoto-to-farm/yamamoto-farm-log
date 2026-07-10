@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260220-ぎょうざ東３-輝風",
+  "planting": {
+    "plantDate": "2026-02-20",
+    "field": "ぎょうざ東３",
+    "variety": "輝風",
+    "seedRef": "20251225-輝風-01",
+    "quantity": 2036,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 8,
+    "firstDate": "2026-06-11",
+    "lastDate": "2026-06-11"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 2878,
+    "firstDate": "2026-06-11",
+    "lastDate": "2026-06-11"
+  },
+  "lastUpdated": "2026-07-05T08:56:07.621Z"
+}

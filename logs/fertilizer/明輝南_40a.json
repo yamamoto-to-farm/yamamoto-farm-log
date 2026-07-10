@@ -1,0 +1,77 @@
+{
+  "field": "明輝南_40a",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-26",
+          "distributed": [
+            {
+              "field": "明輝(南・40a)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 400
+            },
+            {
+              "field": "明輝(南・40a)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 400
+            },
+            {
+              "field": "明輝(南・40a)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 400
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-21",
+          "distributed": [
+            {
+              "field": "明輝(南・40a)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 470
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-08-30",
+          "distributed": [
+            {
+              "field": "明輝(南・40a)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 40
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-11",
+          "distributed": [
+            {
+              "field": "明輝(南・40a)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 160
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "3列足らず"
+        }
+      ]
+    }
+  }
+}

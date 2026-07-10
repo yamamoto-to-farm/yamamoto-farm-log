@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250918-事業所(南)-りくよう",
+  "planting": {
+    "plantDate": "2025-09-18",
+    "field": "事業所(南)",
+    "variety": "りくよう",
+    "seedRef": "20250814-りくよう-01",
+    "quantity": 10600,
+    "trayType": 200,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-04"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 54,
+    "firstDate": "2026-04-22",
+    "lastDate": "2026-04-23"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 18552,
+    "firstDate": "2026-04-22",
+    "lastDate": "2026-04-24"
+  },
+  "lastUpdated": "2026-07-05T08:55:59.184Z"
+}

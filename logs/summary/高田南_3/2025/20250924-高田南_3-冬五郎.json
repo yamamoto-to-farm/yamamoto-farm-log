@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250924-高田(南・3)-冬五郎",
+  "planting": {
+    "plantDate": "2025-09-24",
+    "field": "高田(南・3)",
+    "variety": "冬五郎",
+    "seedRef": "20250810-冬五郎-01",
+    "quantity": 3200,
+    "trayType": 200,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 18,
+    "firstDate": "2026-03-26",
+    "lastDate": "2026-03-26"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 6058,
+    "firstDate": "2026-03-27",
+    "lastDate": "2026-03-27"
+  },
+  "lastUpdated": "2026-07-05T08:56:01.743Z"
+}

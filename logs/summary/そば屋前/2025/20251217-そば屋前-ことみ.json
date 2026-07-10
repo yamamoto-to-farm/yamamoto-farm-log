@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20251217-そば屋前-ことみ",
+  "planting": {
+    "plantDate": "2025-12-17",
+    "field": "そば屋前",
+    "variety": "ことみ",
+    "seedRef": "20251101-ことみ-01",
+    "quantity": 5376,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:56:04.433Z"
+}

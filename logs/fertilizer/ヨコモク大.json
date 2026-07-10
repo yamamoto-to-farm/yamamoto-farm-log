@@ -1,0 +1,63 @@
+{
+  "field": "ヨコモク大",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-08-02",
+          "distributed": [
+            {
+              "field": "ヨコモク(大)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 440
+            },
+            {
+              "field": "ヨコモク(大)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 440
+            },
+            {
+              "field": "ヨコモク(大)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 420
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-07",
+          "distributed": [
+            {
+              "field": "ヨコモク(大)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 480
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "9/8に追加6"
+        },
+        {
+          "date": "2025-10-18",
+          "distributed": [
+            {
+              "field": "ヨコモク(大)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 190
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

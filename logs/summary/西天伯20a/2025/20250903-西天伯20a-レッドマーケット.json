@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250903-西天伯(20a)-レッドマーケット",
+  "planting": {
+    "plantDate": "2025-09-03",
+    "field": "西天伯(20a)",
+    "variety": "レッドマーケット",
+    "seedRef": "20250730-レッドマーケット-01",
+    "quantity": 5632,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 20,
+    "firstDate": "2025-12-03",
+    "lastDate": "2025-12-15"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 5747,
+    "firstDate": "2025-12-05",
+    "lastDate": "2025-12-15"
+  },
+  "lastUpdated": "2026-07-05T08:55:51.471Z"
+}

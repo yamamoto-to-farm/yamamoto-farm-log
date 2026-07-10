@@ -1,0 +1,16 @@
+{
+  "field": "浜中",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-08",
+          "workType": "草取り",
+          "machine": "manual",
+          "workers": "山本 直輝,若月 道昭,石原 孝晋",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

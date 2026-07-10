@@ -1,0 +1,49 @@
+{
+  "field": "上原兵藤",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-01",
+          "distributed": [
+            {
+              "field": "上原(兵藤)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 121.6
+            },
+            {
+              "field": "上原(兵藤)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 67.2
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 11.75,
+              "total_kg": 235
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 6.5,
+              "total_kg": 130
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

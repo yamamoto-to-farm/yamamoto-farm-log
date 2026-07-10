@@ -1,0 +1,20 @@
+{
+  "field": "上原醍醐",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-01",
+          "workType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "ridgeWidthCm": null,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

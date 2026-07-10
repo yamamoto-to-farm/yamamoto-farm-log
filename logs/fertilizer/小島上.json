@@ -1,0 +1,69 @@
+{
+  "field": "小島上",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-31",
+          "distributed": [
+            {
+              "field": "小島(上)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 50
+            },
+            {
+              "field": "小島(上)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 50
+            },
+            {
+              "field": "小島(上)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 50
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-09-16",
+          "distributed": [
+            {
+              "field": "小島(上)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 60
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2025-10-07",
+          "distributed": [
+            {
+              "field": "小島(上)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 20
+            },
+            {
+              "field": "小島(上)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 20
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

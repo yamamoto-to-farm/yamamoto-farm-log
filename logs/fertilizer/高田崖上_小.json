@@ -1,0 +1,35 @@
+{
+  "field": "高田崖上_小",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-28",
+          "distributed": [
+            {
+              "field": "高田(崖上・小)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 40
+            },
+            {
+              "field": "高田(崖上・小)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 40
+            },
+            {
+              "field": "高田(崖上・小)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 40
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

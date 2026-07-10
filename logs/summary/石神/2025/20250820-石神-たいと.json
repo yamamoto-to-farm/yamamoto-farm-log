@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250820-石神-たいと",
+  "planting": {
+    "plantDate": "2025-08-20",
+    "field": "石神",
+    "variety": "たいと",
+    "seedRef": "20250722-たいと-01",
+    "quantity": 4672,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-01"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 22,
+    "firstDate": "2025-12-22",
+    "lastDate": "2026-01-20"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 7274,
+    "firstDate": "2025-12-24",
+    "lastDate": "2026-01-22"
+  },
+  "lastUpdated": "2026-07-05T08:55:46.830Z"
+}

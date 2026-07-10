@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260215-ぎょうざ東１-初恋",
+  "planting": {
+    "plantDate": "2026-02-15",
+    "field": "ぎょうざ東１",
+    "variety": "初恋",
+    "seedRef": "20251215-初恋-01",
+    "quantity": 7680,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-06"
+  },
+  "harvest": {
+    "count": 4,
+    "totalAmount": 45.5,
+    "firstDate": "2026-05-27",
+    "lastDate": "2026-05-31"
+  },
+  "shipping": {
+    "count": 3,
+    "totalWeight": 14674.5,
+    "firstDate": "2026-05-27",
+    "lastDate": "2026-05-31"
+  },
+  "lastUpdated": "2026-07-05T08:56:06.826Z"
+}

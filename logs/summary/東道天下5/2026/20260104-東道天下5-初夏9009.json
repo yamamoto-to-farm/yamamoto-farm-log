@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260104-東道天下5-初夏9009",
+  "planting": {
+    "plantDate": "2026-01-04",
+    "field": "東道天下5",
+    "variety": "初夏9009",
+    "seedRef": "20251118-初夏9009-03",
+    "quantity": 2816,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 2,
+    "firstDate": "2026-05-30",
+    "lastDate": "2026-05-30"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 734,
+    "firstDate": "2026-05-31",
+    "lastDate": "2026-05-31"
+  },
+  "lastUpdated": "2026-07-05T08:56:05.839Z"
+}

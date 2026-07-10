@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250918-信号（小野田）-YRあにき",
+  "planting": {
+    "plantDate": "2025-09-18",
+    "field": "信号（小野田）",
+    "variety": "YRあにき",
+    "seedRef": "20250816-YRあにき-01",
+    "quantity": 4544,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-03"
+  },
+  "harvest": {
+    "count": 2,
+    "totalAmount": 28,
+    "firstDate": "2026-03-20",
+    "lastDate": "2026-03-22"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 9851,
+    "firstDate": "2026-03-22",
+    "lastDate": "2026-03-23"
+  },
+  "lastUpdated": "2026-07-05T08:55:58.993Z"
+}

@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260203-豊栄町東-初夏9009",
+  "planting": {
+    "plantDate": "2026-02-03",
+    "field": "豊栄町東",
+    "variety": "初夏9009",
+    "seedRef": "20251118-初夏9009-03",
+    "quantity": 10284,
+    "trayType": 128,
+    "spacing": {
+      "row": 35,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-05"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-07-05T08:56:06.572Z"
+}

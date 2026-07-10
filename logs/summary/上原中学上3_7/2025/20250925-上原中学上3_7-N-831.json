@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250925-上原(中学上3.7)-N-831",
+  "planting": {
+    "plantDate": "2025-09-25",
+    "field": "上原(中学上3.7)",
+    "variety": "N-831",
+    "seedRef": "20250806-N-831-01",
+    "quantity": 7040,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-02"
+  },
+  "harvest": {
+    "count": 3,
+    "totalAmount": 38,
+    "firstDate": "2026-04-04",
+    "lastDate": "2026-04-05"
+  },
+  "shipping": {
+    "count": 2,
+    "totalWeight": 13914,
+    "firstDate": "2026-04-05",
+    "lastDate": "2026-04-06"
+  },
+  "lastUpdated": "2026-07-05T08:56:02.311Z"
+}

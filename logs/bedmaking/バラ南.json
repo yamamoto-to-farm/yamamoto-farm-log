@@ -1,0 +1,20 @@
+{
+  "field": "バラ南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-06",
+          "workType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "ridgeWidthCm": 60,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

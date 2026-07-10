@@ -1,0 +1,19 @@
+{
+  "field": "高根ポンプ場下",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-01-05",
+          "workType": "潅水",
+          "startTime": "",
+          "endTime": "",
+          "irrigationMinutes": 60,
+          "machine": "",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

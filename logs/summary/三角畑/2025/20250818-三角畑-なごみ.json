@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250818-三角畑-なごみ",
+  "planting": {
+    "plantDate": "2025-08-18",
+    "field": "三角畑",
+    "variety": "なごみ",
+    "seedRef": "20250718-なごみ-01",
+    "quantity": 4800,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-12"
+  },
+  "harvest": {
+    "count": 4,
+    "totalAmount": 20.5,
+    "firstDate": "2025-11-16",
+    "lastDate": "2025-11-26"
+  },
+  "shipping": {
+    "count": 4,
+    "totalWeight": 6575,
+    "firstDate": "2025-11-17",
+    "lastDate": "2025-11-26"
+  },
+  "lastUpdated": "2026-07-05T08:55:45.312Z"
+}

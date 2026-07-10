@@ -1,0 +1,31 @@
+{
+  "field": "高根ポンプ場上",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-11",
+          "workType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "ridgeWidthCm": null,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-04-17",
+          "workType": "手押し",
+          "attachment": "手押し",
+          "ridgeWidthCm": null,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "field": "浜中",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-01",
+          "distributed": [
+            {
+              "field": "浜中",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 41.8
+            },
+            {
+              "field": "浜中",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 27.3
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 6.5,
+              "total_kg": 130
+            },
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 4.25,
+              "total_kg": 85
+            }
+          ]
+        },
+        {
+          "date": "2026-03-30",
+          "distributed": [
+            {
+              "field": "浜中",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 24
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "ロータリカルチCR33B",
+          "attachment": "ロータリカルチCR33B",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 1.2,
+              "total_kg": 24
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

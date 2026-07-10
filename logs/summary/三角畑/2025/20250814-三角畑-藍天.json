@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20250814-三角畑-藍天",
+  "planting": {
+    "plantDate": "2025-08-14",
+    "field": "三角畑",
+    "variety": "藍天",
+    "seedRef": "20250711-藍天-01",
+    "quantity": 256,
+    "trayType": 128,
+    "spacing": {
+      "row": 33,
+      "bed": 60
+    },
+    "harvestPlanYM": "2025-11"
+  },
+  "harvest": {
+    "count": 1,
+    "totalAmount": 2,
+    "firstDate": "2025-11-15",
+    "lastDate": "2025-11-15"
+  },
+  "shipping": {
+    "count": 1,
+    "totalWeight": 646,
+    "firstDate": "2025-11-16",
+    "lastDate": "2025-11-16"
+  },
+  "lastUpdated": "2026-07-05T08:55:44.746Z"
+}

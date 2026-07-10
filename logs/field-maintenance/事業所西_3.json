@@ -1,0 +1,16 @@
+{
+  "field": "事業所西_3",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-02-07",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "山本 雅彦,若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}
