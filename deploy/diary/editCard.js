@@ -443,20 +443,25 @@ function buildManualMergedGroup(groups) {
     return ta.localeCompare(tb);
   });
 
-  const nonEmptyStarts = sortedGroups
-    .map(group => String(group?.start || "").trim())
+  const normalizeTime = value => {
+    const text = String(value || "").trim();
+    return /^\d{2}:\d{2}$/.test(text) ? text : "";
+  };
+
+  const nonEmptyStarts = items
+    .map(item => normalizeTime(item?.start))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
-  const nonEmptyEnds = sortedGroups
-    .map(group => String(group?.end || "").trim())
+  const nonEmptyEnds = items
+    .map(item => normalizeTime(item?.end || item?.start || item?.timestampTime))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
-  const mergedStart = nonEmptyStarts[0] || String(sortedGroups[0]?.start || "").trim();
+  const mergedStart = nonEmptyStarts[0] || normalizeTime(sortedGroups[0]?.start || "");
   const mergedEnd = nonEmptyEnds.length
     ? nonEmptyEnds[nonEmptyEnds.length - 1]
-    : String(sortedGroups[sortedGroups.length - 1]?.end || "").trim();
+    : normalizeTime(sortedGroups[sortedGroups.length - 1]?.end || "");
 
   return {
     groupKey: sessionKey,
