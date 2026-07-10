@@ -178,22 +178,43 @@ export async function initEditPage() {
 }
 
 function mergeSavedDiaryGroups(diary, fallbackGroups) {
+  const fallbackList = Array.isArray(fallbackGroups) ? fallbackGroups : [];
   const savedGroups = Array.isArray(diary?.work) ? diary.work.map((item, index) => normalizeSavedGroup(item, index)) : [];
-  if (!savedGroups.length) return fallbackGroups;
+  if (!savedGroups.length) return fallbackList;
 
-  const manualOnlyGroups = savedGroups.flatMap((group, groupIndex) => expandGroupForManualOnly(group, groupIndex));
+  const fallbackBySourceKey = new Map();
+  fallbackList.forEach(group => {
+    const key = String(group?.sourceKey || "").trim();
+    if (!key || fallbackBySourceKey.has(key)) return;
+    fallbackBySourceKey.set(key, group);
+  });
 
+  const mergedFromSaved = [];
   const coveredSourceKeys = new Set();
-  manualOnlyGroups.forEach(group => {
-    getGroupSourceKeys(group).forEach(key => coveredSourceKeys.add(key));
+
+  savedGroups
+    .flatMap((group, groupIndex) => expandGroupForManualOnly(group, groupIndex))
+    .forEach(group => {
+      const keys = getGroupSourceKeys(group);
+      const matchedKey = keys.find(key => fallbackBySourceKey.has(key));
+      if (!matchedKey || coveredSourceKeys.has(matchedKey)) return;
+
+      const base = fallbackBySourceKey.get(matchedKey);
+      mergedFromSaved.push({
+        ...base,
+        start: String(group?.start || base?.start || "").trim(),
+        end: String(group?.end || base?.end || "").trim(),
+        machine: String(group?.machine || base?.machine || "").trim()
+      });
+      coveredSourceKeys.add(matchedKey);
+    });
+
+  const remaining = fallbackList.filter(group => {
+    const key = String(group?.sourceKey || "").trim();
+    return !key || !coveredSourceKeys.has(key);
   });
 
-  const extraGroups = (Array.isArray(fallbackGroups) ? fallbackGroups : []).filter(group => {
-    const keys = getGroupSourceKeys(group);
-    return keys.every(key => !coveredSourceKeys.has(key));
-  });
-
-  return [...manualOnlyGroups, ...extraGroups];
+  return [...mergedFromSaved, ...remaining];
 }
 
 function expandGroupForManualOnly(group, groupIndex) {
