@@ -472,6 +472,7 @@ function renderFieldCards(rows, state = {}) {
         <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_FIELD ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_FIELD}">作成ビュー（圃場ごと）</button>
         <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_DATE ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_DATE}">運用ビュー（定植日順）</button>
       </div>
+      <p class="planting-view-filter-title">フィルタ</p>
       <div class="planting-view-filter-row" role="group" aria-label="定植絞り込み">
         <button type="button" class="secondary-btn planting-view-filter-btn" data-type="field">圃場で絞り込み</button>
         <button type="button" class="secondary-btn planting-view-filter-btn" data-type="variety">品種で絞り込み</button>
@@ -482,16 +483,37 @@ function renderFieldCards(rows, state = {}) {
   html += `
     <section class="card planting-field-group planting-overview-card">
       <h3 class="section-title">定植計画サマリー</h3>
-      <div class="planting-overview-block">
-        <p>総圃場数：<strong>${targetFields.length}</strong>　総耕作面積（反）：<strong>${planningStats.totalAreaTan.toFixed(2)}反</strong></p>
-        <p>定植可能枚数：<strong>${planningStats.capacityTrays128.toLocaleString()}枚（128穴）</strong>／<strong>${planningStats.capacityTrays200.toLocaleString()}枚（200穴）</strong></p>
-      </div>
-      <div class="planting-overview-block">
-        <p>割り当て済み圃場／総圃場数：<strong>${planningStats.fieldsAssigned}</strong>／<strong>${targetFields.length}</strong>　合計作付面積<strong>${totalAssignedAreaTan.toFixed(2)}反</strong></p>
-      </div>
-      <div class="planting-overview-block">
-        <p>定植計画合計枚数：<strong>${plantingPlanTray128.toLocaleString()}枚（128穴）</strong>／播種計画合計枚数：<strong>${seedPlanTray128.toLocaleString()}枚（128穴）</strong></p>
-        <p>定植計画合計枚数：<strong>${plantingPlanTray200.toLocaleString()}枚（200穴）</strong>／播種計画合計枚数：<strong>${seedPlanTray200.toLocaleString()}枚（200穴）</strong></p>
+      <div class="planting-overview-grid">
+        <div class="planting-overview-item">
+          <div class="overview-label">圃場</div>
+          <div class="overview-value">${planningStats.fieldsAssigned} / ${targetFields.length}</div>
+          <div class="overview-sub">割当済み / 総圃場</div>
+        </div>
+        <div class="planting-overview-item">
+          <div class="overview-label">面積</div>
+          <div class="overview-value">${planningStats.totalAreaTan.toFixed(2)}反</div>
+          <div class="overview-sub">総耕作面積</div>
+        </div>
+        <div class="planting-overview-item">
+          <div class="overview-label">作付面積</div>
+          <div class="overview-value">${totalAssignedAreaTan.toFixed(2)}反</div>
+          <div class="overview-sub">計画割当ベース</div>
+        </div>
+        <div class="planting-overview-item">
+          <div class="overview-label">定植可能枚数</div>
+          <div class="overview-value">128穴 ${planningStats.capacityTrays128.toLocaleString()} / 200穴 ${planningStats.capacityTrays200.toLocaleString()}</div>
+          <div class="overview-sub">圃場面積ベース</div>
+        </div>
+        <div class="planting-overview-item">
+          <div class="overview-label">定植計画合計</div>
+          <div class="overview-value">128穴 ${plantingPlanTray128.toLocaleString()} / 200穴 ${plantingPlanTray200.toLocaleString()}</div>
+          <div class="overview-sub">割当株数ベース</div>
+        </div>
+        <div class="planting-overview-item">
+          <div class="overview-label">播種計画合計</div>
+          <div class="overview-value">128穴 ${seedPlanTray128.toLocaleString()} / 200穴 ${seedPlanTray200.toLocaleString()}</div>
+          <div class="overview-sub">比較用</div>
+        </div>
       </div>
     </section>
   `;
