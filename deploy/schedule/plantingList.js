@@ -226,63 +226,81 @@ function renderFieldCards(rows, state = {}) {
     return;
   }
 
-  const groupMap = new Map();
-  targetFields.forEach(field => {
-    const area = String(field.area || "その他").trim() || "その他";
-    if (!groupMap.has(area)) groupMap.set(area, []);
-    groupMap.get(area).push(field);
-  });
-
   let html = "";
   let totalAssignedPlants = 0;
   let totalAssignedTrays = 0;
 
-  [...groupMap.entries()].forEach(([area, fields]) => {
-    html += `<section class="card planting-field-group"><h3 class="section-title">${escapeHtml(area)}</h3><div class="planting-field-grid">`;
+  const sortedFields = targetFields
+    .slice()
+    .sort((a, b) => String(a.area || "").localeCompare(String(b.area || ""), "ja") || String(a.name || "").localeCompare(String(b.name || ""), "ja"));
 
-    fields.forEach(field => {
-      const fieldName = String(field.name || "").trim();
-      const actualRows = rows.filter(r => String(r.field || "").trim() === fieldName);
-      const actualQuantity = actualRows.reduce((acc, r) => acc + Number(r.quantity || 0), 0);
-      const actualAreaTan = actualRows.reduce((acc, r) => {
-        const spacing = {
-          row: Number(r.spacingRow || 0),
-          bed: Number(r.spacingBed || 0)
-        };
-        const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
-        return acc + calcAreaTan(areaM2);
-      }, 0);
+  html += `
+    <section class="card planting-field-group">
+      <h3 class="section-title">圃場ごとの定植計画（行クリックで編集）</h3>
+      <table class="planting-plan-table">
+        <thead>
+          <tr>
+            <th>エリア</th>
+            <th>圃場</th>
+            <th>いつ（定植予定）</th>
+            <th>何を（品種）</th>
+            <th>どれくらい（計画）</th>
+            <th>実績</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
 
-      const assignments = planningAssignments.get(fieldName) || [];
-      const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
-      const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
-      totalAssignedPlants += plannedPlants;
-      totalAssignedTrays += plannedTrays;
+  sortedFields.forEach(field => {
+    const fieldName = String(field.name || "").trim();
+    const actualRows = rows.filter(r => String(r.field || "").trim() === fieldName);
+    const actualQuantity = actualRows.reduce((acc, r) => acc + Number(r.quantity || 0), 0);
+    const actualAreaTan = actualRows.reduce((acc, r) => {
+      const spacing = {
+        row: Number(r.spacingRow || 0),
+        bed: Number(r.spacingBed || 0)
+      };
+      const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
+      return acc + calcAreaTan(areaM2);
+    }, 0);
 
-      const latestDate = actualRows
-        .map(r => String(r.plantDate || "").trim())
-        .filter(Boolean)
-        .sort((a, b) => b.localeCompare(a))[0] || "-";
+    const assignments = planningAssignments.get(fieldName) || [];
+    const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
+    const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
+    totalAssignedPlants += plannedPlants;
+    totalAssignedTrays += plannedTrays;
 
-      html += `
-        <button type="button" class="planting-field-card" data-field="${escapeAttr(fieldName)}">
-          <div class="planting-field-card-head">
-            <strong>${escapeHtml(fieldName)}</strong>
-            <span class="planting-badge">候補 ${assignments.length}件</span>
-          </div>
-          <div class="planting-field-meta">計画株数：${plannedPlants.toLocaleString()} 株 / 計画トレイ：${plannedTrays.toLocaleString()} 枚</div>
-          <div class="planting-field-meta">実績株数：${actualQuantity.toLocaleString()} 株 / 実績面積：${actualAreaTan.toFixed(2)} 反</div>
-          <div class="planting-field-meta">最終定植日：${escapeHtml(latestDate)}</div>
-        </button>
-      `;
-    });
+    const plannedDates = Array.from(new Set(assignments.map(item => String(item.planPlantDate || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    const plannedVarieties = Array.from(new Set(assignments.map(item => String(item.variety || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ja"));
 
-    html += "</div></section>";
+    const whenText = plannedDates.length ? plannedDates.join(" / ") : "未設定";
+    const whatText = plannedVarieties.length ? plannedVarieties.join(" / ") : "未設定";
+    const planText = `${plannedPlants.toLocaleString()}株 / ${plannedTrays.toLocaleString()}枚`;
+    const actualText = `${actualQuantity.toLocaleString()}株 / ${actualAreaTan.toFixed(2)}反`;
+    const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
+    const unsetClass = isUnset ? "is-unset" : "is-set";
+
+    html += `
+      <tr class="planting-plan-row ${isUnset ? "row-unset" : ""}" data-field="${escapeAttr(fieldName)}">
+        <td>${escapeHtml(String(field.area || "その他"))}</td>
+        <td><strong>${escapeHtml(fieldName)}</strong><span class="planting-badge">候補 ${assignments.length}件</span></td>
+        <td><span class="plan-chip ${unsetClass}">${escapeHtml(whenText)}</span></td>
+        <td><span class="plan-chip ${unsetClass}">${escapeHtml(whatText)}</span></td>
+        <td><span class="plan-chip ${unsetClass}">${planText}</span></td>
+        <td>${actualText}</td>
+      </tr>
+    `;
   });
+
+  html += `
+        </tbody>
+      </table>
+    </section>
+  `;
 
   tableArea.innerHTML = html;
 
-  document.querySelectorAll(".planting-field-card").forEach(el => {
+  document.querySelectorAll(".planting-plan-row").forEach(el => {
     el.addEventListener("click", () => {
       const fieldName = el.dataset.field || "";
       openPlantingPlanModal(fieldName);

@@ -192,6 +192,86 @@
   margin-bottom: 12px;
 }
 
+.planting-plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.planting-plan-table th,
+.planting-plan-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 6px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.planting-plan-table th {
+  font-size: 12px;
+  color: #475569;
+  text-align: left;
+}
+
+.planting-plan-row {
+  cursor: pointer;
+}
+
+.planting-plan-row:hover {
+  background: #f8fbff;
+}
+
+.planting-plan-row.row-unset td {
+  background: #fffbeb;
+}
+
+.plan-chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.plan-chip.is-unset {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  font-weight: 700;
+}
+
+.plan-chip.is-set {
+  background: #ecfeff;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+  font-weight: 600;
+}
+
+.planting-plan-row td:nth-child(1) {
+  width: 12%;
+}
+
+.planting-plan-row td:nth-child(2) {
+  width: 20%;
+}
+
+.planting-plan-row td:nth-child(3) {
+  width: 18%;
+}
+
+.planting-plan-row td:nth-child(4) {
+  width: 22%;
+}
+
+.planting-plan-row td:nth-child(5) {
+  width: 14%;
+  white-space: nowrap;
+}
+
+.planting-plan-row td:nth-child(6) {
+  width: 14%;
+  white-space: nowrap;
+}
+
 .planting-field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -256,4 +336,12 @@
   border-bottom: 1px solid #e2e8f0;
   padding: 6px 4px;
   text-align: left;
+}
+
+@media (max-width: 860px) {
+  .planting-plan-table th,
+  .planting-plan-table td {
+    font-size: 12px;
+    padding: 6px 4px;
+  }
 }
