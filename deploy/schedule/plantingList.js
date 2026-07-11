@@ -20,6 +20,9 @@ let seedRows = [];
 let fieldData = [];
 let varietyData = [];
 let canDiscard = false;
+let seedPlanRows = [];
+let seedPlanYearLoaded = null;
+const planningAssignments = new Map(); // fieldName -> [{ id, variety, sowDate, trayType, trayCount, plants }]
 
 let filterData = {};
 let initialized = false;
@@ -38,9 +41,15 @@ export async function renderPlantingList() {
     initialized = true;
   }
 
+  const selectedYear = getSelectedPlanningYear();
+  if (selectedYear !== seedPlanYearLoaded) {
+    seedPlanRows = await loadSeedPlanRows(selectedYear);
+    seedPlanYearLoaded = selectedYear;
+  }
+
   const state = window.currentFilterState || {};
-  const filtered = applyAllFilters(plantingRows, state);
-  renderTable(filtered);
+  const filteredPlantingRows = applyAllFilters(plantingRows, state);
+  renderFieldCards(filteredPlantingRows, state);
 }
 
 /* ============================================================
@@ -56,6 +65,9 @@ async function initPlantingListPage() {
 
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
+
+  seedPlanYearLoaded = getSelectedPlanningYear();
+  seedPlanRows = await loadSeedPlanRows(seedPlanYearLoaded);
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
@@ -118,12 +130,12 @@ async function initPlantingListPage() {
 
   window.addEventListener("filter:apply", (e) => {
     window.currentFilterState = e.detail;
-    renderTable(applyAllFilters(plantingRows, e.detail));
+    renderFieldCards(applyAllFilters(plantingRows, e.detail), e.detail);
   });
 
   window.addEventListener("filter:reset", () => {
     window.currentFilterState = {};
-    renderTable(plantingRows);
+    renderFieldCards(plantingRows, {});
   });
 }
 
@@ -200,9 +212,230 @@ function getPlantDetail(plantingRef) {
 /* ============================================================
    テーブル描画
 ============================================================ */
-function renderTable(rows) {
+function renderFieldCards(rows, state = {}) {
 
   const tableArea = document.getElementById("table-area");
+
+  const targetFields = getTargetFields(rows, state);
+  if (!targetFields.length) {
+    tableArea.innerHTML = `<div class="card"><p>対象の圃場がありません。</p></div>`;
+    const summary = document.getElementById("summaryArea");
+    if (summary) {
+      summary.textContent = "表示圃場：0件";
+    }
+    return;
+  }
+
+  const groupMap = new Map();
+  targetFields.forEach(field => {
+    const area = String(field.area || "その他").trim() || "その他";
+    if (!groupMap.has(area)) groupMap.set(area, []);
+    groupMap.get(area).push(field);
+  });
+
+  let html = "";
+  let totalAssignedPlants = 0;
+  let totalAssignedTrays = 0;
+
+  [...groupMap.entries()].forEach(([area, fields]) => {
+    html += `<section class="card planting-field-group"><h3 class="section-title">${escapeHtml(area)}</h3><div class="planting-field-grid">`;
+
+    fields.forEach(field => {
+      const fieldName = String(field.name || "").trim();
+      const actualRows = rows.filter(r => String(r.field || "").trim() === fieldName);
+      const actualQuantity = actualRows.reduce((acc, r) => acc + Number(r.quantity || 0), 0);
+      const actualAreaTan = actualRows.reduce((acc, r) => {
+        const spacing = {
+          row: Number(r.spacingRow || 0),
+          bed: Number(r.spacingBed || 0)
+        };
+        const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
+        return acc + calcAreaTan(areaM2);
+      }, 0);
+
+      const assignments = planningAssignments.get(fieldName) || [];
+      const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
+      const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
+      totalAssignedPlants += plannedPlants;
+      totalAssignedTrays += plannedTrays;
+
+      const latestDate = actualRows
+        .map(r => String(r.plantDate || "").trim())
+        .filter(Boolean)
+        .sort((a, b) => b.localeCompare(a))[0] || "-";
+
+      html += `
+        <button type="button" class="planting-field-card" data-field="${escapeAttr(fieldName)}">
+          <div class="planting-field-card-head">
+            <strong>${escapeHtml(fieldName)}</strong>
+            <span class="planting-badge">候補 ${assignments.length}件</span>
+          </div>
+          <div class="planting-field-meta">計画株数：${plannedPlants.toLocaleString()} 株 / 計画トレイ：${plannedTrays.toLocaleString()} 枚</div>
+          <div class="planting-field-meta">実績株数：${actualQuantity.toLocaleString()} 株 / 実績面積：${actualAreaTan.toFixed(2)} 反</div>
+          <div class="planting-field-meta">最終定植日：${escapeHtml(latestDate)}</div>
+        </button>
+      `;
+    });
+
+    html += "</div></section>";
+  });
+
+  tableArea.innerHTML = html;
+
+  document.querySelectorAll(".planting-field-card").forEach(el => {
+    el.addEventListener("click", () => {
+      const fieldName = el.dataset.field || "";
+      openPlantingPlanModal(fieldName);
+    });
+  });
+
+  const summary = document.getElementById("summaryArea");
+  if (summary) {
+    summary.textContent = `表示圃場：${targetFields.length}件　計画合計：${totalAssignedPlants.toLocaleString()}株 / ${totalAssignedTrays.toLocaleString()}枚`;
+  }
+}
+
+function getTargetFields(rows, state = {}) {
+  const selectedFieldNames = Array.isArray(state?.fields) ? state.fields : [];
+  const rowFieldSet = new Set(rows.map(r => String(r.field || "").trim()).filter(Boolean));
+
+  const all = Array.isArray(fieldData) ? fieldData : [];
+  let result = all;
+
+  if (selectedFieldNames.length > 0) {
+    const selected = new Set(selectedFieldNames.map(v => String(v || "").trim()).filter(Boolean));
+    result = result.filter(f => selected.has(String(f.name || "").trim()));
+    return result;
+  }
+
+  if (Array.isArray(state?.yearMonths) && state.yearMonths.length > 0) {
+    result = result.filter(f => rowFieldSet.has(String(f.name || "").trim()));
+    return result;
+  }
+
+  if (Array.isArray(state?.varieties) && state.varieties.length > 0) {
+    result = result.filter(f => rowFieldSet.has(String(f.name || "").trim()));
+  }
+
+  return result;
+}
+
+function getSelectedPlanningYear() {
+  const label = document.getElementById("selectedYearLabel")?.textContent || "";
+  const m = String(label).match(/(\d{4})/);
+  if (m) return m[1];
+  return String(new Date().getFullYear());
+}
+
+async function loadSeedPlanRows(year) {
+  try {
+    const rows = normalizeKeys(await loadCSV(`/logs/schedule/seed/${year}.csv`));
+    return rows.map((row, index) => {
+      const trayCount = Number(row.trayCount || 0);
+      const cells = parseTrayCells(row.trayType);
+      return {
+        id: `${year}-${index}`,
+        year,
+        variety: String(row.variety || "").trim(),
+        sowDate: String(row.sowDate || "").trim(),
+        planPlantDate: String(row.planPlantDate || "").trim(),
+        trayType: String(row.trayType || "").trim(),
+        trayCount,
+        plants: trayCount * cells,
+        source: String(row.source || "").trim(),
+        memo: String(row.memo || "").trim()
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function parseTrayCells(trayType) {
+  const m = String(trayType || "").match(/(\d{2,3})/);
+  if (!m) return 128;
+  const v = Number(m[1]);
+  return Number.isFinite(v) && v > 0 ? v : 128;
+}
+
+function openPlantingPlanModal(fieldName) {
+  const assignments = planningAssignments.get(fieldName) || [];
+  const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
+  const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
+
+  const optionsHtml = seedPlanRows.length
+    ? seedPlanRows.map(item => `
+        <option value="${escapeAttr(item.id)}">${escapeHtml(item.variety || "(品種未設定)")} / 播種:${escapeHtml(item.sowDate || "-")} / 定植:${escapeHtml(item.planPlantDate || "-")} / ${escapeHtml(item.trayCount)}枚(${escapeHtml(item.trayType || "tray")})</option>
+      `).join("")
+    : `<option value="">播種計画がありません</option>`;
+
+  const assignmentRows = assignments.length
+    ? assignments.map(item => `
+      <tr>
+        <td>${escapeHtml(item.variety || "-")}</td>
+        <td>${escapeHtml(item.sowDate || "-")}</td>
+        <td>${escapeHtml(item.planPlantDate || "-")}</td>
+        <td>${Number(item.trayCount || 0).toLocaleString()}</td>
+        <td>${Number(item.plants || 0).toLocaleString()}</td>
+        <td><button type="button" class="secondary-btn plan-remove-btn" data-id="${escapeAttr(item.id)}">削除</button></td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="6" style="text-align:center; color:#666;">まだ割当がありません</td></tr>`;
+
+  showInfoModal(
+    `定植計画：${fieldName}`,
+    `
+      <div class="plant-plan-modal">
+        <p><strong>必要株数：</strong> ${plannedPlants.toLocaleString()} 株</p>
+        <p><strong>必要トレイ枚数：</strong> ${plannedTrays.toLocaleString()} 枚</p>
+
+        <div class="plant-plan-picker">
+          <label>播種計画から選択</label>
+          <select id="plan-seed-select" class="form-input">${optionsHtml}</select>
+          <button type="button" id="plan-seed-add" class="primary-btn" ${seedPlanRows.length ? "" : "disabled"}>この圃場に反映（未保存）</button>
+        </div>
+
+        <table class="plant-plan-table">
+          <thead>
+            <tr><th>品種</th><th>播種日</th><th>定植予定日</th><th>トレイ</th><th>株数</th><th>操作</th></tr>
+          </thead>
+          <tbody>${assignmentRows}</tbody>
+        </table>
+      </div>
+    `
+  );
+
+  const addBtn = document.getElementById("plan-seed-add");
+  const selectEl = document.getElementById("plan-seed-select");
+  if (addBtn && selectEl) {
+    addBtn.onclick = () => {
+      const id = String(selectEl.value || "").trim();
+      if (!id) return;
+      const picked = seedPlanRows.find(v => v.id === id);
+      if (!picked) return;
+
+      const next = [...(planningAssignments.get(fieldName) || [])];
+      if (!next.some(v => v.id === picked.id)) {
+        next.push({ ...picked });
+        planningAssignments.set(fieldName, next);
+      }
+      openPlantingPlanModal(fieldName);
+      renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+    };
+  }
+
+  document.querySelectorAll(".plan-remove-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = String(btn.dataset.id || "").trim();
+      const next = [...(planningAssignments.get(fieldName) || [])].filter(v => v.id !== id);
+      planningAssignments.set(fieldName, next);
+      openPlantingPlanModal(fieldName);
+      renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+    });
+  });
+}
+
+function renderTable(rows) {
 
   let html = `
     <table>
@@ -278,4 +511,17 @@ function renderTable(rows) {
       location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
     });
   });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, "&#96;");
 }

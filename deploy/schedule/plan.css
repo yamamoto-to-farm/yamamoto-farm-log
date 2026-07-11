@@ -183,3 +183,77 @@
     margin: 10mm;
   }
 }
+
+/* ===============================
+   定植計画 Phase1（圃場カード + モーダル）
+=============================== */
+
+.planting-field-group {
+  margin-bottom: 12px;
+}
+
+.planting-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.planting-field-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.planting-field-card:hover {
+  background: #f8fbff;
+  border-color: #aac9ea;
+}
+
+.planting-field-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.planting-badge {
+  font-size: 12px;
+  color: #1d4e89;
+  background: #e6f0fb;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.planting-field-meta {
+  font-size: 13px;
+  color: #334155;
+  margin: 2px 0;
+}
+
+.plant-plan-modal {
+  display: grid;
+  gap: 8px;
+}
+
+.plant-plan-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.plant-plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.plant-plan-table th,
+.plant-plan-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 6px 4px;
+  text-align: left;
+}

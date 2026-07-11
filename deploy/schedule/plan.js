@@ -188,6 +188,11 @@ function applyModeUI() {
     seedControls.style.display = (currentMode === "seed") ? "flex" : "none";
   }
 
+  const addRowArea = document.getElementById("addRowBtn")?.parentElement;
+  if (addRowArea) {
+    addRowArea.style.display = (currentMode === "seed") ? "block" : "none";
+  }
+
   // ▼ 育苗ハウス容量カード
   const capacityCard = document.getElementById("capacity-card");
   if (capacityCard) {
