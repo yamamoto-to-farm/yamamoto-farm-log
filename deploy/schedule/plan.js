@@ -217,13 +217,13 @@ function applyModeUI() {
   // ▼ 播種計画専用コントロール（CSV/JSON 読み込み・保存）
   const seedControls = document.getElementById("seedList-controls");
   if (seedControls) {
-    seedControls.style.display = (currentMode === "seed") ? "flex" : "none";
+    seedControls.style.display = (currentMode === "seed") ? "block" : "none";
   }
 
   // ▼ 定植計画専用コントロール（CSV 読み込み・保存）
   const plantingControls = document.getElementById("planting-controls");
   if (plantingControls) {
-    plantingControls.style.display = (currentMode === "planting") ? "flex" : "none";
+    plantingControls.style.display = (currentMode === "planting") ? "block" : "none";
   }
 
   const addRowArea = document.getElementById("addRowBtn")?.parentElement;

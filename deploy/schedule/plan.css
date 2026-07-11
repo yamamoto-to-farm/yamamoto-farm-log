@@ -40,6 +40,26 @@
    モード切り替えボタン
 =============================== */
 
+.plan-control-hub {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+}
+
+.plan-control-group + .plan-control-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d8dee8;
+}
+
+.plan-control-group .section-title {
+  margin-bottom: 8px;
+}
+
+.selected-year-label {
+  font-weight: 700;
+  padding-left: 4px;
+}
+
 #mode-switch-card button {
   background: #e2e8f0;
   color: #333;
@@ -66,6 +86,30 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.plan-action-card {
+  margin-bottom: 12px;
+}
+
+.plan-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.plan-action-row button {
+  height: 40px;
+}
+
+.plan-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.plan-control-hub .filter-open-btn {
+  margin: 0;
 }
 
 .planting-view-btn.active {
@@ -122,6 +166,7 @@
   #mode-switch-card,
   #seedList-controls,
   #planting-controls,
+  .plan-control-hub,
   #filter-card,
   #activeFilters,
   #capacity-card,
