@@ -461,6 +461,12 @@ function renderFieldCards(rows, state = {}) {
   const plantingPlanTray200 = Math.ceil(planningStats.assignedPlants / 200);
   const seedPlanTray128 = Math.ceil(seedPlanPlantsTotal / 128);
   const seedPlanTray200 = Math.ceil(seedPlanPlantsTotal / 200);
+  const fieldProgressPct = targetFields.length > 0
+    ? Math.round((planningStats.fieldsAssigned / targetFields.length) * 100)
+    : 0;
+  const areaProgressPct = planningStats.totalAreaTan > 0
+    ? Math.round((totalAssignedAreaTan / planningStats.totalAreaTan) * 100)
+    : 0;
 
   totalAssignedPlants = planningStats.assignedPlants;
   totalAssignedTrays = planningStats.assignedTrays;
@@ -485,19 +491,14 @@ function renderFieldCards(rows, state = {}) {
       <h3 class="section-title">定植計画サマリー</h3>
       <div class="planting-overview-grid">
         <div class="planting-overview-item">
-          <div class="overview-label">圃場</div>
+          <div class="overview-label">圃場進捗</div>
           <div class="overview-value">${planningStats.fieldsAssigned} / ${targetFields.length}</div>
-          <div class="overview-sub">割当済み / 総圃場</div>
+          <div class="overview-sub">割当済み / 総圃場（${fieldProgressPct}%）</div>
         </div>
         <div class="planting-overview-item">
-          <div class="overview-label">面積</div>
-          <div class="overview-value">${planningStats.totalAreaTan.toFixed(2)}反</div>
-          <div class="overview-sub">総耕作面積</div>
-        </div>
-        <div class="planting-overview-item">
-          <div class="overview-label">作付面積</div>
-          <div class="overview-value">${totalAssignedAreaTan.toFixed(2)}反</div>
-          <div class="overview-sub">計画割当ベース</div>
+          <div class="overview-label">面積進捗</div>
+          <div class="overview-value">${totalAssignedAreaTan.toFixed(2)} / ${planningStats.totalAreaTan.toFixed(2)}反</div>
+          <div class="overview-sub">計画割当 / 総耕作（${areaProgressPct}%）</div>
         </div>
         <div class="planting-overview-item">
           <div class="overview-label">定植可能枚数</div>
@@ -505,14 +506,9 @@ function renderFieldCards(rows, state = {}) {
           <div class="overview-sub">圃場面積ベース</div>
         </div>
         <div class="planting-overview-item">
-          <div class="overview-label">定植計画合計</div>
-          <div class="overview-value">128穴 ${plantingPlanTray128.toLocaleString()} / 200穴 ${plantingPlanTray200.toLocaleString()}</div>
-          <div class="overview-sub">割当株数ベース</div>
-        </div>
-        <div class="planting-overview-item">
-          <div class="overview-label">播種計画合計</div>
-          <div class="overview-value">128穴 ${seedPlanTray128.toLocaleString()} / 200穴 ${seedPlanTray200.toLocaleString()}</div>
-          <div class="overview-sub">比較用</div>
+          <div class="overview-label">計画枚数（定植 / 播種）</div>
+          <div class="overview-value">128穴 ${plantingPlanTray128.toLocaleString()} / ${seedPlanTray128.toLocaleString()}</div>
+          <div class="overview-sub">200穴 ${plantingPlanTray200.toLocaleString()} / ${seedPlanTray200.toLocaleString()}</div>
         </div>
       </div>
     </section>

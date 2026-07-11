@@ -124,10 +124,24 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .plan-action-row button {
   height: 40px;
+}
+
+.plan-action-row .primary-btn,
+.plan-action-row .secondary-btn,
+.plan-year-row .selected-year-label {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  align-self: center;
+}
+
+.plan-action-row .primary-btn + .secondary-btn,
+.plan-action-row .secondary-btn + .primary-btn {
+  margin-top: 0 !important;
 }
 
 .plan-io-grid {
