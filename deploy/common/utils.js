@@ -237,6 +237,27 @@ export async function printInline(selector, title = "印刷") {
       max-height: none !important;
     }
     /* 定植計画: 印刷は計画列のみ（実績列は非表示） */
+    .field-status-badge {
+      display: none !important;
+    }
+    .planting-plan-table {
+      table-layout: fixed;
+    }
+    .planting-plan-table col:nth-child(5) {
+      display: none !important;
+    }
+    .planting-plan-table col:nth-child(1) {
+      width: 28% !important;
+    }
+    .planting-plan-table col:nth-child(2) {
+      width: 20% !important;
+    }
+    .planting-plan-table col:nth-child(3) {
+      width: 20% !important;
+    }
+    .planting-plan-table col:nth-child(4) {
+      width: 32% !important;
+    }
     .planting-plan-table th:nth-child(5),
     .planting-plan-table td:nth-child(5) {
       display: none !important;
