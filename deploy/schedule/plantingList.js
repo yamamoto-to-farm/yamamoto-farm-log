@@ -787,7 +787,14 @@ function openPlantingPlanModal(fieldName) {
             <label class="plan-seed-toggle"><input id="plan-seed-only-available" type="checkbox" checked> 残りありのみ</label>
           </div>
           <div id="plan-seed-count" class="plan-sub"></div>
-          <select id="plan-seed-select" class="form-input" size="10"></select>
+          <div class="plan-seed-candidate-wrap">
+            <table class="plant-plan-table plan-seed-candidate-table">
+              <thead>
+                <tr><th>定植予定</th><th>品種</th><th>残/全</th><th>トレイ</th></tr>
+              </thead>
+              <tbody id="plan-seed-candidate-body"></tbody>
+            </table>
+          </div>
           <label>この圃場へ割り当てる定植枚数</label>
           <input id="plan-seed-assign-trays" class="form-input" type="number" min="1" step="1" value="1">
           <div id="plan-seed-remaining-note" class="plan-sub"></div>
@@ -805,7 +812,7 @@ function openPlantingPlanModal(fieldName) {
   );
 
   const addBtn = document.getElementById("plan-seed-add");
-  const selectEl = document.getElementById("plan-seed-select");
+  const seedCandidateBodyEl = document.getElementById("plan-seed-candidate-body");
   const seedKeywordEl = document.getElementById("plan-seed-keyword");
   const seedMonthEl = document.getElementById("plan-seed-month");
   const seedOnlyAvailableEl = document.getElementById("plan-seed-only-available");
@@ -817,6 +824,7 @@ function openPlantingPlanModal(fieldName) {
   const requiredPlantsEl = document.getElementById("plan-required-plants");
   const requiredTray128El = document.getElementById("plan-required-tray128");
   const requiredTray200El = document.getElementById("plan-required-tray200");
+  let selectedSeedId = "";
 
   const updateBaseRequirementView = () => {
     if (!bedInput || !plantInput || !requiredPlantsEl || !requiredTray128El || !requiredTray200El) return;
@@ -836,13 +844,14 @@ function openPlantingPlanModal(fieldName) {
     .sort((a, b) => String(a.planPlantDate || "").localeCompare(String(b.planPlantDate || "")) || String(a.variety || "").localeCompare(String(b.variety || ""), "ja"));
 
   const renderSeedOptions = () => {
-    if (!selectEl) return;
-    const prev = String(selectEl.value || "").trim();
+    if (!seedCandidateBodyEl) return;
+    const prev = String(selectedSeedId || "").trim();
     const keyword = String(seedKeywordEl?.value || "").trim().toLowerCase();
     const month = String(seedMonthEl?.value || "").trim();
     const onlyAvailable = !!seedOnlyAvailableEl?.checked;
 
-    const options = [];
+    const rowsHtml = [];
+    const candidateIds = [];
     sortedSeedRows.forEach(item => {
       const id = String(item.id || "").trim();
       const variety = String(item.variety || "").trim();
@@ -858,33 +867,49 @@ function openPlantingPlanModal(fieldName) {
       if (month && monthKey !== month) return;
       if (onlyAvailable && disabled) return;
 
-      const label = `${planDate || "-"} | ${variety || "(品種未設定)"} | 残${remaining.toLocaleString()}枚/全${Number(item.trayCount || 0).toLocaleString()}枚 | ${String(item.trayType || "tray")} | ID:${id}`;
-      options.push(`<option value="${escapeAttr(id)}" ${disabled ? "disabled" : ""}>${escapeHtml(label)}</option>`);
+      const selectedClass = id === prev ? " is-selected" : "";
+      rowsHtml.push(`
+        <tr class="plan-seed-row${selectedClass}${disabled ? " is-disabled" : ""}" data-id="${escapeAttr(id)}" data-disabled="${disabled ? "1" : "0"}">
+          <td>${escapeHtml(planDate || "-")}</td>
+          <td>${escapeHtml(variety || "(品種未設定)")}</td>
+          <td>${remaining.toLocaleString()} / ${Number(item.trayCount || 0).toLocaleString()}枚</td>
+          <td>${escapeHtml(String(item.trayType || "tray"))}</td>
+        </tr>
+      `);
+      if (!disabled) candidateIds.push(id);
     });
 
-    if (options.length === 0) {
-      selectEl.innerHTML = `<option value="">条件に一致する候補がありません</option>`;
-      selectEl.value = "";
+    if (rowsHtml.length === 0) {
+      seedCandidateBodyEl.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#666;">条件に一致する候補がありません</td></tr>`;
+      selectedSeedId = "";
       if (addBtn) addBtn.disabled = true;
       if (seedCountEl) seedCountEl.textContent = "候補: 0件";
       return;
     }
 
-    selectEl.innerHTML = options.join("");
-    const hasPrev = Array.from(selectEl.options).some(op => op.value === prev && !op.disabled);
-    if (hasPrev) {
-      selectEl.value = prev;
-    } else {
-      const firstEnabled = Array.from(selectEl.options).find(op => !op.disabled);
-      selectEl.value = firstEnabled ? firstEnabled.value : "";
-    }
-    if (addBtn) addBtn.disabled = !selectEl.value;
-    if (seedCountEl) seedCountEl.textContent = `候補: ${options.length.toLocaleString()}件`;
+    seedCandidateBodyEl.innerHTML = rowsHtml.join("");
+    selectedSeedId = candidateIds.includes(prev) ? prev : (candidateIds[0] || "");
+
+    seedCandidateBodyEl.querySelectorAll(".plan-seed-row").forEach(row => {
+      const id = String(row.dataset.id || "").trim();
+      const disabled = String(row.dataset.disabled || "") === "1";
+      if (id === selectedSeedId) row.classList.add("is-selected");
+      row.addEventListener("click", () => {
+        if (disabled) return;
+        selectedSeedId = id;
+        seedCandidateBodyEl.querySelectorAll(".plan-seed-row").forEach(r => r.classList.remove("is-selected"));
+        row.classList.add("is-selected");
+        updateSelectedSeedRemainingView();
+      });
+    });
+
+    if (addBtn) addBtn.disabled = !selectedSeedId;
+    if (seedCountEl) seedCountEl.textContent = `候補: ${rowsHtml.length.toLocaleString()}件`;
   };
 
   const updateSelectedSeedRemainingView = () => {
-    if (!selectEl || !assignTraysInput || !remainingNoteEl) return;
-    const id = String(selectEl.value || "").trim();
+    if (!assignTraysInput || !remainingNoteEl) return;
+    const id = String(selectedSeedId || "").trim();
     const picked = getSeedPlanById(id);
     if (!picked) {
       remainingNoteEl.textContent = "";
@@ -911,11 +936,8 @@ function openPlantingPlanModal(fieldName) {
     }
   };
 
-  if (selectEl) {
-    selectEl.addEventListener("change", updateSelectedSeedRemainingView);
-    renderSeedOptions();
-    updateSelectedSeedRemainingView();
-  }
+  renderSeedOptions();
+  updateSelectedSeedRemainingView();
 
   if (seedKeywordEl) {
     seedKeywordEl.addEventListener("input", () => {
@@ -936,9 +958,9 @@ function openPlantingPlanModal(fieldName) {
     });
   }
 
-  if (addBtn && selectEl) {
+  if (addBtn) {
     addBtn.onclick = () => {
-      const id = String(selectEl.value || "").trim();
+      const id = String(selectedSeedId || "").trim();
       if (!id) return;
       const picked = getSeedPlanById(id);
       if (!picked) return;

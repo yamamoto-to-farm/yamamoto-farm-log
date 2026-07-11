@@ -364,6 +364,43 @@
   color: #334155;
 }
 
+.plan-seed-candidate-wrap {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #dbe3ec;
+  border-radius: 6px;
+}
+
+.plan-seed-candidate-table {
+  width: 100%;
+  font-size: 12px;
+}
+
+.plan-seed-candidate-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 1;
+}
+
+.plan-seed-row {
+  cursor: pointer;
+}
+
+.plan-seed-row:hover {
+  background: #eef6ff;
+}
+
+.plan-seed-row.is-selected {
+  background: #dbeafe;
+}
+
+.plan-seed-row.is-disabled {
+  color: #94a3b8;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
 .plant-plan-table {
   width: 100%;
   border-collapse: collapse;
