@@ -721,7 +721,10 @@ function openPlantingPlanModal(fieldName) {
 
   const optionsHtml = seedPlanRows.length
     ? seedPlanRows.map(item => {
-      const remaining = getRemainingTrays(item.id, item.trayCount);
+      const alreadyInThisField = assignments.some(v => String(v.id || "") === String(item.id || ""));
+      const remaining = alreadyInThisField
+        ? getRemainingTrays(item.id, item.trayCount, { excludeField: fieldName, excludeId: item.id })
+        : getRemainingTrays(item.id, item.trayCount);
       const disabled = remaining <= 0;
       return `
         <option value="${escapeAttr(item.id)}" ${disabled ? "disabled" : ""}>${escapeHtml(item.variety || "(品種未設定)")} / 播種:${escapeHtml(item.sowDate || "-")} / 定植:${escapeHtml(item.planPlantDate || "-")} / 残${remaining.toLocaleString()}枚 / 全${Number(item.trayCount || 0).toLocaleString()}枚（${escapeHtml(item.trayType || "tray")}）</option>
@@ -815,10 +818,16 @@ function openPlantingPlanModal(fieldName) {
       return;
     }
 
-    const remaining = getRemainingTrays(picked.id, picked.trayCount);
+    const alreadyInThisField = assignments.some(v => String(v.id || "") === id);
+    const remaining = alreadyInThisField
+      ? getRemainingTrays(picked.id, picked.trayCount, { excludeField: fieldName, excludeId: id })
+      : getRemainingTrays(picked.id, picked.trayCount);
     const cells = parseTrayCells(picked.trayType);
     remainingNoteEl.textContent = `残り定植可能: ${remaining.toLocaleString()}枚（約${(remaining * cells).toLocaleString()}株）`;
-    assignTraysInput.value = String(remaining > 0 ? remaining : 0);
+    const currentInput = Math.floor(Number(assignTraysInput.value || 0));
+    if (!(currentInput > 0)) {
+      assignTraysInput.value = String(remaining > 0 ? remaining : 0);
+    }
   };
 
   if (selectEl) {
@@ -839,19 +848,18 @@ function openPlantingPlanModal(fieldName) {
         return;
       }
 
-      const remaining = getRemainingTrays(picked.id, picked.trayCount);
-      if (remaining <= 0) {
+      const maxAssignable = getRemainingTrays(picked.id, picked.trayCount, { excludeField: fieldName, excludeId: picked.id });
+      if (maxAssignable <= 0) {
         alert("この播種IDは割当可能な残枚数がありません。");
         return;
       }
 
-      const assignTrayCount = Math.min(requested, remaining);
-      if (assignTrayCount <= 0) {
-        alert("割当可能枚数を確認してください。");
+      if (requested > maxAssignable) {
+        alert(`割当上限は ${maxAssignable.toLocaleString()} 枚です。`);
         return;
       }
 
-      upsertAssignment(fieldName, picked, assignTrayCount);
+      upsertAssignment(fieldName, picked, requested);
       openPlantingPlanModal(fieldName);
       renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
     };
