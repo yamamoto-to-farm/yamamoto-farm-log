@@ -387,6 +387,15 @@ export async function printInline(selector, title = "印刷") {
 }
 
 export async function printCurrentPage(title = document.title || "印刷") {
+  let restoreBeforePrint = null;
+  if (typeof window.__beforePrintPrepare === "function") {
+    try {
+      restoreBeforePrint = await window.__beforePrintPrepare();
+    } catch (e) {
+      console.warn("printCurrentPage: beforePrintPrepare failed", e);
+    }
+  }
+
   const selector = document.querySelector("#form-area")
     ? "#form-area"
     : document.querySelector("#page-area")
@@ -419,14 +428,34 @@ export async function printCurrentPage(title = document.title || "印刷") {
       console.warn("printCurrentPage: map invalidateSize failed", e);
     }
 
-    await waitForMapTiles();
-    await new Promise(resolve => setTimeout(resolve, 300));
-    window.print();
-    return;
+    try {
+      await waitForMapTiles();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      window.print();
+      return;
+    } finally {
+      if (typeof restoreBeforePrint === "function") {
+        try {
+          await restoreBeforePrint();
+        } catch (e) {
+          console.warn("printCurrentPage: restoreBeforePrint failed", e);
+        }
+      }
+    }
   }
 
-  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  await printInline(selector, title);
+  try {
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await printInline(selector, title);
+  } finally {
+    if (typeof restoreBeforePrint === "function") {
+      try {
+        await restoreBeforePrint();
+      } catch (e) {
+        console.warn("printCurrentPage: restoreBeforePrint failed", e);
+      }
+    }
+  }
 }
 
 

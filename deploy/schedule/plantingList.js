@@ -28,9 +28,12 @@ const areaExpandState = new Map(); // areaName -> boolean
 const DEFAULT_BED_SPACING_CM = 60;
 const DEFAULT_PLANT_SPACING_CM = 33;
 const ACTUAL_WINDOW_MONTHS = 1;
+const PLANTING_VIEW_MODE_FIELD = "field";
+const PLANTING_VIEW_MODE_DATE = "date";
 
 let filterData = {};
 let initialized = false;
+let plantingViewMode = PLANTING_VIEW_MODE_FIELD;
 
 /* ============================================================
    外部から呼ばれるエントリポイント
@@ -61,6 +64,7 @@ export async function renderPlantingList() {
 
   const state = window.currentFilterState || {};
   const filteredPlantingRows = applyAllFilters(plantingRows, state);
+  registerPlantingPrintHook();
   renderFieldCards(filteredPlantingRows, state);
 }
 
@@ -254,6 +258,10 @@ function renderFieldCards(rows, state = {}) {
     return;
   }
 
+  const displayMode = plantingViewMode === PLANTING_VIEW_MODE_DATE
+    ? PLANTING_VIEW_MODE_DATE
+    : PLANTING_VIEW_MODE_FIELD;
+
   let html = "";
   let totalAssignedPlants = 0;
   let totalAssignedTrays = 0;
@@ -299,6 +307,19 @@ function renderFieldCards(rows, state = {}) {
   const seedPlanTray128 = Math.ceil(seedPlanPlantsTotal / 128);
   const seedPlanTray200 = Math.ceil(seedPlanPlantsTotal / 200);
 
+  totalAssignedPlants = planningStats.assignedPlants;
+  totalAssignedTrays = planningStats.assignedTrays;
+
+  html += `
+    <section class="card planting-view-switch-card print-hide">
+      <h3 class="section-title">表示モード</h3>
+      <div class="planting-view-switch" role="group" aria-label="定植計画表示モード">
+        <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_FIELD ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_FIELD}">作成ビュー（圃場ごと）</button>
+        <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_DATE ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_DATE}">運用ビュー（定植日順）</button>
+      </div>
+    </section>
+  `;
+
   html += `
     <section class="card planting-field-group planting-overview-card">
       <h3 class="section-title">定植計画サマリー</h3>
@@ -316,106 +337,240 @@ function renderFieldCards(rows, state = {}) {
     </section>
   `;
 
-  grouped.forEach((fields, areaName) => {
-    const expanded = getAreaExpanded(areaName);
-    const hasUnsetInArea = fields.some(field => {
+  if (displayMode === PLANTING_VIEW_MODE_DATE) {
+    const dateRows = [];
+    targetFields.forEach(field => {
       const fieldName = String(field.name || "").trim();
+      const areaName = String(field.area || "その他").trim() || "その他";
       const assignments = planningAssignments.get(fieldName) || [];
-      const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
-      const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
-      return assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
+      if (!assignments.length) {
+        dateRows.push({
+          planDate: "",
+          fieldName,
+          areaName,
+          assignments: []
+        });
+        return;
+      }
+      assignments.forEach(item => {
+        dateRows.push({
+          planDate: String(item.planPlantDate || "").trim(),
+          fieldName,
+          areaName,
+          assignments: [item]
+        });
+      });
     });
 
-    html += `
-      <section class="card planting-area-group ${hasUnsetInArea ? "area-has-unset" : ""}">
-        <h4 class="section-title planting-area-title" data-area="${escapeAttr(areaName)}">${expanded ? "▼" : "▶"} ${escapeHtml(areaName)}（${fields.length}圃場）</h4>
-        <div class="planting-area-body" style="display:${expanded ? "block" : "none"}">
-          <table class="planting-plan-table">
-            <colgroup>
-              <col style="width:20%">
-              <col style="width:16%">
-              <col style="width:18%">
-              <col style="width:21%">
-              <col style="width:25%">
-            </colgroup>
-            <thead>
-              <tr>
-                <th>圃場名</th>
-                <th>定植予定日</th>
-                <th>品種</th>
-                <th>枚数（トレイ種別）</th>
-                <th>実績</th>
-              </tr>
-            </thead>
-            <tbody>
-    `;
-
-    fields.forEach(field => {
-    const fieldName = String(field.name || "").trim();
-    const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
-    const actualTrayText = actualSummary.trayLines.length
-      ? actualSummary.trayLines.map(v => escapeHtml(v)).join("<br>")
-      : "-";
-
-    const assignments = planningAssignments.get(fieldName) || [];
-    const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
-    const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
-    totalAssignedPlants += plannedPlants;
-    totalAssignedTrays += plannedTrays;
-
-    const assignmentRows = buildAssignmentDisplayRows(assignments);
-    const whenHtml = assignmentRows.datesHtml;
-    const whatHtml = assignmentRows.varietiesHtml;
-    const planTraySummary = buildPlanTraySummary(assignments);
-    const planRowsHtml = planTraySummary.itemLinesHtml;
-    const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
-    const statusText = isUnset ? "未設定" : `候補${assignments.length}件`;
-    const statusClass = isUnset ? "is-unset" : "is-set";
-
-    html += `
-      <tr class="planting-plan-row ${isUnset ? "row-unset" : ""}" data-field="${escapeAttr(fieldName)}">
-        <td>
-          <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
-          <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
-        </td>
-        <td>
-          <div class="plan-sub plan-lines">${whenHtml}</div>
-        </td>
-        <td>
-          <div class="plan-sub plan-lines">${whatHtml}</div>
-        </td>
-        <td>
-          <div class="plan-sub"><strong>${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
-          <div class="plan-sub plan-lines">${planRowsHtml}</div>
-          <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
-        </td>
-        <td>
-          <div class="last-planting-label">前回定植：${escapeHtml(actualSummary.latestDate || "-")}</div>
-          <div class="plan-sub">${actualTrayText}</div>
-          <div class="plan-sub">作付面積: ${actualSummary.areaTan.toFixed(2)}反（${escapeHtml(actualSummary.windowLabel)}）</div>
-        </td>
-      </tr>
-    `;
+    dateRows.sort((a, b) => {
+      const ad = String(a.planDate || "").trim();
+      const bd = String(b.planDate || "").trim();
+      if (!ad && bd) return 1;
+      if (ad && !bd) return -1;
+      const dCmp = ad.localeCompare(bd);
+      if (dCmp !== 0) return dCmp;
+      const fCmp = String(a.fieldName || "").localeCompare(String(b.fieldName || ""), "ja");
+      if (fCmp !== 0) return fCmp;
+      const av = String(a.assignments[0]?.variety || "").trim();
+      const bv = String(b.assignments[0]?.variety || "").trim();
+      return av.localeCompare(bv, "ja");
     });
 
-    html += `
-            </tbody>
-          </table>
-        </div>
-      </section>
-    `;
-  });
+    const groupedByDate = new Map();
+    dateRows.forEach(item => {
+      const key = String(item.planDate || "").trim() || "未設定";
+      if (!groupedByDate.has(key)) groupedByDate.set(key, []);
+      groupedByDate.get(key).push(item);
+    });
+
+    groupedByDate.forEach((items, dateKey) => {
+      html += `
+        <section class="card planting-area-group">
+          <h4 class="section-title">${escapeHtml(dateKey)}（${items.length}件）</h4>
+          <div class="planting-area-body" style="display:block">
+            <table class="planting-plan-table">
+              <colgroup>
+                <col style="width:20%">
+                <col style="width:16%">
+                <col style="width:18%">
+                <col style="width:21%">
+                <col style="width:25%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>圃場名</th>
+                  <th>定植予定日</th>
+                  <th>品種</th>
+                  <th>枚数（トレイ種別）</th>
+                  <th>実績</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      items.forEach(item => {
+        const fieldName = String(item.fieldName || "").trim();
+        const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
+        const actualTrayText = actualSummary.trayLines.length
+          ? actualSummary.trayLines.map(v => escapeHtml(v)).join("<br>")
+          : "-";
+        const assignments = item.assignments;
+        const plannedPlants = assignments.reduce((acc, v) => acc + getAssignedPlants(v), 0);
+        const plannedTrays = assignments.reduce((acc, v) => acc + getAssignedTrayCount(v), 0);
+        const assignmentRows = buildAssignmentDisplayRows(assignments);
+        const whenHtml = assignmentRows.datesHtml;
+        const whatHtml = assignmentRows.varietiesHtml;
+        const planTraySummary = buildPlanTraySummary(assignments);
+        const planRowsHtml = planTraySummary.itemLinesHtml;
+        const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
+        const statusText = isUnset ? "未設定" : "確定";
+        const statusClass = isUnset ? "is-unset" : "is-set";
+
+        html += `
+          <tr class="planting-plan-row ${isUnset ? "row-unset" : ""}" data-field="${escapeAttr(fieldName)}">
+            <td>
+              <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+              <div class="field-sub">${escapeHtml(String(item.areaName || "その他"))}</div>
+            </td>
+            <td>
+              <div class="plan-sub plan-lines">${whenHtml}</div>
+            </td>
+            <td>
+              <div class="plan-sub plan-lines">${whatHtml}</div>
+            </td>
+            <td>
+              <div class="plan-sub"><strong>${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
+              <div class="plan-sub plan-lines">${planRowsHtml}</div>
+              <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
+            </td>
+            <td>
+              <div class="last-planting-label">前回定植：${escapeHtml(actualSummary.latestDate || "-")}</div>
+              <div class="plan-sub">${actualTrayText}</div>
+              <div class="plan-sub">作付面積: ${actualSummary.areaTan.toFixed(2)}反（${escapeHtml(actualSummary.windowLabel)}）</div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    });
+  } else {
+    grouped.forEach((fields, areaName) => {
+      const expanded = getAreaExpanded(areaName);
+      const hasUnsetInArea = fields.some(field => {
+        const fieldName = String(field.name || "").trim();
+        const assignments = planningAssignments.get(fieldName) || [];
+        const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
+        const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
+        return assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
+      });
+
+      html += `
+        <section class="card planting-area-group ${hasUnsetInArea ? "area-has-unset" : ""}">
+          <h4 class="section-title planting-area-title" data-area="${escapeAttr(areaName)}">${expanded ? "▼" : "▶"} ${escapeHtml(areaName)}（${fields.length}圃場）</h4>
+          <div class="planting-area-body" style="display:${expanded ? "block" : "none"}">
+            <table class="planting-plan-table">
+              <colgroup>
+                <col style="width:20%">
+                <col style="width:16%">
+                <col style="width:18%">
+                <col style="width:21%">
+                <col style="width:25%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>圃場名</th>
+                  <th>定植予定日</th>
+                  <th>品種</th>
+                  <th>枚数（トレイ種別）</th>
+                  <th>実績</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      fields.forEach(field => {
+        const fieldName = String(field.name || "").trim();
+        const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
+        const actualTrayText = actualSummary.trayLines.length
+          ? actualSummary.trayLines.map(v => escapeHtml(v)).join("<br>")
+          : "-";
+
+        const assignments = planningAssignments.get(fieldName) || [];
+        const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
+        const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
+
+        const assignmentRows = buildAssignmentDisplayRows(assignments);
+        const whenHtml = assignmentRows.datesHtml;
+        const whatHtml = assignmentRows.varietiesHtml;
+        const planTraySummary = buildPlanTraySummary(assignments);
+        const planRowsHtml = planTraySummary.itemLinesHtml;
+        const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
+        const statusText = isUnset ? "未設定" : `候補${assignments.length}件`;
+        const statusClass = isUnset ? "is-unset" : "is-set";
+
+        html += `
+          <tr class="planting-plan-row ${isUnset ? "row-unset" : ""}" data-field="${escapeAttr(fieldName)}">
+            <td>
+              <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+              <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
+            </td>
+            <td>
+              <div class="plan-sub plan-lines">${whenHtml}</div>
+            </td>
+            <td>
+              <div class="plan-sub plan-lines">${whatHtml}</div>
+            </td>
+            <td>
+              <div class="plan-sub"><strong>${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
+              <div class="plan-sub plan-lines">${planRowsHtml}</div>
+              <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
+            </td>
+            <td>
+              <div class="last-planting-label">前回定植：${escapeHtml(actualSummary.latestDate || "-")}</div>
+              <div class="plan-sub">${actualTrayText}</div>
+              <div class="plan-sub">作付面積: ${actualSummary.areaTan.toFixed(2)}反（${escapeHtml(actualSummary.windowLabel)}）</div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    });
+  }
 
   tableArea.innerHTML = html;
 
-  document.querySelectorAll(".planting-area-title").forEach(el => {
-    el.addEventListener("click", () => {
-      const areaName = String(el.dataset.area || "").trim();
-      if (!areaName) return;
-      areaExpandState.set(areaName, !getAreaExpanded(areaName));
+  document.querySelectorAll(".planting-view-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const nextMode = String(btn.dataset.viewMode || "").trim();
+      if (![PLANTING_VIEW_MODE_FIELD, PLANTING_VIEW_MODE_DATE].includes(nextMode)) return;
+      if (plantingViewMode === nextMode) return;
+      plantingViewMode = nextMode;
       renderFieldCards(rows, state);
     });
   });
+
+  if (displayMode === PLANTING_VIEW_MODE_FIELD) {
+    document.querySelectorAll(".planting-area-title").forEach(el => {
+      el.addEventListener("click", () => {
+        const areaName = String(el.dataset.area || "").trim();
+        if (!areaName) return;
+        areaExpandState.set(areaName, !getAreaExpanded(areaName));
+        renderFieldCards(rows, state);
+      });
+    });
+  }
 
   document.querySelectorAll(".planting-plan-row").forEach(el => {
     el.addEventListener("click", () => {
@@ -428,6 +583,32 @@ function renderFieldCards(rows, state = {}) {
   if (summary) {
     summary.textContent = `表示圃場：${targetFields.length}件　計画合計：${totalAssignedPlants.toLocaleString()}株 / ${totalAssignedTrays.toLocaleString()}枚`;
   }
+}
+
+function registerPlantingPrintHook() {
+  window.__beforePrintPrepare = async () => {
+    const mode = new URLSearchParams(location.search).get("mode");
+    if (mode !== "planting") return null;
+
+    const prevMode = plantingViewMode;
+    if (prevMode === PLANTING_VIEW_MODE_DATE) {
+      return null;
+    }
+
+    plantingViewMode = PLANTING_VIEW_MODE_DATE;
+    const state = window.currentFilterState || {};
+    const rows = applyAllFilters(plantingRows, state);
+    renderFieldCards(rows, state);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    return async () => {
+      plantingViewMode = prevMode;
+      const restoreState = window.currentFilterState || {};
+      const restoreRows = applyAllFilters(plantingRows, restoreState);
+      renderFieldCards(restoreRows, restoreState);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    };
+  };
 }
 
 function getAreaExpanded(areaName) {

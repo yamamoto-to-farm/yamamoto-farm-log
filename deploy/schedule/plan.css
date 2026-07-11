@@ -58,6 +58,22 @@
   border: none !important;
 }
 
+.planting-view-switch-card {
+  margin-bottom: 12px;
+}
+
+.planting-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.planting-view-btn.active {
+  background: #2f855a !important;
+  color: #fff !important;
+  border-color: #2f855a !important;
+}
+
 /* ===============================
    plantList 専用モーダル（衝突回避）
 =============================== */
@@ -115,6 +131,10 @@
   .discard-btn,
   #addRowBtn,
   #saveCsvBtn {
+    display: none !important;
+  }
+
+  .planting-view-switch-card {
     display: none !important;
   }
 
