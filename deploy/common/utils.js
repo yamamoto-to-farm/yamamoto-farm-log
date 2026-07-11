@@ -236,6 +236,25 @@ export async function printInline(selector, title = "印刷") {
       overflow: visible !important;
       max-height: none !important;
     }
+    /* 定植計画: 印刷は計画列のみ（実績列は非表示） */
+    .planting-plan-table th:nth-child(5),
+    .planting-plan-table td:nth-child(5) {
+      display: none !important;
+    }
+    /* 定植計画: 折りたたみの影響をなくし、カード単位で改ページ */
+    .planting-area-body {
+      display: block !important;
+    }
+    #table-area > .card {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      break-after: page;
+      page-break-after: always;
+    }
+    #table-area > .card:last-of-type {
+      break-after: auto;
+      page-break-after: auto;
+    }
   `;
 
   const styleEl = doc.createElement("style");
