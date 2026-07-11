@@ -619,6 +619,11 @@
     display: block !important;
   }
 
+  .planting-plan-table th:nth-child(5),
+  .planting-plan-table td:nth-child(5) {
+    display: none !important;
+  }
+
   #table-area > .card {
     break-inside: avoid;
     page-break-inside: avoid;
