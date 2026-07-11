@@ -729,10 +729,10 @@ function openPlantingPlanModal(fieldName) {
   const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
   const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
   const baseRequirement = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
-  const areaText = baseRequirement.areaA > 0 ? `${baseRequirement.areaA.toLocaleString()}a` : "未設定";
-  const requiredPlantsText = baseRequirement.valid ? baseRequirement.requiredPlants.toLocaleString() : "-";
+  const areaText = baseRequirement.areaA > 0 ? `${(baseRequirement.areaA / 10).toFixed(2)}反` : "未設定";
   const requiredTray128Text = baseRequirement.valid ? baseRequirement.requiredTray128.toLocaleString() : "-";
   const requiredTray200Text = baseRequirement.valid ? baseRequirement.requiredTray200.toLocaleString() : "-";
+  const defaultAssignableByField = baseRequirement.valid ? Math.max(0, Math.floor(baseRequirement.requiredTray128)) : 0;
 
   const seedMonthOptions = Array.from(
     new Set(
@@ -765,20 +765,18 @@ function openPlantingPlanModal(fieldName) {
     `定植計画：${fieldName}`,
     `
       <div class="plant-plan-modal">
-        <p><strong>圃場面積：</strong> ${areaText}</p>
-        <p>
+        <p class="plan-metric-row"><strong>耕作面積（反）：</strong> ${areaText}</p>
+        <div class="plan-spacing-row">
           <label>畝間(cm)</label>
           <input id="plan-bed-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_BED_SPACING_CM}">
           <label>株間(cm)</label>
           <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
-        </p>
-        <p><strong>必要株数（1作ベース）：</strong> <span id="plan-required-plants">${requiredPlantsText}</span> 株</p>
-        <p><strong>可能トレイ枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
-        <p><strong>割当合計（未保存）：</strong> ${plannedPlants.toLocaleString()} 株 / ${plannedTrays.toLocaleString()} 枚</p>
+        </div>
+        <p class="plan-metric-row"><strong>定植可能枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
 
         <div class="plant-plan-picker">
           <label>播種計画（候補選択）</label>
-          <div id="plan-selected-seed-summary" class="plan-sub">未選択</div>
+          <div id="plan-selected-seed-summary" class="plan-selected-seed-summary">未選択</div>
           <button type="button" id="plan-open-seed-modal" class="secondary-btn">播種候補を開く</button>
           <div id="plan-seed-submodal" class="plan-seed-submodal" style="display:none;">
             <div class="plan-seed-submodal-panel">
@@ -809,7 +807,7 @@ function openPlantingPlanModal(fieldName) {
             </div>
           </div>
           <label>この圃場へ割り当てる定植枚数</label>
-          <input id="plan-seed-assign-trays" class="form-input" type="number" min="1" step="1" value="1">
+          <input id="plan-seed-assign-trays" class="form-input" type="number" min="1" step="1" value="${defaultAssignableByField}">
           <div id="plan-seed-remaining-note" class="plan-sub"></div>
           <button type="button" id="plan-seed-add" class="primary-btn" ${seedPlanRows.length ? "" : "disabled"}>この圃場に反映（未保存）</button>
         </div>
@@ -820,9 +818,16 @@ function openPlantingPlanModal(fieldName) {
           </thead>
           <tbody>${assignmentRows}</tbody>
         </table>
+
+        <p class="plan-metric-row plan-allocation-total"><strong>割り当て合計（未保存）：</strong> ${plannedPlants.toLocaleString()} 株 / ${plannedTrays.toLocaleString()} 枚</p>
       </div>
     `
   );
+
+  const planDialog = document.querySelector("#info-modal-bg .modal");
+  if (planDialog) {
+    planDialog.classList.add("plant-plan-dialog");
+  }
 
   const addBtn = document.getElementById("plan-seed-add");
   const selectedSeedSummaryEl = document.getElementById("plan-selected-seed-summary");
@@ -839,20 +844,19 @@ function openPlantingPlanModal(fieldName) {
   const remainingNoteEl = document.getElementById("plan-seed-remaining-note");
   const bedInput = document.getElementById("plan-bed-spacing");
   const plantInput = document.getElementById("plan-plant-spacing");
-  const requiredPlantsEl = document.getElementById("plan-required-plants");
   const requiredTray128El = document.getElementById("plan-required-tray128");
   const requiredTray200El = document.getElementById("plan-required-tray200");
   let selectedSeedId = "";
   let draftSelectedSeedId = "";
 
   const updateBaseRequirementView = () => {
-    if (!bedInput || !plantInput || !requiredPlantsEl || !requiredTray128El || !requiredTray200El) return;
+    if (!bedInput || !plantInput || !requiredTray128El || !requiredTray200El) return;
     const bedCm = Number(bedInput.value || 0);
     const plantCm = Number(plantInput.value || 0);
     const required = calcBaseRequirement(fieldName, bedCm, plantCm);
-    requiredPlantsEl.textContent = required.valid ? required.requiredPlants.toLocaleString() : "-";
     requiredTray128El.textContent = required.valid ? required.requiredTray128.toLocaleString() : "-";
     requiredTray200El.textContent = required.valid ? required.requiredTray200.toLocaleString() : "-";
+    updateSelectedSeedRemainingView();
   };
 
   if (bedInput) bedInput.addEventListener("input", updateBaseRequirementView);
@@ -935,7 +939,7 @@ function openPlantingPlanModal(fieldName) {
       return;
     }
     const remaining = getRemainingTrays(picked.id, picked.trayCount, { excludeField: fieldName, excludeId: picked.id });
-    selectedSeedSummaryEl.textContent = `${picked.planPlantDate || "-"} / ${picked.variety || "(品種未設定)"} / 残${remaining.toLocaleString()}枚 / 全${Number(picked.trayCount || 0).toLocaleString()}枚（${picked.trayType || "tray"}）`;
+    selectedSeedSummaryEl.textContent = `${picked.planPlantDate || "-"} ｜ ${picked.variety || "(品種未設定)"} ｜ 残${remaining.toLocaleString()} / 全${Number(picked.trayCount || 0).toLocaleString()}枚（${picked.trayType || "tray"}）`;
     if (addBtn) addBtn.disabled = false;
   };
 
@@ -961,10 +965,10 @@ function openPlantingPlanModal(fieldName) {
     const fieldRemainPlants = Math.max(0, capacityPlants - assignedPlantsExcluding);
     const fieldRemainTrays = Math.floor(fieldRemainPlants / Math.max(1, cells));
     const maxAssignable = Math.max(0, Math.min(remaining, fieldRemainTrays));
-    remainingNoteEl.textContent = `残り定植可能: 播種ID ${remaining.toLocaleString()}枚 / 圃場 ${fieldRemainTrays.toLocaleString()}枚（約${fieldRemainPlants.toLocaleString()}株） / 入力上限 ${maxAssignable.toLocaleString()}枚`;
+    remainingNoteEl.textContent = `入力上限 ${maxAssignable.toLocaleString()}枚（播種ID残 ${remaining.toLocaleString()} / 圃場残 ${fieldRemainTrays.toLocaleString()}）`;
     const currentInput = Math.floor(Number(assignTraysInput.value || 0));
     if (!(currentInput > 0)) {
-      assignTraysInput.value = String(maxAssignable > 0 ? maxAssignable : 0);
+      assignTraysInput.value = String(fieldRemainTrays > 0 ? fieldRemainTrays : 0);
     }
   };
 

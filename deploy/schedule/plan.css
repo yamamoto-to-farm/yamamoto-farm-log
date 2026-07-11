@@ -343,12 +343,51 @@
 
 .plant-plan-modal {
   display: grid;
-  gap: 8px;
+  gap: 6px;
+}
+
+.modal.plant-plan-dialog {
+  width: min(1040px, 96vw);
+  max-height: 92vh;
+}
+
+.modal.plant-plan-dialog .modal-content {
+  max-height: calc(92vh - 120px);
+  overflow: auto;
+}
+
+.plan-metric-row {
+  margin: 2px 0;
+  line-height: 1.4;
+}
+
+.plan-spacing-row {
+  display: grid;
+  grid-template-columns: 100px minmax(120px, 1fr) 100px minmax(120px, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+  margin: 0;
+}
+
+.plan-allocation-total {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #dbe3ec;
 }
 
 .plant-plan-picker {
   display: grid;
   gap: 6px;
+}
+
+.plan-selected-seed-summary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #f1f5f9;
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 .plan-seed-filters {
