@@ -938,10 +938,7 @@ function openPlantingPlanModal(fieldName) {
       const variety = String(item.variety || "").trim();
       const planDate = String(item.planPlantDate || "").trim();
       const monthKey = planDate.slice(0, 7);
-      const alreadyInThisField = assignments.some(v => String(v.id || "") === id);
-      const remaining = alreadyInThisField
-        ? getRemainingTrays(item.id, item.trayCount, { excludeField: fieldName, excludeId: id })
-        : getRemainingTrays(item.id, item.trayCount);
+      const remaining = getRemainingTrays(item.id, item.trayCount);
       const disabled = remaining <= 0;
 
       if (keyword && !`${variety} ${id}`.toLowerCase().includes(keyword)) return;
@@ -996,7 +993,7 @@ function openPlantingPlanModal(fieldName) {
       if (addBtn) addBtn.disabled = true;
       return;
     }
-    const remaining = getRemainingTrays(picked.id, picked.trayCount, { excludeField: fieldName, excludeId: picked.id });
+    const remaining = getRemainingTrays(picked.id, picked.trayCount);
     selectedSeedSummaryEl.textContent = `${picked.planPlantDate || "-"} ｜ ${picked.variety || "(品種未設定)"} ｜ 残${remaining.toLocaleString()} / 全${Number(picked.trayCount || 0).toLocaleString()}枚（${picked.trayType || "tray"}）`;
     if (addBtn) addBtn.disabled = false;
   };
@@ -1011,10 +1008,7 @@ function openPlantingPlanModal(fieldName) {
       return;
     }
 
-    const alreadyInThisField = assignments.some(v => String(v.id || "") === id);
-    const remaining = alreadyInThisField
-      ? getRemainingTrays(picked.id, picked.trayCount, { excludeField: fieldName, excludeId: id })
-      : getRemainingTrays(picked.id, picked.trayCount);
+    const remaining = getRemainingTrays(picked.id, picked.trayCount);
     const cells = parseTrayCells(picked.trayType);
     const bedCm = Number(bedInput?.value || 0);
     const plantCm = Number(plantInput?.value || 0);
@@ -1093,7 +1087,7 @@ function openPlantingPlanModal(fieldName) {
         return;
       }
 
-      const maxBySeed = getRemainingTrays(picked.id, picked.trayCount, { excludeField: fieldName, excludeId: picked.id });
+      const maxBySeed = getRemainingTrays(picked.id, picked.trayCount);
       const bedCm = Number(bedInput?.value || 0);
       const plantCm = Number(plantInput?.value || 0);
       const capacityPlants = getFieldCapacityPlants(fieldName, bedCm, plantCm);
