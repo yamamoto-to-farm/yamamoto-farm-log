@@ -5,7 +5,7 @@ import { loadJSON } from "/common/json.js";
 
 import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
 import { renderSeedList } from "./seed/index.js";
-import { renderPlantingList } from "./plantingList.js";
+import { renderPlantingList, loadPlantingPlanFromCSV, savePlantingPlan } from "./plantingList.js";
 import { setFilterData } from "/common/filter/filter-core.js?v=1";
 
 
@@ -111,7 +111,7 @@ export async function initListPage() {
   const btnJson = document.getElementById("loadJsonBtn");
   if (btnJson) {
     btnJson.onclick = async () => {
-      const year = getCurrentYear();
+      const year = selectedYear || getCurrentYear();
       if (!year) {
         alert("年度を選択してください。");
         return;
@@ -128,7 +128,7 @@ export async function initListPage() {
   const btnCsv = document.getElementById("loadCsvBtn");
   if (btnCsv) {
     btnCsv.onclick = async () => {
-      const year = getCurrentYear();
+      const year = selectedYear || getCurrentYear();
       if (!year) {
         alert("年度を選択してください。");
         return;
@@ -147,6 +147,36 @@ export async function initListPage() {
   if (btnSave) {
     btnSave.onclick = () => {
       saveSeedList();
+    };
+  }
+
+  // ▼ 定植計画 CSV 読み込みボタン
+  const btnLoadPlantingCsv = document.getElementById("loadPlantingCsvBtn");
+  if (btnLoadPlantingCsv) {
+    btnLoadPlantingCsv.onclick = async () => {
+      const year = selectedYear || "";
+      if (!year) {
+        alert("年度を選択してください。");
+        return;
+      }
+      const ok = await loadPlantingPlanFromCSV(year, { force: true, silent: false });
+      if (ok) {
+        renderPlantingList();
+      }
+    };
+  }
+
+  // ▼ 定植計画 CSV 保存ボタン
+  const btnSavePlantingCsv = document.getElementById("savePlantingCsvBtn");
+  if (btnSavePlantingCsv) {
+    btnSavePlantingCsv.onclick = async () => {
+      const year = selectedYear || "";
+      if (!year) {
+        alert("年度を選択してください。");
+        return;
+      }
+      await savePlantingPlan();
+      renderPlantingList();
     };
   }
 
@@ -188,6 +218,12 @@ function applyModeUI() {
   const seedControls = document.getElementById("seedList-controls");
   if (seedControls) {
     seedControls.style.display = (currentMode === "seed") ? "flex" : "none";
+  }
+
+  // ▼ 定植計画専用コントロール（CSV 読み込み・保存）
+  const plantingControls = document.getElementById("planting-controls");
+  if (plantingControls) {
+    plantingControls.style.display = (currentMode === "planting") ? "flex" : "none";
   }
 
   const addRowArea = document.getElementById("addRowBtn")?.parentElement;

@@ -5,6 +5,7 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
+import { saveLog } from "/common/save/index.js";
 
 import {
   openYearModal,
@@ -24,6 +25,7 @@ let canDiscard = false;
 let seedPlanRows = [];
 let seedPlanYearLoaded = null;
 const planningAssignmentsByYear = new Map(); // year -> Map(fieldName -> [{...}])
+const loadedPlanningAssignmentYears = new Set();
 const areaExpandState = new Map(); // areaName -> boolean
 const DEFAULT_BED_SPACING_CM = 60;
 const DEFAULT_PLANT_SPACING_CM = 33;
@@ -62,10 +64,157 @@ export async function renderPlantingList() {
     seedPlanYearLoaded = selectedYear;
   }
 
+  await loadPlantingPlanFromCSV(selectedYear, { silent: true });
+
   const state = window.currentFilterState || {};
   const filteredPlantingRows = applyAllFilters(plantingRows, state);
   registerPlantingPrintHook();
   renderFieldCards(filteredPlantingRows, state);
+}
+
+export async function loadPlantingPlanFromCSV(year, options = {}) {
+  const selectedYear = String(year || getSelectedPlanningYear()).trim();
+  if (!selectedYear) return false;
+
+  const force = !!options.force;
+  const silent = !!options.silent;
+
+  if (!force && loadedPlanningAssignmentYears.has(selectedYear)) {
+    return true;
+  }
+
+  try {
+    const rows = normalizeKeys(await loadCSV(`/logs/schedule/planting/${selectedYear}.csv`));
+    const byField = new Map();
+
+    rows.forEach(row => {
+      const fieldName = String(row.field || "").trim();
+      if (!fieldName) return;
+
+      const assignedTrayCount = Math.max(0, Math.floor(Number(row.assignedTrayCount || row.trayCount || 0)));
+      const trayCount = Math.max(0, Math.floor(Number(row.trayCount || assignedTrayCount || 0)));
+
+      const item = {
+        id: String(row.id || "").trim(),
+        year: selectedYear,
+        variety: String(row.variety || "").trim(),
+        sowDate: String(row.sowDate || "").trim(),
+        planPlantDate: String(row.planPlantDate || "").trim(),
+        trayType: String(row.trayType || "").trim(),
+        trayCount,
+        assignedTrayCount,
+        plants: Number(row.plants || 0) || (trayCount * parseTrayCells(row.trayType)),
+        source: String(row.source || "").trim(),
+        memo: String(row.memo || "").trim()
+      };
+
+      if (!byField.has(fieldName)) byField.set(fieldName, []);
+      byField.get(fieldName).push(item);
+    });
+
+    planningAssignmentsByYear.set(selectedYear, byField);
+    loadedPlanningAssignmentYears.add(selectedYear);
+    return true;
+  } catch (e) {
+    planningAssignmentsByYear.set(selectedYear, new Map());
+    loadedPlanningAssignmentYears.add(selectedYear);
+    if (!silent) {
+      alert(`${selectedYear}年の定植計画CSVが見つかりませんでした。`);
+    }
+    return false;
+  }
+}
+
+export async function savePlantingPlan() {
+  const year = String(getSelectedPlanningYear() || "").trim();
+  if (!year || !hasPlanningYearSelection()) {
+    alert("年度を選択してください。");
+    return;
+  }
+
+  const planningAssignments = getPlanningAssignmentsForYear(year);
+  const rows = [];
+
+  planningAssignments.forEach((items, fieldName) => {
+    const keyField = String(fieldName || "").trim();
+    if (!keyField) return;
+
+    items.forEach(item => {
+      const assignedTrayCount = Math.max(0, Math.floor(getAssignedTrayCount(item)));
+      if (assignedTrayCount <= 0) return;
+
+      rows.push({
+        id: String(item.id || "").trim(),
+        field: keyField,
+        variety: String(item.variety || "").trim(),
+        sowDate: String(item.sowDate || "").trim(),
+        planPlantDate: String(item.planPlantDate || "").trim(),
+        trayType: String(item.trayType || "").trim(),
+        trayCount: Math.max(0, Math.floor(Number(item.trayCount || 0))),
+        assignedTrayCount,
+        plants: Math.max(0, Math.floor(getAssignedPlants(item))),
+        source: String(item.source || "").trim(),
+        memo: String(item.memo || "").trim()
+      });
+    });
+  });
+
+  rows.sort((a, b) => {
+    const dCmp = String(a.planPlantDate || "").localeCompare(String(b.planPlantDate || ""));
+    if (dCmp !== 0) return dCmp;
+    const fCmp = String(a.field || "").localeCompare(String(b.field || ""), "ja");
+    if (fCmp !== 0) return fCmp;
+    return String(a.variety || "").localeCompare(String(b.variety || ""), "ja");
+  });
+
+  const csv = convertPlantingAssignmentsToCsv(rows);
+
+  await saveLog(
+    "schedule/planting",
+    `${year}`,
+    {},
+    "",
+    csv,
+    `${year}.csv`
+  );
+
+  loadedPlanningAssignmentYears.add(year);
+}
+
+function convertPlantingAssignmentsToCsv(rows) {
+  const header = [
+    "id",
+    "field",
+    "variety",
+    "sowDate",
+    "planPlantDate",
+    "trayType",
+    "trayCount",
+    "assignedTrayCount",
+    "plants",
+    "source",
+    "memo"
+  ];
+
+  const lines = [header.join(",")];
+  rows.forEach(row => {
+    const cols = [
+      row.id || "",
+      row.field || "",
+      row.variety || "",
+      row.sowDate || "",
+      row.planPlantDate || "",
+      row.trayType || "",
+      row.trayCount || 0,
+      row.assignedTrayCount || 0,
+      row.plants || 0,
+      (row.source || "").replace(/,/g, "、"),
+      (row.memo || "").replace(/,/g, "、")
+    ];
+    lines.push(cols.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+  });
+
+  return `${lines.join("\n")}\n`;
 }
 
 /* ============================================================
