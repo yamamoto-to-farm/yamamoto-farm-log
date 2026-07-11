@@ -364,6 +364,14 @@
   text-align: left;
 }
 
+.plan-assigned-tray-input {
+  max-width: 100px;
+}
+
+.plan-update-btn {
+  margin-right: 4px;
+}
+
 @media (max-width: 860px) {
   .planting-plan-table th,
   .planting-plan-table td {

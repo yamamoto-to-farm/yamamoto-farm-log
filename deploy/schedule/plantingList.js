@@ -281,8 +281,8 @@ function renderFieldCards(rows, state = {}) {
       : "-";
 
     const assignments = planningAssignments.get(fieldName) || [];
-    const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
-    const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
+    const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
+    const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
     totalAssignedPlants += plannedPlants;
     totalAssignedTrays += plannedTrays;
 
@@ -606,9 +606,9 @@ function buildPlanTraySummary(assignments) {
 
   const itemLinesHtml = assignments
     .map(item => {
-      const trayCount = Number(item.trayCount || 0);
+      const trayCount = getAssignedTrayCount(item);
       const trayType = String(item.trayType || "").trim() || "tray未設定";
-      const plants = Number(item.plants || 0);
+      const plants = getAssignedPlants(item);
       const variety = String(item.variety || "").trim() || "(品種未設定)";
       return `<div class="plan-line">${escapeHtml(variety)}: ${Math.round(trayCount).toLocaleString()}枚（${escapeHtml(trayType)}） / ${Math.round(plants).toLocaleString()}株</div>`;
     })
@@ -618,8 +618,8 @@ function buildPlanTraySummary(assignments) {
 
   assignments.forEach(item => {
     const trayType = String(item.trayType || "").trim() || "tray未設定";
-    const trayCount = Number(item.trayCount || 0);
-    const plants = Number(item.plants || 0);
+    const trayCount = getAssignedTrayCount(item);
+    const plants = getAssignedPlants(item);
     const prev = byTrayType.get(trayType) || { trayType, trayCount: 0, plants: 0 };
     prev.trayCount += trayCount;
     prev.plants += plants;
@@ -642,10 +642,77 @@ function buildPlanTraySummary(assignments) {
   };
 }
 
+function getAssignedTrayCount(item) {
+  const assigned = Number(item?.assignedTrayCount);
+  if (Number.isFinite(assigned) && assigned >= 0) return assigned;
+  const fallback = Number(item?.trayCount || 0);
+  return Number.isFinite(fallback) && fallback >= 0 ? fallback : 0;
+}
+
+function getAssignedPlants(item) {
+  const trays = getAssignedTrayCount(item);
+  return Math.round(trays * parseTrayCells(item?.trayType));
+}
+
+function getTotalAssignedTraysForSeed(seedId, options = {}) {
+  const target = String(seedId || "").trim();
+  if (!target) return 0;
+
+  const excludeField = String(options.excludeField || "").trim();
+  const excludeId = String(options.excludeId || "").trim();
+  let total = 0;
+
+  planningAssignments.forEach((items, fieldName) => {
+    const fieldKey = String(fieldName || "").trim();
+    items.forEach(item => {
+      const id = String(item.id || "").trim();
+      if (id !== target) return;
+      if (excludeField && excludeId && fieldKey === excludeField && id === excludeId) return;
+      total += getAssignedTrayCount(item);
+    });
+  });
+
+  return total;
+}
+
+function getSeedPlanById(seedId) {
+  const target = String(seedId || "").trim();
+  if (!target) return null;
+  return seedPlanRows.find(v => String(v.id || "").trim() === target) || null;
+}
+
+function getRemainingTrays(seedId, totalTrays, options = {}) {
+  const remain = Number(totalTrays || 0) - getTotalAssignedTraysForSeed(seedId, options);
+  return remain > 0 ? remain : 0;
+}
+
+function upsertAssignment(fieldName, picked, assignedTrayCount) {
+  const next = [...(planningAssignments.get(fieldName) || [])];
+  const idx = next.findIndex(v => String(v.id || "") === String(picked.id || ""));
+
+  const payload = {
+    ...picked,
+    assignedTrayCount: Math.max(0, Math.floor(Number(assignedTrayCount || 0)))
+  };
+
+  if (idx >= 0) {
+    next[idx] = { ...next[idx], ...payload };
+  } else {
+    next.push(payload);
+  }
+
+  planningAssignments.set(fieldName, next);
+}
+
+function removeAssignment(fieldName, seedId) {
+  const next = [...(planningAssignments.get(fieldName) || [])].filter(v => String(v.id || "") !== String(seedId || ""));
+  planningAssignments.set(fieldName, next);
+}
+
 function openPlantingPlanModal(fieldName) {
   const assignments = planningAssignments.get(fieldName) || [];
-  const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
-  const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
+  const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
+  const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
   const baseRequirement = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
   const areaText = baseRequirement.areaA > 0 ? `${baseRequirement.areaA.toLocaleString()}a` : "未設定";
   const requiredPlantsText = baseRequirement.valid ? baseRequirement.requiredPlants.toLocaleString() : "-";
@@ -653,9 +720,13 @@ function openPlantingPlanModal(fieldName) {
   const requiredTray200Text = baseRequirement.valid ? baseRequirement.requiredTray200.toLocaleString() : "-";
 
   const optionsHtml = seedPlanRows.length
-    ? seedPlanRows.map(item => `
-        <option value="${escapeAttr(item.id)}">${escapeHtml(item.variety || "(品種未設定)")} / 播種:${escapeHtml(item.sowDate || "-")} / 定植:${escapeHtml(item.planPlantDate || "-")} / ${escapeHtml(item.trayCount)}枚(${escapeHtml(item.trayType || "tray")})</option>
-      `).join("")
+    ? seedPlanRows.map(item => {
+      const remaining = getRemainingTrays(item.id, item.trayCount);
+      const disabled = remaining <= 0;
+      return `
+        <option value="${escapeAttr(item.id)}" ${disabled ? "disabled" : ""}>${escapeHtml(item.variety || "(品種未設定)")} / 播種:${escapeHtml(item.sowDate || "-")} / 定植:${escapeHtml(item.planPlantDate || "-")} / 残${remaining.toLocaleString()}枚 / 全${Number(item.trayCount || 0).toLocaleString()}枚（${escapeHtml(item.trayType || "tray")}）</option>
+      `;
+    }).join("")
     : `<option value="">播種計画がありません</option>`;
 
   const assignmentRows = assignments.length
@@ -664,9 +735,15 @@ function openPlantingPlanModal(fieldName) {
         <td>${escapeHtml(item.variety || "-")}</td>
         <td>${escapeHtml(item.sowDate || "-")}</td>
         <td>${escapeHtml(item.planPlantDate || "-")}</td>
-        <td>${Number(item.trayCount || 0).toLocaleString()}</td>
-        <td>${Number(item.plants || 0).toLocaleString()}</td>
-        <td><button type="button" class="secondary-btn plan-remove-btn" data-id="${escapeAttr(item.id)}">削除</button></td>
+        <td>
+          <input type="number" min="0" step="1" class="form-input plan-assigned-tray-input" data-id="${escapeAttr(item.id)}" value="${Math.round(getAssignedTrayCount(item))}">
+          <div class="plan-sub">全${Number(item.trayCount || 0).toLocaleString()}枚</div>
+        </td>
+        <td>${getAssignedPlants(item).toLocaleString()}</td>
+        <td>
+          <button type="button" class="secondary-btn plan-update-btn" data-id="${escapeAttr(item.id)}">更新</button>
+          <button type="button" class="secondary-btn plan-remove-btn" data-id="${escapeAttr(item.id)}">削除</button>
+        </td>
       </tr>
     `).join("")
     : `<tr><td colspan="6" style="text-align:center; color:#666;">まだ割当がありません</td></tr>`;
@@ -689,6 +766,9 @@ function openPlantingPlanModal(fieldName) {
         <div class="plant-plan-picker">
           <label>播種計画から選択</label>
           <select id="plan-seed-select" class="form-input">${optionsHtml}</select>
+          <label>この圃場へ割り当てる定植枚数</label>
+          <input id="plan-seed-assign-trays" class="form-input" type="number" min="1" step="1" value="1">
+          <div id="plan-seed-remaining-note" class="plan-sub"></div>
           <button type="button" id="plan-seed-add" class="primary-btn" ${seedPlanRows.length ? "" : "disabled"}>この圃場に反映（未保存）</button>
         </div>
 
@@ -704,6 +784,8 @@ function openPlantingPlanModal(fieldName) {
 
   const addBtn = document.getElementById("plan-seed-add");
   const selectEl = document.getElementById("plan-seed-select");
+  const assignTraysInput = document.getElementById("plan-seed-assign-trays");
+  const remainingNoteEl = document.getElementById("plan-seed-remaining-note");
   const bedInput = document.getElementById("plan-bed-spacing");
   const plantInput = document.getElementById("plan-plant-spacing");
   const requiredPlantsEl = document.getElementById("plan-required-plants");
@@ -723,28 +805,99 @@ function openPlantingPlanModal(fieldName) {
   if (bedInput) bedInput.addEventListener("input", updateBaseRequirementView);
   if (plantInput) plantInput.addEventListener("input", updateBaseRequirementView);
 
+  const updateSelectedSeedRemainingView = () => {
+    if (!selectEl || !assignTraysInput || !remainingNoteEl) return;
+    const id = String(selectEl.value || "").trim();
+    const picked = getSeedPlanById(id);
+    if (!picked) {
+      remainingNoteEl.textContent = "";
+      assignTraysInput.value = "0";
+      return;
+    }
+
+    const remaining = getRemainingTrays(picked.id, picked.trayCount);
+    const cells = parseTrayCells(picked.trayType);
+    remainingNoteEl.textContent = `残り定植可能: ${remaining.toLocaleString()}枚（約${(remaining * cells).toLocaleString()}株）`;
+    assignTraysInput.value = String(remaining > 0 ? remaining : 0);
+  };
+
+  if (selectEl) {
+    selectEl.addEventListener("change", updateSelectedSeedRemainingView);
+    updateSelectedSeedRemainingView();
+  }
+
   if (addBtn && selectEl) {
     addBtn.onclick = () => {
       const id = String(selectEl.value || "").trim();
       if (!id) return;
-      const picked = seedPlanRows.find(v => v.id === id);
+      const picked = getSeedPlanById(id);
       if (!picked) return;
 
-      const next = [...(planningAssignments.get(fieldName) || [])];
-      if (!next.some(v => v.id === picked.id)) {
-        next.push({ ...picked });
-        planningAssignments.set(fieldName, next);
+      const requested = Math.floor(Number(assignTraysInput?.value || 0));
+      if (!(requested > 0)) {
+        alert("割当枚数を入力してください。");
+        return;
       }
+
+      const remaining = getRemainingTrays(picked.id, picked.trayCount);
+      if (remaining <= 0) {
+        alert("この播種IDは割当可能な残枚数がありません。");
+        return;
+      }
+
+      const assignTrayCount = Math.min(requested, remaining);
+      if (assignTrayCount <= 0) {
+        alert("割当可能枚数を確認してください。");
+        return;
+      }
+
+      upsertAssignment(fieldName, picked, assignTrayCount);
       openPlantingPlanModal(fieldName);
       renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
     };
   }
 
+  document.querySelectorAll(".plan-update-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = String(btn.dataset.id || "").trim();
+      if (!id) return;
+
+      const input = Array.from(document.querySelectorAll(".plan-assigned-tray-input")).find(el => String(el.dataset.id || "") === id);
+      const requested = Math.floor(Number(input?.value || 0));
+      if (!(requested >= 0)) {
+        alert("更新枚数を確認してください。");
+        return;
+      }
+
+      const picked = getSeedPlanById(id);
+      if (!picked) {
+        alert("播種計画IDが見つかりません。");
+        return;
+      }
+
+      if (requested === 0) {
+        removeAssignment(fieldName, id);
+        openPlantingPlanModal(fieldName);
+        renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+        return;
+      }
+
+      const maxAssignable = getRemainingTrays(id, picked.trayCount, { excludeField: fieldName, excludeId: id });
+      if (requested > maxAssignable) {
+        alert(`割当上限は ${maxAssignable.toLocaleString()} 枚です。`);
+        return;
+      }
+
+      upsertAssignment(fieldName, picked, requested);
+      openPlantingPlanModal(fieldName);
+      renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+    });
+  });
+
   document.querySelectorAll(".plan-remove-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = String(btn.dataset.id || "").trim();
-      const next = [...(planningAssignments.get(fieldName) || [])].filter(v => v.id !== id);
-      planningAssignments.set(fieldName, next);
+      removeAssignment(fieldName, id);
       openPlantingPlanModal(fieldName);
       renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
     });
