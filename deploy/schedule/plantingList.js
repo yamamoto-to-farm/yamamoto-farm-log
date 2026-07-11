@@ -19,10 +19,14 @@ let plantingRows = [];
 let seedRows = [];
 let fieldData = [];
 let varietyData = [];
+let fieldDetailData = {};
 let canDiscard = false;
 let seedPlanRows = [];
 let seedPlanYearLoaded = null;
 const planningAssignments = new Map(); // fieldName -> [{ id, variety, sowDate, trayType, trayCount, plants }]
+const DEFAULT_BED_SPACING_CM = 60;
+const DEFAULT_PLANT_SPACING_CM = 33;
+const ACTUAL_WINDOW_YEARS = 2;
 
 let filterData = {};
 let initialized = false;
@@ -71,6 +75,7 @@ async function initPlantingListPage() {
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
+  fieldDetailData = await loadJSON("/data/field-detail.json");
 
   /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
@@ -215,6 +220,7 @@ function getPlantDetail(plantingRef) {
 function renderFieldCards(rows, state = {}) {
 
   const tableArea = document.getElementById("table-area");
+  const selectedYear = Number(getSelectedPlanningYear()) || new Date().getFullYear();
 
   const targetFields = getTargetFields(rows, state);
   if (!targetFields.length) {
@@ -253,16 +259,11 @@ function renderFieldCards(rows, state = {}) {
 
   sortedFields.forEach(field => {
     const fieldName = String(field.name || "").trim();
-    const actualRows = rows.filter(r => String(r.field || "").trim() === fieldName);
-    const actualQuantity = actualRows.reduce((acc, r) => acc + Number(r.quantity || 0), 0);
-    const actualAreaTan = actualRows.reduce((acc, r) => {
-      const spacing = {
-        row: Number(r.spacingRow || 0),
-        bed: Number(r.spacingBed || 0)
-      };
-      const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
-      return acc + calcAreaTan(areaM2);
-    }, 0);
+    const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
+    const actualText = `${actualSummary.quantity.toLocaleString()}株 / ${actualSummary.areaTan.toFixed(2)}反`;
+    const actualVarietyText = actualSummary.varietyLines.length
+      ? actualSummary.varietyLines.map(v => escapeHtml(v)).join("<br>")
+      : "-";
 
     const assignments = planningAssignments.get(fieldName) || [];
     const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
@@ -276,7 +277,6 @@ function renderFieldCards(rows, state = {}) {
     const whenText = plannedDates.length ? plannedDates.join(" / ") : "未設定";
     const whatText = plannedVarieties.length ? plannedVarieties.join(" / ") : "未設定";
     const planText = `${plannedPlants.toLocaleString()}株 / ${plannedTrays.toLocaleString()}枚`;
-    const actualText = `${actualQuantity.toLocaleString()}株 / ${actualAreaTan.toFixed(2)}反`;
     const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
     const unsetClass = isUnset ? "is-unset" : "is-set";
 
@@ -287,7 +287,11 @@ function renderFieldCards(rows, state = {}) {
         <td><span class="plan-chip ${unsetClass}">${escapeHtml(whenText)}</span></td>
         <td><span class="plan-chip ${unsetClass}">${escapeHtml(whatText)}</span></td>
         <td><span class="plan-chip ${unsetClass}">${planText}</span></td>
-        <td>${actualText}</td>
+        <td>
+          <div><strong>直近定植日:</strong> ${escapeHtml(actualSummary.latestDate || "-")}</div>
+          <div>${actualVarietyText}</div>
+          <div>合計: ${actualText}（${escapeHtml(actualSummary.windowLabel)}）</div>
+        </td>
       </tr>
     `;
   });
@@ -376,10 +380,121 @@ function parseTrayCells(trayType) {
   return Number.isFinite(v) && v > 0 ? v : 128;
 }
 
+function parseFlexibleNumber(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const text = String(value ?? "").replace(/,/g, "").trim();
+  const m = text.match(/\d+(?:\.\d+)?/);
+  if (!m) return 0;
+  const n = Number(m[0]);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getFieldSizeA(fieldName) {
+  const raw = fieldDetailData?.[fieldName]?.size;
+  const sizeA = parseFlexibleNumber(raw);
+  return sizeA > 0 ? sizeA : 0;
+}
+
+function calcBaseRequirement(fieldName, bedCm, plantCm) {
+  const areaA = getFieldSizeA(fieldName);
+  if (areaA <= 0 || bedCm <= 0 || plantCm <= 0) {
+    return {
+      areaA,
+      requiredPlants: 0,
+      requiredTray128: 0,
+      requiredTray200: 0,
+      valid: false
+    };
+  }
+
+  const areaM2 = areaA * 100;
+  const onePlantAreaM2 = (bedCm / 100) * (plantCm / 100);
+  const requiredPlants = Math.ceil(areaM2 / onePlantAreaM2);
+
+  return {
+    areaA,
+    requiredPlants,
+    requiredTray128: Math.ceil(requiredPlants / 128),
+    requiredTray200: Math.ceil(requiredPlants / 200),
+    valid: true
+  };
+}
+
+function buildRecentActualSummary(fieldName, selectedYear) {
+  const endYear = Number(selectedYear) || new Date().getFullYear();
+  const startYear = endYear - ACTUAL_WINDOW_YEARS + 1;
+  const startDate = `${startYear}-01-01`;
+  const endDate = `${endYear}-12-31`;
+  const target = String(fieldName || "").trim();
+
+  const recentRows = plantingRows.filter(row => {
+    if (String(row.field || "").trim() !== target) return false;
+    const d = String(row.plantDate || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+    return d >= startDate && d <= endDate;
+  });
+
+  const quantity = recentRows.reduce((acc, row) => acc + Number(row.quantity || 0), 0);
+  const areaTan = recentRows.reduce((acc, row) => {
+    const spacing = {
+      row: Number(row.spacingRow || 0),
+      bed: Number(row.spacingBed || 0)
+    };
+    const areaM2 = calcAreaM2(Number(row.quantity || 0), spacing.row, spacing.bed);
+    return acc + calcAreaTan(areaM2);
+  }, 0);
+
+  const latestDate = recentRows.reduce((maxDate, row) => {
+    const d = String(row.plantDate || "").trim();
+    if (!maxDate) return d;
+    return d > maxDate ? d : maxDate;
+  }, "");
+
+  const byVariety = new Map();
+  recentRows.forEach(row => {
+    const key = String(row.variety || "").trim() || "(品種未設定)";
+    const quantityValue = Number(row.quantity || 0);
+    let trayCount = Number(row.trayCount || 0);
+    if (!(trayCount > 0) && quantityValue > 0) {
+      trayCount = Math.ceil(quantityValue / parseTrayCells(row.trayType));
+    }
+
+    const prev = byVariety.get(key) || { quantity: 0, trays: 0 };
+    prev.quantity += quantityValue;
+    prev.trays += trayCount;
+    byVariety.set(key, prev);
+  });
+
+  const varietyLines = Array.from(byVariety.entries())
+    .sort((a, b) => b[1].quantity - a[1].quantity)
+    .slice(0, 3)
+    .map(([name, v]) => `${name}: ${Math.round(v.quantity).toLocaleString()}株 / ${Math.round(v.trays).toLocaleString()}枚`);
+
+  const restCount = byVariety.size - varietyLines.length;
+  if (restCount > 0) {
+    varietyLines.push(`ほか${restCount}品種`);
+  }
+
+  return {
+    latestDate,
+    quantity,
+    areaTan,
+    varietyLines,
+    windowLabel: `${startYear}〜${endYear}`
+  };
+}
+
 function openPlantingPlanModal(fieldName) {
   const assignments = planningAssignments.get(fieldName) || [];
   const plannedPlants = assignments.reduce((acc, item) => acc + Number(item.plants || 0), 0);
   const plannedTrays = assignments.reduce((acc, item) => acc + Number(item.trayCount || 0), 0);
+  const baseRequirement = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
+  const areaText = baseRequirement.areaA > 0 ? `${baseRequirement.areaA.toLocaleString()}a` : "未設定";
+  const requiredPlantsText = baseRequirement.valid ? baseRequirement.requiredPlants.toLocaleString() : "-";
+  const requiredTray128Text = baseRequirement.valid ? baseRequirement.requiredTray128.toLocaleString() : "-";
+  const requiredTray200Text = baseRequirement.valid ? baseRequirement.requiredTray200.toLocaleString() : "-";
 
   const optionsHtml = seedPlanRows.length
     ? seedPlanRows.map(item => `
@@ -404,8 +519,16 @@ function openPlantingPlanModal(fieldName) {
     `定植計画：${fieldName}`,
     `
       <div class="plant-plan-modal">
-        <p><strong>必要株数：</strong> ${plannedPlants.toLocaleString()} 株</p>
-        <p><strong>必要トレイ枚数：</strong> ${plannedTrays.toLocaleString()} 枚</p>
+        <p><strong>圃場面積：</strong> ${areaText}</p>
+        <p>
+          <label>畝間(cm)</label>
+          <input id="plan-bed-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_BED_SPACING_CM}">
+          <label>株間(cm)</label>
+          <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
+        </p>
+        <p><strong>必要株数（1作ベース）：</strong> <span id="plan-required-plants">${requiredPlantsText}</span> 株</p>
+        <p><strong>必要トレイ枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
+        <p><strong>割当合計（未保存）：</strong> ${plannedPlants.toLocaleString()} 株 / ${plannedTrays.toLocaleString()} 枚</p>
 
         <div class="plant-plan-picker">
           <label>播種計画から選択</label>
@@ -425,6 +548,25 @@ function openPlantingPlanModal(fieldName) {
 
   const addBtn = document.getElementById("plan-seed-add");
   const selectEl = document.getElementById("plan-seed-select");
+  const bedInput = document.getElementById("plan-bed-spacing");
+  const plantInput = document.getElementById("plan-plant-spacing");
+  const requiredPlantsEl = document.getElementById("plan-required-plants");
+  const requiredTray128El = document.getElementById("plan-required-tray128");
+  const requiredTray200El = document.getElementById("plan-required-tray200");
+
+  const updateBaseRequirementView = () => {
+    if (!bedInput || !plantInput || !requiredPlantsEl || !requiredTray128El || !requiredTray200El) return;
+    const bedCm = Number(bedInput.value || 0);
+    const plantCm = Number(plantInput.value || 0);
+    const required = calcBaseRequirement(fieldName, bedCm, plantCm);
+    requiredPlantsEl.textContent = required.valid ? required.requiredPlants.toLocaleString() : "-";
+    requiredTray128El.textContent = required.valid ? required.requiredTray128.toLocaleString() : "-";
+    requiredTray200El.textContent = required.valid ? required.requiredTray200.toLocaleString() : "-";
+  };
+
+  if (bedInput) bedInput.addEventListener("input", updateBaseRequirementView);
+  if (plantInput) plantInput.addEventListener("input", updateBaseRequirementView);
+
   if (addBtn && selectEl) {
     addBtn.onclick = () => {
       const id = String(selectEl.value || "").trim();
