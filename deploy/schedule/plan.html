@@ -16,50 +16,39 @@
     <h1 class="page-title">播種・定植計画</h1>
 
     <section class="card plan-control-hub">
-      <div class="plan-control-group" id="planning-year-card">
-        <h3 class="section-title">年度</h3>
-        <div class="plan-action-row" role="group" aria-label="年度選択">
-          <button id="selectYearBtn" class="primary-btn">年度を選択</button>
-          <span id="selectedYearLabel" class="selected-year-label"></span>
-        </div>
+      <h2 class="section-title plan-control-title">播種・定植計画</h2>
+
+      <div class="plan-action-row plan-mode-row" id="mode-switch-card" role="group" aria-label="計画モード切替">
+        <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
+        <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
       </div>
 
-      <div class="plan-control-group" id="mode-switch-card">
-        <h3 class="section-title">計画モード</h3>
-        <div class="plan-action-row" role="group" aria-label="計画モード切替">
-          <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
-          <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
-        </div>
+      <div class="plan-action-row plan-year-row" id="planning-year-card" role="group" aria-label="年度選択">
+        <button id="selectYearBtn" class="primary-btn">年度を選択</button>
+        <span id="selectedYearLabel" class="selected-year-label"></span>
       </div>
 
-      <div class="plan-control-group plan-action-card" id="seedList-controls">
-        <h3 class="section-title">播種計画データ</h3>
-        <div class="plan-action-row" role="group" aria-label="播種計画データ操作">
-          <button id="loadJsonBtn" class="secondary-btn">JSON 読み込み（初期化）</button>
-          <button id="loadCsvBtn" class="secondary-btn">CSV 読み込み（復元）</button>
-          <button id="saveCsvBtn" class="primary-btn">CSV 保存</button>
+      <div class="plan-io-grid">
+        <div class="plan-io-card plan-action-card" id="seedList-controls">
+          <h3 class="section-title">播種計画データ</h3>
+          <div class="plan-action-row" role="group" aria-label="播種計画データ操作">
+            <button id="loadJsonBtn" class="secondary-btn">JSON 読み込み（初期化）</button>
+            <button id="loadCsvBtn" class="secondary-btn">CSV 読み込み（復元）</button>
+            <button id="saveCsvBtn" class="primary-btn">CSV 保存</button>
+          </div>
+        </div>
+
+        <div class="plan-io-card plan-action-card" id="planting-controls" style="display:none;">
+          <h3 class="section-title">定植計画データ</h3>
+          <div class="plan-action-row" role="group" aria-label="定植計画データ操作">
+            <button id="loadPlantingCsvBtn" class="secondary-btn">定植計画CSV 読み込み（復元）</button>
+            <button id="savePlantingCsvBtn" class="primary-btn">定植計画CSV 保存</button>
+          </div>
         </div>
       </div>
-
-      <div class="plan-control-group plan-action-card" id="planting-controls" style="display:none;">
-        <h3 class="section-title">定植計画データ</h3>
-        <div class="plan-action-row" role="group" aria-label="定植計画データ操作">
-          <button id="loadPlantingCsvBtn" class="secondary-btn">定植計画CSV 読み込み（復元）</button>
-          <button id="savePlantingCsvBtn" class="primary-btn">定植計画CSV 保存</button>
-        </div>
-      </div>
-
-      <div class="plan-control-group" id="filter-card">
-        <h3 class="section-title">フィルタ</h3>
-        <div class="plan-filter-row" role="group" aria-label="定植フィルタ">
-          <div class="filter-open-btn" data-type="year">▶ 年</div>
-          <div class="filter-open-btn" data-type="field">▶ 圃場</div>
-          <div class="filter-open-btn" data-type="variety">▶ 品種</div>
-        </div>
-      </div>
-
-      <div id="activeFilters"></div>
     </section>
+
+    <div id="activeFilters" class="plan-active-filters"></div>
 
     <div class="card" id="capacity-card">
       <label>育苗ハウス容量（トレイ枚数）</label>

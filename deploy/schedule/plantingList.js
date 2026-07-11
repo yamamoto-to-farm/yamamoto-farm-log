@@ -8,7 +8,6 @@ import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 import { saveLog } from "/common/save/index.js";
 
 import {
-  openYearModal,
   openFieldModal,
   openVarietyModal,
   setFilterData
@@ -36,6 +35,7 @@ const PLANTING_VIEW_MODE_DATE = "date";
 let filterData = {};
 let initialized = false;
 let plantingViewMode = PLANTING_VIEW_MODE_FIELD;
+let plantingFilterButtonsBound = false;
 
 /* ============================================================
    外部から呼ばれるエントリポイント
@@ -289,15 +289,21 @@ async function initPlantingListPage() {
   // ▼ list.js がモード切替時に再適用できるよう保存
   window.plantingFilterData = filterData;
 
-  // ▼ フィルタボタン（存在チェック付き）
-  const yearBtn = document.querySelector('[data-type="year"]');
-  if (yearBtn) yearBtn.addEventListener("click", openYearModal);
-
-  const fieldBtn = document.querySelector('[data-type="field"]');
-  if (fieldBtn) fieldBtn.addEventListener("click", openFieldModal);
-
-  const varietyBtn = document.querySelector('[data-type="variety"]');
-  if (varietyBtn) varietyBtn.addEventListener("click", openVarietyModal);
+  if (!plantingFilterButtonsBound) {
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement
+        ? event.target.closest(".planting-view-filter-btn")
+        : null;
+      if (!target) return;
+      const type = String(target.dataset.type || "").trim();
+      if (type === "field") {
+        openFieldModal();
+      } else if (type === "variety") {
+        openVarietyModal();
+      }
+    });
+    plantingFilterButtonsBound = true;
+  }
 
   window.addEventListener("filter:apply", (e) => {
     window.currentFilterState = e.detail;
@@ -465,6 +471,10 @@ function renderFieldCards(rows, state = {}) {
       <div class="planting-view-switch" role="group" aria-label="定植計画表示モード">
         <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_FIELD ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_FIELD}">作成ビュー（圃場ごと）</button>
         <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_DATE ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_DATE}">運用ビュー（定植日順）</button>
+      </div>
+      <div class="planting-view-filter-row" role="group" aria-label="定植絞り込み">
+        <button type="button" class="secondary-btn planting-view-filter-btn" data-type="field">圃場で絞り込み</button>
+        <button type="button" class="secondary-btn planting-view-filter-btn" data-type="variety">品種で絞り込み</button>
       </div>
     </section>
   `;

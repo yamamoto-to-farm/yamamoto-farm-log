@@ -211,7 +211,6 @@ function applyModeUI() {
   btnPlanting.classList.toggle("active", currentMode === "planting");
   btnSeed.classList.toggle("active", currentMode === "seed");
 
-  const filterCard = document.getElementById("filter-card");
   const activeFilters = document.getElementById("activeFilters");
 
   // ▼ 播種計画専用コントロール（CSV/JSON 読み込み・保存）
@@ -243,13 +242,9 @@ function applyModeUI() {
     summaryCard.style.display = (currentMode === "seed") ? "" : "none";
   }
 
-  // ▼ フィルタ（定植計画専用）
-  if (currentMode === "seed") {
-    filterCard.style.display = "none";
-    activeFilters.style.display = "none";
-  } else {
-    filterCard.style.display = "";
-    activeFilters.style.display = "";
+  // ▼ フィルタ表示（定植計画専用）
+  if (activeFilters) {
+    activeFilters.style.display = (currentMode === "planting") ? "" : "none";
   }
 }
 
