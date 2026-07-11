@@ -224,6 +224,19 @@
   background: #fffbeb;
 }
 
+.field-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.plan-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #334155;
+}
+
 .plan-chip {
   display: inline-block;
   border-radius: 999px;
@@ -246,30 +259,16 @@
   font-weight: 600;
 }
 
-.planting-plan-row td:nth-child(1) {
-  width: 12%;
-}
-
 .planting-plan-row td:nth-child(2) {
-  width: 20%;
+  white-space: nowrap;
 }
 
 .planting-plan-row td:nth-child(3) {
-  width: 18%;
+  white-space: nowrap;
 }
 
 .planting-plan-row td:nth-child(4) {
-  width: 22%;
-}
-
-.planting-plan-row td:nth-child(5) {
-  width: 14%;
-  white-space: nowrap;
-}
-
-.planting-plan-row td:nth-child(6) {
-  width: 14%;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .planting-field-grid {

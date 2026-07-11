@@ -236,33 +236,34 @@ function renderFieldCards(rows, state = {}) {
   let totalAssignedPlants = 0;
   let totalAssignedTrays = 0;
 
-  const sortedFields = targetFields
-    .slice()
-    .sort((a, b) => String(a.area || "").localeCompare(String(b.area || ""), "ja") || String(a.name || "").localeCompare(String(b.name || ""), "ja"));
-
   html += `
     <section class="card planting-field-group">
       <h3 class="section-title">圃場ごとの定植計画（行クリックで編集）</h3>
       <table class="planting-plan-table">
+        <colgroup>
+          <col style="width:24%">
+          <col style="width:16%">
+          <col style="width:18%">
+          <col style="width:20%">
+          <col style="width:22%">
+        </colgroup>
         <thead>
           <tr>
-            <th>エリア</th>
-            <th>圃場</th>
-            <th>いつ（定植予定）</th>
-            <th>何を（品種）</th>
-            <th>どれくらい（計画）</th>
+            <th>圃場名</th>
+            <th>定植予定日</th>
+            <th>品種</th>
+            <th>枚数（トレイ種別）</th>
             <th>実績</th>
           </tr>
         </thead>
         <tbody>
   `;
 
-  sortedFields.forEach(field => {
+  targetFields.forEach(field => {
     const fieldName = String(field.name || "").trim();
     const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
-    const actualText = `${actualSummary.quantity.toLocaleString()}株 / ${actualSummary.areaTan.toFixed(2)}反`;
-    const actualVarietyText = actualSummary.varietyLines.length
-      ? actualSummary.varietyLines.map(v => escapeHtml(v)).join("<br>")
+    const actualTrayText = actualSummary.trayLines.length
+      ? actualSummary.trayLines.map(v => escapeHtml(v)).join("<br>")
       : "-";
 
     const assignments = planningAssignments.get(fieldName) || [];
@@ -276,21 +277,28 @@ function renderFieldCards(rows, state = {}) {
 
     const whenText = plannedDates.length ? plannedDates.join(" / ") : "未設定";
     const whatText = plannedVarieties.length ? plannedVarieties.join(" / ") : "未設定";
-    const planText = `${plannedPlants.toLocaleString()}株 / ${plannedTrays.toLocaleString()}枚`;
+    const planTraySummary = buildPlanTraySummary(assignments);
+    const planTrayText = planTraySummary.lines.length ? planTraySummary.lines.map(v => escapeHtml(v)).join("<br>") : "未設定";
     const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
     const unsetClass = isUnset ? "is-unset" : "is-set";
 
     html += `
       <tr class="planting-plan-row ${isUnset ? "row-unset" : ""}" data-field="${escapeAttr(fieldName)}">
-        <td>${escapeHtml(String(field.area || "その他"))}</td>
-        <td><strong>${escapeHtml(fieldName)}</strong><span class="planting-badge">候補 ${assignments.length}件</span></td>
+        <td>
+          <strong>${escapeHtml(fieldName)}</strong><span class="planting-badge">候補 ${assignments.length}件</span>
+          <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
+        </td>
         <td><span class="plan-chip ${unsetClass}">${escapeHtml(whenText)}</span></td>
         <td><span class="plan-chip ${unsetClass}">${escapeHtml(whatText)}</span></td>
-        <td><span class="plan-chip ${unsetClass}">${planText}</span></td>
+        <td>
+          <span class="plan-chip ${unsetClass}">${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</span>
+          <div class="plan-sub">${planTrayText}</div>
+          <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
+        </td>
         <td>
           <div><strong>直近定植日:</strong> ${escapeHtml(actualSummary.latestDate || "-")}</div>
-          <div>${actualVarietyText}</div>
-          <div>合計: ${actualText}（${escapeHtml(actualSummary.windowLabel)}）</div>
+          <div class="plan-sub">${actualTrayText}</div>
+          <div class="plan-sub">作付面積: ${actualSummary.areaTan.toFixed(2)}反（${escapeHtml(actualSummary.windowLabel)}）</div>
         </td>
       </tr>
     `;
@@ -436,7 +444,6 @@ function buildRecentActualSummary(fieldName, selectedYear) {
     return d >= startDate && d <= endDate;
   });
 
-  const quantity = recentRows.reduce((acc, row) => acc + Number(row.quantity || 0), 0);
   const areaTan = recentRows.reduce((acc, row) => {
     const spacing = {
       row: Number(row.spacingRow || 0),
@@ -452,37 +459,75 @@ function buildRecentActualSummary(fieldName, selectedYear) {
     return d > maxDate ? d : maxDate;
   }, "");
 
-  const byVariety = new Map();
+  const byTray = new Map();
   recentRows.forEach(row => {
-    const key = String(row.variety || "").trim() || "(品種未設定)";
+    const variety = String(row.variety || "").trim() || "(品種未設定)";
+    const trayType = String(row.trayType || "").trim() || "tray未設定";
+    const key = `${variety}\t${trayType}`;
     const quantityValue = Number(row.quantity || 0);
     let trayCount = Number(row.trayCount || 0);
     if (!(trayCount > 0) && quantityValue > 0) {
       trayCount = Math.ceil(quantityValue / parseTrayCells(row.trayType));
     }
 
-    const prev = byVariety.get(key) || { quantity: 0, trays: 0 };
+    const areaM2 = calcAreaM2(
+      quantityValue,
+      Number(row.spacingRow || 0),
+      Number(row.spacingBed || 0)
+    );
+    const areaTanValue = calcAreaTan(areaM2);
+
+    const prev = byTray.get(key) || { variety, trayType, quantity: 0, trays: 0, areaTan: 0 };
     prev.quantity += quantityValue;
     prev.trays += trayCount;
-    byVariety.set(key, prev);
+    prev.areaTan += areaTanValue;
+    byTray.set(key, prev);
   });
 
-  const varietyLines = Array.from(byVariety.entries())
-    .sort((a, b) => b[1].quantity - a[1].quantity)
+  const trayLines = Array.from(byTray.values())
+    .sort((a, b) => b.trays - a.trays)
     .slice(0, 3)
-    .map(([name, v]) => `${name}: ${Math.round(v.quantity).toLocaleString()}株 / ${Math.round(v.trays).toLocaleString()}枚`);
+    .map(v => `${v.variety}: ${Math.round(v.trays).toLocaleString()}枚（${v.trayType}） / ${Math.round(v.quantity).toLocaleString()}株 / ${v.areaTan.toFixed(2)}反`);
 
-  const restCount = byVariety.size - varietyLines.length;
+  const restCount = byTray.size - trayLines.length;
   if (restCount > 0) {
-    varietyLines.push(`ほか${restCount}品種`);
+    trayLines.push(`ほか${restCount}件`);
   }
 
   return {
     latestDate,
-    quantity,
     areaTan,
-    varietyLines,
+    trayLines,
     windowLabel: `${startYear}〜${endYear}`
+  };
+}
+
+function buildPlanTraySummary(assignments) {
+  const byTrayType = new Map();
+
+  assignments.forEach(item => {
+    const trayType = String(item.trayType || "").trim() || "tray未設定";
+    const trayCount = Number(item.trayCount || 0);
+    const plants = Number(item.plants || 0);
+    const prev = byTrayType.get(trayType) || { trayType, trayCount: 0, plants: 0 };
+    prev.trayCount += trayCount;
+    prev.plants += plants;
+    byTrayType.set(trayType, prev);
+  });
+
+  const lines = Array.from(byTrayType.values())
+    .sort((a, b) => b.trayCount - a.trayCount)
+    .map(v => `${Math.round(v.trayCount).toLocaleString()}枚（${v.trayType}）`);
+
+  const totalTrays = Array.from(byTrayType.values()).reduce((acc, v) => acc + v.trayCount, 0);
+  const totalPlants = Array.from(byTrayType.values()).reduce((acc, v) => acc + v.plants, 0);
+  const areaM2 = calcAreaM2(totalPlants, DEFAULT_PLANT_SPACING_CM, DEFAULT_BED_SPACING_CM);
+
+  return {
+    lines,
+    totalTrays,
+    totalPlants,
+    areaTan: calcAreaTan(areaM2)
   };
 }
 
