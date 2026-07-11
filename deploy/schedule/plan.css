@@ -248,6 +248,12 @@
   padding: 8px 6px;
   vertical-align: top;
   overflow-wrap: anywhere;
+
+.planting-plan-table td:nth-child(2),
+.planting-plan-table td:nth-child(3),
+.planting-plan-table td:nth-child(4) {
+  font-size: 13px;
+}
 }
 
 .planting-plan-table th {
@@ -608,13 +614,23 @@
   }
 }
 
-  .planting-plan-table td:nth-child(2),
-  .planting-plan-table td:nth-child(3),
-  .planting-plan-table td:nth-child(4) {
-    font-size: 13px;
+@media print {
+  .planting-area-body {
+    display: block !important;
   }
 
-@media print {
+  #table-area > .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  #table-area > .card:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
   .planting-plan-table .plan-chip,
   .planting-plan-table .planting-badge,
   .planting-plan-table .plan-count-chip {
