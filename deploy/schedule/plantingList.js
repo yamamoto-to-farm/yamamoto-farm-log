@@ -23,7 +23,7 @@ let fieldDetailData = {};
 let canDiscard = false;
 let seedPlanRows = [];
 let seedPlanYearLoaded = null;
-const planningAssignments = new Map(); // fieldName -> [{ id, variety, sowDate, trayType, trayCount, plants }]
+const planningAssignmentsByYear = new Map(); // year -> Map(fieldName -> [{...}])
 const areaExpandState = new Map(); // areaName -> boolean
 const DEFAULT_BED_SPACING_CM = 60;
 const DEFAULT_PLANT_SPACING_CM = 33;
@@ -44,6 +44,13 @@ export async function renderPlantingList() {
   if (!initialized) {
     await initPlantingListPage();
     initialized = true;
+  }
+
+  if (!hasPlanningYearSelection()) {
+    seedPlanRows = [];
+    seedPlanYearLoaded = null;
+    renderYearSelectionRequiredState();
+    return;
   }
 
   const selectedYear = getSelectedPlanningYear();
@@ -71,8 +78,13 @@ async function initPlantingListPage() {
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
 
-  seedPlanYearLoaded = getSelectedPlanningYear();
-  seedPlanRows = await loadSeedPlanRows(seedPlanYearLoaded);
+  if (hasPlanningYearSelection()) {
+    seedPlanYearLoaded = getSelectedPlanningYear();
+    seedPlanRows = await loadSeedPlanRows(seedPlanYearLoaded);
+  } else {
+    seedPlanYearLoaded = null;
+    seedPlanRows = [];
+  }
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
@@ -136,11 +148,19 @@ async function initPlantingListPage() {
 
   window.addEventListener("filter:apply", (e) => {
     window.currentFilterState = e.detail;
+    if (!hasPlanningYearSelection()) {
+      renderYearSelectionRequiredState();
+      return;
+    }
     renderFieldCards(applyAllFilters(plantingRows, e.detail), e.detail);
   });
 
   window.addEventListener("filter:reset", () => {
     window.currentFilterState = {};
+    if (!hasPlanningYearSelection()) {
+      renderYearSelectionRequiredState();
+      return;
+    }
     renderFieldCards(plantingRows, {});
   });
 }
@@ -222,6 +242,7 @@ function renderFieldCards(rows, state = {}) {
 
   const tableArea = document.getElementById("table-area");
   const selectedYear = Number(getSelectedPlanningYear()) || new Date().getFullYear();
+  const planningAssignments = getCurrentPlanningAssignments();
 
   const targetFields = getTargetFields(rows, state);
   if (!targetFields.length) {
@@ -479,6 +500,40 @@ function getSelectedPlanningYear() {
   return String(new Date().getFullYear());
 }
 
+function hasPlanningYearSelection() {
+  const label = document.getElementById("selectedYearLabel")?.textContent || "";
+  return /(\d{4})/.test(String(label));
+}
+
+function renderYearSelectionRequiredState() {
+  const tableArea = document.getElementById("table-area");
+  if (tableArea) {
+    tableArea.innerHTML = `
+      <section class="card">
+        <h3 class="section-title">定植計画</h3>
+        <p>年度を選択すると表示・編集できます。</p>
+      </section>
+    `;
+  }
+
+  const summary = document.getElementById("summaryArea");
+  if (summary) {
+    summary.textContent = "年度未選択";
+  }
+}
+
+function getPlanningAssignmentsForYear(year) {
+  const key = String(year || getSelectedPlanningYear());
+  if (!planningAssignmentsByYear.has(key)) {
+    planningAssignmentsByYear.set(key, new Map());
+  }
+  return planningAssignmentsByYear.get(key);
+}
+
+function getCurrentPlanningAssignments() {
+  return getPlanningAssignmentsForYear(getSelectedPlanningYear());
+}
+
 async function loadSeedPlanRows(year) {
   try {
     const rows = normalizeKeys(await loadCSV(`/logs/schedule/seed/${year}.csv`));
@@ -717,6 +772,7 @@ function getTotalAssignedTraysForSeed(seedId, options = {}) {
   const excludeField = String(options.excludeField || "").trim();
   const excludeId = String(options.excludeId || "").trim();
   let total = 0;
+  const planningAssignments = getCurrentPlanningAssignments();
 
   planningAssignments.forEach((items, fieldName) => {
     const fieldKey = String(fieldName || "").trim();
@@ -743,6 +799,7 @@ function getRemainingTrays(seedId, totalTrays, options = {}) {
 }
 
 function upsertAssignment(fieldName, picked, assignedTrayCount) {
+  const planningAssignments = getCurrentPlanningAssignments();
   const next = [...(planningAssignments.get(fieldName) || [])];
   const idx = next.findIndex(v => String(v.id || "") === String(picked.id || ""));
 
@@ -761,6 +818,7 @@ function upsertAssignment(fieldName, picked, assignedTrayCount) {
 }
 
 function removeAssignment(fieldName, seedId) {
+  const planningAssignments = getCurrentPlanningAssignments();
   const next = [...(planningAssignments.get(fieldName) || [])].filter(v => String(v.id || "") !== String(seedId || ""));
   planningAssignments.set(fieldName, next);
 }
@@ -781,6 +839,7 @@ function getAssignedPlantsTotal(assignments, options = {}) {
 }
 
 function openPlantingPlanModal(fieldName) {
+  const planningAssignments = getCurrentPlanningAssignments();
   const assignments = planningAssignments.get(fieldName) || [];
   const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
   const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
@@ -830,6 +889,7 @@ function openPlantingPlanModal(fieldName) {
             <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
           </div>
           <p class="plan-metric-row"><strong>定植可能枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
+          <p class="plan-metric-row"><strong>候補基準の定植可能枚数：</strong> <span id="plan-capacity-by-selected">-</span></p>
         </div>
 
         <div class="plant-plan-picker plan-group plan-group-picker">
@@ -904,6 +964,7 @@ function openPlantingPlanModal(fieldName) {
   const plantInput = document.getElementById("plan-plant-spacing");
   const requiredTray128El = document.getElementById("plan-required-tray128");
   const requiredTray200El = document.getElementById("plan-required-tray200");
+  const capacityBySelectedEl = document.getElementById("plan-capacity-by-selected");
   let selectedSeedId = "";
   let draftSelectedSeedId = "";
 
@@ -998,13 +1059,14 @@ function openPlantingPlanModal(fieldName) {
     if (addBtn) addBtn.disabled = false;
   };
 
-  const updateSelectedSeedRemainingView = () => {
+  const updateSelectedSeedRemainingView = (applySuggestedDefault = false) => {
     if (!assignTraysInput || !remainingNoteEl) return;
     const id = String(selectedSeedId || "").trim();
     const picked = getSeedPlanById(id);
     if (!picked) {
       remainingNoteEl.textContent = "";
       assignTraysInput.value = "0";
+      if (capacityBySelectedEl) capacityBySelectedEl.textContent = "-";
       return;
     }
 
@@ -1017,9 +1079,14 @@ function openPlantingPlanModal(fieldName) {
     const fieldRemainPlants = Math.max(0, capacityPlants - assignedPlantsExcluding);
     const fieldRemainTrays = Math.floor(fieldRemainPlants / Math.max(1, cells));
     const maxAssignable = Math.max(0, Math.min(remaining, fieldRemainTrays));
+    if (capacityBySelectedEl) {
+      capacityBySelectedEl.textContent = `${fieldRemainTrays.toLocaleString()}枚（${picked.trayType || "tray"}）`;
+    }
     remainingNoteEl.textContent = `入力上限 ${maxAssignable.toLocaleString()}枚（播種ID残 ${remaining.toLocaleString()} / 圃場残 ${fieldRemainTrays.toLocaleString()}）`;
     const currentInput = Math.floor(Number(assignTraysInput.value || 0));
-    if (!(currentInput > 0)) {
+    if (applySuggestedDefault) {
+      assignTraysInput.value = String(maxAssignable > 0 ? maxAssignable : 0);
+    } else if (!(currentInput > 0)) {
       assignTraysInput.value = String(fieldRemainTrays > 0 ? fieldRemainTrays : 0);
     }
   };
@@ -1045,7 +1112,7 @@ function openPlantingPlanModal(fieldName) {
     seedSubmodalApplyBtn.addEventListener("click", () => {
       selectedSeedId = String(draftSelectedSeedId || "").trim();
       updateSelectedSeedSummary();
-      updateSelectedSeedRemainingView();
+      updateSelectedSeedRemainingView(true);
       closeSeedSubmodal();
     });
   }
@@ -1053,7 +1120,7 @@ function openPlantingPlanModal(fieldName) {
   selectedSeedId = String(seedPlanRows[0]?.id || "").trim();
   draftSelectedSeedId = selectedSeedId;
   updateSelectedSeedSummary();
-  updateSelectedSeedRemainingView();
+  updateSelectedSeedRemainingView(true);
 
   if (seedKeywordEl) {
     seedKeywordEl.addEventListener("input", () => {

@@ -87,6 +87,8 @@ export function initAnnualLinkage() {
 
         if (currentMode === "seed") {
           renderSeedList();
+        } else if (currentMode === "planting") {
+          renderPlantingList();
         }
       }
     });
