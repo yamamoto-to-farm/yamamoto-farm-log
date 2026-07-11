@@ -1,5 +1,20 @@
 <!DOCTYPE html>
-    <!-- 上部コントロール（年度・モード・保存読込・フィルタ） -->
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>播種・定植計画 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+</head>
+
+<body>
+
+  <div id="page-area" style="display:none;">
+
+    <h1 class="page-title">播種・定植計画</h1>
+
     <section class="card plan-control-hub">
       <div class="plan-control-group" id="planning-year-card">
         <h3 class="section-title">年度</h3>
@@ -7,17 +22,16 @@
           <button id="selectYearBtn" class="primary-btn">年度を選択</button>
           <span id="selectedYearLabel" class="selected-year-label"></span>
         </div>
-    <div class="card" style="margin-bottom:16px;">
-      <button id="selectYearBtn" class="primary-btn">年度を選択</button>
+      </div>
+
       <div class="plan-control-group" id="mode-switch-card">
         <h3 class="section-title">計画モード</h3>
         <div class="plan-action-row" role="group" aria-label="計画モード切替">
           <button id="btn-seed" class="primary-btn" data-mode="seed">播種計画</button>
           <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
         </div>
-      <button id="btn-planting" class="secondary-btn" data-mode="planting">定植計画</button>
+      </div>
 
-      <!-- CSV / JSON 読み込み・保存（seed モードのみ表示） -->
       <div class="plan-control-group plan-action-card" id="seedList-controls">
         <h3 class="section-title">播種計画データ</h3>
         <div class="plan-action-row" role="group" aria-label="播種計画データ操作">
@@ -27,7 +41,6 @@
         </div>
       </div>
 
-      <!-- 定植計画専用：読み込み・保存 -->
       <div class="plan-control-group plan-action-card" id="planting-controls" style="display:none;">
         <h3 class="section-title">定植計画データ</h3>
         <div class="plan-action-row" role="group" aria-label="定植計画データ操作">
@@ -36,7 +49,6 @@
         </div>
       </div>
 
-      <!-- 定植計画専用フィルタ -->
       <div class="plan-control-group" id="filter-card">
         <h3 class="section-title">フィルタ</h3>
         <div class="plan-filter-row" role="group" aria-label="定植フィルタ">
@@ -49,47 +61,23 @@
       <div id="activeFilters"></div>
     </section>
 
-    <!-- 定植計画専用：読み込み・保存 -->
-    <div class="card plan-action-card" id="planting-controls" style="display:none;">
-      <h3 class="section-title">定植計画データ</h3>
-      <div class="plan-action-row" role="group" aria-label="定植計画データ操作">
-        <button id="loadPlantingCsvBtn" class="secondary-btn">定植計画CSV 読み込み（復元）</button>
-        <button id="savePlantingCsvBtn" class="primary-btn">定植計画CSV 保存</button>
-      </div>
-    </div>
-
-    <!-- 定植計画専用フィルタ -->
-    <div class="card" id="filter-card">
-      <h2 class="section-title">フィルタ</h2>
-      <div class="filter-open-btn" data-type="year">▶ 年</div>
-      <div class="filter-open-btn" data-type="field">▶ 圃場</div>
-      <div class="filter-open-btn" data-type="variety">▶ 品種</div>
-    </div>
-
-    <div id="activeFilters"></div>
-
-    <!-- 播種計画専用：育苗容量 -->
     <div class="card" id="capacity-card">
       <label>育苗ハウス容量（トレイ枚数）</label>
       <input type="number" id="nurseryCapacity" value="3312" style="width:120px;">
     </div>
 
-    <!-- 播種計画専用：容量サマリー -->
     <div class="card" id="summary-card">
       <div id="summaryArea"></div>
     </div>
 
-    <!-- 表 -->
     <div id="table-area"></div>
 
-    <!-- 行追加 -->
     <div style="margin-top: 16px;">
       <button id="addRowBtn" class="primary-btn">＋ 行を追加</button>
     </div>
 
   </div>
 
-  <!-- モーダル -->
   <div id="modal-container"></div>
 
   <div id="save-modal-container"></div>
@@ -101,10 +89,8 @@
       });
   </script>
 
-  <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- メインスクリプト -->
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
@@ -115,11 +101,11 @@
       if (!ok) return;
 
       renderHeader();
-      document.getElementById("page-area").style.display = "block";
+      const pageArea = document.getElementById("page-area");
+      if (pageArea) pageArea.style.display = "block";
 
       initAnnualLinkage();
 
-      // filter-core 初期化完了まで待つ
       await initListPage();
     });
   </script>
