@@ -274,9 +274,32 @@
   color: #64748b;
 }
 
+.field-status-badge {
+  margin-left: 6px;
+  display: inline-block;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+
+.field-status-badge.is-set {
+  background: #e6f0fb;
+  color: #1d4e89;
+  border-color: #bfdbfe;
+}
+
+.field-status-badge.is-unset {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
 .plan-sub {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
   color: #334155;
 }
@@ -295,7 +318,8 @@
 }
 
 .last-planting-label {
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 400;
   color: #1f2937;
 }
 
@@ -579,12 +603,20 @@
 @media (max-width: 860px) {
   .planting-plan-table th,
   .planting-plan-table td {
-    font-size: 12px;
+    font-size: 13px;
     padding: 6px 4px;
   }
 }
 
+  .planting-plan-table td:nth-child(2),
+  .planting-plan-table td:nth-child(3),
+  .planting-plan-table td:nth-child(4) {
+    font-size: 13px;
+  }
+
 @media print {
+  .planting-plan-table .plan-chip,
+  .planting-plan-table .planting-badge,
   .planting-plan-table .plan-count-chip {
     display: none !important;
   }

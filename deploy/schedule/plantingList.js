@@ -369,24 +369,23 @@ function renderFieldCards(rows, state = {}) {
     const planTraySummary = buildPlanTraySummary(assignments);
     const planRowsHtml = planTraySummary.itemLinesHtml;
     const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
-    const unsetClass = isUnset ? "is-unset" : "is-set";
+    const statusText = isUnset ? "未設定" : `候補${assignments.length}件`;
+    const statusClass = isUnset ? "is-unset" : "is-set";
 
     html += `
       <tr class="planting-plan-row ${isUnset ? "row-unset" : ""}" data-field="${escapeAttr(fieldName)}">
         <td>
-          <strong>${escapeHtml(fieldName)}</strong><span class="planting-badge">候補 ${assignments.length}件</span>
+          <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
           <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
         </td>
         <td>
-          <span class="plan-chip plan-count-chip ${unsetClass}">${assignments.length ? `${assignments.length}件` : "未設定"}</span>
           <div class="plan-sub plan-lines">${whenHtml}</div>
         </td>
         <td>
-          <span class="plan-chip plan-count-chip ${unsetClass}">${assignments.length ? `${assignmentRows.uniqueVarietyCount}品種` : "未設定"}</span>
           <div class="plan-sub plan-lines">${whatHtml}</div>
         </td>
         <td>
-          <span class="plan-chip ${unsetClass}">${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</span>
+          <div class="plan-sub"><strong>${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
           <div class="plan-sub plan-lines">${planRowsHtml}</div>
           <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
         </td>
