@@ -24,9 +24,10 @@ let canDiscard = false;
 let seedPlanRows = [];
 let seedPlanYearLoaded = null;
 const planningAssignments = new Map(); // fieldName -> [{ id, variety, sowDate, trayType, trayCount, plants }]
+const areaExpandState = new Map(); // areaName -> boolean
 const DEFAULT_BED_SPACING_CM = 60;
 const DEFAULT_PLANT_SPACING_CM = 33;
-const ACTUAL_WINDOW_YEARS = 2;
+const ACTUAL_WINDOW_MONTHS = 1;
 
 let filterData = {};
 let initialized = false;
@@ -236,30 +237,43 @@ function renderFieldCards(rows, state = {}) {
   let totalAssignedPlants = 0;
   let totalAssignedTrays = 0;
 
-  html += `
-    <section class="card planting-field-group">
-      <h3 class="section-title">圃場ごとの定植計画（行クリックで編集）</h3>
-      <table class="planting-plan-table">
-        <colgroup>
-          <col style="width:24%">
-          <col style="width:16%">
-          <col style="width:18%">
-          <col style="width:20%">
-          <col style="width:22%">
-        </colgroup>
-        <thead>
-          <tr>
-            <th>圃場名</th>
-            <th>定植予定日</th>
-            <th>品種</th>
-            <th>枚数（トレイ種別）</th>
-            <th>実績</th>
-          </tr>
-        </thead>
-        <tbody>
-  `;
-
+  const grouped = new Map();
   targetFields.forEach(field => {
+    const areaName = String(field.area || "その他").trim() || "その他";
+    if (!grouped.has(areaName)) grouped.set(areaName, []);
+    grouped.get(areaName).push(field);
+  });
+
+  html += `<section class="card planting-field-group"><h3 class="section-title">圃場ごとの定植計画（行クリックで編集）</h3></section>`;
+
+  grouped.forEach((fields, areaName) => {
+    const expanded = getAreaExpanded(areaName);
+
+    html += `
+      <section class="card planting-area-group">
+        <h4 class="section-title planting-area-title" data-area="${escapeAttr(areaName)}">${expanded ? "▼" : "▶"} ${escapeHtml(areaName)}（${fields.length}圃場）</h4>
+        <div class="planting-area-body" style="display:${expanded ? "block" : "none"}">
+          <table class="planting-plan-table">
+            <colgroup>
+              <col style="width:24%">
+              <col style="width:16%">
+              <col style="width:18%">
+              <col style="width:20%">
+              <col style="width:22%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>圃場名</th>
+                <th>定植予定日</th>
+                <th>品種</th>
+                <th>枚数（トレイ種別）</th>
+                <th>実績</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    fields.forEach(field => {
     const fieldName = String(field.name || "").trim();
     const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
     const actualTrayText = actualSummary.trayLines.length
@@ -272,13 +286,11 @@ function renderFieldCards(rows, state = {}) {
     totalAssignedPlants += plannedPlants;
     totalAssignedTrays += plannedTrays;
 
-    const plannedDates = Array.from(new Set(assignments.map(item => String(item.planPlantDate || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-    const plannedVarieties = Array.from(new Set(assignments.map(item => String(item.variety || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ja"));
-
-    const whenText = plannedDates.length ? plannedDates.join(" / ") : "未設定";
-    const whatText = plannedVarieties.length ? plannedVarieties.join(" / ") : "未設定";
+    const assignmentRows = buildAssignmentDisplayRows(assignments);
+    const whenHtml = assignmentRows.datesHtml;
+    const whatHtml = assignmentRows.varietiesHtml;
     const planTraySummary = buildPlanTraySummary(assignments);
-    const planTrayText = planTraySummary.lines.length ? planTraySummary.lines.map(v => escapeHtml(v)).join("<br>") : "未設定";
+    const planRowsHtml = planTraySummary.itemLinesHtml;
     const isUnset = assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
     const unsetClass = isUnset ? "is-unset" : "is-set";
 
@@ -288,11 +300,17 @@ function renderFieldCards(rows, state = {}) {
           <strong>${escapeHtml(fieldName)}</strong><span class="planting-badge">候補 ${assignments.length}件</span>
           <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
         </td>
-        <td><span class="plan-chip ${unsetClass}">${escapeHtml(whenText)}</span></td>
-        <td><span class="plan-chip ${unsetClass}">${escapeHtml(whatText)}</span></td>
+        <td>
+          <span class="plan-chip ${unsetClass}">${assignments.length ? `${assignments.length}件` : "未設定"}</span>
+          <div class="plan-sub plan-lines">${whenHtml}</div>
+        </td>
+        <td>
+          <span class="plan-chip ${unsetClass}">${assignments.length ? `${assignmentRows.uniqueVarietyCount}品種` : "未設定"}</span>
+          <div class="plan-sub plan-lines">${whatHtml}</div>
+        </td>
         <td>
           <span class="plan-chip ${unsetClass}">${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</span>
-          <div class="plan-sub">${planTrayText}</div>
+          <div class="plan-sub plan-lines">${planRowsHtml}</div>
           <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
         </td>
         <td>
@@ -302,15 +320,26 @@ function renderFieldCards(rows, state = {}) {
         </td>
       </tr>
     `;
+    });
+
+    html += `
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `;
   });
 
-  html += `
-        </tbody>
-      </table>
-    </section>
-  `;
-
   tableArea.innerHTML = html;
+
+  document.querySelectorAll(".planting-area-title").forEach(el => {
+    el.addEventListener("click", () => {
+      const areaName = String(el.dataset.area || "").trim();
+      if (!areaName) return;
+      areaExpandState.set(areaName, !getAreaExpanded(areaName));
+      renderFieldCards(rows, state);
+    });
+  });
 
   document.querySelectorAll(".planting-plan-row").forEach(el => {
     el.addEventListener("click", () => {
@@ -323,6 +352,43 @@ function renderFieldCards(rows, state = {}) {
   if (summary) {
     summary.textContent = `表示圃場：${targetFields.length}件　計画合計：${totalAssignedPlants.toLocaleString()}株 / ${totalAssignedTrays.toLocaleString()}枚`;
   }
+}
+
+function getAreaExpanded(areaName) {
+  if (!areaExpandState.has(areaName)) {
+    areaExpandState.set(areaName, true);
+  }
+  return !!areaExpandState.get(areaName);
+}
+
+function buildAssignmentDisplayRows(assignments) {
+  if (!assignments.length) {
+    return {
+      datesHtml: "未設定",
+      varietiesHtml: "未設定",
+      uniqueVarietyCount: 0
+    };
+  }
+
+  const dateRows = assignments
+    .map(item => String(item.planPlantDate || "").trim() || "未設定")
+    .map(v => `<div class="plan-line">${escapeHtml(v)}</div>`)
+    .join("");
+
+  const varietyRows = assignments
+    .map(item => String(item.variety || "").trim() || "(品種未設定)")
+    .map(v => `<div class="plan-line">${escapeHtml(v)}</div>`)
+    .join("");
+
+  const uniqueVarietyCount = new Set(
+    assignments.map(item => String(item.variety || "").trim() || "(品種未設定)")
+  ).size;
+
+  return {
+    datesHtml: dateRows,
+    varietiesHtml: varietyRows,
+    uniqueVarietyCount
+  };
 }
 
 function getTargetFields(rows, state = {}) {
@@ -431,17 +497,38 @@ function calcBaseRequirement(fieldName, bedCm, plantCm) {
 }
 
 function buildRecentActualSummary(fieldName, selectedYear) {
-  const endYear = Number(selectedYear) || new Date().getFullYear();
-  const startYear = endYear - ACTUAL_WINDOW_YEARS + 1;
-  const startDate = `${startYear}-01-01`;
-  const endDate = `${endYear}-12-31`;
   const target = String(fieldName || "").trim();
 
-  const recentRows = plantingRows.filter(row => {
+  const allRows = plantingRows.filter(row => {
     if (String(row.field || "").trim() !== target) return false;
     const d = String(row.plantDate || "").trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
-    return d >= startDate && d <= endDate;
+    return /^\d{4}-\d{2}-\d{2}$/.test(d);
+  });
+
+  if (allRows.length === 0) {
+    return {
+      latestDate: "",
+      areaTan: 0,
+      trayLines: [],
+      windowLabel: "実績なし"
+    };
+  }
+
+  const yearPrefix = `${Number(selectedYear) || new Date().getFullYear()}-`;
+  const yearRows = allRows.filter(row => String(row.plantDate || "").startsWith(yearPrefix));
+  const latestBaseRows = yearRows.length > 0 ? yearRows : allRows;
+  const latestDate = latestBaseRows.reduce((maxDate, row) => {
+    const d = String(row.plantDate || "").trim();
+    if (!maxDate) return d;
+    return d > maxDate ? d : maxDate;
+  }, "");
+
+  const windowStart = shiftMonth(latestDate, -ACTUAL_WINDOW_MONTHS);
+  const windowEnd = shiftMonth(latestDate, ACTUAL_WINDOW_MONTHS);
+
+  const recentRows = allRows.filter(row => {
+    const d = String(row.plantDate || "").trim();
+    return d >= windowStart && d <= windowEnd;
   });
 
   const areaTan = recentRows.reduce((acc, row) => {
@@ -452,12 +539,6 @@ function buildRecentActualSummary(fieldName, selectedYear) {
     const areaM2 = calcAreaM2(Number(row.quantity || 0), spacing.row, spacing.bed);
     return acc + calcAreaTan(areaM2);
   }, 0);
-
-  const latestDate = recentRows.reduce((maxDate, row) => {
-    const d = String(row.plantDate || "").trim();
-    if (!maxDate) return d;
-    return d > maxDate ? d : maxDate;
-  }, "");
 
   const byTray = new Map();
   recentRows.forEach(row => {
@@ -498,11 +579,41 @@ function buildRecentActualSummary(fieldName, selectedYear) {
     latestDate,
     areaTan,
     trayLines,
-    windowLabel: `${startYear}〜${endYear}`
+    windowLabel: `${windowStart}〜${windowEnd}`
   };
 }
 
+function shiftMonth(ymd, diffMonth) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""))) return "";
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  d.setMonth(d.getMonth() + diffMonth);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function buildPlanTraySummary(assignments) {
+  if (!assignments.length) {
+    return {
+      itemLinesHtml: "未設定",
+      totalTrays: 0,
+      totalPlants: 0,
+      areaTan: 0
+    };
+  }
+
+  const itemLinesHtml = assignments
+    .map(item => {
+      const trayCount = Number(item.trayCount || 0);
+      const trayType = String(item.trayType || "").trim() || "tray未設定";
+      const plants = Number(item.plants || 0);
+      const variety = String(item.variety || "").trim() || "(品種未設定)";
+      return `<div class="plan-line">${escapeHtml(variety)}: ${Math.round(trayCount).toLocaleString()}枚（${escapeHtml(trayType)}） / ${Math.round(plants).toLocaleString()}株</div>`;
+    })
+    .join("");
+
   const byTrayType = new Map();
 
   assignments.forEach(item => {
@@ -524,7 +635,7 @@ function buildPlanTraySummary(assignments) {
   const areaM2 = calcAreaM2(totalPlants, DEFAULT_PLANT_SPACING_CM, DEFAULT_BED_SPACING_CM);
 
   return {
-    lines,
+    itemLinesHtml,
     totalTrays,
     totalPlants,
     areaTan: calcAreaTan(areaM2)

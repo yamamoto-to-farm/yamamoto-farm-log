@@ -192,6 +192,20 @@
   margin-bottom: 12px;
 }
 
+.planting-area-group {
+  margin-bottom: 10px;
+}
+
+.planting-area-title {
+  cursor: pointer;
+  user-select: none;
+  margin: 0 0 8px 0;
+}
+
+.planting-area-body {
+  overflow-x: auto;
+}
+
 .planting-plan-table {
   width: 100%;
   border-collapse: collapse;
@@ -235,6 +249,19 @@
   font-size: 12px;
   line-height: 1.45;
   color: #334155;
+}
+
+.plan-lines {
+  margin-top: 6px;
+}
+
+.plan-line {
+  padding: 2px 0;
+  border-bottom: 1px dashed #dbe3ec;
+}
+
+.plan-line:last-child {
+  border-bottom: none;
 }
 
 .plan-chip {
