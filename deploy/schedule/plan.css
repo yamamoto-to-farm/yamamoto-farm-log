@@ -196,34 +196,34 @@
   margin-bottom: 12px;
 }
 
-.planting-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(220px, 1fr));
-  gap: 8px;
-}
-
-.planting-overview-item {
+.planting-overview-block {
   border: 1px solid #dbe3ec;
   border-radius: 8px;
   padding: 8px 10px;
   background: #f8fafc;
+  margin-bottom: 8px;
 }
 
-.planting-overview-item .label {
-  display: block;
-  color: #64748b;
-  font-size: 12px;
+.planting-overview-block:last-child {
+  margin-bottom: 0;
 }
 
-.planting-overview-item .value {
-  display: block;
-  color: #0f172a;
-  font-weight: 700;
-  margin-top: 2px;
+.planting-overview-block p {
+  margin: 2px 0;
+  line-height: 1.5;
 }
 
 .planting-area-group {
   margin-bottom: 10px;
+}
+
+.planting-area-group.area-has-unset {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.planting-area-group.area-has-unset .planting-area-title {
+  color: #92400e;
 }
 
 .planting-area-title {
@@ -373,12 +373,35 @@
 
 .plant-plan-modal {
   display: grid;
-  gap: 6px;
+  gap: 10px;
+}
+
+.plan-group {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+.plan-group:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.plan-group-metrics {
+  display: grid;
+  gap: 8px;
+}
+
+.plan-group-picker {
+  margin-top: 4px;
+}
+
+.plan-group-assignment {
+  margin-top: 4px;
 }
 
 .modal.plant-plan-dialog {
-  width: min(1240px, 98vw) !important;
-  max-width: min(1240px, 98vw) !important;
+  width: min(1080px, 96vw) !important;
+  max-width: min(1080px, 96vw) !important;
   max-height: 92vh;
 }
 
@@ -399,7 +422,7 @@
 }
 
 .plan-metric-row {
-  margin: 2px 0;
+  margin: 1px 0;
   line-height: 1.4;
 }
 
@@ -430,6 +453,17 @@
   border: 1px solid #dbe3ec;
   border-radius: 8px;
   padding: 8px 10px;
+}
+
+.plan-limit-note {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 2px;
 }
 
 .plan-seed-filters {
@@ -538,10 +572,6 @@
 }
 
 @media (max-width: 860px) {
-  .planting-overview-grid {
-    grid-template-columns: 1fr;
-  }
-
   .planting-plan-table th,
   .planting-plan-table td {
     font-size: 12px;

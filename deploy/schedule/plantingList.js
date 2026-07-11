@@ -250,11 +250,13 @@ function renderFieldCards(rows, state = {}) {
     const fieldPlants = assignments.reduce((sum, item) => sum + getAssignedPlants(item), 0);
     const fieldTrays = assignments.reduce((sum, item) => sum + getAssignedTrayCount(item), 0);
     const cap = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
+    const sizeA = getFieldSizeA(fieldName);
 
     acc.assignedPlants += fieldPlants;
     acc.assignedTrays += fieldTrays;
     acc.capacityTrays128 += cap.valid ? Number(cap.requiredTray128 || 0) : 0;
     acc.capacityTrays200 += cap.valid ? Number(cap.requiredTray200 || 0) : 0;
+    acc.totalAreaTan += sizeA > 0 ? (sizeA / 10) : 0;
     if (assignments.length > 0) acc.fieldsAssigned += 1;
     return acc;
   }, {
@@ -262,6 +264,7 @@ function renderFieldCards(rows, state = {}) {
     assignedTrays: 0,
     capacityTrays128: 0,
     capacityTrays200: 0,
+    totalAreaTan: 0,
     fieldsAssigned: 0
   });
 
@@ -269,25 +272,41 @@ function renderFieldCards(rows, state = {}) {
     calcAreaM2(planningStats.assignedPlants, DEFAULT_PLANT_SPACING_CM, DEFAULT_BED_SPACING_CM)
   );
 
+  const seedPlanPlantsTotal = seedPlanRows.reduce((acc, row) => acc + Number(row.plants || 0), 0);
+  const plantingPlanTray128 = Math.ceil(planningStats.assignedPlants / 128);
+  const plantingPlanTray200 = Math.ceil(planningStats.assignedPlants / 200);
+  const seedPlanTray128 = Math.ceil(seedPlanPlantsTotal / 128);
+  const seedPlanTray200 = Math.ceil(seedPlanPlantsTotal / 200);
+
   html += `
     <section class="card planting-field-group planting-overview-card">
       <h3 class="section-title">定植計画サマリー</h3>
-      <div class="planting-overview-grid">
-        <div class="planting-overview-item"><span class="label">表示エリア</span><span class="value">${grouped.size}件</span></div>
-        <div class="planting-overview-item"><span class="label">表示圃場</span><span class="value">${targetFields.length}件</span></div>
-        <div class="planting-overview-item"><span class="label">割り当て済み圃場</span><span class="value">${planningStats.fieldsAssigned}件</span></div>
-        <div class="planting-overview-item"><span class="label">割り当て合計</span><span class="value">${planningStats.assignedTrays.toLocaleString()}枚 / ${planningStats.assignedPlants.toLocaleString()}株</span></div>
-        <div class="planting-overview-item"><span class="label">合計作付面積</span><span class="value">${totalAssignedAreaTan.toFixed(2)}反</span></div>
-        <div class="planting-overview-item"><span class="label">定植可能枚数(128/200)</span><span class="value">${planningStats.capacityTrays128.toLocaleString()}枚 / ${planningStats.capacityTrays200.toLocaleString()}枚</span></div>
+      <div class="planting-overview-block">
+        <p>総圃場数：<strong>${targetFields.length}</strong>　総耕作面積（反）：<strong>${planningStats.totalAreaTan.toFixed(2)}反</strong></p>
+        <p>定植可能枚数：<strong>${planningStats.capacityTrays128.toLocaleString()}枚（128穴）</strong>／<strong>${planningStats.capacityTrays200.toLocaleString()}枚（200穴）</strong></p>
+      </div>
+      <div class="planting-overview-block">
+        <p>割り当て済み圃場／総圃場数：<strong>${planningStats.fieldsAssigned}</strong>／<strong>${targetFields.length}</strong>　合計作付面積<strong>${totalAssignedAreaTan.toFixed(2)}反</strong></p>
+      </div>
+      <div class="planting-overview-block">
+        <p>定植計画合計枚数：<strong>${plantingPlanTray128.toLocaleString()}枚（128穴）</strong>／播種計画合計枚数：<strong>${seedPlanTray128.toLocaleString()}枚（128穴）</strong></p>
+        <p>定植計画合計枚数：<strong>${plantingPlanTray200.toLocaleString()}枚（200穴）</strong>／播種計画合計枚数：<strong>${seedPlanTray200.toLocaleString()}枚（200穴）</strong></p>
       </div>
     </section>
   `;
 
   grouped.forEach((fields, areaName) => {
     const expanded = getAreaExpanded(areaName);
+    const hasUnsetInArea = fields.some(field => {
+      const fieldName = String(field.name || "").trim();
+      const assignments = planningAssignments.get(fieldName) || [];
+      const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
+      const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
+      return assignments.length === 0 || (plannedPlants <= 0 && plannedTrays <= 0);
+    });
 
     html += `
-      <section class="card planting-area-group">
+      <section class="card planting-area-group ${hasUnsetInArea ? "area-has-unset" : ""}">
         <h4 class="section-title planting-area-title" data-area="${escapeAttr(areaName)}">${expanded ? "▼" : "▶"} ${escapeHtml(areaName)}（${fields.length}圃場）</h4>
         <div class="planting-area-body" style="display:${expanded ? "block" : "none"}">
           <table class="planting-plan-table">
@@ -393,7 +412,7 @@ function renderFieldCards(rows, state = {}) {
 
 function getAreaExpanded(areaName) {
   if (!areaExpandState.has(areaName)) {
-    areaExpandState.set(areaName, true);
+    areaExpandState.set(areaName, false);
   }
   return !!areaExpandState.get(areaName);
 }
@@ -802,16 +821,18 @@ function openPlantingPlanModal(fieldName) {
     `定植計画：${fieldName}`,
     `
       <div class="plant-plan-modal">
-        <p class="plan-metric-row"><strong>耕作面積（反）：</strong> ${areaText}</p>
-        <div class="plan-spacing-row">
-          <label>畝間(cm)</label>
-          <input id="plan-bed-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_BED_SPACING_CM}">
-          <label>株間(cm)</label>
-          <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
+        <div class="plan-group plan-group-metrics">
+          <p class="plan-metric-row"><strong>耕作面積（反）：</strong> ${areaText}</p>
+          <div class="plan-spacing-row">
+            <label>畝間(cm)</label>
+            <input id="plan-bed-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_BED_SPACING_CM}">
+            <label>株間(cm)</label>
+            <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
+          </div>
+          <p class="plan-metric-row"><strong>定植可能枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
         </div>
-        <p class="plan-metric-row"><strong>定植可能枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
 
-        <div class="plant-plan-picker">
+        <div class="plant-plan-picker plan-group plan-group-picker">
           <label>播種計画（候補選択）</label>
           <div id="plan-selected-seed-summary" class="plan-selected-seed-summary">未選択</div>
           <button type="button" id="plan-open-seed-modal" class="secondary-btn">播種候補を開く</button>
@@ -845,11 +866,11 @@ function openPlantingPlanModal(fieldName) {
           </div>
           <label>この圃場へ割り当てる定植枚数</label>
           <input id="plan-seed-assign-trays" class="form-input" type="number" min="1" step="1" value="${defaultAssignableByField}">
-          <div id="plan-seed-remaining-note" class="plan-sub"></div>
+          <div id="plan-seed-remaining-note" class="plan-sub plan-limit-note"></div>
           <button type="button" id="plan-seed-add" class="primary-btn" ${seedPlanRows.length ? "" : "disabled"}>この圃場に反映（未保存）</button>
         </div>
 
-        <table class="plant-plan-table">
+        <table class="plant-plan-table plan-group plan-group-assignment">
           <thead>
             <tr><th>品種</th><th>播種日</th><th>定植予定日</th><th>トレイ</th><th>株数</th><th>操作</th></tr>
           </thead>
