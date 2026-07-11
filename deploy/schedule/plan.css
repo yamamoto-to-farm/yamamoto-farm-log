@@ -371,6 +371,40 @@
   border-radius: 6px;
 }
 
+.plan-seed-submodal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.plan-seed-submodal-panel {
+  width: min(920px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #dbe3ec;
+  padding: 10px;
+}
+
+.plan-seed-submodal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.plan-seed-submodal-foot {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .plan-seed-candidate-table {
   width: 100%;
   font-size: 12px;
