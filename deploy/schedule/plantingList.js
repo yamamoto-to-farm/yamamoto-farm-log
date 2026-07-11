@@ -332,11 +332,11 @@ function renderFieldCards(rows, state = {}) {
         <div class="planting-area-body" style="display:${expanded ? "block" : "none"}">
           <table class="planting-plan-table">
             <colgroup>
-              <col style="width:24%">
+              <col style="width:20%">
               <col style="width:16%">
               <col style="width:18%">
-              <col style="width:20%">
-              <col style="width:22%">
+              <col style="width:21%">
+              <col style="width:25%">
             </colgroup>
             <thead>
               <tr>
@@ -378,11 +378,11 @@ function renderFieldCards(rows, state = {}) {
           <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
         </td>
         <td>
-          <span class="plan-chip ${unsetClass}">${assignments.length ? `${assignments.length}件` : "未設定"}</span>
+          <span class="plan-chip plan-count-chip ${unsetClass}">${assignments.length ? `${assignments.length}件` : "未設定"}</span>
           <div class="plan-sub plan-lines">${whenHtml}</div>
         </td>
         <td>
-          <span class="plan-chip ${unsetClass}">${assignments.length ? `${assignmentRows.uniqueVarietyCount}品種` : "未設定"}</span>
+          <span class="plan-chip plan-count-chip ${unsetClass}">${assignments.length ? `${assignmentRows.uniqueVarietyCount}品種` : "未設定"}</span>
           <div class="plan-sub plan-lines">${whatHtml}</div>
         </td>
         <td>
@@ -391,7 +391,7 @@ function renderFieldCards(rows, state = {}) {
           <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
         </td>
         <td>
-          <div><strong>直近定植日:</strong> ${escapeHtml(actualSummary.latestDate || "-")}</div>
+          <div class="last-planting-label">前回定植：${escapeHtml(actualSummary.latestDate || "-")}</div>
           <div class="plan-sub">${actualTrayText}</div>
           <div class="plan-sub">作付面積: ${actualSummary.areaTan.toFixed(2)}反（${escapeHtml(actualSummary.windowLabel)}）</div>
         </td>

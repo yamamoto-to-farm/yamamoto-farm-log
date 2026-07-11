@@ -294,6 +294,11 @@
   border-bottom: none;
 }
 
+.last-planting-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
 .plan-chip {
   display: inline-block;
   border-radius: 999px;
@@ -576,5 +581,11 @@
   .planting-plan-table td {
     font-size: 12px;
     padding: 6px 4px;
+  }
+}
+
+@media print {
+  .planting-plan-table .plan-count-chip {
+    display: none !important;
   }
 }
