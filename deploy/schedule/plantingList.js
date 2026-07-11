@@ -244,7 +244,44 @@ function renderFieldCards(rows, state = {}) {
     grouped.get(areaName).push(field);
   });
 
-  html += `<section class="card planting-field-group"><h3 class="section-title">圃場ごとの定植計画（行クリックで編集）</h3></section>`;
+  const planningStats = targetFields.reduce((acc, field) => {
+    const fieldName = String(field.name || "").trim();
+    const assignments = planningAssignments.get(fieldName) || [];
+    const fieldPlants = assignments.reduce((sum, item) => sum + getAssignedPlants(item), 0);
+    const fieldTrays = assignments.reduce((sum, item) => sum + getAssignedTrayCount(item), 0);
+    const cap = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
+
+    acc.assignedPlants += fieldPlants;
+    acc.assignedTrays += fieldTrays;
+    acc.capacityTrays128 += cap.valid ? Number(cap.requiredTray128 || 0) : 0;
+    acc.capacityTrays200 += cap.valid ? Number(cap.requiredTray200 || 0) : 0;
+    if (assignments.length > 0) acc.fieldsAssigned += 1;
+    return acc;
+  }, {
+    assignedPlants: 0,
+    assignedTrays: 0,
+    capacityTrays128: 0,
+    capacityTrays200: 0,
+    fieldsAssigned: 0
+  });
+
+  const totalAssignedAreaTan = calcAreaTan(
+    calcAreaM2(planningStats.assignedPlants, DEFAULT_PLANT_SPACING_CM, DEFAULT_BED_SPACING_CM)
+  );
+
+  html += `
+    <section class="card planting-field-group planting-overview-card">
+      <h3 class="section-title">定植計画サマリー</h3>
+      <div class="planting-overview-grid">
+        <div class="planting-overview-item"><span class="label">表示エリア</span><span class="value">${grouped.size}件</span></div>
+        <div class="planting-overview-item"><span class="label">表示圃場</span><span class="value">${targetFields.length}件</span></div>
+        <div class="planting-overview-item"><span class="label">割り当て済み圃場</span><span class="value">${planningStats.fieldsAssigned}件</span></div>
+        <div class="planting-overview-item"><span class="label">割り当て合計</span><span class="value">${planningStats.assignedTrays.toLocaleString()}枚 / ${planningStats.assignedPlants.toLocaleString()}株</span></div>
+        <div class="planting-overview-item"><span class="label">合計作付面積</span><span class="value">${totalAssignedAreaTan.toFixed(2)}反</span></div>
+        <div class="planting-overview-item"><span class="label">定植可能枚数(128/200)</span><span class="value">${planningStats.capacityTrays128.toLocaleString()}枚 / ${planningStats.capacityTrays200.toLocaleString()}枚</span></div>
+      </div>
+    </section>
+  `;
 
   grouped.forEach((fields, areaName) => {
     const expanded = getAreaExpanded(areaName);

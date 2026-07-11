@@ -192,6 +192,36 @@
   margin-bottom: 12px;
 }
 
+.planting-overview-card {
+  margin-bottom: 12px;
+}
+
+.planting-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.planting-overview-item {
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f8fafc;
+}
+
+.planting-overview-item .label {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.planting-overview-item .value {
+  display: block;
+  color: #0f172a;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
 .planting-area-group {
   margin-bottom: 10px;
 }
@@ -347,13 +377,25 @@
 }
 
 .modal.plant-plan-dialog {
-  width: min(1040px, 96vw);
+  width: min(1240px, 98vw) !important;
+  max-width: min(1240px, 98vw) !important;
   max-height: 92vh;
 }
 
 .modal.plant-plan-dialog .modal-content {
   max-height: calc(92vh - 120px);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.modal.plant-plan-dialog table {
+  display: table !important;
+  width: 100% !important;
+  white-space: normal !important;
+}
+
+.modal.plant-plan-dialog .plant-plan-table {
+  table-layout: auto;
 }
 
 .plan-metric-row {
@@ -496,6 +538,10 @@
 }
 
 @media (max-width: 860px) {
+  .planting-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
   .planting-plan-table th,
   .planting-plan-table td {
     font-size: 12px;
