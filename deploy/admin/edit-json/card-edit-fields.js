@@ -367,7 +367,7 @@ export function renderEditCard({ json, container, finalPath }) {
   function normalizeRows() {
     listData = listData.map(v => ({
       name: String(v.name || "").trim(),
-      __originalName: String(v.__originalName ?? v.name || "").trim(),
+      __originalName: String(v.__originalName ?? (v.name || "")).trim(),
       area: String(v.area || "").trim(),
       address: Array.isArray(v.address) ? v.address : parseAddressInput(v.address || ""),
       lat: v.lat == null || v.lat === "" ? "" : String(v.lat),
