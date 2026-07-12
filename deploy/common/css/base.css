@@ -203,16 +203,33 @@ textarea { resize: vertical; }
    JSON 編集
 ------------------------------ */
 .parcel-header,
-.contract-header,
-.parcel-row,
-.contract-row {
+.parcel-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 6px;
     font-size: 14px;
 }
+
+.contract-header,
+.contract-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 14px;
+}
+
 .parcel-header,
-.contract-header { font-weight: bold; margin-bottom: 6px; }
+.contract-header {
+    font-weight: bold;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.parcel-header > div,
+.contract-header > div {
+    white-space: nowrap;
+}
+
 .parcel-row input,
 .contract-row input { padding: 8px; }
 
