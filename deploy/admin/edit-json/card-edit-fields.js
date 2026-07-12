@@ -1,6 +1,38 @@
 // admin/edit-json/card-edit-fields.js
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
-import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { loadCSV } from "/common/csv.js?v=1";
+import { saveLog } from "/common/save/index.js?v=1";
+import { safeFieldName } from "/common/utils.js?v=1";
+import { showSaveModal, updateSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+
+const LOG_TYPES_WITH_ALL_CSV = [
+  "bedmaking",
+  "discard-planting",
+  "fertilizer",
+  "field-maintenance",
+  "hand-weeding",
+  "harvest",
+  "intertill",
+  "pesticide",
+  "planting",
+  "seed",
+  "tillage",
+  "watering",
+  "weeding",
+  "weight"
+];
+
+const LOG_TYPES_WITH_FIELD_JSON = [
+  "bedmaking",
+  "fertilizer",
+  "field-maintenance",
+  "hand-weeding",
+  "intertill",
+  "pesticide",
+  "tillage",
+  "watering",
+  "weeding"
+];
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -67,6 +99,214 @@ async function syncFieldDetailByFields(fieldsList) {
   await saveJSON("data/field-detail.json", nextDetail);
 }
 
+function toCsvCell(value) {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function buildCsvFromRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+
+  const headers = Object.keys(rows[0]);
+  const lines = [headers.map(toCsvCell).join(",")];
+
+  rows.forEach(row => {
+    const cols = headers.map(h => toCsvCell(row?.[h] ?? ""));
+    lines.push(cols.join(","));
+  });
+
+  return `${lines.join("\n")}\n`;
+}
+
+function replaceFieldCellValue(rawValue, renameMap) {
+  const raw = String(rawValue ?? "");
+  if (!raw) return { value: raw, changed: false, replacedCount: 0 };
+
+  let changed = false;
+  let replacedCount = 0;
+
+  const parts = raw.split(/([/／])/);
+  const replaced = parts
+    .map((part, idx) => {
+      if (idx % 2 === 1) return part;
+      const token = String(part || "").trim();
+      if (!token || !renameMap.has(token)) return part;
+      changed = true;
+      replacedCount += 1;
+      return renameMap.get(token);
+    })
+    .join("");
+
+  return { value: replaced, changed, replacedCount };
+}
+
+async function loadTypeIndex(type) {
+  const candidates = [
+    { load: `/data/${type}/${type}-index.json`, save: `data/${type}/${type}-index.json` },
+    { load: `/data/${type}-index.json`, save: `data/${type}-index.json` }
+  ];
+
+  for (const c of candidates) {
+    try {
+      const data = await loadJSON(c.load);
+      if (data && typeof data === "object") {
+        return { data, savePath: c.save };
+      }
+    } catch {
+      // ignore and try next
+    }
+  }
+
+  return null;
+}
+
+function mergeTypeIndexEntry(oldEntry, newEntry) {
+  if (!oldEntry) return newEntry;
+  if (!newEntry) return oldEntry;
+
+  const merged = { ...newEntry };
+  Object.keys(oldEntry).forEach(year => {
+    const oldFiles = Array.isArray(oldEntry[year]) ? oldEntry[year] : [];
+    const nextFiles = Array.isArray(merged[year]) ? merged[year] : [];
+    merged[year] = Array.from(new Set([...nextFiles, ...oldFiles])).sort();
+  });
+  return merged;
+}
+
+async function migrateTypeIndexKeys(renamePairs) {
+  const updatedTypes = new Set();
+  const errors = [];
+
+  for (const type of LOG_TYPES_WITH_FIELD_JSON) {
+    try {
+      const loaded = await loadTypeIndex(type);
+      if (!loaded) continue;
+
+      const nextIndex = { ...loaded.data };
+      let changed = false;
+
+      renamePairs.forEach(({ oldName, newName }) => {
+        const oldSafe = safeFieldName(oldName);
+        const newSafe = safeFieldName(newName);
+        if (!oldSafe || !newSafe || oldSafe === newSafe) return;
+        if (!(oldSafe in nextIndex)) return;
+
+        nextIndex[newSafe] = mergeTypeIndexEntry(nextIndex[oldSafe], nextIndex[newSafe]);
+        delete nextIndex[oldSafe];
+        changed = true;
+      });
+
+      if (!changed) continue;
+
+      await saveJSON(loaded.savePath, nextIndex);
+      updatedTypes.add(type);
+    } catch (e) {
+      errors.push(`${type}-index: ${String(e?.message || e)}`);
+    }
+  }
+
+  return { updatedTypes: Array.from(updatedTypes), errors };
+}
+
+async function migrateFieldAllCsv(renamePairs) {
+  const renameMap = new Map(renamePairs.map(v => [v.oldName, v.newName]));
+  const touchedTypes = [];
+  const errors = [];
+  let replacedCells = 0;
+
+  for (const type of LOG_TYPES_WITH_ALL_CSV) {
+    try {
+      const rows = await loadCSV(`/logs/${type}/all.csv`).catch(() => []);
+      if (!Array.isArray(rows) || rows.length === 0) continue;
+      if (!Object.prototype.hasOwnProperty.call(rows[0], "field")) continue;
+
+      let changed = false;
+      const nextRows = rows.map(row => {
+        const original = String(row.field ?? "");
+        const replaced = replaceFieldCellValue(original, renameMap);
+        if (replaced.changed) {
+          changed = true;
+          replacedCells += replaced.replacedCount;
+          return { ...row, field: replaced.value };
+        }
+        return row;
+      });
+
+      if (!changed) continue;
+
+      const csv = buildCsvFromRows(nextRows);
+      await saveLog({
+        type,
+        suppressModal: true,
+        replaceCsv: csv,
+        fileName: "all.csv"
+      });
+
+      touchedTypes.push(type);
+    } catch (e) {
+      errors.push(`${type}/all.csv: ${String(e?.message || e)}`);
+    }
+  }
+
+  return { touchedTypes, replacedCells, errors };
+}
+
+async function migratePerFieldLogs(renamePairs) {
+  const touched = [];
+  const errors = [];
+
+  for (const { oldName, newName } of renamePairs) {
+    const oldSafe = safeFieldName(oldName);
+    const newSafe = safeFieldName(newName);
+    if (!oldSafe || !newSafe || oldSafe === newSafe) continue;
+
+    for (const type of LOG_TYPES_WITH_FIELD_JSON) {
+      try {
+        const src = await loadJSON(`/logs/${type}/${oldSafe}.json`).catch(() => null);
+        if (!src || typeof src !== "object" || Object.keys(src).length === 0) continue;
+
+        const next = {
+          ...src,
+          field: newSafe
+        };
+
+        await saveLog({
+          type: "multi",
+          suppressModal: true,
+          files: [
+            {
+              path: `logs/${type}/${newSafe}.json`,
+              content: JSON.stringify(next, null, 2)
+            }
+          ]
+        });
+
+        touched.push(`${type}:${oldSafe}->${newSafe}`);
+      } catch (e) {
+        errors.push(`${type}/${oldSafe}.json: ${String(e?.message || e)}`);
+      }
+    }
+  }
+
+  return { touched, errors };
+}
+
+async function migrateHistoricalFieldData(renamePairs) {
+  const csv = await migrateFieldAllCsv(renamePairs);
+  const json = await migratePerFieldLogs(renamePairs);
+  const index = await migrateTypeIndexKeys(renamePairs);
+
+  return {
+    csv,
+    json,
+    index,
+    errors: [...csv.errors, ...json.errors, ...index.errors]
+  };
+}
+
 export function renderEditCard({ json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "圃場基本情報（fields.json）";
@@ -127,6 +367,7 @@ export function renderEditCard({ json, container, finalPath }) {
   function normalizeRows() {
     listData = listData.map(v => ({
       name: String(v.name || "").trim(),
+      __originalName: String(v.__originalName ?? v.name || "").trim(),
       area: String(v.area || "").trim(),
       address: Array.isArray(v.address) ? v.address : parseAddressInput(v.address || ""),
       lat: v.lat == null || v.lat === "" ? "" : String(v.lat),
@@ -191,7 +432,8 @@ export function renderEditCard({ json, container, finalPath }) {
       if (area) areaSet.add(area);
     });
 
-    const options = ["", ...Array.from(areaSet).sort((a, b) => a.localeCompare(b, "ja"))];
+    // fields一覧と同じく、fields.jsonに出現する順序を維持
+    const options = ["", ...Array.from(areaSet)];
     areaFilterEl.innerHTML = options
       .map(v => `<option value="${escapeHtml(v)}">${v ? escapeHtml(v) : "全エリア"}</option>`)
       .join("");
@@ -278,7 +520,7 @@ export function renderEditCard({ json, container, finalPath }) {
       const lng = item.lng ?? "";
 
       listEl.insertAdjacentHTML("beforeend", `
-        <div class="sub-card" style="margin-bottom:12px;">
+        <div class="sub-card" data-index="${index}" style="margin-bottom:12px;">
           <div class="form-row">
             <label class="form-label">圃場名</label>
             <input class="form-input field-name" data-index="${index}" value="${escapeHtml(name)}">
@@ -355,7 +597,8 @@ export function renderEditCard({ json, container, finalPath }) {
     syncVisibleRowToListData();
     listData.push({
       name: "",
-      area: selectedArea || "",
+      __originalName: "",
+      area: "",
       address: [],
       lat: "",
       lng: ""
@@ -369,6 +612,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
     const newList = [];
     const usedNames = new Set();
+    const renamePairs = [];
     let validationError = "";
 
     for (const row of listData) {
@@ -378,7 +622,8 @@ export function renderEditCard({ json, container, finalPath }) {
       const latRaw = String(row.lat || "").trim();
       const lngRaw = String(row.lng || "").trim();
 
-      if (!name && !area) {
+      // 空名行は、実質入力がなければ保存対象外としてスキップ
+      if (!name && !address.length && !latRaw && !lngRaw) {
         continue;
       }
 
@@ -393,11 +638,17 @@ export function renderEditCard({ json, container, finalPath }) {
       }
       usedNames.add(name);
 
+      const oldName = String(row.__originalName || "").trim();
+      if (oldName && oldName !== name) {
+        renamePairs.push({ oldName, newName: name });
+      }
+
       const lat = latRaw === "" ? null : Number(latRaw);
       const lng = lngRaw === "" ? null : Number(lngRaw);
 
       newList.push({
         name,
+        __originalName: name,
         area,
         address,
         lat,
@@ -410,6 +661,27 @@ export function renderEditCard({ json, container, finalPath }) {
       return;
     }
 
+    let shouldMigrateHistory = false;
+    if (renamePairs.length > 0) {
+      const preview = renamePairs
+        .slice(0, 6)
+        .map(v => `・${v.oldName} → ${v.newName}`)
+        .join("\n");
+
+      shouldMigrateHistory = confirm(
+        [
+          "圃場名の変更を検出しました。",
+          "過去ログも新しい圃場名へ置換しますか？",
+          "",
+          preview,
+          renamePairs.length > 6 ? `…ほか ${renamePairs.length - 6} 件` : "",
+          "",
+          "「OK」: all.csv の field列、圃場別ログJSON、index を置換",
+          "「キャンセル」: fields / field-detail のみ保存"
+        ].filter(Boolean).join("\n")
+      );
+    }
+
     showSaveModal("保存しています…");
 
     listData = newList.map(v => ({ ...v }));
@@ -417,14 +689,41 @@ export function renderEditCard({ json, container, finalPath }) {
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
 
     try {
+      await updateSaveModal("fields.json / field-detail.json を保存しています…");
       await saveJSON(savePath, newList);
       await syncFieldDetailByFields(newList);
+
+      if (shouldMigrateHistory) {
+        await updateSaveModal("過去ログの圃場名を置換しています…");
+        const migrated = await migrateHistoricalFieldData(renamePairs);
+
+        const summary = [
+          `all.csv更新: ${migrated.csv.touchedTypes.length} 種類`,
+          `field列置換: ${migrated.csv.replacedCells} 箇所`,
+          `圃場別JSON移行: ${migrated.json.touched.length} 件`,
+          `index更新: ${migrated.index.updatedTypes.length} 種類`
+        ].join(" / ");
+
+        if (migrated.errors.length > 0) {
+          alert([
+            "保存は完了しましたが、一部の過去ログ置換でエラーがありました。",
+            "",
+            summary,
+            "",
+            "エラー例:",
+            ...migrated.errors.slice(0, 8),
+            migrated.errors.length > 8 ? `…ほか ${migrated.errors.length - 8} 件` : ""
+          ].filter(Boolean).join("\n"));
+        }
+
+        completeSaveModal(`保存が完了しました（${summary}）`);
+      } else {
+        completeSaveModal("保存が完了しました");
+      }
     } catch (e) {
       alert(String(e?.message || e || "保存に失敗しました。"));
       return;
     }
-
-    completeSaveModal("保存が完了しました");
     render();
   };
 }
