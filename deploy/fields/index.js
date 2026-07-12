@@ -22,7 +22,7 @@ export async function renderFieldList({ view = "active" } = {}) {
   container.insertAdjacentHTML("beforeend", `
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
       <button
-        class="${isExpiredView ? "secondary-btn" : "primary-btn"}"
+        class="field-view-btn ${isExpiredView ? "" : "is-active"}"
         type="button"
         aria-current="${isExpiredView ? "false" : "page"}"
         onclick="location.href='/fields/index.html'"
@@ -30,7 +30,7 @@ export async function renderFieldList({ view = "active" } = {}) {
         稼働中の圃場一覧
       </button>
       <button
-        class="${isExpiredView ? "primary-btn" : "secondary-btn"}"
+        class="field-view-btn ${isExpiredView ? "is-active" : ""}"
         type="button"
         aria-current="${isExpiredView ? "page" : "false"}"
         onclick="location.href='/fields/index.html?view=expired'"
