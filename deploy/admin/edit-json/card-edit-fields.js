@@ -486,6 +486,70 @@ export function renderEditCard({ json, container, finalPath }) {
     });
   }
 
+  function getAreaOptions() {
+    const areaSet = new Set();
+    listData.forEach(item => {
+      const area = String(item?.area || "").trim();
+      if (area) areaSet.add(area);
+    });
+    return Array.from(areaSet);
+  }
+
+  function selectAreaForNewField() {
+    const areas = getAreaOptions();
+    if (areas.length === 0) return Promise.resolve("");
+
+    return new Promise(resolve => {
+      const existing = document.getElementById("new-field-area-modal-bg");
+      if (existing) existing.remove();
+
+      const modalBg = document.createElement("div");
+      modalBg.id = "new-field-area-modal-bg";
+      modalBg.className = "modal-bg";
+      modalBg.innerHTML = `
+        <div class="modal">
+          <div class="modal-close" id="new-field-area-close">×</div>
+          <h3>追加する圃場のエリア選択</h3>
+          <div class="form-row" style="margin-top:12px;">
+            <label class="form-label">エリア</label>
+            <select id="new-field-area-select" class="form-input" style="min-width:280px;">
+              ${areas.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button class="primary-btn" id="new-field-area-apply">このエリアで追加</button>
+            <button class="secondary-btn" id="new-field-area-cancel">キャンセル</button>
+          </div>
+        </div>
+      `;
+
+      const cleanup = value => {
+        modalBg.remove();
+        resolve(value);
+      };
+
+      modalBg.addEventListener("click", e => {
+        if (e.target === modalBg) cleanup(null);
+      });
+
+      document.body.appendChild(modalBg);
+
+      const closeBtn = document.getElementById("new-field-area-close");
+      const cancelBtn = document.getElementById("new-field-area-cancel");
+      const applyBtn = document.getElementById("new-field-area-apply");
+      const selectEl = document.getElementById("new-field-area-select");
+
+      if (closeBtn) closeBtn.onclick = () => cleanup(null);
+      if (cancelBtn) cancelBtn.onclick = () => cleanup(null);
+      if (applyBtn) {
+        applyBtn.onclick = () => {
+          const value = String(selectEl?.value || "").trim();
+          cleanup(value);
+        };
+      }
+    });
+  }
+
   function render() {
     normalizeRows();
     refreshTargetSelection();
@@ -597,12 +661,16 @@ export function renderEditCard({ json, container, finalPath }) {
     openTargetModalBtn.onclick = openTargetSelectModal;
   }
 
-  document.getElementById("add-field-btn").onclick = () => {
+  document.getElementById("add-field-btn").onclick = async () => {
     syncVisibleRowToListData();
+
+    const selectedArea = await selectAreaForNewField();
+    if (selectedArea === null) return;
+
     listData.push({
       name: "",
       __originalName: "",
-      area: "",
+      area: selectedArea || "",
       address: [],
       lat: "",
       lng: ""
