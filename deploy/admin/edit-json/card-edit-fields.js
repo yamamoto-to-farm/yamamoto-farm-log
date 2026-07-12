@@ -54,24 +54,24 @@ function parseAddressInput(raw) {
 
 function createDefaultFieldDetail(templateField = {}) {
   return {
-    size: "未入力（a）",
-    thumbnail: "未設定",
-    memo: "未入力",
+    size: "",
+    thumbnail: "",
+    memo: "",
     parcels: [
       {
-        address: "未入力",
-        officialArea: "未入力（㎡）",
-        owner: "未入力",
-        rightType: "未入力",
-        rent: "未入力"
+        address: "",
+        officialArea: "",
+        owner: "",
+        rightType: "",
+        rent: ""
       }
     ],
     contracts: [
       {
-        start: "未入力",
-        end: "未入力",
-        rent: "未入力",
-        notes: "未入力"
+        start: "",
+        end: "",
+        rent: "",
+        notes: ""
       }
     ],
     ...templateField
@@ -450,7 +450,8 @@ export function renderEditCard({ json, container, finalPath }) {
   function openTargetSelectModal() {
     syncVisibleRowToListData();
 
-    const rows = getTargetRowsSorted();
+    // 他画面モーダルと同じく、fields.json の出現順で表示する
+    const rows = getNameFilteredRows();
     if (rows.length === 0) {
       alert("表示対象の圃場がありません。エリア・圃場検索条件を見直してください。");
       return;
@@ -477,6 +478,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
     openFieldModal({
       mode: "select",
+      includeExpired: true,
       onSelect: selectedName => {
         const hit = rows.find(v => String(v.item.name || "").trim() === selectedName);
         if (!hit) return;

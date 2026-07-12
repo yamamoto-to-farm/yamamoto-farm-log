@@ -1,10 +1,11 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
+import { buildExpiredFieldNameSet } from "/common/field-contract.js?v=1";
 
 // ▼ デバッグフラグ（true でログ ON）
 const DEBUG_FIELD_LIST = true;
 
-export async function renderFieldList() {
+export async function renderFieldList({ view = "active" } = {}) {
   const container = document.getElementById("analysis-container");
   container.innerHTML = ""; // 初期化
 
@@ -13,6 +14,26 @@ export async function renderFieldList() {
 
   // ★ field-detail.json 読み込み（面積）
   const fieldDetail = await loadJSON("data/field-detail.json");
+
+  const expiredSet = buildExpiredFieldNameSet(fieldDetail);
+  const isExpiredView = view === "expired";
+  const targetFields = fields.filter(f => isExpiredView ? expiredSet.has(f.name) : !expiredSet.has(f.name));
+
+  container.insertAdjacentHTML("beforeend", `
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+      <button class="secondary-btn" type="button" onclick="location.href='/fields/index.html'">稼働中の圃場一覧</button>
+      <button class="secondary-btn" type="button" onclick="location.href='/fields/index.html?view=expired'">契約終了した圃場一覧</button>
+    </div>
+  `);
+
+  if (targetFields.length === 0) {
+    container.insertAdjacentHTML("beforeend", `
+      <div class="card" style="margin-top:8px; color:#555;">
+        ${isExpiredView ? "契約終了した圃場はありません。" : "表示対象の圃場はありません。"}
+      </div>
+    `);
+    return;
+  }
 
   if (DEBUG_FIELD_LIST) {
     console.group("[FIELD LIST DEBUG] 初期ロード情報");
@@ -24,7 +45,7 @@ export async function renderFieldList() {
 
   // ★ area（エリア）ごとにまとめる
   const groups = {};
-  for (const f of fields) {
+  for (const f of targetFields) {
     const groupName = f.area || "その他";
     if (!groups[groupName]) groups[groupName] = [];
     groups[groupName].push(f);

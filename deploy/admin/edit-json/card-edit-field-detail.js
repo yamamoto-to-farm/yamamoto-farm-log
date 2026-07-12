@@ -2,6 +2,87 @@
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
+function normalizeBlank(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (["未入力", "未入力（a）", "未入力（㎡）", "未設定"].includes(text)) return "";
+  return String(value ?? "");
+}
+
+function normalizeParcel(parcel = {}) {
+  return {
+    address: normalizeBlank(parcel.address),
+    officialArea: normalizeBlank(parcel.officialArea),
+    owner: normalizeBlank(parcel.owner),
+    ownerAddress: normalizeBlank(parcel.ownerAddress),
+    rightType: normalizeBlank(parcel.rightType),
+    rent: normalizeBlank(parcel.rent)
+  };
+}
+
+function normalizeContract(contract = {}) {
+  return {
+    start: normalizeBlank(contract.start),
+    end: normalizeBlank(contract.end),
+    rent: normalizeBlank(contract.rent),
+    notes: normalizeBlank(contract.notes)
+  };
+}
+
+function parseRentNumber(value) {
+  const text = String(value ?? "").replace(/,/g, "").trim();
+  if (!text) return 0;
+
+  const matched = text.match(/-?\d+(?:\.\d+)?/);
+  if (!matched) return 0;
+
+  const num = Number(matched[0]);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatRentNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "";
+  return num.toLocaleString("ja-JP");
+}
+
+function calcParcelRentTotal() {
+  const inputs = document.querySelectorAll(".parcel-rent");
+  let sum = 0;
+  inputs.forEach(input => {
+    sum += parseRentNumber(input?.value || "");
+  });
+  return sum;
+}
+
+function updateParcelRentTotalHint() {
+  const hintEl = document.getElementById("contract-rent-total-hint");
+  if (!hintEl) return;
+  const total = calcParcelRentTotal();
+  hintEl.textContent = `筆情報の賃料（10aあたり）合計: ${formatRentNumber(total)}`;
+}
+
+function applyParcelRentTotalToContractRents({ onlyEmpty = false } = {}) {
+  const totalText = formatRentNumber(calcParcelRentTotal());
+  const rentInputs = document.querySelectorAll(".contract-rent");
+
+  rentInputs.forEach(input => {
+    if (!input) return;
+    if (onlyEmpty && String(input.value || "").trim()) return;
+    input.value = totalText;
+  });
+
+  updateParcelRentTotalHint();
+}
+
+function bindParcelRentEvents() {
+  document.querySelectorAll(".parcel-rent").forEach(input => {
+    input.oninput = () => {
+      updateParcelRentTotalHint();
+    };
+  });
+}
+
 export function renderEditCard({ dataName, fieldName, json, container }) {
 
   if (!fieldName) {
@@ -21,7 +102,18 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
   }
 
   const TEMPLATE = json["TEMPLATE_FIELD"];
-  const data = json[fieldName] ? json[fieldName] : { ...TEMPLATE };
+  const rawData = json[fieldName] ? json[fieldName] : { ...TEMPLATE };
+  const data = {
+    ...rawData,
+    size: normalizeBlank(rawData.size),
+    memo: normalizeBlank(rawData.memo),
+    parcels: Array.isArray(rawData.parcels) && rawData.parcels.length > 0
+      ? rawData.parcels.map(normalizeParcel)
+      : [normalizeParcel({})],
+    contracts: Array.isArray(rawData.contracts) && rawData.contracts.length > 0
+      ? rawData.contracts.map(normalizeContract)
+      : [normalizeContract({})]
+  };
 
   // ============================
   // 基本情報カード
@@ -31,7 +123,7 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
       <h2>基本情報</h2>
 
       <div class="edit-line">
-        <label>面積（size）</label>
+        <label>耕作面積（反）</label>
         <input id="size" value="${data.size}">
       </div>
 
@@ -51,11 +143,12 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
 
       <!-- ★ ラベル行 -->
       <div class="parcel-header">
-        <div>住所</div>
-        <div>公簿面積</div>
-        <div>所有者</div>
+        <div>所在</div>
+        <div>登記面積（㎡）</div>
+        <div>所有者：氏名</div>
+        <div>所有者：住所</div>
         <div>権利</div>
-        <div>賃料</div>
+        <div>賃料（10aあたり）</div>
       </div>
 
       <div id="parcels-container"></div>
@@ -71,13 +164,9 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
   });
 
   document.getElementById("add-parcel").addEventListener("click", () => {
-    parcelsContainer.insertAdjacentHTML("beforeend", renderParcelRow({
-      address: "未入力",
-      officialArea: "未入力",
-      owner: "未入力",
-      rightType: "未入力",
-      rent: "未入力"
-    }));
+    parcelsContainer.insertAdjacentHTML("beforeend", renderParcelRow(normalizeParcel({})));
+    bindParcelRentEvents();
+    updateParcelRentTotalHint();
   });
 
   // ============================
@@ -91,8 +180,13 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
       <div class="contract-header">
         <div>開始日</div>
         <div>終了日</div>
-        <div>賃料</div>
+        <div>賃料（合計）</div>
         <div>備考</div>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+        <div id="contract-rent-total-hint" style="color:#555; font-size:13px;"></div>
+        <button id="apply-parcel-rent-total-btn" class="secondary-btn" type="button">筆情報合計を反映</button>
       </div>
 
       <div id="contracts-container"></div>
@@ -108,13 +202,16 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
   });
 
   document.getElementById("add-contract").addEventListener("click", () => {
-    contractsContainer.insertAdjacentHTML("beforeend", renderContractRow({
-      start: "未入力",
-      end: "未入力",
-      rent: "未入力",
-      notes: "未入力"
-    }));
+    contractsContainer.insertAdjacentHTML("beforeend", renderContractRow(normalizeContract({})));
+    applyParcelRentTotalToContractRents({ onlyEmpty: true });
   });
+
+  document.getElementById("apply-parcel-rent-total-btn").addEventListener("click", () => {
+    applyParcelRentTotalToContractRents({ onlyEmpty: false });
+  });
+
+  bindParcelRentEvents();
+  applyParcelRentTotalToContractRents({ onlyEmpty: true });
 
   // ============================
   // 保存ボタン
@@ -140,6 +237,7 @@ function renderParcelRow(p) {
       <input class="parcel-address" value="${p.address}">
       <input class="parcel-area" value="${p.officialArea}">
       <input class="parcel-owner" value="${p.owner}">
+      <input class="parcel-owner-address" value="${p.ownerAddress}">
       <input class="parcel-right" value="${p.rightType}">
       <input class="parcel-rent" value="${p.rent}">
     </div>
@@ -174,6 +272,7 @@ async function saveFieldDetail(dataName, fieldName) {
     address: row.querySelector(".parcel-address").value,
     officialArea: row.querySelector(".parcel-area").value,
     owner: row.querySelector(".parcel-owner").value,
+    ownerAddress: row.querySelector(".parcel-owner-address").value,
     rightType: row.querySelector(".parcel-right").value,
     rent: row.querySelector(".parcel-rent").value
   }));

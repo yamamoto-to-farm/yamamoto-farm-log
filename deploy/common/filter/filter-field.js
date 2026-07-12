@@ -8,22 +8,62 @@ import {
   closeModal,
   bindModalCloseEvents
 } from "./filter-core.js?v=1";
+import { loadJSON } from "/common/json.js?v=1";
+import { buildExpiredFieldNameSet } from "/common/field-contract.js?v=1";
+
+let expiredFieldNameSetCache = null;
+
+async function getExpiredFieldNameSet() {
+  if (expiredFieldNameSetCache) return expiredFieldNameSetCache;
+  try {
+    const detail = await loadJSON("/data/field-detail.json");
+    expiredFieldNameSetCache = buildExpiredFieldNameSet(detail);
+  } catch {
+    expiredFieldNameSetCache = new Set();
+  }
+  return expiredFieldNameSetCache;
+}
+
+async function getFilteredFieldTree({ includeExpired = false } = {}) {
+  const filter = getFilterData();
+  const data = filter?.fields || { parents: [], children: {} };
+  const rawParents = Array.isArray(data.parents) ? data.parents : [];
+  const rawChildren = data.children || {};
+
+  if (includeExpired) {
+    return {
+      parents: rawParents,
+      children: rawChildren
+    };
+  }
+
+  const expiredSet = await getExpiredFieldNameSet();
+  const parents = [];
+  const children = {};
+
+  rawParents.forEach(area => {
+    const list = Array.isArray(rawChildren[area]) ? rawChildren[area] : [];
+    const active = list.filter(name => !expiredSet.has(name));
+    if (active.length === 0) return;
+    parents.push(area);
+    children[area] = active;
+  });
+
+  return { parents, children };
+}
 
 /* ============================================================
    圃場フィルタモーダル（フィルタ／選択モード両対応）
 ============================================================ */
-export function openFieldModal(options = {}) {
+export async function openFieldModal(options = {}) {
   const {
     mode = "filter",     // "filter"（従来） or "select"（STEP2 用）
-    onSelect = null      // 選択モード時のコールバック
+    onSelect = null,      // 選択モード時のコールバック
+    includeExpired = false
   } = options;
 
   // ★★★ 安全ガード（最重要）★★★
-  const filter = getFilterData();
-  console.log("[filter-field] getFilterData result:", filter);
-  const data = filter?.fields || { parents: [], children: {} };
-  const parents = data.parents || [];
-  const children = data.children || {};
+  const { parents, children } = await getFilteredFieldTree({ includeExpired });
 
   const html = `
     <div class="modal-bg" id="modal-bg">

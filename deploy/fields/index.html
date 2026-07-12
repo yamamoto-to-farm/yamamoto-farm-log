@@ -54,6 +54,7 @@
       // ★ URL パラメータ取得
       const params = new URLSearchParams(location.search);
       const field = params.get("field");
+      const view = params.get("view") || "active";
 
       // ★ 分岐
       if (field) {
@@ -61,8 +62,9 @@
         initAnalysisPage(field);
 
       } else {
-        document.getElementById("field-name").textContent = "圃場一覧";
-        await renderFieldList();
+        document.getElementById("field-name").textContent =
+          view === "expired" ? "契約終了した圃場一覧" : "圃場一覧";
+        await renderFieldList({ view });
       }
     });
 
