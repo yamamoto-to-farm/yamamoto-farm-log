@@ -21,8 +21,22 @@ export async function renderFieldList({ view = "active" } = {}) {
 
   container.insertAdjacentHTML("beforeend", `
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-      <button class="secondary-btn" type="button" onclick="location.href='/fields/index.html'">稼働中の圃場一覧</button>
-      <button class="secondary-btn" type="button" onclick="location.href='/fields/index.html?view=expired'">契約終了した圃場一覧</button>
+      <button
+        class="${isExpiredView ? "secondary-btn" : "primary-btn"}"
+        type="button"
+        aria-current="${isExpiredView ? "false" : "page"}"
+        onclick="location.href='/fields/index.html'"
+      >
+        稼働中の圃場一覧
+      </button>
+      <button
+        class="${isExpiredView ? "primary-btn" : "secondary-btn"}"
+        type="button"
+        aria-current="${isExpiredView ? "page" : "false"}"
+        onclick="location.href='/fields/index.html?view=expired'"
+      >
+        契約終了した圃場一覧
+      </button>
     </div>
   `);
 
