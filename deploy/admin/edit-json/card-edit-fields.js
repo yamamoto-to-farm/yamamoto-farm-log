@@ -71,9 +71,16 @@ export function renderEditCard({ json, container, finalPath }) {
   const title = document.getElementById("page-title");
   if (title) title.textContent = "圃場基本情報（fields.json）";
 
+  const params = new URLSearchParams(location.search);
+  const initialField = String(params.get("field") || "").trim();
+
   let listData = Array.isArray(json)
-    ? json
-    : Object.values(json || {});
+    ? json.map(v => ({ ...v }))
+    : Object.values(json || {}).map(v => ({ ...v }));
+
+  let selectedArea = "";
+  let nameKeyword = "";
+  let selectedFieldIndex = -1;
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
@@ -81,24 +88,187 @@ export function renderEditCard({ json, container, finalPath }) {
       <p style="margin:0 0 12px; color:#555;">
         圃場名を追加・削除して保存すると、field-detail.json も同じ圃場名で自動同期されます。
       </p>
+
+      <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+          <div>
+            <label class="form-label">エリアフィルタ</label>
+            <select id="field-area-filter" class="form-input" style="min-width:220px;"></select>
+          </div>
+          <div>
+            <label class="form-label">圃場検索（部分一致）</label>
+            <input id="field-name-search" class="form-input" style="min-width:220px;" placeholder="圃場名で検索">
+          </div>
+          <div>
+            <label class="form-label">編集対象を選択</label>
+            <select id="field-target-select" class="form-input" style="min-width:320px;"></select>
+          </div>
+          <button id="add-field-btn" class="secondary-btn" type="button">＋ 圃場を追加</button>
+        </div>
+        <div id="field-visible-count" style="margin-top:8px; color:#555;"></div>
+      </div>
+
       <div id="field-list"></div>
 
-      <button id="add-field-btn" class="primary-btn" style="margin-top:20px;">
-        ＋ 圃場を追加
-      </button>
-
-      <button id="save-btn" class="primary-btn" style="margin-top:20px;">
-        保存する
-      </button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;">
+        <button id="go-field-detail-btn" class="secondary-btn" type="button">圃場詳細情報へ</button>
+        <button id="save-btn" class="primary-btn">保存する</button>
+      </div>
     </div>
   `);
 
   const listEl = document.getElementById("field-list");
+  const areaFilterEl = document.getElementById("field-area-filter");
+  const nameSearchEl = document.getElementById("field-name-search");
+  const targetSelectEl = document.getElementById("field-target-select");
+  const countEl = document.getElementById("field-visible-count");
+  const goDetailBtn = document.getElementById("go-field-detail-btn");
+
+  function normalizeRows() {
+    listData = listData.map(v => ({
+      name: String(v.name || "").trim(),
+      area: String(v.area || "").trim(),
+      address: Array.isArray(v.address) ? v.address : parseAddressInput(v.address || ""),
+      lat: v.lat == null || v.lat === "" ? "" : String(v.lat),
+      lng: v.lng == null || v.lng === "" ? "" : String(v.lng)
+    }));
+  }
+
+  function syncVisibleRowToListData() {
+    const card = listEl.querySelector(".sub-card");
+    if (!card) return;
+
+    const idx = Number(card.dataset.index);
+    if (!Number.isInteger(idx) || !listData[idx]) return;
+
+    const name = String(card.querySelector(".field-name")?.value || "").trim();
+    const area = String(card.querySelector(".field-area")?.value || "").trim();
+    const address = parseAddressInput(card.querySelector(".field-address")?.value || "");
+    const latRaw = String(card.querySelector(".field-lat")?.value || "").trim();
+    const lngRaw = String(card.querySelector(".field-lng")?.value || "").trim();
+
+    listData[idx] = {
+      ...listData[idx],
+      name,
+      area,
+      address,
+      lat: latRaw,
+      lng: lngRaw
+    };
+  }
+
+  function getAreaRows() {
+    return listData
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => {
+        if (!selectedArea) return true;
+        return String(item.area || "").trim() === selectedArea;
+      });
+  }
+
+  function getNameFilteredRows() {
+    const q = String(nameKeyword || "").trim().toLowerCase();
+    if (!q) return getAreaRows();
+
+    return getAreaRows().filter(({ item }) => {
+      const name = String(item.name || "").toLowerCase();
+      const area = String(item.area || "").toLowerCase();
+      return name.includes(q) || area.includes(q);
+    });
+  }
+
+  function getVisibleRows() {
+    const rows = getNameFilteredRows();
+    if (!Number.isInteger(selectedFieldIndex) || selectedFieldIndex < 0) return rows.slice(0, 1);
+    const selected = rows.find(v => v.index === selectedFieldIndex);
+    return selected ? [selected] : rows.slice(0, 1);
+  }
+
+  function refreshAreaOptions() {
+    const areaSet = new Set();
+    listData.forEach(v => {
+      const area = String(v.area || "").trim();
+      if (area) areaSet.add(area);
+    });
+
+    const options = ["", ...Array.from(areaSet).sort((a, b) => a.localeCompare(b, "ja"))];
+    areaFilterEl.innerHTML = options
+      .map(v => `<option value="${escapeHtml(v)}">${v ? escapeHtml(v) : "全エリア"}</option>`)
+      .join("");
+    areaFilterEl.value = selectedArea;
+  }
+
+  function refreshTargetSelectOptions() {
+    const rows = getNameFilteredRows()
+      .sort((a, b) => {
+        const areaCmp = String(a.item.area || "").localeCompare(String(b.item.area || ""), "ja");
+        if (areaCmp !== 0) return areaCmp;
+        return String(a.item.name || "").localeCompare(String(b.item.name || ""), "ja");
+      });
+
+    targetSelectEl.innerHTML = rows
+      .map(({ item, index }) => {
+        const area = String(item.area || "").trim();
+        const name = String(item.name || "").trim();
+        const label = `${area || "(エリア未入力)"} / ${name || "(圃場名未入力)"}`;
+        return `<option value="${index}">${escapeHtml(label)}</option>`;
+      })
+      .join("");
+
+    const indices = rows.map(v => v.index);
+    if (!Number.isInteger(selectedFieldIndex) || !indices.includes(selectedFieldIndex)) {
+      if (initialField) {
+        const hit = rows.find(v => String(v.item.name || "").trim() === initialField);
+        selectedFieldIndex = hit ? hit.index : (indices[0] ?? -1);
+      } else {
+        selectedFieldIndex = indices[0] ?? -1;
+      }
+    }
+
+    if (Number.isInteger(selectedFieldIndex) && selectedFieldIndex >= 0) {
+      targetSelectEl.value = String(selectedFieldIndex);
+    }
+  }
 
   function render() {
+    normalizeRows();
+    refreshAreaOptions();
+    refreshTargetSelectOptions();
+
+    const searchableRows = getNameFilteredRows();
+    const visibleRows = getVisibleRows();
+
+    if (countEl) {
+      countEl.textContent = `検索対象 ${searchableRows.length} 件 / 全体 ${listData.length} 件`;
+    }
+
+    if (goDetailBtn) {
+      goDetailBtn.onclick = () => {
+        if (!Number.isInteger(selectedFieldIndex) || selectedFieldIndex < 0 || !listData[selectedFieldIndex]) {
+          alert("編集対象の圃場を選択してください。");
+          return;
+        }
+        const name = String(listData[selectedFieldIndex].name || "").trim();
+        if (!name) {
+          alert("先に圃場名を入力してください。");
+          return;
+        }
+        location.href = `?data=field-detail&field=${encodeURIComponent(name)}`;
+      };
+    }
+
     listEl.innerHTML = "";
 
-    listData.forEach((item, index) => {
+    if (visibleRows.length === 0) {
+      listEl.innerHTML = `
+        <div class="sub-card" style="margin-bottom:12px; color:#666;">
+          表示対象がありません。エリア・名称検索・編集対象の選択条件を見直してください。
+        </div>
+      `;
+      return;
+    }
+
+    visibleRows.forEach(({ item, index }) => {
       const name = item.name ?? "";
       const area = item.area ?? "";
       const address = Array.isArray(item.address)
@@ -106,8 +276,6 @@ export function renderEditCard({ json, container, finalPath }) {
         : "";
       const lat = item.lat ?? "";
       const lng = item.lng ?? "";
-
-      const detailHref = `?data=field-detail&field=${encodeURIComponent(name)}`;
 
       listEl.insertAdjacentHTML("beforeend", `
         <div class="sub-card" style="margin-bottom:12px;">
@@ -137,89 +305,91 @@ export function renderEditCard({ json, container, finalPath }) {
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-            <button class="secondary-btn jump-detail-btn" data-index="${index}" ${name ? "" : "disabled"}>
-              詳細を開く
-            </button>
             <button class="secondary-btn delete-field-btn" data-index="${index}">
               削除
             </button>
           </div>
-
-          <a class="detail-link" href="${detailHref}" style="display:none;">detail</a>
         </div>
       `);
     });
 
     document.querySelectorAll(".delete-field-btn").forEach(btn => {
       btn.onclick = () => {
+        syncVisibleRowToListData();
         const idx = Number(btn.dataset.index);
         if (!confirm("この圃場を削除しますか？\n保存時に field-detail からも削除されます。")) return;
         listData.splice(idx, 1);
-        render();
-      };
-    });
-
-    document.querySelectorAll(".jump-detail-btn").forEach(btn => {
-      btn.onclick = () => {
-        const idx = Number(btn.dataset.index);
-        const row = btn.closest(".sub-card");
-        const nameInput = row?.querySelector(".field-name");
-        const name = nameInput?.value.trim() || "";
-
-        if (!name) {
-          alert("先に圃場名を入力してください。");
-          return;
+        if (Number.isInteger(selectedFieldIndex) && selectedFieldIndex === idx) {
+          selectedFieldIndex = -1;
+        } else if (Number.isInteger(selectedFieldIndex) && selectedFieldIndex > idx) {
+          selectedFieldIndex -= 1;
         }
-
-        location.href = `?data=field-detail&field=${encodeURIComponent(name)}`;
+        render();
       };
     });
   }
 
   render();
 
+  areaFilterEl.onchange = () => {
+    syncVisibleRowToListData();
+    selectedArea = areaFilterEl.value || "";
+    selectedFieldIndex = -1;
+    render();
+  };
+
+  nameSearchEl.oninput = () => {
+    syncVisibleRowToListData();
+    nameKeyword = nameSearchEl.value || "";
+    selectedFieldIndex = -1;
+    render();
+  };
+
+  targetSelectEl.onchange = () => {
+    syncVisibleRowToListData();
+    selectedFieldIndex = Number(targetSelectEl.value);
+    render();
+  };
+
   document.getElementById("add-field-btn").onclick = () => {
+    syncVisibleRowToListData();
     listData.push({
       name: "",
-      area: "",
+      area: selectedArea || "",
       address: [],
       lat: "",
       lng: ""
     });
+    selectedFieldIndex = listData.length - 1;
     render();
   };
 
   document.getElementById("save-btn").onclick = async () => {
-    showSaveModal("保存しています…");
-
-    const names = container.querySelectorAll(".field-name");
-    const areas = container.querySelectorAll(".field-area");
-    const addresses = container.querySelectorAll(".field-address");
-    const lats = container.querySelectorAll(".field-lat");
-    const lngs = container.querySelectorAll(".field-lng");
+    syncVisibleRowToListData();
 
     const newList = [];
     const usedNames = new Set();
+    let validationError = "";
 
-    for (let i = 0; i < names.length; i += 1) {
-      const name = names[i].value.trim();
-      const area = areas[i].value.trim();
-      const address = parseAddressInput(addresses[i].value);
-      const latRaw = lats[i].value.trim();
-      const lngRaw = lngs[i].value.trim();
+    for (const row of listData) {
+      const name = String(row.name || "").trim();
+      const area = String(row.area || "").trim();
+      const address = Array.isArray(row.address) ? row.address : parseAddressInput(row.address || "");
+      const latRaw = String(row.lat || "").trim();
+      const lngRaw = String(row.lng || "").trim();
 
       if (!name && !area) {
         continue;
       }
 
       if (!name) {
-        alert("圃場名が空の行があります。圃場名を入力してください。");
-        return;
+        validationError = "圃場名が空の行があります。圃場名を入力してください。";
+        break;
       }
 
       if (usedNames.has(name)) {
-        alert(`圃場名「${name}」が重複しています。`);
-        return;
+        validationError = `圃場名「${name}」が重複しています。`;
+        break;
       }
       usedNames.add(name);
 
@@ -235,11 +405,26 @@ export function renderEditCard({ json, container, finalPath }) {
       });
     }
 
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    showSaveModal("保存しています…");
+
+    listData = newList.map(v => ({ ...v }));
+
     const savePath = "data/" + finalPath.replace(/^\/data\//, "");
 
-    await saveJSON(savePath, newList);
-    await syncFieldDetailByFields(newList);
+    try {
+      await saveJSON(savePath, newList);
+      await syncFieldDetailByFields(newList);
+    } catch (e) {
+      alert(String(e?.message || e || "保存に失敗しました。"));
+      return;
+    }
 
     completeSaveModal("保存が完了しました");
+    render();
   };
 }

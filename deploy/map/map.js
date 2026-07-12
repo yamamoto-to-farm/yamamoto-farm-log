@@ -2,6 +2,7 @@
 
 import { openFieldModal } from "../common/filter/filter-field.js?v=1";
 import { setFilterData } from "../common/filter/filter-core.js?v=1";
+import { loadJSON } from "../common/json.js?v=1";
 
 export function initMap() {
 
@@ -87,8 +88,7 @@ export function initMap() {
     });
   }
 
-  fetch("../data/fields.json")
-    .then(res => res.json())
+  loadJSON("/data/fields.json")
     .then(fields => {
 
       /* ============================================================
@@ -219,5 +219,8 @@ export function initMap() {
         }, 400);
       });
 
+    })
+    .catch(err => {
+      console.error("[map] fields.json load failed", err);
     });
 }
