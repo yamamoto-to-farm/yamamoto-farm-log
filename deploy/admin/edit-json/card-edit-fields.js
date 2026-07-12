@@ -3,6 +3,8 @@ import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { loadCSV } from "/common/csv.js?v=1";
 import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName } from "/common/utils.js?v=1";
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { setFilterData } from "/common/filter/filter-core.js?v=1";
 import { showSaveModal, updateSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 const LOG_TYPES_WITH_ALL_CSV = [
@@ -318,7 +320,6 @@ export function renderEditCard({ json, container, finalPath }) {
     ? json.map(v => ({ ...v }))
     : Object.values(json || {}).map(v => ({ ...v }));
 
-  let selectedArea = "";
   let nameKeyword = "";
   let selectedFieldIndex = -1;
 
@@ -332,16 +333,15 @@ export function renderEditCard({ json, container, finalPath }) {
       <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
           <div>
-            <label class="form-label">エリアフィルタ</label>
-            <select id="field-area-filter" class="form-input" style="min-width:220px;"></select>
-          </div>
-          <div>
             <label class="form-label">圃場検索（部分一致）</label>
             <input id="field-name-search" class="form-input" style="min-width:220px;" placeholder="圃場名で検索">
           </div>
           <div>
             <label class="form-label">編集対象を選択</label>
-            <select id="field-target-select" class="form-input" style="min-width:320px;"></select>
+            <button id="open-field-target-modal" class="secondary-btn" type="button" style="min-width:320px; text-align:left;">
+              圃場を選択
+            </button>
+            <div id="field-target-current" style="margin-top:6px; color:#555;"></div>
           </div>
           <button id="add-field-btn" class="secondary-btn" type="button">＋ 圃場を追加</button>
         </div>
@@ -358,9 +358,9 @@ export function renderEditCard({ json, container, finalPath }) {
   `);
 
   const listEl = document.getElementById("field-list");
-  const areaFilterEl = document.getElementById("field-area-filter");
   const nameSearchEl = document.getElementById("field-name-search");
-  const targetSelectEl = document.getElementById("field-target-select");
+  const openTargetModalBtn = document.getElementById("open-field-target-modal");
+  const targetCurrentEl = document.getElementById("field-target-current");
   const countEl = document.getElementById("field-visible-count");
   const goDetailBtn = document.getElementById("go-field-detail-btn");
 
@@ -398,20 +398,12 @@ export function renderEditCard({ json, container, finalPath }) {
     };
   }
 
-  function getAreaRows() {
-    return listData
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) => {
-        if (!selectedArea) return true;
-        return String(item.area || "").trim() === selectedArea;
-      });
-  }
-
   function getNameFilteredRows() {
     const q = String(nameKeyword || "").trim().toLowerCase();
-    if (!q) return getAreaRows();
+    const rows = listData.map((item, index) => ({ item, index }));
+    if (!q) return rows;
 
-    return getAreaRows().filter(({ item }) => {
+    return rows.filter(({ item }) => {
       const name = String(item.name || "").toLowerCase();
       const area = String(item.area || "").toLowerCase();
       return name.includes(q) || area.includes(q);
@@ -425,39 +417,19 @@ export function renderEditCard({ json, container, finalPath }) {
     return selected ? [selected] : rows.slice(0, 1);
   }
 
-  function refreshAreaOptions() {
-    const areaSet = new Set();
-    listData.forEach(v => {
-      const area = String(v.area || "").trim();
-      if (area) areaSet.add(area);
-    });
-
-    // fields一覧と同じく、fields.jsonに出現する順序を維持
-    const options = ["", ...Array.from(areaSet)];
-    areaFilterEl.innerHTML = options
-      .map(v => `<option value="${escapeHtml(v)}">${v ? escapeHtml(v) : "全エリア"}</option>`)
-      .join("");
-    areaFilterEl.value = selectedArea;
-  }
-
-  function refreshTargetSelectOptions() {
-    const rows = getNameFilteredRows()
+  function getTargetRowsSorted() {
+    return getNameFilteredRows()
       .sort((a, b) => {
         const areaCmp = String(a.item.area || "").localeCompare(String(b.item.area || ""), "ja");
         if (areaCmp !== 0) return areaCmp;
         return String(a.item.name || "").localeCompare(String(b.item.name || ""), "ja");
       });
+  }
 
-    targetSelectEl.innerHTML = rows
-      .map(({ item, index }) => {
-        const area = String(item.area || "").trim();
-        const name = String(item.name || "").trim();
-        const label = `${area || "(エリア未入力)"} / ${name || "(圃場名未入力)"}`;
-        return `<option value="${index}">${escapeHtml(label)}</option>`;
-      })
-      .join("");
-
+  function refreshTargetSelection() {
+    const rows = getTargetRowsSorted();
     const indices = rows.map(v => v.index);
+
     if (!Number.isInteger(selectedFieldIndex) || !indices.includes(selectedFieldIndex)) {
       if (initialField) {
         const hit = rows.find(v => String(v.item.name || "").trim() === initialField);
@@ -467,15 +439,56 @@ export function renderEditCard({ json, container, finalPath }) {
       }
     }
 
-    if (Number.isInteger(selectedFieldIndex) && selectedFieldIndex >= 0) {
-      targetSelectEl.value = String(selectedFieldIndex);
+    const selected = rows.find(v => v.index === selectedFieldIndex);
+    const label = selected
+      ? `${String(selected.item.area || "").trim() || "(エリア未入力)"} / ${String(selected.item.name || "").trim() || "(圃場名未入力)"}`
+      : "対象なし";
+
+    if (targetCurrentEl) targetCurrentEl.textContent = `現在: ${label}`;
+  }
+
+  function openTargetSelectModal() {
+    syncVisibleRowToListData();
+
+    const rows = getTargetRowsSorted();
+    if (rows.length === 0) {
+      alert("表示対象の圃場がありません。エリア・圃場検索条件を見直してください。");
+      return;
     }
+
+    const parents = [];
+    const children = {};
+
+    rows.forEach(({ item }) => {
+      const area = String(item.area || "").trim() || "(エリア未入力)";
+      const name = String(item.name || "").trim() || "(圃場名未入力)";
+      if (!children[area]) {
+        children[area] = [];
+        parents.push(area);
+      }
+      if (!children[area].includes(name)) children[area].push(name);
+    });
+
+    setFilterData({
+      yearMonths: [],
+      fields: { parents, children },
+      varieties: { parents: [], children: {} }
+    });
+
+    openFieldModal({
+      mode: "select",
+      onSelect: selectedName => {
+        const hit = rows.find(v => String(v.item.name || "").trim() === selectedName);
+        if (!hit) return;
+        selectedFieldIndex = hit.index;
+        render();
+      }
+    });
   }
 
   function render() {
     normalizeRows();
-    refreshAreaOptions();
-    refreshTargetSelectOptions();
+    refreshTargetSelection();
 
     const searchableRows = getNameFilteredRows();
     const visibleRows = getVisibleRows();
@@ -573,13 +586,6 @@ export function renderEditCard({ json, container, finalPath }) {
 
   render();
 
-  areaFilterEl.onchange = () => {
-    syncVisibleRowToListData();
-    selectedArea = areaFilterEl.value || "";
-    selectedFieldIndex = -1;
-    render();
-  };
-
   nameSearchEl.oninput = () => {
     syncVisibleRowToListData();
     nameKeyword = nameSearchEl.value || "";
@@ -587,11 +593,9 @@ export function renderEditCard({ json, container, finalPath }) {
     render();
   };
 
-  targetSelectEl.onchange = () => {
-    syncVisibleRowToListData();
-    selectedFieldIndex = Number(targetSelectEl.value);
-    render();
-  };
+  if (openTargetModalBtn) {
+    openTargetModalBtn.onclick = openTargetSelectModal;
+  }
 
   document.getElementById("add-field-btn").onclick = () => {
     syncVisibleRowToListData();
