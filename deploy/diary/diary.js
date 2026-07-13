@@ -44,6 +44,7 @@ function renderModeSwitch(mode, keyword = "") {
   const date = document.getElementById("diaryDate").value;
   const modeUrlView = buildDiaryUrl("view", date, keyword);
   const modeUrlEdit = buildDiaryUrl("edit", date, keyword);
+  const editLogUrl = buildEditLogUrl(date);
   const ym = date ? date.slice(0, 7) : "";
   const monthUrl = ym
     ? `/schedule/monthly-work/index.html?mode=around2&ym=${ym}`
@@ -62,6 +63,9 @@ function renderModeSwitch(mode, keyword = "") {
               onclick="location.href='${modeUrlEdit}'">
         編集モード
       </button>
+      <button class="mode-btn" onclick="location.href='${editLogUrl}'">
+        作業ログ編集へ
+      </button>
     `;
   }
 
@@ -75,6 +79,13 @@ function renderModeSwitch(mode, keyword = "") {
       ${rightButtons}
     </div>
   `;
+}
+
+function buildEditLogUrl(date) {
+  const params = new URLSearchParams();
+  if (date) params.set("date", date);
+  params.set("mode", "date");
+  return `/admin/edit-log/index.html?${params.toString()}`;
 }
 
 function buildDiaryUrl(mode, date, keyword = "") {

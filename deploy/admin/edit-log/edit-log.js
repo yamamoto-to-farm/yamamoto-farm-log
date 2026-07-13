@@ -88,11 +88,14 @@ export async function initEditLogPage() {
   await loadMasterData();
   bindEvents();
 
+  applyInitialQueryState();
+
   const dateEl = document.getElementById("target-date");
-  if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
 
   updateTargetFieldLabel();
   updateTargetModeUI();
+  syncDiaryEditLink();
   updateActionAvailability();
   renderDynamicFieldEditor();
   renderDiffPreview();
@@ -189,10 +192,18 @@ function bindEvents() {
   document.querySelectorAll("input[name='target-mode']").forEach(el => {
     el.addEventListener("change", () => {
       updateTargetModeUI();
+      syncDiaryEditLink();
       updateActionAvailability();
       renderAllCsvPreview();
     });
   });
+
+  const targetDate = document.getElementById("target-date");
+  if (targetDate) {
+    targetDate.addEventListener("change", () => {
+      syncDiaryEditLink();
+    });
+  }
 
   const typeEl = document.getElementById("log-type");
   if (typeEl) {
@@ -238,6 +249,33 @@ function bindEvents() {
   window.addEventListener("resize", () => renderAllCsvVirtualWindow());
 
   document.addEventListener("keydown", handleGlobalKeydown);
+}
+
+function applyInitialQueryState() {
+  const params = new URLSearchParams(location.search);
+  const date = String(params.get("date") || "").trim();
+  const mode = String(params.get("mode") || "").trim();
+
+  if (mode === "date") {
+    const radioDate = document.getElementById("target-mode-date");
+    if (radioDate) radioDate.checked = true;
+  }
+
+  if (date) {
+    const targetDate = document.getElementById("target-date");
+    if (targetDate) targetDate.value = date;
+  }
+}
+
+function syncDiaryEditLink() {
+  const link = document.getElementById("go-diary-link");
+  if (!link) return;
+
+  const date = state.loadedDate || (document.getElementById("target-date")?.value || "");
+  const params = new URLSearchParams();
+  params.set("mode", "edit");
+  if (date) params.set("date", date);
+  link.href = `/diary/index.html?${params.toString()}`;
 }
 
 function showSyncHelpModal() {
