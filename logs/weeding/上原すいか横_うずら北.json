@@ -36,41 +36,6 @@
               "dilution_rate": 100,
               "unit": "L",
               "water_unit": "L",
-              "water_amount": null,
-              "spray_amount": null,
-              "pesticide_amount": null,
-              "pesticide_unit": "ml"
-            }
-          ],
-          "sprayMethod": "背負動力噴霧機",
-          "machine": "machine1",
-          "workers": "山本 直輝,土井 琉羽",
-          "notes": "周りのみ"
-        },
-        {
-          "date": "2026-07-13",
-          "workType": "除草剤散布",
-          "pesticides": [
-            "草枯らしプラボトル"
-          ],
-          "pesticideUsage": [
-            {
-              "pesticide_id": "HL0004",
-              "name": "草枯らしプラボトル",
-              "dilution_rate": 100,
-              "total_water_amount": 105,
-              "total_spray_amount": 105,
-              "unit": "L"
-            }
-          ],
-          "distributed": [
-            {
-              "field": "上原(すいか横、うずら北)",
-              "pesticide_id": "HL0004",
-              "name": "草枯らしプラボトル",
-              "dilution_rate": 100,
-              "unit": "L",
-              "water_unit": "L",
               "water_amount": 12.9,
               "spray_amount": 12.9,
               "pesticide_amount": 129,
