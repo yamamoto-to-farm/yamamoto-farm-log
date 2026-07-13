@@ -942,14 +942,22 @@ function createAllCsvGroupKey(entry, row) {
 function chooseAllCsvHeader(type, existingHeader = []) {
   const normalized = Array.isArray(existingHeader) ? existingHeader.map(v => String(v || "").trim()).filter(Boolean) : [];
   const hasCore = normalized.includes("date") && normalized.includes("worker") && normalized.includes("field");
+  const richTypes = new Set(["tillage", "weeding", "hand-weeding", "watering", "intertill", "bedmaking", "field-maintenance"]);
 
   if (hasCore) {
     if (!normalized.includes("eventId")) normalized.push("eventId");
     if (!normalized.includes("machine")) normalized.push("machine");
+
+    // diary/work-summary.js は rich type で workType / method を参照するため、
+    // 旧 all.csv ヘッダに無くても再生成時に必ず補う。
+    if (richTypes.has(type)) {
+      if (!normalized.includes("workType")) normalized.push("workType");
+      if (!normalized.includes("method")) normalized.push("method");
+    }
+
     return normalized;
   }
 
-  const richTypes = new Set(["tillage", "weeding", "hand-weeding", "watering", "intertill", "bedmaking", "field-maintenance"]);
   if (richTypes.has(type)) return ["date", "eventId", "worker", "field", "machine", "workType", "method"];
   return ["date", "eventId", "worker", "field", "machine"];
 }
