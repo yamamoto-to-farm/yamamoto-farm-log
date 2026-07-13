@@ -6,6 +6,7 @@
   <title>ログ編集（管理者）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
 </head>
 
 <body>
@@ -35,8 +36,30 @@
         </div>
 
         <div>
-          <label for="target-field">圃場</label>
-          <select id="target-field" class="form-input"></select>
+          <label>編集対象</label>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:6px; margin:0;">
+              <input type="radio" name="target-mode" id="target-mode-field" value="field" checked>
+              圃場
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; margin:0;">
+              <input type="radio" name="target-mode" id="target-mode-date" value="date">
+              日付
+            </label>
+          </div>
+        </div>
+
+        <div id="target-field-wrap">
+          <label>圃場</label>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button id="pick-field-btn" class="secondary-btn" type="button">圃場を選択</button>
+            <span id="target-field-label" style="color:#333; font-weight:600;">未選択</span>
+          </div>
+        </div>
+
+        <div id="target-date-wrap" style="display:none;">
+          <label for="target-date">日付</label>
+          <input id="target-date" type="date" class="form-input">
         </div>
 
         <button id="load-btn" class="primary-btn" type="button">読み込む</button>
@@ -61,6 +84,7 @@
           <thead>
             <tr>
               <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:50px;">#</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">圃場</th>
               <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:140px;">日付</th>
               <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">作業内容</th>
               <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:180px;">機械</th>
@@ -116,6 +140,8 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
+    import "/common/filter/filter-core.js?v=1";
+    import "/common/filter/filter-field.js?v=1";
     import { initEditLogPage } from "./edit-log.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
