@@ -3,7 +3,7 @@ import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName } from "/common/utils.js?v=1";
 import { rebuildMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
+import { bindModalCloseEvents, closeModal, getFilterData, openModal, setFilterData } from "/common/filter/filter-core.js?v=1";
 
 let state = {
   fields: [],
@@ -162,6 +162,11 @@ function bindEvents() {
   const saveBtn = document.getElementById("save-btn");
   if (saveBtn) saveBtn.onclick = () => saveCurrentLog();
 
+  const syncHelpBtn = document.getElementById("sync-help-btn");
+  if (syncHelpBtn) {
+    syncHelpBtn.onclick = () => showSyncHelpModal();
+  }
+
   const pickFieldBtn = document.getElementById("pick-field-btn");
   if (pickFieldBtn) {
     pickFieldBtn.onclick = async () => {
@@ -233,6 +238,34 @@ function bindEvents() {
   window.addEventListener("resize", () => renderAllCsvVirtualWindow());
 
   document.addEventListener("keydown", handleGlobalKeydown);
+}
+
+function showSyncHelpModal() {
+  const html = `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal" style="max-width:560px;">
+        <div class="modal-close" id="modal-close">×</div>
+        <h3 style="margin-top:0;">同時修正の説明</h3>
+        <p style="margin:0 0 8px; color:#555;">圃場モードで保存するとき、同じ記録と判定された他圃場の行も一緒に更新します。</p>
+        <ul style="margin:8px 0 12px 20px; color:#333; line-height:1.6;">
+          <li>対象: 同じログタイプ内の行</li>
+          <li>一致判定: eventId・日付・作業内容・機械・作業者など</li>
+          <li>同期内容: 編集した項目を他圃場にも反映</li>
+          <li>例外: distributed は圃場ごとに量が違うため維持</li>
+          <li>注意: 新規追加行は自動複製されません</li>
+        </ul>
+        <div class="modal-footer">
+          <button id="sync-help-close-btn" class="primary-btn" type="button" style="margin-top:0;">閉じる</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(html);
+  bindModalCloseEvents();
+
+  const closeBtn = document.getElementById("sync-help-close-btn");
+  if (closeBtn) closeBtn.onclick = () => closeModal();
 }
 
 function updateTargetFieldLabel() {
@@ -723,10 +756,38 @@ async function rebuildAllCsv(type, fieldOverrides = {}) {
     })
   );
 
-  const rows = [];
+  const grouped = new Map();
   loaded.forEach(({ fieldName, data }) => {
     if (!data) return;
-    flattenEntriesCached(data).forEach(e => rows.push(buildCsvRowFromEntry(e, fieldName)));
+    flattenEntriesCached(data).forEach(entry => {
+      const row = buildCsvRowFromEntry(entry, fieldName);
+      const key = createAllCsvGroupKey(entry, row);
+
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, {
+          ...row,
+          __fieldSet: new Set([fieldName])
+        });
+        return;
+      }
+
+      existing.__fieldSet.add(fieldName);
+      if (!existing.eventId && row.eventId) existing.eventId = row.eventId;
+    });
+  });
+
+  const rows = Array.from(grouped.values()).map(row => {
+    const field = Array.from(row.__fieldSet || [])
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+      .join("／");
+
+    return {
+      ...row,
+      field
+    };
   });
 
   rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -864,6 +925,18 @@ function buildCsvRowFromEntry(entry, fieldName) {
     workType: String(entry.workType || "").trim(),
     method: normalizeMethod(entry)
   };
+}
+
+function createAllCsvGroupKey(entry, row) {
+  return [
+    String(row?.date || "").trim(),
+    formatWorkersForCsv(entry?.workers ?? entry?.worker),
+    normalizeMachine(entry),
+    String(row?.workType || "").trim(),
+    normalizeMethod(entry),
+    normalizePesticides(entry),
+    String(entry?.notes || "").trim()
+  ].join("||");
 }
 
 function chooseAllCsvHeader(type, existingHeader = []) {

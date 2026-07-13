@@ -91,6 +91,23 @@
       flex: 1 1 220px;
     }
 
+    .sync-help-btn {
+      height: 30px;
+      min-width: 30px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      background: #f8fafc;
+      border-radius: 999px;
+      color: #2d3748;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .sync-help-btn:hover {
+      background: #edf2f7;
+    }
+
     .field-select-inline {
       display: flex;
       gap: 8px;
@@ -236,6 +253,7 @@
           <input id="sync-related" type="checkbox" checked>
           複数圃場で同時記録されたログを同時修正
         </label>
+        <button id="sync-help-btn" class="sync-help-btn" type="button" title="同時修正の説明">説明</button>
         <button id="save-btn" class="primary-btn" type="button">保存（JSON + all.csv更新）</button>
       </div>
       <p class="shortcut-help">ショートカット: Ctrl+S で保存 / ↑↓ で行移動 / Esc で選択解除</p>
