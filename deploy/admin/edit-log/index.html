@@ -74,15 +74,12 @@
     </div>
 
     <div class="card">
-      <h2 style="margin-top:0; font-size:1.1rem;">選択行のJSON（全文編集）</h2>
+      <h2 style="margin-top:0; font-size:1.1rem;">選択行の詳細項目（可変入力）</h2>
       <p style="margin-top:0; color:#666;">
-        選択行のJSONを直接編集できます。適用後、上の表にも反映されます。
+        作業内容に応じて入力項目を自動表示します。既存JSONにある項目はすべて表示し、未入力項目も追加入力できます。
       </p>
-      <textarea id="raw-json-editor" class="form-input" style="width:100%; min-height:240px; font-family:monospace; white-space:pre;" spellcheck="false"></textarea>
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <button id="apply-raw-json-btn" class="secondary-btn" type="button">JSONを適用</button>
-        <div id="raw-json-status" style="align-self:center; color:#666;"></div>
-      </div>
+      <div id="dynamic-field-status" style="margin-bottom:8px; color:#666;">行を選択してください</div>
+      <div id="dynamic-fields" style="display:grid; gap:10px;"></div>
     </div>
 
     <div class="card">

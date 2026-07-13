@@ -13,10 +13,78 @@ let state = {
   allCsvRows: []
 };
 
+const NUMERIC_KEYS = new Set([
+  "depthCm",
+  "speedKmh",
+  "ridgeCount",
+  "ridgeHeightCm",
+  "ridgeWidthCm",
+  "sourceRidgeCount",
+  "sourceRidgeHeightCm",
+  "sourceRidgeWidthCm",
+  "irrigationMinutes"
+]);
+
+const TYPE_SUGGESTED_KEYS = {
+  fertilizer: [
+    "date", "workType", "workers", "machine", "notes",
+    "fertilizerItems", "distributed", "sourceWorkType", "sourceWork",
+    "sourceRidgeCount", "sourceRidgeHeightCm", "sourceRidgeWidthCm", "attachment"
+  ],
+  pesticide: [
+    "date", "workType", "workers", "machine", "notes",
+    "distributed", "attachment"
+  ],
+  tillage: [
+    "date", "workType", "workers", "machine", "notes",
+    "depthCm", "speedKmh", "attachment"
+  ],
+  weeding: [
+    "date", "workType", "workers", "machine", "notes",
+    "sprayMethod", "mowingMethod", "pesticides", "pesticideUsage", "distributed", "attachment"
+  ],
+  "hand-weeding": [
+    "date", "workType", "workers", "machine", "notes", "attachment"
+  ],
+  watering: [
+    "date", "workType", "workers", "machine", "notes",
+    "startTime", "endTime", "irrigationMinutes", "attachment"
+  ],
+  intertill: [
+    "date", "workType", "workers", "machine", "notes",
+    "ridgeCount", "ridgeHeightCm", "ridgeWidthCm", "attachment"
+  ],
+  bedmaking: [
+    "date", "workType", "workers", "machine", "notes",
+    "ridgeCount", "ridgeHeightCm", "ridgeWidthCm", "attachment"
+  ],
+  "field-maintenance": [
+    "date", "workType", "workers", "machine", "notes", "attachment"
+  ]
+};
+
+const WORKTYPE_OPTIONS = {
+  weeding: ["除草剤散布", "草刈り"],
+  tillage: ["耕うん(ロータリー)", "プラソイラー", "整地", "土壌改良"],
+  "field-maintenance": ["整地", "補修", "草刈り", "清掃"],
+  watering: ["潅水"],
+  fertilizer: ["施肥"],
+  pesticide: ["防除"],
+  intertill: ["中耕"],
+  bedmaking: ["畝立て"],
+  "hand-weeding": ["草とり"]
+};
+
+const METHOD_OPTIONS = {
+  sprayMethod: ["背負動力噴霧機", "エンジン動噴", "ドローン", "手撒き"],
+  mowingMethod: ["フレールモア", "背負い式刈払機", "ハンマーナイフ", "手作業"]
+};
+
 export async function initEditLogPage() {
   await loadFieldOptions();
   bindEvents();
   setStatus("ログタイプと圃場を選んで読み込んでください。");
+  renderDynamicFieldEditor();
 }
 
 async function loadFieldOptions() {
@@ -39,6 +107,9 @@ function bindEvents() {
   if (addBtn) addBtn.onclick = () => {
     state.rows.push(createEmptyRow());
     renderRows();
+    state.selectedIndex = state.rows.length - 1;
+    renderRows();
+    renderDynamicFieldEditor();
   };
 
   const deleteBtn = document.getElementById("delete-row-btn");
@@ -51,14 +122,12 @@ function bindEvents() {
       state.rows.splice(state.selectedIndex, 1);
       state.selectedIndex = null;
       renderRows();
+      renderDynamicFieldEditor();
     };
   }
 
   const saveBtn = document.getElementById("save-btn");
   if (saveBtn) saveBtn.onclick = () => saveCurrentLog();
-
-  const applyRawBtn = document.getElementById("apply-raw-json-btn");
-  if (applyRawBtn) applyRawBtn.onclick = () => applyRawJsonToSelectedRow();
 }
 
 async function loadSelectedLog() {
@@ -79,7 +148,7 @@ async function loadSelectedLog() {
   state.selectedIndex = null;
 
   renderRows();
-  syncRawJsonEditor();
+  renderDynamicFieldEditor();
   await loadAllCsvPreview(type, field);
   setStatus(`${field} / ${type} を読み込みました（${entries.length}件）`);
 }
@@ -108,7 +177,7 @@ function renderRows() {
     tr.addEventListener("click", () => {
       state.selectedIndex = idx;
       renderRows();
-      syncRawJsonEditor();
+      renderDynamicFieldEditor();
     });
 
     tr.querySelectorAll("input").forEach(input => {
@@ -117,14 +186,14 @@ function renderRows() {
         if (!key) return;
         updateRowField(state.rows[idx], key, input.value);
         if (state.selectedIndex === idx) {
-          syncRawJsonEditor();
+          renderDynamicFieldEditor();
         }
       });
 
       input.addEventListener("click", ev => {
         ev.stopPropagation();
         state.selectedIndex = idx;
-        syncRawJsonEditor();
+        renderDynamicFieldEditor();
       });
     });
 
@@ -275,10 +344,19 @@ function toEditableRow(entry) {
 }
 
 function createEmptyRow() {
-  return {
-    raw: {},
+  const type = getLogType();
+  const base = {
     date: "",
-    workType: "",
+    workType: getDefaultWorkType(type),
+    machine: "",
+    workers: [],
+    notes: ""
+  };
+
+  return {
+    raw: base,
+    date: "",
+    workType: base.workType,
     machine: "",
     workersText: "",
     notes: ""
@@ -445,6 +523,36 @@ function parseAllCsvText(csvText) {
   return { header, rows };
 }
 
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === "," && !inQuotes) {
+      out.push(cur);
+      cur = "";
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  out.push(cur);
+  return out;
+}
+
 function updateRowField(row, key, value) {
   row[key] = value;
   if (!row.raw || typeof row.raw !== "object") row.raw = {};
@@ -459,51 +567,232 @@ function updateRowField(row, key, value) {
   }
 }
 
-function syncRawJsonEditor() {
-  const textarea = document.getElementById("raw-json-editor");
-  const status = document.getElementById("raw-json-status");
-  if (!textarea || !status) return;
+function renderDynamicFieldEditor() {
+  const status = document.getElementById("dynamic-field-status");
+  const root = document.getElementById("dynamic-fields");
+  if (!status || !root) return;
+
+  root.innerHTML = "";
 
   if (state.selectedIndex == null || !state.rows[state.selectedIndex]) {
-    textarea.value = "";
-    status.textContent = "行を選択するとJSONを表示します";
+    status.textContent = "行を選択してください";
     return;
   }
 
   const row = state.rows[state.selectedIndex];
-  textarea.value = JSON.stringify(row.raw || {}, null, 2);
-  status.textContent = `行 #${state.selectedIndex + 1} を編集中`;
+  const type = getLogType();
+  const keys = getDynamicKeys(type, row.raw || {});
+  status.textContent = `行 #${state.selectedIndex + 1} を編集中（${keys.length}項目）`;
+
+  keys.forEach(key => {
+    const value = row.raw?.[key];
+    const editorType = inferEditorType(type, key, value);
+    root.appendChild(createDynamicFieldNode({ type, key, value, editorType, row }));
+  });
 }
 
-function applyRawJsonToSelectedRow() {
-  if (state.selectedIndex == null || !state.rows[state.selectedIndex]) {
-    alert("先に行を選択してください");
-    return;
+function getDynamicKeys(type, rawEntry) {
+  const suggested = Array.isArray(TYPE_SUGGESTED_KEYS[type]) ? TYPE_SUGGESTED_KEYS[type] : [];
+  const fromRaw = rawEntry && typeof rawEntry === "object" ? Object.keys(rawEntry) : [];
+
+  const ordered = [];
+  const seen = new Set();
+
+  const push = (k) => {
+    const key = String(k || "").trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    ordered.push(key);
+  };
+
+  suggested.forEach(push);
+  fromRaw.forEach(push);
+
+  if (String(rawEntry?.workType || "").trim() === "除草剤散布") {
+    ["sprayMethod", "pesticides", "pesticideUsage", "distributed"].forEach(push);
+  }
+  if (String(rawEntry?.workType || "").trim() === "草刈り") {
+    ["mowingMethod"].forEach(push);
   }
 
-  const textarea = document.getElementById("raw-json-editor");
-  const status = document.getElementById("raw-json-status");
-  if (!textarea) return;
+  return ordered;
+}
 
-  let parsed;
+function inferEditorType(type, key, value) {
+  if (key === "date") return "date";
+  if (key === "workType") return "workType";
+  if (key === "workers") return "workers";
+  if (key === "sprayMethod" || key === "mowingMethod") return "method";
+  if (NUMERIC_KEYS.has(key)) return "number";
+
+  if (typeof value === "number") return "number";
+  if (typeof value === "boolean") return "boolean";
+
+  if (Array.isArray(value)) {
+    const allPrimitive = value.every(v => v == null || ["string", "number", "boolean"].includes(typeof v));
+    return allPrimitive ? "list" : "json";
+  }
+
+  if (value && typeof value === "object") return "json";
+  return "text";
+}
+
+function createDynamicFieldNode({ type, key, value, editorType, row }) {
+  const wrap = document.createElement("div");
+  wrap.style.display = "grid";
+  wrap.style.gap = "6px";
+
+  const label = document.createElement("label");
+  label.textContent = key;
+  label.style.fontWeight = "600";
+  label.style.color = "#333";
+  wrap.appendChild(label);
+
+  let input;
+
+  if (editorType === "date") {
+    input = document.createElement("input");
+    input.type = "date";
+    input.className = "form-input";
+    input.value = String(value || "").slice(0, 10);
+    input.addEventListener("input", () => setDynamicValue(row, key, input.value, editorType));
+  } else if (editorType === "number") {
+    input = document.createElement("input");
+    input.type = "number";
+    input.step = "any";
+    input.className = "form-input";
+    input.value = value == null || value === "" ? "" : String(value);
+    input.addEventListener("input", () => setDynamicValue(row, key, input.value, editorType));
+  } else if (editorType === "boolean") {
+    input = document.createElement("select");
+    input.className = "form-input";
+    input.innerHTML = `
+      <option value="">(未設定)</option>
+      <option value="true">true</option>
+      <option value="false">false</option>
+    `;
+    input.value = value === true ? "true" : value === false ? "false" : "";
+    input.addEventListener("change", () => setDynamicValue(row, key, input.value, editorType));
+  } else if (editorType === "workType") {
+    input = document.createElement("select");
+    input.className = "form-input";
+
+    const options = Array.from(new Set([
+      "",
+      ...(WORKTYPE_OPTIONS[type] || []),
+      String(value || "").trim()
+    ])).filter(v => v !== "");
+
+    input.innerHTML = ["<option value=\"\"></option>"]
+      .concat(options.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`))
+      .join("");
+    input.value = String(value || "");
+    input.addEventListener("change", () => {
+      setDynamicValue(row, key, input.value, editorType);
+      renderRows();
+      renderDynamicFieldEditor();
+    });
+  } else if (editorType === "method") {
+    input = document.createElement("select");
+    input.className = "form-input";
+
+    const options = Array.from(new Set([
+      "",
+      ...(METHOD_OPTIONS[key] || []),
+      String(value || "").trim()
+    ])).filter(v => v !== "");
+
+    input.innerHTML = ["<option value=\"\"></option>"]
+      .concat(options.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`))
+      .join("");
+    input.value = String(value || "");
+    input.addEventListener("change", () => setDynamicValue(row, key, input.value, editorType));
+  } else if (editorType === "workers") {
+    input = document.createElement("textarea");
+    input.className = "form-input";
+    input.rows = 3;
+    input.style.fontFamily = "inherit";
+    const text = Array.isArray(value)
+      ? value.map(v => String(v || "").trim()).filter(Boolean).join("\n")
+      : String(value || "").split(/[\/,／、]/).map(v => v.trim()).filter(Boolean).join("\n");
+    input.value = text;
+    input.placeholder = "1行1名（または / 区切り）";
+    input.addEventListener("input", () => setDynamicValue(row, key, input.value, editorType));
+  } else if (editorType === "list") {
+    input = document.createElement("textarea");
+    input.className = "form-input";
+    input.rows = 4;
+    input.style.fontFamily = "inherit";
+    input.value = Array.isArray(value)
+      ? value.map(v => String(v ?? "")).join("\n")
+      : "";
+    input.placeholder = "1行に1要素";
+    input.addEventListener("input", () => setDynamicValue(row, key, input.value, editorType));
+  } else if (editorType === "json") {
+    input = document.createElement("textarea");
+    input.className = "form-input";
+    input.rows = 8;
+    input.style.fontFamily = "monospace";
+    input.value = value == null ? "" : JSON.stringify(value, null, 2);
+    input.placeholder = "JSONを入力";
+    input.addEventListener("blur", () => {
+      const ok = setDynamicValue(row, key, input.value, editorType);
+      if (!ok) {
+        input.style.borderColor = "#c0392b";
+      } else {
+        input.style.borderColor = "";
+      }
+    });
+  } else {
+    input = document.createElement("input");
+    input.type = "text";
+    input.className = "form-input";
+    input.value = value == null ? "" : String(value);
+    input.addEventListener("input", () => setDynamicValue(row, key, input.value, editorType));
+  }
+
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function setDynamicValue(row, key, inputValue, editorType) {
+  if (!row.raw || typeof row.raw !== "object") row.raw = {};
+
   try {
-    parsed = JSON.parse(textarea.value || "{}");
+    if (editorType === "number") {
+      if (String(inputValue || "").trim() === "") {
+        row.raw[key] = "";
+      } else {
+        row.raw[key] = Number(inputValue);
+      }
+    } else if (editorType === "boolean") {
+      if (inputValue === "true") row.raw[key] = true;
+      else if (inputValue === "false") row.raw[key] = false;
+      else row.raw[key] = "";
+    } else if (editorType === "workers") {
+      row.raw[key] = parseWorkers(inputValue);
+    } else if (editorType === "list") {
+      row.raw[key] = String(inputValue || "")
+        .split("\n")
+        .map(v => v.trim())
+        .filter(Boolean);
+    } else if (editorType === "json") {
+      const text = String(inputValue || "").trim();
+      if (!text) {
+        row.raw[key] = Array.isArray(row.raw[key]) ? [] : {};
+      } else {
+        row.raw[key] = JSON.parse(text);
+      }
+    } else {
+      row.raw[key] = inputValue;
+    }
   } catch (e) {
-    alert(`JSONの形式が不正です: ${e.message}`);
-    return;
+    return false;
   }
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    alert("JSONオブジェクトを入力してください");
-    return;
-  }
-
-  const row = state.rows[state.selectedIndex];
-  row.raw = parsed;
   applyRawToDisplayFields(row);
   renderRows();
-  syncRawJsonEditor();
-  if (status) status.textContent = "JSONを適用しました";
+  return true;
 }
 
 function applyRawToDisplayFields(row) {
@@ -616,6 +905,11 @@ function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj ?? null));
 }
 
+function getDefaultWorkType(type) {
+  const arr = WORKTYPE_OPTIONS[type] || [];
+  return arr[0] || "";
+}
+
 function parseWorkers(text) {
   const parts = String(text || "")
     .split(/[\/,／、]/)
@@ -641,7 +935,7 @@ function getDistributedNames(distributed) {
 
 function toCsvCell(value) {
   const s = String(value ?? "");
-  if (!/[",\n]/.test(s)) return s;
+  if (!/[",\n\r]/.test(s)) return s;
   return `"${s.replace(/"/g, '""')}"`;
 }
 
