@@ -8,10 +8,13 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <style>
+    #page-area {
+      overflow-x: hidden;
+    }
+
     #edit-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1240px;
       table-layout: fixed;
       font-size: 14px;
     }
@@ -26,6 +29,8 @@
     #edit-table th,
     #edit-table td {
       vertical-align: top;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     #edit-table .col-no {
@@ -33,27 +38,27 @@
     }
 
     #edit-table .col-field {
-      width: 260px;
+      width: 18%;
     }
 
     #edit-table .col-date {
-      width: 132px;
+      width: 12%;
     }
 
     #edit-table .col-work {
-      width: 180px;
+      width: 16%;
     }
 
     #edit-table .col-machine {
-      width: 168px;
+      width: 14%;
     }
 
     #edit-table .col-worker {
-      width: 200px;
+      width: 16%;
     }
 
     #edit-table .col-notes {
-      width: 280px;
+      width: auto;
     }
 
     #edit-table .form-input {
@@ -86,16 +91,29 @@
     }
 
     #all-csv-scroll {
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       max-height: 360px;
       border: 1px solid #eee;
       border-radius: 8px;
     }
 
+    #all-csv-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    #all-csv-table th,
+    #all-csv-table td {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
     #diff-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 900px;
+      table-layout: fixed;
       font-size: 13px;
     }
 
@@ -105,6 +123,8 @@
       border-bottom: 1px solid #eee;
       padding: 6px;
       vertical-align: top;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     #diff-table thead th {
@@ -115,16 +135,11 @@
     }
 
     #diff-scroll {
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       max-height: 280px;
       border: 1px solid #eee;
       border-radius: 8px;
-    }
-
-    @media (max-width: 960px) {
-      #edit-table {
-        min-width: 1120px;
-      }
     }
   </style>
 </head>
@@ -215,7 +230,7 @@
 
       <div id="status" style="margin-bottom:8px; color:#555;"></div>
 
-      <div style="overflow-x:auto;">
+      <div>
         <table id="edit-table">
           <thead>
             <tr>
@@ -240,12 +255,12 @@
         <table id="diff-table">
           <thead>
             <tr>
-              <th style="width:68px;">種別</th>
-              <th style="width:110px;">日付</th>
-              <th style="width:160px;">作業内容</th>
-              <th style="width:160px;">作業者</th>
-              <th style="width:140px;">機械</th>
-              <th style="width:180px;">圃場</th>
+              <th style="width:8%;">種別</th>
+              <th style="width:12%;">日付</th>
+              <th style="width:16%;">作業内容</th>
+              <th style="width:16%;">作業者</th>
+              <th style="width:14%;">機械</th>
+              <th style="width:16%;">圃場</th>
               <th>備考</th>
             </tr>
           </thead>
@@ -267,7 +282,7 @@
       <h2 style="margin-top:0; font-size:1.1rem;">all.csv プレビュー</h2>
       <div id="all-csv-status" style="margin-bottom:8px; color:#666;">未読み込み</div>
       <div id="all-csv-scroll">
-        <table id="all-csv-table" style="width:100%; border-collapse:collapse; min-width:860px;">
+        <table id="all-csv-table">
           <thead id="all-csv-head"></thead>
           <tbody id="all-csv-rows"></tbody>
         </table>

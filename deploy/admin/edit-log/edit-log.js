@@ -368,11 +368,11 @@ function renderRows() {
 
     tr.innerHTML = `
       <td style="padding:6px;">${serial++}</td>
-      <td data-col="fields" style="padding:6px; color:#333; min-width:320px; white-space:normal; line-height:1.4;">${escapeHtml((row.fields || []).join("／"))}</td>
-      <td style="padding:6px;"><input data-key="date" type="date" class="form-input" style="min-width:140px;" value="${escapeAttr(row.date)}"></td>
-      <td style="padding:6px;"><input data-key="workType" type="text" class="form-input" style="min-width:170px;" value="${escapeAttr(row.workType)}"></td>
-      <td style="padding:6px;"><input data-key="machine" type="text" class="form-input" style="min-width:130px;" value="${escapeAttr(row.machine)}"></td>
-      <td style="padding:6px;"><input data-key="workersText" type="text" class="form-input" style="min-width:170px;" value="${escapeAttr(row.workersText)}"></td>
+      <td data-col="fields" style="padding:6px; color:#333; white-space:normal; line-height:1.4;">${escapeHtml((row.fields || []).join("／"))}</td>
+      <td style="padding:6px;"><input data-key="date" type="date" class="form-input" value="${escapeAttr(row.date)}"></td>
+      <td style="padding:6px;"><input data-key="workType" type="text" class="form-input" value="${escapeAttr(row.workType)}"></td>
+      <td style="padding:6px;"><input data-key="machine" type="text" class="form-input" value="${escapeAttr(row.machine)}"></td>
+      <td style="padding:6px;"><input data-key="workersText" type="text" class="form-input" value="${escapeAttr(row.workersText)}"></td>
       <td style="padding:6px;"><input data-key="notes" type="text" class="form-input" value="${escapeAttr(row.notes)}"></td>
     `;
 
