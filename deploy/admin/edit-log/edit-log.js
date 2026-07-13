@@ -237,7 +237,10 @@ function bindEvents() {
 
 function updateTargetFieldLabel() {
   const label = document.getElementById("target-field-label");
-  if (label) label.textContent = state.loadedField || "未選択";
+  if (!label) return;
+
+  label.textContent = state.loadedField || "未選択";
+  label.classList.toggle("is-selected", !!state.loadedField);
 }
 
 function updateTargetModeUI() {
