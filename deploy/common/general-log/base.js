@@ -208,6 +208,20 @@ export async function saveMultiFieldLog({
 
   debugLog("[saveMultiFieldLog] start", { type, date, fields, entry });
 
+  // 作業区分が欠落したまま保存される再発防止
+  if (type === "weeding") {
+    const workType = normalizeWorkType(entry);
+    const method = normalizeMethod(entry);
+
+    if (!workType) {
+      throw new Error("除草・草刈りの保存で作業区分が未入力です。保存前に作業区分を選択してください。");
+    }
+
+    if ((workType === "除草剤散布" || workType === "草刈り") && !method) {
+      throw new Error(`除草・草刈りの保存で方式が未入力です（作業区分: ${workType}）。保存前に方式を選択してください。`);
+    }
+  }
+
   for (const field of fields) {
     const safeField = safeFieldName(field);
     const filePath = `logs/${type}/${safeField}.json`;
