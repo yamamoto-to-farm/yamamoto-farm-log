@@ -227,7 +227,10 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
       return !keys.some(key => coveredSourceKeys.has(key));
     });
 
-  return [...mergedFromSaved, ...unmatchedSaved, ...remaining];
+  // 現在の自動抽出ログに一致しない旧グループは表示へ持ち込まない。
+  // （旧ログが日誌に残留する不具合の抑止）
+  void unmatchedSaved;
+  return [...mergedFromSaved, ...remaining];
 }
 
 function expandGroupForManualOnly(group, groupIndex) {

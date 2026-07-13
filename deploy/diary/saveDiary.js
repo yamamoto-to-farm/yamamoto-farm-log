@@ -57,8 +57,10 @@ export async function saveDiary(date, autoList) {
     })) : []
   }));
 
-  current.work = newWork;
-  current.workType = Array.from(new Set(newWork.map(w => String(w.type || w.workType || "").trim()).filter(Boolean))).join("／");
+  const filteredWork = newWork.filter(entry => hasValidWorkType(entry));
+
+  current.work = filteredWork;
+  current.workType = Array.from(new Set(filteredWork.map(w => String(w.type || w.workType || "").trim()).filter(Boolean))).join("／");
   current.memo = document.getElementById("freeMemo").value;
 
   // -------------------------------
@@ -87,4 +89,12 @@ function normalizeMultiValueAsArray(value) {
 
   // 既存互換のため「配列1要素（／区切り）」形式で保存する
   return [parts.join("／")];
+}
+
+function hasValidWorkType(entry) {
+  const type = String(entry?.type || entry?.workType || "").trim();
+  if (type) return true;
+
+  // 明示的な type が無いものは保存対象にしない
+  return false;
 }
