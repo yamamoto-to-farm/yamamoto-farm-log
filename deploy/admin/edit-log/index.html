@@ -47,6 +47,10 @@
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
         <button id="add-row-btn" class="secondary-btn" type="button">行を追加</button>
         <button id="delete-row-btn" class="secondary-btn" type="button">選択行を削除</button>
+        <label style="display:flex; align-items:center; gap:6px; margin-left:8px; color:#444;">
+          <input id="sync-related" type="checkbox" checked>
+          複数圃場で同時記録されたログを同時修正
+        </label>
         <button id="save-btn" class="primary-btn" type="button">保存（JSON + all.csv更新）</button>
       </div>
 
@@ -65,6 +69,29 @@
             </tr>
           </thead>
           <tbody id="edit-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0; font-size:1.1rem;">選択行のJSON（全文編集）</h2>
+      <p style="margin-top:0; color:#666;">
+        選択行のJSONを直接編集できます。適用後、上の表にも反映されます。
+      </p>
+      <textarea id="raw-json-editor" class="form-input" style="width:100%; min-height:240px; font-family:monospace; white-space:pre;" spellcheck="false"></textarea>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="apply-raw-json-btn" class="secondary-btn" type="button">JSONを適用</button>
+        <div id="raw-json-status" style="align-self:center; color:#666;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0; font-size:1.1rem;">all.csv プレビュー</h2>
+      <div id="all-csv-status" style="margin-bottom:8px; color:#666;">未読み込み</div>
+      <div style="overflow-x:auto;">
+        <table id="all-csv-table" style="width:100%; border-collapse:collapse; min-width:860px;">
+          <thead id="all-csv-head"></thead>
+          <tbody id="all-csv-rows"></tbody>
         </table>
       </div>
     </div>
