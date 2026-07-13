@@ -4,11 +4,64 @@
     "2026": {
       "entries": [
         {
+          "date": "2026-07-12",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": [
+            "山本 直輝"
+          ],
+          "notes": "小柳津・上含む　圃場内"
+        },
+        {
+          "date": "2026-07-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 60,
+              "total_spray_amount": 60,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "事業所(小柳津)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 60,
+              "spray_amount": 60,
+              "pesticide_amount": 600,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": [
+            "山本 直輝",
+            "石原 孝晋",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ、ハウス側なし、上も"
+        },
+        {
           "date": "2026-07-01",
           "workType": "草刈り",
           "pesticides": [],
           "machine": "",
-          "workers": "山本 直輝,土井 琉羽",
+          "workers": [
+            "山本 直輝",
+            "土井 琉羽"
+          ],
           "notes": ""
         },
         {
@@ -16,7 +69,9 @@
           "workType": "草刈り",
           "pesticides": [],
           "machine": "machine1",
-          "workers": "山本 咲子",
+          "workers": [
+            "山本 咲子"
+          ],
           "notes": ""
         }
       ]

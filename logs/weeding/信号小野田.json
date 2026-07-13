@@ -10,6 +10,41 @@
           "machine": "",
           "workers": "山本 直輝,土井 琉羽",
           "notes": ""
+        },
+        {
+          "date": "2026-07-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ラウンドアップマックスロード"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 100,
+              "total_water_amount": 30,
+              "total_spray_amount": 30,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "信号（小野田）",
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 30,
+              "spray_amount": 30,
+              "pesticide_amount": 300,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,石原 孝晋,土井 琉羽",
+          "notes": "周りのみ"
         }
       ]
     }

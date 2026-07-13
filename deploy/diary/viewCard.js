@@ -41,7 +41,7 @@ export async function initViewPage() {
 
     // 配列/文字列どちらでも表示できるように正規化
     const fieldName = normalizeMultiText(w.field);
-    const title = w.type;
+    const title = String(w.type || w.workType || "").trim();
     const fieldLine = fieldName || "（未入力）";
 
     const workerText = normalizeMultiText(w.workers);

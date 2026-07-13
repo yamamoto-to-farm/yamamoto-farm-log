@@ -1,0 +1,65 @@
+{
+  "field": "スシロー",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "ラウンドアップマックスロード"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 50,
+              "total_water_amount": 10,
+              "total_spray_amount": 10,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 50,
+              "total_water_amount": 10,
+              "total_spray_amount": 10,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "スシロー",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.1,
+              "spray_amount": 4.1,
+              "pesticide_amount": 81.99999999999999,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "スシロー",
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.1,
+              "spray_amount": 4.1,
+              "pesticide_amount": 81.99999999999999,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

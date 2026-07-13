@@ -1,0 +1,48 @@
+{
+  "field": "事業所西_2",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 180,
+              "total_spray_amount": 180,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "事業所(西・２)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 53.3,
+              "spray_amount": 53.3,
+              "pesticide_amount": 532.9999999999999,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": [
+            "山本 直輝",
+            "石原 孝晋",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ"
+        }
+      ]
+    }
+  }
+}

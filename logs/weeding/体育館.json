@@ -10,6 +10,15 @@
           "machine": "machine1",
           "workers": "山本 直輝,石原 孝晋",
           "notes": ""
+        },
+        {
+          "date": "2026-07-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
         }
       ]
     }

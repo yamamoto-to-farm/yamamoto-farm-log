@@ -1,0 +1,18 @@
+{
+  "field": "野依台",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

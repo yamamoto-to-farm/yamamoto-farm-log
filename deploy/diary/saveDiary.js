@@ -36,7 +36,8 @@ export async function saveDiary(date, autoList) {
   const newWork = autoList.map((item, idx) => ({
     sourceKey: String(item.sourceKey || ""),
     sessionKey: String(item.sessionKey || "").trim(),
-    type: item.type,
+    type: String(item.type || item.workType || "").trim(),
+    workType: String(item.workType || item.type || "").trim(),
     // workers と同じく配列で保存（複数値は "／" でまとめる）
     field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || item.field || ""),
     workers: normalizeMultiValueAsArray(item.workers),
@@ -46,7 +47,8 @@ export async function saveDiary(date, autoList) {
     items: Array.isArray(item.items) ? item.items.map(subItem => ({
       sourceKey: String(subItem.sourceKey || ""),
       sessionKey: String(subItem.sessionKey || item.sessionKey || "").trim(),
-      type: subItem.type,
+      type: String(subItem.type || subItem.workType || item.type || item.workType || "").trim(),
+      workType: String(subItem.workType || subItem.type || item.workType || item.type || "").trim(),
       field: normalizeMultiValueAsArray(subItem.field || ""),
       workers: normalizeMultiValueAsArray(subItem.workers || ""),
       machine: String(subItem.machine || item.machine || "").trim(),
@@ -56,6 +58,7 @@ export async function saveDiary(date, autoList) {
   }));
 
   current.work = newWork;
+  current.workType = Array.from(new Set(newWork.map(w => String(w.type || w.workType || "").trim()).filter(Boolean))).join("／");
   current.memo = document.getElementById("freeMemo").value;
 
   // -------------------------------

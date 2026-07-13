@@ -1,0 +1,16 @@
+{
+  "field": "上原兵藤",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-09",
+          "workType": "整地",
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": "バックホー　傾斜なおす"
+        }
+      ]
+    }
+  }
+}

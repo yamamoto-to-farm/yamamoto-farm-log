@@ -82,7 +82,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const card = document.createElement("div");
     card.className = "card edit-card";
     card.dataset.groupIndex = String(idx);
-    card.dataset.workType = String(item.type || "").trim();
+    card.dataset.workType = getWorkTypeText(item);
     card.dataset.selected = "false";
 
     card.innerHTML = `
@@ -90,7 +90,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
         <div class="merge-select-indicator" aria-hidden="true">クリックで選択</div>
         ${unmergeButtonHtml}
       </div>
-      <h3 class="edit-title">${item.type}</h3>
+      <h3 class="edit-title">${getWorkTypeText(item)}</h3>
       <p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>
       <p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>
       ${subItemHtml}
@@ -146,6 +146,10 @@ function normalizeMultiText(value) {
   return String(value || "").trim();
 }
 
+function getWorkTypeText(item) {
+  return String(item?.type || item?.workType || "").trim();
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -181,6 +185,7 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
   const fallbackList = Array.isArray(fallbackGroups) ? fallbackGroups : [];
   const savedGroups = Array.isArray(diary?.work) ? diary.work.map((item, index) => normalizeSavedGroup(item, index)) : [];
   if (!savedGroups.length) return fallbackList;
+  if (!fallbackList.length) return savedGroups;
 
   const fallbackBySourceKey = new Map();
   fallbackList.forEach(group => {
@@ -214,7 +219,15 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
     return !key || !coveredSourceKeys.has(key);
   });
 
-  return [...mergedFromSaved, ...remaining];
+  const unmatchedSaved = savedGroups
+    .flatMap((group, groupIndex) => expandGroupForManualOnly(group, groupIndex))
+    .filter(group => {
+      const keys = getGroupSourceKeys(group);
+      if (!keys.length) return true;
+      return !keys.some(key => coveredSourceKeys.has(key));
+    });
+
+  return [...mergedFromSaved, ...unmatchedSaved, ...remaining];
 }
 
 function expandGroupForManualOnly(group, groupIndex) {
@@ -225,7 +238,8 @@ function expandGroupForManualOnly(group, groupIndex) {
     groupKey: String(item?.sourceKey || `${group.groupKey || `saved-${groupIndex}`}-${itemIndex}`).trim(),
     sessionKey: String(item?.sessionKey || "").trim(),
     sourceKey: String(item?.sourceKey || `${group.groupKey || `saved-${groupIndex}`}-${itemIndex}`).trim(),
-    type: String(item?.type || group?.type || "作業").trim(),
+    type: String(item?.type || item?.workType || group?.type || group?.workType || "作業").trim(),
+    workType: String(item?.workType || item?.type || group?.workType || group?.type || "作業").trim(),
     field: normalizeMultiText(item?.field || ""),
     workers: normalizeMultiText(item?.workers || ""),
     machine: String(item?.machine || group?.machine || "").trim(),
@@ -244,7 +258,8 @@ function normalizeSavedGroup(item, index) {
     groupKey: String(item?.sessionKey || item?.sourceKey || `saved-${index}`).trim(),
     sessionKey: String(item?.sessionKey || "").trim(),
     sourceKey: String(item?.sourceKey || normalizedItems[0]?.sourceKey || `saved-${index}`).trim(),
-    type: String(item?.type || normalizedItems[0]?.type || "作業").trim(),
+    type: String(item?.type || item?.workType || normalizedItems[0]?.type || normalizedItems[0]?.workType || "作業").trim(),
+    workType: String(item?.workType || item?.type || normalizedItems[0]?.workType || normalizedItems[0]?.type || "作業").trim(),
     field: normalizeMultiText(item?.field || normalizedItems.map(v => v.field).join("／")),
     workers: normalizeMultiText(item?.workers || normalizedItems.map(v => v.workers).join("／")),
     machine: String(item?.machine || normalizedItems.map(v => v.machine).filter(Boolean).join("／") || "").trim(),
@@ -258,7 +273,8 @@ function normalizeSavedSubItem(item, index, parent) {
   return {
     sourceKey: String(item?.sourceKey || parent?.sourceKey || `sub-${index}`).trim(),
     sessionKey: String(item?.sessionKey || parent?.sessionKey || "").trim(),
-    type: String(item?.type || parent?.type || "作業").trim(),
+    type: String(item?.type || item?.workType || parent?.type || parent?.workType || "作業").trim(),
+    workType: String(item?.workType || item?.type || parent?.workType || parent?.type || "作業").trim(),
     field: normalizeMultiText(item?.field || ""),
     workers: normalizeMultiText(item?.workers || ""),
     machine: String(item?.machine || parent?.machine || "").trim(),

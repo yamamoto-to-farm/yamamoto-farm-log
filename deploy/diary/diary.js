@@ -20,6 +20,8 @@ const MAX_DIARY_SEARCH_DAYS = 720;
 
 let diaryIndexDatesCache = null;
 let activeSearchState = null;
+let isEditPageLoading = false;
+let isDiarySaving = false;
 
 function shiftDateByDays(dateStr, diffDays) {
   if (!dateStr) return "";
@@ -140,7 +142,7 @@ function buildDiarySearchText(diary) {
   const parts = [String(diary?.memo || "")];
   const works = Array.isArray(diary?.work) ? diary.work : [];
   works.forEach(w => {
-    parts.push(String(w?.type || ""));
+    parts.push(String(w?.type || w?.workType || ""));
     parts.push(Array.isArray(w?.field) ? w.field.join("/") : String(w?.field || ""));
     parts.push(Array.isArray(w?.workers) ? w.workers.join("/") : String(w?.workers || ""));
     parts.push(String(w?.machine || ""));
@@ -153,7 +155,7 @@ function buildDiarySearchText(diary) {
 
 function summarizeDiaryMeta(diary) {
   const works = Array.isArray(diary?.work) ? diary.work : [];
-  const types = Array.from(new Set(works.map(w => String(w?.type || "").trim()).filter(Boolean)));
+  const types = Array.from(new Set(works.map(w => String(w?.type || w?.workType || "").trim()).filter(Boolean)));
   const workers = [];
   const fields = [];
 
@@ -180,7 +182,7 @@ function buildDiarySnippet(diary) {
   if (!works.length) return "";
 
   const first = works[0] || {};
-  const firstType = String(first?.type || "").trim();
+  const firstType = String(first?.type || first?.workType || "").trim();
   const firstMachine = String(first?.machine || "").trim();
   const joined = [firstType, firstMachine].filter(Boolean).join(" / ");
   return joined;
@@ -562,7 +564,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // モード別カード表示
   if (mode === "edit") {
+    isEditPageLoading = true;
     await initEditPage();
+    isEditPageLoading = false;
   } else {
     await initViewPage();
   }
@@ -574,11 +578,33 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   if (mode === "edit") {
     saveBtn.style.display = "block";
+    saveBtn.disabled = false;
 
     saveBtn.addEventListener("click", async () => {
-      const date = dateInput.value;
+      if (isEditPageLoading) {
+        alert("作業カードを読み込み中です。少し待ってから保存してください。");
+        return;
+      }
+      if (isDiarySaving) return;
 
-      saveDiary(date, window.__currentDiaryWorkGroups || []);
+      const date = dateInput.value;
+      if (!date) {
+        alert("日付を選択してください。");
+        return;
+      }
+
+      isDiarySaving = true;
+      saveBtn.disabled = true;
+      const originalText = saveBtn.textContent;
+      saveBtn.textContent = "保存中…";
+
+      try {
+        await saveDiary(date, window.__currentDiaryWorkGroups || []);
+      } finally {
+        isDiarySaving = false;
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+      }
     });
 
   } else {
@@ -602,7 +628,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // モード別カード更新
     if (mode === "edit") {
+      isEditPageLoading = true;
+      saveBtn.disabled = true;
       await initEditPage();
+      isEditPageLoading = false;
+      saveBtn.disabled = false;
     } else {
       await initViewPage();
     }

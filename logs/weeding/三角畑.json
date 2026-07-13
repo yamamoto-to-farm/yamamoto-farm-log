@@ -95,6 +95,50 @@
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭",
           "notes": ""
+        },
+        {
+          "date": "2026-07-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 160,
+              "total_spray_amount": 160,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "三角畑",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 86,
+              "spray_amount": 86,
+              "pesticide_amount": 860,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "土井 琉羽,石原 孝晋,山本 直輝",
+          "notes": "周りのみ、要樹木伐採"
+        },
+        {
+          "date": "2026-07-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
         }
       ]
     }
