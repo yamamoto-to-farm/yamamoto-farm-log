@@ -3,6 +3,7 @@ import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName } from "/common/utils.js?v=1";
 import { rebuildMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 
 let state = {
   fields: [],
@@ -100,7 +101,27 @@ export async function initEditLogPage() {
 
 async function loadMasterData() {
   const fields = await loadJSON("/data/fields.json").catch(() => []);
-  state.fields = Array.isArray(fields) ? fields.map(f => f.name).filter(Boolean) : [];
+  const fieldList = Array.isArray(fields) ? fields : [];
+  state.fields = fieldList.map(f => f.name).filter(Boolean);
+
+  const parents = [];
+  const children = {};
+  fieldList.forEach(f => {
+    const area = String(f?.area || "").trim() || "未分類";
+    const name = String(f?.name || "").trim();
+    if (!name) return;
+    if (!children[area]) {
+      children[area] = [];
+      parents.push(area);
+    }
+    children[area].push(name);
+  });
+
+  const current = getFilterData();
+  setFilterData({
+    ...current,
+    fields: { parents, children }
+  });
 
   const machines = await loadJSON("/data/machines.json").catch(() => ({ machines: [] }));
   state.machines = Array.isArray(machines?.machines) ? machines.machines : [];
