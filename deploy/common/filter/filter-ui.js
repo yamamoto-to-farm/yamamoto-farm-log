@@ -8,7 +8,12 @@ export function closeModal() {
 }
 
 export function openModal(html) {
-  const container = document.getElementById("modal-container");
+  let container = document.getElementById("modal-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "modal-container";
+    document.body.appendChild(container);
+  }
   container.innerHTML = html;
   container.style.display = "block";
 }

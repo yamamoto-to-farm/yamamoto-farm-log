@@ -302,11 +302,13 @@
   </div>
 
   <div id="modal-container"></div>
+  <div id="save-modal-container"></div>
   <script>
     fetch("/common/save-modal.html")
       .then(r => r.text())
       .then(html => {
-        document.getElementById("modal-container").innerHTML = html;
+        const host = document.getElementById("save-modal-container");
+        if (host) host.innerHTML = html;
       });
   </script>
 

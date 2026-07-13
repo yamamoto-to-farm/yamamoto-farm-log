@@ -143,15 +143,20 @@ function bindEvents() {
 
   const pickFieldBtn = document.getElementById("pick-field-btn");
   if (pickFieldBtn) {
-    pickFieldBtn.onclick = () => {
-      openFieldModal({
-        mode: "select",
-        includeExpired: true,
-        onSelect: (name) => {
-          state.loadedField = name;
-          updateTargetFieldLabel();
-        }
-      });
+    pickFieldBtn.onclick = async () => {
+      try {
+        await openFieldModal({
+          mode: "select",
+          includeExpired: true,
+          onSelect: (name) => {
+            state.loadedField = name;
+            updateTargetFieldLabel();
+          }
+        });
+      } catch (e) {
+        console.warn("[edit-log] field modal open failed:", e);
+        alert("圃場選択モーダルの表示に失敗しました。ページを再読み込みして再試行してください。");
+      }
     };
   }
 
