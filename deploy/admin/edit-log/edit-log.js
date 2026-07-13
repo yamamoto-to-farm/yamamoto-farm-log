@@ -11,10 +11,23 @@ let state = {
   selectedIndex: null,
   loadedField: "",
   loadedDate: "",
+  eventIdBackfills: {},
   allCsvHeader: [],
   allCsvRows: [],
+  allCsvDisplayRows: [],
+  allCsvVirtual: {
+    rowHeight: 34,
+    overscan: 16,
+    start: 0,
+    end: 0
+  },
+  rowFilters: {
+    workType: "",
+    worker: ""
+  },
   machines: [],
-  attachmentIndex: {}
+  attachmentIndex: {},
+  diffRenderQueued: false
 };
 
 const NUMERIC_KEYS = new Set([
@@ -65,6 +78,11 @@ const TYPE_TO_MACHINE_PAGE_ID = {
   "field-maintenance": "field-maintenance"
 };
 
+const FLAT_ENTRIES_CACHE = new WeakMap();
+const ROW_BG_SELECTED = "#f5faff";
+const ROW_BG_NORMAL = "transparent";
+const ALLCSV_VIRTUAL_THRESHOLD = 220;
+
 export async function initEditLogPage() {
   await loadMasterData();
   bindEvents();
@@ -76,6 +94,7 @@ export async function initEditLogPage() {
   updateTargetModeUI();
   updateActionAvailability();
   renderDynamicFieldEditor();
+  renderDiffPreview();
   setStatus("ログタイプと編集対象を選んで読み込んでください。");
 }
 
@@ -99,9 +118,9 @@ function bindEvents() {
     addBtn.onclick = () => {
       if (getTargetMode() === "date") return;
       state.rows.push(createEmptyRow());
-      state.selectedIndex = state.rows.length - 1;
       renderRows();
-      renderDynamicFieldEditor();
+      setSelectedRowIndex(state.rows.length - 1);
+      scheduleDiffPreviewRender();
     };
   }
 
@@ -113,9 +132,9 @@ function bindEvents() {
         return;
       }
       state.rows.splice(state.selectedIndex, 1);
-      state.selectedIndex = null;
       renderRows();
-      renderDynamicFieldEditor();
+      setSelectedRowIndex(null);
+      scheduleDiffPreviewRender();
     };
   }
 
@@ -149,8 +168,45 @@ function bindEvents() {
     typeEl.addEventListener("change", () => {
       renderDynamicFieldEditor();
       renderAllCsvPreview();
+      scheduleDiffPreviewRender();
     });
   }
+
+  const workTypeFilter = document.getElementById("filter-worktype");
+  if (workTypeFilter) {
+    workTypeFilter.addEventListener("input", () => {
+      state.rowFilters.workType = String(workTypeFilter.value || "").trim();
+      renderRows();
+    });
+  }
+
+  const workerFilter = document.getElementById("filter-worker");
+  if (workerFilter) {
+    workerFilter.addEventListener("input", () => {
+      state.rowFilters.worker = String(workerFilter.value || "").trim();
+      renderRows();
+    });
+  }
+
+  const clearFiltersBtn = document.getElementById("clear-filters-btn");
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener("click", () => {
+      state.rowFilters.workType = "";
+      state.rowFilters.worker = "";
+      if (workTypeFilter) workTypeFilter.value = "";
+      if (workerFilter) workerFilter.value = "";
+      renderRows();
+    });
+  }
+
+  const allCsvScroll = document.getElementById("all-csv-scroll");
+  if (allCsvScroll) {
+    allCsvScroll.addEventListener("scroll", () => renderAllCsvVirtualWindow());
+  }
+
+  window.addEventListener("resize", () => renderAllCsvVirtualWindow());
+
+  document.addEventListener("keydown", handleGlobalKeydown);
 }
 
 function updateTargetFieldLabel() {
@@ -169,16 +225,10 @@ function updateTargetModeUI() {
 function updateActionAvailability() {
   const mode = getTargetMode();
   const addBtn = document.getElementById("add-row-btn");
-  const sync = document.getElementById("sync-related");
 
   if (addBtn) {
     addBtn.disabled = mode === "date";
     addBtn.title = mode === "date" ? "日付モードは既存ログ同時修正のため行追加不可" : "";
-  }
-
-  if (sync) {
-    sync.disabled = mode === "date";
-    if (mode === "date") sync.checked = false;
   }
 }
 
@@ -188,6 +238,8 @@ async function loadSelectedLog() {
     alert("ログタイプを選択してください");
     return;
   }
+
+  state.eventIdBackfills = {};
 
   if (getTargetMode() === "field") {
     if (!state.loadedField) {
@@ -209,8 +261,11 @@ async function loadSelectedLog() {
 async function loadByField(type, field) {
   const safe = safeFieldName(field);
   const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => ({ field: safe, years: {} }));
+  if (supplementMissingEventIdsInLogData(data)) {
+    state.eventIdBackfills[safe] = data;
+  }
 
-  const rows = flattenEntries(data)
+  const rows = flattenEntriesCached(data)
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
     .map(e => toEditableRow(e, [field], createEntryFingerprint(e)));
 
@@ -221,6 +276,7 @@ async function loadByField(type, field) {
 
   renderRows();
   renderDynamicFieldEditor();
+  renderDiffPreview();
   await loadAllCsvPreview(type);
   setStatus(`${field} / ${type} を読み込みました（${rows.length}件）`);
 }
@@ -228,12 +284,21 @@ async function loadByField(type, field) {
 async function loadByDate(type, date) {
   const groups = new Map();
 
-  for (const fieldName of state.fields) {
-    const safe = safeFieldName(fieldName);
-    const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
-    if (!data) continue;
+  const loadedFields = await Promise.all(
+    state.fields.map(async fieldName => {
+      const safe = safeFieldName(fieldName);
+      const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
+      if (data && supplementMissingEventIdsInLogData(data)) {
+        state.eventIdBackfills[safe] = data;
+      }
+      return { fieldName, data };
+    })
+  );
 
-    const entries = flattenEntries(data).filter(e => String(e.date || "").slice(0, 10) === date);
+  loadedFields.forEach(({ fieldName, data }) => {
+    if (!data) return;
+
+    const entries = flattenEntriesCached(data).filter(e => String(e.date || "").slice(0, 10) === date);
     entries.forEach(entry => {
       const fp = createEntryFingerprint(entry);
       if (!groups.has(fp)) {
@@ -242,7 +307,7 @@ async function loadByDate(type, date) {
       const g = groups.get(fp);
       if (!g.fields.includes(fieldName)) g.fields.push(fieldName);
     });
-  }
+  });
 
   const rows = Array.from(groups.values())
     .map(g => toEditableRow(g.raw, g.fields.slice().sort((a, b) => a.localeCompare(b)), g.beforeFingerprint))
@@ -255,10 +320,30 @@ async function loadByDate(type, date) {
 
   renderRows();
   renderDynamicFieldEditor();
-  await loadAllCsvPreview(type);
+  renderDiffPreview();
+
+  if (rows.length > 0) {
+    await loadAllCsvPreview(type);
+  } else {
+    clearAllCsvPreviewForNoMatch(date);
+  }
 
   const fieldsCount = new Set(rows.flatMap(r => r.fields)).size;
   setStatus(`${date} / ${type} を読み込みました（${rows.length}件, ${fieldsCount}圃場）`);
+}
+
+function clearAllCsvPreviewForNoMatch(date) {
+  state.allCsvHeader = [];
+  state.allCsvRows = [];
+  state.allCsvDisplayRows = [];
+
+  const thead = document.getElementById("all-csv-head");
+  const tbody = document.getElementById("all-csv-rows");
+  const status = document.getElementById("all-csv-status");
+
+  if (thead) thead.innerHTML = "";
+  if (tbody) tbody.innerHTML = "";
+  if (status) status.textContent = `${date} は該当ログ0件のため、all.csv は未読込です`;
 }
 
 function renderRows() {
@@ -266,27 +351,33 @@ function renderRows() {
   if (!tbody) return;
 
   tbody.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  const filteredIndexes = getFilteredRowIndexes();
+  if (state.selectedIndex != null && !filteredIndexes.includes(state.selectedIndex)) {
+    state.selectedIndex = null;
+    renderDynamicFieldEditor();
+  }
+  let serial = 1;
 
-  state.rows.forEach((row, idx) => {
+  filteredIndexes.forEach(idx => {
+    const row = state.rows[idx];
     const tr = document.createElement("tr");
     tr.dataset.index = String(idx);
     tr.style.borderBottom = "1px solid #eee";
-    tr.style.background = state.selectedIndex === idx ? "#f5faff" : "transparent";
+    tr.style.background = state.selectedIndex === idx ? ROW_BG_SELECTED : ROW_BG_NORMAL;
 
     tr.innerHTML = `
-      <td style="padding:6px;">${idx + 1}</td>
-      <td style="padding:6px; color:#333;">${escapeHtml((row.fields || []).join("／"))}</td>
-      <td style="padding:6px;"><input data-key="date" type="date" class="form-input" value="${escapeAttr(row.date)}"></td>
-      <td style="padding:6px;"><input data-key="workType" type="text" class="form-input" value="${escapeAttr(row.workType)}"></td>
-      <td style="padding:6px;"><input data-key="machine" type="text" class="form-input" value="${escapeAttr(row.machine)}"></td>
-      <td style="padding:6px;"><input data-key="workersText" type="text" class="form-input" value="${escapeAttr(row.workersText)}"></td>
+      <td style="padding:6px;">${serial++}</td>
+      <td data-col="fields" style="padding:6px; color:#333; min-width:320px; white-space:normal; line-height:1.4;">${escapeHtml((row.fields || []).join("／"))}</td>
+      <td style="padding:6px;"><input data-key="date" type="date" class="form-input" style="min-width:140px;" value="${escapeAttr(row.date)}"></td>
+      <td style="padding:6px;"><input data-key="workType" type="text" class="form-input" style="min-width:170px;" value="${escapeAttr(row.workType)}"></td>
+      <td style="padding:6px;"><input data-key="machine" type="text" class="form-input" style="min-width:130px;" value="${escapeAttr(row.machine)}"></td>
+      <td style="padding:6px;"><input data-key="workersText" type="text" class="form-input" style="min-width:170px;" value="${escapeAttr(row.workersText)}"></td>
       <td style="padding:6px;"><input data-key="notes" type="text" class="form-input" value="${escapeAttr(row.notes)}"></td>
     `;
 
     tr.addEventListener("click", () => {
-      state.selectedIndex = idx;
-      renderRows();
-      renderDynamicFieldEditor();
+      setSelectedRowIndex(idx, { toggle: true });
     });
 
     tr.querySelectorAll("input").forEach(input => {
@@ -294,20 +385,134 @@ function renderRows() {
         const key = input.dataset.key;
         if (!key) return;
         updateRowField(state.rows[idx], key, input.value);
-        if (state.selectedIndex === idx) {
+        if (state.selectedIndex === idx && key === "workType") {
           renderDynamicFieldEditor();
         }
+        scheduleDiffPreviewRender();
       });
 
       input.addEventListener("click", ev => {
         ev.stopPropagation();
-        state.selectedIndex = idx;
-        renderDynamicFieldEditor();
+        setSelectedRowIndex(idx);
       });
     });
 
-    tbody.appendChild(tr);
+    frag.appendChild(tr);
   });
+
+  tbody.appendChild(frag);
+  renderFilterStatus(filteredIndexes.length, state.rows.length);
+  updateRowSelectionUI();
+}
+
+function getFilteredRowIndexes() {
+  const indexes = [];
+  state.rows.forEach((row, idx) => {
+    if (rowMatchesFilters(row)) indexes.push(idx);
+  });
+  return indexes;
+}
+
+function rowMatchesFilters(row) {
+  const wtFilter = normalizeTextForSearch(state.rowFilters.workType);
+  const workerFilter = normalizeTextForSearch(state.rowFilters.worker);
+
+  if (wtFilter) {
+    const wt = normalizeTextForSearch(row?.workType);
+    if (!wt.includes(wtFilter)) return false;
+  }
+
+  if (workerFilter) {
+    const worker = normalizeTextForSearch(row?.workersText);
+    if (!worker.includes(workerFilter)) return false;
+  }
+
+  return true;
+}
+
+function renderFilterStatus(filteredCount, totalCount) {
+  const el = document.getElementById("filter-status");
+  if (!el) return;
+
+  const wt = state.rowFilters.workType;
+  const worker = state.rowFilters.worker;
+  if (!wt && !worker) {
+    el.textContent = `フィルタ: なし（${totalCount}件）`;
+    return;
+  }
+
+  const parts = [];
+  if (wt) parts.push(`作業内容: ${wt}`);
+  if (worker) parts.push(`作業者: ${worker}`);
+  el.textContent = `フィルタ: ${parts.join(" / ")}（${filteredCount} / ${totalCount}件）`;
+}
+
+function normalizeTextForSearch(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function setSelectedRowIndex(nextIndex, options = {}) {
+  const { toggle = false } = options;
+  let resolved = nextIndex;
+  if (toggle) {
+    resolved = state.selectedIndex === nextIndex ? null : nextIndex;
+  }
+
+  if (state.selectedIndex === resolved) return;
+  state.selectedIndex = resolved;
+  updateRowSelectionUI();
+  renderDynamicFieldEditor();
+}
+
+function updateRowSelectionUI() {
+  const tbody = document.getElementById("edit-rows");
+  if (!tbody) return;
+
+  tbody.querySelectorAll("tr[data-index]").forEach(tr => {
+    const idx = Number(tr.dataset.index);
+    const selected = idx === state.selectedIndex;
+    tr.style.background = selected ? ROW_BG_SELECTED : ROW_BG_NORMAL;
+  });
+}
+
+function handleGlobalKeydown(ev) {
+  const isSave = (ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s";
+  if (isSave) {
+    ev.preventDefault();
+    saveCurrentLog();
+    return;
+  }
+
+  const active = document.activeElement;
+  const tag = (active?.tagName || "").toLowerCase();
+  const isTyping = tag === "input" || tag === "textarea" || tag === "select";
+
+  if (ev.key === "Escape" && state.selectedIndex != null) {
+    setSelectedRowIndex(null);
+    return;
+  }
+
+  if (isTyping) return;
+  const filteredIndexes = getFilteredRowIndexes();
+  if (!filteredIndexes.length) return;
+
+  if (ev.key === "ArrowDown") {
+    ev.preventDefault();
+    const pos = filteredIndexes.indexOf(state.selectedIndex);
+    const next = pos < 0
+      ? filteredIndexes[0]
+      : filteredIndexes[Math.min(filteredIndexes.length - 1, pos + 1)];
+    setSelectedRowIndex(next);
+  }
+
+  if (ev.key === "ArrowUp") {
+    ev.preventDefault();
+    const pos = filteredIndexes.indexOf(state.selectedIndex);
+    const next = pos < 0
+      ? filteredIndexes[filteredIndexes.length - 1]
+      : filteredIndexes[Math.max(0, pos - 1)];
+    setSelectedRowIndex(next);
+  }
 }
 
 async function saveCurrentLog() {
@@ -356,6 +561,8 @@ async function saveFieldMode(type) {
 
   await saveWithCsvRebuild(type, fieldOverrides);
   await loadAllCsvPreview(type);
+  state.originalRows = deepClone(state.rows);
+  renderDiffPreview();
   setStatus(`保存しました: ${field} / ${type}（${normalizedRows.length}件, 同時修正 ${linkedUpdatedCount}件）`);
 }
 
@@ -385,45 +592,59 @@ async function saveDateMode(type) {
   const fieldOverrides = {};
   let touched = 0;
 
-  for (const fieldName of state.fields) {
-    const safe = safeFieldName(fieldName);
-    const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
-    if (!data?.years || typeof data.years !== "object") continue;
+  const processed = await Promise.all(
+    state.fields.map(async fieldName => {
+      const safe = safeFieldName(fieldName);
+      const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
+      if (!data?.years || typeof data.years !== "object") return null;
 
-    let changed = false;
+      let changed = false;
+      let touchedLocal = 0;
 
-    Object.keys(data.years).forEach(year => {
-      const entries = data.years[year]?.entries;
-      if (!Array.isArray(entries)) return;
+      Object.keys(data.years).forEach(year => {
+        const entries = data.years[year]?.entries;
+        if (!Array.isArray(entries)) return;
 
-      const next = [];
-      entries.forEach(entry => {
-        if (String(entry?.date || "").slice(0, 10) !== date) {
+        const next = [];
+        entries.forEach(entry => {
+          if (String(entry?.date || "").slice(0, 10) !== date) {
+            next.push(entry);
+            return;
+          }
+
+          const fp = createEntryFingerprint(entry);
+          if (deletedSet.has(fp)) {
+            changed = true;
+            return;
+          }
+
+          if (currentMap.has(fp)) {
+            next.push(mergeEntryForRelatedField(entry, currentMap.get(fp)));
+            changed = true;
+            touchedLocal += 1;
+            return;
+          }
+
           next.push(entry);
-          return;
-        }
+        });
 
-        const fp = createEntryFingerprint(entry);
-        if (deletedSet.has(fp)) {
-          changed = true;
-          return;
-        }
-
-        if (currentMap.has(fp)) {
-          next.push(mergeEntryForRelatedField(entry, currentMap.get(fp)));
-          changed = true;
-          touched += 1;
-          return;
-        }
-
-        next.push(entry);
+        data.years[year].entries = next;
       });
 
-      data.years[year].entries = next;
-    });
+      if (!changed) return null;
+      return { safe, data, touchedLocal };
+    })
+  );
 
-    if (changed) fieldOverrides[safe] = data;
-  }
+  processed.forEach(item => {
+    if (!item) return;
+    fieldOverrides[item.safe] = item.data;
+    touched += item.touchedLocal;
+  });
+
+  Object.entries(state.eventIdBackfills || {}).forEach(([safe, data]) => {
+    if (!fieldOverrides[safe]) fieldOverrides[safe] = data;
+  });
 
   if (Object.keys(fieldOverrides).length === 0) {
     alert("更新対象がありませんでした");
@@ -436,6 +657,10 @@ async function saveDateMode(type) {
 }
 
 async function saveWithCsvRebuild(type, fieldOverrides) {
+  Object.values(fieldOverrides).forEach(data => {
+    supplementMissingEventIdsInLogData(data);
+  });
+
   setStatus("all.csv を再生成しています…");
   const csvText = await rebuildAllCsv(type, fieldOverrides);
 
@@ -453,21 +678,27 @@ async function saveWithCsvRebuild(type, fieldOverrides) {
   await rebuildMonthlyWorkSummary().catch(e => {
     console.warn("[edit-log] monthly work summary rebuild failed:", e);
   });
+
+  state.eventIdBackfills = {};
 }
 
 async function rebuildAllCsv(type, fieldOverrides = {}) {
   const existingCsv = await loadAllCsvRaw(type);
   const headerCols = chooseAllCsvHeader(type, existingCsv.header);
+  const loaded = await Promise.all(
+    state.fields.map(async fieldName => {
+      const safe = safeFieldName(fieldName);
+      const override = fieldOverrides[safe] || null;
+      const data = override || await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
+      return { fieldName, data };
+    })
+  );
+
   const rows = [];
-
-  for (const fieldName of state.fields) {
-    const safe = safeFieldName(fieldName);
-    const override = fieldOverrides[safe] || null;
-    const data = override || await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
-    if (!data) continue;
-
-    flattenEntries(data).forEach(e => rows.push(buildCsvRowFromEntry(e, fieldName)));
-  }
+  loaded.forEach(({ fieldName, data }) => {
+    if (!data) return;
+    flattenEntriesCached(data).forEach(e => rows.push(buildCsvRowFromEntry(e, fieldName)));
+  });
 
   rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
@@ -504,6 +735,17 @@ function flattenEntries(data) {
   return out;
 }
 
+function flattenEntriesCached(data) {
+  if (!data || typeof data !== "object") return [];
+
+  const cached = FLAT_ENTRIES_CACHE.get(data);
+  if (cached) return cached;
+
+  const flattened = flattenEntries(data);
+  FLAT_ENTRIES_CACHE.set(data, flattened);
+  return flattened;
+}
+
 function toEditableRow(entry, fields = [], beforeFingerprint = "") {
   const distributedNames = getDistributedNames(entry.distributed);
   return {
@@ -520,7 +762,14 @@ function toEditableRow(entry, fields = [], beforeFingerprint = "") {
 
 function createEmptyRow() {
   const type = getLogType();
-  const base = { date: "", workType: getDefaultWorkType(type), machine: "", workers: [], notes: "" };
+  const base = {
+    eventId: createEventId(),
+    date: "",
+    workType: getDefaultWorkType(type),
+    machine: "",
+    workers: [],
+    notes: ""
+  };
   return {
     raw: base,
     fields: state.loadedField ? [state.loadedField] : [],
@@ -579,6 +828,7 @@ function normalizeMethod(entry) {
 function buildCsvRowFromEntry(entry, fieldName) {
   return {
     date: String(entry.date || "").trim(),
+    eventId: String(entry.eventId || "").trim(),
     worker: formatWorkersForCsv(entry.workers ?? entry.worker),
     field: String(fieldName || "").trim(),
     machine: normalizeMachine(entry),
@@ -592,13 +842,14 @@ function chooseAllCsvHeader(type, existingHeader = []) {
   const hasCore = normalized.includes("date") && normalized.includes("worker") && normalized.includes("field");
 
   if (hasCore) {
+    if (!normalized.includes("eventId")) normalized.push("eventId");
     if (!normalized.includes("machine")) normalized.push("machine");
     return normalized;
   }
 
   const richTypes = new Set(["tillage", "weeding", "hand-weeding", "watering", "intertill", "bedmaking", "field-maintenance"]);
-  if (richTypes.has(type)) return ["date", "worker", "field", "machine", "workType", "method"];
-  return ["date", "worker", "field", "machine"];
+  if (richTypes.has(type)) return ["date", "eventId", "worker", "field", "machine", "workType", "method"];
+  return ["date", "eventId", "worker", "field", "machine"];
 }
 
 async function loadAllCsvRaw(type) {
@@ -619,6 +870,7 @@ function renderAllCsvPreview() {
   const thead = document.getElementById("all-csv-head");
   const tbody = document.getElementById("all-csv-rows");
   const status = document.getElementById("all-csv-status");
+  const scroll = document.getElementById("all-csv-scroll");
   if (!thead || !tbody || !status) return;
 
   const mode = getTargetMode();
@@ -634,19 +886,79 @@ function renderAllCsvPreview() {
     return isCsvRowForField(r, targetField);
   });
 
-  const displayRows = matched.length > 0 ? matched : rows;
-  const maxRows = 300;
+  state.allCsvDisplayRows = matched.length > 0 ? matched : rows;
+  if (scroll) scroll.scrollTop = 0;
+  renderAllCsvVirtualWindow(true);
 
-  displayRows.slice(0, maxRows).forEach(r => {
-    const tr = document.createElement("tr");
-    tr.style.borderBottom = "1px solid #eee";
-    tr.innerHTML = header.map(col => `<td style="padding:6px;">${escapeHtml(r[col] || "")}</td>`).join("");
-    tbody.appendChild(tr);
-  });
-
-  const suffix = displayRows.length > maxRows ? `（先頭${maxRows}件を表示）` : "";
+  const suffix = state.allCsvDisplayRows.length > ALLCSV_VIRTUAL_THRESHOLD ? "（仮想スクロール表示）" : "";
   const keyText = mode === "date" ? `${targetDate || "対象日"} 該当 ${matched.length}件` : `${targetField || "対象圃場"} 該当 ${matched.length}件`;
   status.textContent = `all.csv ${rows.length}件中、${keyText} ${suffix}`;
+}
+
+function renderAllCsvVirtualWindow(force = false) {
+  const tbody = document.getElementById("all-csv-rows");
+  const scroll = document.getElementById("all-csv-scroll");
+  const header = chooseAllCsvHeader(getLogType(), state.allCsvHeader);
+  if (!tbody || !scroll) return;
+
+  const rows = Array.isArray(state.allCsvDisplayRows) ? state.allCsvDisplayRows : [];
+  const rowHeight = state.allCsvVirtual.rowHeight;
+  const overscan = state.allCsvVirtual.overscan;
+
+  if (rows.length <= ALLCSV_VIRTUAL_THRESHOLD) {
+    if (!force && state.allCsvVirtual.start === 0 && state.allCsvVirtual.end === rows.length) return;
+
+    state.allCsvVirtual.start = 0;
+    state.allCsvVirtual.end = rows.length;
+    tbody.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid #eee";
+      tr.innerHTML = header.map(col => `<td style="padding:6px;">${escapeHtml(r[col] || "")}</td>`).join("");
+      frag.appendChild(tr);
+    });
+    tbody.appendChild(frag);
+    return;
+  }
+
+  const viewportHeight = Math.max(scroll.clientHeight, rowHeight);
+  const visibleCount = Math.ceil(viewportHeight / rowHeight);
+  const start = Math.max(0, Math.floor(scroll.scrollTop / rowHeight) - overscan);
+  const end = Math.min(rows.length, start + visibleCount + overscan * 2);
+
+  if (!force && start === state.allCsvVirtual.start && end === state.allCsvVirtual.end) return;
+
+  state.allCsvVirtual.start = start;
+  state.allCsvVirtual.end = end;
+
+  const topSpace = start * rowHeight;
+  const bottomSpace = Math.max(0, (rows.length - end) * rowHeight);
+
+  tbody.innerHTML = "";
+
+  if (topSpace > 0) {
+    const topTr = document.createElement("tr");
+    topTr.innerHTML = `<td colspan="${header.length}" style="padding:0; border:0; height:${topSpace}px;"></td>`;
+    tbody.appendChild(topTr);
+  }
+
+  const frag = document.createDocumentFragment();
+  for (let i = start; i < end; i++) {
+    const r = rows[i];
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid #eee";
+    tr.style.height = `${rowHeight}px`;
+    tr.innerHTML = header.map(col => `<td style="padding:6px;">${escapeHtml(r[col] || "")}</td>`).join("");
+    frag.appendChild(tr);
+  }
+  tbody.appendChild(frag);
+
+  if (bottomSpace > 0) {
+    const bottomTr = document.createElement("tr");
+    bottomTr.innerHTML = `<td colspan="${header.length}" style="padding:0; border:0; height:${bottomSpace}px;"></td>`;
+    tbody.appendChild(bottomTr);
+  }
 }
 
 function isCsvRowForField(row, targetField) {
@@ -711,18 +1023,171 @@ function parseCsvLine(line) {
   return out;
 }
 
+function scheduleDiffPreviewRender() {
+  if (state.diffRenderQueued) return;
+  state.diffRenderQueued = true;
+  requestAnimationFrame(() => {
+    state.diffRenderQueued = false;
+    renderDiffPreview();
+  });
+}
+
+function renderDiffPreview() {
+  const status = document.getElementById("diff-status");
+  const tbody = document.getElementById("diff-rows");
+  if (!status || !tbody) return;
+
+  const diffs = computeDiffRows();
+  tbody.innerHTML = "";
+
+  const frag = document.createDocumentFragment();
+  diffs.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = [
+      `<td>${escapeHtml(item.kindLabel)}</td>`,
+      `<td>${escapeHtml(item.date)}</td>`,
+      `<td>${escapeHtml(item.workType)}</td>`,
+      `<td>${escapeHtml(item.worker)}</td>`,
+      `<td>${escapeHtml(item.machine)}</td>`,
+      `<td>${escapeHtml(item.fields)}</td>`,
+      `<td>${escapeHtml(item.notes)}</td>`
+    ].join("");
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
+
+  const added = diffs.filter(v => v.kind === "add").length;
+  const changed = diffs.filter(v => v.kind === "change").length;
+  const deleted = diffs.filter(v => v.kind === "delete").length;
+
+  if (diffs.length === 0) {
+    status.textContent = "差分なし（保存不要）";
+  } else {
+    status.textContent = `差分 ${diffs.length}件（追加 ${added} / 変更 ${changed} / 削除 ${deleted}）`;
+  }
+}
+
+function computeDiffRows() {
+  const original = state.originalRows.map(r => normalizeRow(r));
+  const current = state.rows.map(r => normalizeRow(r));
+
+  const originalByFp = new Map();
+  original.forEach(r => {
+    if (r.beforeFingerprint) originalByFp.set(r.beforeFingerprint, r);
+  });
+
+  const currentFpSet = new Set();
+  const diffs = [];
+
+  current.forEach(r => {
+    if (isAllBlank(r)) return;
+
+    if (!r.beforeFingerprint) {
+      diffs.push(createDiffViewRow("add", r));
+      return;
+    }
+
+    currentFpSet.add(r.beforeFingerprint);
+    const before = originalByFp.get(r.beforeFingerprint);
+    if (!before) {
+      diffs.push(createDiffViewRow("add", r));
+      return;
+    }
+
+    if (buildRowComparableSignature(before) !== buildRowComparableSignature(r)) {
+      diffs.push(createDiffViewRow("change", r));
+    }
+  });
+
+  original.forEach(r => {
+    if (!r.beforeFingerprint) return;
+    if (currentFpSet.has(r.beforeFingerprint)) return;
+    diffs.push(createDiffViewRow("delete", r));
+  });
+
+  return diffs;
+}
+
+function buildRowComparableSignature(row) {
+  const normalized = normalizeRow(row);
+  const entry = deepClone(normalized.raw || {});
+  entry.date = normalized.date;
+  entry.workType = normalized.workType;
+  entry.machine = normalized.machine;
+  entry.workers = parseWorkers(normalized.workersText);
+  entry.notes = normalized.notes;
+  const fields = Array.isArray(normalized.fields)
+    ? normalized.fields.slice().map(v => String(v || "").trim()).filter(Boolean).sort().join("／")
+    : "";
+
+  return [
+    String(entry.date || "").trim(),
+    String(entry.eventId || "").trim(),
+    String(entry.workType || "").trim(),
+    normalizeMachine(entry),
+    formatWorkersForCsv(entry.workers ?? entry.worker),
+    normalizeMethod(entry),
+    normalizePesticides(entry),
+    getDistributedNames(entry.distributed),
+    String(entry.notes || "").trim(),
+    fields,
+    safeStableJson(entry)
+  ].join("||");
+}
+
+function safeStableJson(value) {
+  try {
+    return JSON.stringify(sortObjectDeep(value));
+  } catch {
+    return "";
+  }
+}
+
+function sortObjectDeep(value) {
+  if (Array.isArray(value)) return value.map(sortObjectDeep);
+  if (!value || typeof value !== "object") return value;
+
+  const out = {};
+  Object.keys(value).sort().forEach(key => {
+    out[key] = sortObjectDeep(value[key]);
+  });
+  return out;
+}
+
+function createDiffViewRow(kind, row) {
+  const labels = {
+    add: "追加",
+    change: "変更",
+    delete: "削除"
+  };
+
+  return {
+    kind,
+    kindLabel: labels[kind] || kind,
+    date: String(row?.date || "").trim(),
+    workType: String(row?.workType || "").trim(),
+    worker: String(row?.workersText || "").trim(),
+    machine: String(row?.machine || "").trim(),
+    fields: Array.isArray(row?.fields) ? row.fields.join("／") : "",
+    notes: String(row?.notes || "").trim()
+  };
+}
+
 function updateRowField(row, key, value) {
   row[key] = value;
   if (!row.raw || typeof row.raw !== "object") row.raw = {};
 
   if (key === "workersText") {
     row.raw.workers = parseWorkers(value);
+    scheduleDiffPreviewRender();
     return;
   }
 
   if (key === "date" || key === "workType" || key === "machine" || key === "notes") {
     row.raw[key] = value;
   }
+
+  scheduleDiffPreviewRender();
 }
 
 function renderDynamicFieldEditor() {
@@ -918,27 +1383,32 @@ function createObjectArrayTableEditor(row, key, columns) {
   const root = document.createElement("div");
   root.style.display = "grid";
   root.style.gap = "8px";
+  const rowsWrap = document.createElement("div");
+  rowsWrap.style.display = "grid";
+  rowsWrap.style.gap = "8px";
 
-  const tableWrap = document.createElement("div");
-  tableWrap.style.overflowX = "auto";
-
-  const table = document.createElement("table");
-  table.style.width = "100%";
-  table.style.borderCollapse = "collapse";
-  table.style.minWidth = "860px";
-
-  const thead = document.createElement("thead");
-  thead.innerHTML = `<tr>${columns.map(c => `<th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">${escapeHtml(c.label)}</th>`).join("")}<th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:70px;">操作</th></tr>`;
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
   row.raw[key].forEach((item, idx) => {
-    const tr = document.createElement("tr");
-    tr.style.borderBottom = "1px solid #eee";
+    const rowCard = document.createElement("div");
+    rowCard.style.border = "1px solid #ddd";
+    rowCard.style.borderRadius = "8px";
+    rowCard.style.padding = "10px";
+    rowCard.style.display = "grid";
+    rowCard.style.gap = "8px";
+
+    const grid = document.createElement("div");
+    grid.style.display = "grid";
+    grid.style.gap = "8px";
+    grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(160px, 1fr))";
 
     columns.forEach(col => {
-      const td = document.createElement("td");
-      td.style.padding = "6px";
+      const fieldWrap = document.createElement("div");
+      fieldWrap.style.display = "grid";
+      fieldWrap.style.gap = "4px";
+
+      const fieldLabel = document.createElement("label");
+      fieldLabel.textContent = col.label;
+      fieldLabel.style.fontSize = "12px";
+      fieldLabel.style.color = "#555";
 
       const input = document.createElement("input");
       input.className = "form-input";
@@ -952,14 +1422,20 @@ function createObjectArrayTableEditor(row, key, columns) {
         if (!row.raw[key][idx] || typeof row.raw[key][idx] !== "object") row.raw[key][idx] = {};
         row.raw[key][idx][col.key] = next;
         applyRawToDisplayFields(row);
+        syncSelectedRowInputs();
+        scheduleDiffPreviewRender();
       });
 
-      td.appendChild(input);
-      tr.appendChild(td);
+      fieldWrap.appendChild(fieldLabel);
+      fieldWrap.appendChild(input);
+      grid.appendChild(fieldWrap);
     });
 
-    const actionTd = document.createElement("td");
-    actionTd.style.padding = "6px";
+    rowCard.appendChild(grid);
+
+    const actionWrap = document.createElement("div");
+    actionWrap.style.display = "flex";
+    actionWrap.style.justifyContent = "flex-end";
     const delBtn = document.createElement("button");
     delBtn.type = "button";
     delBtn.className = "secondary-btn";
@@ -969,16 +1445,15 @@ function createObjectArrayTableEditor(row, key, columns) {
       renderDynamicFieldEditor();
       applyRawToDisplayFields(row);
       renderRows();
+      scheduleDiffPreviewRender();
     });
-    actionTd.appendChild(delBtn);
-    tr.appendChild(actionTd);
+    actionWrap.appendChild(delBtn);
+    rowCard.appendChild(actionWrap);
 
-    tbody.appendChild(tr);
+    rowsWrap.appendChild(rowCard);
   });
 
-  table.appendChild(tbody);
-  tableWrap.appendChild(table);
-  root.appendChild(tableWrap);
+  root.appendChild(rowsWrap);
 
   const addBtn = document.createElement("button");
   addBtn.type = "button";
@@ -991,6 +1466,7 @@ function createObjectArrayTableEditor(row, key, columns) {
     renderDynamicFieldEditor();
     applyRawToDisplayFields(row);
     renderRows();
+    scheduleDiffPreviewRender();
   });
   root.appendChild(addBtn);
 
@@ -1073,8 +1549,37 @@ function setDynamicValue(row, key, inputValue, editorType) {
   }
 
   applyRawToDisplayFields(row);
-  renderRows();
+  syncSelectedRowInputs();
+  scheduleDiffPreviewRender();
   return true;
+}
+
+function syncSelectedRowInputs() {
+  const idx = state.selectedIndex;
+  if (idx == null || !state.rows[idx]) return;
+
+  const tr = document.querySelector(`#edit-rows tr[data-index="${idx}"]`);
+  if (!tr) return;
+
+  const row = state.rows[idx];
+
+  const fieldsCell = tr.querySelector("td[data-col='fields']");
+  if (fieldsCell) fieldsCell.textContent = (row.fields || []).join("／");
+
+  const dateInput = tr.querySelector("input[data-key='date']");
+  if (dateInput && dateInput.value !== (row.date || "")) dateInput.value = row.date || "";
+
+  const workTypeInput = tr.querySelector("input[data-key='workType']");
+  if (workTypeInput && workTypeInput.value !== (row.workType || "")) workTypeInput.value = row.workType || "";
+
+  const machineInput = tr.querySelector("input[data-key='machine']");
+  if (machineInput && machineInput.value !== (row.machine || "")) machineInput.value = row.machine || "";
+
+  const workersInput = tr.querySelector("input[data-key='workersText']");
+  if (workersInput && workersInput.value !== (row.workersText || "")) workersInput.value = row.workersText || "";
+
+  const notesInput = tr.querySelector("input[data-key='notes']");
+  if (notesInput && notesInput.value !== (row.notes || "")) notesInput.value = row.notes || "";
 }
 
 function applyRawToDisplayFields(row) {
@@ -1087,6 +1592,7 @@ function applyRawToDisplayFields(row) {
 
 function buildEntryFromRow(row) {
   const base = deepClone(row.raw || {});
+  base.eventId = ensureEntryEventId(base);
   base.date = row.date;
   base.workType = row.workType;
   base.machine = row.machine;
@@ -1108,32 +1614,42 @@ async function applyRelatedUpdates(type, loadedField, rowUpdates) {
   const overrides = {};
   let updatedCount = 0;
 
-  for (const fieldName of state.fields) {
-    if (fieldName === loadedField) continue;
+  const processed = await Promise.all(
+    state.fields
+      .filter(fieldName => fieldName !== loadedField)
+      .map(async fieldName => {
+        const safe = safeFieldName(fieldName);
+        const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
+        if (!data?.years || typeof data.years !== "object") return null;
 
-    const safe = safeFieldName(fieldName);
-    const data = await loadJSON(`/logs/${type}/${safe}.json`).catch(() => null);
-    if (!data?.years || typeof data.years !== "object") continue;
+        let changed = false;
+        let updatedLocal = 0;
 
-    let changed = false;
+        Object.keys(data.years).forEach(year => {
+          const list = data.years[year]?.entries;
+          if (!Array.isArray(list)) return;
 
-    Object.keys(data.years).forEach(year => {
-      const list = data.years[year]?.entries;
-      if (!Array.isArray(list)) return;
+          for (let i = 0; i < list.length; i++) {
+            const current = list[i];
+            const fp = createEntryFingerprint(current);
+            if (!updateMap.has(fp)) continue;
 
-      for (let i = 0; i < list.length; i++) {
-        const current = list[i];
-        const fp = createEntryFingerprint(current);
-        if (!updateMap.has(fp)) continue;
+            list[i] = mergeEntryForRelatedField(current, updateMap.get(fp));
+            changed = true;
+            updatedLocal += 1;
+          }
+        });
 
-        list[i] = mergeEntryForRelatedField(current, updateMap.get(fp));
-        changed = true;
-        updatedCount += 1;
-      }
-    });
+        if (!changed) return null;
+        return { safe, data, updatedLocal };
+      })
+  );
 
-    if (changed) overrides[safe] = data;
-  }
+  processed.forEach(item => {
+    if (!item) return;
+    overrides[item.safe] = item.data;
+    updatedCount += item.updatedLocal;
+  });
 
   return { overrides, updatedCount };
 }
@@ -1142,6 +1658,7 @@ function createEntryFingerprint(entry) {
   if (!entry || typeof entry !== "object") return "";
 
   return [
+    String(entry.eventId || "").trim(),
     String(entry.date || "").trim(),
     String(entry.workType || "").trim(),
     normalizeMachine(entry),
@@ -1150,6 +1667,39 @@ function createEntryFingerprint(entry) {
     normalizePesticides(entry),
     String(entry.notes || "").trim()
   ].join("||");
+}
+
+function supplementMissingEventIdsInLogData(data) {
+  if (!data?.years || typeof data.years !== "object") return false;
+
+  let changed = false;
+  Object.keys(data.years).forEach(year => {
+    const entries = data.years[year]?.entries;
+    if (!Array.isArray(entries)) return;
+
+    entries.forEach(entry => {
+      if (!entry || typeof entry !== "object") return;
+      const nextId = ensureEntryEventId(entry);
+      if (entry.eventId !== nextId) {
+        entry.eventId = nextId;
+        changed = true;
+      }
+    });
+  });
+
+  return changed;
+}
+
+function ensureEntryEventId(entry) {
+  const existing = String(entry?.eventId || "").trim();
+  if (existing) return existing;
+  return createEventId();
+}
+
+function createEventId() {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `ev-${ts}-${rand}`;
 }
 
 function normalizeWorkers(entry) {

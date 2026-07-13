@@ -7,6 +7,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
+  <style>
+    #edit-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1240px;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+
+    #edit-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #fafafa;
+    }
+
+    #edit-table th,
+    #edit-table td {
+      vertical-align: top;
+    }
+
+    #edit-table .col-no {
+      width: 48px;
+    }
+
+    #edit-table .col-field {
+      width: 260px;
+    }
+
+    #edit-table .col-date {
+      width: 132px;
+    }
+
+    #edit-table .col-work {
+      width: 180px;
+    }
+
+    #edit-table .col-machine {
+      width: 168px;
+    }
+
+    #edit-table .col-worker {
+      width: 200px;
+    }
+
+    #edit-table .col-notes {
+      width: 280px;
+    }
+
+    #edit-table .form-input {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    #edit-rows tr:hover {
+      background: #fafcff;
+    }
+
+    .shortcut-help {
+      margin: 6px 0 0;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .inline-filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: end;
+      margin-bottom: 10px;
+    }
+
+    .inline-filter-row .filter-col {
+      min-width: 180px;
+      flex: 1 1 220px;
+    }
+
+    #all-csv-scroll {
+      overflow: auto;
+      max-height: 360px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+
+    #diff-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+      font-size: 13px;
+    }
+
+    #diff-table th,
+    #diff-table td {
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      padding: 6px;
+      vertical-align: top;
+    }
+
+    #diff-table thead th {
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    #diff-scroll {
+      overflow: auto;
+      max-height: 280px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 960px) {
+      #edit-table {
+        min-width: 1120px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -76,23 +196,60 @@
         </label>
         <button id="save-btn" class="primary-btn" type="button">保存（JSON + all.csv更新）</button>
       </div>
+      <p class="shortcut-help">ショートカット: Ctrl+S で保存 / ↑↓ で行移動 / Esc で選択解除</p>
+
+      <div class="inline-filter-row">
+        <div class="filter-col">
+          <label for="filter-worktype">作業内容フィルタ</label>
+          <input id="filter-worktype" type="text" class="form-input" placeholder="部分一致（例: 草刈り）">
+        </div>
+        <div class="filter-col">
+          <label for="filter-worker">作業者フィルタ</label>
+          <input id="filter-worker" type="text" class="form-input" placeholder="部分一致（例: 山本）">
+        </div>
+        <div class="filter-col" style="flex:0 1 auto; min-width:120px;">
+          <button id="clear-filters-btn" class="secondary-btn" type="button">フィルタ解除</button>
+        </div>
+      </div>
+      <div id="filter-status" style="margin-bottom:8px; color:#666;">フィルタ: なし</div>
 
       <div id="status" style="margin-bottom:8px; color:#555;"></div>
 
       <div style="overflow-x:auto;">
-        <table id="edit-table" style="width:100%; border-collapse:collapse; min-width:840px;">
+        <table id="edit-table">
           <thead>
             <tr>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:50px;">#</th>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">圃場</th>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:140px;">日付</th>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">作業内容</th>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:180px;">機械</th>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px; width:220px;">作業者（/区切り）</th>
-              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">備考</th>
+              <th class="col-no" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">#</th>
+              <th class="col-field" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">圃場</th>
+              <th class="col-date" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">日付</th>
+              <th class="col-work" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">作業内容</th>
+              <th class="col-machine" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">機械</th>
+              <th class="col-worker" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">作業者（/区切り）</th>
+              <th class="col-notes" style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">備考</th>
             </tr>
           </thead>
           <tbody id="edit-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0; font-size:1.1rem;">保存前差分</h2>
+      <div id="diff-status" style="margin-bottom:8px; color:#666;">未読み込み</div>
+      <div id="diff-scroll">
+        <table id="diff-table">
+          <thead>
+            <tr>
+              <th style="width:68px;">種別</th>
+              <th style="width:110px;">日付</th>
+              <th style="width:160px;">作業内容</th>
+              <th style="width:160px;">作業者</th>
+              <th style="width:140px;">機械</th>
+              <th style="width:180px;">圃場</th>
+              <th>備考</th>
+            </tr>
+          </thead>
+          <tbody id="diff-rows"></tbody>
         </table>
       </div>
     </div>
@@ -109,7 +266,7 @@
     <div class="card">
       <h2 style="margin-top:0; font-size:1.1rem;">all.csv プレビュー</h2>
       <div id="all-csv-status" style="margin-bottom:8px; color:#666;">未読み込み</div>
-      <div style="overflow-x:auto;">
+      <div id="all-csv-scroll">
         <table id="all-csv-table" style="width:100%; border-collapse:collapse; min-width:860px;">
           <thead id="all-csv-head"></thead>
           <tbody id="all-csv-rows"></tbody>
