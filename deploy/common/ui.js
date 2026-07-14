@@ -459,6 +459,12 @@ export async function createWorkerCheckboxes(containerId) {
   // 既存選択値（あれば維持）
   const selected = readSelectedWorkers(box);
 
+  // 既定選択: 未選択時はログイン中ユーザーを自動選択
+  if (!selected.length) {
+    const defaultWorker = resolveDefaultWorkerDisplay(workers);
+    if (defaultWorker) selected.push(defaultWorker);
+  }
+
   const summary = document.createElement("div");
   summary.className = "info-line";
 
@@ -498,6 +504,20 @@ export async function createWorkerCheckboxes(containerId) {
   box.appendChild(openBtn);
   box.appendChild(selectedArea);
   renderSelected();
+}
+
+function resolveDefaultWorkerDisplay(workers) {
+  const current = String(window.currentHuman || localStorage.getItem(AUTH_HUMAN_KEY) || "").trim();
+  if (!current) return "";
+
+  const list = Array.isArray(workers) ? workers : [];
+  const hit = list.find(w => {
+    const name = String(w?.name || "").trim();
+    const display = String(w?.display || "").trim();
+    return current === name || current === display;
+  });
+
+  return String(hit?.display || "").trim();
 }
 
 function readSelectedWorkers(box) {
