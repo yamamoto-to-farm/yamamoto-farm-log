@@ -34,6 +34,15 @@ function shiftDateByDays(dateStr, diffDays) {
   return `${y}-${m}-${d}`;
 }
 
+function getTodayJstDateString() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  const m = String(jst.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(jst.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // ---------------------------------------------------------
 // モード切り替えボタン描画（★ 日付を URL に保持）
 // ---------------------------------------------------------
@@ -524,7 +533,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("form-area").style.display = "block";
 
   // ★ 日付セット（URL の date を優先）
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayJstDateString();
   const initialDate = urlDate || today;
 
   const dateInput = document.getElementById("diaryDate");
@@ -549,7 +558,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   if (todayBtn) {
     todayBtn.addEventListener("click", () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayJstDateString();
       dateInput.value = today;
       dateInput.dispatchEvent(new Event("change"));
     });
