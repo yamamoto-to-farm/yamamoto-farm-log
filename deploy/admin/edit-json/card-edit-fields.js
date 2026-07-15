@@ -296,16 +296,102 @@ async function migratePerFieldLogs(renamePairs) {
   return { touched, errors };
 }
 
+async function migrateSummaryLogs(renamePairs) {
+  const touched = [];
+  const errors = [];
+  let loaded;
+
+  try {
+    loaded = await loadTypeIndex("summary");
+  } catch (e) {
+    return { touched, updatedFields: [], errors: [String(e?.message || e)] };
+  }
+
+  if (!loaded?.data || typeof loaded.data !== "object") {
+    return { touched, updatedFields: [], errors };
+  }
+
+  const nextIndex = { ...loaded.data };
+  const updatedFields = new Set();
+
+  for (const { oldName, newName } of renamePairs) {
+    const oldSafe = safeFieldName(oldName);
+    const newSafe = safeFieldName(newName);
+    if (!oldSafe || !newSafe || oldSafe === newSafe) continue;
+
+    const oldEntry = nextIndex[oldSafe];
+    if (!oldEntry || typeof oldEntry !== "object") continue;
+
+    const newEntry = nextIndex[newSafe] && typeof nextIndex[newSafe] === "object"
+      ? { ...nextIndex[newSafe] }
+      : {};
+
+    for (const year of Object.keys(oldEntry)) {
+      const files = Array.isArray(oldEntry[year]) ? oldEntry[year] : [];
+      if (!Array.isArray(newEntry[year])) newEntry[year] = [];
+
+      for (const file of files) {
+        try {
+          const summary = await loadJSON(`/logs/summary/${oldSafe}/${year}/${file}`);
+          const nextSummary = {
+            ...summary,
+            planting: {
+              ...(summary?.planting || {}),
+              field: newName
+            }
+          };
+
+          await saveLog({
+            type: "multi",
+            suppressModal: true,
+            files: [
+              {
+                path: `logs/summary/${newSafe}/${year}/${file}`,
+                content: JSON.stringify(nextSummary, null, 2)
+              }
+            ]
+          });
+
+          if (!newEntry[year].includes(file)) {
+            newEntry[year].push(file);
+            newEntry[year].sort();
+          }
+
+          touched.push(`summary:${oldSafe}/${year}/${file}->${newSafe}/${year}/${file}`);
+          updatedFields.add(newSafe);
+        } catch (e) {
+          errors.push(`summary/${oldSafe}/${year}/${file}: ${String(e?.message || e)}`);
+        }
+      }
+    }
+
+    nextIndex[newSafe] = newEntry;
+    delete nextIndex[oldSafe];
+  }
+
+  if (updatedFields.size > 0) {
+    try {
+      await saveJSON(loaded.savePath, nextIndex);
+    } catch (e) {
+      errors.push(`summary-index: ${String(e?.message || e)}`);
+    }
+  }
+
+  return { touched, updatedFields: Array.from(updatedFields), errors };
+}
+
 async function migrateHistoricalFieldData(renamePairs) {
   const csv = await migrateFieldAllCsv(renamePairs);
   const json = await migratePerFieldLogs(renamePairs);
   const index = await migrateTypeIndexKeys(renamePairs);
+  const summary = await migrateSummaryLogs(renamePairs);
 
   return {
     csv,
     json,
+    summary,
     index,
-    errors: [...csv.errors, ...json.errors, ...index.errors]
+    errors: [...csv.errors, ...json.errors, ...index.errors, ...summary.errors]
   };
 }
 
@@ -775,6 +861,7 @@ export function renderEditCard({ json, container, finalPath }) {
           `all.csv更新: ${migrated.csv.touchedTypes.length} 種類`,
           `field列置換: ${migrated.csv.replacedCells} 箇所`,
           `圃場別JSON移行: ${migrated.json.touched.length} 件`,
+          `summary移行: ${migrated.summary.touched.length} 件`,
           `index更新: ${migrated.index.updatedTypes.length} 種類`
         ].join(" / ");
 

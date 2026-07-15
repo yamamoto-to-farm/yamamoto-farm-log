@@ -1,5 +1,6 @@
 // card-summary.js（style.css の h2.section-title に完全対応版）
-import { safeFieldName } from "/common/utils.js";
+import { safeFieldName, safeFileName } from "/common/utils.js";
+import { loadCSV } from "/common/csv.js";
 import { loadNotesForPlantingRef } from "./notes.js";
 
 import {
@@ -24,7 +25,9 @@ export async function renderSummaryCards(rawFieldName) {
     .then(r => r.json())
     .catch(() => ({}));
 
-  if (!index[fieldName]) {
+  const summarySources = await resolveSummarySources({ index, rawFieldName, fieldName });
+
+  if (!summarySources.length) {
     return `<p>サマリーがありません</p>`;
   }
 
@@ -34,26 +37,86 @@ export async function renderSummaryCards(rawFieldName) {
 
   let html = "";
 
-  for (const year of Object.keys(index[fieldName]).sort()) {
+  const groupedSources = {};
+  summarySources.forEach(source => {
+    if (!groupedSources[source.year]) groupedSources[source.year] = [];
+    groupedSources[source.year].push(source);
+  });
+
+  for (const year of Object.keys(groupedSources).sort()) {
     html += `
       <details>
         <summary>${year} 年</summary>
         <div class="year-block">
     `;
 
-    const files = index[fieldName][year];
-
-    for (const file of files) {
-      const url = `${CF_BASE}/logs/summary/${fieldName}/${year}/${file}?ts=${Date.now()}`;
-      const summary = await fetch(url).then(r => r.json());
-
-      html += await renderSummaryCard(summary, harvestBase);
+    for (const source of groupedSources[year]) {
+      const { fieldKey, file } = source;
+      try {
+        const url = `${CF_BASE}/logs/summary/${fieldKey}/${year}/${file}?ts=${Date.now()}`;
+        const summary = await fetch(url).then(r => r.json());
+        html += await renderSummaryCard(summary, harvestBase);
+      } catch {
+        // skip unreadable summary file
+      }
     }
 
     html += `</div></details>`;
   }
 
   return html;
+}
+
+async function resolveSummarySources({ index, rawFieldName, fieldName }) {
+  const direct = buildSummarySourcesForField(index, fieldName);
+  if (direct.length) return direct;
+
+  const plantingRows = await loadCSV("/logs/planting/all.csv").catch(() => []);
+  const targetFiles = new Set(
+    plantingRows
+      .filter(row => normalizeText(row?.field) === normalizeText(rawFieldName))
+      .map(row => `${safeFileName(row?.plantingRef || "")}.json`)
+      .filter(v => v !== ".json")
+  );
+
+  if (targetFiles.size === 0) return [];
+
+  const fallback = [];
+  Object.keys(index || {}).forEach(fieldKey => {
+    const byYear = index?.[fieldKey] || {};
+    Object.keys(byYear).forEach(year => {
+      const files = Array.isArray(byYear[year]) ? byYear[year] : [];
+      files.forEach(file => {
+        if (targetFiles.has(String(file || ""))) {
+          fallback.push({ fieldKey, year: String(year), file: String(file) });
+        }
+      });
+    });
+  });
+
+  return fallback;
+}
+
+function buildSummarySourcesForField(index, fieldKey) {
+  const byYear = index?.[fieldKey] || {};
+  const sources = [];
+
+  Object.keys(byYear)
+    .sort()
+    .forEach(year => {
+      const files = Array.isArray(byYear[year]) ? byYear[year] : [];
+      files.forEach(file => {
+        sources.push({ fieldKey, year: String(year), file: String(file) });
+      });
+    });
+
+  return sources;
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .trim();
 }
 
 /* ===============================
