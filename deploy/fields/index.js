@@ -144,12 +144,24 @@ export async function renderFieldList({ view = "active" } = {}) {
 
       areaTotalHan += sizeHan;
 
-      const address = getFieldAddress(detail);
+      const addressSummary = summarizeFieldAddress(detail);
+      const addressTitleAttr = addressSummary.fullText
+        ? ` title="${escapeHtml(addressSummary.fullText)}"`
+        : "";
+      const addressHtml = addressSummary.mainText === "未入力"
+        ? `<span style="color:#6b7280;">未入力</span>`
+        : `
+          <span style="color:#111827;">${escapeHtml(addressSummary.mainText)}</span>
+          ${addressSummary.restCount > 0
+            ? `<span style="display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:700; line-height:1.5; color:#0f3d75; background:#dbeafe; border:1px solid #93c5fd; vertical-align:middle;">他${addressSummary.restCount}筆</span>`
+            : ""
+          }
+        `;
 
       tableHtml += `
         <tr class="field-row" data-name="${field.name}">
           <td>${escapeHtml(field.name)}</td>
-          <td>${escapeHtml(address)}</td>
+          <td${addressTitleAttr}>${addressHtml}</td>
           <td style="text-align:right;">${display}</td>
         </tr>
       `;
@@ -203,8 +215,14 @@ function attachEvents() {
   });
 }
 
-function getFieldAddress(detail) {
-  if (!detail || typeof detail !== "object") return "未入力";
+function summarizeFieldAddress(detail) {
+  if (!detail || typeof detail !== "object") {
+    return {
+      mainText: "未入力",
+      restCount: 0,
+      fullText: ""
+    };
+  }
 
   // 一覧は簡潔化: 先頭1件 + 他N筆
   if (Array.isArray(detail.parcels)) {
@@ -215,15 +233,29 @@ function getFieldAddress(detail) {
     if (parcelAddresses.length > 0) {
       const first = parcelAddresses[0];
       const rest = parcelAddresses.length - 1;
-      return rest > 0 ? `${first} 他${rest}筆` : first;
+      return {
+        mainText: first,
+        restCount: rest,
+        fullText: parcelAddresses.join("／")
+      };
     }
   }
 
   // 旧形式の直接 address にも対応
   const direct = String(detail.address || "").trim();
-  if (direct && direct !== "未入力") return direct;
+  if (direct && direct !== "未入力") {
+    return {
+      mainText: direct,
+      restCount: 0,
+      fullText: direct
+    };
+  }
 
-  return "未入力";
+  return {
+    mainText: "未入力",
+    restCount: 0,
+    fullText: ""
+  };
 }
 
 function escapeHtml(value) {
