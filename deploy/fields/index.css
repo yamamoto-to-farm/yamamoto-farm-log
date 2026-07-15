@@ -97,3 +97,81 @@
   border-color: #2f855a;
   color: #fff;
 }
+
+/* ================================
+   圃場詳細カード（基本データ）
+================================ */
+.field-detail-card {
+  padding-top: 14px;
+}
+
+.field-detail-section {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.field-detail-section-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.field-detail-item {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fcfcfd;
+}
+
+.field-detail-item-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.field-detail-kv {
+  margin: 0;
+}
+
+.field-detail-kv-top {
+  margin-bottom: 6px;
+}
+
+.field-detail-kv-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.field-detail-kv-row dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.field-detail-kv-row dd {
+  margin: 0;
+  font-size: 14px;
+  color: #111827;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.field-detail-empty {
+  margin: 6px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .field-detail-kv-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
