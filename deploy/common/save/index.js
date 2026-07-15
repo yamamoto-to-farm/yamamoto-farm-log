@@ -11,6 +11,8 @@ const PRESIGN_URL =
   "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const APPEND_URL =
   "https://kv4z4gjnq9.execute-api.ap-northeast-1.amazonaws.com/prod/append";
+const SAVE_UPLOAD_CONCURRENCY = 4;
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
 /* ---------------------------------------------------------
    デバッグ切り替え（localStorage）
@@ -21,6 +23,47 @@ function isDebug() {
 
 function dbg(...args) {
   if (isDebug()) console.log("[saveLog]", ...args);
+}
+
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, options = {}, retryCount = 2) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    try {
+      const res = await fetch(url, options);
+      if (RETRYABLE_STATUS.has(res.status) && attempt < retryCount) {
+        await waitMs(250 * (attempt + 1));
+        continue;
+      }
+      return res;
+    } catch (e) {
+      lastError = e;
+      if (attempt >= retryCount) break;
+      await waitMs(250 * (attempt + 1));
+    }
+  }
+
+  throw lastError || new Error("fetch failed");
+}
+
+async function runWithConcurrency(items, limit, worker) {
+  const queue = Array.isArray(items) ? items : [];
+  const workerCount = Math.max(1, Math.min(limit, queue.length || 1));
+  let cursor = 0;
+
+  const runners = Array.from({ length: workerCount }, async () => {
+    while (cursor < queue.length) {
+      const idx = cursor;
+      cursor += 1;
+      await worker(queue[idx], idx);
+    }
+  });
+
+  await Promise.all(runners);
 }
 
 /* ---------------------------------------------------------
@@ -158,19 +201,19 @@ async function saveToS3(payload) {
      presign → PUT アップロード
      ファイルごとに独立なので並列化して待ち時間を短縮
   ------------------------------ */
-  await Promise.all(files.map(async file => {
+  await runWithConcurrency(files, SAVE_UPLOAD_CONCURRENCY, async file => {
     dbg("---- presign request ----");
     dbg("key:", file.key);
     dbg("contentType:", file.contentType);
 
-    const presignRes = await fetch(PRESIGN_URL, {
+    const presignRes = await fetchWithRetry(PRESIGN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         key: file.key,
         contentType: file.contentType
       })
-    });
+    }, 2);
 
     if (!presignRes.ok) {
       const body = await presignRes.text().catch(() => "");
@@ -183,10 +226,10 @@ async function saveToS3(payload) {
     dbg("---- PUT request ----");
     dbg("PUT to:", url);
 
-    const putRes = await fetch(url, {
+    const putRes = await fetchWithRetry(url, {
       method: "PUT",
       body: file.content
-    });
+    }, 1);
 
     dbg("PUT status:", putRes.status);
 
@@ -195,7 +238,7 @@ async function saveToS3(payload) {
       dbg("PUT failed body:", text);
       throw new Error("PUT failed: " + putRes.status);
     }
-  }));
+  });
 
   if (payload.summary) {
     await recordMonthlyWorkEntries(payload.summary).catch(e => {

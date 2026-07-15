@@ -1,5 +1,5 @@
 import { loadJSON } from "/common/json.js?v=1";
-import { saveLog } from "/common/save/index.js?v=1";
+import { saveLog } from "/common/save/index.js?v=20260716-1";
 import { safeFieldName } from "/common/utils.js?v=1";
 import { rebuildMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -622,11 +622,32 @@ async function saveCurrentLog() {
     return;
   }
 
-  if (getTargetMode() === "field") {
-    await saveFieldMode(type);
-  } else {
-    await saveDateMode(type);
+  try {
+    if (getTargetMode() === "field") {
+      await saveFieldMode(type);
+    } else {
+      await saveDateMode(type);
+    }
+  } catch (e) {
+    console.error("[edit-log] save failed:", e);
+    const msg = buildSaveErrorMessage(e);
+    setStatus(msg);
+    alert(msg);
   }
+}
+
+function buildSaveErrorMessage(err) {
+  const text = String(err?.message || err || "");
+
+  if (/Failed to fetch|NetworkError|CORS|presign/i.test(text)) {
+    return "保存APIへの接続に失敗しました。通信状態またはCORS設定の問題の可能性があります。時間を置いて再試行してください。";
+  }
+
+  if (/PUT failed/i.test(text)) {
+    return "ファイル保存に失敗しました。時間を置いて再試行してください。";
+  }
+
+  return `保存に失敗しました: ${text || "不明なエラー"}`;
 }
 
 async function saveFieldMode(type) {
