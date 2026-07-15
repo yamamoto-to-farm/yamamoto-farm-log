@@ -11,7 +11,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { showSaveModal, closeSaveModal, completeSaveModal, confirmSaveBeforeSubmit } from "/common/save-modal.js?v=1";
 
 export async function initMaintenancePage() {
   debugLog("initMaintenancePage start");
@@ -94,6 +94,19 @@ async function saveMaintenanceLog() {
     alert("作業者は必須です");
     return;
   }
+
+  const fieldsLabel = fields.length <= 4
+    ? fields.join("、")
+    : `${fields.slice(0, 4).join("、")} ほか${fields.length - 4}件`;
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `日付: ${date}`,
+      `作業内容: ${type}`,
+      `圃場: ${fieldsLabel}`,
+      `作業者: ${workers}`
+    ]
+  });
+  if (!confirmed) return;
 
   const btn = document.getElementById("save-btn");
   if (btn) {

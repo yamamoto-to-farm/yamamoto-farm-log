@@ -7,7 +7,8 @@ import { loadJSON, saveJSON } from "/common/json.js";
 import {
   showSaveModal,
   completeSaveModal,
-  closeSaveModal
+  closeSaveModal,
+  confirmSaveBeforeSubmit
 } from "/common/save-modal.js?v=1";
 
 export async function saveDiary(date, autoList) {
@@ -62,6 +63,15 @@ export async function saveDiary(date, autoList) {
   current.work = filteredWork;
   current.workType = Array.from(new Set(filteredWork.map(w => String(w.type || w.workType || "").trim()).filter(Boolean))).join("／");
   current.memo = document.getElementById("freeMemo").value;
+
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `日付: ${date}`,
+      `作業件数: ${filteredWork.length}件`,
+      `メモ: ${current.memo ? "あり" : "なし"}`
+    ]
+  });
+  if (!confirmed) return;
 
   // -------------------------------
   // 保存（data/diary/ 配下なので確実に保存される）

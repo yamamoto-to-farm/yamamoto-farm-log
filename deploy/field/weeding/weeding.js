@@ -13,7 +13,7 @@ import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { toNumber, calcPer10a, distributePesticideUsageByField } from "/common/pesticide-calc.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { showSaveModal, closeSaveModal, completeSaveModal, confirmSaveBeforeSubmit } from "/common/save-modal.js?v=1";
 
 let pesticideDict = {};
 const DEFAULT_MOWING_METHODS = ["背負い式刈払機", "フレールモア", "オフセットモア"];
@@ -261,6 +261,20 @@ async function saveWeedingLog() {
 
     distributed = await distributePesticideUsageByField(fields, pesticideUsage);
   }
+
+  const fieldsLabel = fields.length <= 4
+    ? fields.join("、")
+    : `${fields.slice(0, 4).join("、")} ほか${fields.length - 4}件`;
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `日付: ${date}`,
+      `作業区分: ${workType}`,
+      `圃場: ${fieldsLabel}`,
+      `作業者: ${workers}`,
+      `農薬件数: ${Array.isArray(pesticides) ? pesticides.length : 0}件`
+    ]
+  });
+  if (!confirmed) return;
 
   const btn = document.getElementById("save-btn");
   if (btn) {

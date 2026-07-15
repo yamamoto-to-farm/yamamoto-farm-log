@@ -16,7 +16,7 @@ import { distributeFertilizers }
   from "./fertilizer-distribute.js?v=1";
 import { saveMultiFieldLog } 
   from "/common/general-log/base.js?v=1";
-import { showSaveModal, closeSaveModal, completeSaveModal }
+import { showSaveModal, closeSaveModal, completeSaveModal, confirmSaveBeforeSubmit }
   from "/common/save-modal.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
@@ -80,6 +80,19 @@ export async function saveFertilizerLog() {
     alert("肥料を選択してください");
     return;
   }
+
+  const fieldsLabel = fields.length <= 4
+    ? fields.join("、")
+    : `${fields.slice(0, 4).join("、")} ほか${fields.length - 4}件`;
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `日付: ${date}`,
+      `圃場: ${fieldsLabel}`,
+      `作業者: ${workers}`,
+      `肥料件数: ${fertilizers.length}件`
+    ]
+  });
+  if (!confirmed) return;
 
   const distributed = await distributeFertilizers(fields, fertilizers);
 

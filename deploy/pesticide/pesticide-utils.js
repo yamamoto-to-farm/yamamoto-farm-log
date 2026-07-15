@@ -16,7 +16,7 @@ import { distributepesticides }
   from "./pesticide-distribute.js?v=1";
 import { savePesticideLog } 
   from "/common/general-log/pesticide.js?v=1";
-import { showSaveModal, closeSaveModal, completeSaveModal }
+import { showSaveModal, closeSaveModal, completeSaveModal, confirmSaveBeforeSubmit }
   from "/common/save-modal.js?v=1";
 import { getSelectedWorkers } 
   from "/common/ui.js?v=1";
@@ -80,6 +80,19 @@ export async function savepesticideLog() {
     alert("農薬の希釈倍率・合計散布液量（L）を入力してください");
     return;
   }
+
+  const fieldsLabel = fields.length <= 4
+    ? fields.join("、")
+    : `${fields.slice(0, 4).join("、")} ほか${fields.length - 4}件`;
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `日付: ${date}`,
+      `圃場: ${fieldsLabel}`,
+      `作業者: ${workers}`,
+      `農薬件数: ${pesticides.length}件`
+    ]
+  });
+  if (!confirmed) return;
 
   const distributed = await distributepesticides(fields, pesticides);
 

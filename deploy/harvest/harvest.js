@@ -21,7 +21,8 @@ import { enqueueSummaryUpdate } from "../common/summary.js";
 import {
   showSaveModal,
   updateSaveModal,
-  completeSaveModal
+  completeSaveModal,
+  confirmSaveBeforeSubmit
 } from "../common/save-modal.js";
 
 
@@ -231,6 +232,17 @@ async function saveHarvestInner() {
 
   const machine = getMachineParam();
   const human = window.currentHuman || "";
+
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `収穫日: ${data.harvestDate}`,
+      `圃場: ${data.field || "未設定"}`,
+      `作業者: ${data.worker}`,
+      `数量: ${data.amount || "未入力"}`,
+      `定植参照: ${data.plantingRef}`
+    ]
+  });
+  if (!confirmed) return;
 
   // ★ モーダル開始
   showSaveModal("保存しています…");

@@ -12,7 +12,8 @@ import { enqueueSummaryUpdate } from "../common/summary.js";
 import {
   showSaveModal,
   updateSaveModal,
-  completeSaveModal
+  completeSaveModal,
+  confirmSaveBeforeSubmit
 } from "../common/save-modal.js";
 
 
@@ -260,6 +261,16 @@ async function saveShipping() {
     alert("重量を入力してください");
     return;
   }
+
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `出荷日: ${shippingDate}`,
+      `対象件数: ${checkedOrder.length}件`,
+      `重量入力数: ${weightList.length}件`,
+      `機械: ${machine || "未設定"}`
+    ]
+  });
+  if (!confirmed) return;
 
   // ★ 保存モーダル（保存中…）
   showSaveModal("保存中です…");
