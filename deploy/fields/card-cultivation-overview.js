@@ -55,24 +55,15 @@ export async function renderCultivationOverviewCard({ fieldName, startDate, endD
   }).toString();
 
   return `
-    <h2 class="section-title">栽培概要</h2>
-    <div class="info-block">
+    <h2 class="section-title year-summary-title">栽培概要</h2>
+    <div class="info-block year-summary-block">
       <div class="info-line">集計期間：${escapeHtml(rangeStartLabel)} ～ ${escapeHtml(endDate)}</div>
-      <div class="info-line">防除回数：${pesticideCount} 回</div>
-      <div class="info-line">中耕回数：${intertillCount} 回</div>
-      <div class="info-line">施肥回数：${fertilizerCount} 回</div>
+      <div class="info-line">防除回数：<a href="/fields/work-logs.html?${qPesticide}">${pesticideCount} 回</a></div>
+      <div class="info-line">中耕回数：<a href="/fields/work-logs.html?${qIntertill}">${intertillCount} 回</a></div>
+      <div class="info-line">施肥回数：<a href="/fields/work-logs.html?${qFertilizer}">${fertilizerCount} 回</a></div>
 
       <div class="info-line link">
-        ↳ <a href="/fields/work-logs.html?${qPesticide}">防除記録を見る</a>
-      </div>
-      <div class="info-line link">
-        ↳ <a href="/fields/work-logs.html?${qFertilizer}">施肥記録を見る</a>
-      </div>
-      <div class="info-line link">
-        ↳ <a href="/fields/work-logs.html?${qIntertill}">中耕記録を見る</a>
-      </div>
-      <div class="info-line link">
-        ↳ <a href="/fields/work-logs.html?${q}">作業記録をまとめて見る</a>
+        ↳ <a href="/fields/work-logs.html?${q}">作業記録まとめ</a>
       </div>
     </div>
   `;

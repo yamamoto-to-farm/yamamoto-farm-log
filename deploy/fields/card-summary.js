@@ -2,7 +2,7 @@
 import { safeFieldName, safeFileName } from "/common/utils.js";
 import { loadCSV } from "/common/csv.js";
 import { loadNotesForPlantingRef } from "./notes.js";
-import { renderCultivationOverviewCard } from "./card-cultivation-overview.js";
+import { renderCultivationOverviewCard } from "./card-cultivation-overview.js?v=20260715-1";
 
 import {
   calcAreaM2,
