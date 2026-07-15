@@ -4,7 +4,7 @@
 
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
-import { loadLogsByDate, showWorkSummary, searchLogsByKeyword } from "./work-summary.js";
+import { loadLogsByDate, showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js";
 import { initEditPage } from "./editCard.js";
 import { initViewPageWithOptions } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
@@ -860,10 +860,17 @@ window.addEventListener("DOMContentLoaded", async () => {
       saveBtn.disabled = true;
       const originalText = saveBtn.textContent;
       saveBtn.textContent = "保存中…";
+      let saveSucceeded = false;
 
       try {
         await saveDiary(date, window.__currentDiaryWorkGroups || []);
+        saveSucceeded = true;
+
+        const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
+        location.href = buildDiaryUrl("view", date, currentSearch);
+        return;
       } finally {
+        if (saveSucceeded) return;
         isDiarySaving = false;
         saveBtn.disabled = false;
         saveBtn.textContent = originalText;
@@ -909,6 +916,31 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderSearchState("", { total: 0, hits: [] });
     renderLoadMoreControl(null);
     history.replaceState({}, "", buildDiaryUrl(mode, d, currentSearch));
+  });
+
+  // 編集画面から戻る時（BFCache復帰）に古い CSV キャッシュを破棄して再読込する
+  window.addEventListener("pageshow", async (ev) => {
+    if (!ev.persisted) return;
+
+    const d = dateInput.value || getTodayJstDateString();
+
+    clearWorkSummaryCache();
+    await refreshDiaryMonthMini(d);
+    await renderWeatherBox(d);
+
+    const logsByDate = await loadLogsByDate(d);
+    await showWorkSummary(d, logsByDate);
+    initCollapse("workListTitle", "workList");
+
+    if (mode === "edit") {
+      isEditPageLoading = true;
+      saveBtn.disabled = true;
+      await initEditPage({ date: d, logs: logsByDate });
+      isEditPageLoading = false;
+      saveBtn.disabled = false;
+    } else {
+      await initViewPageWithOptions({ date: d, logs: logsByDate });
+    }
   });
   // (印刷時の一時処理は削除されました)
 });
