@@ -178,6 +178,13 @@ function renderModeSwitch(mode, keyword = "") {
   const monthUrl = ym
     ? `/schedule/monthly-work/index.html?mode=around2&ym=${ym}`
     : "/schedule/monthly-work/index.html?mode=latest4";
+  const pdfButtonHtml = window.currentRole === "admin"
+    ? `
+      <button id="diaryPdfBtn" class="mode-btn" type="button">
+        PDF保存(A4)
+      </button>
+    `
+    : "";
 
   let rightButtons = `
     <button class="mode-btn ${mode === "view" ? "active" : ""}"
@@ -203,9 +210,7 @@ function renderModeSwitch(mode, keyword = "") {
       <button class="mode-btn" onclick="location.href='${monthUrl}'">
         作業カレンダー
       </button>
-      <button id="diaryPdfBtn" class="mode-btn" type="button">
-        PDF保存(A4)
-      </button>
+      ${pdfButtonHtml}
     </div>
     <div class="mode-switch-right">
       ${rightButtons}
@@ -214,6 +219,11 @@ function renderModeSwitch(mode, keyword = "") {
 }
 
 async function printDiaryAsA4Pdf() {
+  if (window.currentRole !== "admin") {
+    alert("この機能は管理者のみ利用できます。");
+    return;
+  }
+
   if (isDiaryPdfPrinting) return;
 
   const btn = document.getElementById("diaryPdfBtn");
@@ -230,10 +240,26 @@ async function printDiaryAsA4Pdf() {
     const formArea = document.getElementById("form-area");
     if (!formArea) return null;
 
+    const dateValue = document.getElementById("diaryDate")?.value || "";
+    let dateLine = null;
+    if (dateValue) {
+      dateLine = document.createElement("p");
+      dateLine.className = "diary-print-dateline";
+      dateLine.textContent = `日付: ${dateValue}`;
+
+      const pageTitle = formArea.querySelector(".page-title");
+      if (pageTitle?.parentNode) {
+        pageTitle.parentNode.insertBefore(dateLine, pageTitle.nextSibling);
+      } else {
+        formArea.prepend(dateLine);
+      }
+    }
+
     formArea.classList.add("diary-print-onepage");
 
     return async () => {
       formArea.classList.remove("diary-print-onepage");
+      dateLine?.remove();
     };
   };
 
