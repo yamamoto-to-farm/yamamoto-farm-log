@@ -242,6 +242,22 @@
       "analysis analysis target target";
   }
 
+  .year-summary-section {
+    overflow: auto;
+  }
+
+  .year-summary-section--plant,
+  .year-summary-section--harvest,
+  .year-summary-section--seedling,
+  .year-summary-section--cultivation {
+    height: 215px;
+  }
+
+  .year-summary-section--analysis,
+  .year-summary-section--target {
+    height: 120px;
+  }
+
   .year-summary-section--plant { grid-area: plant; }
   .year-summary-section--harvest { grid-area: harvest; }
   .year-summary-section--seedling { grid-area: seedling; }
