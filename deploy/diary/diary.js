@@ -4,9 +4,9 @@
 
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
-import { showWorkSummary, searchLogsByKeyword } from "./work-summary.js";
+import { loadLogsByDate, showWorkSummary, searchLogsByKeyword } from "./work-summary.js";
 import { initEditPage } from "./editCard.js";
-import { initViewPage } from "./viewCard.js";
+import { initViewPageWithOptions } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
@@ -396,11 +396,20 @@ function bindSearchEvents({ mode, dateInput }) {
   if (input.dataset.boundSearchUi === "1") return;
   input.dataset.boundSearchUi = "1";
 
+  let debounceTimer = null;
+  let searchToken = 0;
+  const DEBOUNCE_MS = 280;
+
   const performSearch = async () => {
+    const token = ++searchToken;
     const keyword = input.value.trim();
     history.replaceState({}, "", buildDiaryUrl(mode, dateInput.value, keyword));
 
     if (!keyword) {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
       activeSearchState = null;
       renderSearchState("", { total: 0, hits: [] });
       renderLoadMoreControl(null);
@@ -409,6 +418,8 @@ function bindSearchEvents({ mode, dateInput }) {
 
     renderSearchLoading(keyword, dateInput.value, DIARY_BLOCK_DAYS);
     const result = await searchAllSources(keyword, dateInput.value, DIARY_BLOCK_DAYS);
+    if (token !== searchToken) return;
+
     activeSearchState = {
       keyword,
       anchorDate: dateInput.value,
@@ -421,6 +432,13 @@ function bindSearchEvents({ mode, dateInput }) {
     };
     renderSearchState(keyword, result);
     renderLoadMoreControl(activeSearchState);
+  };
+
+  const scheduleDebouncedSearch = () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      void performSearch();
+    }, DEBOUNCE_MS);
   };
 
   searchBtn.addEventListener("click", () => {
@@ -440,6 +458,10 @@ function bindSearchEvents({ mode, dateInput }) {
       e.preventDefault();
       void performSearch();
     }
+  });
+
+  input.addEventListener("input", () => {
+    scheduleDebouncedSearch();
   });
 
   if (!resultsBox.dataset.boundSearchJump) {
@@ -574,7 +596,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   await renderWeatherBox(initialDate);
 
   // 作業ログ一覧表示
-  await showWorkSummary(initialDate);
+  const initialLogs = await loadLogsByDate(initialDate);
+  await showWorkSummary(initialDate, initialLogs);
 
   renderLoadMoreControl(null);
   initCollapse("diarySearchTitle", "diarySearchPanel");
@@ -585,10 +608,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   // モード別カード表示
   if (mode === "edit") {
     isEditPageLoading = true;
-    await initEditPage();
+    await initEditPage({ date: initialDate, logs: initialLogs });
     isEditPageLoading = false;
   } else {
-    await initViewPage();
+    await initViewPageWithOptions({ date: initialDate, logs: initialLogs });
   }
 
   // ---------------------------------------------------------
@@ -641,7 +664,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     await renderWeatherBox(d);
 
     // 作業ログ一覧更新
-    await showWorkSummary(d);
+    const logsByDate = await loadLogsByDate(d);
+    await showWorkSummary(d, logsByDate);
 
     // ▼ 折りたたみ再適用
     initCollapse("workListTitle", "workList");
@@ -650,11 +674,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (mode === "edit") {
       isEditPageLoading = true;
       saveBtn.disabled = true;
-      await initEditPage();
+      await initEditPage({ date: d, logs: logsByDate });
       isEditPageLoading = false;
       saveBtn.disabled = false;
     } else {
-      await initViewPage();
+      await initViewPageWithOptions({ date: d, logs: logsByDate });
     }
 
     // ★ モード切り替えボタンも更新（新しい日付を反映）

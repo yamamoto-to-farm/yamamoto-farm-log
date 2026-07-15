@@ -6,26 +6,69 @@ import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { buildTimestampKey } from "/common/timestamp.js?v=1";
 
 let searchIndexCache = null;
+let folderListCache = null;
+const csvRowsCache = new Map();
+const folderDateBucketCache = new Map();
+
+function resetWorkSummaryCaches() {
+  searchIndexCache = null;
+  folderListCache = null;
+  csvRowsCache.clear();
+  folderDateBucketCache.clear();
+}
 
 // list.json を読み込む
 async function loadFolderList() {
+  if (folderListCache) return folderListCache;
+
   const res = await fetch("/diary/list.json");
   if (!res.ok) {
     console.error("list.json が読み込めませんでした");
-    return [];
+    folderListCache = [];
+    return folderListCache;
   }
-  return await res.json();
+
+  folderListCache = await res.json();
+  return folderListCache;
 }
 
 // CSV 読み込み（404 は null を返す）
 async function loadLogCsv(folder) {
+  if (csvRowsCache.has(folder)) {
+    return csvRowsCache.get(folder);
+  }
+
   try {
     const rows = await loadCSV(`/logs/${folder}/all.csv`);
-    return normalizeKeys(rows);
+    const normalized = normalizeKeys(rows);
+    csvRowsCache.set(folder, normalized);
+    return normalized;
   } catch (e) {
     console.warn(`[work-summary] all.csv が見つかりません: ${folder}`);
+    csvRowsCache.set(folder, null);
     return null; // ← 存在しないフォルダは読み飛ばす
   }
+}
+
+function getRowsByDate(folder, dateColumn, csvRows, targetDate) {
+  const cacheKey = `${folder}::${dateColumn}`;
+
+  if (!folderDateBucketCache.has(cacheKey)) {
+    const bucket = new Map();
+    (Array.isArray(csvRows) ? csvRows : []).forEach(row => {
+      const date = String(row?.[dateColumn] || "").trim();
+      if (!date) return;
+
+      const list = bucket.get(date) || [];
+      list.push(row);
+      bucket.set(date, list);
+    });
+
+    folderDateBucketCache.set(cacheKey, bucket);
+  }
+
+  const bucket = folderDateBucketCache.get(cacheKey);
+  return bucket?.get(targetDate) || [];
 }
 
 async function buildSearchIndex() {
@@ -81,26 +124,28 @@ export async function loadLogsByDate(date) {
     const rows = await loadLogCsv(folder);
     if (!rows) continue; // all.csv が無いフォルダは除外
 
-    rows
-      .filter(r => r[dateColumn] === date)
-      .forEach(r => {
-        result.push({
-          folder,
-          dateColumn,
-          displayName,
-          headerName,
-          data: r
-        });
+    getRowsByDate(folder, dateColumn, rows, date).forEach(r => {
+      result.push({
+        folder,
+        dateColumn,
+        displayName,
+        headerName,
+        data: r
       });
+    });
   }
 
   return result;
 }
 
+export function clearWorkSummaryCache() {
+  resetWorkSummaryCaches();
+}
+
 // UI 表示
-export async function showWorkSummary(date) {
+export async function showWorkSummary(date, preloadedLogs = null) {
   const box = document.getElementById("workList");
-  const logs = await loadLogsByDate(date);
+  const logs = Array.isArray(preloadedLogs) ? preloadedLogs : await loadLogsByDate(date);
 
   if (logs.length === 0) {
     box.innerHTML = "<p>この日の作業ログはありません。</p>";

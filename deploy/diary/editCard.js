@@ -162,15 +162,15 @@ function escapeHtml(value) {
 // ---------------------------------------------------------
 // 初期化（保存イベントは diary.js に集約）
 // ---------------------------------------------------------
-export async function initEditPage() {
+export async function initEditPage(options = {}) {
   const dateInput = document.getElementById("diaryDate");
-  const date = dateInput.value;
+  const date = String(options?.date || dateInput.value || "").trim();
 
   // ★ 既存の日誌を読み込む
   const diary = await loadDiaryByDate(date);   // null の可能性あり
 
   // ★ 作業ログから自動抽出（type, workers, field, machine）
-  const logs = await loadLogsByDate(date);
+  const logs = Array.isArray(options?.logs) ? options.logs : await loadLogsByDate(date);
   const timestampRows = await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
   const hydratedList = mergeSavedDiaryGroups(diary, autoList);
