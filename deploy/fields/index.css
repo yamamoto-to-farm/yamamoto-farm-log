@@ -113,7 +113,7 @@
 
 .field-detail-section-title {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: #1f2937;
 }
@@ -134,7 +134,7 @@
 
 .field-detail-item-title {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: #374151;
 }
 
@@ -156,23 +156,23 @@
 
 .field-detail-kv-row dt {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #4b5563;
 }
 
 .field-detail-kv-row dd {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #111827;
-  line-height: 1.4;
+  line-height: 1.45;
   word-break: break-word;
 }
 
 .field-detail-empty {
   margin: 4px 0;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 @media (max-width: 640px) {

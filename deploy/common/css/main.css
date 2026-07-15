@@ -39,6 +39,6 @@
 @import url("../../schedule/annual-list/annual-list.css") layer(pages);
 @import url("../../admin/edit-csv/edit-csv.css") layer(pages);
 @import url("../../fertilizer/fertilizer.css") layer(pages);
-@import url("../../fields/index.css") layer(pages);
+@import url("../../fields/index.css?v=20260715-2") layer(pages);
 @import url("../../diary/diary.css") layer(pages);
 
