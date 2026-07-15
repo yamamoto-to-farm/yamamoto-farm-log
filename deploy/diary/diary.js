@@ -241,16 +241,23 @@ async function printDiaryAsA4Pdf() {
     if (!formArea) return null;
 
     const dateValue = document.getElementById("diaryDate")?.value || "";
+    let dateTitle = null;
     let dateLine = null;
     if (dateValue) {
+      dateTitle = document.createElement("h2");
+      dateTitle.className = "section-title diary-print-date-title";
+      dateTitle.textContent = "日付";
+
       dateLine = document.createElement("p");
       dateLine.className = "diary-print-dateline";
-      dateLine.textContent = `日付: ${dateValue}`;
+      dateLine.textContent = dateValue;
 
       const pageTitle = formArea.querySelector(".page-title");
       if (pageTitle?.parentNode) {
-        pageTitle.parentNode.insertBefore(dateLine, pageTitle.nextSibling);
+        pageTitle.parentNode.insertBefore(dateTitle, pageTitle.nextSibling);
+        pageTitle.parentNode.insertBefore(dateLine, dateTitle.nextSibling);
       } else {
+        formArea.prepend(dateTitle);
         formArea.prepend(dateLine);
       }
     }
@@ -259,6 +266,7 @@ async function printDiaryAsA4Pdf() {
 
     return async () => {
       formArea.classList.remove("diary-print-onepage");
+      dateTitle?.remove();
       dateLine?.remove();
     };
   };

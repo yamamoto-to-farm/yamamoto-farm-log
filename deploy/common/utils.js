@@ -293,10 +293,13 @@ export async function printInline(selector, title = "印刷") {
       font-size: 15px !important;
       page-break-after: avoid;
     }
+    #form-area.diary-print-onepage .diary-print-date-title {
+      margin-top: 0 !important;
+    }
     #form-area.diary-print-onepage .diary-print-dateline {
       margin: 0 0 6px !important;
       font-size: 12px !important;
-      font-weight: 700;
+      font-weight: 600;
       color: #111;
     }
     #form-area.diary-print-onepage .card,
