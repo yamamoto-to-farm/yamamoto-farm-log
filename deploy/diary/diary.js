@@ -43,6 +43,60 @@ function getTodayJstDateString() {
   return `${y}-${m}-${d}`;
 }
 
+function parseYmdToDate(ymd) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""))) return null;
+  const dt = new Date(`${ymd}T00:00:00`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
+  const host = document.getElementById("diaryMonthMini");
+  if (!host) return;
+
+  const selected = parseYmdToDate(selectedDate);
+  if (!selected) {
+    host.innerHTML = "";
+    return;
+  }
+
+  const year = selected.getFullYear();
+  const month = selected.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const firstWeekday = firstDay.getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const selectedDay = Number(selectedDate.slice(8, 10));
+  const labels = ["日", "月", "火", "水", "木", "金", "土"];
+  const ym = selectedDate.slice(0, 7);
+
+  const cells = [];
+  labels.forEach(label => {
+    cells.push(`<div class="diary-month-mini-cell is-label">${label}</div>`);
+  });
+
+  for (let i = 0; i < firstWeekday; i += 1) {
+    cells.push('<div class="diary-month-mini-cell is-empty"></div>');
+  }
+
+  for (let d = 1; d <= lastDate; d += 1) {
+    const ymd = `${ym}-${String(d).padStart(2, "0")}`;
+    const classes = ["diary-month-mini-cell"];
+    if (savedDatesSet.has(ymd)) classes.push("has-entry");
+    if (d === selectedDay) classes.push("is-selected");
+    cells.push(`<div class="${classes.join(" ")}">${d}</div>`);
+  }
+
+  host.innerHTML = `
+    <div class="diary-month-mini-head">${year}年${month + 1}月（保存日の印付き）</div>
+    <div class="diary-month-mini-grid">${cells.join("")}</div>
+    <div class="diary-month-mini-legend">青背景: 保存済み日 / 枠線: 選択中の日付</div>
+  `;
+}
+
+async function refreshDiaryMonthMini(selectedDate) {
+  const dates = await loadDiaryIndexDates();
+  renderMonthMiniCalendar(selectedDate, new Set(dates));
+}
+
 // ---------------------------------------------------------
 // モード切り替えボタン描画（★ 日付を URL に保持）
 // ---------------------------------------------------------
@@ -591,6 +645,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const searchInput = document.getElementById("diarySearchInput");
   if (searchInput) searchInput.value = urlQuery;
   bindSearchEvents({ mode, dateInput });
+  await refreshDiaryMonthMini(initialDate);
 
   // 天気カード表示
   await renderWeatherBox(initialDate);
@@ -659,6 +714,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------------------------------------
   dateInput.addEventListener("change", async e => {
     const d = e.target.value;
+    await refreshDiaryMonthMini(d);
 
     // 天気カード更新
     await renderWeatherBox(d);
