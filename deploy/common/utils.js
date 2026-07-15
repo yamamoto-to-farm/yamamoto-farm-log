@@ -316,6 +316,10 @@ export async function printInline(selector, title = "印刷") {
     #form-area.diary-print-onepage #workContentWrapper {
       margin: 0 0 8px !important;
       padding: 8px 10px !important;
+      border: 1px solid #ccc !important;
+      border-radius: 6px !important;
+      background: #fff !important;
+      box-shadow: none !important;
       break-inside: avoid;
       page-break-inside: avoid;
     }
