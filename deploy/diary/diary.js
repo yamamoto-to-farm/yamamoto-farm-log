@@ -19,6 +19,7 @@ const DIARY_BLOCK_DAYS = 90;
 const MAX_DIARY_SEARCH_DAYS = 720;
 
 let diaryIndexDatesCache = null;
+const diaryMonthSavedDatesCache = new Map();
 let activeSearchState = null;
 let isEditPageLoading = false;
 let isDiarySaving = false;
@@ -47,6 +48,47 @@ function parseYmdToDate(ymd) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""))) return null;
   const dt = new Date(`${ymd}T00:00:00`);
   return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function buildDateStringsInMonth(ym) {
+  if (!/^\d{4}-\d{2}$/.test(String(ym || ""))) return [];
+
+  const year = Number(ym.slice(0, 4));
+  const month = Number(ym.slice(5, 7)) - 1;
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const dates = [];
+  for (let d = 1; d <= lastDate; d += 1) {
+    dates.push(`${ym}-${String(d).padStart(2, "0")}`);
+  }
+  return dates;
+}
+
+async function loadSavedDatesForMonth(selectedDate) {
+  const ym = String(selectedDate || "").slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(ym)) return [];
+
+  if (diaryMonthSavedDatesCache.has(ym)) {
+    return diaryMonthSavedDatesCache.get(ym) || [];
+  }
+
+  const indexDates = await loadDiaryIndexDates();
+  const fromIndex = indexDates.filter(date => date.startsWith(`${ym}-`));
+  if (fromIndex.length) {
+    diaryMonthSavedDatesCache.set(ym, fromIndex);
+    return fromIndex;
+  }
+
+  // index が空/未更新の環境向けに、当月ファイルの存在を直接確認する
+  const targetDates = buildDateStringsInMonth(ym);
+  const foundDates = [];
+  await Promise.all(targetDates.map(async date => {
+    const diary = await loadDiaryByDate(date);
+    if (diary) foundDates.push(date);
+  }));
+
+  const resolved = foundDates.sort((a, b) => a.localeCompare(b));
+  diaryMonthSavedDatesCache.set(ym, resolved);
+  return resolved;
 }
 
 function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
@@ -93,7 +135,9 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
 }
 
 async function refreshDiaryMonthMini(selectedDate) {
-  const dates = await loadDiaryIndexDates();
+  const dates = await loadSavedDatesForMonth(selectedDate);
+  const host = document.getElementById("diaryMonthMini");
+  if (host) host.classList.add("diary-month-mini");
   renderMonthMiniCalendar(selectedDate, new Set(dates));
 }
 
