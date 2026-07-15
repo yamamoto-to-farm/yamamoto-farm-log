@@ -297,11 +297,6 @@ export async function printInline(selector, title = "印刷") {
       margin-top: 0 !important;
     }
     #form-area.diary-print-onepage .diary-print-date-card {
-      margin: 0 0 8px !important;
-      padding: 6px 10px !important;
-      border: 1px solid #ccc !important;
-      border-radius: 6px !important;
-      background: #fff !important;
       break-inside: avoid;
       page-break-inside: avoid;
     }
@@ -315,6 +310,7 @@ export async function printInline(selector, title = "印刷") {
     #form-area.diary-print-onepage .view-card,
     #form-area.diary-print-onepage .edit-card,
     #form-area.diary-print-onepage .weather-card,
+    #form-area.diary-print-onepage .diary-print-date-card,
     #form-area.diary-print-onepage #workList,
     #form-area.diary-print-onepage #weatherBox,
     #form-area.diary-print-onepage #workContentWrapper {
