@@ -46,6 +46,20 @@ function formatRentNumber(value) {
   return num.toLocaleString("ja-JP");
 }
 
+function formatAreaTanFromA(value) {
+  const num = Number(String(value ?? "").replace(/,/g, "").trim());
+  if (!Number.isFinite(num)) return "";
+  return String(Math.round((num / 10) * 100) / 100);
+}
+
+function parseAreaAFromTan(value) {
+  const text = String(value ?? "").replace(/,/g, "").trim();
+  if (!text) return "";
+  const num = Number(text);
+  if (!Number.isFinite(num)) return text;
+  return String(Math.round(num * 10 * 100) / 100);
+}
+
 function calcParcelRentTotal() {
   const inputs = document.querySelectorAll(".parcel-rent");
   let sum = 0;
@@ -124,7 +138,11 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
 
       <div class="edit-line">
         <label>耕作面積（反）</label>
-        <input id="size" value="${data.size}">
+        <input id="size" value="${formatAreaTanFromA(data.size)}">
+      </div>
+
+      <div class="info-line" style="margin-top:4px; color:#666; font-size:13px;">
+        入力は反で行い、内部では 10a = 1反 として a に換算して保存します。
       </div>
 
       <div class="edit-line">
@@ -265,7 +283,7 @@ function renderContractRow(c) {
 ============================ */
 async function saveFieldDetail(dataName, fieldName) {
 
-  const size = document.getElementById("size").value;
+  const size = parseAreaAFromTan(document.getElementById("size").value);
   const memo = document.getElementById("memo").value;
 
   const parcels = [...document.querySelectorAll(".parcel-row")].map(row => ({
