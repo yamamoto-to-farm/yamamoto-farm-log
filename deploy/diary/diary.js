@@ -10,7 +10,7 @@ import { initViewPageWithOptions } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
-import { initCollapse } from "/common/collapse.js";
+import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
 import { printCurrentPage } from "/common/utils.js?v=20260716-4";
 
