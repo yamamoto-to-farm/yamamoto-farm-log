@@ -19,8 +19,55 @@
 .field-table th,
 .field-table td {
   border-bottom: 1px solid #ddd;
-  padding: 6px 8px;
+  padding: 8px 10px;
   overflow-wrap: break-word;  /* 長い名前でも崩れない */
+}
+
+.field-table thead th {
+  background: #f8fafc;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.field-address-col {
+  text-align: left;
+}
+
+.field-area-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.field-address-main {
+  color: #1f2937;
+}
+
+.field-address-empty {
+  color: #6b7280;
+}
+
+.field-address-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  vertical-align: middle;
+}
+
+.field-area-total-row {
+  margin-top: 6px;
+  padding: 7px 10px;
+  font-weight: 700;
+  color: #374151;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
 }
 
 /* 行クリック */

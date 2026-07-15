@@ -95,8 +95,8 @@ export async function renderFieldList({ view = "active" } = {}) {
         <thead>
           <tr>
             <th>圃場名</th>
-            <th>所在</th>
-            <th style="text-align:right;">耕作面積（反）</th>
+            <th class="field-address-col">所在</th>
+            <th class="field-area-col">耕作面積（反）</th>
           </tr>
         </thead>
         <tbody>
@@ -149,11 +149,11 @@ export async function renderFieldList({ view = "active" } = {}) {
         ? ` title="${escapeHtml(addressSummary.fullText)}"`
         : "";
       const addressHtml = addressSummary.mainText === "未入力"
-        ? `<span style="color:#6b7280;">未入力</span>`
+        ? `<span class="field-address-empty">未入力</span>`
         : `
-          <span style="color:#111827;">${escapeHtml(addressSummary.mainText)}</span>
+          <span class="field-address-main">${escapeHtml(addressSummary.mainText)}</span>
           ${addressSummary.restCount > 0
-            ? `<span style="display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:700; line-height:1.5; color:#0f3d75; background:#dbeafe; border:1px solid #93c5fd; vertical-align:middle;">他${addressSummary.restCount}筆</span>`
+            ? `<span class="field-address-chip">他${addressSummary.restCount}筆</span>`
             : ""
           }
         `;
@@ -161,8 +161,8 @@ export async function renderFieldList({ view = "active" } = {}) {
       tableHtml += `
         <tr class="field-row" data-name="${field.name}">
           <td>${escapeHtml(field.name)}</td>
-          <td${addressTitleAttr}>${addressHtml}</td>
-          <td style="text-align:right;">${display}</td>
+          <td class="field-address-col"${addressTitleAttr}>${addressHtml}</td>
+          <td class="field-area-col">${display}</td>
         </tr>
       `;
     });
@@ -170,7 +170,7 @@ export async function renderFieldList({ view = "active" } = {}) {
     tableHtml += `
         </tbody>
       </table>
-      <div style="margin-top:4px; font-weight:bold;">
+      <div class="field-area-total-row">
         ${groupName}エリア合計：${areaTotalHan.toFixed(2)}反
       </div>
     `;
