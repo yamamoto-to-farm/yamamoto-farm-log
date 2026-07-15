@@ -97,7 +97,74 @@ function bindParcelRentEvents() {
   });
 }
 
+function ensureFieldDetailEditorStyle() {
+  if (document.getElementById("field-detail-editor-style")) return;
+
+  const style = document.createElement("style");
+  style.id = "field-detail-editor-style";
+  style.textContent = `
+    .field-detail-grid-wrap {
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .parcel-header,
+    .parcel-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 2.2fr) minmax(120px, 1fr) minmax(110px, 1fr) minmax(220px, 2fr) minmax(110px, 0.9fr) minmax(120px, 1fr);
+      gap: 6px;
+      min-width: 980px;
+      align-items: center;
+    }
+
+    .contract-header,
+    .contract-row {
+      display: grid;
+      grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(160px, 1fr) minmax(260px, 1.8fr);
+      gap: 6px;
+      min-width: 720px;
+      align-items: center;
+    }
+
+    .parcel-header,
+    .contract-header {
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .parcel-row,
+    .contract-row {
+      margin-bottom: 8px;
+    }
+
+    .parcel-row input,
+    .contract-row input {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .parcel-address,
+    .parcel-owner-address,
+    .contract-notes {
+      min-width: 180px;
+    }
+
+    @media (max-width: 720px) {
+      .parcel-header,
+      .contract-header {
+        font-size: 11px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
 export function renderEditCard({ dataName, fieldName, json, container }) {
+
+  ensureFieldDetailEditorStyle();
 
   if (!fieldName) {
     container.innerHTML = `
@@ -159,17 +226,19 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
     <div class="card">
       <h2>筆情報（parcels）</h2>
 
-      <!-- ★ ラベル行 -->
-      <div class="parcel-header">
-        <div>所在</div>
-        <div>登記面積（㎡）</div>
-        <div>所有者：氏名</div>
-        <div>所有者：住所</div>
-        <div>権利</div>
-        <div>賃料（10aあたり）</div>
-      </div>
+      <div class="field-detail-grid-wrap">
+        <!-- ★ ラベル行 -->
+        <div class="parcel-header">
+          <div>所在</div>
+          <div>登記面積（㎡）</div>
+          <div>所有者：氏名</div>
+          <div>所有者：住所</div>
+          <div>権利</div>
+          <div>賃料（10aあたり）</div>
+        </div>
 
-      <div id="parcels-container"></div>
+        <div id="parcels-container"></div>
+      </div>
       <button id="add-parcel" class="secondary-btn">＋ 行追加</button>
     </div>
   `);
@@ -194,20 +263,22 @@ export function renderEditCard({ dataName, fieldName, json, container }) {
     <div class="card">
       <h2>契約情報（contracts）</h2>
 
-      <!-- ★ ラベル行 -->
-      <div class="contract-header">
-        <div>開始日</div>
-        <div>終了日</div>
-        <div>賃料（合計）</div>
-        <div>備考</div>
+      <div class="field-detail-grid-wrap">
+        <!-- ★ ラベル行 -->
+        <div class="contract-header">
+          <div>開始日</div>
+          <div>終了日</div>
+          <div>賃料（合計）</div>
+          <div>備考</div>
+        </div>
+
+        <div id="contracts-container"></div>
       </div>
 
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
         <div id="contract-rent-total-hint" style="color:#555; font-size:13px;"></div>
         <button id="apply-parcel-rent-total-btn" class="secondary-btn" type="button">筆情報合計を反映</button>
       </div>
-
-      <div id="contracts-container"></div>
       <button id="add-contract" class="secondary-btn">＋ 行追加</button>
     </div>
   `);
