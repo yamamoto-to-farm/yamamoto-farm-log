@@ -38,17 +38,20 @@ export async function renderSummaryCards(rawFieldName) {
 
   const tillageDates = await loadTillageDates(fieldName);
 
-  const allItems = [];
-  for (const source of summarySources) {
-    const { fieldKey, year, file } = source;
-    try {
-      const url = `${CF_BASE}/logs/summary/${fieldKey}/${year}/${file}?ts=${Date.now()}`;
-      const summary = await fetch(url).then(r => r.json());
-      allItems.push({ year: String(year), summary });
-    } catch {
-      // skip unreadable summary file
-    }
-  }
+  const allItems = (
+    await Promise.all(
+      summarySources.map(async (source) => {
+        const { fieldKey, year, file } = source;
+        try {
+          const url = `${CF_BASE}/logs/summary/${fieldKey}/${year}/${file}?ts=${Date.now()}`;
+          const summary = await fetch(url).then(r => r.json());
+          return { year: String(year), summary };
+        } catch {
+          return null;
+        }
+      })
+    )
+  ).filter(Boolean);
 
   allItems.sort((a, b) => {
     const da = String(a?.summary?.planting?.plantDate || "");
@@ -83,15 +86,17 @@ export async function renderSummaryCards(rawFieldName) {
   let html = "";
 
   for (const year of Object.keys(grouped).sort()) {
+    const cardsHtml = await Promise.all(
+      grouped[year].map(summary => renderSummaryCard(summary, harvestBase, fieldName))
+    );
+
     html += `
       <details>
         <summary>${year} 年</summary>
         <div class="year-block">
     `;
 
-    for (const summary of grouped[year]) {
-      html += await renderSummaryCard(summary, harvestBase, fieldName);
-    }
+    html += cardsHtml.join("");
 
     html += `</div></details>`;
   }
@@ -240,8 +245,6 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
         : `${firstMD} ～ ${lastMD}（${harvestDays}日）`;
   }
 
-  const notes = await loadNotesForPlantingRef(s.plantingRef);
-
   const cultivationStart = getCultivationStartDate(
     s.planting.plantDate,
     s.__prevHarvestLastDate
@@ -274,11 +277,14 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
     cultivationEnd = today;
   }
 
-  const cultivationOverviewHTML = await renderCultivationOverviewCard({
-    fieldName,
-    startDate: cultivationStart,
-    endDate: cultivationEnd
-  });
+  const [notes, cultivationOverviewHTML] = await Promise.all([
+    loadNotesForPlantingRef(s.plantingRef),
+    renderCultivationOverviewCard({
+      fieldName,
+      startDate: cultivationStart,
+      endDate: cultivationEnd
+    })
+  ]);
 
   const notesHTML =
     notes.length > 0
@@ -293,11 +299,11 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
       : "";
 
   return `
-    <div class="card">
-
-      <!-- ★ style.css の h2.section-title に完全対応 -->
-      <h2 class="section-title">定植情報</h2>
-      <div class="info-block">
+    <div class="card year-summary-card">
+      <div class="year-summary-grid">
+        <section class="year-summary-section">
+          <h2 class="section-title year-summary-title">定植情報</h2>
+          <div class="info-block year-summary-block">
         <div class="info-line">
           品種：<a href="/varieties/index.html?variety=${encodeURIComponent(s.planting.variety)}">
           ${s.planting.variety}
@@ -307,18 +313,22 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
         <div class="info-line">定植株数：${s.planting.quantity} 株（セルトレイ：${s.planting.trayType || "-"}穴）</div>
         <div class="info-line">株間 × 条間：${spacingText}</div>
         <div class="info-line">作付け面積：${areaTan.toFixed(2)} 反（${areaM2.toFixed(1)} ㎡）</div>
-      </div>
+          </div>
+        </section>
 
-      <h2 class="section-title">収穫情報</h2>
-      <div class="info-block">
+        <section class="year-summary-section">
+          <h2 class="section-title year-summary-title">収穫情報</h2>
+          <div class="info-block year-summary-block">
         <div class="info-line">収穫期間：${harvestPeriod}</div>
         <div class="info-line">収穫回数：${s.harvest.count} 回</div>
         <div class="info-line">収穫合計：${totalAmount} 基（${totalWeight.toFixed(1)} kg）</div>
         <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
-      </div>
+          </div>
+        </section>
 
-      <h2 class="section-title">育苗概要</h2>
-      <div class="info-block">
+        <section class="year-summary-section">
+          <h2 class="section-title year-summary-title">育苗概要</h2>
+          <div class="info-block year-summary-block">
         <div class="info-line">
           播種：${seedlingSummary.sowDate || "—"}　
           育苗期間：${seedlingSummary.days || "—"}日
@@ -326,21 +336,27 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
         <div class="info-line link">
           ↳ <a href="/seedling/detail.html?seedRef=${seedRef || ""}">育苗記録を見る</a>
         </div>
-      </div>
+          </div>
+        </section>
 
-      ${cultivationOverviewHTML}
+        <section class="year-summary-section">
+          ${cultivationOverviewHTML}
+        </section>
 
-      <h2 class="section-title">分析指標</h2>
-      <div class="info-block">
+        <section class="year-summary-section">
+          <h2 class="section-title year-summary-title">分析指標</h2>
+          <div class="info-block year-summary-block">
         <div class="info-line">
           反当たり収量：${yieldPerTan} kg/反　
           ${unitsPerTan} 基/反
         </div>
         <div class="info-line">1基あたり平均重量：${avgPerUnit} kg/基</div>
-      </div>
+          </div>
+        </section>
 
-      <h2 class="section-title">目標比較</h2>
-      <div class="info-block">
+        <section class="year-summary-section">
+          <h2 class="section-title year-summary-title">目標比較</h2>
+          <div class="info-block year-summary-block">
         <div class="info-line">目標反収：${targetPerTan ? targetPerTan + " kg/反" : "—"}</div>
         <div class="info-line">
           達成率：
@@ -348,11 +364,13 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
             ${achieveRate !== "—" ? achieveRate + "%" : "—"}
           </span>
         </div>
+          </div>
+        </section>
       </div>
 
       ${notesHTML}
 
-      <div class="info-line" style="font-size:12px; color:#666;">
+      <div class="info-line year-summary-updated">
         最終更新：${updatedJST}
       </div>
 

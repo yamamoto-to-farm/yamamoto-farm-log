@@ -16,7 +16,7 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
                 <h4 class="field-detail-item-title">筆${idx + 1}</h4>
                 <dl class="field-detail-kv">
                   ${kvRow("所在", p?.address)}
-                  ${kvRow("登記面積", p?.officialArea)}
+                  ${kvRow("登記面積（㎡）", p?.officialArea)}
                   ${kvRow("地権者", p?.owner)}
                   ${kvRow("利用権", p?.rightType)}
                   ${kvRow("支払金額", p?.rent)}

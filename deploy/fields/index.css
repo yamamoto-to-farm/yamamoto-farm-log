@@ -187,3 +187,49 @@
     padding: 3px 0;
   }
 }
+
+/* ================================
+   年サマリーカード（圃場詳細）
+================================ */
+.year-summary-card {
+  padding: 12px 14px;
+}
+
+.year-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 10px;
+}
+
+.year-summary-section {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fcfcfd;
+}
+
+.year-summary-title.section-title {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.year-summary-block {
+  margin: 0;
+}
+
+.year-summary-section .info-line {
+  margin: 2px 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.year-summary-section .info-line.link {
+  margin-top: 4px;
+}
+
+.year-summary-updated {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}

@@ -1,6 +1,6 @@
 // analysis.js（CloudFront 統一版 + デバッグ切替）
 import { loadJSON } from "/common/json.js";
-import { renderSummaryCards } from "./card-summary.js?v=20260715-1";
+import { renderSummaryCards } from "./card-summary.js?v=20260715-2";
 import { renderFieldDetailCard } from "./card-field-detail.js?v=20260715-3";
 
 // ★ デバッグフラグ（true でログ出る）
