@@ -121,10 +121,12 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
 
   for (let d = 1; d <= lastDate; d += 1) {
     const ymd = `${ym}-${String(d).padStart(2, "0")}`;
-    const classes = ["diary-month-mini-cell"];
+    const classes = ["diary-month-mini-cell", "is-day"];
     if (savedDatesSet.has(ymd)) classes.push("has-entry");
     if (d === selectedDay) classes.push("is-selected");
-    cells.push(`<div class="${classes.join(" ")}">${d}</div>`);
+    cells.push(
+      `<button type="button" class="${classes.join(" ")}" data-date="${ymd}" aria-label="${ymd}へ移動">${d}</button>`
+    );
   }
 
   host.innerHTML = `
@@ -139,6 +141,24 @@ async function refreshDiaryMonthMini(selectedDate) {
   const host = document.getElementById("diaryMonthMini");
   if (host) host.classList.add("diary-month-mini");
   renderMonthMiniCalendar(selectedDate, new Set(dates));
+}
+
+function bindMonthMiniDateJump({ mode }) {
+  const host = document.getElementById("diaryMonthMini");
+  if (!host) return;
+  if (host.dataset.boundMiniJump === "1") return;
+  host.dataset.boundMiniJump = "1";
+
+  host.addEventListener("click", e => {
+    const btn = e.target.closest(".diary-month-mini-cell.is-day[data-date]");
+    if (!btn) return;
+
+    const targetDate = String(btn.dataset.date || "");
+    if (!targetDate) return;
+
+    const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
+    location.href = buildDiaryUrl(mode, targetDate, currentSearch);
+  });
 }
 
 // ---------------------------------------------------------
@@ -689,6 +709,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const searchInput = document.getElementById("diarySearchInput");
   if (searchInput) searchInput.value = urlQuery;
   bindSearchEvents({ mode, dateInput });
+  bindMonthMiniDateJump({ mode });
   await refreshDiaryMonthMini(initialDate);
 
   // 天気カード表示

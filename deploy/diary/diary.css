@@ -133,7 +133,7 @@
 
 .diary-month-dock {
   position: fixed;
-  top: 78px;
+  top: 152px;
   left: 16px;
   width: 220px;
   z-index: 20;
@@ -168,6 +168,9 @@
   line-height: 18px;
   border-radius: 999px;
   color: #1f2937;
+  border: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .diary-month-mini-cell.is-label {
@@ -183,6 +186,19 @@
   background: #dbeafe;
   color: #1d4ed8;
   font-weight: 700;
+}
+
+.diary-month-mini-cell.is-day {
+  cursor: pointer;
+}
+
+.diary-month-mini-cell.is-day:hover {
+  background: #e2e8f0;
+}
+
+.diary-month-mini-cell.is-day:focus-visible {
+  outline: 2px solid #334155;
+  outline-offset: 1px;
 }
 
 .diary-month-mini-cell.is-selected {
@@ -251,6 +267,10 @@
 }
 
 @media (max-width: 640px) {
+  .diary-month-dock {
+    display: none;
+  }
+
   .diary-search-bar {
     width: 100%;
     margin-left: 0;
