@@ -156,8 +156,9 @@ async function saveToS3(payload) {
 
   /* ------------------------------
      presign → PUT アップロード
+     ファイルごとに独立なので並列化して待ち時間を短縮
   ------------------------------ */
-  for (const file of files) {
+  await Promise.all(files.map(async file => {
     dbg("---- presign request ----");
     dbg("key:", file.key);
     dbg("contentType:", file.contentType);
@@ -170,6 +171,11 @@ async function saveToS3(payload) {
         contentType: file.contentType
       })
     });
+
+    if (!presignRes.ok) {
+      const body = await presignRes.text().catch(() => "");
+      throw new Error(`presign failed: ${presignRes.status} ${body}`.trim());
+    }
 
     const { url } = await presignRes.json();
     dbg("presigned URL:", url);
@@ -189,7 +195,7 @@ async function saveToS3(payload) {
       dbg("PUT failed body:", text);
       throw new Error("PUT failed: " + putRes.status);
     }
-  }
+  }));
 
   if (payload.summary) {
     await recordMonthlyWorkEntries(payload.summary).catch(e => {

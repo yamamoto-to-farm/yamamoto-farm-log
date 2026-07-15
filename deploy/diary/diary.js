@@ -12,6 +12,7 @@ import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js";
 import { loadJSON } from "/common/json.js";
+import { printCurrentPage } from "/common/utils.js";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -23,6 +24,7 @@ const diaryMonthSavedDatesCache = new Map();
 let activeSearchState = null;
 let isEditPageLoading = false;
 let isDiarySaving = false;
+let isDiaryPdfPrinting = false;
 
 function shiftDateByDays(dateStr, diffDays) {
   if (!dateStr) return "";
@@ -201,11 +203,69 @@ function renderModeSwitch(mode, keyword = "") {
       <button class="mode-btn" onclick="location.href='${monthUrl}'">
         作業カレンダー
       </button>
+      <button id="diaryPdfBtn" class="mode-btn" type="button">
+        PDF保存(A4)
+      </button>
     </div>
     <div class="mode-switch-right">
       ${rightButtons}
     </div>
   `;
+}
+
+async function printDiaryAsA4Pdf() {
+  if (isDiaryPdfPrinting) return;
+
+  const btn = document.getElementById("diaryPdfBtn");
+  const originalText = btn?.textContent || "PDF保存(A4)";
+
+  isDiaryPdfPrinting = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "PDF準備中…";
+  }
+
+  const originalBeforePrintHook = window.__beforePrintPrepare;
+  window.__beforePrintPrepare = async () => {
+    const formArea = document.getElementById("form-area");
+    if (!formArea) return null;
+
+    formArea.classList.add("diary-print-onepage");
+
+    return async () => {
+      formArea.classList.remove("diary-print-onepage");
+    };
+  };
+
+  try {
+    const dateLabel = document.getElementById("diaryDate")?.value || "";
+    const title = dateLabel ? `作業日誌 ${dateLabel}` : "作業日誌";
+    await printCurrentPage(title);
+  } catch (e) {
+    console.error("[diary] print pdf failed", e);
+    alert("PDF保存の準備に失敗しました。もう一度お試しください。");
+  } finally {
+    window.__beforePrintPrepare = originalBeforePrintHook;
+    isDiaryPdfPrinting = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+}
+
+function bindDiaryPdfButton() {
+  const area = document.getElementById("modeSwitchArea");
+  if (!area) return;
+  if (area.dataset.boundDiaryPdfBtn === "1") return;
+  area.dataset.boundDiaryPdfBtn = "1";
+
+  area.addEventListener("click", e => {
+    const btn = e.target.closest("#diaryPdfBtn");
+    if (!btn) return;
+    e.preventDefault();
+    void printDiaryAsA4Pdf();
+  });
 }
 
 function buildEditLogUrl(date) {
@@ -706,6 +766,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // モード切り替えボタン描画（★ initialDate を反映）
   renderModeSwitch(mode, urlQuery);
+  bindDiaryPdfButton();
   const searchInput = document.getElementById("diarySearchInput");
   if (searchInput) searchInput.value = urlQuery;
   bindSearchEvents({ mode, dateInput });

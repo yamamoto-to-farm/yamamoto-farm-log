@@ -276,6 +276,64 @@ export async function printInline(selector, title = "印刷") {
       break-after: auto;
       page-break-after: auto;
     }
+
+    /* 日誌ページ: A4 1枚寄せ PDF 用（diary.js が class を付与） */
+    #form-area.diary-print-onepage {
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    #form-area.diary-print-onepage h1,
+    #form-area.diary-print-onepage .page-title {
+      margin: 0 0 6px !important;
+      font-size: 20px !important;
+    }
+    #form-area.diary-print-onepage h2,
+    #form-area.diary-print-onepage .section-title {
+      margin: 8px 0 4px !important;
+      font-size: 15px !important;
+      page-break-after: avoid;
+    }
+    #form-area.diary-print-onepage .card,
+    #form-area.diary-print-onepage .view-card,
+    #form-area.diary-print-onepage .edit-card,
+    #form-area.diary-print-onepage .weather-card,
+    #form-area.diary-print-onepage #workList,
+    #form-area.diary-print-onepage #weatherBox,
+    #form-area.diary-print-onepage #workContentWrapper {
+      margin: 0 0 8px !important;
+      padding: 8px 10px !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    #form-area.diary-print-onepage #modeSwitchArea,
+    #form-area.diary-print-onepage #diaryDateNav,
+    #form-area.diary-print-onepage #diarySearchTitle,
+    #form-area.diary-print-onepage #diarySearchPanel,
+    #form-area.diary-print-onepage #workListTitle,
+    #form-area.diary-print-onepage #workList,
+    #form-area.diary-print-onepage #saveDiaryBtn {
+      display: none !important;
+    }
+    #form-area.diary-print-onepage #weatherBox {
+      break-after: avoid;
+      page-break-after: avoid;
+      margin-bottom: 6px !important;
+    }
+    #form-area.diary-print-onepage #workContentWrapper {
+      break-before: avoid;
+      page-break-before: avoid;
+    }
+    #form-area.diary-print-onepage .weather-card p,
+    #form-area.diary-print-onepage .view-card p,
+    #form-area.diary-print-onepage .edit-card p {
+      margin: 4px 0 !important;
+    }
+    #form-area.diary-print-onepage .view-card h3,
+    #form-area.diary-print-onepage .edit-card h3,
+    #form-area.diary-print-onepage .weather-card h3 {
+      margin: 0 0 4px !important;
+      font-size: 13px !important;
+    }
   `;
 
   const styleEl = doc.createElement("style");

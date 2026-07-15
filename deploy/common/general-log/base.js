@@ -14,6 +14,8 @@ function debugLog(...args) {
   if (DEBUG) console.log("[base-log]", ...args);
 }
 
+const indexSavePathCache = new Map();
+
 /* ---------------------------------------------------------
    1. JSON 読み込み（404 → 空データ扱い）
 --------------------------------------------------------- */
@@ -147,21 +149,13 @@ async function safeLoadIndexJson(path) {
 /* ---------------------------------------------------------
    4. インデックス更新（正規構造を優先して保存）
 --------------------------------------------------------- */
-async function updateIndex(type, field, year, fileName) {
-  const index = await loadIndex(type);
-
-  if (!index[field]) index[field] = {};
-  if (!index[field][year]) index[field][year] = [];
-
-  if (!index[field][year].includes(fileName)) {
-    index[field][year].push(fileName);
-    index[field][year].sort();
+async function resolveIndexSavePath(type) {
+  if (indexSavePathCache.has(type)) {
+    return indexSavePathCache.get(type);
   }
 
-  // 保存先候補
   const pathB = `data/${type}/${type}-index.json`;  // 正規構造
   const pathA = `data/${type}-index.json`;          // 旧構造
-
   let savePath = pathB;
 
   try {
@@ -178,6 +172,29 @@ async function updateIndex(type, field, year, fileName) {
     // どちらも無い → 正規構造で新規作成
     savePath = pathB;
   }
+
+  indexSavePathCache.set(type, savePath);
+  return savePath;
+}
+
+async function updateIndex(type, fields, year, fileName) {
+  if (!Array.isArray(fields) || fields.length === 0) return;
+
+  const index = await loadIndex(type);
+
+  const uniqueFields = Array.from(new Set(fields.map(v => String(v || "").trim()).filter(Boolean)));
+
+  uniqueFields.forEach(field => {
+    if (!index[field]) index[field] = {};
+    if (!index[field][year]) index[field][year] = [];
+
+    if (!index[field][year].includes(fileName)) {
+      index[field][year].push(fileName);
+      index[field][year].sort();
+    }
+  });
+
+  const savePath = await resolveIndexSavePath(type);
 
   await saveLog({
     type: "multi",
@@ -204,7 +221,9 @@ export async function saveMultiFieldLog({
 }) {
   const year = date.substring(0, 4);
   const savedFields = [];
+  const savedSafeFields = [];
   const skippedFields = [];
+  const filesToSave = [];
 
   debugLog("[saveMultiFieldLog] start", { type, date, fields, entry });
 
@@ -254,24 +273,29 @@ export async function saveMultiFieldLog({
 
     data.years[year].entries.push(storedEntry);
 
-    // 保存
+    filesToSave.push({
+      path: filePath,
+      content: JSON.stringify(data, null, 2)
+    });
+
+    savedFields.push(field);
+    savedSafeFields.push(safeField);
+  }
+
+  if (filesToSave.length > 0) {
     await saveLog({
       type: "multi",
       suppressModal: true,
-      files: [
-        {
-          path: filePath,
-          content: JSON.stringify(data, null, 2)
-        }
-      ]
+      files: filesToSave
     });
 
-    debugLog("[saveMultiFieldLog] saved:", filePath);
-    savedFields.push(field);
+    filesToSave.forEach(file => {
+      debugLog("[saveMultiFieldLog] saved:", file.path);
+    });
 
-    // インデックス更新
+    // インデックス更新は 1 回でまとめて実施
     const fileName = `${date}-${safeFileName(type)}.json`;
-    await updateIndex(type, safeField, year, fileName);
+    await updateIndex(type, savedSafeFields, year, fileName);
   }
 
   if (savedFields.length === 0 && skippedFields.length > 0) {
@@ -284,25 +308,26 @@ export async function saveMultiFieldLog({
 
     const currentTime = getCurrentTimeText();
 
-    await saveTimestampRows(savedFields.map(field => ({
-      date,
-      folder: type,
-      workType: entry.workType || type,
-      field,
-      workers: normalizeWorker(entry),
-      machine: normalizeMachine(entry),
-      time: currentTime
-    }))).catch(e => {
-      console.warn("[saveMultiFieldLog] timestamp update failed:", e);
-    });
-
-    await recordMonthlyWorkEntries({
-      date,
-      sourceKey: type,
-      count: savedFields.length
-    }).catch(e => {
-      console.warn("[saveMultiFieldLog] monthly work summary update failed:", e);
-    });
+    await Promise.all([
+      saveTimestampRows(savedFields.map(field => ({
+        date,
+        folder: type,
+        workType: entry.workType || type,
+        field,
+        workers: normalizeWorker(entry),
+        machine: normalizeMachine(entry),
+        time: currentTime
+      }))).catch(e => {
+        console.warn("[saveMultiFieldLog] timestamp update failed:", e);
+      }),
+      recordMonthlyWorkEntries({
+        date,
+        sourceKey: type,
+        count: savedFields.length
+      }).catch(e => {
+        console.warn("[saveMultiFieldLog] monthly work summary update failed:", e);
+      })
+    ]);
   }
 
   debugLog("[saveMultiFieldLog] done", {
