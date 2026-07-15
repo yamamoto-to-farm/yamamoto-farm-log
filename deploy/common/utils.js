@@ -312,6 +312,8 @@ export async function printInline(selector, title = "印刷") {
       page-break-inside: avoid;
     }
     #form-area.diary-print-onepage #modeSwitchArea,
+    #form-area.diary-print-onepage #diaryDateTitle,
+    #form-area.diary-print-onepage .diary-date-card,
     #form-area.diary-print-onepage #diaryDateNav,
     #form-area.diary-print-onepage #diarySearchTitle,
     #form-area.diary-print-onepage #diarySearchPanel,
