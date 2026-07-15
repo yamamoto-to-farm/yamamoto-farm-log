@@ -12,7 +12,7 @@ import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js";
 import { loadJSON } from "/common/json.js";
-import { printCurrentPage } from "/common/utils.js?v=20260716-3";
+import { printCurrentPage } from "/common/utils.js?v=20260716-4";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
