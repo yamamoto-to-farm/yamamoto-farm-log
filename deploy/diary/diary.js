@@ -12,7 +12,7 @@ import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js";
 import { loadJSON } from "/common/json.js";
-import { printCurrentPage } from "/common/utils.js";
+import { printCurrentPage } from "/common/utils.js?v=20260716-1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -242,23 +242,28 @@ async function printDiaryAsA4Pdf() {
 
     const dateValue = document.getElementById("diaryDate")?.value || "";
     let dateTitle = null;
+    let dateCard = null;
     let dateLine = null;
     if (dateValue) {
       dateTitle = document.createElement("h2");
       dateTitle.className = "section-title diary-print-date-title";
       dateTitle.textContent = "日付";
 
+      dateCard = document.createElement("div");
+      dateCard.className = "diary-print-date-card";
+
       dateLine = document.createElement("p");
       dateLine.className = "diary-print-dateline";
       dateLine.textContent = dateValue;
+      dateCard.appendChild(dateLine);
 
       const pageTitle = formArea.querySelector(".page-title");
       if (pageTitle?.parentNode) {
         pageTitle.parentNode.insertBefore(dateTitle, pageTitle.nextSibling);
-        pageTitle.parentNode.insertBefore(dateLine, dateTitle.nextSibling);
+        pageTitle.parentNode.insertBefore(dateCard, dateTitle.nextSibling);
       } else {
+        formArea.prepend(dateCard);
         formArea.prepend(dateTitle);
-        formArea.prepend(dateLine);
       }
     }
 
@@ -267,7 +272,7 @@ async function printDiaryAsA4Pdf() {
     return async () => {
       formArea.classList.remove("diary-print-onepage");
       dateTitle?.remove();
-      dateLine?.remove();
+      dateCard?.remove();
     };
   };
 
