@@ -197,7 +197,6 @@
 
 .year-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: 10px;
 }
 
@@ -232,4 +231,32 @@
   margin-top: 8px;
   font-size: 12px;
   color: #666;
+}
+
+@media (min-width: 1280px) {
+  .year-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-areas:
+      "plant harvest seedling cultivation"
+      "analysis analysis target target";
+  }
+
+  .year-summary-section--plant { grid-area: plant; }
+  .year-summary-section--harvest { grid-area: harvest; }
+  .year-summary-section--seedling { grid-area: seedling; }
+  .year-summary-section--cultivation { grid-area: cultivation; }
+  .year-summary-section--analysis { grid-area: analysis; }
+  .year-summary-section--target { grid-area: target; }
+}
+
+@media (min-width: 900px) and (max-width: 1279px) {
+  .year-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .year-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }

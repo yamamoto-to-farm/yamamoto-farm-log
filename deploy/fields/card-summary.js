@@ -301,7 +301,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
   return `
     <div class="card year-summary-card">
       <div class="year-summary-grid">
-        <section class="year-summary-section">
+        <section class="year-summary-section year-summary-section--plant">
           <h2 class="section-title year-summary-title">定植情報</h2>
           <div class="info-block year-summary-block">
         <div class="info-line">
@@ -316,7 +316,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
           </div>
         </section>
 
-        <section class="year-summary-section">
+        <section class="year-summary-section year-summary-section--harvest">
           <h2 class="section-title year-summary-title">収穫情報</h2>
           <div class="info-block year-summary-block">
         <div class="info-line">収穫期間：${harvestPeriod}</div>
@@ -326,7 +326,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
           </div>
         </section>
 
-        <section class="year-summary-section">
+        <section class="year-summary-section year-summary-section--seedling">
           <h2 class="section-title year-summary-title">育苗概要</h2>
           <div class="info-block year-summary-block">
         <div class="info-line">
@@ -339,11 +339,11 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
           </div>
         </section>
 
-        <section class="year-summary-section">
+        <section class="year-summary-section year-summary-section--cultivation">
           ${cultivationOverviewHTML}
         </section>
 
-        <section class="year-summary-section">
+        <section class="year-summary-section year-summary-section--analysis">
           <h2 class="section-title year-summary-title">分析指標</h2>
           <div class="info-block year-summary-block">
         <div class="info-line">
@@ -354,7 +354,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
           </div>
         </section>
 
-        <section class="year-summary-section">
+        <section class="year-summary-section year-summary-section--target">
           <h2 class="section-title year-summary-title">目標比較</h2>
           <div class="info-block year-summary-block">
         <div class="info-line">目標反収：${targetPerTan ? targetPerTan + " kg/反" : "—"}</div>
