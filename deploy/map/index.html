@@ -14,7 +14,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <!-- map.css -->
-  <link rel="stylesheet" href="./map.css?v=1">
+  <link rel="stylesheet" href="./map.css?v=20260715-1">
 
   <style>
     body { margin: 0; }
@@ -51,8 +51,6 @@
       </button>
     </div>
 
- 
-
     <div id="map"></div>
 
   </div>
@@ -63,7 +61,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initMap } from "./map.js";
+    import { initMap } from "./map.js?v=20260715-2";
 
     /* filter 系は filter-core.js を中心化 */
     import "/common/filter/filter-core.js?v=1";

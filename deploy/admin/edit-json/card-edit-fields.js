@@ -697,7 +697,7 @@ export function renderEditCard({ json, container, finalPath }) {
           </div>
 
           <div class="form-row">
-            <label class="form-label">住所（/ または , 区切り）</label>
+            <label class="form-label">所在（/ または , 区切り）</label>
             <input class="form-input field-address" data-index="${index}" value="${escapeHtml(address)}">
           </div>
 
