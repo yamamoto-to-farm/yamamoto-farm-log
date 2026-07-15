@@ -206,24 +206,22 @@ function attachEvents() {
 function getFieldAddress(detail) {
   if (!detail || typeof detail !== "object") return "未入力";
 
-  // 直接 address がある形式にも対応
-  const direct = String(detail.address || "").trim();
-  if (direct && direct !== "未入力") return direct;
-
-  // field-detail.json の parcels[] から住所を集約
+  // 一覧は簡潔化: 先頭1件 + 他N筆
   if (Array.isArray(detail.parcels)) {
-    const addresses = Array.from(
-      new Set(
-        detail.parcels
-          .map(p => String(p?.address || "").trim())
-          .filter(v => v && v !== "未入力")
-      )
-    );
+    const parcelAddresses = detail.parcels
+      .map(p => String(p?.address || "").trim())
+      .filter(v => v && v !== "未入力");
 
-    if (addresses.length > 0) {
-      return addresses.join("／");
+    if (parcelAddresses.length > 0) {
+      const first = parcelAddresses[0];
+      const rest = parcelAddresses.length - 1;
+      return rest > 0 ? `${first} 他${rest}筆` : first;
     }
   }
+
+  // 旧形式の直接 address にも対応
+  const direct = String(detail.address || "").trim();
+  if (direct && direct !== "未入力") return direct;
 
   return "未入力";
 }
