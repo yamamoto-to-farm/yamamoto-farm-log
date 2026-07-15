@@ -7,39 +7,47 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
   const contracts = Array.isArray(data.contracts) ? data.contracts : [];
 
   const parcelHtml = parcels.length > 0
-    ? parcels
-        .map(
-          (p, idx) => `
-            <section class="field-detail-item" aria-label="筆${idx + 1}">
-              <h4 class="field-detail-item-title">筆${idx + 1}</h4>
-              <dl class="field-detail-kv">
-                ${kvRow("所在", p?.address)}
-                ${kvRow("登記面積", p?.officialArea)}
-                ${kvRow("地権者", p?.owner)}
-                ${kvRow("利用権", p?.rightType)}
-                ${kvRow("支払金額", p?.rent)}
-              </dl>
-            </section>
-          `
-        )
-        .join("")
+    ? `
+      <div class="field-detail-item-grid">
+        ${parcels
+          .map(
+            (p, idx) => `
+              <section class="field-detail-item" aria-label="筆${idx + 1}">
+                <h4 class="field-detail-item-title">筆${idx + 1}</h4>
+                <dl class="field-detail-kv">
+                  ${kvRow("所在", p?.address)}
+                  ${kvRow("登記面積", p?.officialArea)}
+                  ${kvRow("地権者", p?.owner)}
+                  ${kvRow("利用権", p?.rightType)}
+                  ${kvRow("支払金額", p?.rent)}
+                </dl>
+              </section>
+            `
+          )
+          .join("")}
+      </div>
+    `
     : `<div class="field-detail-empty">筆情報は登録されていません。</div>`;
 
   const contractHtml = contracts.length > 0
-    ? contracts
-        .map(
-          (c, idx) => `
-            <section class="field-detail-item" aria-label="契約${idx + 1}">
-              <h4 class="field-detail-item-title">契約${idx + 1}</h4>
-              <dl class="field-detail-kv">
-                ${kvRow("契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`)}
-                ${kvRow("賃料", c?.rent)}
-                ${kvRow("備考", c?.notes)}
-              </dl>
-            </section>
-          `
-        )
-        .join("")
+    ? `
+      <div class="field-detail-item-grid">
+        ${contracts
+          .map(
+            (c, idx) => `
+              <section class="field-detail-item" aria-label="契約${idx + 1}">
+                <h4 class="field-detail-item-title">契約${idx + 1}</h4>
+                <dl class="field-detail-kv">
+                  ${kvRow("契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`)}
+                  ${kvRow("賃料", c?.rent)}
+                  ${kvRow("備考", c?.notes)}
+                </dl>
+              </section>
+            `
+          )
+          .join("")}
+      </div>
+    `
     : `<div class="field-detail-empty">契約情報は登録されていません。</div>`;
 
   return `

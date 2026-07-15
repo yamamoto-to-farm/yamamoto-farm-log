@@ -102,33 +102,39 @@
    圃場詳細カード（基本データ）
 ================================ */
 .field-detail-card {
-  padding-top: 14px;
+  padding-top: 10px;
 }
 
 .field-detail-section {
-  margin-top: 14px;
-  padding-top: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid #e5e7eb;
 }
 
 .field-detail-section-title {
-  margin: 0 0 8px;
-  font-size: 16px;
+  margin: 0 0 6px;
+  font-size: 15px;
   font-weight: 700;
   color: #1f2937;
 }
 
+.field-detail-item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 8px;
+}
+
 .field-detail-item {
-  margin-top: 8px;
-  padding: 10px 12px;
+  margin-top: 0;
+  padding: 8px 10px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 7px;
   background: #fcfcfd;
 }
 
 .field-detail-item-title {
-  margin: 0 0 6px;
-  font-size: 14px;
+  margin: 0 0 4px;
+  font-size: 13px;
   color: #374151;
 }
 
@@ -142,36 +148,41 @@
 
 .field-detail-kv-row {
   display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 10px;
+  grid-template-columns: 88px 1fr;
+  gap: 8px;
   margin: 0;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .field-detail-kv-row dt {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #4b5563;
 }
 
 .field-detail-kv-row dd {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: #111827;
-  line-height: 1.5;
+  line-height: 1.4;
   word-break: break-word;
 }
 
 .field-detail-empty {
-  margin: 6px 0;
+  margin: 4px 0;
   color: #6b7280;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 @media (max-width: 640px) {
+  .field-detail-item-grid {
+    grid-template-columns: 1fr;
+  }
+
   .field-detail-kv-row {
     grid-template-columns: 1fr;
     gap: 2px;
+    padding: 3px 0;
   }
 }
