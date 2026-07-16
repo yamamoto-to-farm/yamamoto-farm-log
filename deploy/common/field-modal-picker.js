@@ -60,7 +60,7 @@ export function setupFieldModalPicker(options = {}) {
   const {
     fields = [],
     openBtnId = "openFieldModalBtn",
-    displayId = "fieldModalDisplay",
+    displayId = "",
     autoId = "field_auto",
     areaId = "field_area",
     manualId = "field_manual",
@@ -87,13 +87,15 @@ export function setupFieldModalPicker(options = {}) {
     });
   }
 
-  [autoId, manualId, confirmId].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("change", () => {
-      updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+  if (displayId) {
+    [autoId, manualId, confirmId].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("change", () => {
+        updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+      });
     });
-  });
 
-  updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+    updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+  }
 }
