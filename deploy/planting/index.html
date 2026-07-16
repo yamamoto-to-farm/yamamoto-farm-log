@@ -53,18 +53,20 @@
 
       <hr style="margin: 15px 0;">
 
-      <label>エリア選択</label>
-      <select id="field_area" class="form-input">
-        <option value="">エリアを選択</option>
-      </select>
-
-      <label>圃場選択</label>
-      <select id="field_manual" class="form-input">
-        <option value="">エリアを選んでください</option>
-      </select>
+      <label>ログ保存される圃場</label>
+      <input id="fieldSelectedResult" class="form-input" value="未選択" readonly style="background:#f8fafc; font-weight:600;">
 
       <div style="margin-top:10px;">
         <button type="button" id="openFieldModalBtn" class="primary-btn" style="margin-top:0;">圃場を選択</button>
+      </div>
+
+      <div style="display:none;">
+        <select id="field_area" class="form-input">
+          <option value="">エリアを選択</option>
+        </select>
+        <select id="field_manual" class="form-input">
+          <option value="">エリアを選んでください</option>
+        </select>
       </div>
     </div>
 

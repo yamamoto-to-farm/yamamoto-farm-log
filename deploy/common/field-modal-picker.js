@@ -20,15 +20,22 @@ function buildFieldTree(fields) {
   return { parents, children };
 }
 
-function updateFieldDisplay({ autoId, manualId, confirmId, displayId }) {
+function resolveFinalField({ autoId, manualId, confirmId }) {
   const autoRaw = String(document.getElementById(autoId)?.value || "").trim();
   const manual = String(document.getElementById(manualId)?.value || "").trim();
   const confirmed = !!document.getElementById(confirmId)?.checked;
   const auto = autoRaw.replace(/（推定）/g, "").trim();
 
-  const value = confirmed && auto
-    ? `GPS確定: ${auto}`
-    : (manual || auto || "未選択");
+  if (confirmed && auto) return auto;
+  if (manual) return manual;
+  return auto;
+}
+
+function updateFieldDisplay({ autoId, manualId, confirmId, displayId, source }) {
+  const finalField = resolveFinalField({ autoId, manualId, confirmId });
+  const value = finalField
+    ? `${source === "modal" ? "モーダル" : "GPS"}: ${finalField}`
+    : "未選択";
 
   const display = document.getElementById(displayId);
   if (display) display.value = value;
@@ -60,7 +67,7 @@ export function setupFieldModalPicker(options = {}) {
   const {
     fields = [],
     openBtnId = "openFieldModalBtn",
-    displayId = "",
+    displayId = "fieldSelectedResult",
     autoId = "field_auto",
     areaId = "field_area",
     manualId = "field_manual",
@@ -73,6 +80,8 @@ export function setupFieldModalPicker(options = {}) {
     fields: buildFieldTree(fields)
   });
 
+  let source = "gps";
+
   const openBtn = document.getElementById(openBtnId);
   if (openBtn && openBtn.dataset.boundFieldModal !== "1") {
     openBtn.dataset.boundFieldModal = "1";
@@ -81,21 +90,31 @@ export function setupFieldModalPicker(options = {}) {
         mode: "select",
         onSelect: (name) => {
           applyFieldSelection(name, { fields, areaId, manualId, confirmId });
-          updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+          source = "modal";
+          updateFieldDisplay({ autoId, manualId, confirmId, displayId, source });
         }
       });
     });
   }
 
   if (displayId) {
-    [autoId, manualId, confirmId].forEach(id => {
+    const autoEl = document.getElementById(autoId);
+    if (autoEl) {
+      autoEl.addEventListener("change", () => {
+        const text = String(autoEl.value || "");
+        if (text.includes("（推定）")) source = "gps";
+        updateFieldDisplay({ autoId, manualId, confirmId, displayId, source });
+      });
+    }
+
+    [manualId, confirmId].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       el.addEventListener("change", () => {
-        updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+        updateFieldDisplay({ autoId, manualId, confirmId, displayId, source });
       });
     });
 
-    updateFieldDisplay({ autoId, manualId, confirmId, displayId });
+    updateFieldDisplay({ autoId, manualId, confirmId, displayId, source });
   }
 }
