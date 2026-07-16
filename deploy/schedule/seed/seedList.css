@@ -199,9 +199,22 @@
 =============================== */
 @media print {
 
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #111 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   /* ▼ UIカード・ボタン類は丸ごと非表示 */
   #mode-switch-card,
   #seedList-controls,
+  #planning-year-card,
+  .plan-control-title,
+  #selectedYearLabel,
   #filter-card,
   #activeFilters,
   #capacity-card,
@@ -226,30 +239,47 @@
   /* ▼ summary と表だけ印刷 */
   #summary-card {
     display: block !important;
+    break-inside: avoid !important;
   }
 
   #summaryArea {
     display: block !important;
-    margin-bottom: 12px;
-    font-size: 13pt;
+    margin-bottom: 6mm !important;
+    font-size: 10.5pt !important;
+    line-height: 1.35 !important;
   }
 
   #table-area {
     display: block !important;
+    margin-top: 0 !important;
   }
 
   #table-area table {
     width: 100% !important;
     border-collapse: collapse !important;
-    font-size: 11pt !important;
+    font-size: 8.6pt !important;
     table-layout: fixed !important;
+    page-break-inside: auto;
   }
 
   #table-area th,
   #table-area td {
-    border: 1px solid #999 !important;
-    padding: 4px 6px !important;
-    word-break: break-all !important;
+    border: 0.6pt solid #777 !important;
+    padding: 2px 3px !important;
+    word-break: break-word !important;
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+  }
+
+  #table-area thead th {
+    background: #f3f4f6 !important;
+    font-weight: 700 !important;
+    page-break-inside: avoid;
+  }
+
+  #table-area tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
   }
 
   /* ▼ 印刷時だけ右揃え（表が崩れない版） */
@@ -273,7 +303,10 @@
     border: none !important;
     background: transparent !important;
     padding: 0 !important;
-    font-size: 11pt !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    font-size: 8.6pt !important;
   }
 
   /* ▼ 削除列は完全に消す */
@@ -284,6 +317,7 @@
 
   /* ▼ ページ余白 */
   @page {
-    margin: 12mm;
+    size: A4 landscape;
+    margin: 8mm;
   }
 }
