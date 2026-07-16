@@ -308,13 +308,42 @@ export async function createFieldSelector(autoId, areaId, manualId) {
   const res = await fetch("/data/fields.json");
   const fields = await res.json();
 
+  // ▼ 圃場詳細の登録順に合わせたエリア順を作る
+  let orderedAreas = [];
+  try {
+    const detailRes = await fetch("/data/field-detail.json");
+    const detail = await detailRes.json();
+
+    const nameToArea = new Map((fields || []).map(f => [String(f?.name || ""), String(f?.area || "")]));
+    const areaSeen = new Set();
+
+    Object.keys(detail || {})
+      .filter(name => name !== "TEMPLATE_FIELD")
+      .forEach(name => {
+        const area = String(nameToArea.get(name) || "").trim();
+        if (!area || areaSeen.has(area)) return;
+        areaSeen.add(area);
+        orderedAreas.push(area);
+      });
+
+    // fields.json にしかないエリアは末尾に追加
+    [...new Set((fields || []).map(f => String(f?.area || "").trim()).filter(Boolean))]
+      .forEach(area => {
+        if (areaSeen.has(area)) return;
+        areaSeen.add(area);
+        orderedAreas.push(area);
+      });
+  } catch {
+    orderedAreas = [...new Set((fields || []).map(f => String(f?.area || "").trim()).filter(Boolean))];
+  }
+
   // 自動判定欄（読み取り専用）
   const auto = document.getElementById(autoId);
   auto.readOnly = true;
 
   // ▼ エリア一覧を抽出
   const areaSel = document.getElementById(areaId);
-  const areas = [...new Set(fields.map(f => f.area))];
+  const areas = orderedAreas;
 
   areas.forEach(area => {
     const opt = document.createElement("option");
