@@ -62,6 +62,11 @@
       <select id="field_manual" class="form-input">
         <option value="">エリアを選んでください</option>
       </select>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px;">
+        <input id="fieldModalDisplay" class="form-input" value="未選択" readonly style="flex:1 1 260px; background:#f8fafc; font-weight:600;">
+        <button type="button" id="openFieldModalBtn" class="secondary-btn" style="margin-top:0;">圃場をモーダル選択</button>
+      </div>
     </div>
 
     <!-- 品種 -->
@@ -154,7 +159,7 @@
   <script type="module" src="../common/summary.js"></script>
 
   <!-- planting.js -->
-  <script type="module" src="./planting.js?v=20260716-1"></script>
+  <script type="module" src="./planting.js?v=20260716-2"></script>
 
   <!-- save/index.js -->
   <script type="module" src="../common/save/index.js"></script>
@@ -166,7 +171,7 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { attachWorkDoneButton } from "/common/utils.js";
-    import { initPlantingPage } from "./planting.js?v=20260716-1";
+    import { initPlantingPage } from "./planting.js?v=20260716-2";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();

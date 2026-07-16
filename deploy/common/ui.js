@@ -427,6 +427,7 @@ accuracy: ±${accuracy}m
 
     // ▼ 自動判定欄に name を表示
     auto.value = `${nearest.name}（推定）`;
+    auto.dispatchEvent(new Event("change"));
 
     // ▼ エリアをセット
     areaSel.value = nearest.area;
@@ -434,9 +435,11 @@ accuracy: ±${accuracy}m
 
     // ▼ 圃場セレクタも name をセット（id → name に変更）
     fieldSel.value = nearest.name;
+    fieldSel.dispatchEvent(new Event("change"));
 
   } catch (err) {
     auto.value = "自動判定できませんでした（GPSエラー）";
+    auto.dispatchEvent(new Event("change"));
     debugLog(`GPSエラー: ${err}`);
     console.error("GPSエラー:", err);
   }

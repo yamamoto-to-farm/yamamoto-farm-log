@@ -21,6 +21,7 @@ import {
 import { enqueueSummaryUpdate } from "../common/summary.js";
 import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
+import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=1";
 
 
 
@@ -37,8 +38,9 @@ let seedRefOrder = [];
 export async function initPlantingPage() {
   createWorkerCheckboxes("workers_box");
 
-  await createFieldSelector("field_auto", "field_area", "field_manual");
+  const fields = await createFieldSelector("field_auto", "field_area", "field_manual");
   autoDetectField("field_auto", "field_area", "field_manual");
+  setupFieldModalPicker({ fields });
 
   // ★ seed/all.csv を1回だけ読み込む（403対策）
   GLOBAL_SEED_ROWS = await loadCSV("logs/seed/all.csv");

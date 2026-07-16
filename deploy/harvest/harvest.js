@@ -16,8 +16,7 @@ import { checkDuplicate } from "../common/duplicate.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
-import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
-import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
+import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=1";
 
 // ★ 保存モーダル
 import {
@@ -69,8 +68,6 @@ function calcPlannedDays(plantDate, harvestPlanYM) {
 // planting CSV キャッシュ
 // ===============================
 let plantingCache = null;
-let HARVEST_VARIETY_LIST = [];
-let selectedHarvestVariety = "";
 
 
 // ===============================
@@ -80,8 +77,9 @@ export async function initHarvestPage() {
   console.log("🔥 initHarvestPage() 開始");
 
   createWorkerCheckboxes("workers_box");
-  await createFieldSelector("field_auto", "field_area", "field_manual");
+  const fields = await createFieldSelector("field_auto", "field_area", "field_manual");
   autoDetectField("field_auto", "field_area", "field_manual");
+  setupFieldModalPicker({ fields });
 
   document.getElementById("field_manual")
     .addEventListener("change", updatePlantingRefOptions);
@@ -92,79 +90,11 @@ export async function initHarvestPage() {
   document.getElementById("harvestDate")
     .addEventListener("change", updatePlantingRefOptions);
 
-  await setupHarvestVarietyPicker();
-
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("harvestDate").value = today;
   document.getElementById("shippingDate").value = today;
 
   console.log("🔥 initHarvestPage() 完了");
-}
-
-async function setupHarvestVarietyPicker() {
-  const rows = await fetch("../data/varieties.json")
-    .then(r => (r.ok ? r.json() : []))
-    .catch(() => []);
-
-  HARVEST_VARIETY_LIST = Array.isArray(rows) ? rows : [];
-  setupVarietyFilterData(HARVEST_VARIETY_LIST);
-
-  const openBtn = document.getElementById("openHarvestVarietyModal");
-  const clearBtn = document.getElementById("clearHarvestVarietyFilter");
-
-  if (openBtn && openBtn.dataset.boundVarietyModal !== "1") {
-    openBtn.dataset.boundVarietyModal = "1";
-    openBtn.addEventListener("click", () => {
-      openVarietyModal({
-        mode: "select",
-        onSelect: (name) => {
-          selectedHarvestVariety = String(name || "").trim();
-          updateHarvestVarietyDisplay();
-          updatePlantingRefOptions();
-        }
-      });
-    });
-  }
-
-  if (clearBtn && clearBtn.dataset.boundVarietyClear !== "1") {
-    clearBtn.dataset.boundVarietyClear = "1";
-    clearBtn.addEventListener("click", () => {
-      selectedHarvestVariety = "";
-      updateHarvestVarietyDisplay();
-      updatePlantingRefOptions();
-    });
-  }
-
-  updateHarvestVarietyDisplay();
-}
-
-function setupVarietyFilterData(varietyList) {
-  const byType = {};
-  (Array.isArray(varietyList) ? varietyList : []).forEach(item => {
-    const type = String(item?.type || "未分類").trim() || "未分類";
-    const name = String(item?.name || "").trim();
-    if (!name) return;
-    if (!byType[type]) byType[type] = [];
-    if (!byType[type].includes(name)) byType[type].push(name);
-  });
-
-  const parents = Object.keys(byType).sort((a, b) => a.localeCompare(b, "ja"));
-  const children = {};
-  parents.forEach(type => {
-    children[type] = byType[type].slice().sort((a, b) => a.localeCompare(b, "ja"));
-  });
-
-  const current = getFilterData() || {};
-  setFilterData({
-    ...current,
-    varieties: { parents, children }
-  });
-}
-
-function updateHarvestVarietyDisplay() {
-  const input = document.getElementById("harvestVarietyFilter");
-  if (!input) return;
-  input.value = selectedHarvestVariety || "未選択（全品種）";
 }
 
 
@@ -235,10 +165,6 @@ async function updatePlantingRefOptions() {
   });
 
   let finalList = strongMatches.length > 0 ? strongMatches : candidates;
-
-  if (selectedHarvestVariety) {
-    finalList = finalList.filter(p => String(p.variety || "").trim() === selectedHarvestVariety);
-  }
 
   finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
 
