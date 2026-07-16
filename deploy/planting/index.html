@@ -67,15 +67,21 @@
     <!-- 品種 -->
     <h2 class="section-title">品種</h2>
     <div class="card">
-      <label>種別</label>
-      <select id="varietyType" class="form-input">
-        <option value="">種別を選択</option>
-      </select>
+      <label>品種（モーダル選択）</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input id="varietyModalDisplay" class="form-input" value="未選択" readonly style="flex:1 1 260px; background:#f8fafc; font-weight:600;">
+        <button type="button" id="openVarietyModalBtn" class="secondary-btn" style="margin-top:0;">品種を選択</button>
+        <button type="button" id="clearVarietyModalBtn" class="secondary-btn" style="margin-top:0;">解除</button>
+      </div>
 
-      <label style="margin-top:10px;">品名</label>
-      <select id="variety" class="form-input">
-        <option value="">種別を選んでください</option>
-      </select>
+      <div style="display:none;">
+        <select id="varietyType" class="form-input">
+          <option value="">種別を選択</option>
+        </select>
+        <select id="variety" class="form-input">
+          <option value="">種別を選んでください</option>
+        </select>
+      </div>
     </div>
 
     <!-- 播種ロット -->
@@ -148,7 +154,7 @@
   <script type="module" src="../common/summary.js"></script>
 
   <!-- planting.js -->
-  <script type="module" src="./planting.js"></script>
+  <script type="module" src="./planting.js?v=20260716-1"></script>
 
   <!-- save/index.js -->
   <script type="module" src="../common/save/index.js"></script>
@@ -160,7 +166,7 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
     import { attachWorkDoneButton } from "/common/utils.js";
-    import { initPlantingPage } from "./planting.js";
+    import { initPlantingPage } from "./planting.js?v=20260716-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();

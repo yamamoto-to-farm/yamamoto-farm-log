@@ -71,6 +71,16 @@
     </div>
 
     <!-- 紐づける定植記録 -->
+    <h2 class="section-title">品種（定植記録の絞り込み）</h2>
+    <div class="card">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input id="harvestVarietyFilter" class="form-input" value="未選択（全品種）" readonly style="flex:1 1 260px; background:#f8fafc; font-weight:600;">
+        <button type="button" id="openHarvestVarietyModal" class="secondary-btn" style="margin-top:0;">品種を選択</button>
+        <button type="button" id="clearHarvestVarietyFilter" class="secondary-btn" style="margin-top:0;">解除</button>
+      </div>
+    </div>
+
+    <!-- 紐づける定植記録 -->
     <h2 class="section-title">紐づける定植記録</h2>
     <div class="card">
       <label for="plantingRef">定植記録（収穫予定 ±1ヶ月）</label>
@@ -138,7 +148,7 @@
       document.getElementById("shippingDate").value = today;
 
       // harvest.js をロードして初期化
-      const module = await import("./harvest.js");
+      const module = await import("./harvest.js?v=20260716-1");
       module.initHarvestPage();
     });
   </script>

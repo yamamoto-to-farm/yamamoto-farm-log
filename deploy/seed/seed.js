@@ -5,6 +5,8 @@ import { saveLog } from "../common/save/index.js";
 import { checkDuplicate } from "../common/duplicate.js";
 import { loadCSV } from "../common/csv.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
+import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
+import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 
 // 品種リスト
 let VARIETY_LIST = [];
@@ -26,6 +28,9 @@ export async function initSeedPage() {
 async function setupVarietySelector() {
   const res = await fetch("../data/varieties.json");
   VARIETY_LIST = await res.json();
+
+  setupVarietyFilterData(VARIETY_LIST);
+  bindVarietyModalPicker();
 
   const typeSel = document.getElementById("varietyType");
   const nameSel = document.getElementById("variety");
@@ -52,7 +57,97 @@ async function setupVarietySelector() {
       opt.textContent = v.name;
       nameSel.appendChild(opt);
     });
+
+    updateVarietyDisplay();
   });
+
+  nameSel.addEventListener("change", updateVarietyDisplay);
+}
+
+function setupVarietyFilterData(varietyList) {
+  const byType = {};
+  (Array.isArray(varietyList) ? varietyList : []).forEach(item => {
+    const type = String(item?.type || "未分類").trim() || "未分類";
+    const name = String(item?.name || "").trim();
+    if (!name) return;
+    if (!byType[type]) byType[type] = [];
+    if (!byType[type].includes(name)) byType[type].push(name);
+  });
+
+  const parents = Object.keys(byType).sort((a, b) => a.localeCompare(b, "ja"));
+  const children = {};
+  parents.forEach(type => {
+    children[type] = byType[type].slice().sort((a, b) => a.localeCompare(b, "ja"));
+  });
+
+  const current = getFilterData() || {};
+  setFilterData({
+    ...current,
+    varieties: { parents, children }
+  });
+}
+
+function bindVarietyModalPicker() {
+  const btn = document.getElementById("openVarietyModalBtn");
+  const clearBtn = document.getElementById("clearVarietyModalBtn");
+  if (btn && btn.dataset.boundVarietyModal !== "1") {
+    btn.dataset.boundVarietyModal = "1";
+    btn.addEventListener("click", () => {
+      openVarietyModal({
+        mode: "select",
+        onSelect: (name) => {
+          applyVarietySelection(name);
+        }
+      });
+    });
+  }
+
+  if (clearBtn && clearBtn.dataset.boundVarietyClear !== "1") {
+    clearBtn.dataset.boundVarietyClear = "1";
+    clearBtn.addEventListener("click", () => {
+      applyVarietySelection("");
+    });
+  }
+
+  updateVarietyDisplay();
+}
+
+function applyVarietySelection(name) {
+  const selected = String(name || "").trim();
+  const typeSel = document.getElementById("varietyType");
+  const nameSel = document.getElementById("variety");
+  if (!typeSel || !nameSel) return;
+
+  if (!selected) {
+    typeSel.value = "";
+    typeSel.dispatchEvent(new Event("change"));
+    nameSel.value = "";
+    nameSel.dispatchEvent(new Event("change"));
+    updateVarietyDisplay();
+    return;
+  }
+
+  const item = VARIETY_LIST.find(v => String(v?.name || "").trim() === selected);
+  if (!item) return;
+
+  typeSel.value = String(item.type || "");
+  typeSel.dispatchEvent(new Event("change"));
+  nameSel.value = selected;
+  nameSel.dispatchEvent(new Event("change"));
+  updateVarietyDisplay();
+}
+
+function updateVarietyDisplay() {
+  const typeSel = document.getElementById("varietyType");
+  const nameSel = document.getElementById("variety");
+  const display = document.getElementById("varietyModalDisplay");
+  if (!display || !typeSel || !nameSel) return;
+
+  const type = String(typeSel.value || "").trim();
+  const name = String(nameSel.value || "").trim();
+  display.value = name
+    ? `${type || "未分類"} / ${name}`
+    : "未選択";
 }
 
 

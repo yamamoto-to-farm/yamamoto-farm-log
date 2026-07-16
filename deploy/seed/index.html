@@ -30,15 +30,21 @@
     <!-- 品種 -->
     <h2 class="section-title">品種</h2>
     <div class="card">
-      <label>種別</label>
-      <select id="varietyType" class="form-input">
-        <option value="">種別を選択</option>
-      </select>
+      <label>品種（モーダル選択）</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input id="varietyModalDisplay" class="form-input" value="未選択" readonly style="flex:1 1 260px; background:#f8fafc; font-weight:600;">
+        <button type="button" id="openVarietyModalBtn" class="secondary-btn" style="margin-top:0;">品種を選択</button>
+        <button type="button" id="clearVarietyModalBtn" class="secondary-btn" style="margin-top:0;">解除</button>
+      </div>
 
-      <label style="margin-top:10px;">品名</label>
-      <select id="variety" class="form-input">
-        <option value="">種別を選んでください</option>
-      </select>
+      <div style="display:none;">
+        <select id="varietyType" class="form-input">
+          <option value="">種別を選択</option>
+        </select>
+        <select id="variety" class="form-input">
+          <option value="">種別を選んでください</option>
+        </select>
+      </div>
     </div>
 
     <!-- セルトレイ -->
@@ -90,7 +96,7 @@
     import { verifyLocalAuth } from "../common/ui.js";
     import { renderHeader } from "../common/header.js";
     import { attachWorkDoneButton } from "../common/utils.js";
-    import { initSeedPage } from "./seed.js";
+    import { initSeedPage } from "./seed.js?v=20260716-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       // 1) 認証
