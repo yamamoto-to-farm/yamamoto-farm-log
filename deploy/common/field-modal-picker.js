@@ -3,18 +3,22 @@ import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1"
 
 function buildFieldTree(fields) {
   const byArea = {};
+  const areaOrder = [];
   (Array.isArray(fields) ? fields : []).forEach(f => {
     const area = String(f?.area || "").trim();
     const name = String(f?.name || "").trim();
     if (!area || !name) return;
-    if (!byArea[area]) byArea[area] = [];
+    if (!byArea[area]) {
+      byArea[area] = [];
+      areaOrder.push(area);
+    }
     if (!byArea[area].includes(name)) byArea[area].push(name);
   });
 
-  const parents = Object.keys(byArea).sort((a, b) => a.localeCompare(b, "ja"));
+  const parents = areaOrder;
   const children = {};
   parents.forEach(area => {
-    children[area] = byArea[area].slice().sort((a, b) => a.localeCompare(b, "ja"));
+    children[area] = byArea[area].slice();
   });
 
   return { parents, children };
