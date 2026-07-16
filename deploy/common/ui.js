@@ -331,7 +331,7 @@ export async function createFieldSelector(autoId, areaId, manualId) {
   areaSel.addEventListener("change", () => {
     const selectedArea = areaSel.value;
 
-    fieldSel.innerHTML = "";
+    fieldSel.innerHTML = `<option value="">圃場を選択</option>`;
 
     if (!selectedArea) {
       fieldSel.innerHTML = `<option value="">エリアを選んでください</option>`;
@@ -433,8 +433,8 @@ accuracy: ±${accuracy}m
     areaSel.value = nearest.area;
     areaSel.dispatchEvent(new Event("change"));
 
-    // ▼ 圃場セレクタも name をセット（id → name に変更）
-    fieldSel.value = nearest.name;
+    // ▼ 手動選択欄は自動では確定しない（GPS採用ボタンで確定）
+    fieldSel.value = "";
     fieldSel.dispatchEvent(new Event("change"));
 
   } catch (err) {
