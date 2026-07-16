@@ -120,8 +120,11 @@ export function setupFieldModalPicker(options = {}) {
   if (openBtn && openBtn.dataset.boundFieldModal !== "1") {
     openBtn.dataset.boundFieldModal = "1";
     openBtn.addEventListener("click", () => {
+      const currentField = resolveFinalField({ autoId, manualId, confirmId });
       openFieldModal({
         mode: "select",
+        selectWithConfirm: true,
+        selectedField: currentField,
         onSelect: (name) => {
           applyFieldSelection(name, { fields, areaId, manualId, confirmId });
           updateFieldDisplay({ autoId, manualId, confirmId, displayId });

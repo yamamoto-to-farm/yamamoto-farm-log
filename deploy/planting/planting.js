@@ -21,7 +21,7 @@ import {
 import { enqueueSummaryUpdate } from "../common/summary.js";
 import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
-import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=5";
+import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=6";
 
 
 

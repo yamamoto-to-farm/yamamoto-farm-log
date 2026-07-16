@@ -59,7 +59,9 @@ export async function openFieldModal(options = {}) {
   const {
     mode = "filter",     // "filter"（従来） or "select"（STEP2 用）
     onSelect = null,      // 選択モード時のコールバック
-    includeExpired = false
+    includeExpired = false,
+    selectWithConfirm = false,
+    selectedField = ""
   } = options;
 
   // ★★★ 安全ガード（最重要）★★★
@@ -94,21 +96,49 @@ export async function openFieldModal(options = {}) {
                 <button class="secondary-btn" id="clear-field">クリア</button>
               </div>
             `
-            : ""
+            : (
+              selectWithConfirm
+                ? `
+                  <div class="modal-footer">
+                    <button class="primary-btn" id="confirm-field-select" disabled>この圃場にする</button>
+                    <button class="secondary-btn" id="cancel-field-select">キャンセル</button>
+                  </div>
+                `
+                : ""
+            )
         }
       </div>
     </div>
   `;
 
   openModal(html);
-  initFieldEvents(children, mode, onSelect);
+  initFieldEvents(children, mode, onSelect, {
+    selectWithConfirm,
+    selectedField
+  });
 }
 
 /* ============================================================
    イベント
 ============================================================ */
-function initFieldEvents(children, mode, onSelect) {
+function initFieldEvents(children, mode, onSelect, selectOptions = {}) {
+  const {
+    selectWithConfirm = false,
+    selectedField = ""
+  } = selectOptions;
+
   bindModalCloseEvents();
+
+  let pendingSelectedField = String(selectedField || "").trim();
+
+  const setSingleSelectedField = (name) => {
+    pendingSelectedField = String(name || "").trim();
+    document.querySelectorAll("[data-field]").forEach(el => {
+      el.classList.toggle("selected", el.dataset.field === pendingSelectedField);
+    });
+    const confirmBtn = document.getElementById("confirm-field-select");
+    if (confirmBtn) confirmBtn.disabled = !pendingSelectedField;
+  };
 
   // ▼ 親（area）折りたたみ
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
@@ -128,7 +158,12 @@ function initFieldEvents(children, mode, onSelect) {
       const name = el.dataset.field;
 
       if (mode === "select") {
-        // ★ 選択モード：即決定して閉じる
+        // ★ 選択モード：確定ボタン方式 or 即決定方式
+        if (selectWithConfirm) {
+          setSingleSelectedField(name);
+          return;
+        }
+
         if (onSelect) onSelect(name);
         closeModal();
         return;
@@ -152,6 +187,22 @@ function initFieldEvents(children, mode, onSelect) {
     };
 
     updateFieldSelections();
+  }
+
+  if (mode === "select" && selectWithConfirm) {
+    const cancelBtn = document.getElementById("cancel-field-select");
+    if (cancelBtn) cancelBtn.onclick = () => closeModal();
+
+    const confirmBtn = document.getElementById("confirm-field-select");
+    if (confirmBtn) {
+      confirmBtn.onclick = () => {
+        if (!pendingSelectedField) return;
+        if (onSelect) onSelect(pendingSelectedField);
+        closeModal();
+      };
+    }
+
+    setSingleSelectedField(pendingSelectedField);
   }
 }
 
