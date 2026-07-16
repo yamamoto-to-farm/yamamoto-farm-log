@@ -16,7 +16,7 @@ import { checkDuplicate } from "../common/duplicate.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
-import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=2";
+import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=3";
 
 // ★ 保存モーダル
 import {
