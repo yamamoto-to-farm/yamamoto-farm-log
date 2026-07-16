@@ -116,6 +116,9 @@ export async function printInline(selector, title = "印刷") {
   const target = document.querySelector(selector);
   if (!target) return;
 
+  const pageSize = String(window.__printPageSize || "A4").trim() || "A4";
+  const pageMargin = String(window.__printPageMargin || "12mm").trim() || "12mm";
+
   // 親側で折りたたみ解除（念のため）
   document.querySelectorAll(".field-group > div").forEach(w => {
     w.style.display = "block";
@@ -144,7 +147,7 @@ export async function printInline(selector, title = "印刷") {
   const head = doc.head;
 
   const printCss = `
-    @page { size: A4; margin: 12mm; }
+    @page { size: ${pageSize}; margin: ${pageMargin}; }
     html, body {
       margin: 0;
       padding: 0;

@@ -100,6 +100,28 @@ export function initAnnualLinkage() {
 ============================================================ */
 export async function initListPage() {
 
+  window.__beforePrintPrepare = async () => {
+    const prevSize = window.__printPageSize;
+    const prevMargin = window.__printPageMargin;
+
+    const isSchedulePlan = String(location.pathname || "").includes("/schedule/plan");
+    if (isSchedulePlan && currentMode === "seed") {
+      window.__printPageSize = "A4 landscape";
+      window.__printPageMargin = "8mm";
+    } else {
+      window.__printPageSize = "A4";
+      window.__printPageMargin = "12mm";
+    }
+
+    return () => {
+      if (typeof prevSize === "undefined") delete window.__printPageSize;
+      else window.__printPageSize = prevSize;
+
+      if (typeof prevMargin === "undefined") delete window.__printPageMargin;
+      else window.__printPageMargin = prevMargin;
+    };
+  };
+
   // ★ 最重要：filter-core.js に varieties データをセット
   await initSeedListFilter();
 
