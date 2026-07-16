@@ -88,10 +88,14 @@ function applyFieldSelection(name, { fields, areaId, manualId, confirmId }) {
   areaSel.value = String(item.area || "");
   areaSel.dispatchEvent(new Event("change"));
 
+  // モーダル選択時はGPS採用を明示的に解除する
+  if (confirm) {
+    confirm.checked = false;
+    confirm.dispatchEvent(new Event("change"));
+  }
+
   manualSel.value = selected;
   manualSel.dispatchEvent(new Event("change"));
-
-  if (confirm) confirm.checked = false;
 }
 
 export function setupFieldModalPicker(options = {}) {
