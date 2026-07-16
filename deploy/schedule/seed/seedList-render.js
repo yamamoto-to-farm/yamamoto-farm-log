@@ -57,7 +57,7 @@ export function renderTable() {
           <th class="sortable" data-key="variety">品種</th>
           <th class="sortable" data-key="trayCount">枚数</th>
           <th>トレイ</th>
-          <th>計画面積(反)</th>
+          <th class="print-hide-plan-area">計画面積(反)</th>
           <th class="sortable" data-key="planAreaCalc">計算面積(反)</th>
           <th class="sortable" data-key="daysToPlant">定植まで日数</th>
           <th class="sortable" data-key="planPlantDate">定植予定日</th>
@@ -65,7 +65,7 @@ export function renderTable() {
           <th>収穫区分</th>
           <th>種の由来</th>
           <th>備考</th>
-          <th>削除</th>
+          <th class="print-delete-col">削除</th>
         </tr>
       </thead>
       <tbody>
@@ -79,7 +79,7 @@ export function renderTable() {
         <td><input type="text" inputmode="numeric" class="input-tray" value="${r.trayCountRaw}"></td>
         <td class="tray-type-cell">${r.trayType || "選択"}</td>
 
-        <td>${r.planAreaPlan || ""}</td>
+        <td class="print-hide-plan-area">${r.planAreaPlan || ""}</td>
         <td class="calc-area-cell clickable">${r.planAreaCalc || ""}</td>
 
         <td><input type="text" inputmode="numeric" class="input-days" value="${r.daysToPlantRaw}"></td>
@@ -91,7 +91,7 @@ export function renderTable() {
         <td><input type="text" class="input-source" value="${r.source || ""}"></td>
         <td><input type="text" class="input-memo" value="${r.memo || ""}"></td>
 
-        <td><button class="delete-row" data-i="${i}">削除</button></td>
+        <td class="print-delete-col"><button class="delete-row" data-i="${i}">削除</button></td>
       </tr>
     `;
   });

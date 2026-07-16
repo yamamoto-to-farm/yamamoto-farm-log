@@ -7,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./plan.css?v=20260717-1">
-  <link rel="stylesheet" href="./seed/seedList.css?v=20260717-1">
+  <link rel="stylesheet" href="./plan.css?v=20260717-2">
+  <link rel="stylesheet" href="./seed/seedList.css?v=20260717-2">
 </head>
 
 <body>
@@ -85,7 +85,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initListPage, initAnnualLinkage } from "./plan.js";
+    import { initListPage, initAnnualLinkage } from "./plan.js?v=20260717-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();

@@ -310,6 +310,16 @@
   }
 
   /* ▼ 削除列は完全に消す */
+  #table-area .print-hide-plan-area,
+  #table-area .print-hide-plan-area * {
+    display: none !important;
+  }
+
+  #table-area .print-delete-col,
+  #table-area .print-delete-col * {
+    display: none !important;
+  }
+
   #table-area th:last-child,
   #table-area td:last-child {
     display: none !important;

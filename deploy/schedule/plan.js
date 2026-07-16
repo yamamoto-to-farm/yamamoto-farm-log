@@ -103,17 +103,67 @@ export async function initListPage() {
   window.__beforePrintPrepare = async () => {
     const prevSize = window.__printPageSize;
     const prevMargin = window.__printPageMargin;
+    const pageArea = document.getElementById("page-area");
+    let insertedHeader = null;
 
     const isSchedulePlan = String(location.pathname || "").includes("/schedule/plan");
     if (isSchedulePlan && currentMode === "seed") {
       window.__printPageSize = "A4 landscape";
       window.__printPageMargin = "8mm";
+
+      if (pageArea) {
+        pageArea.classList.add("seed-print-compact");
+
+        const yearText = String(document.getElementById("selectedYearLabel")?.textContent || "").trim();
+        const capacityText = String(document.getElementById("nurseryCapacity")?.value || "").trim();
+        const summaryText = String(document.getElementById("summaryArea")?.innerText || "")
+          .replace(/\s*\n\s*/g, " / ")
+          .trim();
+
+        const tableArea = document.getElementById("table-area");
+        insertedHeader = document.createElement("div");
+        insertedHeader.id = "seed-print-compact-header";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "seed-print-title";
+        titleSpan.textContent = "播種・定植計画";
+
+        const yearSpan = document.createElement("span");
+        yearSpan.className = "seed-print-meta";
+        yearSpan.textContent = yearText || "年度未選択";
+
+        const capacitySpan = document.createElement("span");
+        capacitySpan.className = "seed-print-meta";
+        capacitySpan.textContent = `育苗容量 ${capacityText || "-"} 枚`;
+
+        const summarySpan = document.createElement("span");
+        summarySpan.className = "seed-print-meta seed-print-summary";
+        summarySpan.textContent = summaryText || "";
+
+        insertedHeader.appendChild(titleSpan);
+        insertedHeader.appendChild(yearSpan);
+        insertedHeader.appendChild(capacitySpan);
+        insertedHeader.appendChild(summarySpan);
+
+        if (tableArea && tableArea.parentNode === pageArea) {
+          pageArea.insertBefore(insertedHeader, tableArea);
+        } else {
+          pageArea.appendChild(insertedHeader);
+        }
+      }
     } else {
       window.__printPageSize = "A4";
       window.__printPageMargin = "12mm";
     }
 
     return () => {
+      if (pageArea) {
+        pageArea.classList.remove("seed-print-compact");
+      }
+      if (insertedHeader && insertedHeader.parentNode) {
+        insertedHeader.parentNode.removeChild(insertedHeader);
+      }
+
       if (typeof prevSize === "undefined") delete window.__printPageSize;
       else window.__printPageSize = prevSize;
 

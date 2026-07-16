@@ -280,6 +280,46 @@ export async function printInline(selector, title = "印刷") {
       page-break-after: auto;
     }
 
+    /* 播種計画: 大きな上部カードを省き、小型ヘッダーを毎ページ表示 */
+    #page-area.seed-print-compact .page-title,
+    #page-area.seed-print-compact .plan-control-hub,
+    #page-area.seed-print-compact #capacity-card,
+    #page-area.seed-print-compact #summary-card {
+      display: none !important;
+    }
+    #page-area.seed-print-compact #seed-print-compact-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 2.5mm 3mm;
+      border: 1px solid #999;
+      background: #fff;
+      font-size: 9.2pt;
+      line-height: 1.2;
+      z-index: 9999;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    #page-area.seed-print-compact #seed-print-compact-header .seed-print-title {
+      font-weight: 700;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    #page-area.seed-print-compact #seed-print-compact-header .seed-print-meta {
+      white-space: nowrap;
+    }
+    #page-area.seed-print-compact #seed-print-compact-header .seed-print-summary {
+      white-space: normal;
+      flex: 1 1 auto;
+    }
+    #page-area.seed-print-compact #table-area {
+      margin-top: 15mm !important;
+    }
+
     /* 日誌ページ: A4 1枚寄せ PDF 用（diary.js が class を付与） */
     #form-area.diary-print-onepage {
       font-size: 11px;
