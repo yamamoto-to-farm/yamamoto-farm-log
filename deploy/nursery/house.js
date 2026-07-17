@@ -45,8 +45,6 @@ const GROUPS = [
 
 let lots = [];
 let assignments = {};
-let searchKeyword = "";
-let showZeroLots = false;
 let dragSeedRef = "";
 
 export async function initNurseryHousePage() {
@@ -55,21 +53,9 @@ export async function initNurseryHousePage() {
 }
 
 function bindControls() {
-  const searchEl = document.getElementById("lot-search");
-  const showEmptyEl = document.getElementById("show-empty-lots");
   const reloadBtn = document.getElementById("reload-btn");
   const saveBtn = document.getElementById("save-btn");
   const unassignedPool = document.getElementById("unassigned-pool");
-
-  searchEl?.addEventListener("input", () => {
-    searchKeyword = String(searchEl.value || "").trim().toLowerCase();
-    render();
-  });
-
-  showEmptyEl?.addEventListener("change", () => {
-    showZeroLots = !!showEmptyEl.checked;
-    render();
-  });
 
   reloadBtn?.addEventListener("click", async () => {
     await reloadAll();
@@ -343,9 +329,6 @@ function renderUnassignedPool() {
   const assignedSeedRefs = new Set(Object.keys(assignments));
 
   const filtered = lots.filter(lot => {
-    const text = `${lot.variety} ${lot.seedRef}`.toLowerCase();
-    if (searchKeyword && !text.includes(searchKeyword)) return false;
-    if (!showZeroLots && lot.availableTrays <= 0) return false;
     return !assignedSeedRefs.has(lot.seedRef);
   });
 
