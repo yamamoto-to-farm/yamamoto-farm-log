@@ -233,6 +233,13 @@ export async function printInline(selector, title = "印刷") {
     .print-hide {
       display: none !important;
     }
+    /* 播種計画: 計画面積(反)左列 と 削除列は印刷対象外 */
+    #table-area .print-hide-plan-area,
+    #table-area .print-hide-plan-area *,
+    #table-area .print-delete-col,
+    #table-area .print-delete-col * {
+      display: none !important;
+    }
     .collapse-content:not(.print-keep-collapsed):not(.print-hide), .field-group > div:not(.print-hide), #form-area, #page-area, #analysis-container, #workContentWrapper {
       display: block !important;
       visibility: visible !important;
