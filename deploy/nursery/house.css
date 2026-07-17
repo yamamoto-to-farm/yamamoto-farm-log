@@ -8,8 +8,10 @@
 }
 
 #page-area.page-container {
-  width: min(1760px, 98vw);
-  max-width: min(1760px, 98vw);
+  width: min(1960px, 99vw);
+  max-width: min(1960px, 99vw);
+  margin: 4px auto;
+  padding: 6px 8px;
 }
 
 .nursery-layout-grid > .card {
@@ -18,7 +20,7 @@
 }
 
 .lot-pool-card {
-  min-width: 360px;
+  min-width: 280px;
 }
 
 .zones-card {
@@ -65,8 +67,8 @@
 
 .nursery-layout-grid {
   display: grid;
-  grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 10px;
   align-items: start;
 }
 
@@ -88,14 +90,14 @@
 
 .zones-root {
   display: grid;
-  grid-template-columns: minmax(220px, 0.55fr) minmax(370px, 1fr) minmax(370px, 1fr);
+  grid-template-columns: minmax(210px, 0.48fr) minmax(420px, 1fr) minmax(420px, 1fr);
   grid-template-areas:
     "outside-side west east"
     "outside-bottom outside-bottom outside-bottom";
-  gap: 16px;
-  padding: 14px;
+  gap: 8px;
+  padding: 6px;
   background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .zone-card {
@@ -123,7 +125,7 @@
 }
 
 .zone-title {
-  margin: 0 0 16px;
+  margin: 0 0 8px;
   font-size: 38px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -175,7 +177,7 @@
 }
 
 .lane-head {
-  padding: 14px 12px 6px;
+  padding: 10px 8px 4px;
   border-bottom: none;
   background: #fff;
 }
@@ -197,10 +199,10 @@
   min-height: 180px;
   border: none;
   background: #fff;
-  padding: 8px;
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   align-items: stretch;
   overflow-y: auto;
 }
@@ -286,6 +288,8 @@
   #page-area.page-container {
     width: 100%;
     max-width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .nursery-layout-grid {
