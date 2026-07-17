@@ -1,9 +1,9 @@
 :root {
-  --house-bg: #f7faf6;
+  --house-bg: #fbfdff;
   --outside-bg: #fffaf1;
-  --slot-border: #c9d7e3;
+  --slot-border: #2f6fa3;
   --slot-hover: #dbeafe;
-  --slot-fill: #ecfdf3;
+  --slot-fill: #f6fbff;
 }
 
 .nursery-toolbar .toolbar-row {
@@ -69,70 +69,112 @@
 
 .zones-root {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(340px, 1fr));
+  gap: 18px;
 }
 
 .zone-card {
-  border: 1px solid #dbe3ec;
-  border-radius: 10px;
-  padding: 10px;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .zone-card.kind-house {
-  background: var(--house-bg);
+  background: transparent;
 }
 
 .zone-card.kind-outside {
-  background: var(--outside-bg);
+  background: transparent;
+}
+
+.zone-card.is-wide {
+  grid-column: 1 / -1;
 }
 
 .zone-title {
-  margin: 0 0 8px;
-  font-size: 15px;
+  margin: 0 0 16px;
+  font-size: 19px;
+  text-align: center;
   color: #0f172a;
 }
 
-.zone-grid {
+.lane-grid {
   display: grid;
-  gap: 6px;
-}
-
-.slot {
-  min-height: 62px;
-  border: 1px solid var(--slot-border);
-  border-radius: 8px;
-  background: #fff;
-  padding: 4px;
-  font-size: 11px;
-  color: #64748b;
-  display: flex;
+  gap: 0;
   align-items: stretch;
 }
 
-.slot.drag-over {
-  background: var(--slot-hover);
+.lane {
+  background: transparent;
 }
 
-.slot.filled {
-  background: var(--slot-fill);
+.lane-head {
+  padding: 10px 12px 8px;
+  border: 2px solid var(--slot-border);
+  border-bottom: none;
+  background: #fff;
+}
+
+.lane-name {
+  font-size: 15px;
+  font-weight: 700;
   color: #0f172a;
 }
 
-.slot-label {
-  margin-bottom: 2px;
-  font-size: 10px;
+.lane-meta,
+.lane-usage {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.lane-body {
+  min-height: 510px;
+  border: 2px solid var(--slot-border);
+  background: #fff;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  overflow-y: auto;
+}
+
+.lane-body.drag-over,
+.lane-item.drag-over {
+  background: var(--slot-hover);
+}
+
+.lane-empty {
+  min-height: 120px;
+  border: 1px dashed #93c5fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #64748b;
+  font-size: 12px;
+}
+
+.lane-item {
+  display: flex;
+  align-items: stretch;
+  min-height: 64px;
 }
 
 .lot-card {
   width: 100%;
-  border: 1px solid #cfe3d5;
-  border-radius: 8px;
-  background: #fff;
-  padding: 6px;
+  border: 1px solid #b8d4e7;
+  border-radius: 6px;
+  background: var(--slot-fill);
+  padding: 8px;
   cursor: grab;
   user-select: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .lot-card:active {
@@ -143,7 +185,7 @@
   font-size: 12px;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .lot-card .lot-ref {
@@ -176,6 +218,14 @@
 @media (max-width: 980px) {
   .nursery-layout-grid {
     grid-template-columns: 1fr;
+  }
+
+  .zones-root {
+    grid-template-columns: 1fr;
+  }
+
+  .zone-card.is-wide {
+    grid-column: auto;
   }
 
   .lot-pool {

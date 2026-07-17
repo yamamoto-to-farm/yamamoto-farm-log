@@ -3,11 +3,40 @@ import { loadJSON, saveJSON } from "/common/json.js";
 
 const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
-const ZONES = [
-  { id: "house-west", title: "育苗ハウス 西側", kind: "house", columns: 4, rows: 10 },
-  { id: "house-center", title: "育苗ハウス 中央", kind: "house", columns: 4, rows: 8 },
-  { id: "house-east", title: "育苗ハウス 東側", kind: "house", columns: 3, rows: 10 },
-  { id: "outside-east", title: "外育苗 東側新設", kind: "outside", columns: 5, rows: 4 }
+const GROUPS = [
+  {
+    id: "west-house",
+    title: "育苗ハウス　西棟",
+    kind: "house",
+    lanes: [
+      { id: "west-1", label: "西①", capacity: 240, trayCols: 3 },
+      { id: "west-2", label: "西②", capacity: 160, trayCols: 2 },
+      { id: "west-3", label: "西③", capacity: 160, trayCols: 2 },
+      { id: "west-4", label: "西④", capacity: 240, trayCols: 3 }
+    ]
+  },
+  {
+    id: "east-house",
+    title: "育苗ハウス　東棟",
+    kind: "house",
+    lanes: [
+      { id: "east-1", label: "東①", capacity: 366, trayCols: 3 },
+      { id: "east-2", label: "東②", capacity: 610, trayCols: 5 },
+      { id: "east-3", label: "東③", capacity: 366, trayCols: 3 }
+    ]
+  },
+  {
+    id: "outside-area",
+    title: "外育苗場所",
+    kind: "outside",
+    lanes: [
+      { id: "outside-1", label: "外①", capacity: null, trayCols: null },
+      { id: "outside-2", label: "外②", capacity: null, trayCols: null },
+      { id: "outside-3", label: "外③", capacity: null, trayCols: null },
+      { id: "outside-4", label: "外④", capacity: null, trayCols: null },
+      { id: "outside-5", label: "外⑤", capacity: null, trayCols: null }
+    ]
+  }
 ];
 
 let lots = [];
@@ -208,14 +237,56 @@ function sanitizeAssignments(raw) {
   const next = {};
   Object.keys(raw || {}).forEach(seedRef => {
     const value = raw[seedRef];
-    const zoneId = String(value?.zoneId || "").trim();
-    const slotIndex = Number(value?.slotIndex);
-    if (!zoneId || !Number.isInteger(slotIndex) || slotIndex < 0) return;
-    if (!findZone(zoneId)) return;
-    if (slotIndex >= zoneSlotCount(zoneId)) return;
-    next[seedRef] = { zoneId, slotIndex };
+    const laneId = String(value?.laneId || "").trim();
+    const order = Number(value?.order);
+
+    if (laneId && Number.isInteger(order) && order >= 0 && findLane(laneId)) {
+      next[seedRef] = { laneId, order };
+      return;
+    }
+
+    const migrated = migrateLegacyAssignment(value);
+    if (migrated) {
+      next[seedRef] = migrated;
+    }
   });
   return next;
+}
+
+function migrateLegacyAssignment(value) {
+  const zoneId = String(value?.zoneId || "").trim();
+  const slotIndex = Number(value?.slotIndex);
+  if (!zoneId || !Number.isInteger(slotIndex) || slotIndex < 0) return null;
+
+  if (zoneId === "house-west") {
+    return {
+      laneId: `west-${(slotIndex % 4) + 1}`,
+      order: Math.floor(slotIndex / 4)
+    };
+  }
+
+  if (zoneId === "house-center") {
+    return {
+      laneId: `west-${(slotIndex % 4) + 1}`,
+      order: 100 + Math.floor(slotIndex / 4)
+    };
+  }
+
+  if (zoneId === "house-east") {
+    return {
+      laneId: `east-${(slotIndex % 3) + 1}`,
+      order: Math.floor(slotIndex / 3)
+    };
+  }
+
+  if (zoneId === "outside-east") {
+    return {
+      laneId: `outside-${(slotIndex % 5) + 1}`,
+      order: Math.floor(slotIndex / 5)
+    };
+  }
+
+  return null;
 }
 
 function dropUnknownAssignments(currentAssignments, lotRows) {
@@ -231,7 +302,7 @@ function dropUnknownAssignments(currentAssignments, lotRows) {
 function render() {
   renderSummary();
   renderUnassignedPool();
-  renderZones();
+  renderGroups();
 }
 
 function renderSummary() {
@@ -284,81 +355,102 @@ function renderUnassignedPool() {
   });
 }
 
-function renderZones() {
+function renderGroups() {
   const root = document.getElementById("zones-root");
   if (!root) return;
 
   root.innerHTML = "";
-  const bySlot = buildBySlotMap();
+  const byLane = buildLaneMap();
 
-  ZONES.forEach(zone => {
+  GROUPS.forEach(group => {
     const card = document.createElement("section");
-    card.className = `zone-card kind-${zone.kind}`;
+    card.className = `zone-card group-card kind-${group.kind}`;
+    if (group.kind === "outside") card.classList.add("is-wide");
 
     const title = document.createElement("h3");
-    title.className = "zone-title";
-    title.textContent = `${zone.title} (${zone.columns}列 × ${zone.rows}段)`;
+    title.className = "zone-title group-title";
+    title.textContent = group.title;
     card.appendChild(title);
 
     const grid = document.createElement("div");
-    grid.className = "zone-grid";
-    grid.style.gridTemplateColumns = `repeat(${zone.columns}, minmax(0, 1fr))`;
+    grid.className = "lane-grid";
+    grid.style.gridTemplateColumns = `repeat(${group.lanes.length}, minmax(0, 1fr))`;
 
-    const totalSlots = zone.columns * zone.rows;
-    for (let slotIndex = 0; slotIndex < totalSlots; slotIndex++) {
-      const slot = document.createElement("div");
-      slot.className = "slot";
-      slot.dataset.zoneId = zone.id;
-      slot.dataset.slotIndex = String(slotIndex);
+    group.lanes.forEach(lane => {
+      const laneEl = document.createElement("section");
+      laneEl.className = "lane";
+      laneEl.dataset.laneId = lane.id;
 
-      const label = document.createElement("div");
-      label.className = "slot-label";
-      label.textContent = `${(slotIndex % zone.columns) + 1}列-${Math.floor(slotIndex / zone.columns) + 1}`;
+      const laneLots = (byLane.get(lane.id) || []).map(seedRef => lots.find(v => v.seedRef === seedRef)).filter(Boolean);
+      const used = laneLots.reduce((sum, lot) => sum + lot.availableTrays, 0);
+
+      laneEl.innerHTML = `
+        <div class="lane-head">
+          <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
+          <div class="lane-meta">${lane.trayCols ? `トレイ ${lane.trayCols}列` : "外育苗"}</div>
+          <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${laneLots.length}件`}</div>
+        </div>
+      `;
 
       const body = document.createElement("div");
-      body.className = "slot-body";
-      body.style.width = "100%";
+      body.className = "lane-body drop-pool";
+      body.dataset.laneId = lane.id;
+      bindLaneDrop(body, lane.id, "");
 
-      slot.appendChild(body);
-
-      const key = `${zone.id}::${slotIndex}`;
-      const seedRef = bySlot.get(key);
-      if (seedRef) {
-        const lot = lots.find(v => v.seedRef === seedRef);
-        if (lot) {
-          slot.classList.add("filled");
-          body.appendChild(label);
-          body.appendChild(buildLotCard(lot));
-        }
+      if (!laneLots.length) {
+        const empty = document.createElement("div");
+        empty.className = "lane-empty";
+        empty.textContent = "ここへ配置";
+        body.appendChild(empty);
       } else {
-        body.appendChild(label);
+        laneLots.forEach(lot => {
+          const item = document.createElement("div");
+          item.className = "lane-item";
+          item.dataset.seedRef = lot.seedRef;
+          bindLaneDrop(item, lane.id, lot.seedRef);
+          item.appendChild(buildLotCard(lot, lane));
+          body.appendChild(item);
+        });
       }
 
-      bindSlotDnD(slot);
-      grid.appendChild(slot);
-    }
+      laneEl.appendChild(body);
+      grid.appendChild(laneEl);
+    });
 
     card.appendChild(grid);
     root.appendChild(card);
   });
 }
 
-function buildBySlotMap() {
+function buildLaneMap() {
   const map = new Map();
+  allLanes().forEach(lane => map.set(lane.id, []));
+
   Object.keys(assignments || {}).forEach(seedRef => {
-    const a = assignments[seedRef];
-    map.set(`${a.zoneId}::${a.slotIndex}`, seedRef);
+    const placement = assignments[seedRef];
+    if (!placement?.laneId || !map.has(placement.laneId)) return;
+    map.get(placement.laneId).push({ seedRef, order: Number(placement.order || 0) });
   });
+
+  map.forEach((items, laneId) => {
+    items.sort((a, b) => a.order - b.order);
+    map.set(laneId, items.map(v => v.seedRef));
+  });
+
   return map;
 }
 
-function buildLotCard(lot) {
+function buildLotCard(lot, lane = null) {
   const card = document.createElement("article");
   card.className = "lot-card";
   if (lot.availableTrays <= 0) card.classList.add("zero");
   if (lot.availableTrays > 0 && lot.availableTrays < 5) card.classList.add("warn");
   card.draggable = true;
   card.dataset.seedRef = lot.seedRef;
+  if (lane) {
+    const height = computeBlockHeight(lot, lane);
+    card.style.height = `${height}px`;
+  }
 
   card.innerHTML = `
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
@@ -382,57 +474,68 @@ function buildLotCard(lot) {
   return card;
 }
 
-function bindSlotDnD(slot) {
-  slot.addEventListener("dragover", e => {
+function bindLaneDrop(el, laneId, beforeSeedRef) {
+  el.addEventListener("dragover", e => {
     e.preventDefault();
-    slot.classList.add("drag-over");
+    el.classList.add("drag-over");
   });
 
-  slot.addEventListener("dragleave", () => {
-    slot.classList.remove("drag-over");
+  el.addEventListener("dragleave", () => {
+    el.classList.remove("drag-over");
   });
 
-  slot.addEventListener("drop", e => {
+  el.addEventListener("drop", e => {
     e.preventDefault();
-    slot.classList.remove("drag-over");
+    el.classList.remove("drag-over");
 
     const seedRef = dragSeedRef || String(e.dataTransfer?.getData("text/plain") || "").trim();
     if (!seedRef) return;
-
-    const zoneId = String(slot.dataset.zoneId || "").trim();
-    const slotIndex = Number(slot.dataset.slotIndex);
-    if (!zoneId || !Number.isInteger(slotIndex)) return;
-
-    const occupant = findSeedRefAt(zoneId, slotIndex);
-    const prev = assignments[seedRef] || null;
-
-    assignments[seedRef] = { zoneId, slotIndex };
-
-    if (occupant && occupant !== seedRef) {
-      if (prev) assignments[occupant] = prev;
-      else delete assignments[occupant];
-    }
-
+    placeSeedRef(seedRef, laneId, beforeSeedRef);
     render();
   });
 }
 
-function findSeedRefAt(zoneId, slotIndex) {
-  const target = `${zoneId}::${slotIndex}`;
-  return Object.keys(assignments).find(seedRef => {
-    const a = assignments[seedRef];
-    return `${a.zoneId}::${a.slotIndex}` === target;
-  }) || "";
+function placeSeedRef(seedRef, laneId, beforeSeedRef = "") {
+  const lanes = buildLaneMap();
+  lanes.forEach((seedRefs, currentLaneId) => {
+    lanes.set(currentLaneId, seedRefs.filter(ref => ref !== seedRef));
+  });
+
+  const target = [...(lanes.get(laneId) || [])];
+  const beforeIndex = beforeSeedRef ? target.indexOf(beforeSeedRef) : -1;
+  if (beforeIndex >= 0) {
+    target.splice(beforeIndex, 0, seedRef);
+  } else {
+    target.push(seedRef);
+  }
+  lanes.set(laneId, target);
+
+  assignments = {};
+  lanes.forEach((seedRefs, currentLaneId) => {
+    seedRefs.forEach((ref, index) => {
+      assignments[ref] = { laneId: currentLaneId, order: index };
+    });
+  });
 }
 
-function findZone(zoneId) {
-  return ZONES.find(v => v.id === zoneId) || null;
+function findLane(laneId) {
+  return allLanes().find(v => v.id === laneId) || null;
 }
 
-function zoneSlotCount(zoneId) {
-  const zone = findZone(zoneId);
-  if (!zone) return 0;
-  return zone.columns * zone.rows;
+function allLanes() {
+  return GROUPS.flatMap(group => group.lanes);
+}
+
+function computeBlockHeight(lot, lane) {
+  if (lane.capacity && lane.capacity > 0) {
+    const ratio = lot.availableTrays / lane.capacity;
+    return clamp(Math.round(48 + (ratio * 360)), 58, 230);
+  }
+  return clamp(Math.round(68 + (lot.availableTrays * 1.2)), 72, 180);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function formatNum(v) {
