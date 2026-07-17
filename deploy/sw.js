@@ -1,4 +1,4 @@
-const CACHE_NAME = "yamamoto-farm-runtime-v20260713-1";
+const CACHE_NAME = "yamamoto-farm-runtime-v20260718-1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -20,6 +20,9 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
 
+  // Chrome may throw for only-if-cached requests unless they are same-origin navigations.
+  if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;
+
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
@@ -35,7 +38,11 @@ self.addEventListener("fetch", (event) => {
     } catch (error) {
       const cached = await caches.match(request);
       if (cached) return cached;
-      throw error;
+      return new Response("Network unavailable", {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: { "Content-Type": "text/plain; charset=utf-8" }
+      });
     }
   })());
 });
