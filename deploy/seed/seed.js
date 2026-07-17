@@ -5,6 +5,7 @@ import { saveLog } from "../common/save/index.js";
 import { checkDuplicate } from "../common/duplicate.js";
 import { loadCSV } from "../common/csv.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
+import { confirmSaveBeforeSubmit } from "../common/save-modal.js";
 import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 
@@ -265,6 +266,19 @@ async function saveSeedInner() {
     alert("トレイ枚数を入力してください");
     return;
   }
+
+  const confirmed = await confirmSaveBeforeSubmit({
+    lines: [
+      `播種日: ${data.seedDate}`,
+      `品種: ${data.varietyName || "未選択"}`,
+      `トレイ: ${Number(data.trayType || 0)}穴`,
+      `枚数: ${Number(data.trayCount || 0)}枚`,
+      `株数: ${Number(data.seedCount || 0)}株`,
+      `区分: ${data.source || "未選択"}`,
+      `備考: ${String(data.memo || "").trim() || "なし"}`
+    ]
+  });
+  if (!confirmed) return;
 
   const dup = await checkDuplicate("seed", {
     date: data.seedDate,

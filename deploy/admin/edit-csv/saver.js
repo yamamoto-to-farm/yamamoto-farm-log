@@ -43,6 +43,11 @@ export async function saveCsvFile(csvType, csvFile) {
 
   dbg("✔ headers:", headers);
 
+  if (headers.length === 0) {
+    updateSaveModal("列情報が取得できないため保存を中止しました");
+    return;
+  }
+
   // ------------------------------
   // 2. 行データ取得
   // ------------------------------
@@ -50,6 +55,11 @@ export async function saveCsvFile(csvType, csvFile) {
   const trList = table.querySelectorAll("tbody tr");
 
   dbg("✔ tr count:", trList.length);
+
+  if (trList.length === 0) {
+    updateSaveModal("行が0件のため保存を中止しました（全消去防止）");
+    return;
+  }
 
   trList.forEach((tr, rowIndex) => {
     const cells = tr.querySelectorAll("td");
