@@ -7,7 +7,7 @@ const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
 const MM_TO_PX = 0.0088;
 const SNAP_PX = 24;
-const LANE_COL_WIDTH_FACTOR = 26;
+const LANE_COL_WIDTH_FACTOR = 34;
 
 const GROUPS = [
   {
@@ -59,6 +59,7 @@ const resizeState = {
   active: false,
   blockId: "",
   laneId: "",
+  side: "right",
   startX: 0,
   startCols: 1,
   laneCols: 1,
@@ -343,6 +344,17 @@ function parseDateMs(v) {
   const d = Number(digits.slice(6, 8));
   const t = new Date(y, Math.max(0, m - 1), d).getTime();
   return Number.isFinite(t) ? t : 0;
+}
+
+function formatSeedDateLabel(seedDate, seedRef = "") {
+  const raw = String(seedDate || "").trim();
+  if (raw) return raw;
+
+  const ref = String(seedRef || "").trim();
+  const m = ref.match(/^(\d{4})(\d{2})(\d{2})/);
+  if (!m) return "日付なし";
+
+  return `${m[1]}-${m[2]}-${m[3]}`;
 }
 
 function roundTray(v) {
@@ -855,19 +867,21 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   }
 
   if (lane) {
-    const handle = document.createElement("button");
-    handle.type = "button";
-    handle.className = "block-resize-handle";
-    handle.title = "角をドラッグして列幅を変更";
-    handle.textContent = "";
-    handle.addEventListener("mousedown", e => startResizeBlock(e, block.blockId, lane.id));
-    card.appendChild(handle);
+    ["left", "right"].forEach(side => {
+      const handle = document.createElement("button");
+      handle.type = "button";
+      handle.className = `block-resize-handle is-${side}`;
+      handle.title = side === "left" ? "左下角をドラッグして列幅を変更" : "右下角をドラッグして列幅を変更";
+      handle.textContent = "";
+      handle.addEventListener("pointerdown", e => startResizeBlock(e, block.blockId, lane.id, side));
+      card.appendChild(handle);
+    });
   }
 
   return card;
 }
 
-function startResizeBlock(event, blockId, laneId) {
+function startResizeBlock(event, blockId, laneId, side = "right") {
   event.preventDefault();
   event.stopPropagation();
 
@@ -884,14 +898,15 @@ function startResizeBlock(event, blockId, laneId) {
   resizeState.active = true;
   resizeState.blockId = blockId;
   resizeState.laneId = laneId;
+  resizeState.side = side === "left" ? "left" : "right";
   resizeState.startX = event.clientX;
   resizeState.startCols = Math.max(1, Math.min(laneCols, block.spanCols || laneCols));
   resizeState.laneCols = laneCols;
   resizeState.colPx = colPx;
   resizeState.laneBodyHeight = laneBody.clientHeight;
 
-  window.addEventListener("mousemove", onResizeMove);
-  window.addEventListener("mouseup", stopResizeBlock, { once: true });
+  window.addEventListener("pointermove", onResizeMove);
+  window.addEventListener("pointerup", stopResizeBlock, { once: true });
 }
 
 function onResizeMove(event) {
@@ -902,12 +917,18 @@ function onResizeMove(event) {
   const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(resizeState.laneId)}"]`);
   if (!block || !lane || !(laneBody instanceof HTMLElement)) return;
 
-  const deltaCols = Math.round((event.clientX - resizeState.startX) / resizeState.colPx);
+  const sign = resizeState.side === "left" ? -1 : 1;
+  const deltaCols = Math.round(((event.clientX - resizeState.startX) / resizeState.colPx) * sign);
   const nextCols = clamp(resizeState.startCols + deltaCols, 1, resizeState.laneCols);
 
   if (block.spanCols === nextCols) return;
 
   const currentRect = getBlockRectNorm(block, lane, resizeState.laneBodyHeight || laneBody.clientHeight);
+  const nextWidthNorm = clamp(nextCols / getLaneCols(lane), 0.05, 1);
+  const nextMaxX = Math.max(0, 1 - nextWidthNorm);
+  const preferredX = resizeState.side === "left"
+    ? clamp(currentRect.right - nextWidthNorm, 0, nextMaxX)
+    : currentRect.left;
 
   const resolved = resolvePlacementInLane({
     lane,
@@ -916,7 +937,7 @@ function onResizeMove(event) {
     movingBlockId: block.blockId,
     trays: block.trays,
     spanCols: nextCols,
-    preferredX: currentRect.left,
+    preferredX,
     preferredY: currentRect.top
   });
 
@@ -929,7 +950,7 @@ function onResizeMove(event) {
 }
 
 function stopResizeBlock() {
-  window.removeEventListener("mousemove", onResizeMove);
+  window.removeEventListener("pointermove", onResizeMove);
   resizeState.active = false;
 }
 
@@ -1442,6 +1463,7 @@ function renderBlockModal() {
 
   detailEl.innerHTML = `
     <div><strong>ロットID:</strong> ${escapeHtml(block.originSeedRef)}</div>
+    <div><strong>播種日:</strong> ${escapeHtml(formatSeedDateLabel(lot?.seedDate, block.originSeedRef))}</div>
     <div><strong>品種:</strong> ${escapeHtml(lot?.variety || "(不明)")}</div>
     <div><strong>現在枚数:</strong> ${formatNum(block.trays)} 枚</div>
     <div><strong>配置先:</strong> ${escapeHtml(lane?.label || "未配置")}</div>
@@ -1528,14 +1550,14 @@ function computeLaneBodyHeight(lane) {
   if (isOutsideBottomLane(lane)) {
     const tray = getTraySizeByLane(lane);
     const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
-    const px = getLaneCols(lane) * shortEdgeMm * MM_TO_PX * 12;
-    return clamp(Math.round(px), 90, 170);
+    const px = getLaneCols(lane) * shortEdgeMm * MM_TO_PX * 13;
+    return clamp(Math.round(px), 130, 250);
   }
 
   const rows = getLaneRows(lane);
   const tray = getTraySizeByLane(lane);
-  const px = rows * tray.nsMm * MM_TO_PX;
-  return clamp(Math.round(px), 130, 920);
+  const px = rows * tray.nsMm * MM_TO_PX * 1.16;
+  return clamp(Math.round(px), 190, 1220);
 }
 
 function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) {
