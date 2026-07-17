@@ -322,6 +322,8 @@ export async function printInline(selector, title = "印刷") {
     }
     #page-area.seed-print-compact #table-area {
       margin-top: 0 !important;
+      break-inside: auto !important;
+      page-break-inside: auto !important;
     }
 
     /* 日誌ページ: A4 1枚寄せ PDF 用（diary.js が class を付与） */
