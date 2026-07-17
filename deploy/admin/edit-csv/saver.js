@@ -83,7 +83,7 @@ export async function saveCsvFile(csvType, csvFile) {
       null,        // ★ JSON 保存しない（重要）
       "",          // append なし
       csvText,     // replaceCsv（CSV 本体）
-      "all.csv"    // ★ 正しいファイル名（csv-replace ではない）
+      csvFile      // ★ 選択中ファイル名で保存（例: 2026.csv）
     );
 
     // CloudFront の URL（loader.js と統一）

@@ -12,10 +12,48 @@ let currentType = "";
 let currentFile = "";
 let sortState = {};
 
+const csvTypeEl = document.getElementById("csvType");
+const csvFileEl = document.getElementById("csvFile");
+
+function buildYearCsvList() {
+  const base = new Date().getFullYear();
+  return [`${base - 1}.csv`, `${base}.csv`, `${base + 1}.csv`];
+}
+
+function getCsvFileOptionsByType(type) {
+  if (type === "schedule/seed" || type === "schedule/planting") {
+    return buildYearCsvList();
+  }
+  return ["all.csv"];
+}
+
+function refreshCsvFileOptions(type) {
+  const options = getCsvFileOptionsByType(type);
+  const prev = csvFileEl.value;
+
+  csvFileEl.innerHTML = "";
+  options.forEach(file => {
+    const option = document.createElement("option");
+    option.value = file;
+    option.textContent = file;
+    csvFileEl.appendChild(option);
+  });
+
+  if (options.includes(prev)) {
+    csvFileEl.value = prev;
+  }
+}
+
+csvTypeEl.addEventListener("change", () => {
+  refreshCsvFileOptions(csvTypeEl.value);
+});
+
+refreshCsvFileOptions(csvTypeEl.value);
+
 // CSV 読み込み
 document.getElementById("loadCsvBtn").addEventListener("click", async () => {
-  currentType = document.getElementById("csvType").value;
-  currentFile = document.getElementById("csvFile").value;
+  currentType = csvTypeEl.value;
+  currentFile = csvFileEl.value;
 
   console.log("[admin] CSV 読み込み:", currentType, currentFile);
 
