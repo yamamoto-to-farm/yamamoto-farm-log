@@ -44,9 +44,12 @@ const GROUPS = [
 ];
 
 let lots = [];
-let assignments = {};
-let dragSeedRef = "";
+let lotsBySeedRef = new Map();
+let blocks = [];
+let laneLayouts = {};
 let focusedLaneId = "";
+let dragBlockId = "";
+const selectedBlockIds = new Set();
 
 export async function initNurseryHousePage() {
   bindControls();
@@ -56,7 +59,8 @@ export async function initNurseryHousePage() {
 function bindControls() {
   const reloadBtn = document.getElementById("reload-btn");
   const saveBtn = document.getElementById("save-btn");
-  const unassignedPool = document.getElementById("unassigned-pool");
+  const splitBtn = document.getElementById("split-btn");
+  const mergeBtn = document.getElementById("merge-btn");
   const zonesRoot = document.getElementById("zones-root");
 
   reloadBtn?.addEventListener("click", async () => {
@@ -67,41 +71,54 @@ function bindControls() {
     await saveLayout();
   });
 
-  if (unassignedPool) {
-    unassignedPool.addEventListener("dragover", e => {
-      e.preventDefault();
-      unassignedPool.classList.add("drag-over");
-    });
+  splitBtn?.addEventListener("click", () => {
+    splitSelectedBlock();
+  });
 
-    unassignedPool.addEventListener("dragleave", () => {
-      unassignedPool.classList.remove("drag-over");
-    });
+  mergeBtn?.addEventListener("click", () => {
+    mergeSelectedBlocks();
+  });
 
-    unassignedPool.addEventListener("drop", e => {
-      e.preventDefault();
-      unassignedPool.classList.remove("drag-over");
-      if (!dragSeedRef) return;
-      delete assignments[dragSeedRef];
-      render();
-    });
-  }
+  if (!zonesRoot) return;
 
-  if (zonesRoot) {
-    zonesRoot.addEventListener("click", event => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
+  zonesRoot.addEventListener("change", event => {
+    const target = event.target;
+    if (!(target instanceof HTMLSelectElement)) return;
+    if (!target.classList.contains("lane-layout-select")) return;
 
-      const laneHead = target.closest(".lane-head");
-      if (!laneHead) return;
+    const laneId = String(target.dataset.laneId || "").trim();
+    if (!laneId) return;
 
-      const laneEl = laneHead.closest(".lane");
-      const laneId = String(laneEl?.dataset?.laneId || "").trim();
-      if (!laneId) return;
+    laneLayouts[laneId] = { mode: String(target.value || "default") };
+    reconcileBlockSlotsWithLayouts();
+    renderGroups();
+  });
 
-      focusedLaneId = (focusedLaneId === laneId) ? "" : laneId;
+  zonesRoot.addEventListener("click", event => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const cardEl = target.closest(".lot-card[data-block-id]");
+    if (cardEl) {
+      const blockId = String(cardEl.getAttribute("data-block-id") || "").trim();
+      if (!blockId) return;
+      toggleSelection(blockId, event.ctrlKey || event.metaKey);
       renderGroups();
-    });
-  }
+      return;
+    }
+
+    if (target.closest(".lane-layout-select")) return;
+
+    const laneHead = target.closest(".lane-head");
+    if (!laneHead) return;
+
+    const laneEl = laneHead.closest(".lane");
+    const laneId = String(laneEl?.getAttribute("data-lane-id") || "").trim();
+    if (!laneId) return;
+
+    focusedLaneId = focusedLaneId === laneId ? "" : laneId;
+    renderGroups();
+  });
 }
 
 async function reloadAll() {
@@ -116,10 +133,15 @@ async function reloadAll() {
   const plantingRows = normalizeKeys(plantingRaw || []);
   const discardRows = normalizeKeys(discardRaw || []);
 
-  assignments = sanitizeAssignments(layout?.assignments || {});
   lots = buildLots(seedRows, plantingRows, discardRows);
-  assignments = dropUnknownAssignments(assignments, lots);
+  lotsBySeedRef = new Map(lots.map(lot => [lot.seedRef, lot]));
 
+  const normalized = normalizeLayoutModel(layout, lotsBySeedRef);
+  blocks = normalized.blocks;
+  laneLayouts = normalized.laneLayouts;
+  selectedBlockIds.clear();
+
+  reconcileBlockSlotsWithLayouts();
   render();
 }
 
@@ -127,16 +149,18 @@ async function loadLayout() {
   try {
     return await loadJSON(`/${LAYOUT_PATH}`);
   } catch {
-    return { version: 1, assignments: {} };
+    return { version: 2, blocks: [], laneLayouts: {}, assignments: {} };
   }
 }
 
 async function saveLayout() {
   try {
     const payload = {
-      version: 1,
+      version: 2,
       updatedAt: new Date().toISOString(),
-      assignments
+      blocks,
+      laneLayouts,
+      assignments: deriveLegacyAssignments(blocks)
     };
     await saveJSON(LAYOUT_PATH, payload);
     alert("配置を保存しました。");
@@ -221,7 +245,7 @@ function buildDiscardedTrayMap(plantingRows, discardRows) {
 
     const trayType = toNumber(planting.trayType) || 128;
     const discardPlants = toNumber(row.discardQuantity || row.discard || 0);
-    const discardTrays = trayType > 0 ? (discardPlants / trayType) : 0;
+    const discardTrays = trayType > 0 ? discardPlants / trayType : 0;
     const perRef = refs.length > 0 ? discardTrays / refs.length : 0;
 
     refs.forEach(ref => {
@@ -261,91 +285,227 @@ function parseDateMs(v) {
   return Number.isFinite(t) ? t : 0;
 }
 
-function sanitizeAssignments(raw) {
-  const next = {};
-  Object.keys(raw || {}).forEach(seedRef => {
-    const value = raw[seedRef];
-    const laneId = String(value?.laneId || "").trim();
-    const order = Number(value?.order);
+function roundTray(v) {
+  return Math.max(0, Math.round(v * 10) / 10);
+}
 
-    if (laneId && Number.isInteger(order) && order >= 0 && findLane(laneId)) {
-      next[seedRef] = { laneId, order };
+function newBlockId(originSeedRef) {
+  const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+  return `${originSeedRef}#${suffix}`;
+}
+
+function normalizeLayoutModel(layout, lotMap) {
+  const rawBlocks = Array.isArray(layout?.blocks)
+    ? layout.blocks
+    : legacyAssignmentsToBlocks(layout?.assignments || {}, lotMap);
+
+  const grouped = new Map();
+  rawBlocks.forEach((row, index) => {
+    const originSeedRef = String(row?.originSeedRef || row?.seedRef || "").trim();
+    if (!originSeedRef || !lotMap.has(originSeedRef)) return;
+
+    const trays = roundTray(toNumber(row?.trays));
+    if (trays <= 0) return;
+
+    const laneId = String(row?.laneId || "").trim();
+    const validLane = laneId && findLane(laneId) ? laneId : "";
+    const slotIndex = Math.max(0, Math.floor(toNumber(row?.slotIndex)));
+    const order = Number.isFinite(Number(row?.order)) ? Number(row.order) : index;
+
+    const block = {
+      blockId: String(row?.blockId || "").trim() || newBlockId(originSeedRef),
+      originSeedRef,
+      trays,
+      laneId: validLane,
+      slotIndex,
+      order
+    };
+
+    if (!grouped.has(originSeedRef)) grouped.set(originSeedRef, []);
+    grouped.get(originSeedRef).push(block);
+  });
+
+  const normalizedBlocks = [];
+  lotMap.forEach((lot, seedRef) => {
+    const available = roundTray(toNumber(lot.availableTrays));
+    if (available <= 0) return;
+
+    let list = (grouped.get(seedRef) || []).sort((a, b) => a.order - b.order);
+    let sum = roundTray(list.reduce((acc, b) => acc + b.trays, 0));
+
+    if (sum > available) {
+      let excess = roundTray(sum - available);
+      const shrink = [...list].sort((a, b) => {
+        if ((a.laneId ? 1 : 0) !== (b.laneId ? 1 : 0)) return (a.laneId ? 1 : 0) - (b.laneId ? 1 : 0);
+        return b.order - a.order;
+      });
+
+      shrink.forEach(block => {
+        if (excess <= 0) return;
+        const cut = Math.min(block.trays, excess);
+        block.trays = roundTray(block.trays - cut);
+        excess = roundTray(excess - cut);
+      });
+
+      list = list.filter(block => block.trays > 0);
+      sum = roundTray(list.reduce((acc, b) => acc + b.trays, 0));
+    }
+
+    if (sum < available) {
+      list.push({
+        blockId: newBlockId(seedRef),
+        originSeedRef: seedRef,
+        trays: roundTray(available - sum),
+        laneId: "",
+        slotIndex: 0,
+        order: list.length
+      });
+    }
+
+    normalizedBlocks.push(...list);
+  });
+
+  const normalizedLayouts = sanitizeLaneLayouts(layout?.laneLayouts || {});
+  const uniqueIds = new Set();
+  normalizedBlocks.forEach((block, index) => {
+    if (!block.blockId || uniqueIds.has(block.blockId)) {
+      block.blockId = newBlockId(block.originSeedRef);
+    }
+    uniqueIds.add(block.blockId);
+    if (!Number.isFinite(Number(block.order))) block.order = index;
+  });
+
+  return {
+    blocks: normalizeBlockOrders(normalizedBlocks),
+    laneLayouts: normalizedLayouts
+  };
+}
+
+function legacyAssignmentsToBlocks(legacyAssignments, lotMap) {
+  const list = [];
+  lotMap.forEach((lot, seedRef) => {
+    const legacy = legacyAssignments?.[seedRef];
+    const laneId = String(legacy?.laneId || "").trim();
+    list.push({
+      blockId: newBlockId(seedRef),
+      originSeedRef: seedRef,
+      trays: roundTray(toNumber(lot.availableTrays)),
+      laneId: laneId && findLane(laneId) ? laneId : "",
+      slotIndex: 0,
+      order: Number.isFinite(Number(legacy?.order)) ? Number(legacy.order) : 0
+    });
+  });
+  return list;
+}
+
+function deriveLegacyAssignments(currentBlocks) {
+  const bySeed = new Map();
+  const byLane = new Map();
+
+  currentBlocks
+    .filter(block => !!block.laneId)
+    .sort((a, b) => a.order - b.order)
+    .forEach(block => {
+      if (!byLane.has(block.laneId)) byLane.set(block.laneId, 0);
+      if (bySeed.has(block.originSeedRef)) return;
+
+      const idx = byLane.get(block.laneId);
+      byLane.set(block.laneId, idx + 1);
+      bySeed.set(block.originSeedRef, {
+        laneId: block.laneId,
+        order: idx
+      });
+    });
+
+  const out = {};
+  bySeed.forEach((value, key) => {
+    out[key] = value;
+  });
+  return out;
+}
+
+function sanitizeLaneLayouts(raw) {
+  const next = {};
+  allLanes().forEach(lane => {
+    const mode = String(raw?.[lane.id]?.mode || "default").trim();
+    const options = getLaneLayoutOptions(lane).map(v => v.value);
+    next[lane.id] = {
+      mode: options.includes(mode) ? mode : "default"
+    };
+  });
+  return next;
+}
+
+function normalizeBlockOrders(inputBlocks) {
+  const grouped = new Map();
+  inputBlocks.forEach(block => {
+    const key = `${block.laneId || "__pool"}|${block.slotIndex || 0}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(block);
+  });
+
+  const out = [];
+  grouped.forEach(items => {
+    items
+      .sort((a, b) => a.order - b.order)
+      .forEach((item, idx) => {
+        item.order = idx;
+        out.push(item);
+      });
+  });
+  return out;
+}
+
+function reconcileBlockSlotsWithLayouts() {
+  blocks.forEach(block => {
+    if (!block.laneId) {
+      block.slotIndex = 0;
       return;
     }
 
-    const migrated = migrateLegacyAssignment(value);
-    if (migrated) {
-      next[seedRef] = migrated;
+    const lane = findLane(block.laneId);
+    if (!lane) {
+      block.laneId = "";
+      block.slotIndex = 0;
+      return;
+    }
+
+    const spec = getLaneLayoutSpec(lane);
+    if (!spec.activeSlots.length) {
+      block.slotIndex = 0;
+      return;
+    }
+
+    if (!spec.activeSlots.includes(block.slotIndex)) {
+      block.slotIndex = spec.activeSlots[spec.activeSlots.length - 1];
     }
   });
-  return next;
-}
 
-function migrateLegacyAssignment(value) {
-  const zoneId = String(value?.zoneId || "").trim();
-  const slotIndex = Number(value?.slotIndex);
-  if (!zoneId || !Number.isInteger(slotIndex) || slotIndex < 0) return null;
-
-  if (zoneId === "house-west") {
-    return {
-      laneId: `west-${(slotIndex % 4) + 1}`,
-      order: Math.floor(slotIndex / 4)
-    };
-  }
-
-  if (zoneId === "house-center") {
-    return {
-      laneId: `west-${(slotIndex % 4) + 1}`,
-      order: 100 + Math.floor(slotIndex / 4)
-    };
-  }
-
-  if (zoneId === "house-east") {
-    return {
-      laneId: `east-${(slotIndex % 3) + 1}`,
-      order: Math.floor(slotIndex / 3)
-    };
-  }
-
-  if (zoneId === "outside-east") {
-    return {
-      laneId: `outside-${(slotIndex % 5) + 1}`,
-      order: Math.floor(slotIndex / 5)
-    };
-  }
-
-  return null;
-}
-
-function dropUnknownAssignments(currentAssignments, lotRows) {
-  const known = new Set((lotRows || []).map(v => v.seedRef));
-  const next = {};
-  Object.keys(currentAssignments || {}).forEach(seedRef => {
-    if (!known.has(seedRef)) return;
-    next[seedRef] = currentAssignments[seedRef];
-  });
-  return next;
+  blocks = normalizeBlockOrders(blocks);
 }
 
 function render() {
   renderSummary();
-  renderUnassignedPool();
   renderGroups();
 }
 
 function renderSummary() {
   const total = lots.length;
   const active = lots.filter(v => v.availableTrays > 0).length;
-  const assigned = Object.keys(assignments).length;
+  const assignedSeedRefs = new Set(
+    blocks.filter(block => !!block.laneId && block.trays > 0).map(block => block.originSeedRef)
+  );
+
   const line = document.getElementById("summary-line");
   if (line) {
-    line.textContent = `ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assigned}件`;
+    line.textContent = `ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件`;
   }
 
-  const staleSeedRefs = Object.keys(assignments).filter(seedRef => {
-    const lot = lots.find(v => v.seedRef === seedRef);
+  const staleSeedRefs = [...assignedSeedRefs].filter(seedRef => {
+    const lot = lotsBySeedRef.get(seedRef);
     return !!lot && lot.availableTrays <= 0;
   });
+
   const staleLine = document.getElementById("stale-line");
   if (!staleLine) return;
 
@@ -359,27 +519,6 @@ function renderSummary() {
   staleLine.textContent = `注意: 在庫0の配置が ${staleSeedRefs.length}件あります（収穫・定植・破棄反映後）。`;
 }
 
-function renderUnassignedPool() {
-  const root = document.getElementById("unassigned-pool");
-  if (!root) return;
-
-  root.innerHTML = "";
-  const assignedSeedRefs = new Set(Object.keys(assignments));
-
-  const filtered = lots.filter(lot => {
-    return !assignedSeedRefs.has(lot.seedRef);
-  });
-
-  if (!filtered.length) {
-    root.innerHTML = '<p class="empty-note">未配置ロットはありません。</p>';
-    return;
-  }
-
-  filtered.forEach(lot => {
-    root.appendChild(buildLotCard(lot));
-  });
-}
-
 function renderGroups() {
   const root = document.getElementById("zones-root");
   if (!root) return;
@@ -390,8 +529,7 @@ function renderGroups() {
   }
   root.classList.toggle("has-focused-lane", !!focusedLaneId);
 
-  const byLane = buildLaneMap();
-  const quickPlaceLots = getQuickPlaceLots(5);
+  const quickPlaceBlocks = getQuickPlaceBlocks(5);
 
   const westGroup = GROUPS.find(group => group.id === "west-house");
   const eastGroup = GROUPS.find(group => group.id === "east-house");
@@ -413,7 +551,6 @@ function renderGroups() {
           title: "",
           lanes: sideLanes
         },
-        byLane,
         {
           cardClass: "outside-side-card",
           laneGridClass: "layout-outside-side",
@@ -430,7 +567,6 @@ function renderGroups() {
           title: "",
           lanes: bottomLanes
         },
-        byLane,
         {
           cardClass: "outside-bottom-card is-wide",
           laneGridClass: "layout-outside-bottom",
@@ -441,26 +577,26 @@ function renderGroups() {
   }
 
   if (westGroup) {
-    root.appendChild(buildGroupCard(westGroup, byLane, {
+    root.appendChild(buildGroupCard(westGroup, {
       showQuickPlace: true,
-      quickPlaceLots
+      quickPlaceBlocks
     }));
   }
   if (eastGroup) {
-    root.appendChild(buildGroupCard(eastGroup, byLane));
+    root.appendChild(buildGroupCard(eastGroup));
   }
 }
 
-function buildGroupCard(group, byLane, options = {}) {
+function buildGroupCard(group, options = {}) {
   const {
     cardClass = "",
     laneGridClass = "",
     showTitle = true,
     showQuickPlace = false,
-    quickPlaceLots = []
+    quickPlaceBlocks = []
   } = options;
-  const groupClass = `group-${String(group.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
 
+  const groupClass = `group-${String(group.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
   const card = document.createElement("section");
   card.className = `zone-card group-card kind-${group.kind} ${groupClass} ${cardClass}`.trim();
 
@@ -471,7 +607,7 @@ function buildGroupCard(group, byLane, options = {}) {
     card.appendChild(title);
   }
 
-  if (showQuickPlace && quickPlaceLots.length) {
+  if (showQuickPlace && quickPlaceBlocks.length) {
     const panel = document.createElement("section");
     panel.className = "west-unsorted-card";
 
@@ -482,10 +618,10 @@ function buildGroupCard(group, byLane, options = {}) {
 
     const list = document.createElement("div");
     list.className = "west-unsorted-list";
-    quickPlaceLots.forEach(lot => {
-      const cardEl = buildQuickPlaceCard(lot);
-      list.appendChild(cardEl);
+    quickPlaceBlocks.forEach(block => {
+      list.appendChild(buildBlockCard(block, null, 0, true));
     });
+
     panel.appendChild(list);
     card.appendChild(panel);
   }
@@ -500,14 +636,14 @@ function buildGroupCard(group, byLane, options = {}) {
   }
 
   group.lanes.forEach(lane => {
-    grid.appendChild(buildLaneElement(lane, byLane));
+    grid.appendChild(buildLaneElement(lane));
   });
 
   card.appendChild(grid);
   return card;
 }
 
-function buildLaneElement(lane, byLane) {
+function buildLaneElement(lane) {
   const laneEl = document.createElement("section");
   const laneClass = `lane-${String(lane.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
   laneEl.className = `lane ${laneClass}`;
@@ -515,123 +651,162 @@ function buildLaneElement(lane, byLane) {
   if (focusedLaneId && focusedLaneId === lane.id) {
     laneEl.classList.add("is-focused");
   }
-  laneEl.style.setProperty("--lane-cols", String(getLaneCols(lane)));
-  laneEl.style.setProperty("--lane-rows", String(getLaneRows(lane)));
 
-  const laneLots = (byLane.get(lane.id) || []).map(seedRef => lots.find(v => v.seedRef === seedRef)).filter(Boolean);
-  const used = laneLots.reduce((sum, lot) => sum + lot.availableTrays, 0);
+  const layoutOptions = getLaneLayoutOptions(lane);
+  const mode = getLaneLayoutMode(lane.id);
+  const optionHtml = layoutOptions
+    .map(opt => `<option value="${escapeHtml(opt.value)}" ${opt.value === mode ? "selected" : ""}>${escapeHtml(opt.label)}</option>`)
+    .join("");
 
+  const used = getLaneUsedTrays(lane.id);
   laneEl.innerHTML = `
     <div class="lane-head">
       <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
       <div class="lane-meta">トレイ${getLaneCols(lane)}列</div>
-      <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${laneLots.length}件`}</div>
+      <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${formatNum(used)}枚`}</div>
+      <div class="lane-layout-line">
+        <label>運用列</label>
+        <select class="lane-layout-select" data-lane-id="${escapeHtml(lane.id)}">${optionHtml}</select>
+      </div>
     </div>
   `;
 
   const body = document.createElement("div");
-  body.className = "lane-body drop-pool";
-  body.dataset.laneId = lane.id;
+  body.className = "lane-body";
   const laneBodyHeight = computeLaneBodyHeight(lane);
   body.style.height = `${laneBodyHeight}px`;
-  bindLaneDrop(body, lane.id, "");
 
-  if (!laneLots.length) {
-    const empty = document.createElement("div");
-    empty.className = "lane-empty";
-    empty.textContent = "ここへ配置";
-    body.appendChild(empty);
-  } else {
-    laneLots.forEach(lot => {
-      const item = document.createElement("div");
-      item.className = "lane-item";
-      item.dataset.seedRef = lot.seedRef;
-      bindLaneDrop(item, lane.id, lot.seedRef);
-      item.appendChild(buildLotCard(lot, lane, laneBodyHeight));
-      body.appendChild(item);
-    });
+  const spec = getLaneLayoutSpec(lane);
+  const slots = document.createElement("div");
+  slots.className = "lane-slots";
+  slots.style.gridTemplateColumns = `repeat(${spec.slotCount}, minmax(0, 1fr))`;
+
+  for (let slotIndex = 0; slotIndex < spec.slotCount; slotIndex += 1) {
+    const slotEl = document.createElement("section");
+    slotEl.className = "lane-slot drop-pool";
+    slotEl.dataset.laneId = lane.id;
+    slotEl.dataset.slotIndex = String(slotIndex);
+
+    if (!spec.activeSlots.includes(slotIndex)) {
+      slotEl.classList.add("is-inactive");
+    } else {
+      bindBlockDrop(slotEl, lane.id, slotIndex, "");
+    }
+
+    if (spec.groupBreakAfter.includes(slotIndex)) {
+      slotEl.classList.add("group-break");
+    }
+
+    const slotBlocks = getLaneSlotBlocks(lane.id, slotIndex);
+    if (!slotBlocks.length) {
+      const empty = document.createElement("div");
+      empty.className = "lane-empty";
+      empty.textContent = spec.activeSlots.includes(slotIndex) ? "ここへ配置" : "空き列";
+      slotEl.appendChild(empty);
+    } else {
+      slotBlocks.forEach(block => {
+        const item = document.createElement("div");
+        item.className = "lane-item";
+        item.dataset.blockId = block.blockId;
+
+        if (spec.activeSlots.includes(slotIndex)) {
+          bindBlockDrop(item, lane.id, slotIndex, block.blockId);
+        }
+
+        item.appendChild(buildBlockCard(block, lane, laneBodyHeight, false));
+        slotEl.appendChild(item);
+      });
+    }
+
+    slots.appendChild(slotEl);
   }
 
+  body.appendChild(slots);
   laneEl.appendChild(body);
   return laneEl;
 }
 
-function buildLaneMap() {
-  const map = new Map();
-  allLanes().forEach(lane => map.set(lane.id, []));
-
-  Object.keys(assignments || {}).forEach(seedRef => {
-    const placement = assignments[seedRef];
-    if (!placement?.laneId || !map.has(placement.laneId)) return;
-    map.get(placement.laneId).push({ seedRef, order: Number(placement.order || 0) });
-  });
-
-  map.forEach((items, laneId) => {
-    items.sort((a, b) => a.order - b.order);
-    map.set(laneId, items.map(v => v.seedRef));
-  });
-
-  return map;
+function getLaneUsedTrays(laneId) {
+  return blocks
+    .filter(block => block.laneId === laneId)
+    .reduce((sum, block) => sum + block.trays, 0);
 }
 
-function getQuickPlaceLots(limit = 5) {
-  const assigned = new Set(Object.keys(assignments || {}));
-  return lots
-    .filter(lot => lot.availableTrays > 0 && !assigned.has(lot.seedRef))
+function getLaneSlotBlocks(laneId, slotIndex) {
+  return blocks
+    .filter(block => block.laneId === laneId && block.slotIndex === slotIndex)
+    .sort((a, b) => a.order - b.order);
+}
+
+function getQuickPlaceBlocks(limit = 5) {
+  return blocks
+    .filter(block => !block.laneId && block.trays > 0)
     .sort((a, b) => {
-      const cmp = (b.seedDateMs || 0) - (a.seedDateMs || 0);
+      const lotA = lotsBySeedRef.get(a.originSeedRef);
+      const lotB = lotsBySeedRef.get(b.originSeedRef);
+      const cmp = (lotB?.seedDateMs || 0) - (lotA?.seedDateMs || 0);
       if (cmp !== 0) return cmp;
-      return b.seedRef.localeCompare(a.seedRef, "ja");
+      return b.trays - a.trays;
     })
     .slice(0, Math.max(0, limit));
 }
 
-function buildLotCard(lot, lane = null, laneBodyHeight = 0) {
-  const card = document.createElement("article");
-  card.className = "lot-card";
-  if (lot.availableTrays <= 0) card.classList.add("zero");
-  if (lot.availableTrays > 0 && lot.availableTrays < 5) card.classList.add("warn");
-  card.draggable = true;
-  card.dataset.seedRef = lot.seedRef;
-  if (lane) {
-    const height = computeBlockHeight(lot, lane, laneBodyHeight);
-    card.style.height = `${height}px`;
+function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false) {
+  const lot = lotsBySeedRef.get(block.originSeedRef);
+  if (!lot) {
+    const fallback = document.createElement("article");
+    fallback.className = "lot-card zero";
+    fallback.textContent = "ロット情報なし";
+    return fallback;
   }
 
-  card.innerHTML = `
-    <div class="lot-name">${escapeHtml(lot.variety)}</div>
-    <div class="lot-ref">${escapeHtml(lot.seedRef)}</div>
-    <div class="lot-meta">在庫 ${formatNum(lot.availableTrays)} 枚 / 播種 ${formatNum(lot.totalTrays)} 枚</div>
-    <div class="lot-meta">定植 ${formatNum(lot.plantedTrays)} / 破棄 ${formatNum(lot.discardedTrays)} / ${escapeHtml(lot.trayType)}穴</div>
-  `;
+  const card = document.createElement("article");
+  card.className = "lot-card";
+  card.dataset.blockId = block.blockId;
 
+  if (selectedBlockIds.has(block.blockId)) {
+    card.classList.add("is-selected");
+  }
+
+  if (block.trays <= 0) card.classList.add("zero");
+  if (block.trays > 0 && block.trays < 5) card.classList.add("warn");
+  if (compact) card.classList.add("unsorted-lot-card");
+
+  if (lane) {
+    card.style.height = `${computeBlockHeight(block.trays, lane, laneBodyHeight)}px`;
+  }
+
+  card.draggable = true;
   card.addEventListener("dragstart", e => {
-    dragSeedRef = lot.seedRef;
+    dragBlockId = block.blockId;
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", lot.seedRef);
+      e.dataTransfer.setData("text/plain", block.blockId);
     }
   });
 
   card.addEventListener("dragend", () => {
-    dragSeedRef = "";
+    dragBlockId = "";
   });
 
+  card.innerHTML = `
+    <div class="lot-name">${escapeHtml(lot.variety)}</div>
+    <div class="lot-ref">${escapeHtml(lot.seedRef)}</div>
+    <div class="lot-meta">配置 ${formatNum(block.trays)} 枚 / 元在庫 ${formatNum(lot.availableTrays)} 枚</div>
+    <div class="lot-meta">定植 ${formatNum(lot.plantedTrays)} / 破棄 ${formatNum(lot.discardedTrays)} / ${escapeHtml(lot.trayType)}穴</div>
+  `;
+
+  if (compact) {
+    const dateEl = document.createElement("div");
+    dateEl.className = "lot-meta lot-seed-date";
+    dateEl.textContent = `播種 ${lot.seedDate || "日付なし"}`;
+    card.appendChild(dateEl);
+  }
+
   return card;
 }
 
-function buildQuickPlaceCard(lot) {
-  const card = buildLotCard(lot);
-  card.classList.add("unsorted-lot-card");
-
-  const dateEl = document.createElement("div");
-  dateEl.className = "lot-meta lot-seed-date";
-  dateEl.textContent = `播種 ${lot.seedDate || "日付なし"}`;
-  card.appendChild(dateEl);
-  return card;
-}
-
-function bindLaneDrop(el, laneId, beforeSeedRef) {
+function bindBlockDrop(el, laneId, slotIndex, beforeBlockId) {
   el.addEventListener("dragover", e => {
     e.preventDefault();
     el.classList.add("drag-over");
@@ -645,34 +820,137 @@ function bindLaneDrop(el, laneId, beforeSeedRef) {
     e.preventDefault();
     el.classList.remove("drag-over");
 
-    const seedRef = dragSeedRef || String(e.dataTransfer?.getData("text/plain") || "").trim();
-    if (!seedRef) return;
-    placeSeedRef(seedRef, laneId, beforeSeedRef);
+    const blockId = dragBlockId || String(e.dataTransfer?.getData("text/plain") || "").trim();
+    if (!blockId) return;
+
+    placeBlock(blockId, laneId, slotIndex, beforeBlockId);
     render();
   });
 }
 
-function placeSeedRef(seedRef, laneId, beforeSeedRef = "") {
-  const lanes = buildLaneMap();
-  lanes.forEach((seedRefs, currentLaneId) => {
-    lanes.set(currentLaneId, seedRefs.filter(ref => ref !== seedRef));
-  });
+function placeBlock(blockId, laneId, slotIndex, beforeBlockId = "") {
+  const target = blocks.find(block => block.blockId === blockId);
+  if (!target) return;
 
-  const target = [...(lanes.get(laneId) || [])];
-  const beforeIndex = beforeSeedRef ? target.indexOf(beforeSeedRef) : -1;
-  if (beforeIndex >= 0) {
-    target.splice(beforeIndex, 0, seedRef);
+  target.laneId = laneId;
+  target.slotIndex = Math.max(0, Math.floor(toNumber(slotIndex)));
+
+  const laneBlocks = blocks
+    .filter(block => block.blockId !== blockId && block.laneId === laneId && block.slotIndex === target.slotIndex)
+    .sort((a, b) => a.order - b.order);
+
+  if (beforeBlockId) {
+    const before = laneBlocks.find(block => block.blockId === beforeBlockId);
+    if (before) {
+      target.order = before.order - 0.5;
+    } else {
+      target.order = laneBlocks.length;
+    }
   } else {
-    target.push(seedRef);
+    target.order = laneBlocks.length;
   }
-  lanes.set(laneId, target);
 
-  assignments = {};
-  lanes.forEach((seedRefs, currentLaneId) => {
-    seedRefs.forEach((ref, index) => {
-      assignments[ref] = { laneId: currentLaneId, order: index };
-    });
-  });
+  blocks = normalizeBlockOrders(blocks);
+}
+
+function toggleSelection(blockId, multiSelect) {
+  if (!multiSelect) {
+    if (selectedBlockIds.size === 1 && selectedBlockIds.has(blockId)) {
+      selectedBlockIds.clear();
+      return;
+    }
+    selectedBlockIds.clear();
+    selectedBlockIds.add(blockId);
+    return;
+  }
+
+  if (selectedBlockIds.has(blockId)) {
+    selectedBlockIds.delete(blockId);
+  } else {
+    selectedBlockIds.add(blockId);
+  }
+}
+
+function splitSelectedBlock() {
+  if (selectedBlockIds.size !== 1) {
+    alert("分割するブロックを1つ選択してください。");
+    return;
+  }
+
+  const blockId = [...selectedBlockIds][0];
+  const target = blocks.find(block => block.blockId === blockId);
+  if (!target) return;
+
+  if (target.trays <= 1) {
+    alert("分割できる枚数がありません。");
+    return;
+  }
+
+  const defaultValue = String(Math.max(1, Math.floor(target.trays / 2)));
+  const input = window.prompt("分割後の1つ目の枚数を入力してください。", defaultValue);
+  if (input == null) return;
+
+  const first = roundTray(toNumber(input));
+  if (first <= 0 || first >= target.trays) {
+    alert("入力値が不正です。0より大きく、元の枚数未満で入力してください。");
+    return;
+  }
+
+  const rest = roundTray(target.trays - first);
+  target.trays = first;
+
+  const sibling = {
+    blockId: newBlockId(target.originSeedRef),
+    originSeedRef: target.originSeedRef,
+    trays: rest,
+    laneId: target.laneId,
+    slotIndex: target.slotIndex,
+    order: target.order + 0.5
+  };
+
+  blocks.push(sibling);
+  blocks = normalizeBlockOrders(blocks);
+
+  selectedBlockIds.clear();
+  selectedBlockIds.add(target.blockId);
+  render();
+}
+
+function mergeSelectedBlocks() {
+  if (selectedBlockIds.size < 2) {
+    alert("結合するブロックを2つ以上選択してください。Ctrl/Command+クリックで複数選択できます。");
+    return;
+  }
+
+  const targets = blocks
+    .filter(block => selectedBlockIds.has(block.blockId))
+    .sort((a, b) => a.order - b.order);
+
+  if (targets.length < 2) {
+    alert("結合対象が見つかりませんでした。");
+    return;
+  }
+
+  const first = targets[0];
+  const sameOrigin = targets.every(block => block.originSeedRef === first.originSeedRef);
+  const sameLane = targets.every(block => block.laneId === first.laneId);
+  const sameSlot = targets.every(block => block.slotIndex === first.slotIndex);
+
+  if (!sameOrigin || !sameLane || !sameSlot) {
+    alert("結合は同一ロット・同一レーン・同一列のブロックのみ可能です。");
+    return;
+  }
+
+  const merged = roundTray(targets.reduce((sum, block) => sum + block.trays, 0));
+  first.trays = merged;
+
+  const dropIds = new Set(targets.slice(1).map(block => block.blockId));
+  blocks = blocks.filter(block => !dropIds.has(block.blockId));
+  blocks = normalizeBlockOrders(blocks);
+
+  selectedBlockIds.clear();
+  selectedBlockIds.add(first.blockId);
+  render();
 }
 
 function findLane(laneId) {
@@ -684,7 +962,7 @@ function allLanes() {
 }
 
 function getLaneCols(lane) {
-  return Math.max(1, toNumber(lane?.trayCols) || 3);
+  return Math.max(1, Math.floor(toNumber(lane?.trayCols) || 3));
 }
 
 function getLaneRows(lane) {
@@ -692,6 +970,57 @@ function getLaneRows(lane) {
   const capacity = toNumber(lane?.capacity);
   if (capacity <= 0) return 24;
   return Math.max(1, capacity / cols);
+}
+
+function getLaneLayoutOptions(lane) {
+  const cols = getLaneCols(lane);
+  const options = [{ value: "default", label: `標準(${cols}列)` }];
+
+  if (cols >= 3) {
+    options.push({ value: "minus1", label: `${Math.max(1, cols - 1)}列運用(1列空き)` });
+  }
+
+  if (cols === 5) {
+    options.push({ value: "split-2-3", label: "2列+3列" });
+  }
+
+  return options;
+}
+
+function getLaneLayoutMode(laneId) {
+  const lane = findLane(laneId);
+  if (!lane) return "default";
+
+  const mode = String(laneLayouts?.[laneId]?.mode || "default");
+  const allowed = getLaneLayoutOptions(lane).map(v => v.value);
+  return allowed.includes(mode) ? mode : "default";
+}
+
+function getLaneLayoutSpec(lane) {
+  const cols = getLaneCols(lane);
+  const mode = getLaneLayoutMode(lane.id);
+
+  if (mode === "minus1") {
+    return {
+      slotCount: cols,
+      activeSlots: Array.from({ length: Math.max(1, cols - 1) }, (_, i) => i),
+      groupBreakAfter: []
+    };
+  }
+
+  if (mode === "split-2-3" && cols === 5) {
+    return {
+      slotCount: 5,
+      activeSlots: [0, 1, 2, 3, 4],
+      groupBreakAfter: [1]
+    };
+  }
+
+  return {
+    slotCount: cols,
+    activeSlots: Array.from({ length: cols }, (_, i) => i),
+    groupBreakAfter: []
+  };
 }
 
 function isOutsideBottomLane(lane) {
@@ -726,7 +1055,6 @@ function getLaneWidthUnits(lane) {
 }
 
 function computeLaneBodyHeight(lane) {
-  // Physical scaling based on one tray size (300mm x 600mm).
   if (isOutsideBottomLane(lane)) {
     const tray = getTraySizeByLane(lane);
     const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
@@ -740,9 +1068,9 @@ function computeLaneBodyHeight(lane) {
   return clamp(Math.round(px), 130, 920);
 }
 
-function computeBlockHeight(lot, lane, laneBodyHeight = 0) {
+function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0) {
   const laneCapacity = toNumber(lane?.capacity);
-  const trays = Math.max(0, toNumber(lot?.availableTrays));
+  const trays = Math.max(0, toNumber(blockTrays));
 
   if (laneCapacity > 0 && laneBodyHeight > 0) {
     const ratio = trays / laneCapacity;
