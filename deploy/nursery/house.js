@@ -855,17 +855,9 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
 
   card.innerHTML = `
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
-    <div class="lot-ref">${escapeHtml(lot.seedRef)}</div>
-    <div class="lot-meta">配置 ${formatNum(block.trays)} 枚 / 元在庫 ${formatNum(lot.availableTrays)} 枚</div>
-    <div class="lot-meta">定植 ${formatNum(lot.plantedTrays)} / 破棄 ${formatNum(lot.discardedTrays)} / ${escapeHtml(lot.trayType)}穴</div>
+    <div class="lot-ref">播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, block.originSeedRef))}</div>
+    <div class="lot-meta">現状 ${formatNum(block.spanCols || 1)}列 × ${formatNum(block.trays)}枚</div>
   `;
-
-  if (compact) {
-    const dateEl = document.createElement("div");
-    dateEl.className = "lot-meta lot-seed-date";
-    dateEl.textContent = `播種 ${lot.seedDate || "日付なし"}`;
-    card.appendChild(dateEl);
-  }
 
   if (lane) {
     ["left", "right"].forEach(side => {
