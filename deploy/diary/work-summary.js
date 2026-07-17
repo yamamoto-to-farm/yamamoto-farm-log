@@ -214,8 +214,6 @@ export function extractWorkForEdit(logs, timestampRows = []) {
         .forEach(v => workers.push(v));
     }
 
-    if (workers.length === 0) return;
-
     // ★ field 抽出（headerName に field がある場合のみ）
     let field = "";
     if (log.headerName.includes("field")) {

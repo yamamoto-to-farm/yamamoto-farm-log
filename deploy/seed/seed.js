@@ -265,10 +265,6 @@ async function saveSeedInner() {
     alert("トレイ枚数を入力してください");
     return;
   }
-  if (!String(data.worker || "").trim()) {
-    alert("作業者は必須です");
-    return;
-  }
 
   const dup = await checkDuplicate("seed", {
     date: data.seedDate,
@@ -306,7 +302,7 @@ async function saveSeedInner() {
     folder: "seed",
     workType: "播種",
     field: "",
-    workers: data.worker,
+    workers: String(data.worker || ""),
     machine: "",
     time: getCurrentTimeText()
   }]).catch(e => {
