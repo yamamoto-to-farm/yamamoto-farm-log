@@ -856,7 +856,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   card.innerHTML = `
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
     <div class="lot-ref">播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, block.originSeedRef))}</div>
-    <div class="lot-meta">現状 ${formatNum(block.spanCols || 1)}列 × ${formatNum(block.trays)}枚</div>
+    <div class="lot-meta">${formatBlockTrayLine(block.trays, block.spanCols)}</div>
   `;
 
   if (lane) {
@@ -1582,6 +1582,25 @@ function clamp(value, min, max) {
 
 function formatNum(v) {
   return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function formatBlockTrayLine(trays, spanCols) {
+  const cols = Math.max(1, Math.floor(toNumber(spanCols) || 1));
+  const total = roundTray(toNumber(trays));
+
+  // Decimal totals are shown as an average per column.
+  if (Math.abs(total - Math.round(total)) > 0.001) {
+    const perCol = roundTray(total / cols);
+    return `${formatNum(total)}枚（${cols}列×${formatNum(perCol)}枚）`;
+  }
+
+  const totalInt = Math.round(total);
+  const base = Math.floor(totalInt / cols);
+  const rem = totalInt - (base * cols);
+  if (rem <= 0) {
+    return `${totalInt}枚（${cols}列×${base}枚）`;
+  }
+  return `${totalInt}枚（${cols}列×${base}枚+${rem}枚）`;
 }
 
 function escapeHtml(value) {
