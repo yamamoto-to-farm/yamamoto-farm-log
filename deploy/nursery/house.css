@@ -537,11 +537,18 @@
 }
 
 @media (max-width: 980px) {
+  html,
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
   #page-area.page-container {
     width: 100%;
     max-width: 100%;
     margin: 0;
     padding: 0;
+    overflow: visible;
   }
 
   .nursery-layout-grid {
@@ -551,6 +558,7 @@
   .lot-pool-card,
   .zones-card {
     min-width: 0;
+    overflow: visible;
   }
 
   .zones-root {
@@ -560,6 +568,21 @@
       "east"
       "outside-side"
       "outside-bottom";
+    overflow: visible;
+  }
+
+  .zone-card,
+  .lane-grid {
+    overflow: visible;
+  }
+
+  .zone-card.group-west-house,
+  .zone-card.group-east-house {
+    align-self: start;
+  }
+
+  .lane-grid {
+    align-items: start;
   }
 
   .group-west-house .lane-grid,
@@ -582,6 +605,11 @@
 
   .lot-card {
     padding: 5px 6px;
+  }
+
+  .lane-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .lot-pool {
