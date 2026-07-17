@@ -653,7 +653,8 @@ function renderGroups() {
   if (westGroup) {
     root.appendChild(buildGroupCard(westGroup, {
       showQuickPlace: true,
-      quickPlaceBlocks
+      quickPlaceBlocks,
+      quickPlaceAboveTitle: true
     }));
   }
   if (eastGroup) {
@@ -667,13 +668,22 @@ function buildGroupCard(group, options = {}) {
     laneGridClass = "",
     showTitle = true,
     showQuickPlace = false,
-    quickPlaceBlocks = []
+    quickPlaceBlocks = [],
+    quickPlaceAboveTitle = false
   } = options;
 
   const groupClass = `group-${String(group.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
 
   const card = document.createElement("section");
   card.className = `zone-card group-card kind-${group.kind} ${groupClass} ${cardClass}`.trim();
+
+  const quickPanel = (showQuickPlace && quickPlaceBlocks.length)
+    ? buildQuickPlacePanel(quickPlaceBlocks)
+    : null;
+
+  if (quickPanel && quickPlaceAboveTitle) {
+    card.appendChild(quickPanel);
+  }
 
   if (showTitle && group.title) {
     const title = document.createElement("h3");
@@ -682,23 +692,8 @@ function buildGroupCard(group, options = {}) {
     card.appendChild(title);
   }
 
-  if (showQuickPlace && quickPlaceBlocks.length) {
-    const panel = document.createElement("section");
-    panel.className = "west-unsorted-card";
-
-    const head = document.createElement("div");
-    head.className = "west-unsorted-title";
-    head.textContent = "未整理（播種日が新しい順）";
-    panel.appendChild(head);
-
-    const list = document.createElement("div");
-    list.className = "west-unsorted-list";
-    quickPlaceBlocks.forEach(block => {
-      list.appendChild(buildBlockCard(block, null, 0, true));
-    });
-    panel.appendChild(list);
-
-    card.appendChild(panel);
+  if (quickPanel && !quickPlaceAboveTitle) {
+    card.appendChild(quickPanel);
   }
 
   const grid = document.createElement("div");
@@ -716,6 +711,25 @@ function buildGroupCard(group, options = {}) {
 
   card.appendChild(grid);
   return card;
+}
+
+function buildQuickPlacePanel(quickPlaceBlocks) {
+  const panel = document.createElement("section");
+  panel.className = "west-unsorted-card";
+
+  const head = document.createElement("div");
+  head.className = "west-unsorted-title";
+  head.textContent = "未整理（播種日が新しい順）";
+  panel.appendChild(head);
+
+  const list = document.createElement("div");
+  list.className = "west-unsorted-list";
+  quickPlaceBlocks.forEach(block => {
+    list.appendChild(buildBlockCard(block, null, 0, true));
+  });
+  panel.appendChild(list);
+
+  return panel;
 }
 
 function buildLaneElement(lane) {
