@@ -142,19 +142,11 @@
   border: 2px solid var(--slot-border);
   display: flex;
   flex-direction: column;
-  min-height: 520px;
+  min-height: 0;
 }
 
 .kind-outside .lane {
   border-color: var(--outside-border);
-}
-
-.group-west-house .lane-grid {
-  grid-template-columns: 3fr 2fr 2fr 3fr;
-}
-
-.group-east-house .lane-grid {
-  grid-template-columns: 3fr 5fr 3fr;
 }
 
 .layout-outside-side {
@@ -167,7 +159,6 @@
 
 .layout-outside-bottom {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
 }
 
 .layout-outside-side .lane[data-lane-id="outside-4"] {
@@ -203,7 +194,7 @@
 }
 
 .lane-body {
-  min-height: 420px;
+  min-height: 180px;
   border: none;
   background: #fff;
   padding: 8px;
@@ -231,23 +222,6 @@
 
 .kind-outside .lane-empty {
   border-color: #fdba74;
-}
-
-.lane.lane-outside-4,
-.lane.lane-outside-5 {
-  min-height: 520px;
-}
-
-.lane.lane-outside-3 {
-  min-height: 130px;
-}
-
-.outside-bottom-card .lane {
-  min-height: 180px;
-}
-
-.outside-bottom-card .lane-body {
-  min-height: 92px;
 }
 
 .lane-item {

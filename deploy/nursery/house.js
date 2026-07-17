@@ -30,11 +30,11 @@ const GROUPS = [
     title: "外育苗場所",
     kind: "outside",
     lanes: [
-      { id: "outside-1", label: "外①", capacity: null, trayCols: null },
-      { id: "outside-2", label: "外②", capacity: null, trayCols: null },
-      { id: "outside-3", label: "外③", capacity: null, trayCols: null },
-      { id: "outside-4", label: "外④", capacity: null, trayCols: null },
-      { id: "outside-5", label: "外⑤", capacity: null, trayCols: null }
+      { id: "outside-1", label: "外①", capacity: 162, trayCols: 3 },
+      { id: "outside-2", label: "外②", capacity: 108, trayCols: 3 },
+      { id: "outside-3", label: "外③", capacity: 75, trayCols: 3 },
+      { id: "outside-4", label: "外④", capacity: 324, trayCols: 3 },
+      { id: "outside-5", label: "外⑤", capacity: 300, trayCols: 3 }
     ]
   }
 ];
@@ -433,8 +433,11 @@ function buildGroupCard(group, byLane, options = {}) {
 
   const grid = document.createElement("div");
   grid.className = `lane-grid ${laneGridClass}`.trim();
-  if (!laneGridClass) {
-    grid.style.gridTemplateColumns = `repeat(${group.lanes.length}, minmax(0, 1fr))`;
+  if (!laneGridClass || laneGridClass === "layout-outside-bottom") {
+    const colTemplate = group.lanes
+      .map(lane => `${getLaneCols(lane)}fr`)
+      .join(" ");
+    grid.style.gridTemplateColumns = colTemplate || `repeat(${group.lanes.length}, minmax(0, 1fr))`;
   }
 
   group.lanes.forEach(lane => {
@@ -450,6 +453,8 @@ function buildLaneElement(lane, byLane) {
   const laneClass = `lane-${String(lane.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
   laneEl.className = `lane ${laneClass}`;
   laneEl.dataset.laneId = lane.id;
+  laneEl.style.setProperty("--lane-cols", String(getLaneCols(lane)));
+  laneEl.style.setProperty("--lane-rows", String(getLaneRows(lane)));
 
   const laneLots = (byLane.get(lane.id) || []).map(seedRef => lots.find(v => v.seedRef === seedRef)).filter(Boolean);
   const used = laneLots.reduce((sum, lot) => sum + lot.availableTrays, 0);
@@ -457,7 +462,7 @@ function buildLaneElement(lane, byLane) {
   laneEl.innerHTML = `
     <div class="lane-head">
       <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
-      <div class="lane-meta">${lane.trayCols ? `トレイ${lane.trayCols}列` : "トレイ3列"}</div>
+      <div class="lane-meta">トレイ${getLaneCols(lane)}列</div>
       <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${laneLots.length}件`}</div>
     </div>
   `;
@@ -465,6 +470,7 @@ function buildLaneElement(lane, byLane) {
   const body = document.createElement("div");
   body.className = "lane-body drop-pool";
   body.dataset.laneId = lane.id;
+  body.style.minHeight = `${computeLaneBodyHeight(lane)}px`;
   bindLaneDrop(body, lane.id, "");
 
   if (!laneLots.length) {
@@ -589,6 +595,23 @@ function findLane(laneId) {
 
 function allLanes() {
   return GROUPS.flatMap(group => group.lanes);
+}
+
+function getLaneCols(lane) {
+  return Math.max(1, toNumber(lane?.trayCols) || 3);
+}
+
+function getLaneRows(lane) {
+  const cols = getLaneCols(lane);
+  const capacity = toNumber(lane?.capacity);
+  if (capacity <= 0) return 24;
+  return Math.max(1, capacity / cols);
+}
+
+function computeLaneBodyHeight(lane) {
+  // Similar scaling: width ~ tray columns, height ~ (tray count / columns)
+  const rows = getLaneRows(lane);
+  return clamp(Math.round(rows * 2.8), 88, 420);
 }
 
 function computeBlockHeight(lot, lane) {
