@@ -611,15 +611,15 @@ function getLaneRows(lane) {
 function computeLaneBodyHeight(lane) {
   // Similar scaling: width ~ tray columns, height ~ (tray count / columns)
   const rows = getLaneRows(lane);
-  return clamp(Math.round(rows * 3.6), 90, 520);
+  return clamp(Math.round(rows * 2.2), 76, 320);
 }
 
 function computeBlockHeight(lot, lane) {
   if (lane.capacity && lane.capacity > 0) {
     const ratio = lot.availableTrays / lane.capacity;
-    return clamp(Math.round(48 + (ratio * 360)), 58, 230);
+    return clamp(Math.round(34 + (ratio * 220)), 40, 130);
   }
-  return clamp(Math.round(68 + (lot.availableTrays * 1.2)), 72, 180);
+  return clamp(Math.round(44 + (lot.availableTrays * 0.85)), 52, 124);
 }
 
 function clamp(value, min, max) {

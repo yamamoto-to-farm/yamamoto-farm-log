@@ -10,8 +10,8 @@
 #page-area.page-container {
   width: min(1960px, 99vw);
   max-width: min(1960px, 99vw);
-  margin: 4px auto;
-  padding: 6px 8px;
+  margin: 2px auto;
+  padding: 2px 4px;
 }
 
 .nursery-layout-grid > .card {
@@ -68,18 +68,18 @@
 .nursery-layout-grid {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-  gap: 10px;
+  gap: 6px;
   align-items: start;
 }
 
 .lot-pool {
-  min-height: 520px;
-  max-height: calc(100vh - 260px);
+  min-height: 420px;
+  max-height: calc(100vh - 220px);
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-right: 4px;
+  gap: 4px;
+  padding-right: 2px;
 }
 
 .drop-pool.drag-over {
@@ -94,10 +94,10 @@
   grid-template-areas:
     "outside-side west east"
     "outside-bottom outside-bottom outside-bottom";
-  gap: 8px;
-  padding: 6px;
+  gap: 4px;
+  padding: 3px;
   background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-  border-radius: 6px;
+  border-radius: 4px;
   align-items: start;
 }
 
@@ -126,12 +126,12 @@
 }
 
 .zone-title {
-  margin: 0 0 8px;
-  font-size: 38px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-align: center;
-  color: #334155;
+  color: #374151;
 }
 
 .lane-grid {
@@ -142,7 +142,7 @@
 
 .lane {
   background: #fff;
-  border: 2px solid var(--slot-border);
+  border: 1px solid var(--slot-border);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -178,32 +178,32 @@
 }
 
 .lane-head {
-  padding: 10px 8px 4px;
+  padding: 4px 6px 2px;
   border-bottom: none;
   background: #fff;
 }
 
 .lane-name {
-  font-size: 31px;
+  font-size: 18px;
   font-weight: 700;
-  color: #475569;
+  color: #334155;
 }
 
 .lane-meta,
 .lane-usage {
-  margin-top: 2px;
-  font-size: 28px;
-  color: #64748b;
+  margin-top: 1px;
+  font-size: 13px;
+  color: #475569;
 }
 
 .lane-body {
   min-height: 0;
   border: none;
   background: #fff;
-  padding: 4px;
+  padding: 2px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: stretch;
   overflow-y: auto;
 }
@@ -214,13 +214,13 @@
 }
 
 .lane-empty {
-  min-height: 100px;
+  min-height: 48px;
   border: 1px dashed #bfdbfe;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #64748b;
-  font-size: 14px;
+  font-size: 11px;
 }
 
 .kind-outside .lane-empty {
@@ -230,15 +230,15 @@
 .lane-item {
   display: flex;
   align-items: stretch;
-  min-height: 64px;
+  min-height: 42px;
 }
 
 .lot-card {
   width: 100%;
   border: 1px solid #b8d4e7;
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--slot-fill);
-  padding: 8px;
+  padding: 4px 5px;
   cursor: grab;
   user-select: none;
   overflow: hidden;
@@ -252,20 +252,20 @@
 }
 
 .lot-card .lot-name {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .lot-card .lot-ref {
-  font-size: 11px;
+  font-size: 10px;
   color: #475569;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .lot-card .lot-meta {
-  font-size: 11px;
+  font-size: 10px;
   color: #1e293b;
 }
 
@@ -282,7 +282,7 @@
 
 .empty-note {
   color: #64748b;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 @media (max-width: 980px) {
@@ -330,15 +330,15 @@
   }
 
   .zone-title {
-    font-size: 28px;
+    font-size: 16px;
   }
 
   .lane-name {
-    font-size: 22px;
+    font-size: 15px;
   }
 
   .lane-meta,
   .lane-usage {
-    font-size: 16px;
+    font-size: 12px;
   }
 }
