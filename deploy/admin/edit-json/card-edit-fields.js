@@ -145,6 +145,25 @@ function replaceFieldCellValue(rawValue, renameMap) {
   return { value: replaced, changed, replacedCount };
 }
 
+function replacePlantingRefValue(rawValue, renameMap) {
+  const raw = String(rawValue ?? "");
+  if (!raw) return { value: raw, changed: false, replacedCount: 0 };
+
+  let value = raw;
+  let changed = false;
+  let replacedCount = 0;
+
+  renameMap.forEach((newName, oldName) => {
+    const from = `-${oldName}-`;
+    if (!value.includes(from)) return;
+    value = value.split(from).join(`-${newName}-`);
+    changed = true;
+    replacedCount += 1;
+  });
+
+  return { value, changed, replacedCount };
+}
+
 async function loadTypeIndex(type) {
   const candidates = [
     { load: `/data/${type}/${type}-index.json`, save: `data/${type}/${type}-index.json` },
@@ -228,13 +247,25 @@ async function migrateFieldAllCsv(renamePairs) {
       let changed = false;
       const nextRows = rows.map(row => {
         const original = String(row.field ?? "");
-        const replaced = replaceFieldCellValue(original, renameMap);
-        if (replaced.changed) {
+        const replacedField = replaceFieldCellValue(original, renameMap);
+
+        let nextRow = row;
+        if (replacedField.changed) {
           changed = true;
-          replacedCells += replaced.replacedCount;
-          return { ...row, field: replaced.value };
+          replacedCells += replacedField.replacedCount;
+          nextRow = { ...nextRow, field: replacedField.value };
         }
-        return row;
+
+        if (Object.prototype.hasOwnProperty.call(row, "plantingRef")) {
+          const replacedRef = replacePlantingRefValue(String(row.plantingRef ?? ""), renameMap);
+          if (replacedRef.changed) {
+            changed = true;
+            replacedCells += replacedRef.replacedCount;
+            nextRow = { ...nextRow, plantingRef: replacedRef.value };
+          }
+        }
+
+        return nextRow;
       });
 
       if (!changed) continue;
