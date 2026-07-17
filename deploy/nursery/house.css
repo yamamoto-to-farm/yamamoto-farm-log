@@ -7,6 +7,24 @@
   --outside-border: #f97316;
 }
 
+#page-area.page-container {
+  width: min(1760px, 98vw);
+  max-width: min(1760px, 98vw);
+}
+
+.nursery-layout-grid > .card {
+  width: 100%;
+  max-width: none;
+}
+
+.lot-pool-card {
+  min-width: 360px;
+}
+
+.zones-card {
+  min-width: 0;
+}
+
 .nursery-toolbar .toolbar-row {
   display: flex;
   flex-wrap: wrap;
@@ -47,8 +65,8 @@
 
 .nursery-layout-grid {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) 1fr;
-  gap: 12px;
+  grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+  gap: 16px;
   align-items: start;
 }
 
@@ -291,8 +309,18 @@
 }
 
 @media (max-width: 980px) {
+  #page-area.page-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .nursery-layout-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lot-pool-card,
+  .zones-card {
+    min-width: 0;
   }
 
   .zones-root {
