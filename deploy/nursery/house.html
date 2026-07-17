@@ -13,23 +13,16 @@
   <div id="page-area" class="page-container" style="display:none;">
     <h1 class="page-title">育苗ハウス・外育苗 配置ボード</h1>
 
-    <section class="nursery-toolbar">
-      <div class="toolbar-row">
-        <button id="reload-btn" class="secondary-btn" type="button">再読込</button>
-        <button id="save-btn" class="primary-btn" type="button">配置を保存</button>
-      </div>
-      <div id="summary-line" class="summary-line">読み込み中...</div>
-      <div id="stale-line" class="stale-line" style="display:none;"></div>
-    </section>
-
     <section class="nursery-layout-grid">
-      <article class="card lot-pool-card">
-        <h2 class="section-title">未配置ロット（ドラッグ元）</h2>
-        <div id="unassigned-pool" class="lot-pool drop-pool"></div>
-      </article>
-
       <article class="card zones-card">
-        <h2 class="section-title">棟ごとの配置イメージ</h2>
+        <section class="nursery-toolbar">
+          <div class="toolbar-row">
+            <button id="reload-btn" class="secondary-btn" type="button">再読込</button>
+            <button id="save-btn" class="primary-btn" type="button">配置を保存</button>
+          </div>
+          <div id="summary-line" class="summary-line">読み込み中...</div>
+          <div id="stale-line" class="stale-line" style="display:none;"></div>
+        </section>
         <div id="zones-root" class="zones-root"></div>
       </article>
     </section>

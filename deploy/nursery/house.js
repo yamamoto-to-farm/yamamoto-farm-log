@@ -142,6 +142,8 @@ function buildLots(seedRows, plantingRows, discardRows) {
 
       return {
         seedRef,
+        seedDate: String(row.seedDate || "").trim(),
+        seedDateMs: parseDateMs(row.seedDate),
         variety: String(row.varietyName || "(品種未設定)").trim(),
         trayType: String(row.trayType || "-").trim(),
         totalTrays,
@@ -221,6 +223,23 @@ function splitSeedRefs(raw) {
 function toNumber(v) {
   const n = Number(String(v ?? "").replace(/,/g, "").trim());
   return Number.isFinite(n) ? n : 0;
+}
+
+function parseDateMs(v) {
+  const raw = String(v || "").trim();
+  if (!raw) return 0;
+
+  const ms = Date.parse(raw);
+  if (Number.isFinite(ms)) return ms;
+
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length !== 8) return 0;
+
+  const y = Number(digits.slice(0, 4));
+  const m = Number(digits.slice(4, 6));
+  const d = Number(digits.slice(6, 8));
+  const t = new Date(y, Math.max(0, m - 1), d).getTime();
+  return Number.isFinite(t) ? t : 0;
 }
 
 function sanitizeAssignments(raw) {
@@ -348,6 +367,7 @@ function renderGroups() {
 
   root.innerHTML = "";
   const byLane = buildLaneMap();
+  const quickPlaceLots = getQuickPlaceLots(5);
 
   const westGroup = GROUPS.find(group => group.id === "west-house");
   const eastGroup = GROUPS.find(group => group.id === "east-house");
@@ -397,7 +417,10 @@ function renderGroups() {
   }
 
   if (westGroup) {
-    root.appendChild(buildGroupCard(westGroup, byLane));
+    root.appendChild(buildGroupCard(westGroup, byLane, {
+      showQuickPlace: true,
+      quickPlaceLots
+    }));
   }
   if (eastGroup) {
     root.appendChild(buildGroupCard(eastGroup, byLane));
@@ -405,7 +428,13 @@ function renderGroups() {
 }
 
 function buildGroupCard(group, byLane, options = {}) {
-  const { cardClass = "", laneGridClass = "", showTitle = true } = options;
+  const {
+    cardClass = "",
+    laneGridClass = "",
+    showTitle = true,
+    showQuickPlace = false,
+    quickPlaceLots = []
+  } = options;
   const groupClass = `group-${String(group.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
 
   const card = document.createElement("section");
@@ -416,6 +445,25 @@ function buildGroupCard(group, byLane, options = {}) {
     title.className = "zone-title group-title";
     title.textContent = group.title;
     card.appendChild(title);
+  }
+
+  if (showQuickPlace && quickPlaceLots.length) {
+    const panel = document.createElement("section");
+    panel.className = "west-unsorted-card";
+
+    const head = document.createElement("div");
+    head.className = "west-unsorted-title";
+    head.textContent = "未整理（播種日が新しい順）";
+    panel.appendChild(head);
+
+    const list = document.createElement("div");
+    list.className = "west-unsorted-list";
+    quickPlaceLots.forEach(lot => {
+      const cardEl = buildQuickPlaceCard(lot);
+      list.appendChild(cardEl);
+    });
+    panel.appendChild(list);
+    card.appendChild(panel);
   }
 
   const grid = document.createElement("div");
@@ -498,6 +546,18 @@ function buildLaneMap() {
   return map;
 }
 
+function getQuickPlaceLots(limit = 5) {
+  const assigned = new Set(Object.keys(assignments || {}));
+  return lots
+    .filter(lot => lot.availableTrays > 0 && !assigned.has(lot.seedRef))
+    .sort((a, b) => {
+      const cmp = (b.seedDateMs || 0) - (a.seedDateMs || 0);
+      if (cmp !== 0) return cmp;
+      return b.seedRef.localeCompare(a.seedRef, "ja");
+    })
+    .slice(0, Math.max(0, limit));
+}
+
 function buildLotCard(lot, lane = null) {
   const card = document.createElement("article");
   card.className = "lot-card";
@@ -529,6 +589,17 @@ function buildLotCard(lot, lane = null) {
     dragSeedRef = "";
   });
 
+  return card;
+}
+
+function buildQuickPlaceCard(lot) {
+  const card = buildLotCard(lot);
+  card.classList.add("unsorted-lot-card");
+
+  const dateEl = document.createElement("div");
+  dateEl.className = "lot-meta lot-seed-date";
+  dateEl.textContent = `播種 ${lot.seedDate || "日付なし"}`;
+  card.appendChild(dateEl);
   return card;
 }
 
