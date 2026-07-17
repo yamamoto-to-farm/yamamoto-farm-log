@@ -5,7 +5,7 @@ const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
 const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
-const MM_TO_PX = 0.0072;
+const MM_TO_PX = 0.0088;
 
 const GROUPS = [
   {
@@ -13,10 +13,10 @@ const GROUPS = [
     title: "育苗ハウス　西棟",
     kind: "house",
     lanes: [
-      { id: "west-1", label: "西①", capacity: 240, trayCols: 3 },
-      { id: "west-2", label: "西②", capacity: 160, trayCols: 2 },
-      { id: "west-3", label: "西③", capacity: 160, trayCols: 2 },
-      { id: "west-4", label: "西④", capacity: 240, trayCols: 3 }
+      { id: "west-1", label: "西①", capacity: 240, trayCols: 3, shortEdgeAxis: "ew" },
+      { id: "west-2", label: "西②", capacity: 160, trayCols: 2, shortEdgeAxis: "ew" },
+      { id: "west-3", label: "西③", capacity: 160, trayCols: 2, shortEdgeAxis: "ew" },
+      { id: "west-4", label: "西④", capacity: 240, trayCols: 3, shortEdgeAxis: "ew" }
     ]
   },
   {
@@ -24,9 +24,9 @@ const GROUPS = [
     title: "育苗ハウス　東棟",
     kind: "house",
     lanes: [
-      { id: "east-1", label: "東①", capacity: 366, trayCols: 3 },
-      { id: "east-2", label: "東②", capacity: 610, trayCols: 5 },
-      { id: "east-3", label: "東③", capacity: 366, trayCols: 3 }
+      { id: "east-1", label: "東①", capacity: 366, trayCols: 3, shortEdgeAxis: "ew" },
+      { id: "east-2", label: "東②", capacity: 610, trayCols: 5, shortEdgeAxis: "ew" },
+      { id: "east-3", label: "東③", capacity: 366, trayCols: 3, shortEdgeAxis: "ew" }
     ]
   },
   {
@@ -34,11 +34,11 @@ const GROUPS = [
     title: "外育苗場所",
     kind: "outside",
     lanes: [
-      { id: "outside-1", label: "外①", capacity: 162, trayCols: 3 },
-      { id: "outside-2", label: "外②", capacity: 108, trayCols: 3 },
-      { id: "outside-3", label: "外③", capacity: 75, trayCols: 3 },
-      { id: "outside-4", label: "外④", capacity: 324, trayCols: 3 },
-      { id: "outside-5", label: "外⑤", capacity: 300, trayCols: 3 }
+      { id: "outside-1", label: "外①", capacity: 162, trayCols: 3, shortEdgeAxis: "ns" },
+      { id: "outside-2", label: "外②", capacity: 108, trayCols: 3, shortEdgeAxis: "ns" },
+      { id: "outside-3", label: "外③", capacity: 75, trayCols: 3, shortEdgeAxis: "ns" },
+      { id: "outside-4", label: "外④", capacity: 324, trayCols: 3, shortEdgeAxis: "ew" },
+      { id: "outside-5", label: "外⑤", capacity: 300, trayCols: 3, shortEdgeAxis: "ew" }
     ]
   }
 ];
@@ -612,15 +612,32 @@ function getLaneRows(lane) {
   return Math.max(1, capacity / cols);
 }
 
+function getTraySizeByLane(lane) {
+  const axis = String(lane?.shortEdgeAxis || "ew").toLowerCase();
+  if (axis === "ns") {
+    return {
+      ewMm: TRAY_LENGTH_MM,
+      nsMm: TRAY_WIDTH_MM
+    };
+  }
+  return {
+    ewMm: TRAY_WIDTH_MM,
+    nsMm: TRAY_LENGTH_MM
+  };
+}
+
 function getLaneWidthUnits(lane) {
-  return getLaneCols(lane) * TRAY_WIDTH_MM;
+  const cols = getLaneCols(lane);
+  const tray = getTraySizeByLane(lane);
+  return cols * tray.ewMm;
 }
 
 function computeLaneBodyHeight(lane) {
   // Physical scaling based on one tray size (300mm x 600mm).
   const rows = getLaneRows(lane);
-  const px = rows * TRAY_LENGTH_MM * MM_TO_PX;
-  return clamp(Math.round(px), 120, 700);
+  const tray = getTraySizeByLane(lane);
+  const px = rows * tray.nsMm * MM_TO_PX;
+  return clamp(Math.round(px), 130, 920);
 }
 
 function computeBlockHeight(lot, lane) {
@@ -629,7 +646,8 @@ function computeBlockHeight(lot, lane) {
   if (trays <= 0) return 40;
 
   const rows = trays / cols;
-  const px = rows * TRAY_LENGTH_MM * MM_TO_PX;
+  const tray = getTraySizeByLane(lane || {});
+  const px = rows * tray.nsMm * MM_TO_PX;
   return clamp(Math.round(px), 40, 220);
 }
 
