@@ -49,6 +49,7 @@ let lotsBySeedRef = new Map();
 let blocks = [];
 let focusedLaneId = "";
 let dragBlockId = "";
+let dragBlockIds = [];
 const selectedBlockIds = new Set();
 
 const resizeState = {
@@ -743,6 +744,8 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
 
   card.draggable = true;
   card.addEventListener("dragstart", e => {
+    const canGroupMove = selectedBlockIds.has(block.blockId) && selectedBlockIds.size > 1;
+    dragBlockIds = canGroupMove ? [...selectedBlockIds] : [block.blockId];
     dragBlockId = block.blockId;
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = "move";
@@ -751,6 +754,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   });
 
   card.addEventListener("dragend", () => {
+    dragBlockIds = [];
     dragBlockId = "";
   });
 
@@ -859,12 +863,130 @@ function bindBlockDrop(el, lane, laneBodyHeight, beforeBlockId) {
     e.preventDefault();
     el.classList.remove("drag-over");
 
-    const blockId = dragBlockId || String(e.dataTransfer?.getData("text/plain") || "").trim();
-    if (!blockId) return;
+    const fallbackId = dragBlockId || String(e.dataTransfer?.getData("text/plain") || "").trim();
+    const ids = dragBlockIds.length ? [...dragBlockIds] : (fallbackId ? [fallbackId] : []);
+    if (!ids.length) return;
 
-    const moved = placeBlock(blockId, lane, laneBodyHeight, e, beforeBlockId);
+    const moved = ids.length > 1
+      ? placeBlockGroup(ids, lane, laneBodyHeight, e, beforeBlockId, fallbackId)
+      : placeBlock(ids[0], lane, laneBodyHeight, e, beforeBlockId);
+
+    if (moved) {
+      dragBlockIds = [];
+      dragBlockId = "";
+    }
+
     if (moved) render();
   });
+}
+
+function placeBlockGroup(blockIds, lane, laneBodyHeight, dropEvent, beforeBlockId = "", anchorBlockId = "") {
+  const idSet = new Set(blockIds || []);
+  const group = blocks
+    .filter(block => idSet.has(block.blockId))
+    .sort((a, b) => a.order - b.order);
+
+  if (!group.length) return false;
+
+  const anchor = group.find(block => block.blockId === anchorBlockId) || group[0];
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(lane.id)}"]`);
+  if (!(laneBody instanceof HTMLElement)) return false;
+
+  const usedWithoutGroup = blocks
+    .filter(block => !idSet.has(block.blockId) && block.laneId === lane.id)
+    .reduce((sum, block) => sum + block.trays, 0);
+  const groupTrays = group.reduce((sum, block) => sum + block.trays, 0);
+
+  if (toNumber(lane.capacity) > 0 && (usedWithoutGroup + groupTrays) > (toNumber(lane.capacity) + 0.1)) {
+    alert(`${lane.label} は上限 ${formatNum(lane.capacity)}枚です。選択ブロックをまとめて置くと上限を超えます。`);
+    return false;
+  }
+
+  const laneCols = getLaneCols(lane);
+  const anchorSpan = clamp(Math.floor(toNumber(anchor.spanCols) || 1), 1, laneCols);
+  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, anchorSpan, anchor.trays);
+
+  const baseX = clamp(toNumber(anchor.posX), 0, 1);
+  const baseY = clamp(toNumber(anchor.posY), 0, 1);
+
+  const placedRects = [];
+  const placedMap = new Map();
+  const excludeIds = [...idSet];
+
+  for (const block of group) {
+    const span = clamp(Math.floor(toNumber(block.spanCols) || 1), 1, laneCols);
+    const dx = clamp(toNumber(block.posX), 0, 1) - baseX;
+    const dy = clamp(toNumber(block.posY), 0, 1) - baseY;
+
+    const prefX = block.blockId === anchor.blockId ? prefer.x : prefer.x + dx;
+    const prefY = block.blockId === anchor.blockId ? prefer.y : prefer.y + dy;
+
+    const resolved = resolvePlacementInLane({
+      lane,
+      laneBodyEl: laneBody,
+      laneBodyHeight,
+      movingBlockId: block.blockId,
+      trays: block.trays,
+      spanCols: span,
+      preferredX: prefX,
+      preferredY: prefY,
+      excludeBlockIds: excludeIds,
+      occupiedRects: placedRects
+    });
+
+    if (!resolved) {
+      alert("選択ブロックを重ならずに配置できる空きがありません。場所を変えてください。");
+      return false;
+    }
+
+    placedMap.set(block.blockId, {
+      laneId: lane.id,
+      spanCols: span,
+      posX: resolved.x,
+      posY: resolved.y
+    });
+
+    placedRects.push(getRectNormFromPlacement({
+      lane,
+      laneBodyHeight,
+      trays: block.trays,
+      spanCols: span,
+      x: resolved.x,
+      y: resolved.y
+    }));
+  }
+
+  group.forEach(block => {
+    const next = placedMap.get(block.blockId);
+    if (!next) return;
+    block.laneId = next.laneId;
+    block.spanCols = next.spanCols;
+    block.posX = next.posX;
+    block.posY = next.posY;
+  });
+
+  const sameLane = blocks
+    .filter(block => !idSet.has(block.blockId) && block.laneId === lane.id)
+    .sort((a, b) => a.order - b.order);
+
+  const movedList = group.filter(block => placedMap.has(block.blockId));
+  const next = [];
+  let inserted = false;
+  sameLane.forEach(block => {
+    if (!inserted && beforeBlockId && block.blockId === beforeBlockId) {
+      movedList.forEach(v => next.push(v));
+      inserted = true;
+    }
+    next.push(block);
+  });
+  if (!inserted) movedList.forEach(v => next.push(v));
+
+  next.forEach((block, idx) => {
+    block.order = idx;
+  });
+
+  blocks = normalizeBlockOrders(blocks);
+  return true;
 }
 
 function placeBlock(blockId, lane, laneBodyHeight, dropEvent, beforeBlockId = "") {
@@ -950,7 +1072,18 @@ function calcDropPosition(dropEvent, laneBodyEl, lane, laneBodyHeight, spanCols,
   };
 }
 
-function resolvePlacementInLane({ lane, laneBodyEl, laneBodyHeight, movingBlockId, trays, spanCols, preferredX, preferredY }) {
+function resolvePlacementInLane({
+  lane,
+  laneBodyEl,
+  laneBodyHeight,
+  movingBlockId,
+  trays,
+  spanCols,
+  preferredX,
+  preferredY,
+  excludeBlockIds = [],
+  occupiedRects = []
+}) {
   const laneCols = getLaneCols(lane);
   const widthNorm = clamp(spanCols / laneCols, 0.05, 1);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, spanCols);
@@ -978,9 +1111,11 @@ function resolvePlacementInLane({ lane, laneBodyEl, laneBodyHeight, movingBlockI
   });
   candidates.sort((a, b) => a.d - b.d);
 
+  const excludeSet = new Set(excludeBlockIds || []);
   const others = blocks
-    .filter(block => block.blockId !== movingBlockId && block.laneId === lane.id)
+    .filter(block => block.blockId !== movingBlockId && block.laneId === lane.id && !excludeSet.has(block.blockId))
     .map(block => getBlockRectNorm(block, lane, laneBodyHeight));
+  const fixedOccupied = (occupiedRects || []).filter(Boolean);
 
   for (const c of candidates) {
     const rect = {
@@ -990,7 +1125,8 @@ function resolvePlacementInLane({ lane, laneBodyEl, laneBodyHeight, movingBlockI
       bottom: c.y + heightNorm
     };
 
-    const overlapped = others.some(other => isRectOverlap(rect, other));
+    const overlapped = others.some(other => isRectOverlap(rect, other))
+      || fixedOccupied.some(other => isRectOverlap(rect, other));
     if (!overlapped) {
       return { x: c.x, y: c.y };
     }
@@ -1014,6 +1150,26 @@ function getBlockRectNorm(block, lane, laneBodyHeight) {
     top: y,
     right: x + width,
     bottom: y + height
+  };
+}
+
+function getRectNormFromPlacement({ lane, laneBodyHeight, trays, spanCols, x, y }) {
+  const laneCols = getLaneCols(lane);
+  const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
+  const width = clamp(span / laneCols, 0.05, 1);
+  const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, span);
+  const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
+
+  const maxX = Math.max(0, 1 - width);
+  const maxY = Math.max(0, 1 - height);
+  const left = clamp(toNumber(x), 0, maxX);
+  const top = clamp(toNumber(y), 0, maxY);
+
+  return {
+    left,
+    top,
+    right: left + width,
+    bottom: top + height
   };
 }
 
