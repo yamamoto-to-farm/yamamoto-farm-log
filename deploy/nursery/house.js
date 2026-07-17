@@ -7,7 +7,8 @@ const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
 const MM_TO_PX = 0.0088;
 const SNAP_PX = 24;
-const LANE_COL_WIDTH_FACTOR = 34;
+const LANE_COL_WIDTH_FACTOR = 24;
+const PLACEMENT_EDGE_GAP_PX = 6;
 
 const GROUPS = [
   {
@@ -1195,9 +1196,11 @@ function resolvePlacementInLane({
   const widthNorm = clamp(spanCols / laneCols, 0.05, 1);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, spanCols);
   const heightNorm = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
+  const edgeGapNormX = PLACEMENT_EDGE_GAP_PX / Math.max(1, laneBodyEl.clientWidth);
+  const edgeGapNormY = PLACEMENT_EDGE_GAP_PX / Math.max(1, laneBodyHeight);
 
-  const maxX = Math.max(0, 1 - widthNorm);
-  const maxY = Math.max(0, 1 - heightNorm);
+  const maxX = Math.max(0, 1 - widthNorm - edgeGapNormX);
+  const maxY = Math.max(0, 1 - heightNorm - edgeGapNormY);
 
   const stepX = clamp(SNAP_PX / Math.max(1, laneBodyEl.clientWidth), 0.01, 0.2);
   const stepY = clamp(SNAP_PX / Math.max(1, laneBodyHeight), 0.01, 0.2);
@@ -1542,8 +1545,9 @@ function getLaneMinWidthPx(lane) {
   const cols = getLaneCols(lane);
   const tray = getTraySizeByLane(lane);
   const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
-  const colPx = Math.max(56, shortEdgeMm * MM_TO_PX * LANE_COL_WIDTH_FACTOR);
-  return Math.round((colPx * cols) + 24);
+  const trayBased = shortEdgeMm * MM_TO_PX * LANE_COL_WIDTH_FACTOR;
+  const perCol = clamp(Math.round(trayBased), 34, 56);
+  return clamp((perCol * cols) + 44, 130, 250);
 }
 
 function computeLaneBodyHeight(lane) {

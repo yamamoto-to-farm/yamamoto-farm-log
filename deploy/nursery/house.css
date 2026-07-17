@@ -140,6 +140,8 @@
   padding: 0;
   background: transparent;
   box-shadow: none;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .zone-card.group-west-house {
@@ -303,7 +305,7 @@
   display: block;
   position: relative;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .lane-canvas {
