@@ -3,6 +3,10 @@ import { loadJSON, saveJSON } from "/common/json.js";
 
 const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
+const TRAY_WIDTH_MM = 300;
+const TRAY_LENGTH_MM = 600;
+const MM_TO_PX = 0.0052;
+
 const GROUPS = [
   {
     id: "west-house",
@@ -435,7 +439,7 @@ function buildGroupCard(group, byLane, options = {}) {
   grid.className = `lane-grid ${laneGridClass}`.trim();
   if (!laneGridClass || laneGridClass === "layout-outside-bottom") {
     const colTemplate = group.lanes
-      .map(lane => `${getLaneCols(lane)}fr`)
+      .map(lane => `${getLaneWidthUnits(lane)}fr`)
       .join(" ");
     grid.style.gridTemplateColumns = colTemplate || `repeat(${group.lanes.length}, minmax(0, 1fr))`;
   }
@@ -608,18 +612,25 @@ function getLaneRows(lane) {
   return Math.max(1, capacity / cols);
 }
 
+function getLaneWidthUnits(lane) {
+  return getLaneCols(lane) * TRAY_WIDTH_MM;
+}
+
 function computeLaneBodyHeight(lane) {
-  // Similar scaling: width ~ tray columns, height ~ (tray count / columns)
+  // Physical scaling based on one tray size (300mm x 600mm).
   const rows = getLaneRows(lane);
-  return clamp(Math.round(rows * 2.2), 76, 320);
+  const px = rows * TRAY_LENGTH_MM * MM_TO_PX;
+  return clamp(Math.round(px), 96, 460);
 }
 
 function computeBlockHeight(lot, lane) {
-  if (lane.capacity && lane.capacity > 0) {
-    const ratio = lot.availableTrays / lane.capacity;
-    return clamp(Math.round(34 + (ratio * 220)), 40, 130);
-  }
-  return clamp(Math.round(44 + (lot.availableTrays * 0.85)), 52, 124);
+  const cols = getLaneCols(lane || {});
+  const trays = Math.max(0, toNumber(lot?.availableTrays));
+  if (trays <= 0) return 40;
+
+  const rows = trays / cols;
+  const px = rows * TRAY_LENGTH_MM * MM_TO_PX;
+  return clamp(Math.round(px), 40, 220);
 }
 
 function clamp(value, min, max) {
