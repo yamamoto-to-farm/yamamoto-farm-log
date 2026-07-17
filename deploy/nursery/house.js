@@ -612,6 +612,11 @@ function getLaneRows(lane) {
   return Math.max(1, capacity / cols);
 }
 
+function isOutsideBottomLane(lane) {
+  const id = String(lane?.id || "");
+  return id === "outside-1" || id === "outside-2";
+}
+
 function getTraySizeByLane(lane) {
   const axis = String(lane?.shortEdgeAxis || "ew").toLowerCase();
   if (axis === "ns") {
@@ -627,6 +632,12 @@ function getTraySizeByLane(lane) {
 }
 
 function getLaneWidthUnits(lane) {
+  if (isOutsideBottomLane(lane)) {
+    const tray = getTraySizeByLane(lane);
+    const longEdgeRows = getLaneRows(lane);
+    return Math.max(1, longEdgeRows * tray.ewMm);
+  }
+
   const cols = getLaneCols(lane);
   const tray = getTraySizeByLane(lane);
   return cols * tray.ewMm;
@@ -634,6 +645,13 @@ function getLaneWidthUnits(lane) {
 
 function computeLaneBodyHeight(lane) {
   // Physical scaling based on one tray size (300mm x 600mm).
+  if (isOutsideBottomLane(lane)) {
+    const tray = getTraySizeByLane(lane);
+    const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
+    const px = getLaneCols(lane) * shortEdgeMm * MM_TO_PX * 12;
+    return clamp(Math.round(px), 90, 150);
+  }
+
   const rows = getLaneRows(lane);
   const tray = getTraySizeByLane(lane);
   const px = rows * tray.nsMm * MM_TO_PX;

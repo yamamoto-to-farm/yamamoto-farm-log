@@ -112,10 +112,12 @@
 
 .zone-card.group-west-house {
   grid-area: west;
+  align-self: end;
 }
 
 .zone-card.group-east-house {
   grid-area: east;
+  align-self: end;
 }
 
 .zone-card.outside-side-card {
