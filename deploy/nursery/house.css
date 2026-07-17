@@ -8,8 +8,8 @@
 }
 
 #page-area.page-container {
-  width: min(1960px, 99vw);
-  max-width: min(1960px, 99vw);
+  width: min(2320px, 99.6vw);
+  max-width: min(2320px, 99.6vw);
   margin: 2px auto;
   padding: 2px 4px;
 }
@@ -20,11 +20,12 @@
 }
 
 .lot-pool-card {
-  min-width: 280px;
+  display: none;
 }
 
 .zones-card {
   min-width: 0;
+  padding: 4px 6px;
 }
 
 .nursery-toolbar .toolbar-row {
@@ -67,7 +68,7 @@
 
 .nursery-layout-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
   align-items: start;
 }
@@ -90,7 +91,7 @@
 
 .zones-root {
   display: grid;
-  grid-template-columns: minmax(210px, 0.48fr) minmax(420px, 1fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(250px, 0.55fr) minmax(520px, 1fr) minmax(520px, 1fr);
   grid-template-areas:
     "outside-side west east"
     "outside-bottom outside-bottom outside-bottom";

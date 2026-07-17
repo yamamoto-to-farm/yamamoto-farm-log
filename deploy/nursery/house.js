@@ -5,7 +5,7 @@ const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
 const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
-const MM_TO_PX = 0.0052;
+const MM_TO_PX = 0.0072;
 
 const GROUPS = [
   {
@@ -620,7 +620,7 @@ function computeLaneBodyHeight(lane) {
   // Physical scaling based on one tray size (300mm x 600mm).
   const rows = getLaneRows(lane);
   const px = rows * TRAY_LENGTH_MM * MM_TO_PX;
-  return clamp(Math.round(px), 96, 460);
+  return clamp(Math.round(px), 120, 700);
 }
 
 function computeBlockHeight(lot, lane) {
