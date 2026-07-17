@@ -7,6 +7,7 @@ const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
 const MM_TO_PX = 0.0088;
 const SNAP_PX = 24;
+const LANE_COL_WIDTH_FACTOR = 26;
 
 const GROUPS = [
   {
@@ -691,7 +692,7 @@ function buildGroupCard(group, options = {}) {
   grid.className = `lane-grid ${laneGridClass}`.trim();
   if (!laneGridClass || laneGridClass === "layout-outside-bottom") {
     const colTemplate = group.lanes
-      .map(lane => `${getLaneWidthUnits(lane)}fr`)
+      .map(lane => `minmax(${getLaneMinWidthPx(lane)}px, ${getLaneWidthUnits(lane)}fr)`)
       .join(" ");
     grid.style.gridTemplateColumns = colTemplate || `repeat(${group.lanes.length}, minmax(0, 1fr))`;
   }
@@ -745,10 +746,12 @@ function buildLaneElement(lane) {
       const widthPct = (span / getLaneCols(lane)) * 100;
       const blockHeightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
       const heightPct = clamp((blockHeightPx / laneBodyHeight) * 100, 4, 100);
-      const x = clamp(toNumber(block.posX), 0, 1);
-      const y = clamp(toNumber(block.posY), 0, 1);
-      const leftPct = x * Math.max(0, 100 - widthPct);
-      const topPct = y * Math.max(0, 100 - heightPct);
+      const maxX = Math.max(0, 1 - (widthPct / 100));
+      const maxY = Math.max(0, 1 - (heightPct / 100));
+      const x = normalizePosAxis(block.posX, maxX);
+      const y = normalizePosAxis(block.posY, maxY);
+      const leftPct = x * 100;
+      const topPct = y * 100;
 
       const item = document.createElement("div");
       item.className = "lane-float-item";
@@ -904,6 +907,8 @@ function onResizeMove(event) {
 
   if (block.spanCols === nextCols) return;
 
+  const currentRect = getBlockRectNorm(block, lane, resizeState.laneBodyHeight || laneBody.clientHeight);
+
   const resolved = resolvePlacementInLane({
     lane,
     laneBodyEl: laneBody,
@@ -911,8 +916,8 @@ function onResizeMove(event) {
     movingBlockId: block.blockId,
     trays: block.trays,
     spanCols: nextCols,
-    preferredX: clamp(toNumber(block.posX), 0, 1),
-    preferredY: clamp(toNumber(block.posY), 0, 1)
+    preferredX: currentRect.left,
+    preferredY: currentRect.top
   });
 
   if (!resolved) return;
@@ -985,8 +990,9 @@ function placeBlockGroup(blockIds, lane, laneBodyHeight, dropEvent, beforeBlockI
   const anchorSpan = clamp(Math.floor(toNumber(anchor.spanCols) || 1), 1, laneCols);
   const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, anchorSpan, anchor.trays);
 
-  const baseX = clamp(toNumber(anchor.posX), 0, 1);
-  const baseY = clamp(toNumber(anchor.posY), 0, 1);
+  const anchorRect = getBlockRectNorm(anchor, lane, laneBodyHeight);
+  const baseX = anchorRect.left;
+  const baseY = anchorRect.top;
 
   const placedRects = [];
   const placedMap = new Map();
@@ -994,8 +1000,9 @@ function placeBlockGroup(blockIds, lane, laneBodyHeight, dropEvent, beforeBlockI
 
   for (const block of group) {
     const span = clamp(Math.floor(toNumber(block.spanCols) || 1), 1, laneCols);
-    const dx = clamp(toNumber(block.posX), 0, 1) - baseX;
-    const dy = clamp(toNumber(block.posY), 0, 1) - baseY;
+    const blockRect = getBlockRectNorm(block, lane, laneBodyHeight);
+    const dx = blockRect.left - baseX;
+    const dy = blockRect.top - baseY;
 
     const prefX = block.blockId === anchor.blockId ? prefer.x : prefer.x + dx;
     const prefY = block.blockId === anchor.blockId ? prefer.y : prefer.y + dy;
@@ -1174,8 +1181,10 @@ function resolvePlacementInLane({
   const stepX = clamp(SNAP_PX / Math.max(1, laneBodyEl.clientWidth), 0.01, 0.2);
   const stepY = clamp(SNAP_PX / Math.max(1, laneBodyHeight), 0.01, 0.2);
 
-  const prefX = snapToStep(clamp(preferredX, 0, maxX), stepX, maxX);
-  const prefY = snapToStep(clamp(preferredY, 0, maxY), stepY, maxY);
+  const prefXRaw = normalizePosAxis(preferredX, maxX);
+  const prefYRaw = normalizePosAxis(preferredY, maxY);
+  const prefX = snapToStep(clamp(prefXRaw, 0, maxX), stepX, maxX);
+  const prefY = snapToStep(clamp(prefYRaw, 0, maxY), stepY, maxY);
 
   const xs = buildSnapAxis(maxX, stepX);
   const ys = buildSnapAxis(maxY, stepY);
@@ -1221,8 +1230,10 @@ function getBlockRectNorm(block, lane, laneBodyHeight) {
   const heightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
-  const x = clamp(toNumber(block.posX), 0, 1) * Math.max(0, 1 - width);
-  const y = clamp(toNumber(block.posY), 0, 1) * Math.max(0, 1 - height);
+  const maxX = Math.max(0, 1 - width);
+  const maxY = Math.max(0, 1 - height);
+  const x = normalizePosAxis(block.posX, maxX);
+  const y = normalizePosAxis(block.posY, maxY);
 
   return {
     left: x,
@@ -1250,6 +1261,18 @@ function getRectNormFromPlacement({ lane, laneBodyHeight, trays, spanCols, x, y 
     right: left + width,
     bottom: top + height
   };
+}
+
+function normalizePosAxis(value, maxAxis) {
+  const max = Math.max(0, toNumber(maxAxis));
+  if (max <= 0) return 0;
+
+  const n = clamp(toNumber(value), 0, 1);
+  // Backward compatibility: older data can have 0..1 ratio of available track.
+  if (n > (max + 0.0005)) {
+    return clamp(n * max, 0, max);
+  }
+  return clamp(n, 0, max);
 }
 
 function isRectOverlap(a, b) {
@@ -1491,6 +1514,14 @@ function getLaneWidthUnits(lane) {
   const cols = getLaneCols(lane);
   const tray = getTraySizeByLane(lane);
   return cols * tray.ewMm;
+}
+
+function getLaneMinWidthPx(lane) {
+  const cols = getLaneCols(lane);
+  const tray = getTraySizeByLane(lane);
+  const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
+  const colPx = Math.max(56, shortEdgeMm * MM_TO_PX * LANE_COL_WIDTH_FACTOR);
+  return Math.round((colPx * cols) + 24);
 }
 
 function computeLaneBodyHeight(lane) {
