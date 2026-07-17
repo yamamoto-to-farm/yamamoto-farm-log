@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>育苗ハウス管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./house.css?v=20260718-5">
+  <link rel="stylesheet" href="./house.css?v=20260718-6">
 </head>
 
 <body>
@@ -18,8 +18,9 @@
         <section class="nursery-toolbar">
           <div class="toolbar-row">
             <button id="reload-btn" class="secondary-btn" type="button">再読込</button>
-            <button id="split-btn" class="secondary-btn" type="button">分割</button>
-            <button id="merge-btn" class="secondary-btn" type="button">結合</button>
+            <button id="multi-select-mode-btn" class="secondary-btn" type="button" aria-pressed="false">複数選択: OFF</button>
+            <button id="open-selection-modal-btn" class="secondary-btn" type="button">選択中を操作</button>
+            <button id="clear-selection-btn" class="secondary-btn" type="button">選択解除</button>
             <button id="save-btn" class="primary-btn" type="button">配置を保存</button>
           </div>
           <div id="summary-line" class="summary-line">読み込み中...</div>
@@ -30,10 +31,29 @@
     </section>
   </div>
 
+  <div id="block-modal" class="block-modal" aria-hidden="true">
+    <div class="block-modal__backdrop" data-modal-close="true"></div>
+    <section class="block-modal__panel" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
+      <header class="block-modal__header">
+        <h2 id="block-modal-title">ブロック操作</h2>
+        <button id="block-modal-close" class="block-modal__close" type="button" aria-label="閉じる">×</button>
+      </header>
+      <div class="block-modal__body">
+        <div id="block-modal-detail" class="block-modal__detail"></div>
+        <div id="block-modal-selection" class="block-modal__selection"></div>
+      </div>
+      <footer class="block-modal__footer">
+        <button id="modal-split-btn" class="secondary-btn" type="button">分割</button>
+        <button id="modal-merge-btn" class="secondary-btn" type="button">結合</button>
+        <button id="modal-close-btn" class="primary-btn" type="button">閉じる</button>
+      </footer>
+    </section>
+  </div>
+
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initNurseryHousePage } from "./house.js?v=20260718-5";
+    import { initNurseryHousePage } from "./house.js?v=20260718-7";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -45,7 +65,7 @@
     });
   </script>
 
-  <script src="/common/sw-register.js?v=20260713-1"></script>
+  <script src="/common/sw-register.js?v=20260718-1"></script>
 </body>
 
 </html>

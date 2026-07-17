@@ -50,6 +50,8 @@ let blocks = [];
 let focusedLaneId = "";
 let dragBlockId = "";
 let dragBlockIds = [];
+let modalBlockId = "";
+let multiSelectMode = false;
 const selectedBlockIds = new Set();
 
 const resizeState = {
@@ -71,9 +73,15 @@ export async function initNurseryHousePage() {
 function bindControls() {
   const reloadBtn = document.getElementById("reload-btn");
   const saveBtn = document.getElementById("save-btn");
-  const splitBtn = document.getElementById("split-btn");
-  const mergeBtn = document.getElementById("merge-btn");
+  const multiSelectModeBtn = document.getElementById("multi-select-mode-btn");
+  const clearSelectionBtn = document.getElementById("clear-selection-btn");
+  const openSelectionModalBtn = document.getElementById("open-selection-modal-btn");
   const zonesRoot = document.getElementById("zones-root");
+  const modal = document.getElementById("block-modal");
+  const modalClose = document.getElementById("block-modal-close");
+  const modalCloseBtn = document.getElementById("modal-close-btn");
+  const modalSplitBtn = document.getElementById("modal-split-btn");
+  const modalMergeBtn = document.getElementById("modal-merge-btn");
 
   reloadBtn?.addEventListener("click", async () => {
     await reloadAll();
@@ -83,12 +91,43 @@ function bindControls() {
     await saveLayout();
   });
 
-  splitBtn?.addEventListener("click", () => {
-    splitSelectedBlock();
+  multiSelectModeBtn?.addEventListener("click", () => {
+    setMultiSelectMode(!multiSelectMode);
   });
 
-  mergeBtn?.addEventListener("click", () => {
+  clearSelectionBtn?.addEventListener("click", () => {
+    selectedBlockIds.clear();
+    render();
+  });
+
+  openSelectionModalBtn?.addEventListener("click", () => {
+    if (!selectedBlockIds.size) {
+      alert("先にブロックを選択してください。");
+      return;
+    }
+    const firstId = [...selectedBlockIds][0];
+    openBlockModal(firstId);
+  });
+
+  modalClose?.addEventListener("click", closeBlockModal);
+  modalCloseBtn?.addEventListener("click", closeBlockModal);
+  modalSplitBtn?.addEventListener("click", () => {
+    splitSelectedBlock();
+    renderBlockModal();
+  });
+  modalMergeBtn?.addEventListener("click", () => {
     mergeSelectedBlocks();
+    renderBlockModal();
+  });
+
+  modal?.addEventListener("click", event => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest("[data-modal-close='true']")) closeBlockModal();
+  });
+
+  window.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeBlockModal();
   });
 
   if (!zonesRoot) return;
@@ -104,8 +143,21 @@ function bindControls() {
     if (cardEl) {
       const blockId = String(cardEl.getAttribute("data-block-id") || "").trim();
       if (!blockId) return;
-      toggleSelection(blockId, event.ctrlKey || event.metaKey);
+
+      const keyMultiSelect = event.ctrlKey || event.metaKey || event.shiftKey;
+      const useMultiSelect = multiSelectMode || keyMultiSelect;
+      const keepGroupSelection = !useMultiSelect && selectedBlockIds.size > 1 && selectedBlockIds.has(blockId);
+
+      if (!keepGroupSelection) {
+        toggleSelection(blockId, useMultiSelect);
+      }
+
+      if (!multiSelectMode || keyMultiSelect) {
+        openBlockModal(blockId);
+      }
+
       renderGroups();
+      renderSelectionControls();
       return;
     }
 
@@ -472,6 +524,33 @@ function normalizeBlockOrders(inputBlocks) {
 function render() {
   renderSummary();
   renderGroups();
+  renderSelectionControls();
+  renderBlockModal();
+}
+
+function setMultiSelectMode(next) {
+  multiSelectMode = !!next;
+  renderSelectionControls();
+}
+
+function renderSelectionControls() {
+  const modeBtn = document.getElementById("multi-select-mode-btn");
+  const clearBtn = document.getElementById("clear-selection-btn");
+  const openBtn = document.getElementById("open-selection-modal-btn");
+
+  if (modeBtn) {
+    modeBtn.textContent = `複数選択: ${multiSelectMode ? "ON" : "OFF"}`;
+    modeBtn.setAttribute("aria-pressed", multiSelectMode ? "true" : "false");
+    modeBtn.classList.toggle("is-active", multiSelectMode);
+  }
+
+  if (clearBtn) {
+    clearBtn.disabled = selectedBlockIds.size === 0;
+  }
+
+  if (openBtn) {
+    openBtn.disabled = selectedBlockIds.size === 0;
+  }
 }
 
 function renderSummary() {
@@ -481,7 +560,7 @@ function renderSummary() {
 
   const line = document.getElementById("summary-line");
   if (line) {
-    line.textContent = `ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件`;
+    line.textContent = `ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
   }
 
   const staleSeedRefs = [...assignedSeedRefs].filter(seedRef => {
@@ -1200,10 +1279,6 @@ function snapToStep(value, step, max) {
 
 function toggleSelection(blockId, multiSelect) {
   if (!multiSelect) {
-    if (selectedBlockIds.size === 1 && selectedBlockIds.has(blockId)) {
-      selectedBlockIds.clear();
-      return;
-    }
     selectedBlockIds.clear();
     selectedBlockIds.add(blockId);
     return;
@@ -1262,7 +1337,7 @@ function splitSelectedBlock() {
 
 function mergeSelectedBlocks() {
   if (selectedBlockIds.size < 2) {
-    alert("結合するブロックを2つ以上選択してください。Ctrl/Command+クリックで複数選択できます。");
+    alert("結合するブロックを2つ以上選択してください。複数選択モードをONにしてタップ選択できます。PCではCtrl/Command+クリックも使えます。");
     return;
   }
 
@@ -1293,7 +1368,79 @@ function mergeSelectedBlocks() {
 
   selectedBlockIds.clear();
   selectedBlockIds.add(first.blockId);
+  modalBlockId = first.blockId;
   render();
+}
+
+function openBlockModal(blockId = "") {
+  const modal = document.getElementById("block-modal");
+  if (!modal) return;
+
+  if (blockId) {
+    modalBlockId = blockId;
+  }
+
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  renderBlockModal();
+}
+
+function closeBlockModal() {
+  const modal = document.getElementById("block-modal");
+  if (!modal) return;
+
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function renderBlockModal() {
+  const modal = document.getElementById("block-modal");
+  const detailEl = document.getElementById("block-modal-detail");
+  const selectionEl = document.getElementById("block-modal-selection");
+  const splitBtn = document.getElementById("modal-split-btn");
+  const mergeBtn = document.getElementById("modal-merge-btn");
+  if (!modal || !detailEl || !selectionEl || !splitBtn || !mergeBtn) return;
+  if (!modal.classList.contains("is-open")) return;
+
+  let block = blocks.find(v => v.blockId === modalBlockId) || null;
+  if (!block && selectedBlockIds.size) {
+    const firstId = [...selectedBlockIds][0];
+    block = blocks.find(v => v.blockId === firstId) || null;
+  }
+  if (!block) {
+    closeBlockModal();
+    return;
+  }
+
+  modalBlockId = block.blockId;
+  const lot = lotsBySeedRef.get(block.originSeedRef);
+  const lane = findLane(block.laneId);
+  const selected = blocks.filter(v => selectedBlockIds.has(v.blockId));
+
+  detailEl.innerHTML = `
+    <div><strong>ロットID:</strong> ${escapeHtml(block.originSeedRef)}</div>
+    <div><strong>品種:</strong> ${escapeHtml(lot?.variety || "(不明)")}</div>
+    <div><strong>現在枚数:</strong> ${formatNum(block.trays)} 枚</div>
+    <div><strong>配置先:</strong> ${escapeHtml(lane?.label || "未配置")}</div>
+  `;
+
+  const mergeReady = canMergeSelection(selected);
+  const splitReady = selectedBlockIds.size === 1 && block.trays > 1;
+  const selectedCount = selectedBlockIds.size;
+  const modeText = multiSelectMode ? "ON" : "OFF";
+
+  selectionEl.innerHTML = mergeReady
+    ? `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 同一ロットID・同一レーンなので結合できます。`
+    : `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 別ロットIDでも同時移動は可能です。結合は同一ロットIDかつ同一レーンのみです。`;
+
+  splitBtn.disabled = !splitReady;
+  mergeBtn.disabled = !mergeReady;
+}
+
+function canMergeSelection(selected) {
+  if (!Array.isArray(selected) || selected.length < 2) return false;
+  const first = selected[0];
+  return selected.every(block => block.originSeedRef === first.originSeedRef && block.laneId === first.laneId);
 }
 
 function findLane(laneId) {
