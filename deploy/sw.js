@@ -1,4 +1,4 @@
-const CACHE_NAME = "yamamoto-farm-runtime-v20260718-1";
+const CACHE_NAME = "yamamoto-farm-runtime-v20260718-2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -26,9 +26,26 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  const isNurseryLayout = url.pathname === "/logs/nursery/house-layout.json";
+
   event.respondWith((async () => {
     try {
       const fresh = await fetch(request, { cache: "no-store" });
+
+      if (isNurseryLayout && fresh.status === 404) {
+        return new Response(JSON.stringify({
+          version: 2,
+          updatedAt: new Date(0).toISOString(),
+          blocks: [],
+          assignments: {}
+        }), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Cache-Control": "no-store"
+          }
+        });
+      }
 
       // Keep a runtime fallback cache for temporary network failures.
       const cache = await caches.open(CACHE_NAME);

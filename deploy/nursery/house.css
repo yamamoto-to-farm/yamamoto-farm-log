@@ -478,14 +478,14 @@
 
 .block-modal__header h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   color: #0f172a;
 }
 
 .block-modal__close {
   border: none;
   background: transparent;
-  font-size: 20px;
+  font-size: 24px;
   line-height: 1;
   color: #475569;
   cursor: pointer;
@@ -498,7 +498,7 @@
 }
 
 .block-modal__detail {
-  font-size: 14px;
+  font-size: 16px;
   color: #1e293b;
   line-height: 1.45;
 }
@@ -508,7 +508,7 @@
 }
 
 .block-modal__selection {
-  font-size: 13px;
+  font-size: 15px;
   color: #475569;
   padding: 8px;
   border-radius: 6px;
@@ -523,6 +523,11 @@
   padding: 10px 12px;
   border-top: 1px solid #e2e8f0;
   background: #fff;
+}
+
+.block-modal__footer .secondary-btn,
+.block-modal__footer .primary-btn {
+  font-size: 16px;
 }
 
 .block-modal__footer .secondary-btn:disabled,
