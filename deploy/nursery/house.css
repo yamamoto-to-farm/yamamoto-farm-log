@@ -45,10 +45,14 @@
 .nursery-toolbar .primary-btn {
   height: 36px;
   min-height: 36px;
-  padding-top: 0;
-  padding-bottom: 0;
+  padding: 0 14px;
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 700;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
 }
 
 .nursery-toolbar label {
@@ -221,7 +225,7 @@
 
 .zones-root.has-focused-lane .lane.is-focused {
   opacity: 1;
-  transform: scale(1.08);
+  transform: scale(1.15);
   transform-origin: center bottom;
   box-shadow: 0 0 0 2px #1d4ed8, 0 10px 24px rgba(30, 41, 59, 0.25);
   z-index: 8;

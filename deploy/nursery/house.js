@@ -532,7 +532,8 @@ function buildLaneElement(lane, byLane) {
   const body = document.createElement("div");
   body.className = "lane-body drop-pool";
   body.dataset.laneId = lane.id;
-  body.style.height = `${computeLaneBodyHeight(lane)}px`;
+  const laneBodyHeight = computeLaneBodyHeight(lane);
+  body.style.height = `${laneBodyHeight}px`;
   bindLaneDrop(body, lane.id, "");
 
   if (!laneLots.length) {
@@ -546,7 +547,7 @@ function buildLaneElement(lane, byLane) {
       item.className = "lane-item";
       item.dataset.seedRef = lot.seedRef;
       bindLaneDrop(item, lane.id, lot.seedRef);
-      item.appendChild(buildLotCard(lot, lane));
+      item.appendChild(buildLotCard(lot, lane, laneBodyHeight));
       body.appendChild(item);
     });
   }
@@ -585,7 +586,7 @@ function getQuickPlaceLots(limit = 5) {
     .slice(0, Math.max(0, limit));
 }
 
-function buildLotCard(lot, lane = null) {
+function buildLotCard(lot, lane = null, laneBodyHeight = 0) {
   const card = document.createElement("article");
   card.className = "lot-card";
   if (lot.availableTrays <= 0) card.classList.add("zero");
@@ -593,7 +594,7 @@ function buildLotCard(lot, lane = null) {
   card.draggable = true;
   card.dataset.seedRef = lot.seedRef;
   if (lane) {
-    const height = computeBlockHeight(lot, lane);
+    const height = computeBlockHeight(lot, lane, laneBodyHeight);
     card.style.height = `${height}px`;
   }
 
@@ -739,9 +740,18 @@ function computeLaneBodyHeight(lane) {
   return clamp(Math.round(px), 130, 920);
 }
 
-function computeBlockHeight(lot, lane) {
-  const cols = getLaneCols(lane || {});
+function computeBlockHeight(lot, lane, laneBodyHeight = 0) {
+  const laneCapacity = toNumber(lane?.capacity);
   const trays = Math.max(0, toNumber(lot?.availableTrays));
+
+  if (laneCapacity > 0 && laneBodyHeight > 0) {
+    const ratio = trays / laneCapacity;
+    const proportional = Math.round(laneBodyHeight * ratio);
+    if (trays <= 0) return 22;
+    return clamp(proportional, 24, Math.max(28, laneBodyHeight - 6));
+  }
+
+  const cols = getLaneCols(lane || {});
   if (trays <= 0) return 40;
 
   const rows = trays / cols;
