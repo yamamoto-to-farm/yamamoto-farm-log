@@ -109,10 +109,14 @@ export async function saveLog(
 async function saveToS3(payload) {
   dbg("=== saveToS3 START ===");
 
+  const replaceCsv = typeof payload.replaceCsv === "string"
+    ? payload.replaceCsv
+    : "";
+
   /* ------------------------------
      append モード（CSV 1 行追加）
   ------------------------------ */
-  if (payload.csv && payload.replaceCsv === "") {
+  if (payload.csv && replaceCsv === "") {
     dbg("mode: append");
 
     const res = await fetch(APPEND_URL, {
@@ -179,7 +183,7 @@ async function saveToS3(payload) {
     }
 
     // CSV 全書き換え
-    if (payload.replaceCsv !== "") {
+    if (replaceCsv !== "") {
       // ★ fileName が指定されていればそれを使う
       // ★ 指定されていなければ all.csv（後方互換）
       const fileName = payload.fileName || "all.csv";
@@ -189,7 +193,7 @@ async function saveToS3(payload) {
 
       files.push({
         key,
-        content: payload.replaceCsv,
+        content: replaceCsv,
         contentType: "application/octet-stream"
       });
     }

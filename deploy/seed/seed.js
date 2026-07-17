@@ -308,6 +308,7 @@ async function saveSeedInner() {
     type: "seed",
     dateStr,
     csv: csvLine + "\n",
+    replaceCsv: "",
     summary: { date: data.seedDate, sourceKey: "seed", count: 1 }
   });
 
