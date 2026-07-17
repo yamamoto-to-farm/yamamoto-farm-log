@@ -295,10 +295,6 @@ export async function printInline(selector, title = "印刷") {
       display: none !important;
     }
     #page-area.seed-print-compact #seed-print-compact-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -310,6 +306,7 @@ export async function printInline(selector, title = "印刷") {
       z-index: 9999;
       break-inside: avoid;
       page-break-inside: avoid;
+      margin: 0 0 4mm 0;
     }
     #page-area.seed-print-compact #seed-print-compact-header .seed-print-title {
       font-weight: 700;
@@ -324,7 +321,7 @@ export async function printInline(selector, title = "印刷") {
       flex: 1 1 auto;
     }
     #page-area.seed-print-compact #table-area {
-      margin-top: 15mm !important;
+      margin-top: 0 !important;
     }
 
     /* 日誌ページ: A4 1枚寄せ PDF 用（diary.js が class を付与） */
