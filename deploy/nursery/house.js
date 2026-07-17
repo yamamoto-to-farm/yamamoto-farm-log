@@ -1,11 +1,12 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js";
-import { loadJSON, saveJSON } from "/common/json.js";
+import { saveJSON } from "/common/json.js";
 
 const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
 const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
 const MM_TO_PX = 0.0088;
+const SNAP_PX = 24;
 
 const GROUPS = [
   {
@@ -46,10 +47,20 @@ const GROUPS = [
 let lots = [];
 let lotsBySeedRef = new Map();
 let blocks = [];
-let laneLayouts = {};
 let focusedLaneId = "";
 let dragBlockId = "";
 const selectedBlockIds = new Set();
+
+const resizeState = {
+  active: false,
+  blockId: "",
+  laneId: "",
+  startX: 0,
+  startCols: 1,
+  laneCols: 1,
+  colPx: 1,
+  laneBodyHeight: 0
+};
 
 export async function initNurseryHousePage() {
   bindControls();
@@ -81,22 +92,12 @@ function bindControls() {
 
   if (!zonesRoot) return;
 
-  zonesRoot.addEventListener("change", event => {
-    const target = event.target;
-    if (!(target instanceof HTMLSelectElement)) return;
-    if (!target.classList.contains("lane-layout-select")) return;
-
-    const laneId = String(target.dataset.laneId || "").trim();
-    if (!laneId) return;
-
-    laneLayouts[laneId] = { mode: String(target.value || "default") };
-    reconcileBlockSlotsWithLayouts();
-    renderGroups();
-  });
-
   zonesRoot.addEventListener("click", event => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+
+    const handle = target.closest(".block-resize-handle");
+    if (handle) return;
 
     const cardEl = target.closest(".lot-card[data-block-id]");
     if (cardEl) {
@@ -106,8 +107,6 @@ function bindControls() {
       renderGroups();
       return;
     }
-
-    if (target.closest(".lane-layout-select")) return;
 
     const laneHead = target.closest(".lane-head");
     if (!laneHead) return;
@@ -136,20 +135,28 @@ async function reloadAll() {
   lots = buildLots(seedRows, plantingRows, discardRows);
   lotsBySeedRef = new Map(lots.map(lot => [lot.seedRef, lot]));
 
-  const normalized = normalizeLayoutModel(layout, lotsBySeedRef);
-  blocks = normalized.blocks;
-  laneLayouts = normalized.laneLayouts;
+  blocks = normalizeLayoutBlocks(layout, lotsBySeedRef);
   selectedBlockIds.clear();
 
-  reconcileBlockSlotsWithLayouts();
   render();
 }
 
 async function loadLayout() {
   try {
-    return await loadJSON(`/${LAYOUT_PATH}`);
+    const url = `/${LAYOUT_PATH}?ts=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+
+    if (res.status === 404) {
+      return { version: 2, blocks: [], assignments: {} };
+    }
+
+    if (!res.ok) {
+      throw new Error(`layout fetch failed: ${res.status}`);
+    }
+
+    return await res.json();
   } catch {
-    return { version: 2, blocks: [], laneLayouts: {}, assignments: {} };
+    return { version: 2, blocks: [], assignments: {} };
   }
 }
 
@@ -159,7 +166,6 @@ async function saveLayout() {
       version: 2,
       updatedAt: new Date().toISOString(),
       blocks,
-      laneLayouts,
       assignments: deriveLegacyAssignments(blocks)
     };
     await saveJSON(LAYOUT_PATH, payload);
@@ -294,13 +300,12 @@ function newBlockId(originSeedRef) {
   return `${originSeedRef}#${suffix}`;
 }
 
-function normalizeLayoutModel(layout, lotMap) {
-  const rawBlocks = Array.isArray(layout?.blocks)
-    ? layout.blocks
-    : legacyAssignmentsToBlocks(layout?.assignments || {}, lotMap);
+function normalizeLayoutBlocks(layout, lotMap) {
+  const hasBlocks = Array.isArray(layout?.blocks) && layout.blocks.length > 0;
+  const sourceBlocks = hasBlocks ? layout.blocks : legacyAssignmentsToBlocks(layout?.assignments || {}, lotMap);
 
   const grouped = new Map();
-  rawBlocks.forEach((row, index) => {
+  sourceBlocks.forEach((row, index) => {
     const originSeedRef = String(row?.originSeedRef || row?.seedRef || "").trim();
     if (!originSeedRef || !lotMap.has(originSeedRef)) return;
 
@@ -309,23 +314,25 @@ function normalizeLayoutModel(layout, lotMap) {
 
     const laneId = String(row?.laneId || "").trim();
     const validLane = laneId && findLane(laneId) ? laneId : "";
-    const slotIndex = Math.max(0, Math.floor(toNumber(row?.slotIndex)));
-    const order = Number.isFinite(Number(row?.order)) ? Number(row.order) : index;
+    const laneCols = validLane ? getLaneCols(findLane(validLane)) : 1;
+    const rawSpan = Math.max(1, Math.floor(toNumber(row?.spanCols) || laneCols));
 
     const block = {
       blockId: String(row?.blockId || "").trim() || newBlockId(originSeedRef),
       originSeedRef,
       trays,
       laneId: validLane,
-      slotIndex,
-      order
+      spanCols: Math.min(laneCols, rawSpan),
+      posX: Number.isFinite(Number(row?.posX)) ? clamp(toNumber(row?.posX), 0, 1) : NaN,
+      posY: Number.isFinite(Number(row?.posY)) ? clamp(toNumber(row?.posY), 0, 1) : NaN,
+      order: Number.isFinite(Number(row?.order)) ? Number(row.order) : index
     };
 
     if (!grouped.has(originSeedRef)) grouped.set(originSeedRef, []);
     grouped.get(originSeedRef).push(block);
   });
 
-  const normalizedBlocks = [];
+  const normalized = [];
   lotMap.forEach((lot, seedRef) => {
     const available = roundTray(toNumber(lot.availableTrays));
     if (available <= 0) return;
@@ -335,17 +342,17 @@ function normalizeLayoutModel(layout, lotMap) {
 
     if (sum > available) {
       let excess = roundTray(sum - available);
-      const shrink = [...list].sort((a, b) => {
-        if ((a.laneId ? 1 : 0) !== (b.laneId ? 1 : 0)) return (a.laneId ? 1 : 0) - (b.laneId ? 1 : 0);
-        return b.order - a.order;
-      });
-
-      shrink.forEach(block => {
-        if (excess <= 0) return;
-        const cut = Math.min(block.trays, excess);
-        block.trays = roundTray(block.trays - cut);
-        excess = roundTray(excess - cut);
-      });
+      [...list]
+        .sort((a, b) => {
+          if ((a.laneId ? 1 : 0) !== (b.laneId ? 1 : 0)) return (a.laneId ? 1 : 0) - (b.laneId ? 1 : 0);
+          return b.order - a.order;
+        })
+        .forEach(block => {
+          if (excess <= 0) return;
+          const cut = Math.min(block.trays, excess);
+          block.trays = roundTray(block.trays - cut);
+          excess = roundTray(excess - cut);
+        });
 
       list = list.filter(block => block.trays > 0);
       sum = roundTray(list.reduce((acc, b) => acc + b.trays, 0));
@@ -357,42 +364,58 @@ function normalizeLayoutModel(layout, lotMap) {
         originSeedRef: seedRef,
         trays: roundTray(available - sum),
         laneId: "",
-        slotIndex: 0,
+        spanCols: 1,
+        posX: 0,
+        posY: 0,
         order: list.length
       });
     }
 
-    normalizedBlocks.push(...list);
+    normalized.push(...list);
   });
 
-  const normalizedLayouts = sanitizeLaneLayouts(layout?.laneLayouts || {});
-  const uniqueIds = new Set();
-  normalizedBlocks.forEach((block, index) => {
-    if (!block.blockId || uniqueIds.has(block.blockId)) {
-      block.blockId = newBlockId(block.originSeedRef);
+  const seen = new Set();
+  normalized.forEach((block, idx) => {
+    if (!block.blockId || seen.has(block.blockId)) block.blockId = newBlockId(block.originSeedRef);
+    seen.add(block.blockId);
+    if (!block.laneId) {
+      block.spanCols = 1;
+      block.posX = 0;
+      block.posY = 0;
+    } else {
+      if (!Number.isFinite(Number(block.posX))) {
+        block.posX = clamp((idx % 3) * 0.06, 0, 1);
+      } else {
+        block.posX = clamp(toNumber(block.posX), 0, 1);
+      }
+
+      if (!Number.isFinite(Number(block.posY))) {
+        block.posY = clamp(idx * 0.085, 0, 1);
+      } else {
+        block.posY = clamp(toNumber(block.posY), 0, 1);
+      }
     }
-    uniqueIds.add(block.blockId);
-    if (!Number.isFinite(Number(block.order))) block.order = index;
+    if (!Number.isFinite(Number(block.order))) block.order = idx;
   });
 
-  return {
-    blocks: normalizeBlockOrders(normalizedBlocks),
-    laneLayouts: normalizedLayouts
-  };
+  return normalizeBlockOrders(normalized);
 }
 
-function legacyAssignmentsToBlocks(legacyAssignments, lotMap) {
+function legacyAssignmentsToBlocks(assignments, lotMap) {
   const list = [];
   lotMap.forEach((lot, seedRef) => {
-    const legacy = legacyAssignments?.[seedRef];
-    const laneId = String(legacy?.laneId || "").trim();
+    const legacy = assignments?.[seedRef] || {};
+    const laneId = String(legacy.laneId || "").trim();
+    const lane = findLane(laneId);
     list.push({
       blockId: newBlockId(seedRef),
       originSeedRef: seedRef,
       trays: roundTray(toNumber(lot.availableTrays)),
-      laneId: laneId && findLane(laneId) ? laneId : "",
-      slotIndex: 0,
-      order: Number.isFinite(Number(legacy?.order)) ? Number(legacy.order) : 0
+      laneId: lane ? lane.id : "",
+      spanCols: lane ? getLaneCols(lane) : 1,
+      posX: 0,
+      posY: 0,
+      order: Number.isFinite(Number(legacy.order)) ? Number(legacy.order) : 0
     });
   });
   return list;
@@ -424,28 +447,16 @@ function deriveLegacyAssignments(currentBlocks) {
   return out;
 }
 
-function sanitizeLaneLayouts(raw) {
-  const next = {};
-  allLanes().forEach(lane => {
-    const mode = String(raw?.[lane.id]?.mode || "default").trim();
-    const options = getLaneLayoutOptions(lane).map(v => v.value);
-    next[lane.id] = {
-      mode: options.includes(mode) ? mode : "default"
-    };
-  });
-  return next;
-}
-
 function normalizeBlockOrders(inputBlocks) {
-  const grouped = new Map();
+  const byLane = new Map();
   inputBlocks.forEach(block => {
-    const key = `${block.laneId || "__pool"}|${block.slotIndex || 0}`;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push(block);
+    const key = block.laneId || "__pool";
+    if (!byLane.has(key)) byLane.set(key, []);
+    byLane.get(key).push(block);
   });
 
   const out = [];
-  grouped.forEach(items => {
+  byLane.forEach(items => {
     items
       .sort((a, b) => a.order - b.order)
       .forEach((item, idx) => {
@@ -453,35 +464,8 @@ function normalizeBlockOrders(inputBlocks) {
         out.push(item);
       });
   });
+
   return out;
-}
-
-function reconcileBlockSlotsWithLayouts() {
-  blocks.forEach(block => {
-    if (!block.laneId) {
-      block.slotIndex = 0;
-      return;
-    }
-
-    const lane = findLane(block.laneId);
-    if (!lane) {
-      block.laneId = "";
-      block.slotIndex = 0;
-      return;
-    }
-
-    const spec = getLaneLayoutSpec(lane);
-    if (!spec.activeSlots.length) {
-      block.slotIndex = 0;
-      return;
-    }
-
-    if (!spec.activeSlots.includes(block.slotIndex)) {
-      block.slotIndex = spec.activeSlots[spec.activeSlots.length - 1];
-    }
-  });
-
-  blocks = normalizeBlockOrders(blocks);
 }
 
 function render() {
@@ -492,9 +476,7 @@ function render() {
 function renderSummary() {
   const total = lots.length;
   const active = lots.filter(v => v.availableTrays > 0).length;
-  const assignedSeedRefs = new Set(
-    blocks.filter(block => !!block.laneId && block.trays > 0).map(block => block.originSeedRef)
-  );
+  const assignedSeedRefs = new Set(blocks.filter(block => !!block.laneId).map(block => block.originSeedRef));
 
   const line = document.getElementById("summary-line");
   if (line) {
@@ -524,9 +506,7 @@ function renderGroups() {
   if (!root) return;
 
   root.innerHTML = "";
-  if (focusedLaneId && !findLane(focusedLaneId)) {
-    focusedLaneId = "";
-  }
+  if (focusedLaneId && !findLane(focusedLaneId)) focusedLaneId = "";
   root.classList.toggle("has-focused-lane", !!focusedLaneId);
 
   const quickPlaceBlocks = getQuickPlaceBlocks(5);
@@ -597,6 +577,7 @@ function buildGroupCard(group, options = {}) {
   } = options;
 
   const groupClass = `group-${String(group.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
+
   const card = document.createElement("section");
   card.className = `zone-card group-card kind-${group.kind} ${groupClass} ${cardClass}`.trim();
 
@@ -621,8 +602,8 @@ function buildGroupCard(group, options = {}) {
     quickPlaceBlocks.forEach(block => {
       list.appendChild(buildBlockCard(block, null, 0, true));
     });
-
     panel.appendChild(list);
+
     card.appendChild(panel);
   }
 
@@ -652,90 +633,75 @@ function buildLaneElement(lane) {
     laneEl.classList.add("is-focused");
   }
 
-  const layoutOptions = getLaneLayoutOptions(lane);
-  const mode = getLaneLayoutMode(lane.id);
-  const optionHtml = layoutOptions
-    .map(opt => `<option value="${escapeHtml(opt.value)}" ${opt.value === mode ? "selected" : ""}>${escapeHtml(opt.label)}</option>`)
-    .join("");
-
   const used = getLaneUsedTrays(lane.id);
   laneEl.innerHTML = `
     <div class="lane-head">
       <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
       <div class="lane-meta">トレイ${getLaneCols(lane)}列</div>
       <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${formatNum(used)}枚`}</div>
-      <div class="lane-layout-line">
-        <label>運用列</label>
-        <select class="lane-layout-select" data-lane-id="${escapeHtml(lane.id)}">${optionHtml}</select>
-      </div>
     </div>
   `;
 
   const body = document.createElement("div");
-  body.className = "lane-body";
+  body.className = "lane-body drop-pool";
+  body.dataset.laneId = lane.id;
   const laneBodyHeight = computeLaneBodyHeight(lane);
   body.style.height = `${laneBodyHeight}px`;
 
-  const spec = getLaneLayoutSpec(lane);
-  const slots = document.createElement("div");
-  slots.className = "lane-slots";
-  slots.style.gridTemplateColumns = `repeat(${spec.slotCount}, minmax(0, 1fr))`;
+  bindBlockDrop(body, lane, laneBodyHeight, "");
 
-  for (let slotIndex = 0; slotIndex < spec.slotCount; slotIndex += 1) {
-    const slotEl = document.createElement("section");
-    slotEl.className = "lane-slot drop-pool";
-    slotEl.dataset.laneId = lane.id;
-    slotEl.dataset.slotIndex = String(slotIndex);
+  const canvas = document.createElement("div");
+  canvas.className = "lane-canvas";
 
-    if (!spec.activeSlots.includes(slotIndex)) {
-      slotEl.classList.add("is-inactive");
-    } else {
-      bindBlockDrop(slotEl, lane.id, slotIndex, "");
-    }
+  const laneBlocks = getLaneBlocks(lane.id);
+  if (!laneBlocks.length) {
+    const empty = document.createElement("div");
+    empty.className = "lane-empty";
+    empty.textContent = "ここへ配置";
+    canvas.appendChild(empty);
+  } else {
+    laneBlocks.forEach(block => {
+      const span = Math.max(1, Math.min(getLaneCols(lane), Math.floor(toNumber(block.spanCols) || 1)));
+      const widthPct = (span / getLaneCols(lane)) * 100;
+      const blockHeightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
+      const heightPct = clamp((blockHeightPx / laneBodyHeight) * 100, 4, 100);
+      const x = clamp(toNumber(block.posX), 0, 1);
+      const y = clamp(toNumber(block.posY), 0, 1);
+      const leftPct = x * Math.max(0, 100 - widthPct);
+      const topPct = y * Math.max(0, 100 - heightPct);
 
-    if (spec.groupBreakAfter.includes(slotIndex)) {
-      slotEl.classList.add("group-break");
-    }
+      const item = document.createElement("div");
+      item.className = "lane-float-item";
+      item.dataset.blockId = block.blockId;
+      item.style.left = `${leftPct}%`;
+      item.style.top = `${topPct}%`;
+      item.style.width = `${widthPct}%`;
+      item.style.height = `${heightPct}%`;
 
-    const slotBlocks = getLaneSlotBlocks(lane.id, slotIndex);
-    if (!slotBlocks.length) {
-      const empty = document.createElement("div");
-      empty.className = "lane-empty";
-      empty.textContent = spec.activeSlots.includes(slotIndex) ? "ここへ配置" : "空き列";
-      slotEl.appendChild(empty);
-    } else {
-      slotBlocks.forEach(block => {
-        const item = document.createElement("div");
-        item.className = "lane-item";
-        item.dataset.blockId = block.blockId;
+      bindBlockDrop(item, lane, laneBodyHeight, block.blockId);
 
-        if (spec.activeSlots.includes(slotIndex)) {
-          bindBlockDrop(item, lane.id, slotIndex, block.blockId);
-        }
-
-        item.appendChild(buildBlockCard(block, lane, laneBodyHeight, false));
-        slotEl.appendChild(item);
-      });
-    }
-
-    slots.appendChild(slotEl);
+      const card = buildBlockCard(block, lane, 0, false, false);
+      card.style.height = "100%";
+      item.appendChild(card);
+      canvas.appendChild(item);
+    });
   }
 
-  body.appendChild(slots);
+  body.appendChild(canvas);
   laneEl.appendChild(body);
   return laneEl;
+}
+
+function getLaneBlocks(laneId) {
+  return blocks
+    .filter(block => block.laneId === laneId)
+    .sort((a, b) => a.order - b.order);
 }
 
 function getLaneUsedTrays(laneId) {
   return blocks
     .filter(block => block.laneId === laneId)
     .reduce((sum, block) => sum + block.trays, 0);
-}
-
-function getLaneSlotBlocks(laneId, slotIndex) {
-  return blocks
-    .filter(block => block.laneId === laneId && block.slotIndex === slotIndex)
-    .sort((a, b) => a.order - b.order);
 }
 
 function getQuickPlaceBlocks(limit = 5) {
@@ -751,7 +717,7 @@ function getQuickPlaceBlocks(limit = 5) {
     .slice(0, Math.max(0, limit));
 }
 
-function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false) {
+function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false, autoHeight = true) {
   const lot = lotsBySeedRef.get(block.originSeedRef);
   if (!lot) {
     const fallback = document.createElement("article");
@@ -767,13 +733,12 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false)
   if (selectedBlockIds.has(block.blockId)) {
     card.classList.add("is-selected");
   }
-
   if (block.trays <= 0) card.classList.add("zero");
   if (block.trays > 0 && block.trays < 5) card.classList.add("warn");
   if (compact) card.classList.add("unsorted-lot-card");
 
-  if (lane) {
-    card.style.height = `${computeBlockHeight(block.trays, lane, laneBodyHeight)}px`;
+  if (lane && autoHeight) {
+    card.style.height = `${computeBlockHeight(block.trays, lane, laneBodyHeight, block.spanCols)}px`;
   }
 
   card.draggable = true;
@@ -803,10 +768,84 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false)
     card.appendChild(dateEl);
   }
 
+  if (lane) {
+    const handle = document.createElement("button");
+    handle.type = "button";
+    handle.className = "block-resize-handle";
+    handle.title = "角をドラッグして列幅を変更";
+    handle.textContent = "";
+    handle.addEventListener("mousedown", e => startResizeBlock(e, block.blockId, lane.id));
+    card.appendChild(handle);
+  }
+
   return card;
 }
 
-function bindBlockDrop(el, laneId, slotIndex, beforeBlockId) {
+function startResizeBlock(event, blockId, laneId) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const block = blocks.find(v => v.blockId === blockId);
+  const lane = findLane(laneId);
+  if (!block || !lane) return;
+
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(laneId)}"]`);
+  if (!(laneBody instanceof HTMLElement)) return;
+
+  const laneCols = getLaneCols(lane);
+  const colPx = Math.max(20, laneBody.clientWidth / laneCols);
+
+  resizeState.active = true;
+  resizeState.blockId = blockId;
+  resizeState.laneId = laneId;
+  resizeState.startX = event.clientX;
+  resizeState.startCols = Math.max(1, Math.min(laneCols, block.spanCols || laneCols));
+  resizeState.laneCols = laneCols;
+  resizeState.colPx = colPx;
+  resizeState.laneBodyHeight = laneBody.clientHeight;
+
+  window.addEventListener("mousemove", onResizeMove);
+  window.addEventListener("mouseup", stopResizeBlock, { once: true });
+}
+
+function onResizeMove(event) {
+  if (!resizeState.active) return;
+
+  const block = blocks.find(v => v.blockId === resizeState.blockId);
+  const lane = findLane(resizeState.laneId);
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(resizeState.laneId)}"]`);
+  if (!block || !lane || !(laneBody instanceof HTMLElement)) return;
+
+  const deltaCols = Math.round((event.clientX - resizeState.startX) / resizeState.colPx);
+  const nextCols = clamp(resizeState.startCols + deltaCols, 1, resizeState.laneCols);
+
+  if (block.spanCols === nextCols) return;
+
+  const resolved = resolvePlacementInLane({
+    lane,
+    laneBodyEl: laneBody,
+    laneBodyHeight: resizeState.laneBodyHeight || laneBody.clientHeight,
+    movingBlockId: block.blockId,
+    trays: block.trays,
+    spanCols: nextCols,
+    preferredX: clamp(toNumber(block.posX), 0, 1),
+    preferredY: clamp(toNumber(block.posY), 0, 1)
+  });
+
+  if (!resolved) return;
+
+  block.spanCols = nextCols;
+  block.posX = resolved.x;
+  block.posY = resolved.y;
+  renderGroups();
+}
+
+function stopResizeBlock() {
+  window.removeEventListener("mousemove", onResizeMove);
+  resizeState.active = false;
+}
+
+function bindBlockDrop(el, lane, laneBodyHeight, beforeBlockId) {
   el.addEventListener("dragover", e => {
     e.preventDefault();
     el.classList.add("drag-over");
@@ -823,34 +862,184 @@ function bindBlockDrop(el, laneId, slotIndex, beforeBlockId) {
     const blockId = dragBlockId || String(e.dataTransfer?.getData("text/plain") || "").trim();
     if (!blockId) return;
 
-    placeBlock(blockId, laneId, slotIndex, beforeBlockId);
-    render();
+    const moved = placeBlock(blockId, lane, laneBodyHeight, e, beforeBlockId);
+    if (moved) render();
   });
 }
 
-function placeBlock(blockId, laneId, slotIndex, beforeBlockId = "") {
+function placeBlock(blockId, lane, laneBodyHeight, dropEvent, beforeBlockId = "") {
   const target = blocks.find(block => block.blockId === blockId);
-  if (!target) return;
+  if (!target || !lane) return false;
 
-  target.laneId = laneId;
-  target.slotIndex = Math.max(0, Math.floor(toNumber(slotIndex)));
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(lane.id)}"]`);
+  if (!(laneBody instanceof HTMLElement)) return false;
 
-  const laneBlocks = blocks
-    .filter(block => block.blockId !== blockId && block.laneId === laneId && block.slotIndex === target.slotIndex)
-    .sort((a, b) => a.order - b.order);
+  const laneCols = getLaneCols(lane);
+  const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || laneCols)));
 
-  if (beforeBlockId) {
-    const before = laneBlocks.find(block => block.blockId === beforeBlockId);
-    if (before) {
-      target.order = before.order - 0.5;
-    } else {
-      target.order = laneBlocks.length;
-    }
-  } else {
-    target.order = laneBlocks.length;
+  const usedWithoutTarget = blocks
+    .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
+    .reduce((sum, block) => sum + block.trays, 0);
+
+  if (toNumber(lane.capacity) > 0 && (usedWithoutTarget + target.trays) > (toNumber(lane.capacity) + 0.1)) {
+    alert(`${lane.label} は上限 ${formatNum(lane.capacity)}枚です。現在の配置ではこれ以上置けません。`);
+    return false;
   }
 
+  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, spanCols, target.trays);
+  const resolved = resolvePlacementInLane({
+    lane,
+    laneBodyEl: laneBody,
+    laneBodyHeight,
+    movingBlockId: target.blockId,
+    trays: target.trays,
+    spanCols,
+    preferredX: prefer.x,
+    preferredY: prefer.y
+  });
+
+  if (!resolved) {
+    alert("その位置には置けません（重なりまたはスペース不足）。");
+    return false;
+  }
+
+  target.laneId = lane.id;
+  target.spanCols = spanCols;
+  target.posX = resolved.x;
+  target.posY = resolved.y;
+
+  const sameLane = blocks
+    .filter(block => block.blockId !== blockId && block.laneId === lane.id)
+    .sort((a, b) => a.order - b.order);
+
+  const next = [];
+  let inserted = false;
+  sameLane.forEach(block => {
+    if (!inserted && beforeBlockId && block.blockId === beforeBlockId) {
+      next.push(target);
+      inserted = true;
+    }
+    next.push(block);
+  });
+
+  if (!inserted) next.push(target);
+
+  next.forEach((block, idx) => {
+    block.order = idx;
+  });
+
   blocks = normalizeBlockOrders(blocks);
+  return true;
+}
+
+function calcDropPosition(dropEvent, laneBodyEl, lane, laneBodyHeight, spanCols, blockTrays) {
+  const rect = laneBodyEl.getBoundingClientRect();
+  const laneCols = getLaneCols(lane);
+  const widthPx = Math.max(20, (Math.max(1, spanCols) / laneCols) * rect.width);
+  const blockHeightPx = computeBlockHeight(blockTrays, lane, laneBodyHeight, spanCols);
+
+  const rawX = dropEvent.clientX - rect.left - (widthPx / 2);
+  const rawY = dropEvent.clientY - rect.top - (blockHeightPx / 2);
+
+  const xDen = Math.max(1, rect.width - widthPx);
+  const yDen = Math.max(1, rect.height - blockHeightPx);
+
+  return {
+    x: clamp(rawX / xDen, 0, 1),
+    y: clamp(rawY / yDen, 0, 1)
+  };
+}
+
+function resolvePlacementInLane({ lane, laneBodyEl, laneBodyHeight, movingBlockId, trays, spanCols, preferredX, preferredY }) {
+  const laneCols = getLaneCols(lane);
+  const widthNorm = clamp(spanCols / laneCols, 0.05, 1);
+  const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, spanCols);
+  const heightNorm = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
+
+  const maxX = Math.max(0, 1 - widthNorm);
+  const maxY = Math.max(0, 1 - heightNorm);
+
+  const stepX = clamp(SNAP_PX / Math.max(1, laneBodyEl.clientWidth), 0.01, 0.2);
+  const stepY = clamp(SNAP_PX / Math.max(1, laneBodyHeight), 0.01, 0.2);
+
+  const prefX = snapToStep(clamp(preferredX, 0, maxX), stepX, maxX);
+  const prefY = snapToStep(clamp(preferredY, 0, maxY), stepY, maxY);
+
+  const xs = buildSnapAxis(maxX, stepX);
+  const ys = buildSnapAxis(maxY, stepY);
+
+  const candidates = [];
+  ys.forEach(y => {
+    xs.forEach(x => {
+      const dx = x - prefX;
+      const dy = y - prefY;
+      candidates.push({ x, y, d: (dx * dx) + (dy * dy) });
+    });
+  });
+  candidates.sort((a, b) => a.d - b.d);
+
+  const others = blocks
+    .filter(block => block.blockId !== movingBlockId && block.laneId === lane.id)
+    .map(block => getBlockRectNorm(block, lane, laneBodyHeight));
+
+  for (const c of candidates) {
+    const rect = {
+      left: c.x,
+      top: c.y,
+      right: c.x + widthNorm,
+      bottom: c.y + heightNorm
+    };
+
+    const overlapped = others.some(other => isRectOverlap(rect, other));
+    if (!overlapped) {
+      return { x: c.x, y: c.y };
+    }
+  }
+
+  return null;
+}
+
+function getBlockRectNorm(block, lane, laneBodyHeight) {
+  const laneCols = getLaneCols(lane);
+  const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(block.spanCols) || 1)));
+  const width = clamp(span / laneCols, 0.05, 1);
+  const heightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
+  const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
+
+  const x = clamp(toNumber(block.posX), 0, 1) * Math.max(0, 1 - width);
+  const y = clamp(toNumber(block.posY), 0, 1) * Math.max(0, 1 - height);
+
+  return {
+    left: x,
+    top: y,
+    right: x + width,
+    bottom: y + height
+  };
+}
+
+function isRectOverlap(a, b) {
+  const eps = 0.002;
+  return !(a.right <= (b.left + eps)
+    || b.right <= (a.left + eps)
+    || a.bottom <= (b.top + eps)
+    || b.bottom <= (a.top + eps));
+}
+
+function buildSnapAxis(max, step) {
+  const out = [0];
+  let cur = step;
+  while (cur < max) {
+    out.push(Number(cur.toFixed(4)));
+    cur += step;
+  }
+  if (max > 0) out.push(Number(max.toFixed(4)));
+  return [...new Set(out)].sort((a, b) => a - b);
+}
+
+function snapToStep(value, step, max) {
+  if (step <= 0) return clamp(value, 0, max);
+  const snapped = Math.round(value / step) * step;
+  return clamp(Number(snapped.toFixed(4)), 0, max);
 }
 
 function toggleSelection(blockId, multiSelect) {
@@ -864,11 +1053,8 @@ function toggleSelection(blockId, multiSelect) {
     return;
   }
 
-  if (selectedBlockIds.has(blockId)) {
-    selectedBlockIds.delete(blockId);
-  } else {
-    selectedBlockIds.add(blockId);
-  }
+  if (selectedBlockIds.has(blockId)) selectedBlockIds.delete(blockId);
+  else selectedBlockIds.add(blockId);
 }
 
 function splitSelectedBlock() {
@@ -904,7 +1090,9 @@ function splitSelectedBlock() {
     originSeedRef: target.originSeedRef,
     trays: rest,
     laneId: target.laneId,
-    slotIndex: target.slotIndex,
+    spanCols: target.spanCols,
+    posX: clamp(toNumber(target.posX) + 0.04, 0, 1),
+    posY: clamp(toNumber(target.posY) + 0.02, 0, 1),
     order: target.order + 0.5
   };
 
@@ -934,10 +1122,9 @@ function mergeSelectedBlocks() {
   const first = targets[0];
   const sameOrigin = targets.every(block => block.originSeedRef === first.originSeedRef);
   const sameLane = targets.every(block => block.laneId === first.laneId);
-  const sameSlot = targets.every(block => block.slotIndex === first.slotIndex);
 
-  if (!sameOrigin || !sameLane || !sameSlot) {
-    alert("結合は同一ロット・同一レーン・同一列のブロックのみ可能です。");
+  if (!sameOrigin || !sameLane) {
+    alert("結合は同一ロット・同一レーンのブロックのみ可能です。");
     return;
   }
 
@@ -970,57 +1157,6 @@ function getLaneRows(lane) {
   const capacity = toNumber(lane?.capacity);
   if (capacity <= 0) return 24;
   return Math.max(1, capacity / cols);
-}
-
-function getLaneLayoutOptions(lane) {
-  const cols = getLaneCols(lane);
-  const options = [{ value: "default", label: `標準(${cols}列)` }];
-
-  if (cols >= 3) {
-    options.push({ value: "minus1", label: `${Math.max(1, cols - 1)}列運用(1列空き)` });
-  }
-
-  if (cols === 5) {
-    options.push({ value: "split-2-3", label: "2列+3列" });
-  }
-
-  return options;
-}
-
-function getLaneLayoutMode(laneId) {
-  const lane = findLane(laneId);
-  if (!lane) return "default";
-
-  const mode = String(laneLayouts?.[laneId]?.mode || "default");
-  const allowed = getLaneLayoutOptions(lane).map(v => v.value);
-  return allowed.includes(mode) ? mode : "default";
-}
-
-function getLaneLayoutSpec(lane) {
-  const cols = getLaneCols(lane);
-  const mode = getLaneLayoutMode(lane.id);
-
-  if (mode === "minus1") {
-    return {
-      slotCount: cols,
-      activeSlots: Array.from({ length: Math.max(1, cols - 1) }, (_, i) => i),
-      groupBreakAfter: []
-    };
-  }
-
-  if (mode === "split-2-3" && cols === 5) {
-    return {
-      slotCount: 5,
-      activeSlots: [0, 1, 2, 3, 4],
-      groupBreakAfter: [1]
-    };
-  }
-
-  return {
-    slotCount: cols,
-    activeSlots: Array.from({ length: cols }, (_, i) => i),
-    groupBreakAfter: []
-  };
 }
 
 function isOutsideBottomLane(lane) {
@@ -1059,7 +1195,7 @@ function computeLaneBodyHeight(lane) {
     const tray = getTraySizeByLane(lane);
     const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
     const px = getLaneCols(lane) * shortEdgeMm * MM_TO_PX * 12;
-    return clamp(Math.round(px), 90, 150);
+    return clamp(Math.round(px), 90, 170);
   }
 
   const rows = getLaneRows(lane);
@@ -1068,20 +1204,20 @@ function computeLaneBodyHeight(lane) {
   return clamp(Math.round(px), 130, 920);
 }
 
-function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0) {
+function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) {
   const laneCapacity = toNumber(lane?.capacity);
   const trays = Math.max(0, toNumber(blockTrays));
+  const laneCols = getLaneCols(lane || {});
+  const cols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
 
   if (laneCapacity > 0 && laneBodyHeight > 0) {
     const ratio = trays / laneCapacity;
-    const proportional = Math.round(laneBodyHeight * ratio);
+    const adjusted = laneBodyHeight * ratio * (laneCols / cols);
     if (trays <= 0) return 22;
-    return clamp(proportional, 24, Math.max(28, laneBodyHeight - 6));
+    return clamp(Math.round(adjusted), 24, Math.max(28, laneBodyHeight - 6));
   }
 
-  const cols = getLaneCols(lane || {});
   if (trays <= 0) return 40;
-
   const rows = trays / cols;
   const tray = getTraySizeByLane(lane || {});
   const px = rows * tray.nsMm * MM_TO_PX;
