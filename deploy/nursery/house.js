@@ -46,6 +46,7 @@ const GROUPS = [
 let lots = [];
 let assignments = {};
 let dragSeedRef = "";
+let focusedLaneId = "";
 
 export async function initNurseryHousePage() {
   bindControls();
@@ -56,6 +57,7 @@ function bindControls() {
   const reloadBtn = document.getElementById("reload-btn");
   const saveBtn = document.getElementById("save-btn");
   const unassignedPool = document.getElementById("unassigned-pool");
+  const zonesRoot = document.getElementById("zones-root");
 
   reloadBtn?.addEventListener("click", async () => {
     await reloadAll();
@@ -81,6 +83,23 @@ function bindControls() {
       if (!dragSeedRef) return;
       delete assignments[dragSeedRef];
       render();
+    });
+  }
+
+  if (zonesRoot) {
+    zonesRoot.addEventListener("click", event => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const laneHead = target.closest(".lane-head");
+      if (!laneHead) return;
+
+      const laneEl = laneHead.closest(".lane");
+      const laneId = String(laneEl?.dataset?.laneId || "").trim();
+      if (!laneId) return;
+
+      focusedLaneId = (focusedLaneId === laneId) ? "" : laneId;
+      renderGroups();
     });
   }
 }
@@ -366,6 +385,11 @@ function renderGroups() {
   if (!root) return;
 
   root.innerHTML = "";
+  if (focusedLaneId && !findLane(focusedLaneId)) {
+    focusedLaneId = "";
+  }
+  root.classList.toggle("has-focused-lane", !!focusedLaneId);
+
   const byLane = buildLaneMap();
   const quickPlaceLots = getQuickPlaceLots(5);
 
@@ -488,6 +512,9 @@ function buildLaneElement(lane, byLane) {
   const laneClass = `lane-${String(lane.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
   laneEl.className = `lane ${laneClass}`;
   laneEl.dataset.laneId = lane.id;
+  if (focusedLaneId && focusedLaneId === lane.id) {
+    laneEl.classList.add("is-focused");
+  }
   laneEl.style.setProperty("--lane-cols", String(getLaneCols(lane)));
   laneEl.style.setProperty("--lane-rows", String(getLaneRows(lane)));
 

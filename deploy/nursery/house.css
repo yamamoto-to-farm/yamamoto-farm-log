@@ -199,6 +199,7 @@
   display: grid;
   gap: 0;
   align-items: end;
+  overflow: visible;
 }
 
 .lane {
@@ -207,6 +208,27 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 120ms ease;
+}
+
+.lane-head {
+  cursor: zoom-in;
+}
+
+.zones-root.has-focused-lane .lane {
+  opacity: 0.34;
+}
+
+.zones-root.has-focused-lane .lane.is-focused {
+  opacity: 1;
+  transform: scale(1.08);
+  transform-origin: center bottom;
+  box-shadow: 0 0 0 2px #1d4ed8, 0 10px 24px rgba(30, 41, 59, 0.25);
+  z-index: 8;
+}
+
+.zones-root.has-focused-lane .lane.is-focused .lane-head {
+  cursor: zoom-out;
 }
 
 .kind-outside .lane {
