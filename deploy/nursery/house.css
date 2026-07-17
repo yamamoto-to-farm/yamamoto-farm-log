@@ -5,6 +5,9 @@
   --slot-hover: #dbeafe;
   --slot-fill: #f6fbff;
   --outside-border: #f97316;
+  --lot-name-size: clamp(12px, 0.7vw, 18px);
+  --lot-ref-size: clamp(11px, 0.62vw, 15px);
+  --lot-meta-size: clamp(11px, 0.58vw, 14px);
 }
 
 #page-area.page-container {
@@ -145,24 +148,24 @@
 
 .west-unsorted-list {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 4px;
 }
 
 .west-unsorted-list .lot-card.unsorted-lot-card {
   min-height: 0;
-  padding: 3px 4px;
+  padding: 5px 6px;
   border-radius: 3px;
 }
 
 .west-unsorted-list .lot-card.unsorted-lot-card .lot-name {
-  font-size: 10px;
+  font-size: clamp(11px, 0.6vw, 14px);
   margin-bottom: 1px;
 }
 
 .west-unsorted-list .lot-card.unsorted-lot-card .lot-ref,
 .west-unsorted-list .lot-card.unsorted-lot-card .lot-meta {
-  font-size: 9px;
+  font-size: clamp(10px, 0.52vw, 12px);
   margin-bottom: 1px;
 }
 
@@ -296,7 +299,7 @@
   border: 1px solid #b8d4e7;
   border-radius: 4px;
   background: var(--slot-fill);
-  padding: 4px 5px;
+  padding: 7px 8px;
   cursor: grab;
   user-select: none;
   overflow: hidden;
@@ -310,21 +313,24 @@
 }
 
 .lot-card .lot-name {
-  font-size: 11px;
+  font-size: var(--lot-name-size);
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  line-height: 1.28;
 }
 
 .lot-card .lot-ref {
-  font-size: 10px;
+  font-size: var(--lot-ref-size);
   color: #475569;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  line-height: 1.25;
 }
 
 .lot-card .lot-meta {
-  font-size: 10px;
+  font-size: var(--lot-meta-size);
   color: #1e293b;
+  line-height: 1.22;
 }
 
 .lot-card.warn {
@@ -385,6 +391,10 @@
 
   .west-unsorted-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lot-card {
+    padding: 5px 6px;
   }
 
   .lot-pool {
