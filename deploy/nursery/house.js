@@ -470,7 +470,7 @@ function buildLaneElement(lane, byLane) {
   const body = document.createElement("div");
   body.className = "lane-body drop-pool";
   body.dataset.laneId = lane.id;
-  body.style.minHeight = `${computeLaneBodyHeight(lane)}px`;
+  body.style.height = `${computeLaneBodyHeight(lane)}px`;
   bindLaneDrop(body, lane.id, "");
 
   if (!laneLots.length) {
@@ -611,7 +611,7 @@ function getLaneRows(lane) {
 function computeLaneBodyHeight(lane) {
   // Similar scaling: width ~ tray columns, height ~ (tray count / columns)
   const rows = getLaneRows(lane);
-  return clamp(Math.round(rows * 2.8), 88, 420);
+  return clamp(Math.round(rows * 3.6), 90, 520);
 }
 
 function computeBlockHeight(lot, lane) {
