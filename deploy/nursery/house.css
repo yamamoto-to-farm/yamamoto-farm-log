@@ -4,6 +4,7 @@
   --slot-border: #2f6fa3;
   --slot-hover: #dbeafe;
   --slot-fill: #f6fbff;
+  --outside-border: #f97316;
 }
 
 .nursery-toolbar .toolbar-row {
@@ -69,8 +70,14 @@
 
 .zones-root {
   display: grid;
-  grid-template-columns: repeat(2, minmax(340px, 1fr));
-  gap: 18px;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(370px, 1fr) minmax(370px, 1fr);
+  grid-template-areas:
+    "outside-side west east"
+    "outside-bottom outside-bottom outside-bottom";
+  gap: 16px;
+  padding: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  border-radius: 10px;
 }
 
 .zone-card {
@@ -81,23 +88,29 @@
   box-shadow: none;
 }
 
-.zone-card.kind-house {
-  background: transparent;
+.zone-card.group-west-house {
+  grid-area: west;
 }
 
-.zone-card.kind-outside {
-  background: transparent;
+.zone-card.group-east-house {
+  grid-area: east;
 }
 
-.zone-card.is-wide {
-  grid-column: 1 / -1;
+.zone-card.outside-side-card {
+  grid-area: outside-side;
+}
+
+.zone-card.outside-bottom-card {
+  grid-area: outside-bottom;
 }
 
 .zone-title {
   margin: 0 0 16px;
-  font-size: 19px;
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-align: center;
-  color: #0f172a;
+  color: #334155;
 }
 
 .lane-grid {
@@ -107,32 +120,73 @@
 }
 
 .lane {
-  background: transparent;
+  background: #fff;
+  border: 2px solid var(--slot-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+}
+
+.kind-outside .lane {
+  border-color: var(--outside-border);
+}
+
+.group-west-house .lane-grid {
+  grid-template-columns: 3fr 2fr 2fr 3fr;
+}
+
+.group-east-house .lane-grid {
+  grid-template-columns: 3fr 5fr 3fr;
+}
+
+.layout-outside-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "o4 o5"
+    "o3 o3";
+}
+
+.layout-outside-bottom {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.layout-outside-side .lane[data-lane-id="outside-4"] {
+  grid-area: o4;
+}
+
+.layout-outside-side .lane[data-lane-id="outside-5"] {
+  grid-area: o5;
+}
+
+.layout-outside-side .lane[data-lane-id="outside-3"] {
+  grid-area: o3;
+  min-height: 0;
 }
 
 .lane-head {
-  padding: 10px 12px 8px;
-  border: 2px solid var(--slot-border);
+  padding: 14px 12px 6px;
   border-bottom: none;
   background: #fff;
 }
 
 .lane-name {
-  font-size: 15px;
+  font-size: 31px;
   font-weight: 700;
-  color: #0f172a;
+  color: #475569;
 }
 
 .lane-meta,
 .lane-usage {
-  margin-top: 3px;
-  font-size: 12px;
-  color: #334155;
+  margin-top: 2px;
+  font-size: 28px;
+  color: #64748b;
 }
 
 .lane-body {
-  min-height: 510px;
-  border: 2px solid var(--slot-border);
+  min-height: 420px;
+  border: none;
   background: #fff;
   padding: 8px;
   display: flex;
@@ -148,13 +202,34 @@
 }
 
 .lane-empty {
-  min-height: 120px;
-  border: 1px dashed #93c5fd;
+  min-height: 100px;
+  border: 1px dashed #bfdbfe;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #64748b;
-  font-size: 12px;
+  font-size: 14px;
+}
+
+.kind-outside .lane-empty {
+  border-color: #fdba74;
+}
+
+.lane.lane-outside-4,
+.lane.lane-outside-5 {
+  min-height: 520px;
+}
+
+.lane.lane-outside-3 {
+  min-height: 130px;
+}
+
+.outside-bottom-card .lane {
+  min-height: 180px;
+}
+
+.outside-bottom-card .lane-body {
+  min-height: 92px;
 }
 
 .lane-item {
@@ -222,13 +297,41 @@
 
   .zones-root {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "west"
+      "east"
+      "outside-side"
+      "outside-bottom";
   }
 
-  .zone-card.is-wide {
-    grid-column: auto;
+  .group-west-house .lane-grid,
+  .group-east-house .lane-grid,
+  .layout-outside-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .layout-outside-side {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "o4"
+      "o5"
+      "o3";
   }
 
   .lot-pool {
     max-height: none;
+  }
+
+  .zone-title {
+    font-size: 28px;
+  }
+
+  .lane-name {
+    font-size: 22px;
+  }
+
+  .lane-meta,
+  .lane-usage {
+    font-size: 16px;
   }
 }

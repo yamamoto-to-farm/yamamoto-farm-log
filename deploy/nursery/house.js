@@ -362,64 +362,129 @@ function renderGroups() {
   root.innerHTML = "";
   const byLane = buildLaneMap();
 
-  GROUPS.forEach(group => {
-    const card = document.createElement("section");
-    card.className = `zone-card group-card kind-${group.kind}`;
-    if (group.kind === "outside") card.classList.add("is-wide");
+  const westGroup = GROUPS.find(group => group.id === "west-house");
+  const eastGroup = GROUPS.find(group => group.id === "east-house");
+  const outsideGroup = GROUPS.find(group => group.id === "outside-area");
 
+  if (outsideGroup) {
+    const sideLanes = ["outside-4", "outside-5", "outside-3"]
+      .map(id => outsideGroup.lanes.find(lane => lane.id === id))
+      .filter(Boolean);
+    const bottomLanes = ["outside-2", "outside-1"]
+      .map(id => outsideGroup.lanes.find(lane => lane.id === id))
+      .filter(Boolean);
+
+    if (sideLanes.length) {
+      root.appendChild(buildGroupCard(
+        {
+          id: "outside-side",
+          kind: "outside",
+          title: "",
+          lanes: sideLanes
+        },
+        byLane,
+        {
+          cardClass: "outside-side-card",
+          laneGridClass: "layout-outside-side",
+          showTitle: false
+        }
+      ));
+    }
+
+    if (bottomLanes.length) {
+      root.appendChild(buildGroupCard(
+        {
+          id: "outside-bottom",
+          kind: "outside",
+          title: "",
+          lanes: bottomLanes
+        },
+        byLane,
+        {
+          cardClass: "outside-bottom-card is-wide",
+          laneGridClass: "layout-outside-bottom",
+          showTitle: false
+        }
+      ));
+    }
+  }
+
+  if (westGroup) {
+    root.appendChild(buildGroupCard(westGroup, byLane));
+  }
+  if (eastGroup) {
+    root.appendChild(buildGroupCard(eastGroup, byLane));
+  }
+}
+
+function buildGroupCard(group, byLane, options = {}) {
+  const { cardClass = "", laneGridClass = "", showTitle = true } = options;
+  const groupClass = `group-${String(group.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
+
+  const card = document.createElement("section");
+  card.className = `zone-card group-card kind-${group.kind} ${groupClass} ${cardClass}`.trim();
+
+  if (showTitle && group.title) {
     const title = document.createElement("h3");
     title.className = "zone-title group-title";
     title.textContent = group.title;
     card.appendChild(title);
+  }
 
-    const grid = document.createElement("div");
-    grid.className = "lane-grid";
+  const grid = document.createElement("div");
+  grid.className = `lane-grid ${laneGridClass}`.trim();
+  if (!laneGridClass) {
     grid.style.gridTemplateColumns = `repeat(${group.lanes.length}, minmax(0, 1fr))`;
+  }
 
-    group.lanes.forEach(lane => {
-      const laneEl = document.createElement("section");
-      laneEl.className = "lane";
-      laneEl.dataset.laneId = lane.id;
-
-      const laneLots = (byLane.get(lane.id) || []).map(seedRef => lots.find(v => v.seedRef === seedRef)).filter(Boolean);
-      const used = laneLots.reduce((sum, lot) => sum + lot.availableTrays, 0);
-
-      laneEl.innerHTML = `
-        <div class="lane-head">
-          <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
-          <div class="lane-meta">${lane.trayCols ? `トレイ ${lane.trayCols}列` : "外育苗"}</div>
-          <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${laneLots.length}件`}</div>
-        </div>
-      `;
-
-      const body = document.createElement("div");
-      body.className = "lane-body drop-pool";
-      body.dataset.laneId = lane.id;
-      bindLaneDrop(body, lane.id, "");
-
-      if (!laneLots.length) {
-        const empty = document.createElement("div");
-        empty.className = "lane-empty";
-        empty.textContent = "ここへ配置";
-        body.appendChild(empty);
-      } else {
-        laneLots.forEach(lot => {
-          const item = document.createElement("div");
-          item.className = "lane-item";
-          item.dataset.seedRef = lot.seedRef;
-          bindLaneDrop(item, lane.id, lot.seedRef);
-          item.appendChild(buildLotCard(lot, lane));
-          body.appendChild(item);
-        });
-      }
-
-      laneEl.appendChild(body);
-      grid.appendChild(laneEl);
-    });
-
-    card.appendChild(grid);
-    root.appendChild(card);
+  group.lanes.forEach(lane => {
+    grid.appendChild(buildLaneElement(lane, byLane));
   });
+
+  card.appendChild(grid);
+  return card;
+}
+
+function buildLaneElement(lane, byLane) {
+  const laneEl = document.createElement("section");
+  const laneClass = `lane-${String(lane.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
+  laneEl.className = `lane ${laneClass}`;
+  laneEl.dataset.laneId = lane.id;
+
+  const laneLots = (byLane.get(lane.id) || []).map(seedRef => lots.find(v => v.seedRef === seedRef)).filter(Boolean);
+  const used = laneLots.reduce((sum, lot) => sum + lot.availableTrays, 0);
+
+  laneEl.innerHTML = `
+    <div class="lane-head">
+      <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
+      <div class="lane-meta">${lane.trayCols ? `トレイ${lane.trayCols}列` : "トレイ3列"}</div>
+      <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${laneLots.length}件`}</div>
+    </div>
+  `;
+
+  const body = document.createElement("div");
+  body.className = "lane-body drop-pool";
+  body.dataset.laneId = lane.id;
+  bindLaneDrop(body, lane.id, "");
+
+  if (!laneLots.length) {
+    const empty = document.createElement("div");
+    empty.className = "lane-empty";
+    empty.textContent = "ここへ配置";
+    body.appendChild(empty);
+  } else {
+    laneLots.forEach(lot => {
+      const item = document.createElement("div");
+      item.className = "lane-item";
+      item.dataset.seedRef = lot.seedRef;
+      bindLaneDrop(item, lane.id, lot.seedRef);
+      item.appendChild(buildLotCard(lot, lane));
+      body.appendChild(item);
+    });
+  }
+
+  laneEl.appendChild(body);
+  return laneEl;
 }
 
 function buildLaneMap() {
