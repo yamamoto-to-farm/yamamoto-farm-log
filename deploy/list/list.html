@@ -169,6 +169,10 @@
       font-size: 13px;
     }
 
+    .print-header {
+      display: none;
+    }
+
     .log-scroll {
       max-height: min(68vh, 760px);
       overflow: auto;
@@ -361,6 +365,8 @@
     @media print {
       .app-header,
       .hero-card,
+      .summary-card,
+      .list-head,
       .mode-switch-row,
       .filter-card .filter-open-btn,
       .back-action-slot,
@@ -415,6 +421,29 @@
         break-inside: auto !important;
         page-break-inside: auto !important;
         page-break-after: auto !important;
+      }
+
+      .print-header {
+        display: block !important;
+        margin: 0 0 4mm 0 !important;
+        page-break-after: avoid;
+      }
+
+      .print-header h1 {
+        margin: 0 0 2mm 0;
+        font-size: 16pt;
+        line-height: 1.2;
+      }
+
+      .print-header .print-meta {
+        margin: 0 0 2mm 0;
+        font-size: 10pt;
+        color: #334155;
+      }
+
+      .print-header .print-summary {
+        font-size: 10pt;
+        line-height: 1.5;
       }
 
       .list-card {
@@ -491,6 +520,7 @@
       </section>
 
       <div id="print-scope" class="list-shell">
+          <section id="print-header" class="print-header" aria-hidden="true"></section>
           <section class="summary-card">
             <div class="mode-switch-row" id="mode-switch-card">
               <button id="btn-planting" class="mode-btn" data-mode="planting" type="button">定植</button>

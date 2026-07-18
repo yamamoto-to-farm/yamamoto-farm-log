@@ -38,6 +38,10 @@ export function initListPage() {
 
   applyModeUI();
   renderCurrentMode();
+
+  const sync = () => syncPrintHeader();
+  window.addEventListener("beforeprint", sync);
+  window.addEventListener("afterprint", sync);
 }
 
 function applyModeUI() {
@@ -64,6 +68,24 @@ function renderCurrentMode() {
     renderSeedList();
     if (window.seedFilterData) setFilterData(window.seedFilterData);
   }
+
+  syncPrintHeader();
+}
+
+function syncPrintHeader() {
+  const container = document.getElementById("print-header");
+  if (!container) return;
+
+  const title = document.querySelector(".hero-title")?.textContent?.trim() || "播種・定植一覧";
+  const mode = currentMode === "planting" ? "定植" : "播種";
+  const count = document.getElementById("countArea")?.textContent?.trim() || "-";
+  const summaryHtml = document.getElementById("summaryArea")?.innerHTML?.trim() || "-";
+
+  container.innerHTML = `
+    <h1>${title}</h1>
+    <p class="print-meta">モード: ${mode} / 表示件数: ${count}</p>
+    <div class="print-summary">${summaryHtml}</div>
+  `;
 }
 
 // ★ フィルタ適用時は再描画しない（各一覧JSが担当）
