@@ -13,6 +13,7 @@ let selectedVarieties = [];    // "CTみかさ"
 ============================================================ */
 export function setFilterData(data) {
   filterData = data;
+  updateFilterOpenButtons();
 }
 
 export function getFilterState() {
@@ -54,6 +55,10 @@ export function setFilterState(state = {}, { apply = true } = {}) {
 ============================================================ */
 function renderActiveFilters() {
   const area = document.getElementById("activeFilters");
+  if (!area) {
+    updateFilterOpenButtons();
+    return;
+  }
   area.innerHTML = "";
 
   // 年月
@@ -112,6 +117,23 @@ function renderActiveFilters() {
         applyCurrentFilters();
       };
     }
+  });
+
+  updateFilterOpenButtons();
+}
+
+function updateFilterOpenButtons() {
+  const yearOn = selectedYearMonths.length > 0;
+  const fieldOn = selectedFields.length > 0;
+  const varietyOn = selectedVarieties.length > 0;
+
+  document.querySelectorAll(".filter-open-btn[data-type], .filter-launch-btn[data-type]").forEach(el => {
+    const type = String(el.getAttribute("data-type") || "").trim();
+    const active =
+      (type === "year" && yearOn) ||
+      (type === "field" && fieldOn) ||
+      (type === "variety" && varietyOn);
+    el.classList.toggle("is-active", !!active);
   });
 }
 

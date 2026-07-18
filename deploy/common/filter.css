@@ -50,10 +50,10 @@
   align-items: center;
   justify-content: center;
   padding: 12px 18px;
-  border: 1px solid #276749;
+  border: 1px solid #cbd5e0;
   border-radius: 6px;
-  background: #2f855a;
-  color: #fff;
+  background: #e2e8f0;
+  color: #333;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
@@ -64,6 +64,19 @@
 
 .filter-open-btn:hover,
 .filter-launch-btn:hover {
+  background: #d7dee8;
+  border-color: #b8c4d6;
+}
+
+.filter-open-btn.is-active,
+.filter-launch-btn.is-active {
+  background: #2f855a;
+  color: #fff;
+  border-color: #276749;
+}
+
+.filter-open-btn.is-active:hover,
+.filter-launch-btn.is-active:hover {
   background: #276749;
   border-color: #22543d;
 }

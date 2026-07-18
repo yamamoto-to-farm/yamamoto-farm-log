@@ -14,12 +14,28 @@ export function setKpiFilterData(data) {
   renderActiveFilters();
 }
 
+function updateKpiOpenButtons() {
+  const yearOn = selectedYears.length > 0;
+  const varietyOn = selectedVarieties.length > 0;
+
+  document.querySelectorAll(".filter-open-btn[data-type], .filter-launch-btn[data-type]").forEach(el => {
+    const type = String(el.getAttribute("data-type") || "").trim();
+    const active =
+      (type === "year" && yearOn) ||
+      (type === "variety" && varietyOn);
+    el.classList.toggle("is-active", !!active);
+  });
+}
+
 /* ============================================================
    activeFilters の描画
 ============================================================ */
 function renderActiveFilters() {
   const area = document.getElementById("activeFilters");
-  if (!area) return;
+  if (!area) {
+    updateKpiOpenButtons();
+    return;
+  }
 
   area.innerHTML = "";
 
@@ -61,6 +77,8 @@ function renderActiveFilters() {
       };
     }
   });
+
+  updateKpiOpenButtons();
 }
 
 /* ============================================================
