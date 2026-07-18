@@ -27,6 +27,7 @@ let harvestStartDateMap = {};
 
 let filterData = {};
 let initialized = false;
+let plantDateSortOrder = null; // null | asc | desc
 
 export async function renderPlantingList() {
   if (!initialized) {
@@ -289,12 +290,13 @@ function getPlantDetail(plantingRef) {
 function renderTable(rows) {
 
   const tableArea = document.getElementById("table-area");
+  const sortedRows = sortRowsByDate(rows, "plantDate", plantDateSortOrder);
 
   let html = `
     <table>
       <thead>
         <tr>
-          <th>定植日</th>
+          <th id="th-plant-date">${buildPlantDateHeaderLabel()}</th>
           <th>育苗日数</th>
           <th>定植後経過日数</th>
           <th>圃場</th>
@@ -309,7 +311,7 @@ function renderTable(rows) {
   let totalQuantity = 0;
   let totalAreaTan = 0;
 
-  rows.forEach(r => {
+  sortedRows.forEach(r => {
 
     const spacing = {
       row: Number(r.spacingRow || 0),
@@ -347,6 +349,16 @@ function renderTable(rows) {
 
   tableArea.innerHTML = html;
 
+  const dateHeader = document.getElementById("th-plant-date");
+  if (dateHeader) {
+    dateHeader.style.cursor = "pointer";
+    dateHeader.title = "クリックで昇順/降順を切り替え";
+    dateHeader.addEventListener("click", () => {
+      plantDateSortOrder = plantDateSortOrder === "asc" ? "desc" : "asc";
+      renderTable(rows);
+    });
+  }
+
   document.querySelectorAll(".plant-date-cell").forEach(cell => {
     cell.addEventListener("click", () => {
       const ref = cell.dataset.id;
@@ -368,4 +380,28 @@ function renderTable(rows) {
       }
     });
   });
+}
+
+function buildPlantDateHeaderLabel() {
+  if (plantDateSortOrder === "asc") return "定植日 ▲";
+  if (plantDateSortOrder === "desc") return "定植日 ▼";
+  return "定植日";
+}
+
+function sortRowsByDate(rows, key, order) {
+  const list = Array.isArray(rows) ? rows.slice() : [];
+  if (!order) return list;
+
+  const factor = order === "asc" ? 1 : -1;
+  return list.sort((a, b) => {
+    const av = dateToSortableNumber(a?.[key]);
+    const bv = dateToSortableNumber(b?.[key]);
+    return (av - bv) * factor;
+  });
+}
+
+function dateToSortableNumber(value) {
+  const text = String(value ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return -1;
+  return Number(text.replace(/-/g, ""));
 }
