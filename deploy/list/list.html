@@ -78,6 +78,25 @@
       margin-top: 10px;
     }
 
+    .filter-summary-layout {
+      display: grid;
+      grid-template-columns: minmax(520px, 1fr) 360px;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .filter-column {
+      min-width: 0;
+    }
+
+    .summary-column {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-width: 0;
+      align-content: start;
+    }
+
     .metric-card {
       padding: 10px 12px;
       border: 1px solid #e5e7eb;
@@ -100,17 +119,29 @@
 
     .filter-card {
       margin-top: 10px;
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #ffffff;
+      max-width: 760px;
+      width: 100%;
+      margin-right: auto;
     }
 
     .filter-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(3, minmax(130px, 1fr));
+      gap: 6px;
       align-items: end;
+    }
+
+    .filter-grid .form-field {
+      margin-bottom: 0;
+    }
+
+    .filter-grid .form-field label {
+      margin-bottom: 4px;
+      font-size: 14px;
     }
 
     .list-card {
@@ -206,7 +237,7 @@
     }
 
     #activeFilters {
-      margin: 8px 0 2px;
+      margin: 6px 0 0;
     }
 
     #activeFilters .filter-open-btn {
@@ -215,6 +246,42 @@
 
     #activeFilters .filter-pill-row {
       margin-top: 0;
+    }
+
+    #summary-grid {
+      margin-top: 0;
+      gap: 8px;
+      grid-template-columns: 1fr;
+    }
+
+    #summary-grid .metric-card {
+      min-height: 0;
+    }
+
+    #summaryArea {
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1024px) {
+      .filter-summary-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-column {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-card {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
     }
 
     @media print {
@@ -292,33 +359,38 @@
             </div>
 
             <h2 class="section-title">フィルタ・集計</h2>
-            <div class="filter-card">
-              <div class="filter-grid">
-                <div class="form-field">
-                  <label>年月フィルタ</label>
-                  <button class="filter-open-btn" data-type="year" type="button">年月を選択</button>
+            <div class="filter-summary-layout">
+              <div class="filter-column">
+                <div class="filter-card">
+                  <div class="filter-grid">
+                    <div class="form-field">
+                      <label>年月フィルタ</label>
+                      <button class="filter-open-btn" data-type="year" type="button">年月を選択</button>
+                    </div>
+                    <div class="form-field">
+                      <label>圃場フィルタ</label>
+                      <button class="filter-open-btn" data-type="field" type="button">圃場を選択</button>
+                    </div>
+                    <div class="form-field">
+                      <label>品種フィルタ</label>
+                      <button class="filter-open-btn" data-type="variety" type="button">品種を選択</button>
+                    </div>
+                  </div>
                 </div>
-                <div class="form-field">
-                  <label>圃場フィルタ</label>
-                  <button class="filter-open-btn" data-type="field" type="button">圃場を選択</button>
-                </div>
-                <div class="form-field">
-                  <label>品種フィルタ</label>
-                  <button class="filter-open-btn" data-type="variety" type="button">品種を選択</button>
-                </div>
+                <div id="activeFilters"></div>
               </div>
-            </div>
 
-            <div id="activeFilters"></div>
-
-            <div class="summary-grid" id="summary-grid">
-              <div class="metric-card">
-                <div class="metric-label">表示件数</div>
-                <div id="countArea" class="metric-value">0 件</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">集計</div>
-                <div id="summaryArea" class="metric-value" style="font-size:16px;line-height:1.4;">-</div>
+              <div class="summary-column">
+                <div class="summary-grid" id="summary-grid">
+                  <div class="metric-card">
+                    <div class="metric-label">表示件数</div>
+                    <div id="countArea" class="metric-value">0 件</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-label">集計</div>
+                    <div id="summaryArea" class="metric-value">-</div>
+                  </div>
+                </div>
               </div>
             </div>
 

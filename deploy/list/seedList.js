@@ -246,7 +246,6 @@ function renderTable(rows) {
           <th>枚数</th>
           <th id="th-area">予定面積(反)</th>
           <th>定植ID</th>
-          <th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -281,7 +280,6 @@ function renderTable(rows) {
       <td>${tray}</td>
       <td>${areaTan.toFixed(2)}</td>
       <td>${plantingHtml}</td>
-      <td>${canDiscard ? `<button class="primary-btn discard-btn" data-ref="${r.seedRef}">破棄</button>` : ""}</td>
     </tr>`;
   });
 
@@ -304,7 +302,21 @@ function renderTable(rows) {
       const ref = cell.dataset.id;
       const row = seedRows.find(s => s.seedRef === ref);
       const data = getSeedDetail(row);
-      showInfoModal(data.title, data.html);
+
+      const discardActionHtml = canDiscard && ref
+        ? `<div style="margin-top:12px;"><button class="secondary-btn" id="seed-modal-discard-btn" type="button">破棄ページへ</button></div>`
+        : "";
+
+      showInfoModal(data.title, `${data.html}${discardActionHtml}`);
+
+      if (canDiscard && ref) {
+        const discardBtn = document.getElementById("seed-modal-discard-btn");
+        if (discardBtn) {
+          discardBtn.addEventListener("click", () => {
+            location.href = `/seed/discard-seed.html?ref=${encodeURIComponent(ref)}`;
+          });
+        }
+      }
     });
   });
 
@@ -320,11 +332,4 @@ function renderTable(rows) {
     );
   });
 
-  /* ▼ 破棄ボタン */
-  document.querySelectorAll(".discard-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const ref = btn.dataset.ref;
-      location.href = `/seed/discard-seed.html?ref=${encodeURIComponent(ref)}`;
-    });
-  });
 }

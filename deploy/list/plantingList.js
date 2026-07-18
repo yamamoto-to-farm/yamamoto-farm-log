@@ -217,7 +217,6 @@ function renderTable(rows) {
           <th>品種</th>
           <th>面積(反)</th>
           <th>播種日</th>
-          <th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -247,7 +246,6 @@ function renderTable(rows) {
       <td><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>
       <td>${getSeedDates(r.seedRef)}</td>
-      <td>${canDiscard && ref ? `<button class="primary-btn discard-btn" data-ref="${ref}">破棄</button>` : ""}</td>
     </tr>`;
   });
 
@@ -267,14 +265,21 @@ function renderTable(rows) {
     cell.addEventListener("click", () => {
       const ref = cell.dataset.id;
       const data = getPlantDetail(ref);
-      showInfoModal(data.title, data.html);
-    });
-  });
 
-  document.querySelectorAll(".discard-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const ref = btn.dataset.ref;
-      location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
+      const discardActionHtml = canDiscard && ref
+        ? `<div style="margin-top:12px;"><button class="secondary-btn" id="planting-modal-discard-btn" type="button">破棄ページへ</button></div>`
+        : "";
+
+      showInfoModal(data.title, `${data.html}${discardActionHtml}`);
+
+      if (canDiscard && ref) {
+        const discardBtn = document.getElementById("planting-modal-discard-btn");
+        if (discardBtn) {
+          discardBtn.addEventListener("click", () => {
+            location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
+          });
+        }
+      }
     });
   });
 }
