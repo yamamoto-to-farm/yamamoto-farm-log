@@ -59,6 +59,8 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const workersText = normalizeMultiText(item.workers || existing.workers) || "（未入力）";
     const machine = String(item.machine ?? existing.machine ?? "").trim();
     const machineText = machine || "（未入力）";
+    const hideField = isSowingWorkItem(item);
+    const sowingCategoryText = normalizeMultiText(item.workType || existing.workType || item.type || existing.type) || "（未入力）";
     const subItems = Array.isArray(item.items) ? item.items : [];
     const unmergeButtonHtml = subItems.length > 1
       ? `<button type="button" class="secondary-btn merge-unmerge-btn" data-group-index="${idx}">マージ解除</button>`
@@ -91,8 +93,10 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
         ${unmergeButtonHtml}
       </div>
       <h3 class="edit-title">${getWorkTypeText(item)}</h3>
-      <p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>
-      <p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>
+      ${hideField ? "" : `<p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>`}
+      ${hideField
+        ? `<p class="edit-workers"><strong>播種区分：</strong> ${escapeHtml(sowingCategoryText)}</p>`
+        : `<p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>`}
       ${subItemHtml}
 
       <input type="hidden" id="field_${idx}" value="${field}">
@@ -148,6 +152,10 @@ function normalizeMultiText(value) {
 
 function getWorkTypeText(item) {
   return String(item?.type || item?.workType || "").trim();
+}
+
+function isSowingWorkItem(item) {
+  return getWorkTypeText(item).includes("播種");
 }
 
 function escapeHtml(value) {
