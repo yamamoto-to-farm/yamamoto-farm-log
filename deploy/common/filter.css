@@ -49,23 +49,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  background: #fff;
-  color: #374151;
-  font-size: 14px;
+  padding: 12px 18px;
+  border: 1px solid #276749;
+  border-radius: 6px;
+  background: #2f855a;
+  color: #fff;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
   box-sizing: border-box;
+  line-height: 1.2;
 }
 
 .filter-open-btn:hover,
 .filter-launch-btn:hover {
-  border-color: #9ca3af;
-  background: #f8fafc;
+  background: #276749;
+  border-color: #22543d;
 }
 
 /* ===============================
