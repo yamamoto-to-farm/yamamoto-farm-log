@@ -377,7 +377,8 @@
       /* Hide normal on-screen title/summary blocks and keep print header only. */
       #page-area .hero-card,
       #print-scope .summary-card,
-      #print-scope .list-head {
+      #print-scope .list-head,
+      #print-header {
         display: none !important;
       }
 
@@ -427,26 +428,7 @@
       }
 
       .print-header {
-        display: block !important;
-        margin: 0 0 4mm 0 !important;
-        page-break-after: avoid;
-      }
-
-      .print-header h1 {
-        margin: 0 0 2mm 0;
-        font-size: 16pt;
-        line-height: 1.2;
-      }
-
-      .print-header .print-meta {
-        margin: 0 0 2mm 0;
-        font-size: 10pt;
-        color: #334155;
-      }
-
-      .print-header .print-summary {
-        font-size: 10pt;
-        line-height: 1.5;
+        display: none !important;
       }
 
       .list-card {
