@@ -98,16 +98,23 @@
       line-height: 1.1;
     }
 
-    .filter-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 8px;
+    .filter-card {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
     }
 
-    .summary-filter-btn {
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .filter-grid .primary-btn {
       width: 100%;
-      display: inline-flex;
       margin-top: 0 !important;
     }
 
@@ -233,7 +240,7 @@
       }
 
       .mode-switch-row,
-      .filter-open-btn,
+      .filter-card .primary-btn,
       .back-action-slot,
       #modal-container,
       #list-back-btn,
@@ -290,10 +297,21 @@
             </div>
 
             <h2 class="section-title">フィルタ・集計</h2>
-            <div class="filter-row">
-              <button class="filter-launch-btn summary-filter-btn filter-open-btn" data-type="year" type="button">年月フィルタ</button>
-              <button class="filter-launch-btn summary-filter-btn filter-open-btn" data-type="field" type="button">圃場フィルタ</button>
-              <button class="filter-launch-btn summary-filter-btn filter-open-btn" data-type="variety" type="button">品種フィルタ</button>
+            <div class="filter-card">
+              <div class="filter-grid">
+                <div class="form-field">
+                  <label>年月フィルタ</label>
+                  <button class="primary-btn" data-type="year" type="button">年月を選択</button>
+                </div>
+                <div class="form-field">
+                  <label>圃場フィルタ</label>
+                  <button class="primary-btn" data-type="field" type="button">圃場を選択</button>
+                </div>
+                <div class="form-field">
+                  <label>品種フィルタ</label>
+                  <button class="primary-btn" data-type="variety" type="button">品種を選択</button>
+                </div>
+              </div>
             </div>
 
             <div id="activeFilters"></div>
