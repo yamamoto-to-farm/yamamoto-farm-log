@@ -22,8 +22,9 @@ export async function initViewPageWithOptions(options = {}) {
   const logs = Array.isArray(options?.logs) ? options.logs : await loadLogsByDate(date);
   const timestampRows = await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
+  const autoSowingCategoryMap = buildSowingCategoryMap(autoList);
   const workList = Array.isArray(diary?.work) && diary.work.length
-    ? normalizeViewGroups(diary.work)
+    ? normalizeViewGroups(hydrateSowingCategoryForView(diary.work, autoSowingCategoryMap))
     : normalizeViewGroups(mergeWorkEntries(autoList, timestampRows));
 
   if (!diary) {
@@ -94,6 +95,41 @@ function createMemoCard(memoValue) {
   card.appendChild(p);
 
   return card;
+}
+
+function buildSowingCategoryMap(autoList) {
+  const map = new Map();
+  (Array.isArray(autoList) ? autoList : []).forEach(item => {
+    const key = String(item?.sourceKey || "").trim();
+    if (!key || map.has(key)) return;
+    const category = normalizeMultiText(item?.sowingCategory || item?.workType || item?.type);
+    if (!category) return;
+    map.set(key, category);
+  });
+  return map;
+}
+
+function hydrateSowingCategoryForView(workList, categoryMap) {
+  return (Array.isArray(workList) ? workList : []).map(work => {
+    const next = { ...(work || {}) };
+    const selfKey = String(next.sourceKey || "").trim();
+    if (!next.sowingCategory && selfKey && categoryMap.has(selfKey)) {
+      next.sowingCategory = categoryMap.get(selfKey);
+    }
+
+    if (Array.isArray(next.items) && next.items.length) {
+      next.items = next.items.map(item => {
+        const child = { ...(item || {}) };
+        const childKey = String(child.sourceKey || "").trim();
+        if (!child.sowingCategory && childKey && categoryMap.has(childKey)) {
+          child.sowingCategory = categoryMap.get(childKey);
+        }
+        return child;
+      });
+    }
+
+    return next;
+  });
 }
 
 function createLine(label, value) {
