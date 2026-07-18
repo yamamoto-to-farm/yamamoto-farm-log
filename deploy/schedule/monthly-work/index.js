@@ -497,7 +497,7 @@ async function main() {
   const monthMode = document.getElementById("month-mode");
   const referenceMonth = document.getElementById("reference-month");
 
-  const summary = await loadMonthlyWorkSummary({ rebuildIfMissing: true });
+  const summary = await loadMonthlyWorkSummary({ rebuildIfMissing: true, forceRebuild: true });
   const months = Object.keys(summary.months || {}).sort((a, b) => b.localeCompare(a, "ja"));
 
   if (months.length === 0) {

@@ -289,8 +289,12 @@ export async function rebuildMonthlyWorkSummary() {
   }
 }
 
-export async function loadMonthlyWorkSummary({ rebuildIfMissing = true } = {}) {
-  if (summaryCache) return summaryCache;
+export async function loadMonthlyWorkSummary({ rebuildIfMissing = true, forceRebuild = false } = {}) {
+  if (!forceRebuild && summaryCache) return summaryCache;
+
+  if (forceRebuild) {
+    return await rebuildMonthlyWorkSummary();
+  }
 
   const raw = await loadJSON(`/data/monthly-work-index.json`).catch(() => null);
   const normalized = normalizeSummary(raw);
