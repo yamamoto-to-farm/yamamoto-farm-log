@@ -347,6 +347,8 @@ function renderTable(rows) {
     `株数合計：${totalQuantity.toLocaleString()} 株　
      面積合計：${totalAreaTan.toFixed(2)} 反`;
 
+  window.dispatchEvent(new CustomEvent("list:summary-updated"));
+
   tableArea.innerHTML = html;
 
   const dateHeader = document.getElementById("th-plant-date");

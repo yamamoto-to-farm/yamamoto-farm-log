@@ -411,6 +411,8 @@ function renderTable(rows) {
      総株数：${totalSeed.toLocaleString()} 株<br>
      予定面積合計：${totalAreaTan.toFixed(2)} 反`;
 
+  window.dispatchEvent(new CustomEvent("list:summary-updated"));
+
   tableArea.innerHTML = html;
 
   const dateHeader = document.getElementById("th-seed-date");

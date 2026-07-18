@@ -42,6 +42,7 @@ export function initListPage() {
   const sync = () => syncPrintHeader();
   window.addEventListener("beforeprint", sync);
   window.addEventListener("afterprint", sync);
+  window.addEventListener("list:summary-updated", sync);
 }
 
 function applyModeUI() {
@@ -69,7 +70,10 @@ function renderCurrentMode() {
     if (window.seedFilterData) setFilterData(window.seedFilterData);
   }
 
+  // Fallback syncs in case rendering completes asynchronously after this call.
   syncPrintHeader();
+  setTimeout(syncPrintHeader, 0);
+  setTimeout(syncPrintHeader, 120);
 }
 
 function syncPrintHeader() {
