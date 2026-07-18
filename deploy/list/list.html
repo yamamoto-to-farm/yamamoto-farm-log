@@ -374,9 +374,9 @@
         display: none !important;
       }
 
-      /* Hide normal on-screen title/summary blocks and keep print header only. */
+      /* Print only record-list card body. */
       #page-area .hero-card,
-      #print-scope .summary-card,
+      #print-scope > :not(.list-card),
       #print-scope .list-head,
       #print-header {
         display: none !important;
