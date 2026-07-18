@@ -43,6 +43,27 @@
   border: none;
 }
 
+/* ▼ フィルタ起動ボタン（ページ上） */
+.filter-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-launch-btn:hover {
+  border-color: #9ca3af;
+  background: #f8fafc;
+}
+
 /* ===============================
    フィルタブロック（年・圃場・品種）
 =============================== */

@@ -8,6 +8,7 @@
 
   <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
 
   <!-- フィルタ UI 共通 CSS -->
 
@@ -107,23 +108,7 @@
     .summary-filter-btn {
       width: 100%;
       display: inline-flex;
-      align-items: center;
-      justify-content: center;
       margin-top: 0 !important;
-      padding: 8px 12px;
-      min-height: 38px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      background: #fff;
-      color: #374151;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .summary-filter-btn:hover {
-      border-color: #9ca3af;
-      background: #f8fafc;
     }
 
     .list-card {
@@ -306,9 +291,9 @@
 
             <h2 class="section-title">フィルタ・集計</h2>
             <div class="filter-row">
-              <button class="summary-filter-btn filter-open-btn" data-type="year" type="button">年月フィルタ</button>
-              <button class="summary-filter-btn filter-open-btn" data-type="field" type="button">圃場フィルタ</button>
-              <button class="summary-filter-btn filter-open-btn" data-type="variety" type="button">品種フィルタ</button>
+              <button class="filter-launch-btn summary-filter-btn filter-open-btn" data-type="year" type="button">年月フィルタ</button>
+              <button class="filter-launch-btn summary-filter-btn filter-open-btn" data-type="field" type="button">圃場フィルタ</button>
+              <button class="filter-launch-btn summary-filter-btn filter-open-btn" data-type="variety" type="button">品種フィルタ</button>
             </div>
 
             <div id="activeFilters"></div>
