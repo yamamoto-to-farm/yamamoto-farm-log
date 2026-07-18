@@ -185,6 +185,18 @@ function bump(summary, dateKey, sourceKey, count = 1) {
   month.days[dateKey][sourceKey] = (month.days[dateKey][sourceKey] || 0) + count;
 }
 
+function bumpUniqueDay(summary, dateKey, sourceKey) {
+  if (!dateKey || !sourceKey) return;
+
+  const ym = dateKey.slice(0, 7);
+  if (!ym) return;
+
+  const month = ensureMonth(summary, ym);
+  if (month.days[dateKey]?.[sourceKey]) return;
+
+  bump(summary, dateKey, sourceKey, 1);
+}
+
 async function loadTypeIndex(type) {
   const paths = [
     `/data/${type}/${type}-index.json`,
@@ -260,6 +272,11 @@ function normalizeSummary(raw) {
 function addRowsToSummary(summary, sourceKey, rows, dateFields) {
   for (const row of rows) {
     const dateKey = toDateKey(extractDateText(row, dateFields));
+    if (sourceKey === "seed") {
+      bumpUniqueDay(summary, dateKey, sourceKey);
+      continue;
+    }
+
     bump(summary, dateKey, sourceKey, 1);
   }
 }
@@ -322,6 +339,12 @@ export async function recordMonthlyWorkEntries(entries) {
     const count = Number(entry?.count || 1);
 
     if (!dateKey || !sourceKey || !count) continue;
+
+    if (sourceKey === "seed") {
+      bumpUniqueDay(summary, dateKey, sourceKey);
+      continue;
+    }
+
     bump(summary, dateKey, sourceKey, count);
   }
 
