@@ -194,9 +194,9 @@ export function extractWorkForEdit(logs, timestampRows = []) {
 
   logs.forEach((log, logIndex) => {
     const displayName = String(log.displayName || "").trim();
-    const rowWorkType = String(log.data?.workType || "").trim();
-    const sourceTypeKey = String(log.data?.workType || log.displayName || "").trim();
-    const type = buildDiaryTypeLabel(displayName, rowWorkType);
+    const rowWorkType = String(log.folder === "seed" ? (log.data?.source || "") : (log.data?.workType || "")).trim();
+    const sourceTypeKey = String(log.folder === "seed" ? (log.data?.source || log.displayName || "") : (log.data?.workType || log.displayName || "")).trim();
+    const type = log.folder === "seed" ? displayName : buildDiaryTypeLabel(displayName, rowWorkType);
 
     // worker 系列を抽出（worker1, worker2... / worker 単一列の両対応）
     const workers = [];
@@ -268,6 +268,7 @@ export function extractWorkForEdit(logs, timestampRows = []) {
       folder: log.folder,
       date: sourceDate,
       type,
+      sowingCategory: rowWorkType,
       workers,
       workersKey: buildWorkersSetKey(workers),
       field,
