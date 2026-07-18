@@ -54,12 +54,13 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const end = String(item.end || existing.end || defaults.end || "").trim();
 
     // ★ ログ由来の値を優先（同期を維持）
-    const field = item.field || existing.field || "";
+    const isSeedWork = isSowingWorkItem(item) || String(item?.folder || existing?.folder || "").trim() === "seed";
+    const field = isSeedWork ? "" : (item.field || existing.field || "");
     const fieldText = normalizeMultiText(field) || "（未入力）";
     const workersText = normalizeMultiText(item.workers || existing.workers) || "（未入力）";
     const machine = String(item.machine ?? existing.machine ?? "").trim();
     const machineText = machine || "（未入力）";
-    const hideField = isSowingWorkItem(item);
+    const hideField = isSeedWork;
     const sowingCategoryText = normalizeMultiText(item.sowingCategory || existing.sowingCategory || item.workType || existing.workType || item.type || existing.type) || "（未入力）";
     const subItems = Array.isArray(item.items) ? item.items : [];
     const unmergeButtonHtml = subItems.length > 1
@@ -99,7 +100,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
         : `<p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>`}
       ${subItemHtml}
 
-      <input type="hidden" id="field_${idx}" value="${field}">
+      <input type="hidden" id="field_${idx}" value="${escapeHtml(field)}">
       <input type="hidden" id="machine_${idx}" value="${machine}">
 
       <div class="time-row">

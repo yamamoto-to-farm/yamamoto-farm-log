@@ -41,7 +41,7 @@ export async function saveDiary(date, autoList) {
     workType: String(item.workType || item.type || "").trim(),
     sowingCategory: String(item.sowingCategory || "").trim(),
     // workers と同じく配列で保存（複数値は "／" でまとめる）
-    field: normalizeMultiValueAsArray(document.getElementById(`field_${idx}`)?.value || item.field || ""),
+    field: normalizeMultiValueAsArray((String(item.folder || "").trim() === "seed") ? "" : (document.getElementById(`field_${idx}`)?.value || item.field || "")),
     workers: normalizeMultiValueAsArray(item.workers),
     machine: String(document.getElementById(`machine_${idx}`)?.value || item.machine || "").trim(),
     start: document.getElementById(`start_${idx}`)?.value || "",
@@ -52,7 +52,7 @@ export async function saveDiary(date, autoList) {
       type: String(subItem.type || subItem.workType || item.type || item.workType || "").trim(),
       workType: String(subItem.workType || subItem.type || item.workType || item.type || "").trim(),
       sowingCategory: String(subItem.sowingCategory || item.sowingCategory || "").trim(),
-      field: normalizeMultiValueAsArray(subItem.field || ""),
+      field: normalizeMultiValueAsArray((String(item.folder || "").trim() === "seed") ? "" : (subItem.field || "")),
       workers: normalizeMultiValueAsArray(subItem.workers || ""),
       machine: String(subItem.machine || item.machine || "").trim(),
       start: String(subItem.start || item.start || "").trim(),

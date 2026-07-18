@@ -50,8 +50,9 @@ export async function initViewPageWithOptions(options = {}) {
 }
 
 function createViewWorkCard(w) {
-  const fieldLine = normalizeMultiText(w?.field) || "（未入力）";
   const title = String(w?.type || w?.workType || "").trim();
+  const isSowing = isSowingWorkItem(w);
+  const fieldLine = isSowing ? "（未入力）" : (normalizeMultiText(w?.field) || "（未入力）");
   const workerLine = normalizeMultiText(w?.workers) || "（未入力）";
   const machineLine = String(w?.machine || "").trim() || "（未入力）";
 
@@ -62,13 +63,15 @@ function createViewWorkCard(w) {
   h3.textContent = title;
   card.appendChild(h3);
 
-  card.appendChild(createLine("圃場", fieldLine));
-  card.appendChild(createWorkerMachineLine(workerLine, machineLine));
+  if (!isSowing) {
+    card.appendChild(createLine("圃場", fieldLine));
+    card.appendChild(createWorkerMachineLine(workerLine, machineLine));
+  }
   card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || "")));
 
   const subItems = Array.isArray(w?.items) ? w.items : [];
   if (subItems.length > 1) {
-    card.appendChild(createSubItemsDetails(subItems));
+    card.appendChild(createSubItemsDetails(subItems, isSowing));
   }
 
   return card;
@@ -127,7 +130,7 @@ function createStartEndLine(start, end) {
   return p;
 }
 
-function createSubItemsDetails(subItems) {
+function createSubItemsDetails(subItems, hideField = false) {
   const details = document.createElement("details");
   details.className = "merged-work-details";
 
@@ -142,7 +145,7 @@ function createSubItemsDetails(subItems) {
     const li = document.createElement("li");
 
     const field = document.createElement("span");
-    field.textContent = normalizeMultiText(subItem?.field) || "未入力圃場";
+    field.textContent = hideField ? "未入力圃場" : (normalizeMultiText(subItem?.field) || "未入力圃場");
     li.appendChild(field);
 
     const time = document.createElement("span");
@@ -154,6 +157,11 @@ function createSubItemsDetails(subItems) {
 
   details.appendChild(ul);
   return details;
+}
+
+function isSowingWorkItem(w) {
+  const title = String(w?.type || w?.workType || "").trim();
+  return title.includes("播種");
 }
 
 function normalizeMultiText(value) {
