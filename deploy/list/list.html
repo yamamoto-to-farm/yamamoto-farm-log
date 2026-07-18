@@ -16,20 +16,58 @@
   <!-- 播種一覧専用 CSS（列幅など） -->
 
   <style>
+    body {
+      background: linear-gradient(180deg, #f7f7f2 0%, #ffffff 28%);
+    }
+
+    .page-wrap {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 12px 16px 28px;
+    }
+
+    .hero-card,
+    .list-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .hero-card {
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .hero-copy {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+
     .list-shell {
       display: grid;
       gap: 12px;
     }
 
     .unified-summary-card {
+      margin-top: 14px;
       padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f8fafc;
     }
 
     .mode-switch-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 10px;
+      margin: 0 0 10px;
     }
 
     .mode-btn {
@@ -80,7 +118,7 @@
       padding: 10px 12px;
       border: 1px solid #e5e7eb;
       border-radius: 10px;
-      background: #fff;
+      background: #ffffff;
     }
 
     .aux-title {
@@ -108,6 +146,102 @@
       font-size: 12px;
     }
 
+    .list-card {
+      margin-top: 12px;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .list-head {
+      padding: 14px 14px 0;
+    }
+
+    .list-head h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .list-head p {
+      margin: 6px 0 10px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .log-scroll {
+      max-height: min(68vh, 760px);
+      overflow: auto;
+      padding: 0 10px 10px;
+    }
+
+    .log-scroll table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: #fff;
+    }
+
+    .log-scroll th,
+    .log-scroll td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 9px 8px;
+      font-size: 14px;
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .log-scroll th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .log-scroll tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .log-scroll a {
+      color: #0f766e;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .log-scroll a:hover {
+      text-decoration: underline;
+    }
+
+    .log-scroll .primary-btn,
+    .log-scroll .secondary-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      line-height: 1.2;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .log-scroll .plant-date-cell,
+    .log-scroll .seed-date-cell {
+      cursor: pointer;
+      color: #0f766e;
+      font-weight: 700;
+    }
+
+    .log-scroll .plant-date-cell:hover,
+    .log-scroll .seed-date-cell:hover {
+      text-decoration: underline;
+    }
+
+    #activeFilters {
+      margin: 8px 0 2px;
+    }
+
     @media print {
       body * {
         visibility: hidden !important;
@@ -130,7 +264,35 @@
       .filter-open-btn,
       .back-action-slot,
       #modal-container,
-      #list-back-btn {
+      #list-back-btn,
+      .hero-copy {
+        display: none !important;
+      }
+
+      .hero-card,
+      .list-card,
+      .unified-summary-card,
+      .metric-card,
+      .aux-card {
+        box-shadow: none !important;
+      }
+
+      .log-scroll {
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+
+      .log-scroll table {
+        min-width: 0 !important;
+      }
+
+      .log-scroll th {
+        position: static !important;
+      }
+
+      .log-scroll .primary-btn,
+      .log-scroll .secondary-btn {
         display: none !important;
       }
     }
@@ -143,42 +305,56 @@
 
   <div id="page-area" style="display:none;">
 
-    <h1 class="page-title">播種・定植一覧</h1>
+    <div class="page-wrap">
 
-    <div id="print-scope" class="list-shell">
-      <div class="card unified-summary-card">
-        <div class="mode-switch-row" id="mode-switch-card">
-          <button id="btn-planting" class="mode-btn" data-mode="planting" type="button">定植</button>
-          <button id="btn-seed" class="mode-btn" data-mode="seed" type="button">播種</button>
-        </div>
+      <section class="hero-card">
+        <h1 class="page-title hero-title">播種・定植一覧</h1>
+        <p class="hero-copy">播種と定植の実績を同じ条件で切り替えて確認できます。印刷時はサマリーとフィルタ後一覧のみ出力されます。</p>
 
-        <h2 class="section-title">フィルタ・集計</h2>
-        <div class="filter-open-btn" data-type="year">▶ 年月</div>
-        <div class="filter-open-btn" data-type="field">▶ 圃場</div>
-        <div class="filter-open-btn" data-type="variety">▶ 品種</div>
+        <div id="print-scope" class="list-shell">
+          <div class="unified-summary-card">
+            <div class="mode-switch-row" id="mode-switch-card">
+              <button id="btn-planting" class="mode-btn" data-mode="planting" type="button">定植</button>
+              <button id="btn-seed" class="mode-btn" data-mode="seed" type="button">播種</button>
+            </div>
 
-        <div id="activeFilters"></div>
+            <h2 class="section-title">フィルタ・集計</h2>
+            <div class="filter-open-btn" data-type="year">▶ 年月</div>
+            <div class="filter-open-btn" data-type="field">▶ 圃場</div>
+            <div class="filter-open-btn" data-type="variety">▶ 品種</div>
 
-        <div class="summary-grid" id="summary-grid">
-          <div class="metric-card">
-            <div class="metric-label">表示件数</div>
-            <div id="countArea" class="metric-value">0 件</div>
+            <div id="activeFilters"></div>
+
+            <div class="summary-grid" id="summary-grid">
+              <div class="metric-card">
+                <div class="metric-label">表示件数</div>
+                <div id="countArea" class="metric-value">0 件</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">集計</div>
+                <div id="summaryArea" class="metric-value" style="font-size:16px;line-height:1.4;">-</div>
+              </div>
+            </div>
+
+            <div id="mode-aux-area"></div>
           </div>
-          <div class="metric-card">
-            <div class="metric-label">集計</div>
-            <div id="summaryArea" class="metric-value" style="font-size:16px;line-height:1.4;">-</div>
-          </div>
-        </div>
 
-        <div id="mode-aux-area"></div>
+          <section class="list-card">
+            <div class="list-head">
+              <h2>記録一覧</h2>
+              <p>フィルタ条件で絞り込んだデータを表示しています。</p>
+            </div>
+            <div class="log-scroll">
+              <div id="table-area"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <div class="back-action-slot" style="margin-top:14px;">
+        <button id="list-back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
       </div>
 
-      <!-- テーブル描画領域 -->
-      <div id="table-area"></div>
-    </div>
-
-    <div class="back-action-slot" style="margin-top:14px;">
-      <button id="list-back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
     </div>
 
   </div>
