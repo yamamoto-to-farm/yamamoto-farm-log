@@ -113,37 +113,31 @@
       line-height: 1.1;
     }
 
-    .aux-card {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      background: #ffffff;
-    }
-
-    .aux-title {
-      margin: 0 0 8px;
-      font-size: 14px;
-    }
-
-    .aux-list {
+    .filter-row {
       display: grid;
-      gap: 8px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 8px;
     }
 
-    .aux-item {
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 8px 10px;
-      background: #f9fafb;
-      font-size: 13px;
-      line-height: 1.5;
+    .summary-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    .muted-note {
-      color: #6b7280;
-      font-size: 12px;
+    .summary-filter-btn:hover {
+      border-color: #9ca3af;
+      background: #f8fafc;
     }
 
     .list-card {
@@ -242,6 +236,14 @@
       margin: 8px 0 2px;
     }
 
+    #activeFilters .filter-open-btn {
+      display: none;
+    }
+
+    #activeFilters .filter-pill-row {
+      margin-top: 0;
+    }
+
     @media print {
       body * {
         visibility: hidden !important;
@@ -260,7 +262,6 @@
       }
 
       .mode-switch-row,
-      #mode-aux-area,
       .filter-open-btn,
       .back-action-slot,
       #modal-container,
@@ -272,8 +273,7 @@
       .hero-card,
       .list-card,
       .unified-summary-card,
-      .metric-card,
-      .aux-card {
+      .metric-card {
         box-shadow: none !important;
       }
 
@@ -319,9 +319,11 @@
             </div>
 
             <h2 class="section-title">フィルタ・集計</h2>
-            <div class="filter-open-btn" data-type="year">▶ 年月</div>
-            <div class="filter-open-btn" data-type="field">▶ 圃場</div>
-            <div class="filter-open-btn" data-type="variety">▶ 品種</div>
+            <div class="filter-row">
+              <button class="summary-filter-btn filter-open-btn" data-type="year" type="button">年月フィルタ</button>
+              <button class="summary-filter-btn filter-open-btn" data-type="field" type="button">圃場フィルタ</button>
+              <button class="summary-filter-btn filter-open-btn" data-type="variety" type="button">品種フィルタ</button>
+            </div>
 
             <div id="activeFilters"></div>
 
@@ -336,7 +338,6 @@
               </div>
             </div>
 
-            <div id="mode-aux-area"></div>
           </div>
 
           <section class="list-card">

@@ -219,8 +219,6 @@ function renderTable(rows) {
     `株数合計：${totalQuantity.toLocaleString()} 株　
      面積合計：${totalAreaTan.toFixed(2)} 反`;
 
-  renderPlantingAuxCards(rows);
-
   tableArea.innerHTML = html;
 
   document.querySelectorAll(".plant-date-cell").forEach(cell => {
@@ -237,56 +235,4 @@ function renderTable(rows) {
       location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
     });
   });
-}
-
-function renderPlantingAuxCards(rows) {
-  const area = document.getElementById("mode-aux-area");
-  if (!area) return;
-
-  const fieldToArea = new Map(
-    (Array.isArray(fieldData) ? fieldData : []).map(f => [String(f?.name || ""), String(f?.area || "未分類")])
-  );
-
-  const latestByArea = new Map();
-
-  rows.forEach(r => {
-    const field = String(r.field || "").trim();
-    if (!field) return;
-
-    const areaName = fieldToArea.get(field) || "未分類";
-    const date = String(r.plantDate || "").trim();
-    if (!date) return;
-
-    const prev = latestByArea.get(areaName);
-    if (!prev || date > prev.plantDate) {
-      latestByArea.set(areaName, {
-        area: areaName,
-        plantDate: date,
-        field,
-        variety: String(r.variety || "")
-      });
-    }
-  });
-
-  const cards = [...latestByArea.values()]
-    .sort((a, b) => a.area.localeCompare(b.area, "ja"))
-    .map(item => `
-      <div class="aux-item">
-        <div><strong>${item.area}</strong></div>
-        <div>最終定植日: ${item.plantDate}</div>
-        <div>圃場: ${item.field}</div>
-        <div>品種: ${item.variety || "-"}</div>
-      </div>
-    `)
-    .join("");
-
-  area.innerHTML = `
-    <details class="aux-card" open>
-      <summary class="aux-title">エリアごとの最終作業（定植）</summary>
-      ${cards
-        ? `<div class="aux-list">${cards}</div>`
-        : `<div class="muted-note">この条件では該当データがありません。</div>`}
-      <div class="muted-note" style="margin-top:8px;">印刷対象はサマリーとフィルタ後一覧です。この補助情報は画面確認用です。</div>
-    </details>
-  `;
 }
