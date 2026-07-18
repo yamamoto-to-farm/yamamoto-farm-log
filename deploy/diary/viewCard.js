@@ -55,6 +55,7 @@ function createViewWorkCard(w) {
   const fieldLine = isSowing ? "（未入力）" : (normalizeMultiText(w?.field) || "（未入力）");
   const workerLine = normalizeMultiText(w?.workers) || "（未入力）";
   const machineLine = String(w?.machine || "").trim() || "（未入力）";
+  const sowingCategoryLine = normalizeSowingCategoryText(w);
 
   const card = document.createElement("div");
   card.className = "card view-card";
@@ -66,6 +67,8 @@ function createViewWorkCard(w) {
   if (!isSowing) {
     card.appendChild(createLine("圃場", fieldLine));
     card.appendChild(createWorkerMachineLine(workerLine, machineLine));
+  } else {
+    card.appendChild(createLine("播種区分", sowingCategoryLine));
   }
   card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || "")));
 
@@ -162,6 +165,18 @@ function createSubItemsDetails(subItems, hideField = false) {
 function isSowingWorkItem(w) {
   const title = String(w?.type || w?.workType || "").trim();
   return title.includes("播種");
+}
+
+function normalizeSowingCategoryText(w) {
+  const direct = normalizeMultiText(w?.sowingCategory);
+  if (direct) return direct;
+
+  const nested = Array.isArray(w?.items)
+    ? w.items.map(item => normalizeMultiText(item?.sowingCategory || item?.workType || item?.type)).filter(Boolean).join("／")
+    : "";
+  if (nested) return nested;
+
+  return normalizeMultiText(w?.workType || w?.type) || "（未入力）";
 }
 
 function normalizeMultiText(value) {

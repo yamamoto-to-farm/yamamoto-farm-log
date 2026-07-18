@@ -61,7 +61,15 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     const machine = String(item.machine ?? existing.machine ?? "").trim();
     const machineText = machine || "（未入力）";
     const hideField = isSeedWork;
-    const sowingCategoryText = normalizeMultiText(item.sowingCategory || existing.sowingCategory || item.workType || existing.workType || item.type || existing.type) || "（未入力）";
+    const sowingCategoryText = normalizeMultiText(
+      item.sowingCategory
+      || existing.sowingCategory
+      || (Array.isArray(item.items) ? item.items.map(subItem => subItem?.sowingCategory || subItem?.workType || subItem?.type).join("／") : "")
+      || item.workType
+      || existing.workType
+      || item.type
+      || existing.type
+    ) || "（未入力）";
     const subItems = Array.isArray(item.items) ? item.items : [];
     const unmergeButtonHtml = subItems.length > 1
       ? `<button type="button" class="secondary-btn merge-unmerge-btn" data-group-index="${idx}">マージ解除</button>`

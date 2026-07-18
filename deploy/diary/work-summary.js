@@ -303,6 +303,7 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
         sessionKey,
         type: item.type,
         sourceKey: item.sourceKey,
+        sowingCategorySet: new Set(),
         items: [],
         fieldSet: new Set(),
         workerSet: new Set(),
@@ -315,6 +316,7 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
     }
 
     group.items.push({ ...item, __index: index });
+  normalizeMultiText(item.sowingCategory || item.workType || item.type || "").split("／").map(v => v.trim()).filter(Boolean).forEach(v => group.sowingCategorySet.add(v));
 
     normalizeMultiText(item.field).split("／").map(v => v.trim()).filter(Boolean).forEach(v => group.fieldSet.add(v));
     normalizeMultiText(item.workers).split("／").map(v => v.trim()).filter(Boolean).forEach(v => group.workerSet.add(v));
@@ -337,6 +339,7 @@ export function mergeWorkEntries(autoList, timestampRows = []) {
       sessionKey: group.sessionKey,
       type: group.type,
       sourceKey: group.sourceKey,
+      sowingCategory: [...group.sowingCategorySet].join("／"),
       field: [...group.fieldSet].join("／"),
       workers: [...group.workerSet].join("／"),
       machine: group.machine,
