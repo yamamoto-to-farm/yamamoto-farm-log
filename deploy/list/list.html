@@ -364,17 +364,20 @@
 
     @media print {
       .app-header,
-      .hero-card,
-      .summary-card,
-      .list-head,
       .mode-switch-row,
       .filter-card .filter-open-btn,
       .back-action-slot,
       #modal-container,
       #list-back-btn,
-      .hero-copy,
       .log-scroll .primary-btn,
       .log-scroll .secondary-btn {
+        display: none !important;
+      }
+
+      /* Hide normal on-screen title/summary blocks and keep print header only. */
+      #page-area .hero-card,
+      #print-scope .summary-card,
+      #print-scope .list-head {
         display: none !important;
       }
 
