@@ -18,6 +18,7 @@ import { showInfoModal } from "/common/showInfoModal.js";
 let seedRows = [];
 let plantingRows = [];
 let varietyData = [];
+let fieldData = [];
 let canDiscard = false;
 
 let filterData = {};
@@ -46,6 +47,7 @@ async function initSeedListPage() {
 
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
+  fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
   /* ▼ 年 → 月マップ生成 */
@@ -70,10 +72,23 @@ async function initSeedListPage() {
     typeMap[v.type].push(v.name);
   });
 
+  const areaMap = {};
+  const areaOrder = [];
+  (Array.isArray(fieldData) ? fieldData : []).forEach(f => {
+    const area = String(f?.area || "").trim() || "未分類";
+    const name = String(f?.name || "").trim();
+    if (!name) return;
+    if (!areaMap[area]) {
+      areaMap[area] = [];
+      areaOrder.push(area);
+    }
+    areaMap[area].push(name);
+  });
+
   filterData = {
     years: Object.keys(ymMap).sort(),
     months: ymMap,
-    fields: { parents: [], children: {} }, // 播種一覧は圃場なし
+    fields: { parents: areaOrder, children: areaMap },
     varieties: { parents: typeOrder, children: typeMap }
   };
 
