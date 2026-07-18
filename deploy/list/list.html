@@ -80,8 +80,8 @@
 
     .filter-summary-layout {
       display: grid;
-      grid-template-columns: minmax(520px, 1fr) 360px;
-      gap: 10px;
+      grid-template-columns: minmax(430px, 0.82fr) minmax(430px, 1.18fr);
+      gap: 8px;
       align-items: start;
     }
 
@@ -119,19 +119,19 @@
 
     .filter-card {
       margin-top: 10px;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #ffffff;
-      max-width: 760px;
+      max-width: 650px;
       width: 100%;
       margin-right: auto;
     }
 
     .filter-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(130px, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
       align-items: end;
     }
 
@@ -140,8 +140,13 @@
     }
 
     .filter-grid .form-field label {
-      margin-bottom: 4px;
-      font-size: 14px;
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+
+    .filter-grid .filter-open-btn {
+      padding-left: 12px;
+      padding-right: 12px;
     }
 
     .list-card {
