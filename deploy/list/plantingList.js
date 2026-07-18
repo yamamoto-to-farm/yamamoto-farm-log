@@ -86,8 +86,6 @@ async function initPlantingListPage() {
   setFilterData(filterData);
   window.plantingFilterData = filterData;
 
-  applyDefaultSeasonFilterIfNeeded(ymMap);
-
   document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
   document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
   document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
@@ -103,6 +101,8 @@ async function initPlantingListPage() {
     window.currentFilterState = {};
     renderTable(plantingRows);
   });
+
+  applyDefaultSeasonFilterIfNeeded(ymMap);
 }
 
 function applyDefaultSeasonFilterIfNeeded(ymMap) {
@@ -133,7 +133,14 @@ function applyDefaultSeasonFilterIfNeeded(ymMap) {
   const matched = targets.filter(ym => available.has(ym));
   if (!matched.length) return;
 
-  setFilterState({ yearMonths: matched }, { apply: true });
+  window.currentFilterState = {
+    ...(window.currentFilterState || {}),
+    yearMonths: [...matched],
+    fields: [],
+    varieties: []
+  };
+
+  setFilterState({ yearMonths: matched, fields: [], varieties: [] }, { apply: true });
 }
 
 function applyAllFilters(rows, state) {

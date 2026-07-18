@@ -97,8 +97,6 @@ async function initSeedListPage() {
   // ▼ フィルタ UI 初期化
   setFilterData(filterData);
 
-  applyDefaultSeasonFilterIfNeeded(ymMap);
-
   // ▼ list.js がモード切替時に再適用できるよう保存
   window.seedFilterData = filterData;
 
@@ -120,6 +118,8 @@ async function initSeedListPage() {
     window.currentFilterState = {};
     renderTable(seedRows);
   });
+
+  applyDefaultSeasonFilterIfNeeded(ymMap);
 }
 
 function applyDefaultSeasonFilterIfNeeded(ymMap) {
@@ -150,7 +150,14 @@ function applyDefaultSeasonFilterIfNeeded(ymMap) {
   const matched = targets.filter(ym => available.has(ym));
   if (!matched.length) return;
 
-  setFilterState({ yearMonths: matched }, { apply: true });
+  window.currentFilterState = {
+    ...(window.currentFilterState || {}),
+    yearMonths: [...matched],
+    fields: [],
+    varieties: []
+  };
+
+  setFilterState({ yearMonths: matched, fields: [], varieties: [] }, { apply: true });
 }
 
 /* ============================================================
