@@ -46,6 +46,8 @@ function applyModeUI() {
 
   btnPlanting.classList.toggle("active", currentMode === "planting");
   btnSeed.classList.toggle("active", currentMode === "seed");
+
+  document.body.setAttribute("data-list-mode", currentMode);
 }
 
 function renderCurrentMode() {

@@ -239,6 +239,8 @@ function renderTable(rows) {
      総株数：${totalSeed.toLocaleString()} 株　
      予定面積合計：${totalAreaTan.toFixed(2)} 反`;
 
+  renderSeedAuxCards(rows);
+
   tableArea.innerHTML = html;
 
   /* ▼ 播種日クリックでモーダル */
@@ -270,4 +272,60 @@ function renderTable(rows) {
       location.href = `/seed/discard-seed.html?ref=${encodeURIComponent(ref)}`;
     });
   });
+}
+
+function splitSeedRefs(raw) {
+  return String(raw || "")
+    .split(/[\/,]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function renderSeedAuxCards(rows) {
+  const area = document.getElementById("mode-aux-area");
+  if (!area) return;
+
+  const plantedByRef = new Map();
+  plantingRows.forEach(row => {
+    const refs = splitSeedRefs(row.seedRef);
+    if (!refs.length) return;
+
+    const qty = Number(row.quantity || 0);
+    const perRef = refs.length > 0 ? qty / refs.length : 0;
+    refs.forEach(ref => {
+      plantedByRef.set(ref, (plantedByRef.get(ref) || 0) + perRef);
+    });
+  });
+
+  let pendingLots = 0;
+  let pendingCount = 0;
+  let doneLots = 0;
+
+  rows.forEach(r => {
+    const seedRef = String(r.seedRef || "").trim();
+    if (!seedRef) return;
+
+    const total = Number(r.seedCount || 0);
+    const planted = Number(plantedByRef.get(seedRef) || 0);
+    const remain = Math.max(0, total - planted);
+
+    if (remain > 0) {
+      pendingLots += 1;
+      pendingCount += remain;
+    } else {
+      doneLots += 1;
+    }
+  });
+
+  area.innerHTML = `
+    <div class="aux-card">
+      <div class="aux-title">ロット進捗（播種）</div>
+      <div class="aux-list">
+        <div class="aux-item"><strong>未定植ロット</strong><br>${pendingLots.toLocaleString()} 件</div>
+        <div class="aux-item"><strong>未定植株数</strong><br>${Math.round(pendingCount).toLocaleString()} 株</div>
+        <div class="aux-item"><strong>定植完了ロット</strong><br>${doneLots.toLocaleString()} 件</div>
+      </div>
+      <div class="muted-note" style="margin-top:8px;">播種モードでは圃場別カードは表示しません。ロット進捗のみ表示します。</div>
+    </div>
+  `;
 }

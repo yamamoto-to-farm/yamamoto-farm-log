@@ -15,6 +15,127 @@
 
   <!-- 播種一覧専用 CSS（列幅など） -->
 
+  <style>
+    .list-shell {
+      display: grid;
+      gap: 12px;
+    }
+
+    .unified-summary-card {
+      padding: 12px;
+    }
+
+    .mode-switch-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mode-btn {
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #fff;
+      color: #374151;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      border-color: #0f766e;
+      background: #ccfbf1;
+      color: #115e59;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      margin-top: 10px;
+    }
+
+    .metric-card {
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.1;
+    }
+
+    .aux-card {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .aux-title {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .aux-list {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .aux-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #f9fafb;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .muted-note {
+      color: #6b7280;
+      font-size: 12px;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+
+      #print-scope,
+      #print-scope * {
+        visibility: visible !important;
+      }
+
+      #print-scope {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      .mode-switch-row,
+      #mode-aux-area,
+      .filter-open-btn,
+      .back-action-slot,
+      #modal-container,
+      #list-back-btn {
+        display: none !important;
+      }
+    }
+  </style>
+
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
@@ -24,31 +145,37 @@
 
     <h1 class="page-title">播種・定植一覧</h1>
 
-    <!-- モード切り替えカード（印刷時非表示） -->
-    <div class="card" id="mode-switch-card" style="margin-bottom: 16px;">
-      <button id="btn-planting" class="primary-btn" data-mode="planting">定植ベース</button>
-      <button id="btn-seed" class="secondary-btn" data-mode="seed">播種ベース</button>
+    <div id="print-scope" class="list-shell">
+      <div class="card unified-summary-card">
+        <div class="mode-switch-row" id="mode-switch-card">
+          <button id="btn-planting" class="mode-btn" data-mode="planting" type="button">定植</button>
+          <button id="btn-seed" class="mode-btn" data-mode="seed" type="button">播種</button>
+        </div>
+
+        <h2 class="section-title">フィルタ・集計</h2>
+        <div class="filter-open-btn" data-type="year">▶ 年月</div>
+        <div class="filter-open-btn" data-type="field">▶ 圃場</div>
+        <div class="filter-open-btn" data-type="variety">▶ 品種</div>
+
+        <div id="activeFilters"></div>
+
+        <div class="summary-grid" id="summary-grid">
+          <div class="metric-card">
+            <div class="metric-label">表示件数</div>
+            <div id="countArea" class="metric-value">0 件</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">集計</div>
+            <div id="summaryArea" class="metric-value" style="font-size:16px;line-height:1.4;">-</div>
+          </div>
+        </div>
+
+        <div id="mode-aux-area"></div>
+      </div>
+
+      <!-- テーブル描画領域 -->
+      <div id="table-area"></div>
     </div>
-
-    <!-- 適用中フィルタ表示 -->
-    <div id="activeFilters"></div>
-
-    <!-- フィルタカード -->
-    <div class="card" id="filter-card">
-      <h2 class="section-title">フィルタ</h2>
-      <div class="filter-open-btn" data-type="year">▶ 年月</div>
-      <div class="filter-open-btn" data-type="field">▶ 圃場</div>
-      <div class="filter-open-btn" data-type="variety">▶ 品種</div>
-    </div>
-
-    <!-- 件数・サマリー -->
-    <div class="card">
-      <div id="countArea">0 件</div>
-      <div id="summaryArea" style="margin-top:10px;"></div>
-    </div>
-
-    <!-- テーブル描画領域 -->
-    <div id="table-area"></div>
 
     <div class="back-action-slot" style="margin-top:14px;">
       <button id="list-back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
