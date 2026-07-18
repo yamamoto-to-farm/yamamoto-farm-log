@@ -359,36 +359,78 @@
     }
 
     @media print {
-      body * {
-        visibility: hidden !important;
-      }
-
-      #print-scope,
-      #print-scope * {
-        visibility: visible !important;
-      }
-
-      #print-scope {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-
+      .app-header,
       .mode-switch-row,
       .filter-card .filter-open-btn,
       .back-action-slot,
       #modal-container,
       #list-back-btn,
-      .hero-copy {
+      .hero-copy,
+      .log-scroll .primary-btn,
+      .log-scroll .secondary-btn {
         display: none !important;
       }
 
+      body {
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      #page-area {
+        display: block !important;
+      }
+
+      .page-wrap {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      #print-scope {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+      }
+
       .hero-card,
-      .list-card,
       .summary-card,
-      .metric-card {
+      .list-card,
+      .metric-card,
+      .filter-card {
+        border: none !important;
         box-shadow: none !important;
+      }
+
+      .hero-card {
+        padding: 0 !important;
+        margin: 0 0 6mm 0 !important;
+      }
+
+      .summary-card {
+        padding: 0 !important;
+        margin: 0 0 4mm 0 !important;
+        background: transparent !important;
+        break-inside: avoid-page;
+        page-break-inside: avoid;
+        page-break-after: avoid;
+      }
+
+      .list-card {
+        margin-top: 0 !important;
+        page-break-before: avoid;
+      }
+
+      .filter-summary-layout {
+        grid-template-columns: 1fr !important;
+        gap: 3mm !important;
+      }
+
+      .filter-card {
+        margin-top: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        background: transparent !important;
       }
 
       .log-scroll {
@@ -398,16 +440,17 @@
       }
 
       .log-scroll table {
+        width: 100% !important;
         min-width: 0 !important;
+        table-layout: fixed !important;
       }
 
       .log-scroll th {
         position: static !important;
       }
 
-      .log-scroll .primary-btn,
-      .log-scroll .secondary-btn {
-        display: none !important;
+      @page {
+        margin: 10mm;
       }
     }
   </style>
