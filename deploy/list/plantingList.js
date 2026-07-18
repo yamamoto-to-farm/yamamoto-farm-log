@@ -19,9 +19,11 @@ import { showInfoModal } from "/common/showInfoModal.js";
 
 let plantingRows = [];
 let seedRows = [];
+let harvestRows = [];
 let fieldData = [];
 let varietyData = [];
 let canDiscard = false;
+let harvestStartDateMap = {};
 
 let filterData = {};
 let initialized = false;
@@ -42,9 +44,11 @@ async function initPlantingListPage() {
 
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
+  harvestRows = normalizeKeys(await loadCSV("/logs/harvest/all.csv").catch(() => []));
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
+  harvestStartDateMap = buildHarvestStartDateMap(harvestRows);
 
   const ymMap = {};
   plantingRows.forEach(r => {
@@ -167,16 +171,94 @@ function applyAllFilters(rows, state) {
 }
 
 function getSeedDates(seedRef) {
-  if (!seedRef) return "";
-  const clean = s => (s ?? "").replace(/\s+/g, "").trim();
-  const refs = seedRef.split(",").map(s => clean(s));
+  const refs = parseSeedRefs(seedRef);
+  if (!refs.length) return "";
 
   const dates = refs.map(ref => {
-    const row = seedRows.find(s => clean(s.seedRef) === ref);
+    const row = seedRows.find(s => normalizeRef(s.seedRef) === ref);
     return row?.seedDate ?? "";
   });
 
   return dates.filter(d => d).join("<br>");
+}
+
+function normalizeRef(value) {
+  return String(value ?? "").replace(/\s+/g, "").trim();
+}
+
+function parseSeedRefs(value) {
+  return String(value ?? "")
+    .split(/[\/,]/)
+    .map(normalizeRef)
+    .filter(Boolean);
+}
+
+function parseYmdToUtcDate(value) {
+  const text = String(value ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const [y, m, d] = text.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+function diffDays(startDate, endDate) {
+  if (!(startDate instanceof Date) || !(endDate instanceof Date)) return null;
+  const ms = endDate.getTime() - startDate.getTime();
+  return Math.floor(ms / 86400000);
+}
+
+function buildHarvestStartDateMap(rows) {
+  const map = {};
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const ref = String(row?.plantingRef ?? "").trim();
+    const date = parseYmdToUtcDate(row?.harvestDate);
+    if (!ref || !date) return;
+
+    if (!map[ref] || date < map[ref]) {
+      map[ref] = date;
+    }
+  });
+  return map;
+}
+
+function getNurseryDays(seedRef, plantDate) {
+  const plant = parseYmdToUtcDate(plantDate);
+  if (!plant) return "-";
+
+  const refs = parseSeedRefs(seedRef);
+  if (!refs.length) return "-";
+
+  const dayList = refs
+    .map(ref => seedRows.find(s => normalizeRef(s.seedRef) === ref)?.seedDate)
+    .map(parseYmdToUtcDate)
+    .map(seedDate => diffDays(seedDate, plant))
+    .filter(days => Number.isFinite(days) && days >= 0);
+
+  if (!dayList.length) return "-";
+
+  const min = Math.min(...dayList);
+  const max = Math.max(...dayList);
+  if (min === max) return `${min}日`;
+  return `${min}〜${max}日`;
+}
+
+function getPostPlantingDays(plantDate, plantingRef) {
+  const plant = parseYmdToUtcDate(plantDate);
+  if (!plant) return "-";
+
+  const ref = String(plantingRef ?? "").trim();
+  const harvestStart = ref ? harvestStartDateMap[ref] : null;
+
+  if (harvestStart instanceof Date) {
+    const days = diffDays(plant, harvestStart);
+    if (!Number.isFinite(days)) return "-";
+    return `${days}日（収穫開始まで）`;
+  }
+
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const elapsed = diffDays(plant, today);
+  if (!Number.isFinite(elapsed)) return "-";
+  return `${elapsed}日（経過）`;
 }
 
 function getPlantDetail(plantingRef) {
@@ -213,6 +295,8 @@ function renderTable(rows) {
       <thead>
         <tr>
           <th>定植日</th>
+          <th>育苗日数</th>
+          <th>定植後経過日数</th>
           <th>圃場</th>
           <th>品種</th>
           <th>面積(反)</th>
@@ -242,6 +326,8 @@ function renderTable(rows) {
 
     html += `<tr>
       <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
+      <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
+      <td>${getPostPlantingDays(r.plantDate, ref)}</td>
       <td><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
       <td><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>

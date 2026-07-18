@@ -19,6 +19,7 @@ import { showInfoModal } from "/common/showInfoModal.js";
 
 let seedRows = [];
 let plantingRows = [];
+let nurseryRows = [];
 let varietyData = [];
 let fieldData = [];
 let canDiscard = false;
@@ -49,6 +50,7 @@ async function initSeedListPage() {
 
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
+  nurseryRows = normalizeKeys(await loadCSV("/logs/nursery/all.csv").catch(() => []));
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
@@ -187,21 +189,79 @@ function applyAllFilters(rows, state) {
 ============================================================ */
 function getPlantingRefs(seedRef) {
   if (!seedRef) return [];
-
-  const clean = s => (s ?? "").replace(/\s+/g, "").trim();
-  const refs = seedRef.split(",").map(s => clean(s));
+  const refs = parseSeedRefs(seedRef);
 
   const plantingRefs = [];
 
   plantingRows.forEach(r => {
     if (!r.seedRef) return;
-    const srefs = r.seedRef.split(",").map(s => clean(s));
+    const srefs = parseSeedRefs(r.seedRef);
     if (srefs.some(s => refs.includes(s))) {
       plantingRefs.push(r.plantingRef);
     }
   });
 
   return plantingRefs;
+}
+
+function normalizeRef(value) {
+  return String(value ?? "").replace(/\s+/g, "").trim();
+}
+
+function parseSeedRefs(value) {
+  return String(value ?? "")
+    .split(/[\/,]/)
+    .map(normalizeRef)
+    .filter(Boolean);
+}
+
+function buildSeedUsageMap() {
+  const plantedMap = {};
+  const discardMap = {};
+
+  plantingRows.forEach(row => {
+    const qty = Number(row.quantity || 0);
+    if (!Number.isFinite(qty) || qty === 0) return;
+
+    parseSeedRefs(row.seedRef).forEach(ref => {
+      plantedMap[ref] = (plantedMap[ref] || 0) + qty;
+    });
+  });
+
+  nurseryRows.forEach(row => {
+    const ref = normalizeRef(row.seedRef);
+    if (!ref) return;
+
+    const discard = Number(row.discard || 0);
+    if (!Number.isFinite(discard) || discard === 0) return;
+
+    discardMap[ref] = (discardMap[ref] || 0) + discard;
+  });
+
+  return { plantedMap, discardMap };
+}
+
+function formatCount(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return "0";
+  const rounded = Math.round(num * 10) / 10;
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
+    return Math.round(rounded).toLocaleString();
+  }
+  return rounded.toLocaleString();
+}
+
+function renderRemainingStockCell(seedRef, seedCount, usageMap) {
+  const ref = normalizeRef(seedRef);
+  const planted = Number(usageMap.plantedMap[ref] || 0);
+  const discarded = Number(usageMap.discardMap[ref] || 0);
+  const total = Number(seedCount || 0);
+  const remaining = total - planted - discarded;
+
+  if (discarded > 0) {
+    return `${formatCount(remaining)}<div style="font-size:12px;color:#6b7280;">破棄:${formatCount(discarded)}</div>`;
+  }
+  return formatCount(remaining);
 }
 
 /* ============================================================
@@ -245,6 +305,7 @@ function renderTable(rows) {
           <th>品種</th>
           <th>枚数</th>
           <th id="th-area">予定面積(反)</th>
+          <th>残株数</th>
           <th>定植ID</th>
         </tr>
       </thead>
@@ -254,6 +315,7 @@ function renderTable(rows) {
   let totalTray = 0;
   let totalSeed = 0;
   let totalAreaTan = 0;
+  const usageMap = buildSeedUsageMap();
 
   rows.forEach(r => {
 
@@ -279,6 +341,7 @@ function renderTable(rows) {
 
       <td>${tray}</td>
       <td>${areaTan.toFixed(2)}</td>
+      <td>${renderRemainingStockCell(r.seedRef, seedCount, usageMap)}</td>
       <td>${plantingHtml}</td>
     </tr>`;
   });
