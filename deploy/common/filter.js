@@ -15,6 +15,40 @@ export function setFilterData(data) {
   filterData = data;
 }
 
+export function getFilterState() {
+  return {
+    yearMonths: [...selectedYearMonths],
+    fields: [...selectedFields],
+    varieties: [...selectedVarieties]
+  };
+}
+
+export function setFilterState(state = {}, { apply = true } = {}) {
+  const normalize = (list) => {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const out = [];
+    list.forEach(item => {
+      const value = String(item || "").trim();
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      out.push(value);
+    });
+    return out;
+  };
+
+  selectedYearMonths = normalize(state.yearMonths);
+  selectedFields = normalize(state.fields);
+  selectedVarieties = normalize(state.varieties);
+
+  if (apply) {
+    applyCurrentFilters();
+    return;
+  }
+
+  renderActiveFilters();
+}
+
 /* ============================================================
    activeFilters の描画
 ============================================================ */

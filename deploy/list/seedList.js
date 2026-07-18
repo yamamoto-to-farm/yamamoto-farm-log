@@ -10,7 +10,9 @@ import {
   openYearModal,
   openFieldModal,
   openVarietyModal,
-  setFilterData
+  setFilterData,
+  getFilterState,
+  setFilterState
 } from "/common/filter.js";
 
 import { showInfoModal } from "/common/showInfoModal.js";
@@ -95,6 +97,8 @@ async function initSeedListPage() {
   // ▼ フィルタ UI 初期化
   setFilterData(filterData);
 
+  applyDefaultSeasonFilterIfNeeded(ymMap);
+
   // ▼ list.js がモード切替時に再適用できるよう保存
   window.seedFilterData = filterData;
 
@@ -116,6 +120,37 @@ async function initSeedListPage() {
     window.currentFilterState = {};
     renderTable(seedRows);
   });
+}
+
+function applyDefaultSeasonFilterIfNeeded(ymMap) {
+  const current = getFilterState();
+  const alreadySelected =
+    current.yearMonths.length > 0 ||
+    current.fields.length > 0 ||
+    current.varieties.length > 0;
+  if (alreadySelected) return;
+
+  const now = new Date();
+  const baseYear = now.getFullYear();
+
+  const targets = [];
+  for (let m = 7; m <= 12; m += 1) {
+    targets.push(`${baseYear}-${String(m).padStart(2, "0")}`);
+  }
+  for (let m = 1; m <= 3; m += 1) {
+    targets.push(`${baseYear + 1}-${String(m).padStart(2, "0")}`);
+  }
+
+  const available = new Set(
+    Object.entries(ymMap || {}).flatMap(([year, months]) =>
+      (months || []).map(month => `${year}-${month}`)
+    )
+  );
+
+  const matched = targets.filter(ym => available.has(ym));
+  if (!matched.length) return;
+
+  setFilterState({ yearMonths: matched }, { apply: true });
 }
 
 /* ============================================================

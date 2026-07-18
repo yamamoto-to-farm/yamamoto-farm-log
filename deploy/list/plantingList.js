@@ -10,7 +10,9 @@ import {
   openYearModal,
   openFieldModal,
   openVarietyModal,
-  setFilterData
+  setFilterData,
+  getFilterState,
+  setFilterState
 } from "/common/filter.js";
 
 import { showInfoModal } from "/common/showInfoModal.js";
@@ -84,6 +86,8 @@ async function initPlantingListPage() {
   setFilterData(filterData);
   window.plantingFilterData = filterData;
 
+  applyDefaultSeasonFilterIfNeeded(ymMap);
+
   document.querySelector('[data-type="year"]').addEventListener("click", openYearModal);
   document.querySelector('[data-type="field"]').addEventListener("click", openFieldModal);
   document.querySelector('[data-type="variety"]').addEventListener("click", openVarietyModal);
@@ -99,6 +103,37 @@ async function initPlantingListPage() {
     window.currentFilterState = {};
     renderTable(plantingRows);
   });
+}
+
+function applyDefaultSeasonFilterIfNeeded(ymMap) {
+  const current = getFilterState();
+  const alreadySelected =
+    current.yearMonths.length > 0 ||
+    current.fields.length > 0 ||
+    current.varieties.length > 0;
+  if (alreadySelected) return;
+
+  const now = new Date();
+  const baseYear = now.getFullYear();
+
+  const targets = [];
+  for (let m = 7; m <= 12; m += 1) {
+    targets.push(`${baseYear}-${String(m).padStart(2, "0")}`);
+  }
+  for (let m = 1; m <= 3; m += 1) {
+    targets.push(`${baseYear + 1}-${String(m).padStart(2, "0")}`);
+  }
+
+  const available = new Set(
+    Object.entries(ymMap || {}).flatMap(([year, months]) =>
+      (months || []).map(month => `${year}-${month}`)
+    )
+  );
+
+  const matched = targets.filter(ym => available.has(ym));
+  if (!matched.length) return;
+
+  setFilterState({ yearMonths: matched }, { apply: true });
 }
 
 function applyAllFilters(rows, state) {
