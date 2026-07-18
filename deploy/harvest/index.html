@@ -8,6 +8,7 @@
 
   <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
 
   <!-- Papaparse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -63,7 +64,7 @@
       <input id="fieldSelectedResult" class="form-input" value="未選択" readonly style="background:#f8fafc; font-weight:600;">
 
       <div style="margin-top:10px;">
-        <button type="button" id="openFieldModalBtn" class="primary-btn" style="margin-top:0;">圃場を選択</button>
+        <button type="button" id="openFieldModalBtn" class="filter-open-btn" data-type="field">圃場を選択</button>
       </div>
 
       <div style="display:none;">

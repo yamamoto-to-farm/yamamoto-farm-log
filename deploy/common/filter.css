@@ -50,6 +50,7 @@
   align-items: center;
   justify-content: center;
   padding: 12px 18px;
+  margin-top: 20px;
   border: 1px solid #cbd5e0;
   border-radius: 6px;
   background: #e2e8f0;
@@ -62,23 +63,11 @@
   line-height: 1.2;
 }
 
-.filter-open-btn:hover,
-.filter-launch-btn:hover {
-  background: #d7dee8;
-  border-color: #b8c4d6;
-}
-
 .filter-open-btn.is-active,
 .filter-launch-btn.is-active {
   background: #2f855a;
   color: #fff;
-  border-color: #276749;
-}
-
-.filter-open-btn.is-active:hover,
-.filter-launch-btn.is-active:hover {
-  background: #276749;
-  border-color: #22543d;
+  border: none;
 }
 
 /* ===============================

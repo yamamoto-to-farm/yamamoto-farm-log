@@ -142,6 +142,7 @@ function updateVarietyDisplay() {
   const typeSel = document.getElementById("varietyType");
   const nameSel = document.getElementById("variety");
   const display = document.getElementById("varietyModalDisplay");
+  const openBtn = document.getElementById("openVarietyModalBtn");
   if (!display || !typeSel || !nameSel) return;
 
   const type = String(typeSel.value || "").trim();
@@ -149,6 +150,8 @@ function updateVarietyDisplay() {
   display.value = name
     ? `${type || "未分類"} / ${name}`
     : "未選択";
+
+  if (openBtn) openBtn.classList.toggle("is-active", !!name);
 }
 
 

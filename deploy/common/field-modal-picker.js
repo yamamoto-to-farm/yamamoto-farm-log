@@ -58,6 +58,12 @@ function updateFieldDisplay({ autoId, manualId, confirmId, displayId }) {
   if (display) display.value = value;
 }
 
+function updateOpenButtonState(openBtnId, hasSelection) {
+  const openBtn = document.getElementById(openBtnId);
+  if (!openBtn) return;
+  openBtn.classList.toggle("is-active", !!hasSelection);
+}
+
 function updateConfirmUi({ autoId, manualId, confirmId, useGpsBtnId }) {
   const autoRaw = String(document.getElementById(autoId)?.value || "").trim();
   const manual = String(document.getElementById(manualId)?.value || "").trim();
@@ -156,6 +162,7 @@ export function setupFieldModalPicker(options = {}) {
       autoEl.addEventListener("change", () => {
         updateFieldDisplay({ autoId, manualId, confirmId, displayId });
         updateConfirmUi({ autoId, manualId, confirmId, useGpsBtnId });
+        updateOpenButtonState(openBtnId, !!resolveFinalField({ autoId, manualId, confirmId }));
       });
     }
 
@@ -165,10 +172,12 @@ export function setupFieldModalPicker(options = {}) {
       el.addEventListener("change", () => {
         updateFieldDisplay({ autoId, manualId, confirmId, displayId });
         updateConfirmUi({ autoId, manualId, confirmId, useGpsBtnId });
+        updateOpenButtonState(openBtnId, !!resolveFinalField({ autoId, manualId, confirmId }));
       });
     });
 
     updateFieldDisplay({ autoId, manualId, confirmId, displayId });
     updateConfirmUi({ autoId, manualId, confirmId, useGpsBtnId });
+    updateOpenButtonState(openBtnId, !!resolveFinalField({ autoId, manualId, confirmId }));
   }
 }

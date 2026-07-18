@@ -8,6 +8,7 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
 
   <!-- Papaparse（1回だけ） -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -57,7 +58,7 @@
       <input id="fieldSelectedResult" class="form-input" value="未選択" readonly style="background:#f8fafc; font-weight:600;">
 
       <div style="margin-top:10px;">
-        <button type="button" id="openFieldModalBtn" class="primary-btn" style="margin-top:0;">圃場を選択</button>
+        <button type="button" id="openFieldModalBtn" class="filter-open-btn" data-type="field">圃場を選択</button>
       </div>
 
       <div style="display:none;">
@@ -76,7 +77,7 @@
       <label>品種（モーダル選択）</label>
       <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <input id="varietyModalDisplay" class="form-input" value="未選択" readonly style="flex:1 1 260px; background:#f8fafc; font-weight:600;">
-        <button type="button" id="openVarietyModalBtn" class="secondary-btn" style="margin-top:0;">品種を選択</button>
+        <button type="button" id="openVarietyModalBtn" class="filter-open-btn" data-type="variety">品種を選択</button>
         <button type="button" id="clearVarietyModalBtn" class="secondary-btn" style="margin-top:0;">解除</button>
       </div>
 

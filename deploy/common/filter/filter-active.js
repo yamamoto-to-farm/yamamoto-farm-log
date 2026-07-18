@@ -17,6 +17,8 @@ export function updateActiveFilterUI() {
 
   const state = getFilter();
 
+  updateFilterTriggerState(state);
+
   /* -------------------------------
      圃場タグ
   -------------------------------- */
@@ -140,6 +142,23 @@ export function updateActiveFilterUI() {
       window.dispatchEvent(new CustomEvent("filter:apply"));
     };
   }
+}
+
+function updateFilterTriggerState(state) {
+  const rules = {
+    year: Array.isArray(state.yearMonths) && state.yearMonths.length > 0,
+    field: Array.isArray(state.fields) && state.fields.length > 0,
+    variety: Array.isArray(state.varieties) && state.varieties.length > 0,
+    fertilizer: Array.isArray(state.fertilizers) && state.fertilizers.length > 0,
+    pesticide: Array.isArray(state.pesticides) && state.pesticides.length > 0,
+    machine: Array.isArray(state.machines) && state.machines.length > 0
+  };
+
+  document.querySelectorAll(".filter-open-btn[data-type], .filter-launch-btn[data-type]").forEach(el => {
+    const type = String(el.getAttribute("data-type") || "").trim();
+    const active = !!rules[type];
+    el.classList.toggle("is-active", active);
+  });
 }
 
 /* ------------------------------------------------------------
