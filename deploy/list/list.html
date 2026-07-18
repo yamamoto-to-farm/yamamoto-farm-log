@@ -360,6 +360,7 @@
 
     @media print {
       .app-header,
+      .hero-card,
       .mode-switch-row,
       .filter-card .filter-open-btn,
       .back-action-slot,
@@ -409,16 +410,17 @@
 
       .summary-card {
         padding: 0 !important;
-        margin: 0 0 4mm 0 !important;
+        margin: 0 0 2mm 0 !important;
         background: transparent !important;
-        break-inside: avoid-page;
-        page-break-inside: avoid;
-        page-break-after: avoid;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+        page-break-after: auto !important;
       }
 
       .list-card {
         margin-top: 0 !important;
-        page-break-before: avoid;
+        break-inside: auto !important;
+        page-break-before: auto !important;
       }
 
       .filter-summary-layout {
@@ -436,17 +438,36 @@
       .log-scroll {
         max-height: none !important;
         overflow: visible !important;
+        height: auto !important;
         padding: 0 !important;
+      }
+
+      #table-area {
+        display: block !important;
+        margin-top: 0 !important;
       }
 
       .log-scroll table {
         width: 100% !important;
         min-width: 0 !important;
         table-layout: fixed !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
       }
 
       .log-scroll th {
         position: static !important;
+      }
+
+      .log-scroll thead {
+        display: table-header-group !important;
+      }
+
+      .log-scroll tr,
+      .log-scroll td,
+      .log-scroll th {
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
 
       @page {
