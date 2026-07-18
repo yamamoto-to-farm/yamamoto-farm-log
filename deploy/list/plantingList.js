@@ -252,14 +252,14 @@ function getPostPlantingDays(plantDate, plantingRef) {
   if (harvestStart instanceof Date) {
     const days = diffDays(plant, harvestStart);
     if (!Number.isFinite(days)) return "-";
-    return `${days}日（収穫開始まで）`;
+    return `${days}日で収穫`;
   }
 
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
   const elapsed = diffDays(plant, today);
   if (!Number.isFinite(elapsed)) return "-";
-  return `${elapsed}日（経過）`;
+  return `${elapsed}日経過`;
 }
 
 function getPlantDetail(plantingRef) {
@@ -297,12 +297,12 @@ function renderTable(rows) {
       <thead>
         <tr>
           <th id="th-plant-date">${buildPlantDateHeaderLabel()}</th>
-          <th>育苗日数</th>
-          <th>定植後経過日数</th>
           <th>圃場</th>
           <th>品種</th>
           <th>面積(反)</th>
           <th>播種日</th>
+          <th>育苗日数</th>
+          <th>定植後経過日数</th>
         </tr>
       </thead>
       <tbody>
@@ -328,12 +328,12 @@ function renderTable(rows) {
 
     html += `<tr>
       <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
-      <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
-      <td>${getPostPlantingDays(r.plantDate, ref)}</td>
       <td><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
       <td><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
       <td>${areaTan.toFixed(2)}</td>
       <td>${getSeedDates(r.seedRef)}</td>
+      <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
+      <td>${getPostPlantingDays(r.plantDate, ref)}</td>
     </tr>`;
   });
 

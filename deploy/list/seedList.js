@@ -252,17 +252,65 @@ function formatCount(value) {
   return rounded.toLocaleString();
 }
 
-function renderRemainingStockCell(seedRef, seedCount, usageMap) {
+function formatTrayCount(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return "-";
+
+  const rounded = Math.round(num * 10) / 10;
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
+    return `${Math.round(rounded).toLocaleString()}枚`;
+  }
+  return `${rounded.toLocaleString()}枚`;
+}
+
+function formatTrayWithType(trayCount, trayType) {
+  const trayText = formatTrayCount(trayCount);
+  const typeNum = Number(trayType || 0);
+  if (Number.isFinite(typeNum) && typeNum > 0) {
+    return `${trayText}（${Math.round(typeNum)}穴）`;
+  }
+  return trayText;
+}
+
+function resolveTrayUnit(seedRow) {
+  const trayType = Number(seedRow?.trayType || 0);
+  if (Number.isFinite(trayType) && trayType > 0) return trayType;
+
+  const seedCount = Number(seedRow?.seedCount || 0);
+  const trayCount = Number(seedRow?.trayCount || 0);
+  if (Number.isFinite(seedCount) && Number.isFinite(trayCount) && seedCount > 0 && trayCount > 0) {
+    return seedCount / trayCount;
+  }
+
+  return null;
+}
+
+function renderRemainingStockCell(seedRow, usageMap) {
+  const seedRef = seedRow?.seedRef;
+  const seedCount = Number(seedRow?.seedCount || 0);
   const ref = normalizeRef(seedRef);
   const planted = Number(usageMap.plantedMap[ref] || 0);
   const discarded = Number(usageMap.discardMap[ref] || 0);
   const total = Number(seedCount || 0);
-  const remaining = total - planted - discarded;
+  const remainingRaw = total - planted - discarded;
+  const remaining = Math.max(0, remainingRaw);
+
+  const trayUnit = resolveTrayUnit(seedRow);
+  if (!trayUnit) {
+    if (discarded > 0) {
+      return `${formatCount(remaining)}<div style="font-size:12px;color:#6b7280;">破棄:${formatCount(discarded)}株</div>`;
+    }
+    return `${formatCount(remaining)}株`;
+  }
+
+  const remainingTrays = remaining / trayUnit;
+  const discardedTrays = discarded / trayUnit;
+  const trayType = Number(seedRow?.trayType || 0);
 
   if (discarded > 0) {
-    return `${formatCount(remaining)}<div style="font-size:12px;color:#6b7280;">破棄:${formatCount(discarded)}</div>`;
+    return `${formatTrayWithType(remainingTrays, trayType)}<div style="font-size:12px;color:#6b7280;">破棄:${formatTrayWithType(discardedTrays, trayType)}</div>`;
   }
-  return formatCount(remaining);
+  return formatTrayWithType(remainingTrays, trayType);
 }
 
 /* ============================================================
@@ -307,14 +355,15 @@ function renderTable(rows) {
           <th>品種</th>
           <th>枚数</th>
           <th id="th-area">予定面積(反)</th>
-          <th>残株数</th>
+          <th>残トレイ枚数</th>
           <th>定植ID</th>
         </tr>
       </thead>
       <tbody>
   `;
 
-  let totalTray = 0;
+  let totalTray128 = 0;
+  let totalTray200 = 0;
   let totalSeed = 0;
   let totalAreaTan = 0;
   const usageMap = buildSeedUsageMap();
@@ -323,9 +372,11 @@ function renderTable(rows) {
 
     const tray = Number(r.trayCount || 0);
     const seedCount = Number(r.seedCount || 0);
+    const trayType = Number(r.trayType || 0);
     const areaTan = calcSeedAreaTan(seedCount);
 
-    totalTray += tray;
+    if (trayType === 128) totalTray128 += tray;
+    if (trayType === 200) totalTray200 += tray;
     totalSeed += seedCount;
     totalAreaTan += areaTan;
 
@@ -341,9 +392,9 @@ function renderTable(rows) {
         </a>
       </td>
 
-      <td>${tray}</td>
+      <td>${formatTrayWithType(tray, trayType)}</td>
       <td>${areaTan.toFixed(2)}</td>
-      <td>${renderRemainingStockCell(r.seedRef, seedCount, usageMap)}</td>
+      <td>${renderRemainingStockCell(r, usageMap)}</td>
       <td>${plantingHtml}</td>
     </tr>`;
   });
@@ -355,8 +406,9 @@ function renderTable(rows) {
 
   document.getElementById("countArea").textContent = `${rows.length} 件`;
   document.getElementById("summaryArea").innerHTML =
-    `総枚数：${totalTray} 枚　
-     総株数：${totalSeed.toLocaleString()} 株　
+    `総枚数：${formatTrayWithType(totalTray128, 128)}<br>
+     総枚数：${formatTrayWithType(totalTray200, 200)}<br>
+     総株数：${totalSeed.toLocaleString()} 株<br>
      予定面積合計：${totalAreaTan.toFixed(2)} 反`;
 
   tableArea.innerHTML = html;

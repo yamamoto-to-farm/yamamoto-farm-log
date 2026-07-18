@@ -22,12 +22,13 @@
     }
 
     .page-wrap {
-      max-width: 1260px;
+      max-width: 1420px;
       margin: 0 auto;
       padding: 12px 16px 28px;
     }
 
     .hero-card,
+    .summary-card,
     .list-card {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -56,11 +57,8 @@
       gap: 12px;
     }
 
-    .unified-summary-card {
-      margin-top: 14px;
+    .summary-card {
       padding: 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
       background: #f8fafc;
     }
 
@@ -80,8 +78,8 @@
 
     .filter-summary-layout {
       display: grid;
-      grid-template-columns: minmax(430px, 0.82fr) minmax(430px, 1.18fr);
-      gap: 8px;
+      grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+      gap: 10px;
       align-items: start;
     }
 
@@ -95,6 +93,7 @@
       gap: 8px;
       min-width: 0;
       align-content: start;
+      width: 100%;
     }
 
     .metric-card {
@@ -123,7 +122,7 @@
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #ffffff;
-      max-width: 650px;
+      max-width: 100%;
       width: 100%;
       margin-right: auto;
     }
@@ -178,10 +177,50 @@
 
     .log-scroll table {
       width: 100%;
-      min-width: 860px;
+      min-width: 980px;
       border-collapse: collapse;
       table-layout: fixed;
       background: #fff;
+    }
+
+    body[data-list-mode="planting"] .log-scroll table {
+      min-width: 1260px;
+    }
+
+    body[data-list-mode="seed"] .log-scroll table {
+      min-width: 1040px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(1),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(1) {
+      width: 110px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(2),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(2) {
+      width: 165px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(3),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(3) {
+      width: 165px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(4),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(4) {
+      width: 88px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(5),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(5) {
+      width: 110px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(6),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(6),
+    body[data-list-mode="planting"] .log-scroll th:nth-child(7),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(7) {
+      width: 130px;
     }
 
     .log-scroll th,
@@ -317,7 +356,7 @@
 
       .hero-card,
       .list-card,
-      .unified-summary-card,
+      .summary-card,
       .metric-card {
         box-shadow: none !important;
       }
@@ -355,9 +394,10 @@
       <section class="hero-card">
         <h1 class="page-title hero-title">播種・定植一覧</h1>
         <p class="hero-copy">播種と定植の実績を同じ条件で切り替えて確認できます。印刷時はサマリーとフィルタ後一覧のみ出力されます。</p>
+      </section>
 
-        <div id="print-scope" class="list-shell">
-          <div class="unified-summary-card">
+      <div id="print-scope" class="list-shell">
+          <section class="summary-card">
             <div class="mode-switch-row" id="mode-switch-card">
               <button id="btn-planting" class="mode-btn" data-mode="planting" type="button">定植</button>
               <button id="btn-seed" class="mode-btn" data-mode="seed" type="button">播種</button>
@@ -399,7 +439,7 @@
               </div>
             </div>
 
-          </div>
+          </section>
 
           <section class="list-card">
             <div class="list-head">
@@ -410,8 +450,7 @@
               <div id="table-area"></div>
             </div>
           </section>
-        </div>
-      </section>
+      </div>
 
       <div class="back-action-slot" style="margin-top:14px;">
         <button id="list-back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
