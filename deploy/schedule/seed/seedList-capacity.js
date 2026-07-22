@@ -85,6 +85,21 @@ export function updateSummary(maxStock = 0) {
   // 面積は従来通り合計
   const totalArea = rows.reduce((sum, r) => sum + (Number(r.planAreaCalc) || 0), 0);
 
+  // 播種トレイ枚数の内訳（128穴 / 200穴）
+  const trayTotals = rows.reduce(
+    (acc, r) => {
+      const trayCount = Number(r.trayCount || 0);
+      if (!(trayCount > 0)) return acc;
+
+      const trayTypeNum = Number(String(r.trayType || "").match(/(\d{2,3})/)?.[1] || 0);
+      acc.total += trayCount;
+      if (trayTypeNum === 128) acc.t128 += trayCount;
+      if (trayTypeNum === 200) acc.t200 += trayCount;
+      return acc;
+    },
+    { total: 0, t128: 0, t200: 0 }
+  );
+
   const diff = capacity - maxStock;
 
   let statusHtml = "";
@@ -97,7 +112,7 @@ export function updateSummary(maxStock = 0) {
 
   document.getElementById("summaryArea").innerHTML = `
     <div>最大同時トレイ数：${maxStock} 枚</div>
-    <div>総予定面積：${totalArea.toFixed(2)} 反</div>
+    <div>総予定面積：${totalArea.toFixed(2)} 反　　播種枚数：${trayTotals.total.toLocaleString()} 枚（128穴：${trayTotals.t128.toLocaleString()} 枚　　200穴：${trayTotals.t200.toLocaleString()} 枚）</div>
     <div>育苗ハウス容量：${capacity} 枚</div>
     <div style="margin-top:6px;">${statusHtml}</div>
   `;
