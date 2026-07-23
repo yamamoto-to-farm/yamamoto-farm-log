@@ -2739,15 +2739,15 @@ function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) 
   if (laneCapacity > 0 && laneBodyHeight > 0) {
     const ratio = trays / laneCapacity;
     const adjusted = laneBodyHeight * ratio * (laneCols / cols);
-    if (trays <= 0) return 22;
-    return clamp(Math.round(adjusted), 24, Math.max(28, laneBodyHeight - 6));
+    if (trays <= 0) return 18;
+    return clamp(Math.round(adjusted), 18, Math.max(24, laneBodyHeight - 6));
   }
 
-  if (trays <= 0) return 40;
+  if (trays <= 0) return 30;
   const rows = trays / cols;
   const tray = getTraySizeByLane(lane || {});
   const px = rows * tray.nsMm * MM_TO_PX;
-  return clamp(Math.round(px), 40, 220);
+  return clamp(Math.round(px), 30, 220);
 }
 
 function clamp(value, min, max) {

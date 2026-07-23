@@ -529,7 +529,7 @@ body[data-house-mode="lane"] .lane-single-card .lane-grid {
 .lane-float-item {
   position: absolute;
   min-width: 0;
-  min-height: 40px;
+  min-height: 28px;
   padding: 1px;
   box-sizing: border-box;
 }
@@ -578,8 +578,8 @@ body[data-house-mode="lane"] .lane-single-card .lane-grid {
   border: 1px solid #b8d4e7;
   border-radius: 4px;
   background: var(--slot-fill);
-  min-height: 64px;
-  padding: 10px 11px;
+  min-height: 48px;
+  padding: 7px 8px;
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -587,7 +587,8 @@ body[data-house-mode="lane"] .lane-single-card .lane-grid {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 3px;
 }
 
 .lot-card:active {
@@ -624,8 +625,8 @@ body.is-pointer-dragging-block * {
   font-size: var(--lot-name-size);
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 3px;
-  line-height: 1.28;
+  margin-bottom: 0;
+  line-height: 1.18;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -633,16 +634,18 @@ body.is-pointer-dragging-block * {
 .lot-card .lot-ref {
   font-size: var(--lot-ref-size);
   color: #475569;
-  margin-bottom: 3px;
-  line-height: 1.25;
+  margin-bottom: 0;
+  line-height: 1.15;
   overflow-wrap: anywhere;
   word-break: break-all;
 }
 
 .lot-card .lot-meta {
   font-size: var(--lot-meta-size);
-  color: #1e293b;
-  line-height: 1.22;
+  color: #0f172a;
+  line-height: 1.12;
+  font-weight: 700;
+  margin-top: auto;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
