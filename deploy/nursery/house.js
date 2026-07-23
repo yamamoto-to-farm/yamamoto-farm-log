@@ -56,6 +56,7 @@ let modalBlockId = "";
 let multiSelectMode = false;
 const selectedBlockIds = new Set();
 let currentView = "all";
+let lockedView = "";
 
 const VIEW_CONFIG = {
   all: { label: "全体ビュー", groupIds: ["west-house", "east-house", "outside-area"] },
@@ -76,8 +77,18 @@ const resizeState = {
   laneBodyHeight: 0
 };
 
-export async function initNurseryHousePage() {
-  currentView = parseViewFromLocation();
+export async function initNurseryHousePage(options = {}) {
+  const forcedView = String(options?.forcedView || "").trim().toLowerCase();
+  const lockView = !!options?.lockView;
+
+  if (lockView && VIEW_CONFIG[forcedView]) {
+    lockedView = forcedView;
+  }
+
+  currentView = lockedView || parseViewFromLocation();
+  document.body.classList.toggle("single-view-mode", !!lockedView);
+  document.body.setAttribute("data-house-view", currentView);
+
   bindControls();
   await reloadAll();
 }
@@ -102,6 +113,17 @@ function bindControls() {
       setCurrentView(view, { syncUrl: true });
     });
   });
+
+  if (lockedView) {
+    viewButtons.forEach(btn => {
+      const view = String(btn.dataset.view || "").trim();
+      if (view === lockedView) {
+        btn.classList.add("is-active");
+      } else {
+        btn.style.display = "none";
+      }
+    });
+  }
 
   reloadBtn?.addEventListener("click", async () => {
     await reloadAll();
@@ -634,6 +656,15 @@ function renderGroups() {
   const eastGroup = visibleGroups.find(group => group.id === "east-house");
   const outsideGroup = visibleGroups.find(group => group.id === "outside-area");
 
+  if (lockedView === "outside" && outsideGroup) {
+    root.appendChild(buildGroupCard(outsideGroup, {
+      cardClass: "outside-single-card",
+      laneGridClass: "layout-outside-single",
+      showTitle: true
+    }));
+    return;
+  }
+
   if (outsideGroup) {
     const sideLanes = ["outside-4", "outside-5", "outside-3"]
       .map(id => outsideGroup.lanes.find(lane => lane.id === id))
@@ -696,11 +727,14 @@ function parseViewFromLocation() {
 }
 
 function setCurrentView(view, options = {}) {
+  if (lockedView) return;
+
   const next = VIEW_CONFIG[view] ? view : "all";
   const { syncUrl = false } = options;
   if (currentView === next && !syncUrl) return;
 
   currentView = next;
+  document.body.setAttribute("data-house-view", currentView);
   focusedLaneId = "";
   selectedBlockIds.clear();
   closeBlockModal();

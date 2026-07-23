@@ -542,6 +542,52 @@
   cursor: not-allowed;
 }
 
+body.single-view-mode #page-area.page-container {
+  width: min(2100px, 99.5vw);
+  max-width: min(2100px, 99.5vw);
+}
+
+body.single-view-mode .nursery-toolbar .toolbar-row:first-child {
+  min-height: 0;
+}
+
+body.single-view-mode .nursery-toolbar .toolbar-row:first-child .secondary-btn[data-view]:not(.is-active) {
+  display: none;
+}
+
+body.single-view-mode .zones-root {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "single";
+  gap: 6px;
+}
+
+body.single-view-mode .zone-card {
+  grid-area: single;
+}
+
+body.single-view-mode .zone-title {
+  font-size: 22px;
+}
+
+.layout-outside-single {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.outside-single-card .lane {
+  min-height: 0;
+}
+
+body.single-view-mode[data-house-view="outside"] .lane-name {
+  font-size: 19px;
+}
+
+body.single-view-mode[data-house-view="outside"] .lot-card {
+  min-height: 58px;
+  padding: 8px 9px;
+}
+
 @media (max-width: 980px) {
   html,
   body {
@@ -638,5 +684,18 @@
   .block-modal__panel {
     width: calc(100vw - 12px);
     margin-top: 10px;
+  }
+
+  body.single-view-mode #page-area.page-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.single-view-mode .zone-title {
+    font-size: 17px;
+  }
+
+  .layout-outside-single {
+    grid-template-columns: 1fr;
   }
 }

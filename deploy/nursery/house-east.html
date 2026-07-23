@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>育苗ハウス管理（東棟） - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./house.css?v=20260723-1">
+</head>
+
+<body>
+  <div id="page-area" class="page-container" style="display:none;">
+    <h1 class="page-title">育苗ハウス・外育苗 配置ボード（東棟）</h1>
+
+    <section class="nursery-layout-grid">
+      <article class="card zones-card">
+        <section class="nursery-toolbar">
+          <div class="toolbar-row">
+            <button id="view-all-btn" class="secondary-btn" type="button" data-view="all">全体ビュー</button>
+            <button id="view-east-btn" class="secondary-btn" type="button" data-view="east">東棟</button>
+            <button id="view-west-btn" class="secondary-btn" type="button" data-view="west">西棟</button>
+            <button id="view-outside-btn" class="secondary-btn" type="button" data-view="outside">外</button>
+          </div>
+          <div class="toolbar-row">
+            <button id="reload-btn" class="secondary-btn" type="button">再読込</button>
+            <button id="multi-select-mode-btn" class="secondary-btn" type="button" aria-pressed="false">複数選択: OFF</button>
+            <button id="open-selection-modal-btn" class="secondary-btn" type="button">選択中を操作</button>
+            <button id="clear-selection-btn" class="secondary-btn" type="button">選択解除</button>
+            <button id="save-btn" class="primary-btn" type="button">配置を保存</button>
+          </div>
+          <div id="summary-line" class="summary-line">読み込み中...</div>
+          <div id="stale-line" class="stale-line" style="display:none;"></div>
+        </section>
+        <div id="zones-root" class="zones-root"></div>
+      </article>
+    </section>
+  </div>
+
+  <div id="block-modal" class="block-modal" aria-hidden="true">
+    <div class="block-modal__backdrop" data-modal-close="true"></div>
+    <section class="block-modal__panel" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
+      <header class="block-modal__header">
+        <h2 id="block-modal-title">ブロック操作</h2>
+        <button id="block-modal-close" class="block-modal__close" type="button" aria-label="閉じる">×</button>
+      </header>
+      <div class="block-modal__body">
+        <div id="block-modal-detail" class="block-modal__detail"></div>
+        <div id="block-modal-selection" class="block-modal__selection"></div>
+      </div>
+      <footer class="block-modal__footer">
+        <button id="modal-split-btn" class="secondary-btn" type="button">分割</button>
+        <button id="modal-merge-btn" class="secondary-btn" type="button">結合</button>
+        <button id="modal-close-btn" class="primary-btn" type="button">閉じる</button>
+      </footer>
+    </section>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js";
+    import { initNurseryHousePage } from "./house.js?v=20260723-1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+
+      renderHeader();
+      document.getElementById("page-area").style.display = "block";
+      await initNurseryHousePage({ forcedView: "east", lockView: true });
+    });
+  </script>
+
+  <script src="/common/sw-register.js?v=20260718-1"></script>
+</body>
+
+</html>
