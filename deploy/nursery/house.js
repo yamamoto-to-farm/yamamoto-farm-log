@@ -6,7 +6,7 @@ const LAYOUT_PATH = "logs/nursery/house-layout.json";
 const TRAY_WIDTH_MM = 300;
 const TRAY_LENGTH_MM = 600;
 const MM_TO_PX = 0.0088;
-const SNAP_PX = 24;
+const SNAP_PX = 12;
 const LANE_COL_WIDTH_FACTOR = 24;
 const PLACEMENT_EDGE_GAP_PX = 6;
 
@@ -57,6 +57,7 @@ let multiSelectMode = false;
 const selectedBlockIds = new Set();
 let currentView = "all";
 let lockedView = "";
+let dragPreview = null;
 
 const VIEW_CONFIG = {
   all: { label: "全体ビュー", groupIds: ["west-house", "east-house", "outside-area"] },
@@ -80,12 +81,16 @@ const resizeState = {
 export async function initNurseryHousePage(options = {}) {
   const forcedView = String(options?.forcedView || "").trim().toLowerCase();
   const lockView = !!options?.lockView;
+  const lockByQuery = options?.lockByQuery !== false;
+  const queryView = parseViewFromLocation();
 
   if (lockView && VIEW_CONFIG[forcedView]) {
     lockedView = forcedView;
+  } else if (lockByQuery && queryView !== "all") {
+    lockedView = queryView;
   }
 
-  currentView = lockedView || parseViewFromLocation();
+  currentView = lockedView || queryView;
   document.body.classList.toggle("single-view-mode", !!lockedView);
   document.body.setAttribute("data-house-view", currentView);
 
@@ -716,6 +721,8 @@ function renderGroups() {
   if (eastGroup) {
     root.appendChild(buildGroupCard(eastGroup));
   }
+
+  if (dragPreview) renderDragPreview();
 }
 
 function parseViewFromLocation() {
@@ -737,6 +744,7 @@ function setCurrentView(view, options = {}) {
   document.body.setAttribute("data-house-view", currentView);
   focusedLaneId = "";
   selectedBlockIds.clear();
+  clearDragPreview();
   closeBlockModal();
 
   if (syncUrl) {
@@ -964,6 +972,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   card.addEventListener("dragend", () => {
     dragBlockIds = [];
     dragBlockId = "";
+    clearDragPreview();
   });
 
   card.innerHTML = `
@@ -1064,15 +1073,18 @@ function bindBlockDrop(el, lane, laneBodyHeight, beforeBlockId) {
   el.addEventListener("dragover", e => {
     e.preventDefault();
     el.classList.add("drag-over");
+    updateDragPreview(lane, laneBodyHeight, e);
   });
 
   el.addEventListener("dragleave", () => {
     el.classList.remove("drag-over");
+    clearDragPreview(lane.id);
   });
 
   el.addEventListener("drop", e => {
     e.preventDefault();
     el.classList.remove("drag-over");
+    clearDragPreview();
 
     const fallbackId = dragBlockId || String(e.dataTransfer?.getData("text/plain") || "").trim();
     const ids = dragBlockIds.length ? [...dragBlockIds] : (fallbackId ? [fallbackId] : []);
@@ -1283,6 +1295,83 @@ function calcDropPosition(dropEvent, laneBodyEl, lane, laneBodyHeight, spanCols,
     x: clamp(rawX / xDen, 0, 1),
     y: clamp(rawY / yDen, 0, 1)
   };
+}
+
+function updateDragPreview(lane, laneBodyHeight, dropEvent) {
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(lane.id)}"]`);
+  if (!(laneBody instanceof HTMLElement)) return;
+
+  const fallbackId = dragBlockId || "";
+  const ids = dragBlockIds.length ? [...dragBlockIds] : (fallbackId ? [fallbackId] : []);
+  if (!ids.length) {
+    clearDragPreview();
+    return;
+  }
+
+  const target = blocks.find(block => block.blockId === ids[0]);
+  if (!target) {
+    clearDragPreview();
+    return;
+  }
+
+  const laneCols = getLaneCols(lane);
+  const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
+  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, spanCols, target.trays);
+  const resolved = resolvePlacementInLane({
+    lane,
+    laneBodyEl: laneBody,
+    laneBodyHeight,
+    movingBlockId: target.blockId,
+    trays: target.trays,
+    spanCols,
+    preferredX: prefer.x,
+    preferredY: prefer.y
+  });
+
+  if (!resolved) {
+    clearDragPreview();
+    return;
+  }
+
+  const widthNorm = clamp(spanCols / laneCols, 0.05, 1);
+  const blockHeightPx = computeBlockHeight(target.trays, lane, laneBodyHeight, spanCols);
+  const heightNorm = clamp(blockHeightPx / Math.max(1, laneBodyHeight), 0.04, 1);
+
+  dragPreview = {
+    laneId: lane.id,
+    x: resolved.x,
+    y: resolved.y,
+    width: widthNorm,
+    height: heightNorm
+  };
+  renderDragPreview();
+}
+
+function clearDragPreview(laneId = "") {
+  if (!dragPreview) return;
+  if (laneId && dragPreview.laneId !== laneId) return;
+
+  dragPreview = null;
+  document.querySelectorAll(".drop-preview").forEach(el => el.remove());
+}
+
+function renderDragPreview() {
+  document.querySelectorAll(".drop-preview").forEach(el => el.remove());
+  if (!dragPreview) return;
+
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(dragPreview.laneId)}"]`);
+  if (!(laneBody instanceof HTMLElement)) return;
+
+  const canvas = laneBody.querySelector(".lane-canvas");
+  if (!(canvas instanceof HTMLElement)) return;
+
+  const preview = document.createElement("div");
+  preview.className = "drop-preview";
+  preview.style.left = `${(dragPreview.x * 100).toFixed(2)}%`;
+  preview.style.top = `${(dragPreview.y * 100).toFixed(2)}%`;
+  preview.style.width = `${(dragPreview.width * 100).toFixed(2)}%`;
+  preview.style.height = `${(dragPreview.height * 100).toFixed(2)}%`;
+  canvas.appendChild(preview);
 }
 
 function resolvePlacementInLane({
