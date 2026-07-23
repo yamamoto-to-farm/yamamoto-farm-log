@@ -3,6 +3,16 @@ import { saveLog } from "../common/save/index.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import { confirmSaveBeforeSubmit } from "../common/save-modal.js";
 
+const DISCARD_REASON_OPTIONS = [
+  { value: "補植余り", label: "補植余り" },
+  { value: "育苗不良", label: "育苗不良" },
+  { value: "病害", label: "病害" },
+  { value: "暑さ障害", label: "暑さ障害" },
+  { value: "寒害", label: "寒害" },
+  { value: "徒長", label: "徒長" },
+  { value: "その他", label: "その他" }
+];
+
 let seedRef = "";
 let seedRow = null;
 let availableTrays = 0;
@@ -46,14 +56,25 @@ export async function initDiscardSeedPage() {
   availablePlants = Math.max(0, round1(availableTrays * trayType));
 
   bindStaticInfo(seedRow, trayType);
+  setupReasonSelector();
   bindInputs(trayType);
+}
+
+export function goBackFromDiscardSeed() {
+  const params = new URLSearchParams(location.search || "");
+  const returnPath = String(params.get("return") || "").trim();
+  if (returnPath && returnPath.startsWith("/")) {
+    location.href = returnPath;
+    return;
+  }
+  history.back();
 }
 
 export async function saveDiscardSeed() {
   if (!seedRow) return;
 
   const discardDate = String(document.getElementById("discardDate").value || "").trim();
-  const discardReason = String(document.getElementById("discardReason").value || "").trim();
+  const discardReason = getDiscardReasonValue();
   const notes = String(document.getElementById("notes").value || "").trim();
   const trayType = Number(seedRow.trayType || 0) || deriveTrayType(seedRow);
   const discardTrays = round1(Number(document.getElementById("discardTrays").value || 0));
@@ -65,6 +86,10 @@ export async function saveDiscardSeed() {
   }
   if (!(discardTrays > 0)) {
     alert("破棄トレイ枚数を入力してください");
+    return;
+  }
+  if (!discardReason) {
+    alert("破棄理由を選択してください");
     return;
   }
   if (discardTrays > availableTrays + 0.0001) {
@@ -119,8 +144,41 @@ export async function saveDiscardSeed() {
 
   alert(`播種ロット破棄を保存しました\n\n播種ID: ${seedRef}\n破棄枚数: ${formatCount(discardTrays)}枚\n破棄株数: ${formatCount(discardQuantity)}株`);
   setTimeout(() => {
-    history.back();
+    goBackFromDiscardSeed();
   }, 300);
+}
+
+function setupReasonSelector() {
+  const select = document.getElementById("discardReason");
+  if (!(select instanceof HTMLSelectElement)) return;
+
+  select.innerHTML = DISCARD_REASON_OPTIONS.map(option => (
+    `<option value="${escapeAttr(option.value)}">${escapeHtml(option.label)}</option>`
+  )).join("");
+
+  select.addEventListener("change", syncReasonDetailVisibility);
+  syncReasonDetailVisibility();
+}
+
+function syncReasonDetailVisibility() {
+  const select = document.getElementById("discardReason");
+  const detailField = document.getElementById("discardReasonDetailField");
+  const detailInput = document.getElementById("discardReasonDetail");
+  if (!(select instanceof HTMLSelectElement) || !(detailField instanceof HTMLElement) || !(detailInput instanceof HTMLInputElement)) return;
+
+  const isOther = String(select.value || "") === "その他";
+  detailField.style.display = isOther ? "block" : "none";
+  if (!isOther) detailInput.value = "";
+}
+
+function getDiscardReasonValue() {
+  const select = document.getElementById("discardReason");
+  const detailInput = document.getElementById("discardReasonDetail");
+  const reason = String(select?.value || "").trim();
+  if (reason !== "その他") return reason;
+
+  const detail = String(detailInput?.value || "").trim();
+  return detail ? `その他:${detail}` : "";
 }
 
 function bindStaticInfo(row, trayType) {
@@ -238,6 +296,19 @@ function csvEscape(value) {
   const text = String(value || "");
   if (!/[",\n]/.test(text)) return text;
   return `"${text.replace(/"/g, '""')}"`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
 
 function getCurrentTimeText() {

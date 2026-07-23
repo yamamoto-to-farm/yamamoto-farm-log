@@ -29,13 +29,12 @@
 
       <div class="form-field">
         <label for="discardReason">破棄理由</label>
-        <select id="discardReason" class="form-input">
-          <option value="補植余り">補植余り</option>
-          <option value="育苗不良">育苗不良</option>
-          <option value="病害">病害</option>
-          <option value="暑さ障害">暑さ障害</option>
-          <option value="その他">その他</option>
-        </select>
+        <select id="discardReason" class="form-input"></select>
+      </div>
+
+      <div class="form-field" id="discardReasonDetailField" style="display:none;">
+        <label for="discardReasonDetail">理由詳細</label>
+        <input type="text" id="discardReasonDetail" class="form-input" placeholder="例: 補植現場で余った苗を回収後に破棄">
       </div>
 
       <div class="form-field">
@@ -55,7 +54,7 @@
     </section>
 
     <div class="button-row" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
-      <button class="secondary-btn unified-back-btn" type="button" onclick="history.back()">← 一覧へ戻る</button>
+      <button id="backBtn" class="secondary-btn unified-back-btn" type="button">← 一覧へ戻る</button>
       <button id="saveBtn" class="primary-btn" type="button">破棄ログを保存</button>
     </div>
   </div>
@@ -72,7 +71,7 @@
   <script type="module">
     import { verifyLocalAuth } from "../common/ui.js";
     import { renderHeader } from "../common/header.js";
-    import { initDiscardSeedPage, saveDiscardSeed } from "./discard-seed.js?v=20260724-1";
+    import { initDiscardSeedPage, saveDiscardSeed, goBackFromDiscardSeed } from "./discard-seed.js?v=20260724-2";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -85,6 +84,10 @@
 
     document.getElementById("saveBtn").addEventListener("click", () => {
       saveDiscardSeed();
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      goBackFromDiscardSeed();
     });
   </script>
 

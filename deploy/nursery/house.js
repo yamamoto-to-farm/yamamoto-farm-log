@@ -142,6 +142,7 @@ function bindControls() {
   const modal = document.getElementById("block-modal");
   const modalClose = document.getElementById("block-modal-close");
   const modalCloseBtn = document.getElementById("modal-close-btn");
+  const modalDiscardSeedBtn = document.getElementById("modal-discard-seed-btn");
   const modalSplitBtn = document.getElementById("modal-split-btn");
   const modalMergeBtn = document.getElementById("modal-merge-btn");
   const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
@@ -196,6 +197,13 @@ function bindControls() {
 
   modalClose?.addEventListener("click", closeBlockModal);
   modalCloseBtn?.addEventListener("click", closeBlockModal);
+  modalDiscardSeedBtn?.addEventListener("click", () => {
+    const block = blocks.find(v => v.blockId === modalBlockId) || null;
+    const seedRef = String(block?.originSeedRef || "").trim();
+    if (!seedRef) return;
+    const returnPath = `${location.pathname}${location.search || ""}`;
+    location.href = `/seed/discard-seed.html?ref=${encodeURIComponent(seedRef)}&return=${encodeURIComponent(returnPath)}`;
+  });
   modalSplitBtn?.addEventListener("click", () => {
     splitSelectedBlock();
     renderBlockModal();
@@ -2609,9 +2617,10 @@ function renderBlockModal() {
   const detailEl = document.getElementById("block-modal-detail");
   const selectionEl = document.getElementById("block-modal-selection");
   const moveEl = document.getElementById("block-modal-move");
+  const discardSeedBtn = document.getElementById("modal-discard-seed-btn");
   const splitBtn = document.getElementById("modal-split-btn");
   const mergeBtn = document.getElementById("modal-merge-btn");
-  if (!modal || !detailEl || !selectionEl || !moveEl || !splitBtn || !mergeBtn) return;
+  if (!modal || !detailEl || !selectionEl || !moveEl || !discardSeedBtn || !splitBtn || !mergeBtn) return;
   if (!modal.classList.contains("is-open")) return;
 
   let block = blocks.find(v => v.blockId === modalBlockId) || null;
@@ -2648,6 +2657,7 @@ function renderBlockModal() {
     : `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 別ロットIDでも同時移動は可能です。結合は同一ロットIDかつ同一レーンのみです。`;
 
   moveEl.innerHTML = buildMovePickerMarkup(currentBlockZone, !!block.laneId);
+  discardSeedBtn.disabled = !block.originSeedRef;
   splitBtn.disabled = !splitReady;
   mergeBtn.disabled = !mergeReady;
 }

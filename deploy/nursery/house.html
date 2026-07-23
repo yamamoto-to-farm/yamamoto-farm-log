@@ -50,6 +50,7 @@
         <div id="block-modal-move" class="block-modal__move"></div>
       </div>
       <footer class="block-modal__footer">
+        <button id="modal-discard-seed-btn" class="secondary-btn" type="button">播種破棄ページへ</button>
         <button id="modal-split-btn" class="secondary-btn" type="button">分割</button>
         <button id="modal-merge-btn" class="secondary-btn" type="button">結合</button>
         <button id="modal-close-btn" class="primary-btn" type="button">閉じる</button>
@@ -60,7 +61,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initNurseryHousePage } from "./house.js?v=20260723-2";
+    import { initNurseryHousePage } from "./house.js?v=20260724-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
