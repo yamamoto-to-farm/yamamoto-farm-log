@@ -551,7 +551,8 @@ function normalizeLayoutBlocks(layout, lotMap) {
 
     const laneId = String(row?.laneId || "").trim();
     const validLane = laneId && findLane(laneId) ? laneId : "";
-    const laneCols = validLane ? getLaneCols(findLane(validLane)) : 1;
+    const laneObj = validLane ? findLane(validLane) : null;
+    const laneCols = laneObj ? getLaneCols(laneObj) : 1;
     const rawSpan = Math.max(1, Math.floor(toNumber(row?.spanCols) || laneCols));
 
     const block = {
@@ -559,7 +560,7 @@ function normalizeLayoutBlocks(layout, lotMap) {
       originSeedRef,
       trays,
       laneId: validLane,
-      spanCols: Math.min(laneCols, rawSpan),
+      spanCols: laneObj ? getEffectiveSpanCols(laneObj, rawSpan) : Math.min(laneCols, rawSpan),
       posX: Number.isFinite(Number(row?.posX)) ? clamp(toNumber(row?.posX), 0, 1) : NaN,
       posY: Number.isFinite(Number(row?.posY)) ? clamp(toNumber(row?.posY), 0, 1) : NaN,
       order: Number.isFinite(Number(row?.order)) ? Number(row.order) : index
@@ -1447,7 +1448,7 @@ function buildLaneElement(lane) {
     canvas.appendChild(empty);
   } else {
     laneBlocks.forEach(block => {
-      const span = Math.max(1, Math.min(getLaneCols(lane), Math.floor(toNumber(block.spanCols) || 1)));
+      const span = getBlockSpanCols(block, lane);
       const widthPct = (span / getLaneCols(lane)) * 100;
       const blockHeightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
       const heightPct = clamp((blockHeightPx / laneBodyHeight) * 100, 4, 100);
@@ -1526,7 +1527,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   if (compact) card.classList.add("unsorted-lot-card");
 
   if (lane && autoHeight) {
-    card.style.height = `${computeBlockHeight(block.trays, lane, laneBodyHeight, block.spanCols)}px`;
+    card.style.height = `${computeBlockHeight(block.trays, lane, laneBodyHeight, getBlockSpanCols(block, lane))}px`;
   }
 
   card.addEventListener("pointerdown", event => {
@@ -1538,10 +1539,10 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   card.innerHTML = `
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
     <div class="lot-ref">播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, block.originSeedRef))}</div>
-    <div class="lot-meta">${formatBlockTrayLine(block.trays, block.spanCols)}</div>
+    <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols)}</div>
   `;
 
-  if (lane) {
+  if (lane && !isRotatedSpanLane(lane)) {
     ["left", "right"].forEach(side => {
       const handle = document.createElement("button");
       handle.type = "button";
@@ -2003,7 +2004,7 @@ function placeBlockGroup(blockIds, lane, laneBodyHeight, dropEvent, beforeBlockI
   }
 
   const laneCols = getLaneCols(lane);
-  const anchorSpan = clamp(Math.floor(toNumber(anchor.spanCols) || 1), 1, laneCols);
+  const anchorSpan = getBlockSpanCols(anchor, lane);
   const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, anchorSpan, anchor.trays);
 
   const anchorRect = getBlockRectNorm(anchor, lane, laneBodyHeight);
@@ -2015,7 +2016,7 @@ function placeBlockGroup(blockIds, lane, laneBodyHeight, dropEvent, beforeBlockI
   const excludeIds = [...idSet];
 
   for (const block of group) {
-    const span = clamp(Math.floor(toNumber(block.spanCols) || 1), 1, laneCols);
+    const span = getBlockSpanCols(block, lane);
     const blockRect = getBlockRectNorm(block, lane, laneBodyHeight);
     const dx = blockRect.left - baseX;
     const dy = blockRect.top - baseY;
@@ -2099,7 +2100,7 @@ function placeBlock(blockId, lane, laneBodyHeight, dropEvent, beforeBlockId = ""
   if (!(laneBody instanceof HTMLElement)) return false;
 
   const laneCols = getLaneCols(lane);
-  const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || laneCols)));
+  const spanCols = getBlockSpanCols(target, lane);
 
   const usedWithoutTarget = blocks
     .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
@@ -2492,7 +2493,7 @@ function resolvePlacementInLane({
 
 function getBlockRectNorm(block, lane, laneBodyHeight) {
   const laneCols = getLaneCols(lane);
-  const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(block.spanCols) || 1)));
+  const span = getBlockSpanCols(block, lane);
   const width = clamp(span / laneCols, 0.05, 1);
   const heightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
@@ -2512,7 +2513,7 @@ function getBlockRectNorm(block, lane, laneBodyHeight) {
 
 function getRectNormFromPlacement({ lane, laneBodyHeight, trays, spanCols, x, y }) {
   const laneCols = getLaneCols(lane);
-  const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
+  const span = getEffectiveSpanCols(lane, spanCols);
   const width = clamp(span / laneCols, 0.05, 1);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
@@ -2794,6 +2795,20 @@ function allLanes() {
 
 function getLaneCols(lane) {
   return Math.max(1, Math.floor(toNumber(lane?.trayCols) || 3));
+}
+
+function isRotatedSpanLane(lane) {
+  return String(lane?.shortEdgeAxis || "").toLowerCase() === "ns";
+}
+
+function getEffectiveSpanCols(lane, rawSpan) {
+  const laneCols = getLaneCols(lane);
+  if (isRotatedSpanLane(lane)) return laneCols;
+  return Math.max(1, Math.min(laneCols, Math.floor(toNumber(rawSpan) || 1)));
+}
+
+function getBlockSpanCols(block, lane) {
+  return getEffectiveSpanCols(lane, block?.spanCols);
 }
 
 function getLaneRows(lane) {
