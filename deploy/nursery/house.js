@@ -9,6 +9,11 @@ const MM_TO_PX = 0.0088;
 const SNAP_PX = 12;
 const LANE_COL_WIDTH_FACTOR = 24;
 const PLACEMENT_EDGE_GAP_PX = 6;
+const POINTER_DRAG_THRESHOLD_PX = 8;
+const POINTER_HOLD_DELAY_MS = 220;
+const POINTER_HOLD_CANCEL_PX = 12;
+const POINTER_AUTO_SCROLL_EDGE_PX = 72;
+const POINTER_AUTO_SCROLL_MAX_STEP_PX = 22;
 
 const GROUPS = [
   {
@@ -61,6 +66,28 @@ let dragPreview = null;
 let currentMode = "overview";
 let currentZone = "";
 let currentLaneId = "";
+let suppressClickUntil = 0;
+
+const pointerDragState = {
+  active: false,
+  started: false,
+  pointerId: null,
+  pointerType: "mouse",
+  blockId: "",
+  blockIds: [],
+  startX: 0,
+  startY: 0,
+  latestX: 0,
+  latestY: 0,
+  holdReady: false,
+  holdTimer: 0,
+  autoScrollRaf: 0,
+  originCard: null,
+  hoverEl: null,
+  hoverLaneId: "",
+  hoverBeforeBlockId: "",
+  ghostEl: null
+};
 
 const VIEW_CONFIG = {
   all: { label: "全体ビュー", groupIds: ["west-house", "east-house", "outside-area"] },
@@ -189,6 +216,12 @@ function bindControls() {
   if (!zonesRoot) return;
 
   zonesRoot.addEventListener("click", event => {
+    if (Date.now() < suppressClickUntil) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     const target = event.target;
     if (!(target instanceof Element)) return;
 
@@ -691,81 +724,17 @@ function renderGroups() {
     return;
   }
 
+  if (currentMode === "zone") {
+    renderZoneMode(root);
+    if (dragPreview) renderDragPreview();
+    return;
+  }
+
   if (currentMode === "lane") {
     renderLaneMode(root);
     if (dragPreview) renderDragPreview();
     return;
   }
-
-  const quickPlaceBlocks = getQuickPlaceBlocks(5);
-
-  const visibleGroups = getVisibleGroups();
-  const westGroup = visibleGroups.find(group => group.id === "west-house");
-  const eastGroup = visibleGroups.find(group => group.id === "east-house");
-  const outsideGroup = visibleGroups.find(group => group.id === "outside-area");
-
-  if (lockedView === "outside" && outsideGroup) {
-    root.appendChild(buildGroupCard(outsideGroup, {
-      cardClass: "outside-single-card",
-      laneGridClass: "layout-outside-single",
-      showTitle: true
-    }));
-    return;
-  }
-
-  if (outsideGroup) {
-    const sideLanes = ["outside-4", "outside-5", "outside-3"]
-      .map(id => outsideGroup.lanes.find(lane => lane.id === id))
-      .filter(Boolean);
-    const bottomLanes = ["outside-2", "outside-1"]
-      .map(id => outsideGroup.lanes.find(lane => lane.id === id))
-      .filter(Boolean);
-
-    if (sideLanes.length) {
-      root.appendChild(buildGroupCard(
-        {
-          id: "outside-side",
-          kind: "outside",
-          title: "",
-          lanes: sideLanes
-        },
-        {
-          cardClass: "outside-side-card",
-          laneGridClass: "layout-outside-side",
-          showTitle: false
-        }
-      ));
-    }
-
-    if (bottomLanes.length) {
-      root.appendChild(buildGroupCard(
-        {
-          id: "outside-bottom",
-          kind: "outside",
-          title: "",
-          lanes: bottomLanes
-        },
-        {
-          cardClass: "outside-bottom-card is-wide",
-          laneGridClass: "layout-outside-bottom",
-          showTitle: false
-        }
-      ));
-    }
-  }
-
-  if (westGroup) {
-    root.appendChild(buildGroupCard(westGroup, {
-      showQuickPlace: true,
-      quickPlaceBlocks,
-      quickPlaceAboveTitle: true
-    }));
-  }
-  if (eastGroup) {
-    root.appendChild(buildGroupCard(eastGroup));
-  }
-
-  if (dragPreview) renderDragPreview();
 }
 
 function parseViewFromLocation() {
@@ -910,6 +879,33 @@ function renderOverviewMode(root) {
   root.appendChild(wrap);
 }
 
+function renderZoneMode(root) {
+  const group = getVisibleGroups()[0] || null;
+  if (!group) {
+    renderOverviewMode(root);
+    return;
+  }
+
+  const workspace = document.createElement("section");
+  workspace.className = "zone-workspace";
+
+  workspace.appendChild(buildZoneHeroCard(group));
+
+  const content = document.createElement("section");
+  content.className = "zone-content";
+
+  const boardPanel = document.createElement("section");
+  boardPanel.className = "zone-board-panel";
+  appendZoneBoard(boardPanel, group);
+  content.appendChild(boardPanel);
+
+  const poolPanel = buildZonePoolPanel(group);
+  if (poolPanel) content.appendChild(poolPanel);
+
+  workspace.appendChild(content);
+  root.appendChild(workspace);
+}
+
 function renderLaneMode(root) {
   const lane = findLane(currentLaneId);
   if (!lane) {
@@ -962,6 +958,160 @@ function buildOverviewCard(group) {
   return card;
 }
 
+function buildZoneHeroCard(group) {
+  const card = document.createElement("section");
+  card.className = "zone-hero-card";
+
+  const lanes = group.lanes || [];
+  const laneIds = new Set(lanes.map(lane => lane.id));
+  const assignedBlocks = blocks.filter(block => laneIds.has(block.laneId));
+  const usedTrays = assignedBlocks.reduce((sum, block) => sum + block.trays, 0);
+  const capacity = lanes.reduce((sum, lane) => sum + toNumber(lane.capacity), 0);
+  const staleCount = assignedBlocks.filter(block => {
+    const lot = lotsBySeedRef.get(block.originSeedRef);
+    return !!lot && lot.availableTrays <= 0;
+  }).length;
+  const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
+  const unassignedTrays = unassignedBlocks.reduce((sum, block) => sum + block.trays, 0);
+
+  const top = document.createElement("div");
+  top.className = "zone-hero-top";
+
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "zone-hero-title-wrap";
+  titleWrap.innerHTML = `
+    <div class="zone-hero-label">ZONE WORKSPACE</div>
+    <h2 class="zone-hero-title">${escapeHtml(group.title)}</h2>
+    <div class="zone-hero-subtitle">レーンをタップすると集中編集へ。ここでは棟全体の移動と保存を行います。</div>
+  `;
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "secondary-btn zone-back-btn";
+  backBtn.textContent = "全体俯瞰へ戻る";
+  backBtn.addEventListener("click", () => {
+    navigateToRoute({ mode: "overview", zone: "", laneId: "" }, { syncUrl: true });
+  });
+
+  top.appendChild(titleWrap);
+  top.appendChild(backBtn);
+  card.appendChild(top);
+
+  const metrics = document.createElement("div");
+  metrics.className = "zone-metrics";
+  metrics.appendChild(buildZoneMetricCard("使用枚数", `${formatNum(usedTrays)} / ${formatNum(capacity)}枚`));
+  metrics.appendChild(buildZoneMetricCard("使用率", `${formatNum(capacity > 0 ? Math.round((usedTrays / capacity) * 100) : 0)}%`));
+  metrics.appendChild(buildZoneMetricCard("未配置ロット", `${formatNum(unassignedBlocks.length)}件 / ${formatNum(unassignedTrays)}枚`));
+  metrics.appendChild(buildZoneMetricCard("注意", staleCount ? `在庫0配置 ${formatNum(staleCount)}件` : "問題なし"));
+  card.appendChild(metrics);
+
+  const shortcuts = document.createElement("div");
+  shortcuts.className = "zone-lane-shortcuts";
+  lanes.forEach(lane => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "secondary-btn zone-lane-shortcut-btn";
+    btn.textContent = `${lane.label}へ`;
+    btn.addEventListener("click", () => {
+      navigateToRoute({ mode: "lane", zone: getZoneByLaneId(lane.id), laneId: lane.id }, { syncUrl: true });
+    });
+    shortcuts.appendChild(btn);
+  });
+  card.appendChild(shortcuts);
+
+  return card;
+}
+
+function buildZoneMetricCard(label, value) {
+  const card = document.createElement("section");
+  card.className = "zone-metric-card";
+  card.innerHTML = `
+    <div class="zone-metric-label">${escapeHtml(label)}</div>
+    <div class="zone-metric-value">${escapeHtml(value)}</div>
+  `;
+  return card;
+}
+
+function appendZoneBoard(container, group) {
+  if (group.id === "outside-area") {
+    const sideLanes = ["outside-4", "outside-5", "outside-3"]
+      .map(id => group.lanes.find(lane => lane.id === id))
+      .filter(Boolean);
+    const bottomLanes = ["outside-2", "outside-1"]
+      .map(id => group.lanes.find(lane => lane.id === id))
+      .filter(Boolean);
+
+    const splitWrap = document.createElement("div");
+    splitWrap.className = "zone-board-split";
+
+    if (sideLanes.length) {
+      splitWrap.appendChild(buildGroupCard({
+        id: "outside-side",
+        kind: "outside",
+        title: "",
+        lanes: sideLanes
+      }, {
+        cardClass: "outside-side-card zone-main-card",
+        laneGridClass: "layout-outside-side",
+        showTitle: false
+      }));
+    }
+
+    if (bottomLanes.length) {
+      splitWrap.appendChild(buildGroupCard({
+        id: "outside-bottom",
+        kind: "outside",
+        title: "",
+        lanes: bottomLanes
+      }, {
+        cardClass: "outside-bottom-card zone-main-card",
+        laneGridClass: "layout-outside-bottom",
+        showTitle: false
+      }));
+    }
+
+    container.appendChild(splitWrap);
+    return;
+  }
+
+  container.appendChild(buildGroupCard(group, {
+    cardClass: "zone-main-card",
+    showTitle: false
+  }));
+}
+
+function buildZonePoolPanel(group) {
+  const panel = document.createElement("aside");
+  panel.className = "zone-pool-panel";
+
+  const quickPlaceBlocks = getQuickPlaceBlocks(10);
+  const groupLabel = VIEW_CONFIG[getZoneByGroupId(group.id)]?.label || group.title;
+
+  panel.innerHTML = `
+    <div class="zone-pool-head">
+      <h3 class="zone-pool-title">未配置ロット</h3>
+      <div class="zone-pool-note">${escapeHtml(groupLabel)}へ入れる候補。ドラッグして配置します。</div>
+    </div>
+  `;
+
+  const list = document.createElement("div");
+  list.className = "zone-pool-list";
+
+  if (!quickPlaceBlocks.length) {
+    const empty = document.createElement("div");
+    empty.className = "zone-pool-empty";
+    empty.textContent = "未配置ロットはありません。";
+    panel.appendChild(empty);
+    return panel;
+  }
+
+  quickPlaceBlocks.forEach(block => {
+    list.appendChild(buildBlockCard(block, null, 0, true));
+  });
+  panel.appendChild(list);
+  return panel;
+}
+
 function syncFrameState() {
   document.body.setAttribute("data-house-mode", currentMode);
   document.body.setAttribute("data-house-view", currentView);
@@ -1008,6 +1158,13 @@ function getZoneByLaneId(laneId) {
   if (group.id === "east-house") return "east";
   if (group.id === "west-house") return "west";
   if (group.id === "outside-area") return "outside";
+  return "";
+}
+
+function getZoneByGroupId(groupId) {
+  if (groupId === "east-house") return "east";
+  if (groupId === "west-house") return "west";
+  if (groupId === "outside-area") return "outside";
   return "";
 }
 
@@ -1209,21 +1366,10 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
     card.style.height = `${computeBlockHeight(block.trays, lane, laneBodyHeight, block.spanCols)}px`;
   }
 
-  card.draggable = true;
-  card.addEventListener("dragstart", e => {
-    const canGroupMove = selectedBlockIds.has(block.blockId) && selectedBlockIds.size > 1;
-    dragBlockIds = canGroupMove ? [...selectedBlockIds] : [block.blockId];
-    dragBlockId = block.blockId;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", block.blockId);
-    }
-  });
-
-  card.addEventListener("dragend", () => {
-    dragBlockIds = [];
-    dragBlockId = "";
-    clearDragPreview();
+  card.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    if (event.target instanceof Element && event.target.closest(".block-resize-handle")) return;
+    startPointerDrag(event, block.blockId, card);
   });
 
   card.innerHTML = `
@@ -1318,6 +1464,301 @@ function onResizeMove(event) {
 function stopResizeBlock() {
   window.removeEventListener("pointermove", onResizeMove);
   resizeState.active = false;
+}
+
+function startPointerDrag(event, blockId, card) {
+  if (resizeState.active || pointerDragState.active) return;
+
+  const canGroupMove = selectedBlockIds.has(blockId) && selectedBlockIds.size > 1;
+  const pointerType = String(event.pointerType || "mouse").toLowerCase();
+  pointerDragState.active = true;
+  pointerDragState.started = false;
+  pointerDragState.pointerId = event.pointerId;
+  pointerDragState.pointerType = pointerType;
+  pointerDragState.blockId = blockId;
+  pointerDragState.blockIds = canGroupMove ? [...selectedBlockIds] : [blockId];
+  pointerDragState.startX = event.clientX;
+  pointerDragState.startY = event.clientY;
+  pointerDragState.latestX = event.clientX;
+  pointerDragState.latestY = event.clientY;
+  pointerDragState.holdReady = pointerType === "mouse";
+  pointerDragState.originCard = card;
+  pointerDragState.hoverEl = null;
+  pointerDragState.hoverLaneId = "";
+  pointerDragState.hoverBeforeBlockId = "";
+
+  if (!pointerDragState.holdReady) {
+    card.classList.add("is-hold-pending");
+    pointerDragState.holdTimer = window.setTimeout(() => {
+      if (!pointerDragState.active || pointerDragState.pointerId !== event.pointerId) return;
+      pointerDragState.holdReady = true;
+      card.classList.remove("is-hold-pending");
+      beginPointerDragVisual();
+      updatePointerDragTarget(pointerDragState.latestX, pointerDragState.latestY);
+    }, POINTER_HOLD_DELAY_MS);
+  }
+
+  card.setPointerCapture?.(event.pointerId);
+  window.addEventListener("pointermove", onPointerDragMove);
+  window.addEventListener("pointerup", stopPointerDrag);
+  window.addEventListener("pointercancel", cancelPointerDrag);
+}
+
+function onPointerDragMove(event) {
+  if (!pointerDragState.active || event.pointerId !== pointerDragState.pointerId) return;
+
+  pointerDragState.latestX = event.clientX;
+  pointerDragState.latestY = event.clientY;
+
+  if (!pointerDragState.started) {
+    const dx = event.clientX - pointerDragState.startX;
+    const dy = event.clientY - pointerDragState.startY;
+    const distance = Math.hypot(dx, dy);
+    if (!pointerDragState.holdReady) {
+      if (distance > POINTER_HOLD_CANCEL_PX) {
+        cleanupPointerDrag();
+      }
+      return;
+    }
+    if (distance < POINTER_DRAG_THRESHOLD_PX) return;
+    beginPointerDragVisual();
+  }
+
+  event.preventDefault();
+  updatePointerDragGhost(event.clientX, event.clientY);
+  updatePointerDragTarget(event.clientX, event.clientY);
+  ensurePointerAutoScroll();
+}
+
+function stopPointerDrag(event) {
+  if (!pointerDragState.active) return;
+  if (event.pointerId !== pointerDragState.pointerId) return;
+
+  if (pointerDragState.started) {
+    event.preventDefault();
+    commitPointerDrag(event.clientX, event.clientY);
+    suppressClickUntil = Date.now() + 250;
+  }
+
+  cleanupPointerDrag();
+}
+
+function cancelPointerDrag() {
+  if (!pointerDragState.active) return;
+  cleanupPointerDrag();
+}
+
+function beginPointerDragVisual() {
+  if (pointerDragState.started) return;
+
+  pointerDragState.started = true;
+  clearPointerHoldTimer();
+  dragBlockIds = [...pointerDragState.blockIds];
+  dragBlockId = pointerDragState.blockId;
+  pointerDragState.originCard?.classList.remove("is-hold-pending");
+  pointerDragState.originCard?.classList.add("is-pointer-dragging");
+  document.body.classList.add("is-pointer-dragging-block");
+  renderPointerDragGhost();
+}
+
+function renderPointerDragGhost() {
+  removePointerDragGhost();
+
+  const card = pointerDragState.originCard;
+  if (!(card instanceof HTMLElement)) return;
+
+  const rect = card.getBoundingClientRect();
+  const ghost = document.createElement("article");
+  ghost.className = `${card.className} pointer-drag-ghost`;
+  ghost.innerHTML = card.innerHTML;
+  ghost.querySelectorAll(".block-resize-handle").forEach(el => el.remove());
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.height = `${rect.height}px`;
+  document.body.appendChild(ghost);
+  pointerDragState.ghostEl = ghost;
+  updatePointerDragGhost(pointerDragState.latestX, pointerDragState.latestY);
+}
+
+function updatePointerDragGhost(clientX, clientY) {
+  const ghost = pointerDragState.ghostEl;
+  if (!(ghost instanceof HTMLElement)) return;
+
+  const offsetX = ghost.offsetWidth / 2;
+  const offsetY = Math.min(ghost.offsetHeight / 2, 56);
+  ghost.style.left = `${Math.round(clientX - offsetX)}px`;
+  ghost.style.top = `${Math.round(clientY - offsetY)}px`;
+}
+
+function updatePointerDragTarget(clientX, clientY) {
+  const target = getPointerDropTarget(clientX, clientY);
+  setPointerHoverElement(target?.hoverEl || null);
+
+  if (!target) {
+    pointerDragState.hoverLaneId = "";
+    pointerDragState.hoverBeforeBlockId = "";
+    clearDragPreview();
+    return;
+  }
+
+  pointerDragState.hoverLaneId = target.lane.id;
+  pointerDragState.hoverBeforeBlockId = target.beforeBlockId || "";
+  updateDragPreview(target.lane, target.laneBodyHeight, {
+    clientX,
+    clientY
+  });
+}
+
+function ensurePointerAutoScroll() {
+  if (!pointerDragState.started || pointerDragState.autoScrollRaf) return;
+
+  const step = () => {
+    pointerDragState.autoScrollRaf = 0;
+    if (!pointerDragState.active || !pointerDragState.started) return;
+
+    const scrollingEl = document.scrollingElement || document.documentElement;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const maxScrollTop = Math.max(0, scrollingEl.scrollHeight - viewportHeight);
+    if (viewportHeight <= 0 || maxScrollTop <= 0) return;
+
+    const deltaY = computePointerAutoScrollDelta(pointerDragState.latestY, viewportHeight);
+    if (!deltaY) return;
+
+    const prevTop = scrollingEl.scrollTop;
+    scrollingEl.scrollTop = clamp(prevTop + deltaY, 0, maxScrollTop);
+    const changed = scrollingEl.scrollTop !== prevTop;
+    if (changed) {
+      updatePointerDragTarget(pointerDragState.latestX, pointerDragState.latestY);
+      updatePointerDragGhost(pointerDragState.latestX, pointerDragState.latestY);
+    }
+
+    if (changed || computePointerAutoScrollDelta(pointerDragState.latestY, viewportHeight)) {
+      pointerDragState.autoScrollRaf = window.requestAnimationFrame(step);
+    }
+  };
+
+  pointerDragState.autoScrollRaf = window.requestAnimationFrame(step);
+}
+
+function computePointerAutoScrollDelta(clientY, viewportHeight) {
+  if (clientY < POINTER_AUTO_SCROLL_EDGE_PX) {
+    const ratio = 1 - clamp(clientY / POINTER_AUTO_SCROLL_EDGE_PX, 0, 1);
+    return -Math.max(4, Math.round(POINTER_AUTO_SCROLL_MAX_STEP_PX * ratio));
+  }
+
+  const bottomStart = viewportHeight - POINTER_AUTO_SCROLL_EDGE_PX;
+  if (clientY > bottomStart) {
+    const ratio = clamp((clientY - bottomStart) / POINTER_AUTO_SCROLL_EDGE_PX, 0, 1);
+    return Math.max(4, Math.round(POINTER_AUTO_SCROLL_MAX_STEP_PX * ratio));
+  }
+
+  return 0;
+}
+
+function getPointerDropTarget(clientX, clientY) {
+  const el = document.elementFromPoint(clientX, clientY);
+  if (!(el instanceof Element)) return null;
+
+  const laneBody = el.closest(".lane-body[data-lane-id]");
+  if (!(laneBody instanceof HTMLElement)) return null;
+
+  const laneId = String(laneBody.dataset.laneId || "").trim();
+  const lane = findLane(laneId);
+  if (!lane) return null;
+
+  const blockItem = el.closest(".lane-float-item[data-block-id]");
+  const beforeBlockId = String(blockItem?.getAttribute("data-block-id") || "").trim();
+
+  return {
+    lane,
+    laneBodyHeight: laneBody.clientHeight,
+    beforeBlockId,
+    hoverEl: blockItem instanceof HTMLElement ? blockItem : laneBody
+  };
+}
+
+function setPointerHoverElement(nextEl) {
+  if (pointerDragState.hoverEl === nextEl) return;
+  if (pointerDragState.hoverEl instanceof HTMLElement) {
+    pointerDragState.hoverEl.classList.remove("drag-over");
+  }
+  pointerDragState.hoverEl = nextEl instanceof HTMLElement ? nextEl : null;
+  if (pointerDragState.hoverEl) {
+    pointerDragState.hoverEl.classList.add("drag-over");
+  }
+}
+
+function commitPointerDrag(clientX, clientY) {
+  const target = getPointerDropTarget(clientX, clientY);
+  if (!target) return;
+
+  const eventLike = { clientX, clientY };
+  const ids = pointerDragState.blockIds.length
+    ? [...pointerDragState.blockIds]
+    : (pointerDragState.blockId ? [pointerDragState.blockId] : []);
+  if (!ids.length) return;
+
+  const moved = ids.length > 1
+    ? placeBlockGroup(ids, target.lane, target.laneBodyHeight, eventLike, target.beforeBlockId, pointerDragState.blockId)
+    : placeBlock(ids[0], target.lane, target.laneBodyHeight, eventLike, target.beforeBlockId);
+
+  if (moved) render();
+}
+
+function cleanupPointerDrag() {
+  window.removeEventListener("pointermove", onPointerDragMove);
+  window.removeEventListener("pointerup", stopPointerDrag);
+  window.removeEventListener("pointercancel", cancelPointerDrag);
+
+  clearPointerHoldTimer();
+  stopPointerAutoScroll();
+
+  pointerDragState.originCard?.releasePointerCapture?.(pointerDragState.pointerId);
+  pointerDragState.originCard?.classList.remove("is-hold-pending");
+  pointerDragState.originCard?.classList.remove("is-pointer-dragging");
+  document.body.classList.remove("is-pointer-dragging-block");
+
+  removePointerDragGhost();
+  setPointerHoverElement(null);
+  clearDragPreview();
+
+  dragBlockIds = [];
+  dragBlockId = "";
+
+  pointerDragState.active = false;
+  pointerDragState.started = false;
+  pointerDragState.pointerId = null;
+  pointerDragState.pointerType = "mouse";
+  pointerDragState.blockId = "";
+  pointerDragState.blockIds = [];
+  pointerDragState.startX = 0;
+  pointerDragState.startY = 0;
+  pointerDragState.latestX = 0;
+  pointerDragState.latestY = 0;
+  pointerDragState.holdReady = false;
+  pointerDragState.holdTimer = 0;
+  pointerDragState.autoScrollRaf = 0;
+  pointerDragState.originCard = null;
+  pointerDragState.hoverEl = null;
+  pointerDragState.hoverLaneId = "";
+  pointerDragState.hoverBeforeBlockId = "";
+}
+
+function clearPointerHoldTimer() {
+  if (!pointerDragState.holdTimer) return;
+  window.clearTimeout(pointerDragState.holdTimer);
+  pointerDragState.holdTimer = 0;
+}
+
+function stopPointerAutoScroll() {
+  if (!pointerDragState.autoScrollRaf) return;
+  window.cancelAnimationFrame(pointerDragState.autoScrollRaf);
+  pointerDragState.autoScrollRaf = 0;
+}
+
+function removePointerDragGhost() {
+  const ghost = pointerDragState.ghostEl;
+  if (ghost instanceof HTMLElement) ghost.remove();
+  pointerDragState.ghostEl = null;
 }
 
 function bindBlockDrop(el, lane, laneBodyHeight, beforeBlockId) {
