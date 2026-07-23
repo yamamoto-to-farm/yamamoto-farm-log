@@ -59,6 +59,7 @@ let dragBlockId = "";
 let dragBlockIds = [];
 let modalBlockId = "";
 let modalMoveZone = "";
+let modalMoveExpanded = false;
 let multiSelectMode = false;
 const selectedBlockIds = new Set();
 let currentView = "all";
@@ -216,7 +217,18 @@ function bindControls() {
         moveSelectedBlocksToPool();
         return;
       }
+      modalMoveExpanded = true;
       modalMoveZone = normalizeZoneId(category);
+      renderBlockModal();
+      return;
+    }
+
+    const moveToggleBtn = target.closest("[data-move-toggle]");
+    if (moveToggleBtn instanceof HTMLElement) {
+      modalMoveExpanded = !modalMoveExpanded;
+      if (!modalMoveExpanded) {
+        modalMoveZone = "";
+      }
       renderBlockModal();
       return;
     }
@@ -2056,6 +2068,7 @@ function moveSelectedBlocksToPool() {
   if (!moved) return false;
 
   modalMoveZone = "";
+  modalMoveExpanded = false;
   render();
   renderBlockModal();
   return true;
@@ -2119,6 +2132,7 @@ function moveSelectedBlocksToZone(zone, laneId = "") {
 
   blocks = normalizeBlockOrders(blocks);
   modalMoveZone = normalizedZone;
+  modalMoveExpanded = false;
   if (currentZone !== normalizedZone) {
     navigateToRoute({ mode: "zone", zone: normalizedZone, laneId: "" }, { syncUrl: true });
     return true;
@@ -2532,7 +2546,8 @@ function openBlockModal(blockId = "") {
   }
 
   const activeBlock = blocks.find(v => v.blockId === (blockId || modalBlockId)) || null;
-  modalMoveZone = activeBlock?.laneId ? getZoneByLaneId(activeBlock.laneId) : "";
+  modalMoveZone = "";
+  modalMoveExpanded = false;
 
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
@@ -2546,6 +2561,7 @@ function closeBlockModal() {
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
   modalMoveZone = "";
+  modalMoveExpanded = false;
 }
 
 function renderBlockModal() {
@@ -2587,10 +2603,6 @@ function renderBlockModal() {
   const modeText = multiSelectMode ? "ON" : "OFF";
   const currentBlockZone = lane ? getZoneByLaneId(lane.id) : "";
 
-  if (!modalMoveZone && currentBlockZone) {
-    modalMoveZone = currentBlockZone;
-  }
-
   selectionEl.innerHTML = mergeReady
     ? `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 同一ロットID・同一レーンなので結合できます。`
     : `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 別ロットIDでも同時移動は可能です。結合は同一ロットIDかつ同一レーンのみです。`;
@@ -2602,7 +2614,7 @@ function renderBlockModal() {
 
 function buildMovePickerMarkup(currentBlockZone, canReturnPool) {
   const zones = ["east", "west", "outside"];
-  const selectedZone = normalizeZoneId(modalMoveZone || currentBlockZone);
+  const selectedZone = normalizeZoneId(modalMoveZone);
   const laneButtons = selectedZone
     ? getLanesForZone(selectedZone).map(lane => `
       <button class="secondary-btn move-lane-btn" type="button" data-move-zone="${selectedZone}" data-move-lane-id="${escapeHtml(lane.id)}">${escapeHtml(lane.label)}</button>
@@ -2611,19 +2623,24 @@ function buildMovePickerMarkup(currentBlockZone, canReturnPool) {
 
   return `
     <section class="block-modal__move-section">
-      <div class="block-modal__move-title">移動先を選択</div>
-      <div class="block-modal__move-categories">
-        <button class="secondary-btn" type="button" data-move-category="pool" ${canReturnPool ? "" : "disabled"}>未配置へ戻す</button>
-        ${zones.map(zone => `
-          <button class="secondary-btn ${selectedZone === zone ? "is-active" : ""}" type="button" data-move-category="${zone}" ${currentBlockZone === zone ? "disabled" : ""}>${escapeHtml(VIEW_CONFIG[zone]?.label || zone)}</button>
-        `).join("")}
-      </div>
-      ${selectedZone ? `
-        <div class="block-modal__move-step">${escapeHtml(VIEW_CONFIG[selectedZone]?.label || selectedZone)} へ移動</div>
-        <div class="block-modal__move-actions">
-          <button class="secondary-btn" type="button" data-move-auto-zone="${selectedZone}">自動配置</button>
-          ${laneButtons}
+      <button class="block-modal__move-toggle" type="button" data-move-toggle="true" aria-expanded="${modalMoveExpanded ? "true" : "false"}">
+        <span class="block-modal__move-title">移動先を選択</span>
+        <span class="block-modal__move-toggle-icon">${modalMoveExpanded ? "−" : "+"}</span>
+      </button>
+      ${modalMoveExpanded ? `
+        <div class="block-modal__move-categories">
+          <button class="secondary-btn" type="button" data-move-category="pool" ${canReturnPool ? "" : "disabled"}>未配置へ戻す</button>
+          ${zones.map(zone => `
+            <button class="secondary-btn ${selectedZone === zone ? "is-active" : ""}" type="button" data-move-category="${zone}" ${currentBlockZone === zone ? "disabled" : ""}>${escapeHtml(VIEW_CONFIG[zone]?.label || zone)}</button>
+          `).join("")}
         </div>
+        ${selectedZone ? `
+          <div class="block-modal__move-step">${escapeHtml(VIEW_CONFIG[selectedZone]?.label || selectedZone)} へ移動</div>
+          <div class="block-modal__move-actions">
+            <button class="secondary-btn" type="button" data-move-auto-zone="${selectedZone}">自動配置</button>
+            ${laneButtons}
+          </div>
+        ` : ""}
       ` : ""}
     </section>
   `;

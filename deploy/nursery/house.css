@@ -779,10 +779,28 @@ body.is-pointer-dragging-block * {
   background: #fcfdff;
 }
 
+.block-modal__move-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
 .block-modal__move-title {
   font-size: 14px;
   font-weight: 800;
   color: #0f172a;
+}
+
+.block-modal__move-toggle-icon {
+  font-size: 20px;
+  line-height: 1;
+  color: #64748b;
 }
 
 .block-modal__move-step {
