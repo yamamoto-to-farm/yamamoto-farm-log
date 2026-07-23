@@ -107,6 +107,14 @@ const SOURCES = [
     csv: "/logs/discard-planting/all.csv",
     dateFields: ["discardDate", "date", "workDate"],
     className: "tone-discard"
+  },
+  {
+    key: "discard-seed",
+    label: "播種破棄",
+    kind: "csv",
+    csv: "/logs/discard-seed/all.csv",
+    dateFields: ["discardDate", "date", "workDate"],
+    className: "tone-discard"
   }
 ]
 

@@ -120,6 +120,29 @@ function setupVarietyFilterData(varietyList) {
   });
 }
 
+function calcSeedDiscardQuantity(seedRef, discardSeedRows = [], legacyNurseryRows = []) {
+  const ref = String(seedRef || "").trim();
+  if (!ref) return 0;
+
+  const directDiscard = (Array.isArray(discardSeedRows) ? discardSeedRows : [])
+    .filter(row => String(row?.seedRef || "").trim() === ref)
+    .reduce((sum, row) => {
+      let qty = Number(row.discardQuantity || 0);
+      if (!Number.isFinite(qty) || qty <= 0) {
+        const trays = Number(row.discardTrays || 0);
+        const trayType = Number(row.trayType || 0);
+        qty = Number.isFinite(trays) && Number.isFinite(trayType) ? trays * trayType : 0;
+      }
+      return sum + (Number.isFinite(qty) ? qty : 0);
+    }, 0);
+
+  const legacyDiscard = (Array.isArray(legacyNurseryRows) ? legacyNurseryRows : [])
+    .filter(row => String(row?.seedRef || "").trim() === ref)
+    .reduce((sum, row) => sum + Number(row.discard || 0), 0);
+
+  return directDiscard + legacyDiscard;
+}
+
 function bindVarietyModalPicker() {
   const btn = document.getElementById("openVarietyModalBtn");
   const clearBtn = document.getElementById("clearVarietyModalBtn");
@@ -205,6 +228,7 @@ async function updateSeedRefSelector() {
 
   const plantingRows = await loadCSV("logs/planting/all.csv").catch(() => []);
   const nurseryRows = await loadCSV("logs/nursery/all.csv").catch(() => []);
+  const discardSeedRows = await loadCSV("logs/discard-seed/all.csv").catch(() => []);
 
   const list = seedRows.filter(r => r.varietyName === variety);
 
@@ -216,9 +240,7 @@ async function updateSeedRefSelector() {
       .filter(p => (p.seedRef || "").split("/").includes(seedRef))
       .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
 
-    const discarded = nurseryRows
-      .filter(n => n.seedRef === seedRef)
-      .reduce((sum, n) => sum + Number(n.discard || 0), 0);
+    const discarded = calcSeedDiscardQuantity(seedRef, discardSeedRows, nurseryRows);
 
     const remaining = seedCount - planted - discarded;
 
@@ -452,10 +474,16 @@ async function savePlantingInner() {
   }
 
   let nurseryRows = [];
+  let discardSeedRows = [];
   try {
     nurseryRows = await loadCSV("logs/nursery/all.csv");
   } catch (e) {
     nurseryRows = [];
+  }
+  try {
+    discardSeedRows = await loadCSV("logs/discard-seed/all.csv");
+  } catch (e) {
+    discardSeedRows = [];
   }
 
   // ===============================
@@ -473,9 +501,7 @@ async function savePlantingInner() {
       .filter(p => (p.seedRef || "").split("/").includes(ref))
       .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
 
-    const discarded = nurseryRows
-      .filter(n => n.seedRef === ref)
-      .reduce((sum, n) => sum + Number(n.discard || 0), 0);
+    const discarded = calcSeedDiscardQuantity(ref, discardSeedRows, nurseryRows);
 
     const available = seedCount - planted - discarded;
 

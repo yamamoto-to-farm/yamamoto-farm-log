@@ -304,18 +304,22 @@ function bindControls() {
 }
 
 async function reloadAll() {
-  const [seedRaw, plantingRaw, discardRaw, layout] = await Promise.all([
+  const [seedRaw, plantingRaw, discardPlantingRaw, discardSeedRaw, legacyNurseryRaw, layout] = await Promise.all([
     loadCSV("/logs/seed/all.csv").catch(() => []),
     loadCSV("/logs/planting/all.csv").catch(() => []),
     loadCSV("/logs/discard-planting/all.csv").catch(() => []),
+    loadCSV("/logs/discard-seed/all.csv").catch(() => []),
+    loadCSV("/logs/nursery/all.csv").catch(() => []),
     loadLayout()
   ]);
 
   const seedRows = normalizeKeys(seedRaw || []);
   const plantingRows = normalizeKeys(plantingRaw || []);
-  const discardRows = normalizeKeys(discardRaw || []);
+  const discardPlantingRows = normalizeKeys(discardPlantingRaw || []);
+  const discardSeedRows = normalizeKeys(discardSeedRaw || []);
+  const legacyNurseryRows = normalizeKeys(legacyNurseryRaw || []);
 
-  lots = buildLots(seedRows, plantingRows, discardRows);
+  lots = buildLots(seedRows, plantingRows, discardPlantingRows, discardSeedRows, legacyNurseryRows);
   lotsBySeedRef = new Map(lots.map(lot => [lot.seedRef, lot]));
 
   blocks = normalizeLayoutBlocks(layout, lotsBySeedRef);
@@ -358,9 +362,10 @@ async function saveLayout() {
   }
 }
 
-function buildLots(seedRows, plantingRows, discardRows) {
+function buildLots(seedRows, plantingRows, discardPlantingRows, discardSeedRows, legacyNurseryRows = []) {
   const plantedMap = buildPlantedTrayMap(plantingRows);
-  const discardedMap = buildDiscardedTrayMap(plantingRows, discardRows);
+  const discardedPlantingMap = buildDiscardedTrayMap(plantingRows, discardPlantingRows);
+  const discardedSeedMap = buildSeedDiscardTrayMap(discardSeedRows, legacyNurseryRows);
 
   return seedRows
     .map(row => {
@@ -369,7 +374,7 @@ function buildLots(seedRows, plantingRows, discardRows) {
 
       const totalTrays = toNumber(row.trayCount);
       const plantedTrays = toNumber(plantedMap.get(seedRef) || 0);
-      const discardedTrays = toNumber(discardedMap.get(seedRef) || 0);
+      const discardedTrays = toNumber(discardedPlantingMap.get(seedRef) || 0) + toNumber(discardedSeedMap.get(seedRef) || 0);
       const availableTrays = Math.max(0, totalTrays - plantedTrays - discardedTrays);
 
       return {
@@ -440,6 +445,36 @@ function buildDiscardedTrayMap(plantingRows, discardRows) {
     refs.forEach(ref => {
       map.set(ref, toNumber(map.get(ref) || 0) + perRef);
     });
+  });
+
+  return map;
+}
+
+function buildSeedDiscardTrayMap(discardSeedRows, legacyNurseryRows = []) {
+  const map = new Map();
+
+  (Array.isArray(discardSeedRows) ? discardSeedRows : []).forEach(row => {
+    const ref = String(row.seedRef || "").trim();
+    if (!ref) return;
+
+    let trays = toNumber(row.discardTrays);
+    if (trays <= 0) {
+      const qty = toNumber(row.discardQuantity || row.discard || 0);
+      const trayType = toNumber(row.trayType) || 0;
+      trays = trayType > 0 ? qty / trayType : 0;
+    }
+    if (trays <= 0) return;
+
+    map.set(ref, toNumber(map.get(ref) || 0) + trays);
+  });
+
+  (Array.isArray(legacyNurseryRows) ? legacyNurseryRows : []).forEach(row => {
+    const ref = String(row.seedRef || "").trim();
+    if (!ref) return;
+
+    const trays = toNumber(row.discard);
+    if (trays <= 0) return;
+    map.set(ref, toNumber(map.get(ref) || 0) + trays);
   });
 
   return map;

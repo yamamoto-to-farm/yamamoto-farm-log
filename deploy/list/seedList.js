@@ -20,6 +20,7 @@ import { showInfoModal } from "/common/showInfoModal.js";
 let seedRows = [];
 let plantingRows = [];
 let nurseryRows = [];
+let discardSeedRows = [];
 let varietyData = [];
 let fieldData = [];
 let canDiscard = false;
@@ -52,6 +53,7 @@ async function initSeedListPage() {
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   nurseryRows = normalizeKeys(await loadCSV("/logs/nursery/all.csv").catch(() => []));
+  discardSeedRows = normalizeKeys(await loadCSV("/logs/discard-seed/all.csv").catch(() => []));
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
 
@@ -234,6 +236,21 @@ function buildSeedUsageMap() {
     if (!ref) return;
 
     const discard = Number(row.discard || 0);
+    if (!Number.isFinite(discard) || discard === 0) return;
+
+    discardMap[ref] = (discardMap[ref] || 0) + discard;
+  });
+
+  discardSeedRows.forEach(row => {
+    const ref = normalizeRef(row.seedRef);
+    if (!ref) return;
+
+    let discard = Number(row.discardQuantity || 0);
+    if (!Number.isFinite(discard) || discard <= 0) {
+      const trays = Number(row.discardTrays || 0);
+      const trayType = Number(row.trayType || 0);
+      discard = Number.isFinite(trays) && Number.isFinite(trayType) ? trays * trayType : 0;
+    }
     if (!Number.isFinite(discard) || discard === 0) return;
 
     discardMap[ref] = (discardMap[ref] || 0) + discard;
