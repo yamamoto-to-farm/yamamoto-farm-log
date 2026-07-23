@@ -993,16 +993,91 @@ function renderLaneMode(root) {
   }
 
   const group = findGroupByLaneId(lane.id);
-  const title = group ? `${group.title} / ${lane.label}` : lane.label;
-  root.appendChild(buildGroupCard({
+  const workspace = document.createElement("section");
+  workspace.className = "zone-workspace lane-workspace";
+
+  workspace.appendChild(buildLaneHeroCard(lane, group));
+
+  const content = document.createElement("section");
+  content.className = "zone-content lane-content";
+
+  const boardPanel = document.createElement("section");
+  boardPanel.className = "zone-board-panel lane-board-panel";
+  boardPanel.appendChild(buildGroupCard({
     id: `lane-${lane.id}`,
     kind: group?.kind || "house",
-    title,
+    title: group ? `${group.title} / ${lane.label}` : lane.label,
     lanes: [lane]
   }, {
-    cardClass: "lane-single-card",
-    showTitle: true
+    cardClass: "lane-single-card zone-main-card",
+    showTitle: false
   }));
+  content.appendChild(boardPanel);
+
+  const poolPanel = buildLanePoolPanel(lane, group);
+  if (poolPanel) content.appendChild(poolPanel);
+
+  workspace.appendChild(content);
+  root.appendChild(workspace);
+}
+
+function buildLaneHeroCard(lane, group) {
+  const card = document.createElement("section");
+  card.className = "zone-hero-card lane-hero-card";
+
+  const usedTrays = getLaneUsedTrays(lane.id);
+  const capacity = toNumber(lane.capacity);
+  const freeTrays = Math.max(0, roundTray(capacity - usedTrays));
+  const laneBlocks = getLaneBlocks(lane.id);
+  const staleCount = laneBlocks.filter(block => {
+    const lot = lotsBySeedRef.get(block.originSeedRef);
+    return !!lot && lot.availableTrays <= 0;
+  }).length;
+  const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
+  const unassignedTrays = unassignedBlocks.reduce((sum, block) => sum + block.trays, 0);
+
+  const top = document.createElement("div");
+  top.className = "zone-hero-top";
+
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "zone-hero-title-wrap";
+  titleWrap.innerHTML = `
+    <div class="zone-hero-label">LANE WORKSPACE</div>
+    <h2 class="zone-hero-title">${escapeHtml(group?.title || "")} ${escapeHtml(lane.label)}</h2>
+    <div class="zone-hero-subtitle">このレーンの集中編集画面です。下段の未配置ロット帯から、このレーンへそのまま追加配置できます。</div>
+  `;
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "secondary-btn zone-back-btn";
+  backBtn.textContent = `${VIEW_CONFIG[getZoneByLaneId(lane.id)]?.label || "棟"}へ戻る`;
+  backBtn.addEventListener("click", () => {
+    navigateToRoute({ mode: "zone", zone: getZoneByLaneId(lane.id), laneId: "" }, { syncUrl: true });
+  });
+
+  top.appendChild(titleWrap);
+  top.appendChild(backBtn);
+  card.appendChild(top);
+
+  const metrics = document.createElement("div");
+  metrics.className = "zone-metrics lane-metrics";
+  metrics.appendChild(buildZoneMetricCard("使用枚数", `${formatNum(usedTrays)} / ${formatNum(capacity)}枚`));
+  metrics.appendChild(buildZoneMetricCard("空き枚数", `${formatNum(freeTrays)}枚`));
+  metrics.appendChild(buildZoneMetricCard("配置ブロック", `${formatNum(laneBlocks.length)}件`));
+  metrics.appendChild(buildZoneMetricCard("未配置ロット", `${formatNum(unassignedBlocks.length)}件 / ${formatNum(unassignedTrays)}枚`));
+  metrics.appendChild(buildZoneMetricCard("注意", staleCount ? `在庫0配置 ${formatNum(staleCount)}件` : "問題なし"));
+  card.appendChild(metrics);
+
+  return card;
+}
+
+function buildLanePoolPanel(lane, group) {
+  const panel = buildZonePoolPanel(group || { title: lane.label, id: "" }, {
+    title: "未配置ロット",
+    note: `${lane.label}へ入れる候補。zone と同じく下段からドラッグして配置します。`
+  });
+  panel.classList.add("lane-pool-panel");
+  return panel;
 }
 
 function buildOverviewCard(group) {
@@ -1159,18 +1234,20 @@ function appendZoneBoard(container, group) {
   }));
 }
 
-function buildZonePoolPanel(group) {
+function buildZonePoolPanel(group, options = {}) {
   const panel = document.createElement("aside");
   panel.className = "zone-pool-panel";
   panel.dataset.dropTarget = "pool";
 
   const quickPlaceBlocks = getQuickPlaceBlocks(10);
   const groupLabel = VIEW_CONFIG[getZoneByGroupId(group.id)]?.label || group.title;
+  const title = String(options.title || "未配置ロット").trim() || "未配置ロット";
+  const note = String(options.note || `${groupLabel}へ入れる候補。ドラッグで配置、横にスワイプで続きを表示します。`).trim();
 
   panel.innerHTML = `
     <div class="zone-pool-head">
-      <h3 class="zone-pool-title">未配置ロット</h3>
-      <div class="zone-pool-note">${escapeHtml(groupLabel)}へ入れる候補。ドラッグで配置、横にスワイプで続きを表示します。</div>
+      <h3 class="zone-pool-title">${escapeHtml(title)}</h3>
+      <div class="zone-pool-note">${escapeHtml(note)}</div>
     </div>
   `;
 

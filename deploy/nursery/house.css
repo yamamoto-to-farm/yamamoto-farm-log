@@ -254,6 +254,11 @@
   gap: 12px;
 }
 
+.lane-workspace {
+  display: grid;
+  gap: 12px;
+}
+
 .zone-hero-card {
   display: grid;
   gap: 12px;
@@ -305,6 +310,10 @@
   gap: 10px;
 }
 
+.lane-metrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .zone-metric-card {
   display: grid;
   gap: 6px;
@@ -342,6 +351,12 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: start;
+}
+
+.lane-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
 }
 
 .zone-board-panel,
@@ -453,6 +468,7 @@ body[data-house-mode="lane"] .zones-root {
 
 body[data-house-mode="overview"] .zone-card,
 body[data-house-mode="zone"] .zone-workspace,
+body[data-house-mode="lane"] .zone-workspace,
 body[data-house-mode="lane"] .zone-card {
   grid-area: single;
 }
