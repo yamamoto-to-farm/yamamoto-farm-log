@@ -1542,7 +1542,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
     <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols)}</div>
   `;
 
-  if (lane && !isRotatedSpanLane(lane)) {
+  if (lane) {
     ["left", "right"].forEach(side => {
       const handle = document.createElement("button");
       handle.type = "button";
@@ -2798,12 +2798,11 @@ function getLaneCols(lane) {
 }
 
 function isRotatedSpanLane(lane) {
-  return String(lane?.shortEdgeAxis || "").toLowerCase() === "ns";
+  return false;
 }
 
 function getEffectiveSpanCols(lane, rawSpan) {
   const laneCols = getLaneCols(lane);
-  if (isRotatedSpanLane(lane)) return laneCols;
   return Math.max(1, Math.min(laneCols, Math.floor(toNumber(rawSpan) || 1)));
 }
 
