@@ -1539,7 +1539,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   card.innerHTML = `
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
     <div class="lot-ref">播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, block.originSeedRef))}</div>
-    <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols)}</div>
+    <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols, lane)}</div>
   `;
 
   if (lane) {
@@ -2798,7 +2798,8 @@ function getLaneCols(lane) {
 }
 
 function isRotatedSpanLane(lane) {
-  return false;
+  const laneId = String(lane?.id || "").trim();
+  return laneId === "outside-1" || laneId === "outside-2" || laneId === "outside-3";
 }
 
 function getEffectiveSpanCols(lane, rawSpan) {
@@ -2932,8 +2933,18 @@ function formatNum(v) {
   return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
-function formatBlockTrayLine(trays, spanCols) {
-  const cols = Math.max(1, Math.floor(toNumber(spanCols) || 1));
+function getDisplaySpanCols(spanCols, lane) {
+  const laneCols = getLaneCols(lane);
+  const cols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
+  if (!isRotatedSpanLane(lane)) return cols;
+
+  // Outside 1-3 are operated on a 90-degree orientation, so we display
+  // the column label in the inverse direction to match field-side meaning.
+  return Math.max(1, Math.min(laneCols, (laneCols + 1) - cols));
+}
+
+function formatBlockTrayLine(trays, spanCols, lane = null) {
+  const cols = getDisplaySpanCols(spanCols, lane);
   const total = roundTray(toNumber(trays));
 
   // Decimal totals are shown as an average per column.
