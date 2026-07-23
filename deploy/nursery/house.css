@@ -357,6 +357,12 @@
 .zone-board-split {
   display: grid;
   gap: 10px;
+  width: 100%;
+}
+
+.zone-board-split > .outside-side-card,
+.zone-board-split > .outside-bottom-card {
+  grid-area: auto;
 }
 
 .zone-main-card {
