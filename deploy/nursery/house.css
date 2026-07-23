@@ -469,7 +469,7 @@ body[data-house-mode="lane"] .lane-single-card .lane-grid {
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
     "o4 o5"
-    "o3 .";
+    "o3 o3";
 }
 
 .layout-outside-bottom {
@@ -645,7 +645,7 @@ body.is-pointer-dragging-block * {
   color: #0f172a;
   line-height: 1.12;
   font-weight: 700;
-  margin-top: auto;
+  margin-top: 1px;
   overflow-wrap: anywhere;
   word-break: break-word;
 }

@@ -2716,18 +2716,51 @@ function getLaneMinWidthPx(lane) {
   return clamp((perCol * cols) + 44, 130, 250);
 }
 
+function isOutsideZoneRoute() {
+  if (currentMode === "zone" && currentZone === "outside") return true;
+  if (currentMode === "lane" && getZoneByLaneId(currentLaneId) === "outside") return true;
+  return false;
+}
+
+function adjustOutsideLaneBodyHeight(lane, baseHeight) {
+  const laneId = String(lane?.id || "").trim();
+  const base = Math.max(0, Math.round(baseHeight || 0));
+
+  if (laneId === "outside-4") {
+    return clamp(Math.round(base * 0.62), 260, 420);
+  }
+  if (laneId === "outside-5") {
+    return clamp(Math.round(base * 0.62), 240, 390);
+  }
+  if (laneId === "outside-3") {
+    return clamp(Math.round(base * 0.82), 130, 180);
+  }
+  if (laneId === "outside-1" || laneId === "outside-2") {
+    return clamp(Math.round(base * 0.88), 120, 190);
+  }
+
+  return base;
+}
+
 function computeLaneBodyHeight(lane) {
+  let height = 0;
   if (isOutsideBottomLane(lane)) {
     const tray = getTraySizeByLane(lane);
     const shortEdgeMm = Math.min(tray.ewMm, tray.nsMm);
     const px = getLaneCols(lane) * shortEdgeMm * MM_TO_PX * 13;
-    return clamp(Math.round(px), 130, 250);
+    height = clamp(Math.round(px), 130, 250);
+  } else {
+    const rows = getLaneRows(lane);
+    const tray = getTraySizeByLane(lane);
+    const px = rows * tray.nsMm * MM_TO_PX * 1.16;
+    height = clamp(Math.round(px), 190, 1220);
   }
 
-  const rows = getLaneRows(lane);
-  const tray = getTraySizeByLane(lane);
-  const px = rows * tray.nsMm * MM_TO_PX * 1.16;
-  return clamp(Math.round(px), 190, 1220);
+  if (isOutsideZoneRoute() && getZoneByLaneId(lane?.id) === "outside") {
+    return adjustOutsideLaneBodyHeight(lane, height);
+  }
+
+  return height;
 }
 
 function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) {
