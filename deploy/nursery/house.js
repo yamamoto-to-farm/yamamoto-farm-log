@@ -58,6 +58,7 @@ let focusedLaneId = "";
 let dragBlockId = "";
 let dragBlockIds = [];
 let modalBlockId = "";
+let modalMoveZone = "";
 let multiSelectMode = false;
 const selectedBlockIds = new Set();
 let currentView = "all";
@@ -207,6 +208,29 @@ function bindControls() {
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (target.closest("[data-modal-close='true']")) closeBlockModal();
+
+    const categoryBtn = target.closest("[data-move-category]");
+    if (categoryBtn instanceof HTMLElement) {
+      const category = String(categoryBtn.dataset.moveCategory || "").trim();
+      if (category === "pool") {
+        moveSelectedBlocksToPool();
+        return;
+      }
+      modalMoveZone = normalizeZoneId(category);
+      renderBlockModal();
+      return;
+    }
+
+    const autoBtn = target.closest("[data-move-auto-zone]");
+    if (autoBtn instanceof HTMLElement) {
+      moveSelectedBlocksToZone(String(autoBtn.dataset.moveAutoZone || "").trim());
+      return;
+    }
+
+    const laneBtn = target.closest("[data-move-lane-id]");
+    if (laneBtn instanceof HTMLElement) {
+      moveSelectedBlocksToZone(String(laneBtn.dataset.moveZone || "").trim(), String(laneBtn.dataset.moveLaneId || "").trim());
+    }
   });
 
   window.addEventListener("keydown", event => {
@@ -1083,6 +1107,7 @@ function appendZoneBoard(container, group) {
 function buildZonePoolPanel(group) {
   const panel = document.createElement("aside");
   panel.className = "zone-pool-panel";
+  panel.dataset.dropTarget = "pool";
 
   const quickPlaceBlocks = getQuickPlaceBlocks(10);
   const groupLabel = VIEW_CONFIG[getZoneByGroupId(group.id)]?.label || group.title;
@@ -1096,6 +1121,7 @@ function buildZonePoolPanel(group) {
 
   const list = document.createElement("div");
   list.className = "zone-pool-list";
+  list.dataset.dropTarget = "pool";
 
   if (!quickPlaceBlocks.length) {
     const empty = document.createElement("div");
@@ -1600,6 +1626,13 @@ function updatePointerDragTarget(clientX, clientY) {
     return;
   }
 
+  if (target.type === "pool") {
+    pointerDragState.hoverLaneId = "";
+    pointerDragState.hoverBeforeBlockId = "";
+    clearDragPreview();
+    return;
+  }
+
   pointerDragState.hoverLaneId = target.lane.id;
   pointerDragState.hoverBeforeBlockId = target.beforeBlockId || "";
   updateDragPreview(target.lane, target.laneBodyHeight, {
@@ -1658,6 +1691,14 @@ function getPointerDropTarget(clientX, clientY) {
   const el = document.elementFromPoint(clientX, clientY);
   if (!(el instanceof Element)) return null;
 
+  const poolTarget = el.closest("[data-drop-target='pool']");
+  if (poolTarget instanceof HTMLElement) {
+    return {
+      type: "pool",
+      hoverEl: poolTarget
+    };
+  }
+
   const laneBody = el.closest(".lane-body[data-lane-id]");
   if (!(laneBody instanceof HTMLElement)) return null;
 
@@ -1669,6 +1710,7 @@ function getPointerDropTarget(clientX, clientY) {
   const beforeBlockId = String(blockItem?.getAttribute("data-block-id") || "").trim();
 
   return {
+    type: "lane",
     lane,
     laneBodyHeight: laneBody.clientHeight,
     beforeBlockId,
@@ -1690,12 +1732,18 @@ function setPointerHoverElement(nextEl) {
 function commitPointerDrag(clientX, clientY) {
   const target = getPointerDropTarget(clientX, clientY);
   if (!target) return;
-
-  const eventLike = { clientX, clientY };
   const ids = pointerDragState.blockIds.length
     ? [...pointerDragState.blockIds]
     : (pointerDragState.blockId ? [pointerDragState.blockId] : []);
   if (!ids.length) return;
+
+  if (target.type === "pool") {
+    const moved = moveBlocksToPool(ids);
+    if (moved) render();
+    return;
+  }
+
+  const eventLike = { clientX, clientY };
 
   const moved = ids.length > 1
     ? placeBlockGroup(ids, target.lane, target.laneBodyHeight, eventLike, target.beforeBlockId, pointerDragState.blockId)
@@ -1969,6 +2017,176 @@ function placeBlock(blockId, lane, laneBodyHeight, dropEvent, beforeBlockId = ""
 
   blocks = normalizeBlockOrders(blocks);
   return true;
+}
+
+function moveBlocksToPool(blockIds = []) {
+  const ids = [...new Set((blockIds || []).filter(Boolean))];
+  if (!ids.length) return false;
+
+  const poolOrderBase = blocks
+    .filter(block => !block.laneId)
+    .reduce((max, block) => Math.max(max, toNumber(block.order)), -1) + 1;
+
+  let moved = 0;
+  ids.forEach((blockId, index) => {
+    const target = blocks.find(block => block.blockId === blockId);
+    if (!target) return;
+    target.laneId = "";
+    target.posX = 0;
+    target.posY = 0;
+    target.order = poolOrderBase + index;
+    moved += 1;
+  });
+
+  if (!moved) return false;
+  blocks = normalizeBlockOrders(blocks);
+  return true;
+}
+
+function moveSelectedBlocksToPool() {
+  const ids = selectedBlockIds.size
+    ? [...selectedBlockIds]
+    : (modalBlockId ? [modalBlockId] : []);
+  if (!ids.length) {
+    alert("先にブロックを選択してください。");
+    return false;
+  }
+
+  const moved = moveBlocksToPool(ids);
+  if (!moved) return false;
+
+  modalMoveZone = "";
+  render();
+  renderBlockModal();
+  return true;
+}
+
+function moveSelectedBlocksToZone(zone, laneId = "") {
+  const normalizedZone = normalizeZoneId(zone);
+  if (!normalizedZone) return false;
+
+  const ids = selectedBlockIds.size
+    ? [...selectedBlockIds]
+    : (modalBlockId ? [modalBlockId] : []);
+  if (!ids.length) {
+    alert("先にブロックを選択してください。");
+    return false;
+  }
+
+  const group = GROUPS.find(v => getZoneByGroupId(v.id) === normalizedZone);
+  if (!group) return false;
+
+  const targets = ids
+    .map(id => blocks.find(block => block.blockId === id))
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order);
+  if (!targets.length) return false;
+
+  const targetLane = laneId ? findLane(laneId) : null;
+  if (laneId && (!targetLane || getZoneByLaneId(laneId) !== normalizedZone)) {
+    alert("移動先レーンが不正です。");
+    return false;
+  }
+
+  const snapshot = targets.map(block => ({
+    block,
+    laneId: block.laneId,
+    spanCols: block.spanCols,
+    posX: block.posX,
+    posY: block.posY,
+    order: block.order
+  }));
+
+  for (const target of targets) {
+    const placed = targetLane
+      ? placeBlockInLane(target, targetLane)
+      : placeBlockInZone(target, group);
+    if (!placed) {
+      snapshot.forEach(entry => {
+        entry.block.laneId = entry.laneId;
+        entry.block.spanCols = entry.spanCols;
+        entry.block.posX = entry.posX;
+        entry.block.posY = entry.posY;
+        entry.block.order = entry.order;
+      });
+      blocks = normalizeBlockOrders(blocks);
+      alert(targetLane
+        ? `${targetLane.label} に配置できる空きがありません。`
+        : `${VIEW_CONFIG[normalizedZone]?.label || normalizedZone} に配置できる空きがありません。`);
+      return false;
+    }
+  }
+
+  blocks = normalizeBlockOrders(blocks);
+  modalMoveZone = normalizedZone;
+  if (currentZone !== normalizedZone) {
+    navigateToRoute({ mode: "zone", zone: normalizedZone, laneId: "" }, { syncUrl: true });
+    return true;
+  }
+
+  render();
+  renderBlockModal();
+  return true;
+}
+
+function placeBlockInZone(target, group) {
+  if (!target || !group) return false;
+
+  for (const lane of group.lanes) {
+    if (placeBlockInLane(target, lane)) return true;
+  }
+
+  return false;
+}
+
+function placeBlockInLane(target, lane) {
+  if (!target || !lane) return false;
+
+  const laneBodyHeight = computeLaneBodyHeight(lane);
+  const laneCols = getLaneCols(lane);
+  const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
+  const usedWithoutTarget = blocks
+    .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
+    .reduce((sum, block) => sum + block.trays, 0);
+
+  if (toNumber(lane.capacity) > 0 && (usedWithoutTarget + target.trays) > (toNumber(lane.capacity) + 0.1)) {
+    return false;
+  }
+
+  const virtualLaneBody = {
+    clientWidth: estimateLaneBodyWidth(lane)
+  };
+
+  const resolved = resolvePlacementInLane({
+    lane,
+    laneBodyEl: virtualLaneBody,
+    laneBodyHeight,
+    movingBlockId: target.blockId,
+    trays: target.trays,
+    spanCols,
+    preferredX: 0,
+    preferredY: 0
+  });
+
+  if (!resolved) return false;
+
+  target.laneId = lane.id;
+  target.spanCols = spanCols;
+  target.posX = resolved.x;
+  target.posY = resolved.y;
+
+  const sameLane = blocks
+    .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
+    .sort((a, b) => a.order - b.order);
+  sameLane.push(target);
+  sameLane.forEach((block, idx) => {
+    block.order = idx;
+  });
+  return true;
+}
+
+function estimateLaneBodyWidth(lane) {
+  return Math.max(getLaneMinWidthPx(lane), getLaneCols(lane) * 96);
 }
 
 function calcDropPosition(dropEvent, laneBodyEl, lane, laneBodyHeight, spanCols, blockTrays) {
@@ -2313,6 +2531,9 @@ function openBlockModal(blockId = "") {
     modalBlockId = blockId;
   }
 
+  const activeBlock = blocks.find(v => v.blockId === (blockId || modalBlockId)) || null;
+  modalMoveZone = activeBlock?.laneId ? getZoneByLaneId(activeBlock.laneId) : "";
+
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   renderBlockModal();
@@ -2324,15 +2545,17 @@ function closeBlockModal() {
 
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
+  modalMoveZone = "";
 }
 
 function renderBlockModal() {
   const modal = document.getElementById("block-modal");
   const detailEl = document.getElementById("block-modal-detail");
   const selectionEl = document.getElementById("block-modal-selection");
+  const moveEl = document.getElementById("block-modal-move");
   const splitBtn = document.getElementById("modal-split-btn");
   const mergeBtn = document.getElementById("modal-merge-btn");
-  if (!modal || !detailEl || !selectionEl || !splitBtn || !mergeBtn) return;
+  if (!modal || !detailEl || !selectionEl || !moveEl || !splitBtn || !mergeBtn) return;
   if (!modal.classList.contains("is-open")) return;
 
   let block = blocks.find(v => v.blockId === modalBlockId) || null;
@@ -2362,13 +2585,53 @@ function renderBlockModal() {
   const splitReady = selectedBlockIds.size === 1 && block.trays > 1;
   const selectedCount = selectedBlockIds.size;
   const modeText = multiSelectMode ? "ON" : "OFF";
+  const currentBlockZone = lane ? getZoneByLaneId(lane.id) : "";
+
+  if (!modalMoveZone && currentBlockZone) {
+    modalMoveZone = currentBlockZone;
+  }
 
   selectionEl.innerHTML = mergeReady
     ? `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 同一ロットID・同一レーンなので結合できます。`
     : `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 別ロットIDでも同時移動は可能です。結合は同一ロットIDかつ同一レーンのみです。`;
 
+  moveEl.innerHTML = buildMovePickerMarkup(currentBlockZone, !!block.laneId);
   splitBtn.disabled = !splitReady;
   mergeBtn.disabled = !mergeReady;
+}
+
+function buildMovePickerMarkup(currentBlockZone, canReturnPool) {
+  const zones = ["east", "west", "outside"];
+  const selectedZone = normalizeZoneId(modalMoveZone || currentBlockZone);
+  const laneButtons = selectedZone
+    ? getLanesForZone(selectedZone).map(lane => `
+      <button class="secondary-btn move-lane-btn" type="button" data-move-zone="${selectedZone}" data-move-lane-id="${escapeHtml(lane.id)}">${escapeHtml(lane.label)}</button>
+    `).join("")
+    : "";
+
+  return `
+    <section class="block-modal__move-section">
+      <div class="block-modal__move-title">移動先を選択</div>
+      <div class="block-modal__move-categories">
+        <button class="secondary-btn" type="button" data-move-category="pool" ${canReturnPool ? "" : "disabled"}>未配置へ戻す</button>
+        ${zones.map(zone => `
+          <button class="secondary-btn ${selectedZone === zone ? "is-active" : ""}" type="button" data-move-category="${zone}" ${currentBlockZone === zone ? "disabled" : ""}>${escapeHtml(VIEW_CONFIG[zone]?.label || zone)}</button>
+        `).join("")}
+      </div>
+      ${selectedZone ? `
+        <div class="block-modal__move-step">${escapeHtml(VIEW_CONFIG[selectedZone]?.label || selectedZone)} へ移動</div>
+        <div class="block-modal__move-actions">
+          <button class="secondary-btn" type="button" data-move-auto-zone="${selectedZone}">自動配置</button>
+          ${laneButtons}
+        </div>
+      ` : ""}
+    </section>
+  `;
+}
+
+function getLanesForZone(zone) {
+  const group = GROUPS.find(v => getZoneByGroupId(v.id) === normalizeZoneId(zone));
+  return group?.lanes || [];
 }
 
 function canMergeSelection(selected) {
