@@ -21,10 +21,10 @@ const GROUPS = [
     title: "育苗ハウス　西棟",
     kind: "house",
     lanes: [
-      { id: "west-1", label: "西①", capacity: 240, trayCols: 3, shortEdgeAxis: "ew" },
-      { id: "west-2", label: "西②", capacity: 160, trayCols: 2, shortEdgeAxis: "ew" },
-      { id: "west-3", label: "西③", capacity: 160, trayCols: 2, shortEdgeAxis: "ew" },
-      { id: "west-4", label: "西④", capacity: 240, trayCols: 3, shortEdgeAxis: "ew" }
+      { id: "west-1", label: "西④", capacity: 240, trayCols: 3, shortEdgeAxis: "ew" },
+      { id: "west-2", label: "西③", capacity: 160, trayCols: 2, shortEdgeAxis: "ew" },
+      { id: "west-3", label: "西②", capacity: 160, trayCols: 2, shortEdgeAxis: "ew" },
+      { id: "west-4", label: "西①", capacity: 240, trayCols: 3, shortEdgeAxis: "ew" }
     ]
   },
   {
@@ -32,9 +32,9 @@ const GROUPS = [
     title: "育苗ハウス　東棟",
     kind: "house",
     lanes: [
-      { id: "east-1", label: "東①", capacity: 366, trayCols: 3, shortEdgeAxis: "ew" },
+      { id: "east-1", label: "東③", capacity: 366, trayCols: 3, shortEdgeAxis: "ew" },
       { id: "east-2", label: "東②", capacity: 610, trayCols: 5, shortEdgeAxis: "ew" },
-      { id: "east-3", label: "東③", capacity: 366, trayCols: 3, shortEdgeAxis: "ew" }
+      { id: "east-3", label: "東①", capacity: 366, trayCols: 3, shortEdgeAxis: "ew" }
     ]
   },
   {
@@ -217,6 +217,12 @@ function bindControls() {
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (target.closest("[data-modal-close='true']")) closeBlockModal();
+
+    const applySpanBtn = target.closest("[data-apply-span]");
+    if (applySpanBtn instanceof HTMLElement) {
+      applyModalSpanChange();
+      return;
+    }
 
     const categoryBtn = target.closest("[data-move-category]");
     if (categoryBtn instanceof HTMLElement) {
@@ -1539,7 +1545,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   card.innerHTML = `
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
     <div class="lot-ref">播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, block.originSeedRef))}</div>
-    <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols, lane)}</div>
+    <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols)}</div>
   `;
 
   if (lane) {
@@ -2715,6 +2721,23 @@ function renderBlockModal() {
   const lot = lotsBySeedRef.get(block.originSeedRef);
   const lane = findLane(block.laneId);
   const selected = blocks.filter(v => selectedBlockIds.has(v.blockId));
+  const laneCols = lane ? getLaneCols(lane) : 1;
+  const currentSpan = lane ? getBlockSpanCols(block, lane) : 1;
+  const spanOptions = lane
+    ? Array.from({ length: laneCols }, (_, idx) => idx + 1)
+      .map(cols => `<option value="${cols}" ${cols === currentSpan ? "selected" : ""}>${cols}列</option>`)
+      .join("")
+    : "";
+  const spanEditorMarkup = lane ? `
+    <div class="block-modal__span-editor">
+      <div class="block-modal__span-label">列幅</div>
+      <div class="block-modal__span-controls">
+        <select id="modal-span-cols" class="block-modal__span-select" aria-label="列幅を選択">${spanOptions}</select>
+        <button class="secondary-btn" type="button" data-apply-span="true">列幅を適用</button>
+      </div>
+      <div class="block-modal__span-hint">他ブロックと重なって移動できない時は、列幅を狭めて再配置できます。</div>
+    </div>
+  ` : "";
 
   detailEl.innerHTML = `
     <div><strong>ロットID:</strong> ${escapeHtml(block.originSeedRef)}</div>
@@ -2722,6 +2745,7 @@ function renderBlockModal() {
     <div><strong>品種:</strong> ${escapeHtml(lot?.variety || "(不明)")}</div>
     <div><strong>現在枚数:</strong> ${formatNum(block.trays)} 枚</div>
     <div><strong>配置先:</strong> ${escapeHtml(lane?.label || "未配置")}</div>
+    ${spanEditorMarkup}
   `;
 
   const mergeReady = canMergeSelection(selected);
@@ -2774,6 +2798,64 @@ function buildMovePickerMarkup(currentBlockZone, canReturnPool) {
   `;
 }
 
+function applyModalSpanChange() {
+  const block = blocks.find(v => v.blockId === modalBlockId) || null;
+  if (!block) return false;
+
+  const lane = findLane(block.laneId);
+  if (!lane) {
+    alert("未配置ロットは列幅を変更できません。先にレーンへ配置してください。");
+    return false;
+  }
+
+  const selectEl = document.getElementById("modal-span-cols");
+  if (!(selectEl instanceof HTMLSelectElement)) return false;
+
+  const nextSpan = getEffectiveSpanCols(lane, toNumber(selectEl.value));
+  const prevSpan = getBlockSpanCols(block, lane);
+  if (nextSpan === prevSpan) return true;
+
+  const laneBody = document.querySelector(`.lane-body[data-lane-id="${CSS.escape(lane.id)}"]`);
+  const laneBodyHeight = computeLaneBodyHeight(lane);
+  const laneBodyEl = laneBody instanceof HTMLElement
+    ? laneBody
+    : { clientWidth: estimateLaneBodyWidth(lane) };
+
+  const resolved = resolvePlacementInLane({
+    lane,
+    laneBodyEl,
+    laneBodyHeight,
+    movingBlockId: block.blockId,
+    trays: block.trays,
+    spanCols: nextSpan,
+    preferredX: block.posX,
+    preferredY: block.posY
+  }) || resolvePlacementInLane({
+    lane,
+    laneBodyEl,
+    laneBodyHeight,
+    movingBlockId: block.blockId,
+    trays: block.trays,
+    spanCols: nextSpan,
+    preferredX: 0,
+    preferredY: 0
+  });
+
+  if (!resolved) {
+    alert(`${lane.label} で ${nextSpan}列に変更できる空きがありません。`);
+    return false;
+  }
+
+  block.spanCols = nextSpan;
+  block.posX = resolved.x;
+  block.posY = resolved.y;
+  blocks = normalizeBlockOrders(blocks);
+
+  render();
+  renderBlockModal();
+  return true;
+}
+
 function getLanesForZone(zone) {
   const group = GROUPS.find(v => getZoneByGroupId(v.id) === normalizeZoneId(zone));
   return group?.lanes || [];
@@ -2798,8 +2880,7 @@ function getLaneCols(lane) {
 }
 
 function isRotatedSpanLane(lane) {
-  const laneId = String(lane?.id || "").trim();
-  return laneId === "outside-1" || laneId === "outside-2" || laneId === "outside-3";
+  return false;
 }
 
 function getEffectiveSpanCols(lane, rawSpan) {
@@ -2933,18 +3014,8 @@ function formatNum(v) {
   return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
-function getDisplaySpanCols(spanCols, lane) {
-  const laneCols = getLaneCols(lane);
-  const cols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
-  if (!isRotatedSpanLane(lane)) return cols;
-
-  // Outside 1-3 are operated on a 90-degree orientation, so we display
-  // the column label in the inverse direction to match field-side meaning.
-  return Math.max(1, Math.min(laneCols, (laneCols + 1) - cols));
-}
-
-function formatBlockTrayLine(trays, spanCols, lane = null) {
-  const cols = getDisplaySpanCols(spanCols, lane);
+function formatBlockTrayLine(trays, spanCols) {
+  const cols = Math.max(1, Math.floor(toNumber(spanCols) || 1));
   const total = roundTray(toNumber(trays));
 
   // Decimal totals are shown as an average per column.
