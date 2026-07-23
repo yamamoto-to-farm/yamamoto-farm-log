@@ -1127,9 +1127,13 @@ function buildZonePoolPanel(group) {
   panel.innerHTML = `
     <div class="zone-pool-head">
       <h3 class="zone-pool-title">未配置ロット</h3>
-      <div class="zone-pool-note">${escapeHtml(groupLabel)}へ入れる候補。ドラッグして配置します。</div>
+      <div class="zone-pool-note">${escapeHtml(groupLabel)}へ入れる候補。ドラッグで配置、横にスワイプで続きを表示します。</div>
     </div>
   `;
+
+  const scrollShell = document.createElement("div");
+  scrollShell.className = "zone-pool-scroll-shell";
+  scrollShell.dataset.dropTarget = "pool";
 
   const list = document.createElement("div");
   list.className = "zone-pool-list";
@@ -1146,7 +1150,8 @@ function buildZonePoolPanel(group) {
   quickPlaceBlocks.forEach(block => {
     list.appendChild(buildBlockCard(block, null, 0, true));
   });
-  panel.appendChild(list);
+  scrollShell.appendChild(list);
+  panel.appendChild(scrollShell);
   return panel;
 }
 

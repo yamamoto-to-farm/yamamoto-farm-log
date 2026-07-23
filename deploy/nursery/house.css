@@ -339,7 +339,7 @@
 
 .zone-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
@@ -365,8 +365,7 @@
 }
 
 .zone-pool-panel {
-  position: sticky;
-  top: 8px;
+  position: static;
 }
 
 .zone-pool-panel.drag-over,
@@ -392,9 +391,41 @@
   color: #64748b;
 }
 
+.zone-pool-scroll-shell {
+  position: relative;
+}
+
+.zone-pool-scroll-shell::before,
+.zone-pool-scroll-shell::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 6px;
+  width: 24px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.zone-pool-scroll-shell::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.zone-pool-scroll-shell::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
 .zone-pool-list {
   display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 220px);
   gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: start;
+  padding-bottom: 6px;
+  overscroll-behavior-x: contain;
 }
 
 .zone-pool-empty {
