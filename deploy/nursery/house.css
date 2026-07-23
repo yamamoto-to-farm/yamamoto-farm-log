@@ -61,6 +61,12 @@
   color: #1e3a8a;
 }
 
+.nursery-toolbar .secondary-btn[data-view].is-active {
+  border-color: #2f855a;
+  background: #2f855a;
+  color: #fff;
+}
+
 .nursery-toolbar .secondary-btn:disabled,
 .nursery-toolbar .primary-btn:disabled {
   opacity: 0.5;

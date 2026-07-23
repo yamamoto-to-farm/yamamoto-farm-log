@@ -55,6 +55,14 @@ let dragBlockIds = [];
 let modalBlockId = "";
 let multiSelectMode = false;
 const selectedBlockIds = new Set();
+let currentView = "all";
+
+const VIEW_CONFIG = {
+  all: { label: "全体ビュー", groupIds: ["west-house", "east-house", "outside-area"] },
+  east: { label: "東棟", groupIds: ["east-house"] },
+  west: { label: "西棟", groupIds: ["west-house"] },
+  outside: { label: "外", groupIds: ["outside-area"] }
+};
 
 const resizeState = {
   active: false,
@@ -69,6 +77,7 @@ const resizeState = {
 };
 
 export async function initNurseryHousePage() {
+  currentView = parseViewFromLocation();
   bindControls();
   await reloadAll();
 }
@@ -85,6 +94,14 @@ function bindControls() {
   const modalCloseBtn = document.getElementById("modal-close-btn");
   const modalSplitBtn = document.getElementById("modal-split-btn");
   const modalMergeBtn = document.getElementById("modal-merge-btn");
+  const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
+
+  viewButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const view = String(btn.dataset.view || "all").trim();
+      setCurrentView(view, { syncUrl: true });
+    });
+  });
 
   reloadBtn?.addEventListener("click", async () => {
     await reloadAll();
@@ -551,6 +568,12 @@ function renderSelectionControls() {
   const modeBtn = document.getElementById("multi-select-mode-btn");
   const clearBtn = document.getElementById("clear-selection-btn");
   const openBtn = document.getElementById("open-selection-modal-btn");
+  const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
+
+  viewButtons.forEach(btn => {
+    const view = String(btn.dataset.view || "all").trim();
+    btn.classList.toggle("is-active", view === currentView);
+  });
 
   if (modeBtn) {
     modeBtn.textContent = `複数選択: ${multiSelectMode ? "ON" : "OFF"}`;
@@ -574,7 +597,8 @@ function renderSummary() {
 
   const line = document.getElementById("summary-line");
   if (line) {
-    line.textContent = `ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
+    const viewLabel = VIEW_CONFIG[currentView]?.label || "全体ビュー";
+    line.textContent = `表示: ${viewLabel} / ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
   }
 
   const staleSeedRefs = [...assignedSeedRefs].filter(seedRef => {
@@ -605,9 +629,10 @@ function renderGroups() {
 
   const quickPlaceBlocks = getQuickPlaceBlocks(5);
 
-  const westGroup = GROUPS.find(group => group.id === "west-house");
-  const eastGroup = GROUPS.find(group => group.id === "east-house");
-  const outsideGroup = GROUPS.find(group => group.id === "outside-area");
+  const visibleGroups = getVisibleGroups();
+  const westGroup = visibleGroups.find(group => group.id === "west-house");
+  const eastGroup = visibleGroups.find(group => group.id === "east-house");
+  const outsideGroup = visibleGroups.find(group => group.id === "outside-area");
 
   if (outsideGroup) {
     const sideLanes = ["outside-4", "outside-5", "outside-3"]
@@ -660,6 +685,46 @@ function renderGroups() {
   if (eastGroup) {
     root.appendChild(buildGroupCard(eastGroup));
   }
+}
+
+function parseViewFromLocation() {
+  const params = new URLSearchParams(location.search || "");
+  const fromView = String(params.get("view") || "").trim().toLowerCase();
+  const fromEmptyKey = String(params.get("") || "").trim().toLowerCase();
+  const value = fromView || fromEmptyKey;
+  return VIEW_CONFIG[value] ? value : "all";
+}
+
+function setCurrentView(view, options = {}) {
+  const next = VIEW_CONFIG[view] ? view : "all";
+  const { syncUrl = false } = options;
+  if (currentView === next && !syncUrl) return;
+
+  currentView = next;
+  focusedLaneId = "";
+  selectedBlockIds.clear();
+  closeBlockModal();
+
+  if (syncUrl) {
+    const params = new URLSearchParams(location.search || "");
+    if (next === "all") {
+      params.delete("view");
+      params.delete("");
+    } else {
+      params.set("view", next);
+      params.delete("");
+    }
+    const q = params.toString();
+    const nextUrl = `${location.pathname}${q ? `?${q}` : ""}`;
+    history.replaceState(null, "", nextUrl);
+  }
+
+  render();
+}
+
+function getVisibleGroups() {
+  const ids = VIEW_CONFIG[currentView]?.groupIds || VIEW_CONFIG.all.groupIds;
+  return GROUPS.filter(group => ids.includes(group.id));
 }
 
 function buildGroupCard(group, options = {}) {
