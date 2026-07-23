@@ -2721,23 +2721,26 @@ function renderBlockModal() {
   const lot = lotsBySeedRef.get(block.originSeedRef);
   const lane = findLane(block.laneId);
   const selected = blocks.filter(v => selectedBlockIds.has(v.blockId));
-  const laneCols = lane ? getLaneCols(lane) : 1;
-  const currentSpan = lane ? getBlockSpanCols(block, lane) : 1;
-  const spanOptions = lane
-    ? Array.from({ length: laneCols }, (_, idx) => idx + 1)
-      .map(cols => `<option value="${cols}" ${cols === currentSpan ? "selected" : ""}>${cols}列</option>`)
-      .join("")
-    : "";
-  const spanEditorMarkup = lane ? `
+  const maxLaneCols = Math.max(1, ...allLanes().map(v => getLaneCols(v)));
+  const spanLimit = lane ? getLaneCols(lane) : maxLaneCols;
+  const currentSpan = Math.max(1, Math.floor(toNumber(block.spanCols) || 1));
+  const initialSpan = Math.max(1, Math.min(spanLimit, currentSpan));
+  const spanOptions = Array.from({ length: spanLimit }, (_, idx) => idx + 1)
+    .map(cols => `<option value="${cols}" ${cols === initialSpan ? "selected" : ""}>${cols}列</option>`)
+    .join("");
+  const spanEditorHint = lane
+    ? "他ブロックと重なって移動できない時は、列幅を狭めて再配置できます。"
+    : "未配置中は仮設定です。配置先レーンの列数上限に合わせて自動調整されます。";
+  const spanEditorMarkup = `
     <div class="block-modal__span-editor">
       <div class="block-modal__span-label">列幅</div>
       <div class="block-modal__span-controls">
         <select id="modal-span-cols" class="block-modal__span-select" aria-label="列幅を選択">${spanOptions}</select>
         <button class="secondary-btn" type="button" data-apply-span="true">列幅を適用</button>
       </div>
-      <div class="block-modal__span-hint">他ブロックと重なって移動できない時は、列幅を狭めて再配置できます。</div>
+      <div class="block-modal__span-hint">${spanEditorHint}</div>
     </div>
-  ` : "";
+  `;
 
   detailEl.innerHTML = `
     <div><strong>ロットID:</strong> ${escapeHtml(block.originSeedRef)}</div>
@@ -2802,16 +2805,21 @@ function applyModalSpanChange() {
   const block = blocks.find(v => v.blockId === modalBlockId) || null;
   if (!block) return false;
 
-  const lane = findLane(block.laneId);
-  if (!lane) {
-    alert("未配置ロットは列幅を変更できません。先にレーンへ配置してください。");
-    return false;
-  }
-
   const selectEl = document.getElementById("modal-span-cols");
   if (!(selectEl instanceof HTMLSelectElement)) return false;
 
-  const nextSpan = getEffectiveSpanCols(lane, toNumber(selectEl.value));
+  const requestedSpan = Math.max(1, Math.floor(toNumber(selectEl.value) || 1));
+
+  const lane = findLane(block.laneId);
+  if (!lane) {
+    if (block.spanCols === requestedSpan) return true;
+    block.spanCols = requestedSpan;
+    render();
+    renderBlockModal();
+    return true;
+  }
+
+  const nextSpan = getEffectiveSpanCols(lane, requestedSpan);
   const prevSpan = getBlockSpanCols(block, lane);
   if (nextSpan === prevSpan) return true;
 
