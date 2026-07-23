@@ -797,7 +797,7 @@ function renderGroups() {
 
   root.innerHTML = "";
   if (focusedLaneId && !findLane(focusedLaneId)) focusedLaneId = "";
-  root.classList.toggle("has-focused-lane", currentMode === "lane" && !!focusedLaneId);
+  root.classList.toggle("has-focused-lane", currentMode !== "lane" && !!focusedLaneId);
 
   if (currentMode === "overview") {
     renderOverviewMode(root);
