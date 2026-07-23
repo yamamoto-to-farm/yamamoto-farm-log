@@ -219,6 +219,51 @@
   color: #374151;
 }
 
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.overview-zone-card,
+.overview-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+  padding: 16px;
+  border: 1px solid #d7e2ee;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.overview-metric,
+.overview-info-line {
+  font-size: 15px;
+  color: #334155;
+}
+
+.overview-open-btn {
+  margin-top: auto;
+  align-self: stretch;
+}
+
+body[data-house-mode="overview"] .zones-root,
+body[data-house-mode="lane"] .zones-root {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "single";
+}
+
+body[data-house-mode="overview"] .zone-card,
+body[data-house-mode="lane"] .zone-card {
+  grid-area: single;
+}
+
+body[data-house-mode="lane"] .lane-single-card .lane-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
 .lane-grid {
   display: grid;
   gap: 0;

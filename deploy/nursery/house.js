@@ -58,6 +58,9 @@ const selectedBlockIds = new Set();
 let currentView = "all";
 let lockedView = "";
 let dragPreview = null;
+let currentMode = "overview";
+let currentZone = "";
+let currentLaneId = "";
 
 const VIEW_CONFIG = {
   all: { label: "全体ビュー", groupIds: ["west-house", "east-house", "outside-area"] },
@@ -81,18 +84,20 @@ const resizeState = {
 export async function initNurseryHousePage(options = {}) {
   const forcedView = String(options?.forcedView || "").trim().toLowerCase();
   const lockView = !!options?.lockView;
-  const lockByQuery = options?.lockByQuery !== false;
-  const queryView = parseViewFromLocation();
+  const route = parseRouteFromLocation();
 
   if (lockView && VIEW_CONFIG[forcedView]) {
     lockedView = forcedView;
-  } else if (lockByQuery && queryView !== "all") {
-    lockedView = queryView;
   }
 
-  currentView = lockedView || queryView;
+  applyRouteState(route);
+  if (lockedView) {
+    currentView = lockedView;
+    currentZone = lockedView;
+    currentMode = "zone";
+  }
+
   document.body.classList.toggle("single-view-mode", !!lockedView);
-  document.body.setAttribute("data-house-view", currentView);
 
   bindControls();
   await reloadAll();
@@ -115,7 +120,11 @@ function bindControls() {
   viewButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       const view = String(btn.dataset.view || "all").trim();
-      setCurrentView(view, { syncUrl: true });
+      if (view === "all") {
+        navigateToRoute({ mode: "overview", zone: "", laneId: "" }, { syncUrl: true });
+        return;
+      }
+      navigateToRoute({ mode: "zone", zone: view, laneId: "" }, { syncUrl: true });
     });
   });
 
@@ -214,6 +223,11 @@ function bindControls() {
     const laneEl = laneHead.closest(".lane");
     const laneId = String(laneEl?.getAttribute("data-lane-id") || "").trim();
     if (!laneId) return;
+
+    if (currentMode !== "lane") {
+      navigateToRoute({ mode: "lane", laneId, zone: getZoneByLaneId(laneId) }, { syncUrl: true });
+      return;
+    }
 
     focusedLaneId = focusedLaneId === laneId ? "" : laneId;
     renderGroups();
@@ -580,6 +594,7 @@ function normalizeBlockOrders(inputBlocks) {
 }
 
 function render() {
+  syncFrameState();
   renderSummary();
   renderGroups();
   renderSelectionControls();
@@ -595,25 +610,42 @@ function renderSelectionControls() {
   const modeBtn = document.getElementById("multi-select-mode-btn");
   const clearBtn = document.getElementById("clear-selection-btn");
   const openBtn = document.getElementById("open-selection-modal-btn");
+  const saveBtn = document.getElementById("save-btn");
+  const reloadBtn = document.getElementById("reload-btn");
   const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
+  const isOverview = currentMode === "overview";
 
   viewButtons.forEach(btn => {
     const view = String(btn.dataset.view || "all").trim();
-    btn.classList.toggle("is-active", view === currentView);
+    const active = view === "all"
+      ? currentMode === "overview"
+      : view === currentZone && currentMode !== "overview";
+    btn.classList.toggle("is-active", active);
   });
 
   if (modeBtn) {
     modeBtn.textContent = `複数選択: ${multiSelectMode ? "ON" : "OFF"}`;
     modeBtn.setAttribute("aria-pressed", multiSelectMode ? "true" : "false");
     modeBtn.classList.toggle("is-active", multiSelectMode);
+    modeBtn.hidden = isOverview;
   }
 
   if (clearBtn) {
-    clearBtn.disabled = selectedBlockIds.size === 0;
+    clearBtn.disabled = isOverview || selectedBlockIds.size === 0;
+    clearBtn.hidden = isOverview;
   }
 
   if (openBtn) {
-    openBtn.disabled = selectedBlockIds.size === 0;
+    openBtn.disabled = isOverview || selectedBlockIds.size === 0;
+    openBtn.hidden = isOverview;
+  }
+
+  if (saveBtn) {
+    saveBtn.hidden = isOverview;
+  }
+
+  if (reloadBtn) {
+    reloadBtn.disabled = false;
   }
 }
 
@@ -621,11 +653,11 @@ function renderSummary() {
   const total = lots.length;
   const active = lots.filter(v => v.availableTrays > 0).length;
   const assignedSeedRefs = new Set(blocks.filter(block => !!block.laneId).map(block => block.originSeedRef));
+  const label = getCurrentLocationLabel();
 
   const line = document.getElementById("summary-line");
   if (line) {
-    const viewLabel = VIEW_CONFIG[currentView]?.label || "全体ビュー";
-    line.textContent = `表示: ${viewLabel} / ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
+    line.textContent = `画面: ${label} / ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
   }
 
   const staleSeedRefs = [...assignedSeedRefs].filter(seedRef => {
@@ -652,7 +684,18 @@ function renderGroups() {
 
   root.innerHTML = "";
   if (focusedLaneId && !findLane(focusedLaneId)) focusedLaneId = "";
-  root.classList.toggle("has-focused-lane", !!focusedLaneId);
+  root.classList.toggle("has-focused-lane", currentMode === "lane" && !!focusedLaneId);
+
+  if (currentMode === "overview") {
+    renderOverviewMode(root);
+    return;
+  }
+
+  if (currentMode === "lane") {
+    renderLaneMode(root);
+    if (dragPreview) renderDragPreview();
+    return;
+  }
 
   const quickPlaceBlocks = getQuickPlaceBlocks(5);
 
@@ -733,35 +776,243 @@ function parseViewFromLocation() {
   return VIEW_CONFIG[value] ? value : "all";
 }
 
-function setCurrentView(view, options = {}) {
-  if (lockedView) return;
+function parseRouteFromLocation() {
+  const params = new URLSearchParams(location.search || "");
+  const rawMode = String(params.get("mode") || "").trim().toLowerCase();
+  const rawZone = String(params.get("zone") || "").trim().toLowerCase();
+  const rawLaneId = String(params.get("lane") || "").trim();
+  const legacyView = parseViewFromLocation();
 
-  const next = VIEW_CONFIG[view] ? view : "all";
-  const { syncUrl = false } = options;
-  if (currentView === next && !syncUrl) return;
+  let laneId = rawLaneId;
+  let zone = normalizeZoneId(rawZone || (legacyView !== "all" ? legacyView : ""));
+  if (laneId && !findLane(laneId)) laneId = "";
+  if (laneId) zone = getZoneByLaneId(laneId) || zone;
 
-  currentView = next;
+  let mode = rawMode;
+  if (!mode) {
+    if (laneId) mode = "lane";
+    else if (zone) mode = "zone";
+    else mode = "overview";
+  }
+
+  if (!["overview", "zone", "lane"].includes(mode)) mode = zone ? "zone" : "overview";
+  if (mode === "lane" && !laneId) mode = zone ? "zone" : "overview";
+  if (mode === "zone" && !zone) mode = "overview";
+
+  return {
+    mode,
+    zone,
+    laneId,
+    view: mode === "overview" ? "all" : (zone || "all")
+  };
+}
+
+function applyRouteState(route = {}) {
+  currentMode = route.mode || "overview";
+  currentZone = route.zone || "";
+  currentLaneId = route.laneId || "";
+  currentView = route.view || (currentMode === "overview" ? "all" : (currentZone || "all"));
+  document.body.setAttribute("data-house-mode", currentMode);
   document.body.setAttribute("data-house-view", currentView);
-  focusedLaneId = "";
+  document.body.setAttribute("data-house-zone", currentZone || "all");
+}
+
+function navigateToRoute(nextRoute = {}, options = {}) {
+  if (lockedView && nextRoute.mode !== "lane") return;
+
+  const route = normalizeRouteState({
+    mode: nextRoute.mode ?? currentMode,
+    zone: nextRoute.zone ?? currentZone,
+    laneId: nextRoute.laneId ?? currentLaneId
+  });
+
+  const { syncUrl = false } = options;
+  const isSameRoute = route.mode === currentMode
+    && route.zone === currentZone
+    && route.laneId === currentLaneId;
+  if (isSameRoute && !syncUrl) return;
+
+  applyRouteState(route);
+  focusedLaneId = route.mode === "lane" ? route.laneId : "";
   selectedBlockIds.clear();
   clearDragPreview();
   closeBlockModal();
 
   if (syncUrl) {
-    const params = new URLSearchParams(location.search || "");
-    if (next === "all") {
-      params.delete("view");
-      params.delete("");
-    } else {
-      params.set("view", next);
-      params.delete("");
-    }
+    const params = new URLSearchParams();
+    if (route.mode !== "overview") params.set("mode", route.mode);
+    if (route.mode === "zone" && route.zone) params.set("zone", route.zone);
+    if (route.mode === "lane" && route.laneId) params.set("lane", route.laneId);
     const q = params.toString();
     const nextUrl = `${location.pathname}${q ? `?${q}` : ""}`;
     history.replaceState(null, "", nextUrl);
   }
 
   render();
+}
+
+function normalizeRouteState(route = {}) {
+  let mode = String(route.mode || "overview").trim().toLowerCase();
+  let zone = normalizeZoneId(route.zone);
+  let laneId = String(route.laneId || "").trim();
+
+  if (laneId && !findLane(laneId)) laneId = "";
+  if (laneId) zone = getZoneByLaneId(laneId) || zone;
+
+  if (!["overview", "zone", "lane"].includes(mode)) mode = "overview";
+  if (mode === "lane" && !laneId) mode = zone ? "zone" : "overview";
+  if (mode === "zone" && !zone) mode = "overview";
+  if (mode === "overview") {
+    zone = "";
+    laneId = "";
+  }
+
+  return {
+    mode,
+    zone,
+    laneId,
+    view: mode === "overview" ? "all" : (zone || "all")
+  };
+}
+
+function setCurrentView(view, options = {}) {
+  if (view === "all") {
+    navigateToRoute({ mode: "overview", zone: "", laneId: "" }, options);
+    return;
+  }
+  navigateToRoute({ mode: "zone", zone: view, laneId: "" }, options);
+}
+
+function renderOverviewMode(root) {
+  const wrap = document.createElement("section");
+  wrap.className = "overview-grid";
+
+  getVisibleGroups().forEach(group => {
+    wrap.appendChild(buildOverviewCard(group));
+  });
+
+  const infoCard = document.createElement("section");
+  infoCard.className = "overview-info-card";
+  const unassignedCount = blocks.filter(block => !block.laneId && block.trays > 0).length;
+  const staleCount = blocks.filter(block => {
+    if (!block.laneId) return false;
+    const lot = lotsBySeedRef.get(block.originSeedRef);
+    return !!lot && lot.availableTrays <= 0;
+  }).length;
+  infoCard.innerHTML = `
+    <h3 class="zone-title">全体メモ</h3>
+    <div class="overview-info-line">未配置ロット: ${formatNum(unassignedCount)}件</div>
+    <div class="overview-info-line">在庫0配置: ${formatNum(staleCount)}件</div>
+    <div class="overview-info-line">棟を開くと移動・保存ができます</div>
+  `;
+  wrap.appendChild(infoCard);
+
+  root.appendChild(wrap);
+}
+
+function renderLaneMode(root) {
+  const lane = findLane(currentLaneId);
+  if (!lane) {
+    renderOverviewMode(root);
+    return;
+  }
+
+  const group = findGroupByLaneId(lane.id);
+  const title = group ? `${group.title} / ${lane.label}` : lane.label;
+  root.appendChild(buildGroupCard({
+    id: `lane-${lane.id}`,
+    kind: group?.kind || "house",
+    title,
+    lanes: [lane]
+  }, {
+    cardClass: "lane-single-card",
+    showTitle: true
+  }));
+}
+
+function buildOverviewCard(group) {
+  const card = document.createElement("section");
+  card.className = "overview-zone-card";
+
+  const assignedBlocks = blocks.filter(block => block.laneId && group.lanes.some(lane => lane.id === block.laneId));
+  const used = assignedBlocks.reduce((sum, block) => sum + block.trays, 0);
+  const capacity = group.lanes.reduce((sum, lane) => sum + toNumber(lane.capacity), 0);
+  const percent = capacity > 0 ? Math.round((used / capacity) * 100) : 0;
+  const actionZone = group.id === "east-house"
+    ? "east"
+    : group.id === "west-house"
+      ? "west"
+      : "outside";
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "secondary-btn overview-open-btn";
+  btn.textContent = `${VIEW_CONFIG[actionZone]?.label || group.title}を開く`;
+  btn.addEventListener("click", () => {
+    navigateToRoute({ mode: "zone", zone: actionZone, laneId: "" }, { syncUrl: true });
+  });
+
+  card.innerHTML = `
+    <h3 class="zone-title">${escapeHtml(group.title)}</h3>
+    <div class="overview-metric">使用 ${formatNum(used)} / ${formatNum(capacity)}枚</div>
+    <div class="overview-metric">使用率 ${formatNum(percent)}%</div>
+    <div class="overview-metric">レーン ${formatNum(group.lanes.length)}本</div>
+  `;
+  card.appendChild(btn);
+  return card;
+}
+
+function syncFrameState() {
+  document.body.setAttribute("data-house-mode", currentMode);
+  document.body.setAttribute("data-house-view", currentView);
+  document.body.setAttribute("data-house-zone", currentZone || "all");
+
+  const titleEl = document.querySelector(".page-title");
+  if (titleEl) {
+    titleEl.textContent = getPageTitle();
+  }
+}
+
+function getPageTitle() {
+  if (currentMode === "lane") {
+    const lane = findLane(currentLaneId);
+    const group = lane ? findGroupByLaneId(lane.id) : null;
+    return lane ? `育苗ハウス・外育苗 配置ボード（${group?.title || ""} ${lane.label}）` : "育苗ハウス・外育苗 配置ボード";
+  }
+  if (currentMode === "zone") {
+    return `育苗ハウス・外育苗 配置ボード（${getCurrentLocationLabel()}）`;
+  }
+  return "育苗ハウス・外育苗 配置ボード（全体俯瞰）";
+}
+
+function getCurrentLocationLabel() {
+  if (currentMode === "lane") {
+    const lane = findLane(currentLaneId);
+    const group = lane ? findGroupByLaneId(lane.id) : null;
+    return lane ? `${group?.title || ""} ${lane.label}`.trim() : "全体俯瞰";
+  }
+  if (currentMode === "zone") {
+    return VIEW_CONFIG[currentZone]?.label || "棟別作業";
+  }
+  return "全体俯瞰";
+}
+
+function normalizeZoneId(value) {
+  const zone = String(value || "").trim().toLowerCase();
+  return ["east", "west", "outside"].includes(zone) ? zone : "";
+}
+
+function getZoneByLaneId(laneId) {
+  const group = findGroupByLaneId(laneId);
+  if (!group) return "";
+  if (group.id === "east-house") return "east";
+  if (group.id === "west-house") return "west";
+  if (group.id === "outside-area") return "outside";
+  return "";
+}
+
+function findGroupByLaneId(laneId) {
+  return GROUPS.find(group => group.lanes.some(lane => lane.id === laneId)) || null;
 }
 
 function getVisibleGroups() {
