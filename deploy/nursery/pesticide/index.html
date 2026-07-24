@@ -23,12 +23,24 @@
       box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
     }
 
+    .target-zone.is-active {
+      border-color: #1d4ed8;
+      box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.12);
+    }
+
     .target-zone__head {
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
+      border: 1px solid #cdd8e6;
+      border-radius: 12px;
+      background: #f8fbff;
+      padding: 10px 12px;
+      cursor: pointer;
+      text-align: left;
     }
 
     .target-zone__title {
@@ -43,16 +55,32 @@
       line-height: 1.4;
     }
 
+    .target-zone__state {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .target-zone__chevron {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      line-height: 1;
+      background: #fff;
+    }
+
     .target-zone__actions,
     .target-zone__lanes {
       display: grid;
       gap: 8px;
-    }
-
-    .target-zone__actions {
-      grid-auto-flow: column;
-      justify-content: end;
-      align-items: center;
     }
 
     .target-zone__lanes {
@@ -99,6 +127,10 @@
       font-weight: 800;
       cursor: pointer;
       text-align: left;
+    }
+
+    .target-lane__head:active {
+      transform: translateY(1px);
     }
 
     .target-lane.is-active .target-lane__head {
@@ -152,6 +184,7 @@
       border-radius: 9px;
       background: #fff;
       padding: 8px 10px;
+      cursor: pointer;
     }
 
     .target-lot.is-selected {
@@ -171,20 +204,20 @@
       line-height: 1.45;
     }
 
-    .target-lot__remove {
-      width: 30px;
-      height: 30px;
-      border: 1px solid #cbd5e1;
+    .target-lot__toggle {
+      font-size: 12px;
+      color: #64748b;
+      border: 1px solid #d4deea;
       border-radius: 999px;
-      background: #fff;
-      color: #475569;
-      cursor: pointer;
-      flex: 0 0 auto;
+      background: #f8fbff;
+      padding: 4px 8px;
+      align-self: center;
     }
 
-    .target-lane__footer {
-      display: flex;
-      justify-content: flex-end;
+    .target-lot.is-selected .target-lot__toggle {
+      color: #1d4ed8;
+      border-color: #93c5fd;
+      background: #eaf2ff;
     }
 
     .target-summary {
@@ -210,11 +243,6 @@
     }
 
     @media (max-width: 900px) {
-      .target-zone__actions {
-        grid-auto-flow: row;
-        justify-content: stretch;
-      }
-
       .target-zone__lanes {
         grid-template-columns: minmax(0, 1fr);
       }

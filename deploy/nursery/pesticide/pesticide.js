@@ -65,6 +65,9 @@ const targetState = {
   lotsBySeedRef: new Map()
 };
 
+let expandedZoneId = "";
+const expandedLaneByZone = new Map();
+
 export async function initNurseryPesticidePage() {
   await initPesticideFilterData();
   await initTargetData();
@@ -95,35 +98,26 @@ function bindControls() {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
+      const zoneBtn = target.closest("[data-zone-id]");
+      if (zoneBtn instanceof HTMLElement && zoneBtn.classList.contains("target-zone__head")) {
+        toggleZoneSelectionAndExpand(String(zoneBtn.dataset.zoneId || "").trim());
+        return;
+      }
+
       const laneBtn = target.closest("[data-lane-id]");
       if (laneBtn instanceof HTMLElement) {
-        toggleLaneSelection(String(laneBtn.dataset.laneId || "").trim());
+        const laneId = String(laneBtn.dataset.laneId || "").trim();
+        const zoneId = String(laneBtn.dataset.zoneId || "").trim();
+        toggleLaneSelection(zoneId, laneId);
         return;
       }
 
-      const laneClearBtn = target.closest("[data-lane-clear]");
-      if (laneClearBtn instanceof HTMLElement) {
-        clearLaneSelection(String(laneClearBtn.dataset.laneClear || "").trim());
-        return;
-      }
-
-      const zoneAllBtn = target.closest("[data-zone-all]");
-      if (zoneAllBtn instanceof HTMLElement) {
-        setZoneSelection(String(zoneAllBtn.dataset.zoneAll || "").trim(), true);
-        return;
-      }
-
-      const zoneClearBtn = target.closest("[data-zone-clear]");
-      if (zoneClearBtn instanceof HTMLElement) {
-        setZoneSelection(String(zoneClearBtn.dataset.zoneClear || "").trim(), false);
-        return;
-      }
-
-      const lotRemoveBtn = target.closest("[data-remove-seed-ref]");
-      if (lotRemoveBtn instanceof HTMLElement) {
-        const seedRef = String(lotRemoveBtn.dataset.removeSeedRef || "").trim();
-        const laneId = String(lotRemoveBtn.dataset.removeLaneId || "").trim();
-        removeSeedRef(seedRef, laneId);
+      const lotCard = target.closest("[data-lot-seed-ref]");
+      if (lotCard instanceof HTMLElement) {
+        const seedRef = String(lotCard.dataset.lotSeedRef || "").trim();
+        const laneId = String(lotCard.dataset.lotLaneId || "").trim();
+        const zoneId = String(lotCard.dataset.lotZoneId || "").trim();
+        toggleLotSelection(seedRef, laneId, zoneId);
       }
     });
   }
@@ -291,21 +285,26 @@ function renderTargetArea() {
   if (!area) return;
 
   area.innerHTML = NURSERY_TARGET_GROUPS.map(zone => {
+    const expanded = expandedZoneId === zone.id;
+    const allSelected = isZoneFullySelected(zone);
     const zoneStats = getZoneSelectionStats(zone);
-    const laneHTML = zone.lanes.map(lane => renderLaneCard(zone, lane)).join("");
+    const laneHTML = expanded
+      ? zone.lanes.map(lane => renderLaneCard(zone, lane)).join("")
+      : "";
+
     return `
-      <section class="target-zone">
-        <div class="target-zone__head">
+      <section class="target-zone ${expanded ? "is-expanded" : ""} ${allSelected ? "is-active" : ""}">
+        <button class="target-zone__head" type="button" data-zone-id="${escapeHtml(zone.id)}">
           <div>
             <div class="target-zone__title">${escapeHtml(zone.label)}</div>
             <div class="target-zone__summary">${escapeHtml(zoneStats.text)}</div>
           </div>
-          <div class="target-zone__actions">
-            <button class="secondary-btn" type="button" data-zone-all="${escapeHtml(zone.id)}">この棟を全選択</button>
-            <button class="secondary-btn" type="button" data-zone-clear="${escapeHtml(zone.id)}">解除</button>
+          <div class="target-zone__state">
+            <span>${allSelected ? "選択中" : "未選択"}</span>
+            <span class="target-zone__chevron">${expanded ? "−" : "+"}</span>
           </div>
-        </div>
-        <div class="target-zone__lanes">${laneHTML}</div>
+        </button>
+        ${expanded ? `<div class="target-zone__lanes">${laneHTML}</div>` : ""}
       </section>
     `;
   }).join("");
@@ -349,7 +348,7 @@ function renderLaneCard(zone, lane) {
   const overBy = capacity > 0 ? Math.max(0, selectedTrays - capacity) : 0;
   const allSelected = totalCount > 0 && selectedCount === totalCount;
   const partial = selectedCount > 0 && selectedCount < totalCount;
-  const expanded = selectedCount > 0;
+  const expanded = expandedLaneByZone.get(zone.id) === lane.id;
 
   return `
     <section class="target-lane ${allSelected ? "is-active" : partial ? "is-partial" : ""} ${overBy > 0 ? "is-warning" : ""}">
@@ -358,17 +357,14 @@ function renderLaneCard(zone, lane) {
         <span class="target-lane__badge">${selectedCount}/${totalCount}ロット / ${formatNum(selectedTrays)}枚${capacity > 0 ? ` / 目安${formatNum(capacity)}枚` : ""}</span>
       </button>
       <div class="target-lane__body">
-        ${expanded ? renderLaneLots(lots) : `<div class="target-lane__hint">クリックすると対象ロットを表示します</div>`}
+        ${expanded ? renderLaneLots(zone.id, lane.id, lots) : `<div class="target-lane__hint">タップで選択/解除。タップ中のレーンは対象ロットを表示します</div>`}
         ${overBy > 0 ? `<div class="target-lane__warning">目安上限を ${formatNum(overBy)} 枚超えています。並べ方によっては許容できる場合があります。</div>` : ""}
-      </div>
-      <div class="target-lane__footer">
-        <button class="secondary-btn" type="button" data-lane-clear="${escapeHtml(lane.id)}">このレーンを解除</button>
       </div>
     </section>
   `;
 }
 
-function renderLaneLots(lots) {
+function renderLaneLots(zoneId, laneId, lots) {
   if (!lots.length) {
     return `<div class="target-lane__empty">対象ロットがありません</div>`;
   }
@@ -378,13 +374,13 @@ function renderLaneLots(lots) {
       ${lots.map(lot => {
         const selected = selectedSeedRefs.has(lot.seedRef);
         return `
-          <article class="target-lot ${selected ? "is-selected" : ""}">
+          <article class="target-lot ${selected ? "is-selected" : ""}" data-lot-seed-ref="${escapeHtml(lot.seedRef)}" data-lot-lane-id="${escapeHtml(laneId)}" data-lot-zone-id="${escapeHtml(zoneId)}">
             <div class="target-lot__main">
               <div class="target-lot__name">${escapeHtml(lot.variety)}</div>
               <div class="target-lot__meta">${escapeHtml(lot.seedRef)} / 播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, lot.seedRef))}</div>
               <div class="target-lot__meta">${formatNum(lot.trays)} 枚${lot.blockCount > 1 ? `（${lot.blockCount}ブロック）` : ""}</div>
             </div>
-            <button class="target-lot__remove" type="button" data-remove-seed-ref="${escapeHtml(lot.seedRef)}" data-remove-lane-id="${escapeHtml(lot.laneId)}">×</button>
+            <div class="target-lot__toggle">${selected ? "選択中" : "タップで選択"}</div>
           </article>
         `;
       }).join("")}
@@ -398,7 +394,7 @@ function updateSummary() {
 
   const selected = getSelectedTargets();
   if (selected.length === 0) {
-    el.innerHTML = "<strong>未選択</strong> <span>レーンを開いて対象ロットを選択してください。</span>";
+    el.innerHTML = "<strong>未選択</strong> <span>東棟・西棟・外をタップすると棟全体を選択し、レーンを展開できます。</span>";
     return;
   }
 
@@ -414,7 +410,36 @@ function updateSummary() {
     : `<strong>${formatNum(selected.length)}ロット / ${formatNum(totalTrays)}枚</strong><br>${escapeHtml(base)}`;
 }
 
-function toggleLaneSelection(laneId) {
+function toggleZoneSelectionAndExpand(zoneId) {
+  const zone = NURSERY_TARGET_GROUPS.find(v => v.id === zoneId);
+  if (!zone) return;
+
+  const zoneLots = getZoneLots(zone);
+  const allSelected = zoneLots.length > 0 && zoneLots.every(seedRef => selectedSeedRefs.has(seedRef));
+
+  if (allSelected) {
+    zoneLots.forEach(seedRef => selectedSeedRefs.delete(seedRef));
+    if (expandedZoneId === zoneId) {
+      expandedZoneId = "";
+      expandedLaneByZone.delete(zoneId);
+    }
+  } else {
+    zoneLots.forEach(seedRef => selectedSeedRefs.add(seedRef));
+    expandedZoneId = zoneId;
+
+    const firstLaneWithLots = zone.lanes.find(lane => (targetState.laneLotsByLane.get(lane.id) || []).length > 0);
+    if (firstLaneWithLots) {
+      expandedLaneByZone.set(zoneId, firstLaneWithLots.id);
+    } else {
+      expandedLaneByZone.delete(zoneId);
+    }
+  }
+
+  renderTargetArea();
+  updateSummary();
+}
+
+function toggleLaneSelection(zoneId, laneId) {
   const lots = targetState.laneLotsByLane.get(laneId) || [];
   if (!lots.length) {
     alert("このレーンに対象ロットがありません。");
@@ -423,50 +448,50 @@ function toggleLaneSelection(laneId) {
 
   const allSelected = lots.every(lot => selectedSeedRefs.has(lot.seedRef));
   if (allSelected) {
-    clearLaneSelection(laneId);
+    lots.forEach(lot => selectedSeedRefs.delete(lot.seedRef));
+    if (expandedLaneByZone.get(zoneId) === laneId) {
+      expandedLaneByZone.delete(zoneId);
+    }
   } else {
     lots.forEach(lot => selectedSeedRefs.add(lot.seedRef));
-    renderTargetArea();
-    updateSummary();
+    expandedZoneId = zoneId;
+    expandedLaneByZone.set(zoneId, laneId);
   }
-}
 
-function clearLaneSelection(laneId) {
-  const lots = targetState.laneLotsByLane.get(laneId) || [];
-  lots.forEach(lot => selectedSeedRefs.delete(lot.seedRef));
   renderTargetArea();
   updateSummary();
 }
 
-function setZoneSelection(zoneId, enabled) {
-  const zone = NURSERY_TARGET_GROUPS.find(v => v.id === zoneId);
-  if (!zone) return;
+function toggleLotSelection(seedRef, laneId, zoneId) {
+  if (!seedRef) return;
 
+  if (selectedSeedRefs.has(seedRef)) {
+    selectedSeedRefs.delete(seedRef);
+  } else {
+    selectedSeedRefs.add(seedRef);
+    if (zoneId) expandedZoneId = zoneId;
+    if (zoneId && laneId) expandedLaneByZone.set(zoneId, laneId);
+  }
+
+  renderTargetArea();
+  updateSummary();
+}
+
+function getZoneLots(zone) {
+  const refs = [];
   zone.lanes.forEach(lane => {
     const lots = targetState.laneLotsByLane.get(lane.id) || [];
     lots.forEach(lot => {
-      if (enabled) selectedSeedRefs.add(lot.seedRef);
-      else selectedSeedRefs.delete(lot.seedRef);
+      refs.push(lot.seedRef);
     });
   });
-
-  renderTargetArea();
-  updateSummary();
+  return refs;
 }
 
-function removeSeedRef(seedRef, laneId) {
-  if (!seedRef) return;
-
-  selectedSeedRefs.delete(seedRef);
-
-  const lots = targetState.laneLotsByLane.get(laneId) || [];
-  if (lots.every(lot => !selectedSeedRefs.has(lot.seedRef))) {
-    clearLaneSelection(laneId);
-    return;
-  }
-
-  renderTargetArea();
-  updateSummary();
+function isZoneFullySelected(zone) {
+  const refs = getZoneLots(zone);
+  if (!refs.length) return false;
+  return refs.every(seedRef => selectedSeedRefs.has(seedRef));
 }
 
 function getSelectedTargets() {
