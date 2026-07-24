@@ -1637,7 +1637,7 @@ function buildLaneElement(lane) {
   } else {
     laneBlocks.forEach(block => {
       const span = getBlockSpanCols(block, lane);
-      const widthPct = getBlockWidthPct(lane, span);
+      const widthPct = getBlockWidthPct(lane, span, block.trays);
       const blockHeightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
       const heightPct = clamp((blockHeightPx / laneBodyHeight) * 100, 4, 100);
       const maxX = Math.max(0, 1 - (widthPct / 100));
@@ -1788,7 +1788,7 @@ function onResizeMove(event) {
   if (block.spanCols === nextCols) return;
 
   const currentRect = getBlockRectNorm(block, lane, resizeState.laneBodyHeight || laneBody.clientHeight);
-  const nextWidthNorm = getBlockWidthNorm(lane, nextCols);
+  const nextWidthNorm = getBlockWidthNorm(lane, nextCols, block.trays);
   const nextMaxX = Math.max(0, 1 - nextWidthNorm);
   const preferredX = resizeState.side === "left"
     ? clamp(currentRect.right - nextWidthNorm, 0, nextMaxX)
@@ -2546,7 +2546,7 @@ function updateDragPreview(lane, laneBodyHeight, dropEvent) {
     return;
   }
 
-  const widthNorm = getBlockWidthNorm(lane, placement.spanCols);
+  const widthNorm = getBlockWidthNorm(lane, placement.spanCols, target.trays);
   const blockHeightPx = computeBlockHeight(target.trays, lane, laneBodyHeight, placement.spanCols);
   const heightNorm = clamp(blockHeightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
@@ -2596,7 +2596,7 @@ function getPreferredSpanForLane(target, lane) {
   }
 
   const sourceSpan = getBlockSpanCols(target, sourceLane);
-  const sourceWidthNorm = getBlockWidthNorm(sourceLane, sourceSpan);
+  const sourceWidthNorm = getBlockWidthNorm(sourceLane, sourceSpan, target.trays);
   const estimatedSpan = Math.round(sourceWidthNorm * targetLaneCols);
   return Math.max(1, Math.min(targetLaneCols, estimatedSpan || fallback));
 }
@@ -2680,7 +2680,7 @@ function resolvePlacementInLane({
   occupiedRects = []
 }) {
   const laneCols = getLaneCols(lane);
-  const widthNorm = getBlockWidthNorm(lane, spanCols);
+  const widthNorm = getBlockWidthNorm(lane, spanCols, trays);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, spanCols);
   const heightNorm = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
   const edgeGapNormX = PLACEMENT_EDGE_GAP_PX / Math.max(1, laneBodyEl.clientWidth);
@@ -2765,7 +2765,7 @@ function resolvePlacementInLane({
 
 function getBlockRectNorm(block, lane, laneBodyHeight) {
   const span = getBlockSpanCols(block, lane);
-  const width = getBlockWidthNorm(lane, span);
+  const width = getBlockWidthNorm(lane, span, block.trays);
   const heightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
@@ -2784,7 +2784,7 @@ function getBlockRectNorm(block, lane, laneBodyHeight) {
 
 function getRectNormFromPlacement({ lane, laneBodyHeight, trays, spanCols, x, y }) {
   const span = getEffectiveSpanCols(lane, spanCols);
-  const width = getBlockWidthNorm(lane, span);
+  const width = getBlockWidthNorm(lane, span, trays);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
@@ -3222,6 +3222,12 @@ function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) 
   const cols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
 
   if (laneCapacity > 0 && laneBodyHeight > 0) {
+    if (isRotatedSpanLane(lane)) {
+      const adjustedRotated = laneBodyHeight * (cols / laneCols);
+      if (trays <= 0) return 18;
+      return clamp(Math.round(adjustedRotated * BLOCK_HEIGHT_SCALE), 18, Math.max(24, laneBodyHeight - 6));
+    }
+
     const ratio = trays / laneCapacity;
     const adjusted = laneBodyHeight * ratio * (laneCols / cols);
     if (trays <= 0) return 18;
@@ -3235,14 +3241,22 @@ function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) 
   return clamp(Math.round(px * BLOCK_HEIGHT_SCALE), 30, 220);
 }
 
-function getBlockWidthNorm(lane, spanCols) {
+function getBlockWidthNorm(lane, spanCols, blockTrays = 0) {
   const laneCols = getLaneCols(lane);
   const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
+  if (isRotatedSpanLane(lane)) {
+    const laneCapacity = toNumber(lane?.capacity);
+    const trays = Math.max(0, toNumber(blockTrays));
+    if (laneCapacity > 0 && trays > 0) {
+      const ratio = trays / laneCapacity;
+      return clamp(ratio * (laneCols / span) * BLOCK_WIDTH_SCALE, 0.05, 1);
+    }
+  }
   return clamp((span / laneCols) * BLOCK_WIDTH_SCALE, 0.05, 1);
 }
 
-function getBlockWidthPct(lane, spanCols) {
-  return getBlockWidthNorm(lane, spanCols) * 100;
+function getBlockWidthPct(lane, spanCols, blockTrays = 0) {
+  return getBlockWidthNorm(lane, spanCols, blockTrays) * 100;
 }
 
 function clamp(value, min, max) {
