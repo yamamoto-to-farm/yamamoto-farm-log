@@ -120,6 +120,36 @@
       line-height: 1.6;
     }
 
+    .filter-actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .rebuild-btn {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #1f2937;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .rebuild-btn:hover {
+      background: #eef2f7;
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+    }
+
+    .rebuild-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+      transform: none;
+    }
+
     .source-filter-card h3 {
       margin: 0 0 10px;
       font-size: 14px;
@@ -368,6 +398,9 @@
         </div>
 
         <div id="filter-note" class="filter-note"></div>
+        <div class="filter-actions">
+          <button type="button" id="rebuild-summary-btn" class="rebuild-btn">集計を更新</button>
+        </div>
       </div>
 
       <div class="filter-card source-filter-card">
@@ -380,7 +413,7 @@
     </div>
   </div>
 
-  <script type="module" src="./index.js"></script>
+  <script type="module" src="./index.js?v=20260725-2"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

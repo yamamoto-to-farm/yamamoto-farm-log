@@ -220,6 +220,21 @@ function getFilterState() {
   };
 }
 
+function shouldForceRebuildSummary() {
+  const params = new URLSearchParams(location.search);
+  const value = String(params.get("rebuild") || "").trim().toLowerCase();
+  const shouldRebuild = value === "1" || value === "true" || value === "yes";
+
+  if (shouldRebuild) {
+    params.delete("rebuild");
+    const nextQuery = params.toString();
+    const nextUrl = nextQuery ? `${location.pathname}?${nextQuery}` : location.pathname;
+    history.replaceState(null, "", nextUrl);
+  }
+
+  return shouldRebuild;
+}
+
 function normalizeSelectedSourceKeys(keys) {
   const set = new Set(Array.isArray(keys) ? keys : []);
   return SOURCE_KEYS.filter(key => set.has(key));
@@ -504,8 +519,12 @@ async function main() {
   const monthList = document.getElementById("month-list");
   const monthMode = document.getElementById("month-mode");
   const referenceMonth = document.getElementById("reference-month");
+  const rebuildSummaryBtn = document.getElementById("rebuild-summary-btn");
 
-  const summary = await loadMonthlyWorkSummary({ rebuildIfMissing: true, forceRebuild: true });
+  const summary = await loadMonthlyWorkSummary({
+    rebuildIfMissing: true,
+    forceRebuild: shouldForceRebuildSummary()
+  });
   const months = Object.keys(summary.months || {}).sort((a, b) => b.localeCompare(a, "ja"));
 
   if (months.length === 0) {
@@ -523,6 +542,24 @@ async function main() {
 
   renderMonthOptions(months, defaultReferenceYm);
   renderSourceFilterChips(selectedSourceKeys, sourceTotalCounts);
+
+  if (rebuildSummaryBtn) {
+    rebuildSummaryBtn.addEventListener("click", () => {
+      const params = new URLSearchParams(location.search);
+      const mode = monthMode.value || initialMode;
+      const ym = referenceMonth.value || defaultReferenceYm;
+      const normalized = normalizeSelectedSourceKeys(selectedSourceKeys);
+
+      params.set("mode", mode);
+      params.set("ym", ym);
+      params.set("types", normalized.join(","));
+      params.set("rebuild", "1");
+
+      rebuildSummaryBtn.disabled = true;
+      rebuildSummaryBtn.textContent = "集計を更新中...";
+      location.href = `${location.pathname}?${params.toString()}`;
+    });
+  }
 
   const applyFilter = () => {
     const mode = monthMode.value;
