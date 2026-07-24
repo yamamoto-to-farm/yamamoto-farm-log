@@ -22,13 +22,10 @@ import {
 let _summaryIndexCache = null;
 let _summaryRefMap = null;
 
-function applyAnnualStep1Targets(calendarYear, annualAll, fallbackTargets) {
-  const nextTargets = {
-    targetKg: [...(fallbackTargets?.targetKg || Array(12).fill(0))],
-    targetUnits: [...(fallbackTargets?.targetUnits || Array(12).fill(0))]
-  };
-
-  let overridden = false;
+function buildAnnualStep1MonthlyData(calendarYear, annualAll) {
+  const planArea = Array(12).fill(null);
+  const targetKg = Array(12).fill(null);
+  const targetUnits = Array(12).fill(null);
   const candidateYears = [calendarYear - 1, calendarYear];
 
   for (const planYear of candidateYears) {
@@ -46,15 +43,35 @@ function applyAnnualStep1Targets(calendarYear, annualAll, fallbackTargets) {
 
       const needArea = Number(item?.needArea || 0);
       const yieldPer10a = Number(item?.yieldPer10a || 0);
-      const targetUnits = Number(item?.targetUnits || 0);
+      const units = Number(item?.targetUnits || 0);
 
-      nextTargets.targetKg[monthIndex] = needArea * yieldPer10a;
-      nextTargets.targetUnits[monthIndex] = targetUnits;
-      overridden = true;
+      planArea[monthIndex] = needArea;
+      targetKg[monthIndex] = needArea * yieldPer10a;
+      targetUnits[monthIndex] = units;
     }
   }
 
-  return overridden ? nextTargets : fallbackTargets;
+  return { planArea, targetKg, targetUnits };
+}
+
+function mergeAnnualStep1IntoTargets(fallbackPlanArea, fallbackTargets, annualData) {
+  const nextPlanArea = [...(fallbackPlanArea || Array(12).fill(0))];
+  const nextTargets = {
+    targetKg: [...(fallbackTargets?.targetKg || Array(12).fill(0))],
+    targetUnits: [...(fallbackTargets?.targetUnits || Array(12).fill(0))]
+  };
+  const planSources = Array(12).fill("csv");
+
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    if (annualData?.planArea?.[monthIndex] === null || annualData?.planArea?.[monthIndex] === undefined) continue;
+
+    nextPlanArea[monthIndex] = Number(annualData.planArea[monthIndex] || 0);
+    nextTargets.targetKg[monthIndex] = Number(annualData.targetKg?.[monthIndex] || 0);
+    nextTargets.targetUnits[monthIndex] = Number(annualData.targetUnits?.[monthIndex] || 0);
+    planSources[monthIndex] = "annual";
+  }
+
+  return { planArea: nextPlanArea, targets: nextTargets, planSources };
 }
 
 function parseYearFromDate(value) {
@@ -170,6 +187,8 @@ export async function renderKpiPage(filters = null) {
     yearContainer.innerHTML = await renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase, annualAll);
 
     yearContainer.querySelectorAll(".plan-cell").forEach(cell => {
+      if (cell.dataset.planSource === "annual") return;
+
       cell.addEventListener("click", () => {
         const yearValue = Number(cell.dataset.year);
         const month = Number(cell.dataset.month);
@@ -269,13 +288,14 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
   /* ------------------------------
      目標値
   ------------------------------ */
-    const fallbackTargets = calcTargets(planArea, harvestBase);
-    const targets = applyAnnualStep1Targets(year, annualAll, fallbackTargets);
+  const fallbackTargets = calcTargets(planArea, harvestBase);
+  const annualData = buildAnnualStep1MonthlyData(year, annualAll);
+  const mergedPlan = mergeAnnualStep1IntoTargets(planArea, fallbackTargets, annualData);
 
   /* ------------------------------
      KPI テーブル生成
   ------------------------------ */
-  return renderKpiTable(planArea, areaMonthly, actuals, targets, year);
+  return renderKpiTable(mergedPlan.planArea, areaMonthly, actuals, mergedPlan.targets, year, mergedPlan.planSources);
 }
 
 function openPlanRefModal(year, month, refList, plantingRows) {

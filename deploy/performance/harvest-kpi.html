@@ -21,6 +21,21 @@
     .debug-only { display:none; }
     #activeFilters { margin-bottom: 12px; font-size: 14px; color: #333; }
     #activeFilters .chip { display:inline-block; padding:6px 10px; background:#eef; border-radius:16px; margin-right:6px; }
+    .kpi-note {
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #dbe4f0;
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .plan-cell--static {
+      color: #475569;
+      background: #f8fafc;
+      cursor: default;
+    }
   </style>
 
   <script type="module" src="/common/ui.js?v=1"></script>
@@ -61,7 +76,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.4";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.5";
     import { loadJSON } from "/common/json.js";
     import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {

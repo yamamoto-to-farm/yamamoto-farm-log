@@ -1,8 +1,10 @@
 // kpi-render.js
 // KPI テーブル描画（HTML生成）
 
-export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
+export function renderKpiTable(planArea, areaMonthly, actuals, targets, year, planSources = []) {
+  const hasAnnualPlan = Array.isArray(planSources) && planSources.includes("annual");
   let html = `
+    ${hasAnnualPlan ? '<div class="kpi-note">注記: 予定面積・目標収量・出荷目標は annual の STEP1 計画を優先表示しています。annual 未設定の月のみ従来計算です。</div>' : ''}
     <table class="kpi-table">
       <thead>
         <tr>
@@ -23,6 +25,7 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
   // 月別行
   // ===============================
   for (let m = 0; m < 12; m++) {
+    const planSource = planSources[m] || "csv";
     const diff = areaMonthly[m] - planArea[m];
     const diffClass =
       diff > 0 ? "diff-positive" :
@@ -34,9 +37,10 @@ export function renderKpiTable(planArea, areaMonthly, actuals, targets, year) {
       <td><a href="/performance/kpi-month.html?year=${year}&month=${m + 1}">${m + 1}月</a></td>
 
       <!-- ★ 予定面積セルをクリック可能に -->
-      <td class="plan-cell"
+        <td class="plan-cell ${planSource === "annual" ? "plan-cell--static" : ""}"
           data-year="${year}"
-          data-month="${m}">
+          data-month="${m}"
+          data-plan-source="${planSource}">
           ${planArea[m].toFixed(2)}
       </td>
 
