@@ -95,7 +95,7 @@ const pointerDragState = {
 };
 
 const VIEW_CONFIG = {
-  all: { label: "全体ビュー", groupIds: ["west-house", "east-house", "outside-area"] },
+  all: { label: "全体ビュー", groupIds: ["outside-area", "west-house", "east-house"] },
   east: { label: "東棟", groupIds: ["east-house"] },
   west: { label: "西棟", groupIds: ["west-house"] },
   outside: { label: "外", groupIds: ["outside-area"] }
