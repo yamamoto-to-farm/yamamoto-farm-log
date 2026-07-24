@@ -1362,11 +1362,20 @@ function buildZoneHeroCard(group) {
 
   const shortcuts = document.createElement("div");
   shortcuts.className = "zone-lane-shortcuts";
+
+  const groupTab = document.createElement("button");
+  groupTab.type = "button";
+  groupTab.className = "secondary-btn zone-lane-tab-btn is-active";
+  groupTab.textContent = getZoneLaneGroupTabLabel(group);
+  groupTab.disabled = true;
+  groupTab.setAttribute("aria-current", "page");
+  shortcuts.appendChild(groupTab);
+
   lanes.forEach(lane => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "secondary-btn zone-lane-shortcut-btn";
-    btn.textContent = `${lane.label}へ`;
+    btn.className = "secondary-btn zone-lane-tab-btn";
+    btn.textContent = lane.label;
     btn.addEventListener("click", () => {
       navigateToRoute({ mode: "lane", zone: getZoneByLaneId(lane.id), laneId: lane.id }, { syncUrl: true });
     });
@@ -1538,6 +1547,14 @@ function getZoneMemoTitle(group) {
   if (zone === "east") return "東棟メモ";
   if (zone === "outside") return "外メモ";
   return "棟メモ";
+}
+
+function getZoneLaneGroupTabLabel(group) {
+  const zone = getZoneByGroupId(String(group?.id || "").trim());
+  if (zone === "west") return "西棟";
+  if (zone === "east") return "東棟";
+  if (zone === "outside") return "外";
+  return String(group?.title || "棟").trim() || "棟";
 }
 
 function findGroupByLaneId(laneId) {

@@ -516,14 +516,14 @@
 }
 
 .zone-memo-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   color: #1e3a8a;
 }
 
 .zone-memo-line {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
   color: #0f172a;
   line-height: 1.35;
 }
@@ -561,13 +561,52 @@
 }
 
 .zone-lane-shortcuts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid #c8d8ea;
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #fff;
 }
 
-.zone-lane-shortcut-btn {
-  min-width: 110px;
+.zone-lane-tab-btn {
+  min-width: 92px;
+  height: 38px;
+  border: none;
+  border-right: 1px solid #d8e4f1;
+  border-radius: 0;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+.zone-lane-tab-btn:last-child {
+  border-right: none;
+}
+
+.zone-lane-tab-btn:hover:not(:disabled) {
+  background: #f2f7ff;
+}
+
+.zone-lane-tab-btn.is-active,
+.zone-lane-tab-btn:disabled {
+  background: #2f855a;
+  color: #fff;
+  border-color: transparent;
+  opacity: 1;
+}
+
+.zone-lane-tab-btn:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
 }
 
 .zone-content {
