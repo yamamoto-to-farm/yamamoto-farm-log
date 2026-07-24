@@ -74,12 +74,12 @@
 .toolbar-location-title {
   justify-self: center;
   align-self: center;
-  padding: 4px 14px;
-  font-size: 20px;
+  padding: 2px 14px 4px;
+  font-size: clamp(24px, 2vw, 34px);
   font-weight: 800;
-  color: #1e3a8a;
+  color: #0f172a;
   letter-spacing: 0.03em;
-  border-bottom: 2px solid #cfe0f3;
+  border-bottom: 2px solid #d6e4f3;
 }
 
 .toolbar-group {
@@ -1288,7 +1288,7 @@ body.single-view-mode[data-house-view="outside"] .lot-card {
     width: 100%;
     justify-self: stretch;
     text-align: center;
-    font-size: 17px;
+    font-size: 22px;
     padding: 2px 8px;
   }
 

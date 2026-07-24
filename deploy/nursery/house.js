@@ -1329,28 +1329,10 @@ function buildZoneHeroCard(group) {
   const utilization = capacity > 0 ? Math.round((usedTrays / capacity) * 100) : 0;
   const freeTrays = Math.max(0, roundTray(capacity - usedTrays));
 
-  const top = document.createElement("div");
-  top.className = "zone-hero-top";
-
-  const titleWrap = document.createElement("div");
-  titleWrap.className = "zone-hero-title-wrap";
-  titleWrap.innerHTML = `
-    <div class="zone-hero-label">ZONE WORKSPACE</div>
-    <h2 class="zone-hero-title">${escapeHtml(group.title)}</h2>
-    <div class="zone-hero-subtitle">レーンをタップすると集中編集へ。ここでは棟全体の移動と保存を行います。</div>
-  `;
-
-  const backBtn = document.createElement("button");
-  backBtn.type = "button";
-  backBtn.className = "secondary-btn zone-back-btn";
-  backBtn.textContent = "全体俯瞰へ戻る";
-  backBtn.addEventListener("click", () => {
-    navigateToRoute({ mode: "overview", zone: "", laneId: "" }, { syncUrl: true });
-  });
-
-  top.appendChild(titleWrap);
-  top.appendChild(backBtn);
-  card.appendChild(top);
+  const subtitle = document.createElement("div");
+  subtitle.className = "zone-hero-subtitle";
+  subtitle.textContent = "レーンをタップすると集中編集へ。ここでは棟全体の移動と保存を行います。";
+  card.appendChild(subtitle);
 
   const memo = document.createElement("section");
   memo.className = "zone-memo-card";
@@ -1528,12 +1510,12 @@ function getCurrentLocationLabel() {
 function getCurrentLocationTitle() {
   if (currentMode === "lane") {
     const lane = findLane(currentLaneId);
-    return lane ? lane.label : "全体俯瞰";
+    return `表示中：${lane ? lane.label : "全体ビュー"}`;
   }
   if (currentMode === "zone") {
-    return VIEW_CONFIG[currentZone]?.label || "棟別作業";
+    return `表示中：${VIEW_CONFIG[currentZone]?.label || "棟別作業"}`;
   }
-  return "全体俯瞰";
+  return "表示中：全体ビュー";
 }
 
 function normalizeZoneId(value) {
