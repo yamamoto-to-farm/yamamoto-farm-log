@@ -1027,17 +1027,12 @@ function renderOverviewMode(root) {
   const infoCard = document.createElement("section");
   infoCard.className = "overview-info-card";
   const memo = getOverviewMemoData();
-  const topLotHtml = memo.topLots.length
-    ? memo.topLots
-      .map(item => `<div class="overview-info-subline">${escapeHtml(item.variety)}（${formatNum(item.trays)}枚） 播種日：${escapeHtml(item.seedDateLabel)}</div>`)
-      .join("")
-    : `<div class="overview-info-subline">配置中ロットなし</div>`;
   const zoneUsageHtml = memo.zoneUsage
     .map(item => `<div class="overview-info-subline">${escapeHtml(item.label)} ${formatNum(item.used)}/${formatNum(item.capacity)}枚（${formatNum(item.percent)}%）</div>`)
     .join("");
   const actionLine = memo.unassignedTrays > 0
-    ? `未配置が ${formatNum(memo.unassignedCount)}件 / ${formatNum(memo.unassignedTrays)}枚あります。棟を開いて配置してください。`
-    : "未配置はありません。";
+    ? "棟を開くと、未配置ロットを移動・配置できます。"
+    : "現在、未配置ロットはありません。";
 
   infoCard.innerHTML = `
     <h3 class="zone-title">全体メモ</h3>
@@ -1047,10 +1042,6 @@ function renderOverviewMode(root) {
     <div class="overview-info-section">
       <div class="overview-info-title">棟別の使用状況</div>
       ${zoneUsageHtml}
-    </div>
-    <div class="overview-info-section">
-      <div class="overview-info-title">配置中ロット（枚数上位）</div>
-      ${topLotHtml}
     </div>
   `;
   wrap.appendChild(infoCard);
@@ -1082,16 +1073,13 @@ function getOverviewMemoData() {
   const unassignedCount = unassignedBlocks.length;
   const unassignedTrays = roundTray(unassignedBlocks.reduce((sum, block) => sum + toNumber(block.trays), 0));
 
-  const topLots = getOverviewLotSummaries({ lanes: GROUPS.flatMap(group => group.lanes || []) }, 5).rows.slice(0, 3);
-
   return {
     totalUsedTrays,
     totalCapacity,
     totalPercent,
     unassignedCount,
     unassignedTrays,
-    zoneUsage: groupStats,
-    topLots
+    zoneUsage: groupStats
   };
 }
 
@@ -1239,6 +1227,7 @@ function buildOverviewCard(group) {
   const moreSummaryHtml = lotSummaries.moreCount > 0
     ? `<div class="overview-lot-line overview-lot-more">ほか${formatNum(lotSummaries.moreCount)}件</div>`
     : "";
+  const orderNoteHtml = `<div class="overview-lot-line overview-lot-note">※播種日が新しい順（最新${formatNum(Math.max(1, lotSummaries.limit))}件）</div>`;
 
   const btn = document.createElement("button");
   btn.type = "button";
@@ -1253,7 +1242,7 @@ function buildOverviewCard(group) {
     <div class="overview-metric">使用 ${formatNum(used)} / ${formatNum(capacity)}枚</div>
     <div class="overview-metric">使用率 ${formatNum(percent)}%</div>
     <div class="overview-metric">レーン ${formatNum(group.lanes.length)}本</div>
-    <div class="overview-lot-list">${lotSummaryHtml}${moreSummaryHtml}</div>
+    <div class="overview-lot-list">${lotSummaryHtml}${moreSummaryHtml}${orderNoteHtml}</div>
   `;
   card.appendChild(btn);
   return card;
@@ -1289,18 +1278,19 @@ function getOverviewLotSummaries(group, maxRows = 4) {
     })
     .filter(item => item.trays > 0)
     .sort((a, b) => {
-      const trayDiff = b.trays - a.trays;
-      if (trayDiff !== 0) return trayDiff;
-
       const dateDiff = b.seedDateMs - a.seedDateMs;
       if (dateDiff !== 0) return dateDiff;
+
+      const trayDiff = b.trays - a.trays;
+      if (trayDiff !== 0) return trayDiff;
 
       return a.variety.localeCompare(b.variety, "ja");
     });
 
   return {
     rows: rows.slice(0, limit),
-    moreCount: Math.max(0, rows.length - limit)
+    moreCount: Math.max(0, rows.length - limit),
+    limit
   };
 }
 

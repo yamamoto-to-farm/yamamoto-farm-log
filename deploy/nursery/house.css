@@ -300,9 +300,30 @@
   color: #475569;
 }
 
+.overview-lot-note {
+  font-size: 12px;
+  color: #64748b;
+}
+
 .overview-open-btn {
   margin-top: auto;
   align-self: stretch;
+}
+
+.overview-info-card .zone-title {
+  font-size: 24px;
+}
+
+.overview-info-card .overview-info-line {
+  font-size: 18px;
+}
+
+.overview-info-card .overview-info-title {
+  font-size: 15px;
+}
+
+.overview-info-card .overview-info-subline {
+  font-size: 16px;
 }
 
 .zone-workspace {
