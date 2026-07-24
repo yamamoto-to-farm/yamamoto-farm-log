@@ -14,6 +14,7 @@ const POINTER_HOLD_DELAY_MS = 220;
 const POINTER_HOLD_CANCEL_PX = 12;
 const POINTER_AUTO_SCROLL_EDGE_PX = 72;
 const POINTER_AUTO_SCROLL_MAX_STEP_PX = 22;
+const BLOCK_DIMENSION_SCALE = 0.965;
 
 const GROUPS = [
   {
@@ -1455,7 +1456,7 @@ function buildLaneElement(lane) {
   } else {
     laneBlocks.forEach(block => {
       const span = getBlockSpanCols(block, lane);
-      const widthPct = (span / getLaneCols(lane)) * 100;
+      const widthPct = getBlockWidthPct(lane, span);
       const blockHeightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
       const heightPct = clamp((blockHeightPx / laneBodyHeight) * 100, 4, 100);
       const maxX = Math.max(0, 1 - (widthPct / 100));
@@ -1606,7 +1607,7 @@ function onResizeMove(event) {
   if (block.spanCols === nextCols) return;
 
   const currentRect = getBlockRectNorm(block, lane, resizeState.laneBodyHeight || laneBody.clientHeight);
-  const nextWidthNorm = clamp(nextCols / getLaneCols(lane), 0.05, 1);
+  const nextWidthNorm = getBlockWidthNorm(lane, nextCols);
   const nextMaxX = Math.max(0, 1 - nextWidthNorm);
   const preferredX = resizeState.side === "left"
     ? clamp(currentRect.right - nextWidthNorm, 0, nextMaxX)
@@ -2389,7 +2390,7 @@ function updateDragPreview(lane, laneBodyHeight, dropEvent) {
     return;
   }
 
-  const widthNorm = clamp(spanCols / laneCols, 0.05, 1);
+  const widthNorm = getBlockWidthNorm(lane, spanCols);
   const blockHeightPx = computeBlockHeight(target.trays, lane, laneBodyHeight, spanCols);
   const heightNorm = clamp(blockHeightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
@@ -2443,7 +2444,7 @@ function resolvePlacementInLane({
   occupiedRects = []
 }) {
   const laneCols = getLaneCols(lane);
-  const widthNorm = clamp(spanCols / laneCols, 0.05, 1);
+  const widthNorm = getBlockWidthNorm(lane, spanCols);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, spanCols);
   const heightNorm = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
   const edgeGapNormX = PLACEMENT_EDGE_GAP_PX / Math.max(1, laneBodyEl.clientWidth);
@@ -2498,9 +2499,8 @@ function resolvePlacementInLane({
 }
 
 function getBlockRectNorm(block, lane, laneBodyHeight) {
-  const laneCols = getLaneCols(lane);
   const span = getBlockSpanCols(block, lane);
-  const width = clamp(span / laneCols, 0.05, 1);
+  const width = getBlockWidthNorm(lane, span);
   const heightPx = computeBlockHeight(block.trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
@@ -2518,9 +2518,8 @@ function getBlockRectNorm(block, lane, laneBodyHeight) {
 }
 
 function getRectNormFromPlacement({ lane, laneBodyHeight, trays, spanCols, x, y }) {
-  const laneCols = getLaneCols(lane);
   const span = getEffectiveSpanCols(lane, spanCols);
-  const width = clamp(span / laneCols, 0.05, 1);
+  const width = getBlockWidthNorm(lane, span);
   const heightPx = computeBlockHeight(trays, lane, laneBodyHeight, span);
   const height = clamp(heightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
@@ -3004,14 +3003,24 @@ function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) 
     const ratio = trays / laneCapacity;
     const adjusted = laneBodyHeight * ratio * (laneCols / cols);
     if (trays <= 0) return 18;
-    return clamp(Math.round(adjusted), 18, Math.max(24, laneBodyHeight - 6));
+    return clamp(Math.round(adjusted * BLOCK_DIMENSION_SCALE), 18, Math.max(24, laneBodyHeight - 6));
   }
 
   if (trays <= 0) return 30;
   const rows = trays / cols;
   const tray = getTraySizeByLane(lane || {});
   const px = rows * tray.nsMm * MM_TO_PX;
-  return clamp(Math.round(px), 30, 220);
+  return clamp(Math.round(px * BLOCK_DIMENSION_SCALE), 30, 220);
+}
+
+function getBlockWidthNorm(lane, spanCols) {
+  const laneCols = getLaneCols(lane);
+  const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
+  return clamp((span / laneCols) * BLOCK_DIMENSION_SCALE, 0.05, 1);
+}
+
+function getBlockWidthPct(lane, spanCols) {
+  return getBlockWidthNorm(lane, spanCols) * 100;
 }
 
 function clamp(value, min, max) {
