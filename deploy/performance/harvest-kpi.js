@@ -22,6 +22,41 @@ import {
 let _summaryIndexCache = null;
 let _summaryRefMap = null;
 
+function applyAnnualStep1Targets(calendarYear, annualAll, fallbackTargets) {
+  const nextTargets = {
+    targetKg: [...(fallbackTargets?.targetKg || Array(12).fill(0))],
+    targetUnits: [...(fallbackTargets?.targetUnits || Array(12).fill(0))]
+  };
+
+  let overridden = false;
+  const candidateYears = [calendarYear - 1, calendarYear];
+
+  for (const planYear of candidateYears) {
+    const months = annualAll?.[String(planYear)]?.step1?.months;
+    if (!Array.isArray(months)) continue;
+
+    for (const item of months) {
+      const ym = String(item?.month || "").trim();
+      const match = ym.match(/^(\d{4})-(\d{2})$/);
+      if (!match) continue;
+
+      const targetYear = Number(match[1]);
+      const monthIndex = Number(match[2]) - 1;
+      if (targetYear !== calendarYear || monthIndex < 0 || monthIndex > 11) continue;
+
+      const needArea = Number(item?.needArea || 0);
+      const yieldPer10a = Number(item?.yieldPer10a || 0);
+      const targetUnits = Number(item?.targetUnits || 0);
+
+      nextTargets.targetKg[monthIndex] = needArea * yieldPer10a;
+      nextTargets.targetUnits[monthIndex] = targetUnits;
+      overridden = true;
+    }
+  }
+
+  return overridden ? nextTargets : fallbackTargets;
+}
+
 function parseYearFromDate(value) {
   if (!value) return null;
   const d = new Date(value);
@@ -71,6 +106,7 @@ export async function renderKpiPage(filters = null) {
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   const weightRows = normalizeKeys(await loadCSV("/logs/weight/all.csv"));
   const harvestBase = await loadJSON("/data/harvestBase.json");
+  const annualAll = await loadJSON("/logs/schedule/annual/annual.json").catch(() => ({}));
 
   // shippingDate の年から年度一覧を作る（月次と完全一致)
   let years = [...new Set(
@@ -131,7 +167,7 @@ export async function renderKpiPage(filters = null) {
       refList = refList.filter(r => f.varieties.includes(r.variety));
     }
 
-    yearContainer.innerHTML = await renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase);
+    yearContainer.innerHTML = await renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase, annualAll);
 
     yearContainer.querySelectorAll(".plan-cell").forEach(cell => {
       cell.addEventListener("click", () => {
@@ -146,7 +182,7 @@ export async function renderKpiPage(filters = null) {
 /* ---------------------------------------------------------
    年ごとの KPI 生成（shippingDate ベース）
 --------------------------------------------------------- */
-async function renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase) {
+async function renderKpiForYear(year, refList, plantingRows, weightRows, harvestBase, annualAll) {
   const filteredWeightRows = weightRows.filter(row => {
     const rowYear = parseYearFromDate(row.shippingDate);
     return rowYear === year;
@@ -233,7 +269,8 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
   /* ------------------------------
      目標値
   ------------------------------ */
-  const targets = calcTargets(planArea, harvestBase);
+    const fallbackTargets = calcTargets(planArea, harvestBase);
+    const targets = applyAnnualStep1Targets(year, annualAll, fallbackTargets);
 
   /* ------------------------------
      KPI テーブル生成
