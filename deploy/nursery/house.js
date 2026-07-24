@@ -1326,10 +1326,11 @@ function buildZoneHeroCard(group) {
   const assignedBlocks = blocks.filter(block => laneIds.has(block.laneId));
   const usedTrays = assignedBlocks.reduce((sum, block) => sum + block.trays, 0);
   const capacity = lanes.reduce((sum, lane) => sum + toNumber(lane.capacity), 0);
-  const staleCount = assignedBlocks.filter(block => {
-    const lot = lotsBySeedRef.get(block.originSeedRef);
-    return !!lot && lot.availableTrays <= 0;
-  }).length;
+  const assignedSeedRefs = new Set(assignedBlocks.map(block => String(block.originSeedRef || "").trim()).filter(Boolean));
+  const activeLots = lots.filter(lot => toNumber(lot.availableTrays) > 0);
+  const activeCount = activeLots.length;
+  const activeTrays = roundTray(activeLots.reduce((sum, lot) => sum + toNumber(lot.availableTrays), 0));
+  const utilization = capacity > 0 ? Math.round((usedTrays / capacity) * 100) : 0;
   const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
   const unassignedTrays = unassignedBlocks.reduce((sum, block) => sum + block.trays, 0);
 
@@ -1358,10 +1359,10 @@ function buildZoneHeroCard(group) {
 
   const metrics = document.createElement("div");
   metrics.className = "zone-metrics";
-  metrics.appendChild(buildZoneMetricCard("使用枚数", `${formatNum(usedTrays)} / ${formatNum(capacity)}枚`));
-  metrics.appendChild(buildZoneMetricCard("使用率", `${formatNum(capacity > 0 ? Math.round((usedTrays / capacity) * 100) : 0)}%`));
-  metrics.appendChild(buildZoneMetricCard("未配置ロット", `${formatNum(unassignedBlocks.length)}件 / ${formatNum(unassignedTrays)}枚`));
-  metrics.appendChild(buildZoneMetricCard("注意", staleCount ? `在庫0配置 ${formatNum(staleCount)}件` : "問題なし"));
+  metrics.appendChild(buildZoneMetricCard("在庫あり（全体）", `${formatNum(activeCount)}件（${formatNum(activeTrays)}枚）`));
+  metrics.appendChild(buildZoneMetricCard("配置済み（この棟）", `${formatNum(assignedSeedRefs.size)}件（${formatNum(usedTrays)}枚）`));
+  metrics.appendChild(buildZoneMetricCard("使用率（この棟）", `${formatNum(utilization)}%`));
+  metrics.appendChild(buildZoneMetricCard("未配置（全体）", `${formatNum(unassignedBlocks.length)}件（${formatNum(unassignedTrays)}枚）`));
   card.appendChild(metrics);
 
   const shortcuts = document.createElement("div");
