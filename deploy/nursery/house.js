@@ -63,7 +63,6 @@ let dragBlockIds = [];
 let modalBlockId = "";
 let modalMoveZone = "";
 let modalMoveExpanded = false;
-let multiSelectMode = false;
 const selectedBlockIds = new Set();
 let currentView = "all";
 let lockedView = "";
@@ -138,9 +137,7 @@ export async function initNurseryHousePage(options = {}) {
 function bindControls() {
   const reloadBtn = document.getElementById("reload-btn");
   const saveBtn = document.getElementById("save-btn");
-  const multiSelectModeBtn = document.getElementById("multi-select-mode-btn");
   const clearSelectionBtn = document.getElementById("clear-selection-btn");
-  const openSelectionModalBtn = document.getElementById("open-selection-modal-btn");
   const zonesRoot = document.getElementById("zones-root");
   const modal = document.getElementById("block-modal");
   const modalClose = document.getElementById("block-modal-close");
@@ -148,7 +145,6 @@ function bindControls() {
   const modalDiscardSeedBtn = document.getElementById("modal-discard-seed-btn");
   const modalNurseryPesticideBtn = document.getElementById("modal-nursery-pesticide-btn");
   const modalSplitBtn = document.getElementById("modal-split-btn");
-  const modalMergeBtn = document.getElementById("modal-merge-btn");
   const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
 
   viewButtons.forEach(btn => {
@@ -181,22 +177,9 @@ function bindControls() {
     await saveLayout();
   });
 
-  multiSelectModeBtn?.addEventListener("click", () => {
-    setMultiSelectMode(!multiSelectMode);
-  });
-
   clearSelectionBtn?.addEventListener("click", () => {
     selectedBlockIds.clear();
     render();
-  });
-
-  openSelectionModalBtn?.addEventListener("click", () => {
-    if (!selectedBlockIds.size) {
-      alert("先にブロックを選択してください。");
-      return;
-    }
-    const firstId = [...selectedBlockIds][0];
-    openBlockModal(firstId);
   });
 
   modalClose?.addEventListener("click", closeBlockModal);
@@ -223,10 +206,6 @@ function bindControls() {
   });
   modalSplitBtn?.addEventListener("click", () => {
     splitSelectedBlock();
-    renderBlockModal();
-  });
-  modalMergeBtn?.addEventListener("click", () => {
-    mergeSelectedBlocks();
     renderBlockModal();
   });
 
@@ -300,17 +279,8 @@ function bindControls() {
       const blockId = String(cardEl.getAttribute("data-block-id") || "").trim();
       if (!blockId) return;
 
-      const keyMultiSelect = event.ctrlKey || event.metaKey || event.shiftKey;
-      const useMultiSelect = multiSelectMode || keyMultiSelect;
-      const keepGroupSelection = !useMultiSelect && selectedBlockIds.size > 1 && selectedBlockIds.has(blockId);
-
-      if (!keepGroupSelection) {
-        toggleSelection(blockId, useMultiSelect);
-      }
-
-      if (!multiSelectMode || keyMultiSelect) {
-        openBlockModal(blockId);
-      }
+      toggleSelection(blockId);
+      openBlockModal(blockId);
 
       renderGroups();
       renderSelectionControls();
@@ -810,15 +780,8 @@ function render() {
   renderBlockModal();
 }
 
-function setMultiSelectMode(next) {
-  multiSelectMode = !!next;
-  renderSelectionControls();
-}
-
 function renderSelectionControls() {
-  const modeBtn = document.getElementById("multi-select-mode-btn");
   const clearBtn = document.getElementById("clear-selection-btn");
-  const openBtn = document.getElementById("open-selection-modal-btn");
   const saveBtn = document.getElementById("save-btn");
   const reloadBtn = document.getElementById("reload-btn");
   const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
@@ -832,21 +795,9 @@ function renderSelectionControls() {
     btn.classList.toggle("is-active", active);
   });
 
-  if (modeBtn) {
-    modeBtn.textContent = `複数選択: ${multiSelectMode ? "ON" : "OFF"}`;
-    modeBtn.setAttribute("aria-pressed", multiSelectMode ? "true" : "false");
-    modeBtn.classList.toggle("is-active", multiSelectMode);
-    modeBtn.hidden = isOverview;
-  }
-
   if (clearBtn) {
     clearBtn.disabled = isOverview || selectedBlockIds.size === 0;
     clearBtn.hidden = isOverview;
-  }
-
-  if (openBtn) {
-    openBtn.disabled = isOverview || selectedBlockIds.size === 0;
-    openBtn.hidden = isOverview;
   }
 
   if (saveBtn) {
@@ -870,7 +821,7 @@ function renderSummary() {
 
   const line = document.getElementById("summary-line");
   if (line) {
-    line.textContent = `画面: ${label} / 在庫あり ${activeCount}件（${formatNum(activeTrays)}枚） / 配置済み ${assignedSeedRefs.size}件（${formatNum(assignedTrays)}枚） / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
+    line.textContent = `画面: ${label} / 在庫あり ${activeCount}件（${formatNum(activeTrays)}枚） / 配置済み ${assignedSeedRefs.size}件（${formatNum(assignedTrays)}枚） / 選択 ${selectedBlockIds.size}件`;
   }
 
   const staleLine = document.getElementById("stale-line");
@@ -2870,15 +2821,9 @@ function snapToStep(value, step, max) {
   return clamp(Number(snapped.toFixed(4)), 0, max);
 }
 
-function toggleSelection(blockId, multiSelect) {
-  if (!multiSelect) {
-    selectedBlockIds.clear();
-    selectedBlockIds.add(blockId);
-    return;
-  }
-
-  if (selectedBlockIds.has(blockId)) selectedBlockIds.delete(blockId);
-  else selectedBlockIds.add(blockId);
+function toggleSelection(blockId) {
+  selectedBlockIds.clear();
+  selectedBlockIds.add(blockId);
 }
 
 function splitSelectedBlock() {
@@ -2928,43 +2873,6 @@ function splitSelectedBlock() {
   render();
 }
 
-function mergeSelectedBlocks() {
-  if (selectedBlockIds.size < 2) {
-    alert("結合するブロックを2つ以上選択してください。複数選択モードをONにしてタップ選択できます。PCではCtrl/Command+クリックも使えます。");
-    return;
-  }
-
-  const targets = blocks
-    .filter(block => selectedBlockIds.has(block.blockId))
-    .sort((a, b) => a.order - b.order);
-
-  if (targets.length < 2) {
-    alert("結合対象が見つかりませんでした。");
-    return;
-  }
-
-  const first = targets[0];
-  const sameOrigin = targets.every(block => block.originSeedRef === first.originSeedRef);
-  const sameLane = targets.every(block => block.laneId === first.laneId);
-
-  if (!sameOrigin || !sameLane) {
-    alert("結合は同一ロット・同一レーンのブロックのみ可能です。");
-    return;
-  }
-
-  const merged = roundTray(targets.reduce((sum, block) => sum + block.trays, 0));
-  first.trays = merged;
-
-  const dropIds = new Set(targets.slice(1).map(block => block.blockId));
-  blocks = blocks.filter(block => !dropIds.has(block.blockId));
-  blocks = normalizeBlockOrders(blocks);
-
-  selectedBlockIds.clear();
-  selectedBlockIds.add(first.blockId);
-  modalBlockId = first.blockId;
-  render();
-}
-
 function openBlockModal(blockId = "") {
   const modal = document.getElementById("block-modal");
   if (!modal) return;
@@ -3000,8 +2908,7 @@ function renderBlockModal() {
   const discardSeedBtn = document.getElementById("modal-discard-seed-btn");
   const nurseryPesticideBtn = document.getElementById("modal-nursery-pesticide-btn");
   const splitBtn = document.getElementById("modal-split-btn");
-  const mergeBtn = document.getElementById("modal-merge-btn");
-  if (!modal || !detailEl || !selectionEl || !moveEl || !discardSeedBtn || !nurseryPesticideBtn || !splitBtn || !mergeBtn) return;
+  if (!modal || !detailEl || !selectionEl || !moveEl || !discardSeedBtn || !nurseryPesticideBtn || !splitBtn) return;
   if (!modal.classList.contains("is-open")) return;
 
   let block = blocks.find(v => v.blockId === modalBlockId) || null;
@@ -3017,7 +2924,6 @@ function renderBlockModal() {
   modalBlockId = block.blockId;
   const lot = lotsBySeedRef.get(block.originSeedRef);
   const lane = findLane(block.laneId);
-  const selected = blocks.filter(v => selectedBlockIds.has(v.blockId));
   const maxLaneCols = Math.max(1, ...allLanes().map(v => getLaneCols(v)));
   const spanLimit = lane ? getLaneCols(lane) : maxLaneCols;
   const currentSpan = Math.max(1, Math.floor(toNumber(block.spanCols) || 1));
@@ -3048,21 +2954,16 @@ function renderBlockModal() {
     ${spanEditorMarkup}
   `;
 
-  const mergeReady = canMergeSelection(selected);
   const splitReady = selectedBlockIds.size === 1 && block.trays > 1;
   const selectedCount = selectedBlockIds.size;
-  const modeText = multiSelectMode ? "ON" : "OFF";
   const currentBlockZone = lane ? getZoneByLaneId(lane.id) : "";
 
-  selectionEl.innerHTML = mergeReady
-    ? `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 同一ロットID・同一レーンなので結合できます。`
-    : `選択中 ${selectedCount} 件 / 複数選択 ${modeText}: 別ロットIDでも同時移動は可能です。結合は同一ロットIDかつ同一レーンのみです。`;
+  selectionEl.innerHTML = `選択中 ${selectedCount} 件: このブロックを移動・分割・関連ログ連携できます。`;
 
   moveEl.innerHTML = buildMovePickerMarkup(currentBlockZone, !!block.laneId);
   discardSeedBtn.disabled = !block.originSeedRef;
   nurseryPesticideBtn.disabled = !block.originSeedRef;
   splitBtn.disabled = !splitReady;
-  mergeBtn.disabled = !mergeReady;
 }
 
 function buildMovePickerMarkup(currentBlockZone, canReturnPool) {
@@ -3165,12 +3066,6 @@ function applyModalSpanChange() {
 function getLanesForZone(zone) {
   const group = GROUPS.find(v => getZoneByGroupId(v.id) === normalizeZoneId(zone));
   return group?.lanes || [];
-}
-
-function canMergeSelection(selected) {
-  if (!Array.isArray(selected) || selected.length < 2) return false;
-  const first = selected[0];
-  return selected.every(block => block.originSeedRef === first.originSeedRef && block.laneId === first.laneId);
 }
 
 function findLane(laneId) {
