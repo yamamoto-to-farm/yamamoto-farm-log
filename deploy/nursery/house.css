@@ -38,9 +38,10 @@
   display: grid;
   gap: 8px;
   padding: 8px;
-  border: 1px solid #d9e5f1;
+  border: 1px solid #ddd;
   border-radius: 10px;
-  background: linear-gradient(180deg, #fdfefe 0%, #f6fbff 100%);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .nursery-toolbar .toolbar-row {
@@ -59,11 +60,10 @@
   flex-wrap: nowrap;
   gap: 0;
   padding: 0;
-  border: 1px solid #c8d8ea;
-  border-radius: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
   background: #fff;
   overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .toolbar-row--actions {
@@ -75,11 +75,11 @@
   justify-self: center;
   align-self: center;
   padding: 2px 14px 4px;
-  font-size: clamp(24px, 2vw, 34px);
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: 0.03em;
-  border-bottom: 2px solid #d6e4f3;
+  font-size: clamp(20px, 1.6vw, 24px);
+  font-weight: 600;
+  color: #2a4d2f;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .toolbar-group {
@@ -113,12 +113,12 @@
   padding: 0 16px;
   line-height: 1;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .toolbar-segment .secondary-btn {
@@ -127,13 +127,13 @@
 
 .toolbar-segment .secondary-btn[data-view] {
   min-width: 112px;
-  height: 44px;
+  height: 40px;
   border: none;
-  border-right: 1px solid #d8e4f1;
+  border-right: 1px solid #cbd5e0;
   border-radius: 0;
-  background: #ffffff;
-  color: #1f2937;
-  font-weight: 800;
+  background: #e2e8f0;
+  color: #333;
+  font-weight: 600;
 }
 
 .toolbar-segment .secondary-btn[data-view]:last-child {
@@ -141,7 +141,7 @@
 }
 
 .toolbar-segment .secondary-btn[data-view]:hover {
-  background: #f2f7ff;
+  background: #edf2f7;
 }
 
 .toolbar-segment .secondary-btn[data-view]:focus-visible {
@@ -156,20 +156,12 @@
 }
 
 #open-selection-modal-btn {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 #save-btn {
   min-width: 136px;
-  font-size: 17px;
-  background: #2b6d53;
-  border-color: #245b45;
-  box-shadow: 0 3px 10px rgba(43, 109, 83, 0.22);
-}
-
-#save-btn:hover {
-  background: #245b45;
-  border-color: #1f4f3b;
+  font-size: 16px;
 }
 
 .nursery-toolbar .secondary-btn.is-active {
@@ -213,19 +205,19 @@
   margin-top: 2px;
   padding: 8px 10px;
   font-size: 14px;
-  color: #0f172a;
-  border: 1px solid #d5e3f3;
+  color: #333;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  background: #f8fbff;
+  background: #fff;
 }
 
 .stale-line {
   margin-top: 2px;
   padding: 7px 10px;
   font-size: 13px;
-  color: #b91c1c;
+  color: #8b1c1c;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff1f2;
 }
 
@@ -528,14 +520,14 @@
 
 .zone-memo-title {
   font-size: 15px;
-  font-weight: 800;
-  color: #1e3a8a;
+  font-weight: 600;
+  color: #333;
 }
 
 .zone-memo-line {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
   line-height: 1.35;
 }
 
@@ -577,8 +569,8 @@
   gap: 0;
   width: fit-content;
   max-width: 100%;
-  border: 1px solid #c8d8ea;
-  border-radius: 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
   overflow-x: auto;
   overflow-y: hidden;
   background: #fff;
@@ -588,12 +580,12 @@
   min-width: 92px;
   height: 38px;
   border: none;
-  border-right: 1px solid #d8e4f1;
+  border-right: 1px solid #cbd5e0;
   border-radius: 0;
-  background: #ffffff;
-  color: #1f2937;
+  background: #e2e8f0;
+  color: #333;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0 14px;
 }
 
@@ -602,7 +594,7 @@
 }
 
 .zone-lane-tab-btn:hover:not(:disabled) {
-  background: #f2f7ff;
+  background: #edf2f7;
 }
 
 .zone-lane-tab-btn.is-active,
@@ -1288,7 +1280,7 @@ body.single-view-mode[data-house-view="outside"] .lot-card {
     width: 100%;
     justify-self: stretch;
     text-align: center;
-    font-size: 22px;
+    font-size: 20px;
     padding: 2px 8px;
   }
 
