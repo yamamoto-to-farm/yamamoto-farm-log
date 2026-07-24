@@ -2592,7 +2592,21 @@ function getPreferredSpanForLane(target, lane) {
   const sourceLane = findLane(target.laneId);
   if (!sourceLane) return fallback;
 
-  const sourceWidthNorm = getBlockWidthNorm(sourceLane, getBlockSpanCols(target, sourceLane));
+  const sourceRotated = isRotatedSpanLane(sourceLane);
+  const targetRotated = isRotatedSpanLane(lane);
+  const sourceSpan = getBlockSpanCols(target, sourceLane);
+
+  if (sourceRotated !== targetRotated) {
+    const sourceLaneCols = getLaneCols(sourceLane);
+    if (sourceLaneCols <= 1 || targetLaneCols <= 1) return fallback;
+
+    const sourceRatio = (sourceSpan - 1) / Math.max(1, sourceLaneCols - 1);
+    const rotatedRatio = 1 - sourceRatio;
+    const rotatedSpan = Math.round(rotatedRatio * Math.max(1, targetLaneCols - 1)) + 1;
+    return Math.max(1, Math.min(targetLaneCols, rotatedSpan));
+  }
+
+  const sourceWidthNorm = getBlockWidthNorm(sourceLane, sourceSpan);
   const estimatedSpan = Math.round(sourceWidthNorm * targetLaneCols);
   return Math.max(1, Math.min(targetLaneCols, estimatedSpan || fallback));
 }
@@ -3094,7 +3108,8 @@ function getLaneCols(lane) {
 }
 
 function isRotatedSpanLane(lane) {
-  return false;
+  const id = String(lane?.id || "").trim();
+  return id === "outside-1" || id === "outside-2" || id === "outside-3";
 }
 
 function getEffectiveSpanCols(lane, rawSpan) {
