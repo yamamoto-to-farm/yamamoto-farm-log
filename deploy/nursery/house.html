@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>育苗ハウス管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./house.css?v=20260724-8">
+  <link rel="stylesheet" href="./house.css?v=20260724-10">
 </head>
 
 <body>
@@ -16,19 +16,27 @@
     <section class="nursery-layout-grid">
       <article class="card zones-card">
         <section class="nursery-toolbar">
-          <div class="toolbar-row">
-            <button id="view-all-btn" class="secondary-btn" type="button" data-view="all">全体ビュー</button>
-            <button id="view-east-btn" class="secondary-btn" type="button" data-view="east">東棟</button>
-            <button id="view-west-btn" class="secondary-btn" type="button" data-view="west">西棟</button>
-            <button id="view-outside-btn" class="secondary-btn" type="button" data-view="outside">外</button>
+          <div class="toolbar-row toolbar-row--view">
+            <div class="toolbar-segment" role="group" aria-label="表示切替">
+              <button id="view-all-btn" class="secondary-btn" type="button" data-view="all">全体ビュー</button>
+              <button id="view-east-btn" class="secondary-btn" type="button" data-view="east">東棟</button>
+              <button id="view-west-btn" class="secondary-btn" type="button" data-view="west">西棟</button>
+              <button id="view-outside-btn" class="secondary-btn" type="button" data-view="outside">外</button>
+            </div>
           </div>
-          <div class="toolbar-row">
-            <button id="reload-btn" class="secondary-btn" type="button">再読込</button>
-            <button id="multi-select-mode-btn" class="secondary-btn" type="button" aria-pressed="false">複数選択: OFF</button>
-            <button id="open-selection-modal-btn" class="secondary-btn" type="button">選択中を操作</button>
-            <button id="clear-selection-btn" class="secondary-btn" type="button">選択解除</button>
-            <a href="/nursery/pesticide/index.html" class="secondary-btn" style="display:inline-flex; align-items:center;">育苗防除ログ</a>
-            <button id="save-btn" class="primary-btn" type="button">配置を保存</button>
+          <div class="toolbar-row toolbar-row--actions">
+            <div class="toolbar-group toolbar-group--edit" role="group" aria-label="配置操作">
+              <button id="reload-btn" class="secondary-btn" type="button">再読込</button>
+              <button id="multi-select-mode-btn" class="secondary-btn" type="button" aria-pressed="false">複数選択: OFF</button>
+              <button id="open-selection-modal-btn" class="secondary-btn" type="button">選択中を操作</button>
+              <button id="clear-selection-btn" class="secondary-btn" type="button">選択解除</button>
+            </div>
+            <div class="toolbar-group toolbar-group--side" role="group" aria-label="関連機能">
+              <a href="/nursery/pesticide/index.html" class="secondary-btn toolbar-link-btn">育苗防除ログ</a>
+            </div>
+            <div class="toolbar-group toolbar-group--save" role="group" aria-label="保存">
+              <button id="save-btn" class="primary-btn" type="button">配置を保存</button>
+            </div>
           </div>
           <div id="summary-line" class="summary-line">読み込み中...</div>
           <div id="stale-line" class="stale-line" style="display:none;"></div>
@@ -63,7 +71,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initNurseryHousePage } from "./house.js?v=20260724-8";
+    import { initNurseryHousePage } from "./house.js?v=20260724-10";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
