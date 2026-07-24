@@ -414,6 +414,14 @@ function toggleZoneSelectionAndExpand(zoneId) {
   const zone = NURSERY_TARGET_GROUPS.find(v => v.id === zoneId);
   if (!zone) return;
 
+  // When tapping the currently open zone again, collapse it first.
+  if (expandedZoneId === zoneId) {
+    expandedZoneId = "";
+    renderTargetArea();
+    updateSummary();
+    return;
+  }
+
   const zoneLots = getZoneLots(zone);
   const allSelected = zoneLots.length > 0 && zoneLots.every(seedRef => selectedSeedRefs.has(seedRef));
 
