@@ -146,6 +146,7 @@ function bindControls() {
   const modalClose = document.getElementById("block-modal-close");
   const modalCloseBtn = document.getElementById("modal-close-btn");
   const modalDiscardSeedBtn = document.getElementById("modal-discard-seed-btn");
+  const modalNurseryPesticideBtn = document.getElementById("modal-nursery-pesticide-btn");
   const modalSplitBtn = document.getElementById("modal-split-btn");
   const modalMergeBtn = document.getElementById("modal-merge-btn");
   const viewButtons = Array.from(document.querySelectorAll("button[data-view]"));
@@ -206,6 +207,19 @@ function bindControls() {
     if (!seedRef) return;
     const returnPath = `${location.pathname}${location.search || ""}`;
     location.href = `/seed/discard-seed.html?ref=${encodeURIComponent(seedRef)}&return=${encodeURIComponent(returnPath)}`;
+  });
+  modalNurseryPesticideBtn?.addEventListener("click", () => {
+    const block = blocks.find(v => v.blockId === modalBlockId) || null;
+    const seedRef = String(block?.originSeedRef || "").trim();
+    if (!seedRef) return;
+
+    const laneId = String(block?.laneId || "").trim();
+    const returnPath = `${location.pathname}${location.search || ""}`;
+    const params = new URLSearchParams();
+    params.set("seedRef", seedRef);
+    if (laneId) params.set("laneId", laneId);
+    params.set("return", returnPath);
+    location.href = `/nursery/pesticide/index.html?${params.toString()}`;
   });
   modalSplitBtn?.addEventListener("click", () => {
     splitSelectedBlock();
@@ -1176,6 +1190,15 @@ function buildOverviewCard(group) {
     : group.id === "west-house"
       ? "west"
       : "outside";
+  const lotSummaries = getOverviewLotSummaries(group, 4);
+  const lotSummaryHtml = lotSummaries.rows.length
+    ? lotSummaries.rows
+      .map(item => `<div class="overview-lot-line">${escapeHtml(item.variety)}（${formatNum(item.trays)}枚） 播種日：${escapeHtml(item.seedDateLabel)}</div>`)
+      .join("")
+    : `<div class="overview-lot-line is-empty">現在配置なし</div>`;
+  const moreSummaryHtml = lotSummaries.moreCount > 0
+    ? `<div class="overview-lot-line overview-lot-more">ほか${formatNum(lotSummaries.moreCount)}件</div>`
+    : "";
 
   const btn = document.createElement("button");
   btn.type = "button";
@@ -1190,9 +1213,64 @@ function buildOverviewCard(group) {
     <div class="overview-metric">使用 ${formatNum(used)} / ${formatNum(capacity)}枚</div>
     <div class="overview-metric">使用率 ${formatNum(percent)}%</div>
     <div class="overview-metric">レーン ${formatNum(group.lanes.length)}本</div>
+    <div class="overview-lot-list">${lotSummaryHtml}${moreSummaryHtml}</div>
   `;
   card.appendChild(btn);
   return card;
+}
+
+function getOverviewLotSummaries(group, maxRows = 4) {
+  const limit = Math.max(1, Math.floor(toNumber(maxRows) || 4));
+  const laneIds = new Set((group?.lanes || []).map(lane => lane.id));
+  const trayBySeedRef = new Map();
+
+  blocks.forEach(block => {
+    if (!laneIds.has(block.laneId)) return;
+    const seedRef = String(block.originSeedRef || "").trim();
+    if (!seedRef) return;
+
+    const next = toNumber(trayBySeedRef.get(seedRef) || 0) + toNumber(block.trays);
+    trayBySeedRef.set(seedRef, roundTray(next));
+  });
+
+  const rows = [...trayBySeedRef.entries()]
+    .map(([seedRef, trays]) => {
+      const lot = lotsBySeedRef.get(seedRef);
+      const variety = String(lot?.variety || seedRef || "(品種不明)").trim() || "(品種不明)";
+      const seedDateLabel = formatSeedDateShort(lot?.seedDate || "", seedRef);
+      const seedDateMs = toNumber(lot?.seedDateMs || 0);
+      return {
+        seedRef,
+        variety,
+        trays: roundTray(trays),
+        seedDateLabel,
+        seedDateMs
+      };
+    })
+    .filter(item => item.trays > 0)
+    .sort((a, b) => {
+      const trayDiff = b.trays - a.trays;
+      if (trayDiff !== 0) return trayDiff;
+
+      const dateDiff = b.seedDateMs - a.seedDateMs;
+      if (dateDiff !== 0) return dateDiff;
+
+      return a.variety.localeCompare(b.variety, "ja");
+    });
+
+  return {
+    rows: rows.slice(0, limit),
+    moreCount: Math.max(0, rows.length - limit)
+  };
+}
+
+function formatSeedDateShort(seedDate, seedRef = "") {
+  const ms = parseDateMs(seedDate) || parseDateMs(formatSeedDateLabel(seedDate, seedRef));
+  if (ms > 0) {
+    const d = new Date(ms);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  return formatSeedDateLabel(seedDate, seedRef);
 }
 
 function buildZoneHeroCard(group) {
@@ -2795,9 +2873,10 @@ function renderBlockModal() {
   const selectionEl = document.getElementById("block-modal-selection");
   const moveEl = document.getElementById("block-modal-move");
   const discardSeedBtn = document.getElementById("modal-discard-seed-btn");
+  const nurseryPesticideBtn = document.getElementById("modal-nursery-pesticide-btn");
   const splitBtn = document.getElementById("modal-split-btn");
   const mergeBtn = document.getElementById("modal-merge-btn");
-  if (!modal || !detailEl || !selectionEl || !moveEl || !discardSeedBtn || !splitBtn || !mergeBtn) return;
+  if (!modal || !detailEl || !selectionEl || !moveEl || !discardSeedBtn || !nurseryPesticideBtn || !splitBtn || !mergeBtn) return;
   if (!modal.classList.contains("is-open")) return;
 
   let block = blocks.find(v => v.blockId === modalBlockId) || null;
@@ -2856,6 +2935,7 @@ function renderBlockModal() {
 
   moveEl.innerHTML = buildMovePickerMarkup(currentBlockZone, !!block.laneId);
   discardSeedBtn.disabled = !block.originSeedRef;
+  nurseryPesticideBtn.disabled = !block.originSeedRef;
   splitBtn.disabled = !splitReady;
   mergeBtn.disabled = !mergeReady;
 }

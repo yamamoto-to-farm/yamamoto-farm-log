@@ -244,6 +244,33 @@
   color: #334155;
 }
 
+.overview-lot-list {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.overview-lot-line {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-lot-line.is-empty {
+  color: #64748b;
+}
+
+.overview-lot-more {
+  font-size: 12px;
+  color: #475569;
+}
+
 .overview-open-btn {
   margin-top: auto;
   align-self: stretch;

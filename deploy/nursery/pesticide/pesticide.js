@@ -71,6 +71,7 @@ const expandedLaneByZone = new Map();
 export async function initNurseryPesticidePage() {
   await initPesticideFilterData();
   await initTargetData();
+  applySelectionFromQuery();
 
   initActiveFilterUI();
   filterState.pesticides = [];
@@ -79,6 +80,34 @@ export async function initNurseryPesticidePage() {
   renderTargetArea();
   renderNurseryPesticideInputs();
   updateSummary();
+}
+
+function applySelectionFromQuery() {
+  const params = new URLSearchParams(location.search || "");
+  const seedRef = String(params.get("seedRef") || "").trim();
+  const requestedLaneId = String(params.get("laneId") || "").trim();
+
+  if (!seedRef) return;
+  if (!targetState.lotsBySeedRef.has(seedRef)) return;
+
+  selectedSeedRefs.add(seedRef);
+
+  let laneId = requestedLaneId;
+  if (!laneId) {
+    for (const [key, lots] of targetState.laneLotsByLane.entries()) {
+      if ((lots || []).some(lot => lot.seedRef === seedRef)) {
+        laneId = key;
+        break;
+      }
+    }
+  }
+
+  const lane = laneId ? findLane(laneId) : null;
+  const zoneId = lane ? getZoneByLaneId(lane.id) : "";
+  if (zoneId) {
+    expandedZoneId = zoneId;
+    expandedLaneByZone.set(zoneId, lane.id);
+  }
 }
 
 function bindControls() {
