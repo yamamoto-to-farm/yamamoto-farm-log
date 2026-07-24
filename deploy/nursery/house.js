@@ -1162,45 +1162,20 @@ function buildLaneHeroCard(lane, group) {
   const usedTrays = getLaneUsedTrays(lane.id);
   const capacity = toNumber(lane.capacity);
   const freeTrays = Math.max(0, roundTray(capacity - usedTrays));
-  const laneBlocks = getLaneBlocks(lane.id);
-  const staleCount = laneBlocks.filter(block => {
-    const lot = lotsBySeedRef.get(block.originSeedRef);
-    return !!lot && lot.availableTrays <= 0;
-  }).length;
-  const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
-  const unassignedTrays = unassignedBlocks.reduce((sum, block) => sum + block.trays, 0);
+  const utilization = capacity > 0 ? Math.round((usedTrays / capacity) * 100) : 0;
 
-  const top = document.createElement("div");
-  top.className = "zone-hero-top";
+  const subtitle = document.createElement("div");
+  subtitle.className = "zone-hero-subtitle";
+  subtitle.textContent = "このレーンの集中編集画面です。下段の未配置ロット帯から、このレーンへそのまま追加配置できます。";
+  card.appendChild(subtitle);
 
-  const titleWrap = document.createElement("div");
-  titleWrap.className = "zone-hero-title-wrap";
-  titleWrap.innerHTML = `
-    <div class="zone-hero-label">LANE WORKSPACE</div>
-    <h2 class="zone-hero-title">${escapeHtml(group?.title || "")} ${escapeHtml(lane.label)}</h2>
-    <div class="zone-hero-subtitle">このレーンの集中編集画面です。下段の未配置ロット帯から、このレーンへそのまま追加配置できます。</div>
+  const memo = document.createElement("section");
+  memo.className = "zone-memo-card";
+  memo.innerHTML = `
+    <div class="zone-memo-title">${escapeHtml(lane.label)}メモ</div>
+    <div class="zone-memo-line">使用: ${formatNum(usedTrays)} / ${formatNum(capacity)}枚（${formatNum(utilization)}%）　空き枚数: ${formatNum(freeTrays)}枚</div>
   `;
-
-  const backBtn = document.createElement("button");
-  backBtn.type = "button";
-  backBtn.className = "secondary-btn zone-back-btn";
-  backBtn.textContent = `${VIEW_CONFIG[getZoneByLaneId(lane.id)]?.label || "棟"}へ戻る`;
-  backBtn.addEventListener("click", () => {
-    navigateToRoute({ mode: "zone", zone: getZoneByLaneId(lane.id), laneId: "" }, { syncUrl: true });
-  });
-
-  top.appendChild(titleWrap);
-  top.appendChild(backBtn);
-  card.appendChild(top);
-
-  const metrics = document.createElement("div");
-  metrics.className = "zone-metrics lane-metrics";
-  metrics.appendChild(buildZoneMetricCard("使用枚数", `${formatNum(usedTrays)} / ${formatNum(capacity)}枚`));
-  metrics.appendChild(buildZoneMetricCard("空き枚数", `${formatNum(freeTrays)}枚`));
-  metrics.appendChild(buildZoneMetricCard("配置ブロック", `${formatNum(laneBlocks.length)}件`));
-  metrics.appendChild(buildZoneMetricCard("未配置ロット", `${formatNum(unassignedBlocks.length)}件 / ${formatNum(unassignedTrays)}枚`));
-  metrics.appendChild(buildZoneMetricCard("注意", staleCount ? `在庫0配置 ${formatNum(staleCount)}件` : "問題なし"));
-  card.appendChild(metrics);
+  card.appendChild(memo);
 
   return card;
 }
