@@ -8,6 +8,16 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <style>
+    #form-area {
+      width: min(1520px, 97vw);
+      margin: 0 auto;
+    }
+
+    #form-area .card {
+      width: 100%;
+      max-width: none;
+    }
+
     .target-grid {
       display: grid;
       gap: 10px;
@@ -44,13 +54,13 @@
     }
 
     .target-zone__title {
-      font-size: 18px;
+      font-size: 21px;
       font-weight: 800;
       color: #0f172a;
     }
 
     .target-zone__summary {
-      font-size: 13px;
+      font-size: 16px;
       color: #475569;
       line-height: 1.4;
     }
@@ -59,7 +69,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
+      font-size: 15px;
       font-weight: 700;
       color: #334155;
     }
@@ -84,7 +94,7 @@
     }
 
     .target-zone__lanes {
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       align-items: start;
       gap: 10px;
     }
@@ -94,7 +104,7 @@
       border: 1px solid #dbe5f0;
       border-radius: 12px;
       background: #fbfdff;
-      padding: 9px;
+      padding: 11px;
       display: grid;
       gap: 8px;
       align-content: start;
@@ -120,7 +130,7 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 8px;
-      padding: 9px 10px;
+      padding: 11px 12px;
       border: 1px solid #cbd5e1;
       border-radius: 9px;
       background: #f8fafc;
@@ -128,6 +138,11 @@
       font-weight: 800;
       cursor: pointer;
       text-align: left;
+    }
+
+    .target-lane__label {
+      font-size: 18px;
+      line-height: 1.25;
     }
 
     .target-lane__head:active {
@@ -141,7 +156,7 @@
     }
 
     .target-lane__badge {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
       color: inherit;
       white-space: nowrap;
@@ -156,13 +171,13 @@
 
     .target-lane__hint,
     .target-lane__empty {
-      font-size: 12px;
+      font-size: 15px;
       color: #64748b;
       padding: 2px 2px 4px;
     }
 
     .target-lane__warning {
-      font-size: 12px;
+      font-size: 14px;
       color: #b45309;
       background: #fff7ed;
       border: 1px solid #fdba74;
@@ -194,19 +209,19 @@
     }
 
     .target-lot__name {
-      font-size: 15px;
+      font-size: 18px;
       font-weight: 800;
       color: #0f172a;
     }
 
     .target-lot__meta {
-      font-size: 13px;
+      font-size: 15px;
       color: #475569;
       line-height: 1.45;
     }
 
     .target-lot__toggle {
-      font-size: 12px;
+      font-size: 14px;
       color: #64748b;
       border: 1px solid #d4deea;
       border-radius: 999px;
@@ -225,7 +240,7 @@
       position: sticky;
       top: 8px;
       z-index: 1;
-      font-size: 14px;
+      font-size: 16px;
       color: #334155;
       line-height: 1.5;
       padding: 8px 10px;
@@ -244,6 +259,10 @@
     }
 
     @media (max-width: 900px) {
+      #form-area {
+        width: min(100%, 100vw);
+      }
+
       .target-zone__lanes {
         grid-template-columns: minmax(0, 1fr);
       }
