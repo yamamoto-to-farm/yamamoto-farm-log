@@ -5,9 +5,9 @@
   --slot-hover: #dbeafe;
   --slot-fill: #f6fbff;
   --outside-border: #f97316;
-  --lot-name-size: clamp(15px, 0.94vw, 24px);
-  --lot-ref-size: clamp(14px, 0.82vw, 18px);
-  --lot-meta-size: clamp(13px, 0.76vw, 17px);
+  --lot-name-size: clamp(14px, 0.88vw, 22px);
+  --lot-ref-size: clamp(14px, 0.8vw, 17px);
+  --lot-meta-size: clamp(13px, 0.78vw, 17px);
 }
 
 #page-area.page-container {
@@ -275,7 +275,7 @@
     "outside-bottom outside-bottom outside-bottom";
   gap: 8px;
   padding: 3px;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  background: #fff;
   border-radius: 4px;
   align-items: start;
 }
@@ -493,7 +493,7 @@
   padding: 16px 18px;
   border: 1px solid #d7e2ee;
   border-radius: 14px;
-  background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+  background: #fff;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
@@ -976,9 +976,10 @@ body.is-pointer-dragging-block * {
 
 .lot-card .lot-ref {
   font-size: var(--lot-ref-size);
-  color: #555;
+  color: #444;
   margin-bottom: 0;
   line-height: 1.2;
+  font-weight: 500;
   overflow-wrap: anywhere;
   word-break: break-all;
 }
