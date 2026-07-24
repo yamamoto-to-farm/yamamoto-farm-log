@@ -1,5 +1,6 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { saveJSON } from "/common/json.js";
+import { saveLog } from "/common/save/index.js";
 
 const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
@@ -370,7 +371,15 @@ async function saveLayout() {
       blocks,
       assignments: deriveLegacyAssignments(blocks)
     };
-    await saveJSON(LAYOUT_PATH, payload);
+    await saveLog({
+      type: "multi",
+      files: [
+        {
+          path: LAYOUT_PATH,
+          content: JSON.stringify(payload, null, 2)
+        }
+      ]
+    });
     alert("配置を保存しました。");
   } catch (e) {
     alert(`保存に失敗しました: ${String(e?.message || e)}`);
