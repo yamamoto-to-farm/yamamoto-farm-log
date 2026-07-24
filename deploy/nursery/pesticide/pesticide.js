@@ -291,11 +291,15 @@ function renderTargetArea() {
   if (!area) return;
 
   area.innerHTML = NURSERY_TARGET_GROUPS.map(zone => {
+    const zoneStats = getZoneSelectionStats(zone);
     const laneHTML = zone.lanes.map(lane => renderLaneCard(zone, lane)).join("");
     return `
       <section class="target-zone">
         <div class="target-zone__head">
-          <div class="target-zone__title">${escapeHtml(zone.label)}</div>
+          <div>
+            <div class="target-zone__title">${escapeHtml(zone.label)}</div>
+            <div class="target-zone__summary">${escapeHtml(zoneStats.text)}</div>
+          </div>
           <div class="target-zone__actions">
             <button class="secondary-btn" type="button" data-zone-all="${escapeHtml(zone.id)}">この棟を全選択</button>
             <button class="secondary-btn" type="button" data-zone-clear="${escapeHtml(zone.id)}">解除</button>
@@ -305,6 +309,34 @@ function renderTargetArea() {
       </section>
     `;
   }).join("");
+}
+
+function getZoneSelectionStats(zone) {
+  let laneCount = 0;
+  let selectedLaneCount = 0;
+  let selectedLotCount = 0;
+  let selectedTrayCount = 0;
+
+  zone.lanes.forEach(lane => {
+    const lots = targetState.laneLotsByLane.get(lane.id) || [];
+    if (!lots.length) return;
+
+    laneCount += 1;
+    const selectedLots = lots.filter(lot => selectedSeedRefs.has(lot.seedRef));
+    if (selectedLots.length > 0) selectedLaneCount += 1;
+    selectedLotCount += selectedLots.length;
+    selectedTrayCount += selectedLots.reduce((sum, lot) => sum + toNumber(lot.trays), 0);
+  });
+
+  return {
+    laneCount,
+    selectedLaneCount,
+    selectedLotCount,
+    selectedTrayCount,
+    text: laneCount > 0
+      ? `対象レーン ${selectedLaneCount}/${laneCount}・${formatNum(selectedLotCount)}ロット・${formatNum(selectedTrayCount)}枚`
+      : "対象ロットなし"
+  };
 }
 
 function renderLaneCard(zone, lane) {
@@ -366,19 +398,20 @@ function updateSummary() {
 
   const selected = getSelectedTargets();
   if (selected.length === 0) {
-    el.textContent = "未選択";
+    el.innerHTML = "<strong>未選択</strong> <span>レーンを開いて対象ロットを選択してください。</span>";
     return;
   }
 
   const labels = selected.map(v => `${v.laneLabel}:${v.variety}`);
   const warnings = getCapacityWarnings();
+  const totalTrays = selected.reduce((sum, item) => sum + toNumber(item.trays), 0);
   const base = labels.length <= 4
     ? `選択中: ${labels.join("、")}`
     : `選択中: ${labels.slice(0, 4).join("、")} ほか${labels.length - 4}件`;
 
   el.innerHTML = warnings.length
-    ? `${escapeHtml(base)}<br><span style="color:#b45309; font-weight:700;">${escapeHtml(warnings.join(" / "))}</span>`
-    : escapeHtml(base);
+    ? `<strong>${formatNum(selected.length)}ロット / ${formatNum(totalTrays)}枚</strong><br>${escapeHtml(base)}<br><span class="target-summary__warn">${escapeHtml(warnings.join(" / "))}</span>`
+    : `<strong>${formatNum(selected.length)}ロット / ${formatNum(totalTrays)}枚</strong><br>${escapeHtml(base)}`;
 }
 
 function toggleLaneSelection(laneId) {

@@ -10,30 +10,37 @@
   <style>
     .target-grid {
       display: grid;
-      gap: 12px;
+      gap: 10px;
     }
 
     .target-zone {
       border: 1px solid #dbe5f0;
-      border-radius: 12px;
-      background: #fff;
-      padding: 10px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      padding: 12px;
       display: grid;
-      gap: 10px;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
     }
 
     .target-zone__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
     .target-zone__title {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 800;
       color: #0f172a;
+    }
+
+    .target-zone__summary {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.4;
     }
 
     .target-zone__actions,
@@ -42,14 +49,26 @@
       gap: 8px;
     }
 
+    .target-zone__actions {
+      grid-auto-flow: column;
+      justify-content: end;
+      align-items: center;
+    }
+
+    .target-zone__lanes {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      align-items: start;
+    }
+
     .target-lane {
       width: 100%;
       border: 1px solid #dbe5f0;
-      border-radius: 10px;
+      border-radius: 12px;
       background: #fbfdff;
-      padding: 8px;
+      padding: 7px;
       display: grid;
-      gap: 8px;
+      gap: 6px;
+      align-content: start;
     }
 
     .target-lane.is-active {
@@ -70,11 +89,11 @@
       width: 100%;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
-      padding: 10px 12px;
+      padding: 9px 10px;
       border: 1px solid #cbd5e1;
-      border-radius: 10px;
+      border-radius: 9px;
       background: #f8fafc;
       color: #0f172a;
       font-weight: 800;
@@ -89,47 +108,50 @@
     }
 
     .target-lane__badge {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: inherit;
       white-space: nowrap;
+      line-height: 1.35;
+      text-align: right;
     }
 
     .target-lane__body {
       display: grid;
-      gap: 8px;
+      gap: 6px;
     }
 
     .target-lane__hint,
     .target-lane__empty {
-      font-size: 13px;
+      font-size: 12px;
       color: #64748b;
-      padding: 4px 2px;
+      padding: 2px 2px 4px;
     }
 
     .target-lane__warning {
-      font-size: 13px;
+      font-size: 12px;
       color: #b45309;
       background: #fff7ed;
       border: 1px solid #fdba74;
       border-radius: 8px;
-      padding: 6px 8px;
+      padding: 5px 8px;
     }
 
     .target-lot-list {
       display: grid;
-      gap: 8px;
+      gap: 6px;
     }
 
     .target-lot {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       justify-content: space-between;
       align-items: flex-start;
       gap: 10px;
       border: 1px solid #e2e8f0;
-      border-radius: 10px;
+      border-radius: 9px;
       background: #fff;
-      padding: 10px 12px;
+      padding: 8px 10px;
     }
 
     .target-lot.is-selected {
@@ -138,20 +160,20 @@
     }
 
     .target-lot__name {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
       color: #0f172a;
     }
 
     .target-lot__meta {
-      font-size: 13px;
+      font-size: 12px;
       color: #475569;
       line-height: 1.45;
     }
 
     .target-lot__remove {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border: 1px solid #cbd5e1;
       border-radius: 999px;
       background: #fff;
@@ -166,9 +188,45 @@
     }
 
     .target-summary {
+      position: sticky;
+      top: 8px;
+      z-index: 1;
       font-size: 14px;
       color: #334155;
       line-height: 1.5;
+      padding: 8px 10px;
+      border: 1px solid #dbe5f0;
+      border-radius: 10px;
+      background: #f8fbff;
+    }
+
+    .target-summary strong {
+      color: #0f172a;
+    }
+
+    .target-summary__warn {
+      color: #b45309;
+      font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+      .target-zone__actions {
+        grid-auto-flow: row;
+        justify-content: stretch;
+      }
+
+      .target-zone__lanes {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .target-lane__head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .target-lane__badge {
+        text-align: left;
+      }
     }
   </style>
 </head>
@@ -190,7 +248,7 @@
     <h2 class="section-title">対象</h2>
     <div class="card">
       <div id="nursery-target-summary" class="target-summary">未選択</div>
-      <div id="nursery-target-area" class="target-grid" style="margin-top:12px;"></div>
+      <div id="nursery-target-area" class="target-grid" style="margin-top:10px;"></div>
     </div>
 
     <h2 class="section-title">農薬</h2>
