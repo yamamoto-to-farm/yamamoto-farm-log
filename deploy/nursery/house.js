@@ -719,7 +719,72 @@ function normalizeBlockOrders(inputBlocks) {
       });
   });
 
-  return out;
+  return compactLanePlacements(out);
+}
+
+function compactLanePlacements(inputBlocks) {
+  const byLane = new Map();
+
+  inputBlocks.forEach(block => {
+    const key = block.laneId || "__pool";
+    if (!byLane.has(key)) byLane.set(key, []);
+    byLane.get(key).push(block);
+  });
+
+  byLane.forEach((items, key) => {
+    items.sort((a, b) => a.order - b.order);
+
+    if (key === "__pool") {
+      items.forEach(item => {
+        item.posX = 0;
+        item.posY = 0;
+      });
+      return;
+    }
+
+    const lane = findLane(key);
+    if (!lane) return;
+
+    const laneBodyHeight = computeLaneBodyHeight(lane);
+    const laneBodyEl = { clientWidth: estimateLaneBodyWidth(lane) };
+    const occupiedRects = [];
+    let preferredY = 0;
+
+    items.forEach(item => {
+      const spanCols = getBlockSpanCols(item, lane);
+      const resolved = resolvePlacementInLane({
+        lane,
+        laneBodyEl,
+        laneBodyHeight,
+        movingBlockId: item.blockId,
+        trays: item.trays,
+        spanCols,
+        preferredX: 0,
+        preferredY,
+        occupiedRects
+      });
+
+      if (resolved) {
+        item.posX = resolved.x;
+        item.posY = resolved.y;
+        const rect = getRectNormFromPlacement({
+          lane,
+          laneBodyHeight,
+          trays: item.trays,
+          spanCols,
+          x: item.posX,
+          y: item.posY
+        });
+        occupiedRects.push(rect);
+        preferredY = clamp(rect.bottom + 0.015, 0, 1);
+      } else {
+        item.posX = 0;
+        item.posY = clamp(preferredY, 0, 1);
+      }
+    });
+  });
+
+  return inputBlocks;
 }
 
 function render() {
