@@ -9,13 +9,14 @@ const TRAY_LENGTH_MM = 600;
 const MM_TO_PX = 0.0088;
 const SNAP_PX = 12;
 const LANE_COL_WIDTH_FACTOR = 24;
-const PLACEMENT_EDGE_GAP_PX = 6;
+const PLACEMENT_EDGE_GAP_PX = 3;
 const POINTER_DRAG_THRESHOLD_PX = 8;
 const POINTER_HOLD_DELAY_MS = 220;
 const POINTER_HOLD_CANCEL_PX = 12;
 const POINTER_AUTO_SCROLL_EDGE_PX = 72;
 const POINTER_AUTO_SCROLL_MAX_STEP_PX = 22;
-const BLOCK_DIMENSION_SCALE = 0.965;
+const BLOCK_HEIGHT_SCALE = 0.965;
+const BLOCK_WIDTH_SCALE = 1;
 
 const GROUPS = [
   {
@@ -2544,20 +2545,49 @@ function resolvePlacementInLane({
     .map(block => getBlockRectNorm(block, lane, laneBodyHeight));
   const fixedOccupied = (occupiedRects || []).filter(Boolean);
 
-  for (const c of candidates) {
-    const rect = {
-      left: c.x,
-      top: c.y,
-      right: c.x + widthNorm,
-      bottom: c.y + heightNorm
-    };
+  const tryFindPlacement = candidateList => {
+    for (const c of candidateList) {
+      const rect = {
+        left: c.x,
+        top: c.y,
+        right: c.x + widthNorm,
+        bottom: c.y + heightNorm
+      };
 
-    const overlapped = others.some(other => isRectOverlap(rect, other))
-      || fixedOccupied.some(other => isRectOverlap(rect, other));
-    if (!overlapped) {
-      return { x: c.x, y: c.y };
+      const overlapped = others.some(other => isRectOverlap(rect, other))
+        || fixedOccupied.some(other => isRectOverlap(rect, other));
+      if (!overlapped) {
+        return { x: c.x, y: c.y };
+      }
     }
-  }
+    return null;
+  };
+
+  const strictFound = tryFindPlacement(candidates);
+  if (strictFound) return strictFound;
+
+  // Relaxed fallback: drop edge gap and use finer snap to accept practical placements.
+  const relaxedMaxX = Math.max(0, 1 - widthNorm);
+  const relaxedMaxY = Math.max(0, 1 - heightNorm);
+  const relaxedStepX = clamp((SNAP_PX * 0.5) / Math.max(1, laneBodyEl.clientWidth), 0.005, 0.2);
+  const relaxedStepY = clamp((SNAP_PX * 0.5) / Math.max(1, laneBodyHeight), 0.005, 0.2);
+  const relaxedPrefX = snapToStep(clamp(prefXRaw, 0, relaxedMaxX), relaxedStepX, relaxedMaxX);
+  const relaxedPrefY = snapToStep(clamp(prefYRaw, 0, relaxedMaxY), relaxedStepY, relaxedMaxY);
+  const relaxedXs = buildSnapAxis(relaxedMaxX, relaxedStepX);
+  const relaxedYs = buildSnapAxis(relaxedMaxY, relaxedStepY);
+  const relaxedCandidates = [];
+
+  relaxedYs.forEach(y => {
+    relaxedXs.forEach(x => {
+      const dx = x - relaxedPrefX;
+      const dy = y - relaxedPrefY;
+      relaxedCandidates.push({ x, y, d: (dx * dx) + (dy * dy) });
+    });
+  });
+  relaxedCandidates.sort((a, b) => a.d - b.d);
+
+  const relaxedFound = tryFindPlacement(relaxedCandidates);
+  if (relaxedFound) return relaxedFound;
 
   return null;
 }
@@ -3077,20 +3107,20 @@ function computeBlockHeight(blockTrays, lane, laneBodyHeight = 0, spanCols = 1) 
     const ratio = trays / laneCapacity;
     const adjusted = laneBodyHeight * ratio * (laneCols / cols);
     if (trays <= 0) return 18;
-    return clamp(Math.round(adjusted * BLOCK_DIMENSION_SCALE), 18, Math.max(24, laneBodyHeight - 6));
+    return clamp(Math.round(adjusted * BLOCK_HEIGHT_SCALE), 18, Math.max(24, laneBodyHeight - 6));
   }
 
   if (trays <= 0) return 30;
   const rows = trays / cols;
   const tray = getTraySizeByLane(lane || {});
   const px = rows * tray.nsMm * MM_TO_PX;
-  return clamp(Math.round(px * BLOCK_DIMENSION_SCALE), 30, 220);
+  return clamp(Math.round(px * BLOCK_HEIGHT_SCALE), 30, 220);
 }
 
 function getBlockWidthNorm(lane, spanCols) {
   const laneCols = getLaneCols(lane);
   const span = Math.max(1, Math.min(laneCols, Math.floor(toNumber(spanCols) || 1)));
-  return clamp((span / laneCols) * BLOCK_DIMENSION_SCALE, 0.05, 1);
+  return clamp((span / laneCols) * BLOCK_WIDTH_SCALE, 0.05, 1);
 }
 
 function getBlockWidthPct(lane, spanCols) {
