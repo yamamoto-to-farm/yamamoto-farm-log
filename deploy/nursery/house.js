@@ -652,7 +652,7 @@ function normalizeLayoutBlocks(layout, lotMap) {
     if (!Number.isFinite(Number(block.order))) block.order = idx;
   });
 
-  return normalizeBlockOrders(normalized);
+  return compactLanePlacements(normalizeBlockOrders(normalized));
 }
 
 function legacyAssignmentsToBlocks(assignments, lotMap) {
@@ -719,7 +719,7 @@ function normalizeBlockOrders(inputBlocks) {
       });
   });
 
-  return compactLanePlacements(out);
+  return out;
 }
 
 function compactLanePlacements(inputBlocks) {

@@ -4,6 +4,10 @@ function debugLog(...args) {
   if (DEBUG) console.log("[nursery-pesticide]", ...args);
 }
 
+function formatNum(v) {
+  return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
 import { loadCSV, normalizeKeys } from "/common/csv.js?v=1";
 import { loadJSON } from "/common/json.js?v=1";
 import { openpesticideModal } from "/common/filter/filter-pesticide.js?v=1";
