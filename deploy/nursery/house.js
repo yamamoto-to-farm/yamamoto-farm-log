@@ -1494,6 +1494,11 @@ function syncFrameState() {
   if (titleEl) {
     titleEl.textContent = getPageTitle();
   }
+
+  const locationTitleEl = document.getElementById("toolbar-location-title");
+  if (locationTitleEl) {
+    locationTitleEl.textContent = getCurrentLocationTitle();
+  }
 }
 
 function getPageTitle() {
@@ -1513,6 +1518,17 @@ function getCurrentLocationLabel() {
     const lane = findLane(currentLaneId);
     const group = lane ? findGroupByLaneId(lane.id) : null;
     return lane ? `${group?.title || ""} ${lane.label}`.trim() : "全体俯瞰";
+  }
+  if (currentMode === "zone") {
+    return VIEW_CONFIG[currentZone]?.label || "棟別作業";
+  }
+  return "全体俯瞰";
+}
+
+function getCurrentLocationTitle() {
+  if (currentMode === "lane") {
+    const lane = findLane(currentLaneId);
+    return lane ? lane.label : "全体俯瞰";
   }
   if (currentMode === "zone") {
     return VIEW_CONFIG[currentZone]?.label || "棟別作業";
