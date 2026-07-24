@@ -419,9 +419,20 @@
   color: #64748b;
 }
 
-.overview-open-btn {
-  margin-top: auto;
-  align-self: stretch;
+.overview-zone-card--clickable {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.overview-zone-card--clickable:hover {
+  transform: translateY(-1px);
+  border-color: #b9d1ea;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+}
+
+.overview-zone-card--clickable:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
 }
 
 .overview-info-card .zone-title {

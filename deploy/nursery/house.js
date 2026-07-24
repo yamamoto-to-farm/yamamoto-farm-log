@@ -1216,7 +1216,7 @@ function buildLanePoolPanel(lane, group) {
 
 function buildOverviewCard(group) {
   const card = document.createElement("section");
-  card.className = "overview-zone-card";
+  card.className = "overview-zone-card overview-zone-card--clickable";
 
   const assignedBlocks = blocks.filter(block => block.laneId && group.lanes.some(lane => lane.id === block.laneId));
   const used = assignedBlocks.reduce((sum, block) => sum + block.trays, 0);
@@ -1237,14 +1237,10 @@ function buildOverviewCard(group) {
     ? `<div class="overview-lot-line overview-lot-more">ほか${formatNum(lotSummaries.moreCount)}件</div>`
     : "";
   const orderNoteHtml = `<div class="overview-lot-line overview-lot-note">※播種日が新しい順（最新${formatNum(Math.max(1, lotSummaries.limit))}件）</div>`;
-
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "secondary-btn overview-open-btn";
-  btn.textContent = `${VIEW_CONFIG[actionZone]?.label || group.title}を開く`;
-  btn.addEventListener("click", () => {
+  const zoneLabel = VIEW_CONFIG[actionZone]?.label || group.title;
+  const openZone = () => {
     navigateToRoute({ mode: "zone", zone: actionZone, laneId: "" }, { syncUrl: true });
-  });
+  };
 
   card.innerHTML = `
     <h3 class="zone-title">${escapeHtml(group.title)}</h3>
@@ -1253,7 +1249,16 @@ function buildOverviewCard(group) {
     <div class="overview-metric">レーン ${formatNum(group.lanes.length)}本</div>
     <div class="overview-lot-list">${lotSummaryHtml}${moreSummaryHtml}${orderNoteHtml}</div>
   `;
-  card.appendChild(btn);
+
+  card.setAttribute("role", "button");
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("aria-label", `${zoneLabel}を開く`);
+  card.addEventListener("click", openZone);
+  card.addEventListener("keydown", event => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openZone();
+  });
   return card;
 }
 
