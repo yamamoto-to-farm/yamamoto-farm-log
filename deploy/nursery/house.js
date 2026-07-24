@@ -1502,11 +1502,18 @@ function buildLaneElement(lane) {
   }
 
   const used = getLaneUsedTrays(lane.id);
+  const capacity = toNumber(lane.capacity);
+  const overBy = capacity > 0 ? Math.max(0, used - capacity) : 0;
+  if (overBy > 0) {
+    laneEl.classList.add("is-over-capacity");
+  }
   laneEl.innerHTML = `
     <div class="lane-head">
       <div class="lane-name">${escapeHtml(lane.label)} ${lane.capacity ? `${formatNum(lane.capacity)}枚` : ""}</div>
       <div class="lane-meta">トレイ${getLaneCols(lane)}列</div>
-      <div class="lane-usage">${lane.capacity ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}` : `配置 ${formatNum(used)}枚`}</div>
+      <div class="lane-usage">${lane.capacity
+        ? `使用 ${formatNum(used)} / ${formatNum(lane.capacity)}${overBy > 0 ? ` ・ 目安超過 ${formatNum(overBy)}枚` : ""}`
+        : `配置 ${formatNum(used)}枚`}</div>
     </div>
   `;
 
@@ -2079,11 +2086,6 @@ function placeBlockGroup(blockIds, lane, laneBodyHeight, dropEvent, beforeBlockI
     .reduce((sum, block) => sum + block.trays, 0);
   const groupTrays = group.reduce((sum, block) => sum + block.trays, 0);
 
-  if (toNumber(lane.capacity) > 0 && (usedWithoutGroup + groupTrays) > (toNumber(lane.capacity) + 0.1)) {
-    alert(`${lane.label} は上限 ${formatNum(lane.capacity)}枚です。選択ブロックをまとめて置くと上限を超えます。`);
-    return false;
-  }
-
   const laneCols = getLaneCols(lane);
   const anchorSpan = getBlockSpanCols(anchor, lane);
   const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, anchorSpan, anchor.trays);
@@ -2186,11 +2188,6 @@ function placeBlock(blockId, lane, laneBodyHeight, dropEvent, beforeBlockId = ""
   const usedWithoutTarget = blocks
     .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
     .reduce((sum, block) => sum + block.trays, 0);
-
-  if (toNumber(lane.capacity) > 0 && (usedWithoutTarget + target.trays) > (toNumber(lane.capacity) + 0.1)) {
-    alert(`${lane.label} は上限 ${formatNum(lane.capacity)}枚です。現在の配置ではこれ以上置けません。`);
-    return false;
-  }
 
   const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, spanCols, target.trays);
   const resolved = resolvePlacementInLane({
@@ -2366,13 +2363,6 @@ function placeBlockInLane(target, lane) {
   const laneBodyHeight = computeLaneBodyHeight(lane);
   const laneCols = getLaneCols(lane);
   const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
-  const usedWithoutTarget = blocks
-    .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
-    .reduce((sum, block) => sum + block.trays, 0);
-
-  if (toNumber(lane.capacity) > 0 && (usedWithoutTarget + target.trays) > (toNumber(lane.capacity) + 0.1)) {
-    return false;
-  }
 
   const virtualLaneBody = {
     clientWidth: estimateLaneBodyWidth(lane)
@@ -3058,6 +3048,16 @@ function computeLaneBodyHeight(lane) {
     const tray = getTraySizeByLane(lane);
     const px = rows * tray.nsMm * MM_TO_PX * 1.16;
     height = clamp(Math.round(px), 190, 1220);
+  }
+
+  if (currentMode === "lane") {
+    const capacity = toNumber(lane?.capacity);
+    if (capacity > 0) {
+      const used = getLaneUsedTrays(lane?.id);
+      const utilization = clamp(used / capacity, 0, 1.25);
+      const displayScale = clamp(0.5 + (utilization * 0.5), 0.5, 1);
+      height = clamp(Math.round(height * displayScale), 130, 1220);
+    }
   }
 
   if (isOutsideZoneRoute() && getZoneByLaneId(lane?.id) === "outside") {
