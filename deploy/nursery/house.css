@@ -36,8 +36,8 @@
 
 .nursery-toolbar {
   display: grid;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 8px;
   border: 1px solid #d9e5f1;
   border-radius: 10px;
   background: linear-gradient(180deg, #fdfefe 0%, #f6fbff 100%);
@@ -67,7 +67,8 @@
 }
 
 .toolbar-row--actions {
-  justify-content: space-between;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .toolbar-group {
@@ -75,6 +76,10 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+
+.toolbar-group:empty {
+  display: none;
 }
 
 .toolbar-group--edit {
@@ -86,10 +91,14 @@
   flex: 0 0 auto;
 }
 
+.toolbar-group--save {
+  margin-left: auto;
+}
+
 .nursery-toolbar .secondary-btn,
 .nursery-toolbar .primary-btn {
-  height: 40px;
-  min-height: 40px;
+  height: 38px;
+  min-height: 38px;
   padding: 0 16px;
   line-height: 1;
   font-size: 16px;
@@ -142,7 +151,14 @@
 #save-btn {
   min-width: 136px;
   font-size: 17px;
-  box-shadow: 0 4px 12px rgba(47, 133, 90, 0.24);
+  background: #2b6d53;
+  border-color: #245b45;
+  box-shadow: 0 3px 10px rgba(43, 109, 83, 0.22);
+}
+
+#save-btn:hover {
+  background: #245b45;
+  border-color: #1f4f3b;
 }
 
 .nursery-toolbar .secondary-btn.is-active {
@@ -1201,6 +1217,7 @@ body.single-view-mode[data-house-view="outside"] .lot-card {
   .toolbar-group--save {
     width: 100%;
     flex: 1 1 100%;
+    margin-left: 0;
   }
 
   .toolbar-group .secondary-btn,

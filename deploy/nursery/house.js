@@ -859,14 +859,18 @@ function renderSelectionControls() {
 }
 
 function renderSummary() {
-  const total = lots.length;
-  const active = lots.filter(v => v.availableTrays > 0).length;
+  const activeLots = lots.filter(v => v.availableTrays > 0);
+  const activeCount = activeLots.length;
+  const activeTrays = roundTray(activeLots.reduce((sum, lot) => sum + toNumber(lot.availableTrays), 0));
   const assignedSeedRefs = new Set(blocks.filter(block => !!block.laneId).map(block => block.originSeedRef));
+  const assignedTrays = roundTray(blocks
+    .filter(block => !!block.laneId)
+    .reduce((sum, block) => sum + toNumber(block.trays), 0));
   const label = getCurrentLocationLabel();
 
   const line = document.getElementById("summary-line");
   if (line) {
-    line.textContent = `画面: ${label} / ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
+    line.textContent = `画面: ${label} / 在庫あり ${activeCount}件（${formatNum(activeTrays)}枚） / 配置済み ${assignedSeedRefs.size}件（${formatNum(assignedTrays)}枚） / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
   }
 
   const staleLine = document.getElementById("stale-line");
@@ -1037,7 +1041,7 @@ function renderOverviewMode(root) {
   infoCard.innerHTML = `
     <h3 class="zone-title">全体メモ</h3>
     <div class="overview-info-line">全体使用: ${formatNum(memo.totalUsedTrays)} / ${formatNum(memo.totalCapacity)}枚（${formatNum(memo.totalPercent)}%）</div>
-    <div class="overview-info-line">未配置ロット: ${formatNum(memo.unassignedCount)}件 / ${formatNum(memo.unassignedTrays)}枚</div>
+    <div class="overview-info-line">在庫あり: ${formatNum(memo.activeCount)}件（${formatNum(memo.activeTrays)}枚）</div>
     <div class="overview-info-line">${escapeHtml(actionLine)}</div>
     <div class="overview-info-section">
       <div class="overview-info-title">棟別の使用状況</div>
@@ -1068,6 +1072,9 @@ function getOverviewMemoData() {
   const totalUsedTrays = roundTray(groupStats.reduce((sum, row) => sum + toNumber(row.used), 0));
   const totalCapacity = roundTray(groupStats.reduce((sum, row) => sum + toNumber(row.capacity), 0));
   const totalPercent = totalCapacity > 0 ? Math.round((totalUsedTrays / totalCapacity) * 100) : 0;
+  const activeLots = lots.filter(lot => toNumber(lot.availableTrays) > 0);
+  const activeCount = activeLots.length;
+  const activeTrays = roundTray(activeLots.reduce((sum, lot) => sum + toNumber(lot.availableTrays), 0));
 
   const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
   const unassignedCount = unassignedBlocks.length;
@@ -1077,6 +1084,8 @@ function getOverviewMemoData() {
     totalUsedTrays,
     totalCapacity,
     totalPercent,
+    activeCount,
+    activeTrays,
     unassignedCount,
     unassignedTrays,
     zoneUsage: groupStats
