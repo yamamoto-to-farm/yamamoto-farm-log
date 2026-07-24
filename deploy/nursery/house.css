@@ -990,6 +990,28 @@ body.is-pointer-dragging-block * {
   word-break: break-word;
 }
 
+.lot-card .lot-pesticide {
+  font-size: clamp(11px, 0.72vw, 15px);
+  line-height: 1.24;
+  font-weight: 600;
+  margin-top: 1px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.lot-card .lot-pesticide--chemical {
+  color: #334155;
+}
+
+.lot-card .lot-pesticide--foliar {
+  color: #0f766e;
+}
+
+.west-unsorted-list .lot-card.unsorted-lot-card .lot-pesticide {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
 .lot-card.warn {
   border-color: #f0c36d;
   background: #fffaf0;

@@ -56,6 +56,7 @@ const GROUPS = [
 
 let lots = [];
 let lotsBySeedRef = new Map();
+let nurseryPesticideBySeedRef = new Map();
 let blocks = [];
 let focusedLaneId = "";
 let dragBlockId = "";
@@ -305,12 +306,13 @@ function bindControls() {
 }
 
 async function reloadAll() {
-  const [seedRaw, plantingRaw, discardPlantingRaw, discardSeedRaw, legacyNurseryRaw, layout] = await Promise.all([
+  const [seedRaw, plantingRaw, discardPlantingRaw, discardSeedRaw, legacyNurseryRaw, nurseryPesticideRaw, layout] = await Promise.all([
     loadCSV("/logs/seed/all.csv").catch(() => []),
     loadCSV("/logs/planting/all.csv").catch(() => []),
     loadCSV("/logs/discard-planting/all.csv").catch(() => []),
     loadCSV("/logs/discard-seed/all.csv").catch(() => []),
     loadCSV("/logs/nursery/all.csv").catch(() => []),
+    loadCSV("/logs/nursery-pesticide/all.csv").catch(() => []),
     loadLayout()
   ]);
 
@@ -319,9 +321,11 @@ async function reloadAll() {
   const discardPlantingRows = normalizeKeys(discardPlantingRaw || []);
   const discardSeedRows = normalizeKeys(discardSeedRaw || []);
   const legacyNurseryRows = normalizeKeys(legacyNurseryRaw || []);
+  const nurseryPesticideRows = normalizeKeys(nurseryPesticideRaw || []);
 
   lots = buildLots(seedRows, plantingRows, discardPlantingRows, discardSeedRows, legacyNurseryRows);
   lotsBySeedRef = new Map(lots.map(lot => [lot.seedRef, lot]));
+  nurseryPesticideBySeedRef = buildNurseryPesticideSummaryMap(nurseryPesticideRows);
 
   blocks = normalizeLayoutBlocks(layout, lotsBySeedRef);
   selectedBlockIds.clear();
@@ -1728,6 +1732,7 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
     <div class="lot-name">${escapeHtml(lot.variety)}</div>
     <div class="lot-ref">播種日 ${escapeHtml(formatSeedDateLabel(lot.seedDate, block.originSeedRef))}</div>
     <div class="lot-meta">${formatBlockTrayLine(block.trays, lane ? getBlockSpanCols(block, lane) : block.spanCols)}</div>
+    ${buildPesticideDateLines(block.originSeedRef)}
   `;
 
   if (lane) {
@@ -1743,6 +1748,126 @@ function buildBlockCard(block, lane = null, laneBodyHeight = 0, compact = false,
   }
 
   return card;
+}
+
+function buildPesticideDateLines(seedRef) {
+  const summary = nurseryPesticideBySeedRef.get(String(seedRef || "").trim());
+  if (!summary) return "";
+
+  const chemicalDates = (Array.isArray(summary.chemicalDateKeys) ? summary.chemicalDateKeys : [])
+    .slice(0, 4)
+    .map(formatDateKeyShort)
+    .filter(Boolean);
+  const foliarDates = (Array.isArray(summary.foliarDateKeys) ? summary.foliarDateKeys : [])
+    .slice(0, 4)
+    .map(formatDateKeyShort)
+    .filter(Boolean);
+
+  const lines = [];
+  if (chemicalDates.length) {
+    lines.push(`<div class="lot-pesticide lot-pesticide--chemical">薬品: ${escapeHtml(chemicalDates.join(" / "))}</div>`);
+  }
+  if (foliarDates.length) {
+    lines.push(`<div class="lot-pesticide lot-pesticide--foliar">葉面散布: ${escapeHtml(foliarDates.join(" / "))}</div>`);
+  }
+
+  return lines.join("");
+}
+
+function buildNurseryPesticideSummaryMap(rows) {
+  const map = new Map();
+
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const dateKey = toDateKey(row?.date);
+    if (!dateKey) return;
+
+    const targets = parseJsonArray(row?.targets);
+    if (!targets.length) return;
+
+    const pesticides = parseJsonArray(row?.pesticides);
+    if (!pesticides.length) return;
+
+    const hasChemical = pesticides.some(entry => !isFoliarPesticideEntry(entry));
+    const hasFoliar = pesticides.some(entry => isFoliarPesticideEntry(entry));
+
+    if (!hasChemical && !hasFoliar) return;
+
+    targets.forEach(target => {
+      const seedRef = String(target?.seedRef || "").trim();
+      if (!seedRef) return;
+
+      if (!map.has(seedRef)) {
+        map.set(seedRef, {
+          chemical: new Set(),
+          foliar: new Set()
+        });
+      }
+
+      const bucket = map.get(seedRef);
+      if (hasChemical) bucket.chemical.add(dateKey);
+      if (hasFoliar) bucket.foliar.add(dateKey);
+    });
+  });
+
+  const normalized = new Map();
+  map.forEach((value, seedRef) => {
+    normalized.set(seedRef, {
+      chemicalDateKeys: sortDateKeysDesc([...value.chemical]),
+      foliarDateKeys: sortDateKeysDesc([...value.foliar])
+    });
+  });
+
+  return normalized;
+}
+
+function parseJsonArray(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return [];
+
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function isFoliarPesticideEntry(entry) {
+  const category = String(entry?.category || "").trim();
+  const materialType = String(entry?.materialType || "").trim().toLowerCase();
+  if (materialType === "fertilizer") return true;
+  return category === "液肥" || category === "葉面散布剤" || category === "BS資材";
+}
+
+function formatDateKeyShort(dateKey) {
+  if (!dateKey) return "";
+  const [, m, d] = dateKey.split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+
+function sortDateKeysDesc(keys) {
+  return keys
+    .slice()
+    .sort((a, b) => String(b).localeCompare(String(a), "ja"));
+}
+
+function toDateKey(dateText) {
+  const text = String(dateText || "").trim();
+  if (!text) return "";
+
+  const isoMatch = text.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function startResizeBlock(event, blockId, laneId, side = "right") {
