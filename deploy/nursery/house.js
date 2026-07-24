@@ -1338,7 +1338,7 @@ function buildZoneHeroCard(group) {
   memo.className = "zone-memo-card";
   memo.innerHTML = `
     <div class="zone-memo-title">${escapeHtml(getZoneMemoTitle(group))}</div>
-    <div class="zone-memo-line">${escapeHtml(group.title)}使用: ${formatNum(usedTrays)} / ${formatNum(capacity)}枚（${formatNum(utilization)}%）　空き枚数: ${formatNum(freeTrays)}枚</div>
+    <div class="zone-memo-line">使用: ${formatNum(usedTrays)} / ${formatNum(capacity)}枚（${formatNum(utilization)}%）　空き枚数: ${formatNum(freeTrays)}枚</div>
   `;
   card.appendChild(memo);
 
