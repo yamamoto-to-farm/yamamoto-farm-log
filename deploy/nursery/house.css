@@ -506,6 +506,28 @@
   flex: 0 0 auto;
 }
 
+.zone-memo-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.zone-memo-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e3a8a;
+}
+
+.zone-memo-line {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
 .zone-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

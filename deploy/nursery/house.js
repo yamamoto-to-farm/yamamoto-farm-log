@@ -1326,13 +1326,8 @@ function buildZoneHeroCard(group) {
   const assignedBlocks = blocks.filter(block => laneIds.has(block.laneId));
   const usedTrays = assignedBlocks.reduce((sum, block) => sum + block.trays, 0);
   const capacity = lanes.reduce((sum, lane) => sum + toNumber(lane.capacity), 0);
-  const assignedSeedRefs = new Set(assignedBlocks.map(block => String(block.originSeedRef || "").trim()).filter(Boolean));
-  const activeLots = lots.filter(lot => toNumber(lot.availableTrays) > 0);
-  const activeCount = activeLots.length;
-  const activeTrays = roundTray(activeLots.reduce((sum, lot) => sum + toNumber(lot.availableTrays), 0));
   const utilization = capacity > 0 ? Math.round((usedTrays / capacity) * 100) : 0;
-  const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
-  const unassignedTrays = unassignedBlocks.reduce((sum, block) => sum + block.trays, 0);
+  const freeTrays = Math.max(0, roundTray(capacity - usedTrays));
 
   const top = document.createElement("div");
   top.className = "zone-hero-top";
@@ -1357,13 +1352,13 @@ function buildZoneHeroCard(group) {
   top.appendChild(backBtn);
   card.appendChild(top);
 
-  const metrics = document.createElement("div");
-  metrics.className = "zone-metrics";
-  metrics.appendChild(buildZoneMetricCard("在庫あり（全体）", `${formatNum(activeCount)}件（${formatNum(activeTrays)}枚）`));
-  metrics.appendChild(buildZoneMetricCard("配置済み（この棟）", `${formatNum(assignedSeedRefs.size)}件（${formatNum(usedTrays)}枚）`));
-  metrics.appendChild(buildZoneMetricCard("使用率（この棟）", `${formatNum(utilization)}%`));
-  metrics.appendChild(buildZoneMetricCard("未配置（全体）", `${formatNum(unassignedBlocks.length)}件（${formatNum(unassignedTrays)}枚）`));
-  card.appendChild(metrics);
+  const memo = document.createElement("section");
+  memo.className = "zone-memo-card";
+  memo.innerHTML = `
+    <div class="zone-memo-title">${escapeHtml(getZoneMemoTitle(group))}</div>
+    <div class="zone-memo-line">${escapeHtml(group.title)}使用: ${formatNum(usedTrays)} / ${formatNum(capacity)}枚（${formatNum(utilization)}%）　空き枚数: ${formatNum(freeTrays)}枚</div>
+  `;
+  card.appendChild(memo);
 
   const shortcuts = document.createElement("div");
   shortcuts.className = "zone-lane-shortcuts";
@@ -1535,6 +1530,14 @@ function getZoneByGroupId(groupId) {
   if (groupId === "west-house") return "west";
   if (groupId === "outside-area") return "outside";
   return "";
+}
+
+function getZoneMemoTitle(group) {
+  const zone = getZoneByGroupId(String(group?.id || "").trim());
+  if (zone === "west") return "西棟メモ";
+  if (zone === "east") return "東棟メモ";
+  if (zone === "outside") return "外メモ";
+  return "棟メモ";
 }
 
 function findGroupByLaneId(laneId) {
