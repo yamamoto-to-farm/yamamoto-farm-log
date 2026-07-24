@@ -5,9 +5,9 @@
   --slot-hover: #dbeafe;
   --slot-fill: #f6fbff;
   --outside-border: #f97316;
-  --lot-name-size: clamp(14px, 0.88vw, 22px);
-  --lot-ref-size: clamp(13px, 0.75vw, 17px);
-  --lot-meta-size: clamp(12px, 0.7vw, 16px);
+  --lot-name-size: clamp(15px, 0.94vw, 24px);
+  --lot-ref-size: clamp(14px, 0.82vw, 18px);
+  --lot-meta-size: clamp(13px, 0.76vw, 17px);
 }
 
 #page-area.page-container {
@@ -47,7 +47,7 @@
   min-height: 36px;
   padding: 0 14px;
   line-height: 1;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   box-sizing: border-box;
   display: inline-flex;
@@ -74,7 +74,7 @@
 }
 
 .nursery-toolbar label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #334155;
 }
@@ -88,19 +88,19 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: #475569;
 }
 
 .summary-line {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: #0f172a;
 }
 
 .stale-line {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: 13px;
   color: #b91c1c;
 }
 
@@ -212,7 +212,7 @@
 
 .zone-title {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-align: center;
@@ -240,7 +240,7 @@
 
 .overview-metric,
 .overview-info-line {
-  font-size: 15px;
+  font-size: 16px;
   color: #334155;
 }
 
@@ -258,14 +258,14 @@
 }
 
 .overview-info-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.03em;
   color: #1e3a8a;
 }
 
 .overview-info-subline {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: #1e293b;
   white-space: nowrap;
@@ -283,7 +283,7 @@
 }
 
 .overview-lot-line {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: #1e293b;
   white-space: nowrap;
@@ -296,7 +296,7 @@
 }
 
 .overview-lot-more {
-  font-size: 12px;
+  font-size: 13px;
   color: #475569;
 }
 
@@ -338,7 +338,7 @@
 }
 
 .zone-hero-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.16em;
   color: #2563eb;
@@ -352,7 +352,7 @@
 }
 
 .zone-hero-subtitle {
-  font-size: 14px;
+  font-size: 15px;
   color: #475569;
 }
 
@@ -380,7 +380,7 @@
 }
 
 .zone-metric-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: #64748b;
@@ -464,7 +464,7 @@
 }
 
 .zone-pool-note {
-  font-size: 13px;
+  font-size: 14px;
   color: #64748b;
 }
 
@@ -509,7 +509,7 @@
   padding: 18px 10px;
   border: 1px dashed #cbd5e1;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 15px;
   color: #64748b;
   text-align: center;
   background: #f8fafc;
@@ -667,7 +667,7 @@ body[data-house-mode="lane"] .lane-single-card .lane-grid {
   align-items: center;
   justify-content: center;
   color: #64748b;
-  font-size: 11px;
+  font-size: 12px;
   height: 100%;
 }
 
@@ -797,7 +797,7 @@ body.is-pointer-dragging-block * {
 
 .empty-note {
   color: #64748b;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .block-modal {
@@ -877,7 +877,7 @@ body.is-pointer-dragging-block * {
 }
 
 .block-modal__span-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #334155;
 }
@@ -901,7 +901,7 @@ body.is-pointer-dragging-block * {
 }
 
 .block-modal__span-hint {
-  font-size: 12px;
+  font-size: 13px;
   color: #64748b;
 }
 
@@ -953,7 +953,7 @@ body.is-pointer-dragging-block * {
 }
 
 .block-modal__move-step {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #475569;
 }

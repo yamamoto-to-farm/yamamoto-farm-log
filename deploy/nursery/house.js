@@ -869,22 +869,10 @@ function renderSummary() {
     line.textContent = `画面: ${label} / ロット ${total}件 / 在庫あり ${active}件 / 配置済み ${assignedSeedRefs.size}件 / 選択 ${selectedBlockIds.size}件 / 複数選択 ${multiSelectMode ? "ON" : "OFF"}`;
   }
 
-  const staleSeedRefs = [...assignedSeedRefs].filter(seedRef => {
-    const lot = lotsBySeedRef.get(seedRef);
-    return !!lot && lot.availableTrays <= 0;
-  });
-
   const staleLine = document.getElementById("stale-line");
   if (!staleLine) return;
-
-  if (!staleSeedRefs.length) {
-    staleLine.style.display = "none";
-    staleLine.textContent = "";
-    return;
-  }
-
-  staleLine.style.display = "block";
-  staleLine.textContent = `注意: 在庫0の配置が ${staleSeedRefs.length}件あります（収穫・定植・破棄反映後）。`;
+  staleLine.style.display = "none";
+  staleLine.textContent = "";
 }
 
 function renderGroups() {
@@ -1050,17 +1038,12 @@ function renderOverviewMode(root) {
   const actionLine = memo.unassignedTrays > 0
     ? `未配置が ${formatNum(memo.unassignedCount)}件 / ${formatNum(memo.unassignedTrays)}枚あります。棟を開いて配置してください。`
     : "未配置はありません。";
-  const staleLine = memo.staleCount > 0
-    ? `在庫0配置が ${formatNum(memo.staleCount)}件あります。配置見直しを推奨します。`
-    : "在庫0配置はありません。";
 
   infoCard.innerHTML = `
     <h3 class="zone-title">全体メモ</h3>
     <div class="overview-info-line">全体使用: ${formatNum(memo.totalUsedTrays)} / ${formatNum(memo.totalCapacity)}枚（${formatNum(memo.totalPercent)}%）</div>
     <div class="overview-info-line">未配置ロット: ${formatNum(memo.unassignedCount)}件 / ${formatNum(memo.unassignedTrays)}枚</div>
-    <div class="overview-info-line ${memo.staleCount > 0 ? "is-alert" : ""}">在庫0配置: ${formatNum(memo.staleCount)}件</div>
     <div class="overview-info-line">${escapeHtml(actionLine)}</div>
-    <div class="overview-info-line ${memo.staleCount > 0 ? "is-alert" : ""}">${escapeHtml(staleLine)}</div>
     <div class="overview-info-section">
       <div class="overview-info-title">棟別の使用状況</div>
       ${zoneUsageHtml}
@@ -1099,12 +1082,6 @@ function getOverviewMemoData() {
   const unassignedCount = unassignedBlocks.length;
   const unassignedTrays = roundTray(unassignedBlocks.reduce((sum, block) => sum + toNumber(block.trays), 0));
 
-  const staleCount = blocks.filter(block => {
-    if (!block.laneId) return false;
-    const lot = lotsBySeedRef.get(block.originSeedRef);
-    return !!lot && lot.availableTrays <= 0;
-  }).length;
-
   const topLots = getOverviewLotSummaries({ lanes: GROUPS.flatMap(group => group.lanes || []) }, 5).rows.slice(0, 3);
 
   return {
@@ -1113,7 +1090,6 @@ function getOverviewMemoData() {
     totalPercent,
     unassignedCount,
     unassignedTrays,
-    staleCount,
     zoneUsage: groupStats,
     topLots
   };
