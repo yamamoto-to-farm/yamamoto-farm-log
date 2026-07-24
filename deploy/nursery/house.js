@@ -1038,21 +1038,85 @@ function renderOverviewMode(root) {
 
   const infoCard = document.createElement("section");
   infoCard.className = "overview-info-card";
-  const unassignedCount = blocks.filter(block => !block.laneId && block.trays > 0).length;
+  const memo = getOverviewMemoData();
+  const topLotHtml = memo.topLots.length
+    ? memo.topLots
+      .map(item => `<div class="overview-info-subline">${escapeHtml(item.variety)}（${formatNum(item.trays)}枚） 播種日：${escapeHtml(item.seedDateLabel)}</div>`)
+      .join("")
+    : `<div class="overview-info-subline">配置中ロットなし</div>`;
+  const zoneUsageHtml = memo.zoneUsage
+    .map(item => `<div class="overview-info-subline">${escapeHtml(item.label)} ${formatNum(item.used)}/${formatNum(item.capacity)}枚（${formatNum(item.percent)}%）</div>`)
+    .join("");
+  const actionLine = memo.unassignedTrays > 0
+    ? `未配置が ${formatNum(memo.unassignedCount)}件 / ${formatNum(memo.unassignedTrays)}枚あります。棟を開いて配置してください。`
+    : "未配置はありません。";
+  const staleLine = memo.staleCount > 0
+    ? `在庫0配置が ${formatNum(memo.staleCount)}件あります。配置見直しを推奨します。`
+    : "在庫0配置はありません。";
+
+  infoCard.innerHTML = `
+    <h3 class="zone-title">全体メモ</h3>
+    <div class="overview-info-line">全体使用: ${formatNum(memo.totalUsedTrays)} / ${formatNum(memo.totalCapacity)}枚（${formatNum(memo.totalPercent)}%）</div>
+    <div class="overview-info-line">未配置ロット: ${formatNum(memo.unassignedCount)}件 / ${formatNum(memo.unassignedTrays)}枚</div>
+    <div class="overview-info-line ${memo.staleCount > 0 ? "is-alert" : ""}">在庫0配置: ${formatNum(memo.staleCount)}件</div>
+    <div class="overview-info-line">${escapeHtml(actionLine)}</div>
+    <div class="overview-info-line ${memo.staleCount > 0 ? "is-alert" : ""}">${escapeHtml(staleLine)}</div>
+    <div class="overview-info-section">
+      <div class="overview-info-title">棟別の使用状況</div>
+      ${zoneUsageHtml}
+    </div>
+    <div class="overview-info-section">
+      <div class="overview-info-title">配置中ロット（枚数上位）</div>
+      ${topLotHtml}
+    </div>
+  `;
+  wrap.appendChild(infoCard);
+
+  root.appendChild(wrap);
+}
+
+function getOverviewMemoData() {
+  const groupStats = GROUPS.map(group => {
+    const laneIds = new Set((group.lanes || []).map(lane => lane.id));
+    const assignedBlocks = blocks.filter(block => laneIds.has(block.laneId));
+    const used = roundTray(assignedBlocks.reduce((sum, block) => sum + toNumber(block.trays), 0));
+    const capacity = roundTray((group.lanes || []).reduce((sum, lane) => sum + toNumber(lane.capacity), 0));
+    const percent = capacity > 0 ? Math.round((used / capacity) * 100) : 0;
+    return {
+      id: group.id,
+      label: group.title,
+      used,
+      capacity,
+      percent
+    };
+  });
+
+  const totalUsedTrays = roundTray(groupStats.reduce((sum, row) => sum + toNumber(row.used), 0));
+  const totalCapacity = roundTray(groupStats.reduce((sum, row) => sum + toNumber(row.capacity), 0));
+  const totalPercent = totalCapacity > 0 ? Math.round((totalUsedTrays / totalCapacity) * 100) : 0;
+
+  const unassignedBlocks = blocks.filter(block => !block.laneId && block.trays > 0);
+  const unassignedCount = unassignedBlocks.length;
+  const unassignedTrays = roundTray(unassignedBlocks.reduce((sum, block) => sum + toNumber(block.trays), 0));
+
   const staleCount = blocks.filter(block => {
     if (!block.laneId) return false;
     const lot = lotsBySeedRef.get(block.originSeedRef);
     return !!lot && lot.availableTrays <= 0;
   }).length;
-  infoCard.innerHTML = `
-    <h3 class="zone-title">全体メモ</h3>
-    <div class="overview-info-line">未配置ロット: ${formatNum(unassignedCount)}件</div>
-    <div class="overview-info-line">在庫0配置: ${formatNum(staleCount)}件</div>
-    <div class="overview-info-line">棟を開くと移動・保存ができます</div>
-  `;
-  wrap.appendChild(infoCard);
 
-  root.appendChild(wrap);
+  const topLots = getOverviewLotSummaries({ lanes: GROUPS.flatMap(group => group.lanes || []) }, 5).rows.slice(0, 3);
+
+  return {
+    totalUsedTrays,
+    totalCapacity,
+    totalPercent,
+    unassignedCount,
+    unassignedTrays,
+    staleCount,
+    zoneUsage: groupStats,
+    topLots
+  };
 }
 
 function renderZoneMode(root) {
