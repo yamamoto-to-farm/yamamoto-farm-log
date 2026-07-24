@@ -256,10 +256,14 @@ function setFilterState(mode, referenceYm, selectedSourceKeys) {
   history.replaceState(null, "", nextUrl);
 }
 
-function buildSourceTotalCounts(monthDataMap) {
+function buildSourceTotalCounts(monthDataMap, targetMonths = null) {
   const totals = Object.fromEntries(SOURCE_KEYS.map(key => [key, 0]));
+  const monthKeys = Array.isArray(targetMonths) && targetMonths.length > 0
+    ? targetMonths
+    : Object.keys(monthDataMap || {});
 
-  for (const month of Object.values(monthDataMap || {})) {
+  for (const ym of monthKeys) {
+    const month = monthDataMap?.[ym] || {};
     for (const key of SOURCE_KEYS) {
       totals[key] += Number(month?.sources?.[key] || 0);
     }
@@ -537,11 +541,9 @@ async function main() {
   const defaultReferenceYm = months.includes(initialReferenceYm) ? initialReferenceYm : months[0];
   const supportedModes = new Set(["latest4", "around2", "sameMonth"]);
   const initialMode = supportedModes.has(initialFilter.mode) ? initialFilter.mode : "latest4";
-  const sourceTotalCounts = buildSourceTotalCounts(summary.months);
   let selectedSourceKeys = normalizeSelectedSourceKeys(initialFilter.selectedSourceKeys);
 
   renderMonthOptions(months, defaultReferenceYm);
-  renderSourceFilterChips(selectedSourceKeys, sourceTotalCounts);
 
   if (rebuildSummaryBtn) {
     rebuildSummaryBtn.addEventListener("click", () => {
@@ -564,7 +566,10 @@ async function main() {
   const applyFilter = () => {
     const mode = monthMode.value;
     const ym = referenceMonth.value || defaultReferenceYm;
+    const visibleMonths = getVisibleMonths(months, mode, ym);
+    const sourceTotalCounts = buildSourceTotalCounts(summary.months, visibleMonths);
     setFilterState(mode, ym, selectedSourceKeys);
+    renderSourceFilterChips(selectedSourceKeys, sourceTotalCounts);
     renderVisibleMonths(months, summary.months, mode, ym, selectedSourceKeys);
   };
 
@@ -591,12 +596,11 @@ async function main() {
       }
 
       selectedSourceKeys = normalizeSelectedSourceKeys([...set]);
-      renderSourceFilterChips(selectedSourceKeys, sourceTotalCounts);
       applyFilter();
     });
   }
 
-  renderVisibleMonths(months, summary.months, monthMode.value, referenceMonth.value, selectedSourceKeys);
+  applyFilter();
 }
 
 main();
