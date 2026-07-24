@@ -1177,6 +1177,38 @@ function buildLaneHeroCard(lane, group) {
   `;
   card.appendChild(memo);
 
+  const shortcuts = document.createElement("div");
+  shortcuts.className = "zone-lane-shortcuts";
+
+  const groupTab = document.createElement("button");
+  groupTab.type = "button";
+  groupTab.className = "secondary-btn zone-lane-tab-btn";
+  groupTab.textContent = getZoneLaneGroupTabLabel(group);
+  groupTab.addEventListener("click", () => {
+    navigateToRoute({ mode: "zone", zone: getZoneByLaneId(lane.id), laneId: "" }, { syncUrl: true });
+  });
+  shortcuts.appendChild(groupTab);
+
+  const groupLanes = (group?.lanes || []).slice();
+  groupLanes.forEach(item => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const isActive = item.id === lane.id;
+    btn.className = `secondary-btn zone-lane-tab-btn${isActive ? " is-active" : ""}`;
+    btn.textContent = item.label;
+    if (isActive) {
+      btn.disabled = true;
+      btn.setAttribute("aria-current", "page");
+    } else {
+      btn.addEventListener("click", () => {
+        navigateToRoute({ mode: "lane", zone: getZoneByLaneId(item.id), laneId: item.id }, { syncUrl: true });
+      });
+    }
+    shortcuts.appendChild(btn);
+  });
+
+  card.appendChild(shortcuts);
+
   return card;
 }
 
