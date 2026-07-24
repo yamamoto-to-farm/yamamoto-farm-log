@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>育苗防除ログ - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
+  <style>
+    .target-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .target-zone {
+      border: 1px solid #dbe5f0;
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .target-zone__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .target-zone__title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .target-zone__actions,
+    .target-zone__lanes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .target-lane-btn {
+      min-width: 92px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    .target-lane-btn.is-active {
+      background: #1d4ed8;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+
+    .target-summary {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="form-area" style="display:none;">
+    <h1 class="page-title">育苗防除ログ</h1>
+
+    <div style="margin:10px 0; display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/nursery/house.html" class="secondary-btn">育苗ハウスへ戻る</a>
+      <a id="edit-pesticide-master-link" href="/admin/edit-json/index.html?data=pesticide-index&return=%2Fnursery%2Fpesticide%2Findex.html" class="secondary-btn" style="display:none;">農薬基本情報を編集</a>
+    </div>
+
+    <h2 class="section-title">防除日</h2>
+    <div class="card">
+      <input type="date" id="date" class="form-input">
+    </div>
+
+    <h2 class="section-title">対象</h2>
+    <div class="card">
+      <div id="nursery-target-summary" class="target-summary">未選択</div>
+      <div id="nursery-target-area" class="target-grid" style="margin-top:12px;"></div>
+    </div>
+
+    <h2 class="section-title">農薬</h2>
+    <div class="card">
+      <button id="open-pesticide-modal" class="filter-open-btn" data-type="pesticide">農薬を選択</button>
+      <div id="activePesticideFilters" style="margin-top:10px;"></div>
+    </div>
+
+    <h2 class="section-title">使用量（農薬ごとに倍率・散布液量[L]を入力）</h2>
+    <div class="card">
+      <div id="pesticide-input-area">
+        <p style="color:#777;">農薬を選択すると、倍率と混合後の散布液量（L）を入力できます</p>
+      </div>
+    </div>
+
+    <h2 class="section-title">作業者</h2>
+    <div class="card" id="workers_box"></div>
+
+    <div class="card">
+      <label for="temp_workers">単発バイト（カンマ区切り）</label>
+      <input id="temp_workers" class="form-input" placeholder="例：佐藤さん, 田中さん">
+    </div>
+
+    <h2 class="section-title">備考</h2>
+    <div class="card">
+      <textarea id="notes" class="form-textarea"></textarea>
+    </div>
+
+    <button id="save-btn" class="primary-btn">保存</button>
+  </div>
+
+  <div id="modal-container"></div>
+
+  <script>
+    fetch("/common/save-modal.html")
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById("modal-container").innerHTML = html;
+      });
+  </script>
+
+  <script type="module" src="/common/summary.js?v=1"></script>
+  <script type="module" src="/common/save/index.js?v=1"></script>
+
+  <script type="module" src="/common/filter/filter-core.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-pesticide.js?v=1"></script>
+  <script type="module" src="/common/filter/filter-active.js?v=1"></script>
+
+  <script type="module" src="./pesticide-input.js?v=20260724-1"></script>
+
+  <script type="module">
+    import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js";
+    import { initNurseryPesticidePage } from "./pesticide.js?v=20260724-1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+
+      renderHeader();
+      document.getElementById("form-area").style.display = "block";
+
+      const editLink = document.getElementById("edit-pesticide-master-link");
+      if (editLink && window.currentRole === "admin") {
+        editLink.style.display = "inline-flex";
+      }
+
+      document.getElementById("date").value = new Date().toISOString().slice(0, 10);
+      await createWorkerCheckboxes("workers_box");
+
+      const params = new URLSearchParams(location.search);
+      window.__nursery_pesticide_machine = params.get("machine") || "machine1";
+
+      await initNurseryPesticidePage();
+    });
+  </script>
+
+  <script src="/common/sw-register.js?v=20260713-1"></script>
+</body>
+
+</html>

@@ -19,6 +19,14 @@ export const MONTHLY_WORK_SOURCES = [
     className: "tone-start"
   },
   {
+    key: "nursery-pesticide",
+    label: "育苗防除",
+    kind: "csv",
+    csv: "/logs/nursery-pesticide/all.csv",
+    dateFields: ["date", "workDate"],
+    className: "tone-care"
+  },
+  {
     key: "tillage",
     label: "耕起",
     kind: "json",

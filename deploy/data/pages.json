@@ -214,6 +214,15 @@
       "openLog": false
     },
     {
+      "id": "nursery-pesticide",
+      "name": "育苗防除ログ",
+      "path": "nursery/pesticide/index.html",
+      "category": "育苗",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/pesticide.png",
+      "openLog": true
+    },
+    {
       "id": "nursery-variety",
       "name": "品種詳細",
       "path": "varieties/index.html",
