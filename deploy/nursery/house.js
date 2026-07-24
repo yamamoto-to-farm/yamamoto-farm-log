@@ -2332,33 +2332,31 @@ function placeBlock(blockId, lane, laneBodyHeight, dropEvent, beforeBlockId = ""
   if (!(laneBody instanceof HTMLElement)) return false;
 
   const laneCols = getLaneCols(lane);
-  const spanCols = getBlockSpanCols(target, lane);
+  const baseSpanCols = getBlockSpanCols(target, lane);
 
   const usedWithoutTarget = blocks
     .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
     .reduce((sum, block) => sum + block.trays, 0);
 
-  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, spanCols, target.trays);
-  const resolved = resolvePlacementInLane({
+  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, baseSpanCols, target.trays);
+  const placement = resolvePlacementWithAutoSpan({
+    target,
     lane,
     laneBodyEl: laneBody,
     laneBodyHeight,
-    movingBlockId: target.blockId,
-    trays: target.trays,
-    spanCols,
     preferredX: prefer.x,
     preferredY: prefer.y
   });
 
-  if (!resolved) {
+  if (!placement) {
     alert("その位置には置けません（重なりまたはスペース不足）。");
     return false;
   }
 
   target.laneId = lane.id;
-  target.spanCols = spanCols;
-  target.posX = resolved.x;
-  target.posY = resolved.y;
+  target.spanCols = placement.spanCols;
+  target.posX = placement.x;
+  target.posY = placement.y;
 
   const sameLane = blocks
     .filter(block => block.blockId !== blockId && block.laneId === lane.id)
@@ -2510,30 +2508,26 @@ function placeBlockInLane(target, lane) {
   if (!target || !lane) return false;
 
   const laneBodyHeight = computeLaneBodyHeight(lane);
-  const laneCols = getLaneCols(lane);
-  const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
 
   const virtualLaneBody = {
     clientWidth: estimateLaneBodyWidth(lane)
   };
 
-  const resolved = resolvePlacementInLane({
+  const placement = resolvePlacementWithAutoSpan({
+    target,
     lane,
     laneBodyEl: virtualLaneBody,
     laneBodyHeight,
-    movingBlockId: target.blockId,
-    trays: target.trays,
-    spanCols,
     preferredX: 0,
     preferredY: 0
   });
 
-  if (!resolved) return false;
+  if (!placement) return false;
 
   target.laneId = lane.id;
-  target.spanCols = spanCols;
-  target.posX = resolved.x;
-  target.posY = resolved.y;
+  target.spanCols = placement.spanCols;
+  target.posX = placement.x;
+  target.posY = placement.y;
 
   const sameLane = blocks
     .filter(block => block.blockId !== target.blockId && block.laneId === lane.id)
@@ -2585,36 +2579,97 @@ function updateDragPreview(lane, laneBodyHeight, dropEvent) {
   }
 
   const laneCols = getLaneCols(lane);
-  const spanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
-  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, spanCols, target.trays);
-  const resolved = resolvePlacementInLane({
+  const baseSpanCols = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
+  const prefer = calcDropPosition(dropEvent, laneBody, lane, laneBodyHeight, baseSpanCols, target.trays);
+  const placement = resolvePlacementWithAutoSpan({
+    target,
     lane,
     laneBodyEl: laneBody,
     laneBodyHeight,
-    movingBlockId: target.blockId,
-    trays: target.trays,
-    spanCols,
     preferredX: prefer.x,
     preferredY: prefer.y
   });
 
-  if (!resolved) {
+  if (!placement) {
     clearDragPreview();
     return;
   }
 
-  const widthNorm = getBlockWidthNorm(lane, spanCols);
-  const blockHeightPx = computeBlockHeight(target.trays, lane, laneBodyHeight, spanCols);
+  const widthNorm = getBlockWidthNorm(lane, placement.spanCols);
+  const blockHeightPx = computeBlockHeight(target.trays, lane, laneBodyHeight, placement.spanCols);
   const heightNorm = clamp(blockHeightPx / Math.max(1, laneBodyHeight), 0.04, 1);
 
   dragPreview = {
     laneId: lane.id,
-    x: resolved.x,
-    y: resolved.y,
+    x: placement.x,
+    y: placement.y,
     width: widthNorm,
     height: heightNorm
   };
   renderDragPreview();
+}
+
+function buildAutoSpanCandidates(preferredSpan, laneCols) {
+  const preferred = Math.max(1, Math.min(laneCols, Math.floor(toNumber(preferredSpan) || 1)));
+  const candidates = [];
+  const seen = new Set();
+
+  for (let delta = 0; delta < laneCols; delta += 1) {
+    const wider = preferred + delta;
+    if (wider <= laneCols && !seen.has(wider)) {
+      candidates.push(wider);
+      seen.add(wider);
+    }
+
+    if (delta === 0) continue;
+
+    const narrower = preferred - delta;
+    if (narrower >= 1 && !seen.has(narrower)) {
+      candidates.push(narrower);
+      seen.add(narrower);
+    }
+  }
+
+  return candidates;
+}
+
+function resolvePlacementWithAutoSpan({
+  target,
+  lane,
+  laneBodyEl,
+  laneBodyHeight,
+  preferredX,
+  preferredY,
+  excludeBlockIds = []
+}) {
+  if (!target || !lane || !laneBodyEl) return null;
+
+  const laneCols = getLaneCols(lane);
+  const preferredSpan = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
+  const candidates = buildAutoSpanCandidates(preferredSpan, laneCols);
+
+  for (const spanCols of candidates) {
+    const resolved = resolvePlacementInLane({
+      lane,
+      laneBodyEl,
+      laneBodyHeight,
+      movingBlockId: target.blockId,
+      trays: target.trays,
+      spanCols,
+      preferredX,
+      preferredY,
+      excludeBlockIds
+    });
+    if (resolved) {
+      return {
+        spanCols,
+        x: resolved.x,
+        y: resolved.y
+      };
+    }
+  }
+
+  return null;
 }
 
 function clearDragPreview(laneId = "") {
