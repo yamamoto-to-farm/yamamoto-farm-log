@@ -67,8 +67,19 @@
 }
 
 .toolbar-row--actions {
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  justify-content: stretch;
   align-items: center;
+}
+
+.toolbar-row--actions .toolbar-group--edit {
+  min-width: 0;
+}
+
+.toolbar-row--actions .toolbar-group--side,
+.toolbar-row--actions .toolbar-group--save {
+  flex: 0 0 auto;
 }
 
 .toolbar-location-title {
@@ -104,6 +115,10 @@
 
 .toolbar-group--save {
   margin-left: auto;
+}
+
+.toolbar-row--actions .toolbar-group--save {
+  margin-left: 0;
 }
 
 .nursery-toolbar .secondary-btn,
@@ -1291,6 +1306,7 @@ body.single-view-mode[data-house-view="outside"] .lot-card {
   }
 
   .toolbar-row--actions {
+    display: flex;
     justify-content: flex-start;
   }
 
