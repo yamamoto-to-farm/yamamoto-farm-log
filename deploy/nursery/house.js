@@ -2584,6 +2584,19 @@ function buildAutoSpanCandidates(preferredSpan, laneCols) {
   return candidates;
 }
 
+function getPreferredSpanForLane(target, lane) {
+  const targetLaneCols = getLaneCols(lane);
+  const fallback = Math.max(1, Math.min(targetLaneCols, Math.floor(toNumber(target?.spanCols) || 1)));
+  if (!target || !lane) return fallback;
+
+  const sourceLane = findLane(target.laneId);
+  if (!sourceLane) return fallback;
+
+  const sourceWidthNorm = getBlockWidthNorm(sourceLane, getBlockSpanCols(target, sourceLane));
+  const estimatedSpan = Math.round(sourceWidthNorm * targetLaneCols);
+  return Math.max(1, Math.min(targetLaneCols, estimatedSpan || fallback));
+}
+
 function resolvePlacementWithAutoSpan({
   target,
   lane,
@@ -2596,7 +2609,7 @@ function resolvePlacementWithAutoSpan({
   if (!target || !lane || !laneBodyEl) return null;
 
   const laneCols = getLaneCols(lane);
-  const preferredSpan = Math.max(1, Math.min(laneCols, Math.floor(toNumber(target.spanCols) || 1)));
+  const preferredSpan = getPreferredSpanForLane(target, lane);
   const candidates = buildAutoSpanCandidates(preferredSpan, laneCols);
 
   for (const spanCols of candidates) {
