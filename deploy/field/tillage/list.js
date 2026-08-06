@@ -156,6 +156,62 @@ async function loadFieldAreas() {
   return data && typeof data === "object" ? data : {};
 }
 
+function normalizeContractText(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (["未入力", "未入力（a）", "未入力（㎡）", "未設定"].includes(text)) return "";
+  return text;
+}
+
+function parseContractDateValue(value) {
+  const text = normalizeContractText(value);
+  if (!text) return 0;
+
+  const m = text.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m) {
+    return Number(`${m[1]}${String(m[2]).padStart(2, "0")}${String(m[3]).padStart(2, "0")}`);
+  }
+
+  const d = new Date(text);
+  if (Number.isNaN(d.getTime())) return 0;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return Number(`${year}${month}${day}`);
+}
+
+function hasContractPayload(contract = {}) {
+  return [contract?.start, contract?.end, contract?.rent, contract?.notes]
+    .some(value => normalizeContractText(value));
+}
+
+function isFieldContractEnded(detail, todayValue) {
+  const contracts = Array.isArray(detail?.contracts) ? detail.contracts : [];
+  if (contracts.length === 0) return false;
+
+  let hasAnyPastEnd = false;
+  let hasActiveContract = false;
+
+  contracts.forEach(contract => {
+    if (!hasContractPayload(contract)) return;
+
+    const endValue = parseContractDateValue(contract?.end);
+    if (endValue > 0) {
+      if (endValue >= todayValue) {
+        hasActiveContract = true;
+      } else {
+        hasAnyPastEnd = true;
+      }
+      return;
+    }
+
+    // 終了日が未設定の契約は継続中扱いにする
+    hasActiveContract = true;
+  });
+
+  return hasAnyPastEnd && !hasActiveContract;
+}
+
 async function loadTillageLog(fieldName) {
   const file = safeFieldName(fieldName);
   const url = `/logs/tillage/${encodeURIComponent(file)}.json`;
@@ -191,14 +247,20 @@ function normalizeEntry(fieldMeta, entry) {
 async function loadRows() {
   const fields = await loadFieldList();
   const fieldDetail = await loadFieldAreas();
-  const loaded = await Promise.all(fields.map(async field => ({
+  const todayValue = getTodayValue();
+
+  const activeFields = fields.filter(field => {
+    const detail = fieldDetail?.[field.name] || null;
+    return !isFieldContractEnded(detail, todayValue);
+  });
+
+  const loaded = await Promise.all(activeFields.map(async field => ({
     meta: field,
     log: await loadTillageLog(field.name)
   })));
 
   const rows = [];
   const fieldCards = [];
-  const todayValue = getTodayValue();
 
   loaded.forEach(({ meta, log }) => {
     const entries = flattenEntries(log)
@@ -250,10 +312,10 @@ async function loadRows() {
     });
   });
 
-  state.fields = fields;
+  state.fields = activeFields;
   state.rows = rows;
   state.fieldCards = fieldCards;
-  state.fieldAreaMap = Object.fromEntries(fields.map(field => {
+  state.fieldAreaMap = Object.fromEntries(activeFields.map(field => {
     const sizeA = Number(fieldDetail?.[field.name]?.size || 0);
     return [field.name, Number.isFinite(sizeA) ? sizeA / 10 : 0];
   }));
