@@ -40,6 +40,17 @@ function parseRentNumber(value) {
   return Number.isFinite(num) ? num : 0;
 }
 
+function parseSquareMeter(value) {
+  const text = String(value ?? "").replace(/,/g, "").trim();
+  if (!text) return 0;
+
+  const matched = text.match(/-?\d+(?:\.\d+)?/);
+  if (!matched) return 0;
+
+  const num = Number(matched[0]);
+  return Number.isFinite(num) ? num : 0;
+}
+
 function formatRentNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "";
@@ -61,19 +72,26 @@ function parseAreaAFromTan(value) {
 }
 
 function calcParcelRentTotal() {
-  const inputs = document.querySelectorAll(".parcel-rent");
+  const rows = document.querySelectorAll(".parcel-row");
   let sum = 0;
-  inputs.forEach(input => {
-    sum += parseRentNumber(input?.value || "");
+
+  rows.forEach(row => {
+    const areaSqm = parseSquareMeter(row.querySelector(".parcel-area")?.value || "");
+    const rentPer10a = parseRentNumber(row.querySelector(".parcel-rent")?.value || "");
+    if (areaSqm <= 0 || rentPer10a <= 0) return;
+
+    // parcel-rent is unit price per 10a (1000 sqm), so convert area and sum actual amount.
+    sum += (areaSqm / 1000) * rentPer10a;
   });
-  return sum;
+
+  return Math.round(sum);
 }
 
 function updateParcelRentTotalHint() {
   const hintEl = document.getElementById("contract-rent-total-hint");
   if (!hintEl) return;
   const total = calcParcelRentTotal();
-  hintEl.textContent = `筆情報の賃料（10aあたり）合計: ${formatRentNumber(total)}`;
+  hintEl.textContent = `筆情報の賃料（合計）: ${formatRentNumber(total)}`;
 }
 
 function applyParcelRentTotalToContractRents({ onlyEmpty = false } = {}) {
