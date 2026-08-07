@@ -59,8 +59,16 @@ export async function initEditJson() {
   const path3 = `/data/${dataName}/${dataName}.json`;
 
   // チェック順
-  // ハイフン付きデータ（例: pesticide-detail）は /data/<prefix>/ を優先して 404 ノイズを減らす
-  const candidates = dataName.includes("-")
+  // prefix配下にあるデータだけ /data/<prefix>/ を優先して 404 ノイズを減らす。
+  // field-detail のように root にあるデータは /data/${dataName}.json を先に確認する。
+  const preferPrefixPath = new Set([
+    "fertilizer-index",
+    "fertilizer-detail",
+    "pesticide-index",
+    "pesticide-detail"
+  ]);
+
+  const candidates = preferPrefixPath.has(dataName)
     ? [path2, path1, path3]
     : [path1, path2, path3];
 
