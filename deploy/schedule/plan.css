@@ -174,25 +174,6 @@
   margin-bottom: 10px;
 }
 
-.field-next-action {
-  margin-top: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.field-next-action.next-action--warn {
-  color: #9a3412;
-}
-
-.field-next-action.next-action--focus {
-  color: #1d4ed8;
-}
-
-.field-next-action.next-action--ok {
-  color: #166534;
-}
-
 .planting-view-btn.active {
   background: #2f855a !important;
   color: #fff !important;
@@ -815,15 +796,11 @@
   }
 
   #table-area > .card {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    break-after: page;
-    page-break-after: always;
-  }
-
-  #table-area > .card:last-of-type {
+    break-inside: auto;
+    page-break-inside: auto;
     break-after: auto;
     page-break-after: auto;
+    margin-bottom: 6mm !important;
   }
 
   .planting-plan-table .plan-chip,

@@ -155,26 +155,6 @@ function renderPlanActiveFilters(state = {}) {
   }
 }
 
-function getNextActionMeta(assignments, actualSummary) {
-  const list = Array.isArray(assignments) ? assignments : [];
-  const totalTrays = list.reduce((sum, item) => sum + getAssignedTrayCount(item), 0);
-
-  if (list.length === 0 || totalTrays <= 0) {
-    return { text: "候補を割り当て", className: "next-action--warn" };
-  }
-
-  const missingDateCount = list.filter(item => !String(item?.planPlantDate || "").trim()).length;
-  if (missingDateCount > 0) {
-    return { text: `定植予定日を入力（未設定${missingDateCount}件）`, className: "next-action--warn" };
-  }
-
-  if (!String(actualSummary?.latestDate || "").trim()) {
-    return { text: "初回定植の実績確認", className: "next-action--focus" };
-  }
-
-  return { text: "実績と差分を確認", className: "next-action--ok" };
-}
-
 /* ============================================================
    外部から呼ばれるエントリポイント
 ============================================================ */
@@ -751,7 +731,6 @@ function renderFieldCards(rows, state = {}) {
       items.forEach(item => {
         const fieldName = String(item.fieldName || "").trim();
         const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
-        const nextAction = getNextActionMeta(item.assignments, actualSummary);
         const actualTrayText = actualSummary.trayLines.length
           ? actualSummary.trayLines.map(v => escapeHtml(v)).join("<br>")
           : "-";
@@ -772,7 +751,6 @@ function renderFieldCards(rows, state = {}) {
             <td>
               <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
               <div class="field-sub">${escapeHtml(String(item.areaName || "その他"))}</div>
-              <div class="field-next-action ${nextAction.className}">次アクション: ${escapeHtml(nextAction.text)}</div>
             </td>
             <td>
               <div class="plan-sub plan-lines">${whenHtml}</div>
@@ -844,7 +822,6 @@ function renderFieldCards(rows, state = {}) {
           : "-";
 
         const assignments = planningAssignments.get(fieldName) || [];
-        const nextAction = getNextActionMeta(assignments, actualSummary);
         const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
         const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
 
@@ -862,7 +839,6 @@ function renderFieldCards(rows, state = {}) {
             <td>
               <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
               <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
-              <div class="field-next-action ${nextAction.className}">次アクション: ${escapeHtml(nextAction.text)}</div>
             </td>
             <td>
               <div class="plan-sub plan-lines">${whenHtml}</div>
