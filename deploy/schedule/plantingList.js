@@ -45,6 +45,51 @@ const PLANTING_FILTER_QUERY_KEYS = {
   fields: "ffield",
   varieties: "fvar"
 };
+const ASSIGNMENT_DELETE_UNDO_MS = 5000;
+const pendingAssignmentDeleteByField = new Map();
+
+function buildAssignmentDeleteKey(fieldName) {
+  return `${getSelectedPlanningYear()}\t${String(fieldName || "").trim()}`;
+}
+
+function getPendingAssignmentDelete(fieldName) {
+  const key = buildAssignmentDeleteKey(fieldName);
+  const pending = pendingAssignmentDeleteByField.get(key);
+  if (!pending) return null;
+  if (pending.expiresAt <= Date.now()) {
+    clearTimeout(pending.timerId);
+    pendingAssignmentDeleteByField.delete(key);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingAssignmentDelete(fieldName) {
+  const key = buildAssignmentDeleteKey(fieldName);
+  const pending = pendingAssignmentDeleteByField.get(key);
+  if (!pending) return;
+  clearTimeout(pending.timerId);
+  pendingAssignmentDeleteByField.delete(key);
+}
+
+function stagePendingAssignmentDelete(fieldName, item) {
+  clearPendingAssignmentDelete(fieldName);
+  const key = buildAssignmentDeleteKey(fieldName);
+  const payload = {
+    item: { ...item },
+    expiresAt: Date.now() + ASSIGNMENT_DELETE_UNDO_MS,
+    timerId: null
+  };
+
+  payload.timerId = setTimeout(() => {
+    const current = pendingAssignmentDeleteByField.get(key);
+    if (current === payload) {
+      pendingAssignmentDeleteByField.delete(key);
+    }
+  }, ASSIGNMENT_DELETE_UNDO_MS);
+
+  pendingAssignmentDeleteByField.set(key, payload);
+}
 
 function normalizePlanFilterState(state = {}) {
   return {
@@ -1205,6 +1250,25 @@ function shiftMonth(ymd, diffMonth) {
   return `${y}-${m}-${day}`;
 }
 
+function getTodayYmd() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function shiftDateYmd(ymd, diffDays) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""))) return "";
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + diffDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function buildPlanTraySummary(assignments) {
   if (!assignments.length) {
     return {
@@ -1356,6 +1420,10 @@ function openPlantingPlanModal(fieldName) {
   const requiredTray128Text = baseRequirement.valid ? baseRequirement.requiredTray128.toLocaleString() : "-";
   const requiredTray200Text = baseRequirement.valid ? baseRequirement.requiredTray200.toLocaleString() : "-";
   const defaultAssignableByField = baseRequirement.valid ? Math.max(0, Math.floor(baseRequirement.requiredTray128)) : 0;
+  const pendingDelete = getPendingAssignmentDelete(fieldName);
+  const pendingDeleteSeconds = pendingDelete
+    ? Math.max(1, Math.ceil((pendingDelete.expiresAt - Date.now()) / 1000))
+    : 0;
 
   const seedMonthOptions = Array.from(
     new Set(
@@ -1371,16 +1439,22 @@ function openPlantingPlanModal(fieldName) {
         <td>${escapeHtml(item.variety || "-")}</td>
         <td>${escapeHtml(item.sowDate || "-")}</td>
         <td>
-          <input type="date" class="form-input plan-assigned-date-input" data-id="${escapeAttr(item.id)}" value="${escapeAttr(String(item.planPlantDate || "").trim())}">
+          <div class="plan-date-edit-wrap">
+            <input type="date" class="form-input plan-assigned-date-input" data-id="${escapeAttr(item.id)}" value="${escapeAttr(String(item.planPlantDate || "").trim())}">
+            <div class="plan-date-quick-row">
+              <button type="button" class="secondary-btn plan-date-quick-btn" data-id="${escapeAttr(item.id)}" data-date-action="prev">前日</button>
+              <button type="button" class="secondary-btn plan-date-quick-btn" data-id="${escapeAttr(item.id)}" data-date-action="today">当日</button>
+              <button type="button" class="secondary-btn plan-date-quick-btn" data-id="${escapeAttr(item.id)}" data-date-action="next">翌日</button>
+            </div>
+          </div>
           <div class="plan-sub">空欄可（後で設定）</div>
         </td>
         <td>
-          <input type="number" min="0" step="1" class="form-input plan-assigned-tray-input" data-id="${escapeAttr(item.id)}" value="${Math.round(getAssignedTrayCount(item))}">
+          <input type="number" min="1" step="1" class="form-input plan-assigned-tray-input" data-id="${escapeAttr(item.id)}" value="${Math.round(getAssignedTrayCount(item))}">
           <div class="plan-sub">全${Number(item.trayCount || 0).toLocaleString()}枚</div>
         </td>
         <td>${getAssignedPlants(item).toLocaleString()}</td>
         <td>
-          <button type="button" class="secondary-btn plan-update-btn" data-id="${escapeAttr(item.id)}">更新</button>
           <button type="button" class="secondary-btn plan-remove-btn" data-id="${escapeAttr(item.id)}">削除</button>
         </td>
       </tr>
@@ -1392,15 +1466,26 @@ function openPlantingPlanModal(fieldName) {
     `
       <div class="plant-plan-modal">
         <div class="plan-group plan-group-metrics">
-          <p class="plan-metric-row"><strong>耕作面積（反）：</strong> ${areaText}</p>
-          <div class="plan-spacing-row">
-            <label>畝間(cm)</label>
-            <input id="plan-bed-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_BED_SPACING_CM}">
-            <label>株間(cm)</label>
-            <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
+          <p class="plan-metric-compact"><strong>耕作面積（反）：</strong> ${areaText} ／ <strong>定植可能枚数：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span>枚（128穴）・<span id="plan-required-tray200">${requiredTray200Text}</span>枚（200穴）</p>
+          <details class="plan-metrics-details">
+            <summary>基準情報の詳細を開く</summary>
+            <div class="plan-spacing-row">
+              <label>畝間(cm)</label>
+              <input id="plan-bed-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_BED_SPACING_CM}">
+              <label>株間(cm)</label>
+              <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
+            </div>
+            <p class="plan-metric-row"><strong>候補基準の定植可能枚数：</strong> <span id="plan-capacity-by-selected">-</span></p>
+          </details>
+        </div>
+
+        <div class="plan-group plan-group-bulk-date">
+          <label>定植予定日の一括設定</label>
+          <div class="plan-bulk-date-row">
+            <input id="plan-bulk-date" class="form-input" type="date">
+            <button type="button" id="plan-bulk-date-apply" class="secondary-btn">全行に設定</button>
           </div>
-          <p class="plan-metric-row"><strong>定植可能枚数（128穴/200穴）：</strong> <span id="plan-required-tray128">${requiredTray128Text}</span> 枚 / <span id="plan-required-tray200">${requiredTray200Text}</span> 枚</p>
-          <p class="plan-metric-row"><strong>候補基準の定植可能枚数：</strong> <span id="plan-capacity-by-selected">-</span></p>
+          <p class="plan-sub">空欄時は適用しません。日付は各行でも編集できます。</p>
         </div>
 
         <div class="plant-plan-picker plan-group plan-group-picker">
@@ -1448,6 +1533,9 @@ function openPlantingPlanModal(fieldName) {
           <tbody>${assignmentRows}</tbody>
         </table>
 
+        <p class="plan-sub plan-auto-apply-note">変更は自動反映されます（CSV保存は別操作）。</p>
+        ${pendingDelete ? `<div class="plan-pending-delete">「${escapeHtml(String(pendingDelete.item?.variety || "(品種未設定)"))}」を削除しました。<button type="button" id="plan-undo-delete-btn" class="secondary-btn">取り消す</button><span class="plan-sub">${pendingDeleteSeconds}秒以内</span></div>` : ""}
+
         <p class="plan-metric-row plan-allocation-total"><strong>割り当て合計（未保存）：</strong> ${plannedPlants.toLocaleString()} 株 / ${plannedTrays.toLocaleString()} 枚</p>
       </div>
     `
@@ -1471,6 +1559,9 @@ function openPlantingPlanModal(fieldName) {
   const seedCountEl = document.getElementById("plan-seed-count");
   const assignTraysInput = document.getElementById("plan-seed-assign-trays");
   const remainingNoteEl = document.getElementById("plan-seed-remaining-note");
+  const bulkDateInput = document.getElementById("plan-bulk-date");
+  const bulkDateApplyBtn = document.getElementById("plan-bulk-date-apply");
+  const undoDeleteBtn = document.getElementById("plan-undo-delete-btn");
   const bedInput = document.getElementById("plan-bed-spacing");
   const plantInput = document.getElementById("plan-plant-spacing");
   const requiredTray128El = document.getElementById("plan-required-tray128");
@@ -1652,6 +1743,97 @@ function openPlantingPlanModal(fieldName) {
     });
   }
 
+  const applyAssignmentDraftById = (id) => {
+    const seedId = String(id || "").trim();
+    if (!seedId) return;
+
+    const input = Array.from(document.querySelectorAll(".plan-assigned-tray-input")).find(el => String(el.dataset.id || "") === seedId);
+    const dateInput = Array.from(document.querySelectorAll(".plan-assigned-date-input")).find(el => String(el.dataset.id || "") === seedId);
+    const currentAssignments = getCurrentPlanningAssignments().get(fieldName) || [];
+    const current = currentAssignments.find(v => String(v.id || "") === seedId);
+    const picked = getSeedPlanById(seedId) || current;
+    if (!picked) {
+      alert("播種計画IDが見つかりません。");
+      return;
+    }
+
+    const requested = Math.floor(Number(input?.value || 0));
+    if (!(requested > 0)) {
+      alert("トレイ枚数は1以上で入力してください。削除は「削除」ボタンを使ってください。");
+      if (input) input.value = String(Math.max(1, Math.round(getAssignedTrayCount(current || picked) || 1)));
+      return;
+    }
+
+    const updatedPlanDateRaw = String(dateInput?.value || "").trim();
+    const updatedPlanDate = normalizePlanPlantDateInput(updatedPlanDateRaw);
+    if (updatedPlanDate === null) {
+      alert("定植予定日は YYYY-MM-DD 形式で入力してください。");
+      if (dateInput) dateInput.value = String(current?.planPlantDate || "").trim();
+      return;
+    }
+
+    const maxBySeed = getRemainingTrays(seedId, picked.trayCount, { excludeField: fieldName, excludeId: seedId });
+    const bedCm = Number(bedInput?.value || 0);
+    const plantCm = Number(plantInput?.value || 0);
+    const capacityPlants = getFieldCapacityPlants(fieldName, bedCm, plantCm);
+    if (capacityPlants <= 0) {
+      alert("圃場面積または株間/畝間の設定を確認してください。");
+      return;
+    }
+    const assignedPlantsExcluding = getAssignedPlantsTotal(currentAssignments, { excludeId: seedId });
+    const remainPlantsByField = Math.max(0, capacityPlants - assignedPlantsExcluding);
+    const cells = parseTrayCells(picked.trayType);
+    const maxByField = Math.floor(remainPlantsByField / Math.max(1, cells));
+    const maxAssignable = Math.max(0, Math.min(maxBySeed, maxByField));
+
+    if (requested > maxAssignable) {
+      alert(`割当上限は ${maxAssignable.toLocaleString()} 枚です。`);
+      if (input) input.value = String(Math.max(1, maxAssignable));
+      return;
+    }
+
+    clearPendingAssignmentDelete(fieldName);
+    upsertAssignment(fieldName, picked, requested, { planPlantDate: updatedPlanDate });
+    openPlantingPlanModal(fieldName);
+    renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+  };
+
+  if (bulkDateApplyBtn) {
+    bulkDateApplyBtn.addEventListener("click", () => {
+      const dateText = normalizePlanPlantDateInput(bulkDateInput?.value || "");
+      if (!dateText) {
+        alert("一括設定する日付を入力してください。");
+        return;
+      }
+
+      const currentAssignments = getCurrentPlanningAssignments().get(fieldName) || [];
+      if (!currentAssignments.length) {
+        alert("割当行がありません。");
+        return;
+      }
+
+      clearPendingAssignmentDelete(fieldName);
+      currentAssignments.forEach(item => {
+        upsertAssignment(fieldName, item, getAssignedTrayCount(item), { planPlantDate: dateText });
+      });
+
+      openPlantingPlanModal(fieldName);
+      renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+    });
+  }
+
+  if (undoDeleteBtn) {
+    undoDeleteBtn.addEventListener("click", () => {
+      const pending = getPendingAssignmentDelete(fieldName);
+      if (!pending?.item) return;
+      const restoreItem = pending.item;
+      clearPendingAssignmentDelete(fieldName);
+      upsertAssignment(fieldName, restoreItem, getAssignedTrayCount(restoreItem), { planPlantDate: restoreItem.planPlantDate });
+      openPlantingPlanModal(fieldName);
+      renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+    });
+  }
+
   if (addBtn) {
     addBtn.onclick = () => {
       const id = String(selectedSeedId || "").trim();
@@ -1695,67 +1877,48 @@ function openPlantingPlanModal(fieldName) {
     };
   }
 
-  document.querySelectorAll(".plan-update-btn").forEach(btn => {
+  document.querySelectorAll(".plan-assigned-tray-input").forEach(input => {
+    input.addEventListener("change", () => {
+      applyAssignmentDraftById(input.dataset.id || "");
+    });
+  });
+
+  document.querySelectorAll(".plan-assigned-date-input").forEach(input => {
+    input.addEventListener("change", () => {
+      applyAssignmentDraftById(input.dataset.id || "");
+    });
+  });
+
+  document.querySelectorAll(".plan-date-quick-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = String(btn.dataset.id || "").trim();
-      if (!id) return;
-
-      const input = Array.from(document.querySelectorAll(".plan-assigned-tray-input")).find(el => String(el.dataset.id || "") === id);
+      const action = String(btn.dataset.dateAction || "").trim();
       const dateInput = Array.from(document.querySelectorAll(".plan-assigned-date-input")).find(el => String(el.dataset.id || "") === id);
-      const requested = Math.floor(Number(input?.value || 0));
-      if (!(requested >= 0)) {
-        alert("更新枚数を確認してください。");
-        return;
-      }
-      const updatedPlanDateRaw = String(dateInput?.value || "").trim();
-      const updatedPlanDate = normalizePlanPlantDateInput(updatedPlanDateRaw);
-      if (updatedPlanDate === null) {
-        alert("定植予定日は YYYY-MM-DD 形式で入力してください。");
-        return;
+      if (!dateInput) return;
+
+      const baseDate = String(dateInput.value || "").trim() || getTodayYmd();
+      if (action === "today") {
+        dateInput.value = getTodayYmd();
+      } else if (action === "prev") {
+        dateInput.value = shiftDateYmd(baseDate, -1) || getTodayYmd();
+      } else if (action === "next") {
+        dateInput.value = shiftDateYmd(baseDate, 1) || getTodayYmd();
       }
 
-      const picked = getSeedPlanById(id);
-      if (!picked) {
-        alert("播種計画IDが見つかりません。");
-        return;
-      }
-
-      if (requested === 0) {
-        removeAssignment(fieldName, id);
-        openPlantingPlanModal(fieldName);
-        renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
-        return;
-      }
-
-      const maxBySeed = getRemainingTrays(id, picked.trayCount, { excludeField: fieldName, excludeId: id });
-      const bedCm = Number(bedInput?.value || 0);
-      const plantCm = Number(plantInput?.value || 0);
-      const capacityPlants = getFieldCapacityPlants(fieldName, bedCm, plantCm);
-      if (capacityPlants <= 0) {
-        alert("圃場面積または株間/畝間の設定を確認してください。");
-        return;
-      }
-      const assignedPlantsExcluding = getAssignedPlantsTotal(assignments, { excludeId: id });
-      const remainPlantsByField = Math.max(0, capacityPlants - assignedPlantsExcluding);
-      const cells = parseTrayCells(picked.trayType);
-      const maxByField = Math.floor(remainPlantsByField / Math.max(1, cells));
-      const maxAssignable = Math.max(0, Math.min(maxBySeed, maxByField));
-
-      if (requested > maxAssignable) {
-        alert(`割当上限は ${maxAssignable.toLocaleString()} 枚です。`);
-        return;
-      }
-
-      upsertAssignment(fieldName, picked, requested, { planPlantDate: updatedPlanDate });
-      openPlantingPlanModal(fieldName);
-      renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
+      applyAssignmentDraftById(id);
     });
   });
 
   document.querySelectorAll(".plan-remove-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = String(btn.dataset.id || "").trim();
+      if (!id) return;
+      const currentAssignments = getCurrentPlanningAssignments().get(fieldName) || [];
+      const removedItem = currentAssignments.find(v => String(v.id || "") === id);
+      if (!removedItem) return;
+
       removeAssignment(fieldName, id);
+      stagePendingAssignmentDelete(fieldName, removedItem);
       openPlantingPlanModal(fieldName);
       renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
     });

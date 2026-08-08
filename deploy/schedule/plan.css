@@ -745,8 +745,68 @@
   max-width: 100px;
 }
 
-.plan-update-btn {
-  margin-right: 4px;
+.plan-metric-compact {
+  margin: 0;
+  font-size: 14px;
+}
+
+.plan-metrics-details {
+  margin-top: 8px;
+}
+
+.plan-metrics-details > summary {
+  cursor: pointer;
+  color: #1e3a8a;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.plan-group-bulk-date {
+  margin-top: 10px;
+}
+
+.plan-bulk-date-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.plan-bulk-date-row input {
+  max-width: 180px;
+}
+
+.plan-date-edit-wrap {
+  display: grid;
+  gap: 4px;
+}
+
+.plan-date-quick-row {
+  display: flex;
+  gap: 4px;
+}
+
+.plan-date-quick-btn {
+  height: 26px;
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.plan-auto-apply-note {
+  margin-top: 8px;
+}
+
+.plan-pending-delete {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: #7c2d12;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 
 @media (max-width: 860px) {
