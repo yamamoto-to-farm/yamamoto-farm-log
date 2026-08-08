@@ -40,6 +40,11 @@ let filterData = {};
 let initialized = false;
 let plantingViewMode = PLANTING_VIEW_MODE_FIELD;
 let plantingFilterButtonsBound = false;
+const PLANTING_FILTER_QUERY_KEYS = {
+  yearMonths: "fym",
+  fields: "ffield",
+  varieties: "fvar"
+};
 
 function normalizePlanFilterState(state = {}) {
   return {
@@ -47,6 +52,43 @@ function normalizePlanFilterState(state = {}) {
     fields: Array.isArray(state?.fields) ? state.fields : [],
     varieties: Array.isArray(state?.varieties) ? state.varieties : []
   };
+}
+
+function splitFilterQueryParam(value) {
+  return String(value || "")
+    .split(",")
+    .map(v => String(v || "").trim())
+    .filter(Boolean);
+}
+
+function readPlanFilterStateFromUrl() {
+  const params = new URLSearchParams(location.search);
+  return {
+    yearMonths: splitFilterQueryParam(params.get(PLANTING_FILTER_QUERY_KEYS.yearMonths)),
+    fields: splitFilterQueryParam(params.get(PLANTING_FILTER_QUERY_KEYS.fields)),
+    varieties: splitFilterQueryParam(params.get(PLANTING_FILTER_QUERY_KEYS.varieties))
+  };
+}
+
+function writePlanFilterStateToUrl(state = {}) {
+  const next = normalizePlanFilterState(state);
+  const params = new URLSearchParams(location.search);
+
+  const setOrDelete = (key, list) => {
+    if (Array.isArray(list) && list.length > 0) {
+      params.set(key, list.join(","));
+    } else {
+      params.delete(key);
+    }
+  };
+
+  setOrDelete(PLANTING_FILTER_QUERY_KEYS.yearMonths, next.yearMonths);
+  setOrDelete(PLANTING_FILTER_QUERY_KEYS.fields, next.fields);
+  setOrDelete(PLANTING_FILTER_QUERY_KEYS.varieties, next.varieties);
+
+  const query = params.toString();
+  const url = query ? `${location.pathname}?${query}` : location.pathname;
+  history.replaceState(null, "", url);
 }
 
 function syncFilterStateToCore(state = {}) {
@@ -111,6 +153,26 @@ function renderPlanActiveFilters(state = {}) {
       applyFilter();
     });
   }
+}
+
+function getNextActionMeta(assignments, actualSummary) {
+  const list = Array.isArray(assignments) ? assignments : [];
+  const totalTrays = list.reduce((sum, item) => sum + getAssignedTrayCount(item), 0);
+
+  if (list.length === 0 || totalTrays <= 0) {
+    return { text: "候補を割り当て", className: "next-action--warn" };
+  }
+
+  const missingDateCount = list.filter(item => !String(item?.planPlantDate || "").trim()).length;
+  if (missingDateCount > 0) {
+    return { text: `定植予定日を入力（未設定${missingDateCount}件）`, className: "next-action--warn" };
+  }
+
+  if (!String(actualSummary?.latestDate || "").trim()) {
+    return { text: "初回定植の実績確認", className: "next-action--focus" };
+  }
+
+  return { text: "実績と差分を確認", className: "next-action--ok" };
 }
 
 /* ============================================================
@@ -371,7 +433,11 @@ async function initPlantingListPage() {
 
   // ▼ フィルタ UI 初期化
   setFilterData(filterData);
-  window.currentFilterState = sanitizePlanFilterState(window.currentFilterState || {});
+  const restoredState = readPlanFilterStateFromUrl();
+  const baseState = normalizePlanFilterState(window.currentFilterState || {});
+  const hasRestored = restoredState.yearMonths.length > 0 || restoredState.fields.length > 0 || restoredState.varieties.length > 0;
+  window.currentFilterState = sanitizePlanFilterState(hasRestored ? restoredState : baseState);
+  writePlanFilterStateToUrl(window.currentFilterState);
   syncFilterStateToCore(window.currentFilterState);
   renderPlanActiveFilters(window.currentFilterState);
 
@@ -396,6 +462,7 @@ async function initPlantingListPage() {
 
   window.addEventListener("filter:apply", (e) => {
     window.currentFilterState = sanitizePlanFilterState(e.detail || {});
+    writePlanFilterStateToUrl(window.currentFilterState);
     renderPlanActiveFilters(window.currentFilterState);
     if (!hasPlanningYearSelection()) {
       renderYearSelectionRequiredState();
@@ -406,6 +473,7 @@ async function initPlantingListPage() {
 
   window.addEventListener("filter:reset", () => {
     window.currentFilterState = { yearMonths: [], fields: [], varieties: [] };
+    writePlanFilterStateToUrl(window.currentFilterState);
     syncFilterStateToCore(window.currentFilterState);
     renderPlanActiveFilters(window.currentFilterState);
     if (!hasPlanningYearSelection()) {
@@ -569,9 +637,9 @@ function renderFieldCards(rows, state = {}) {
   html += `
     <section class="card planting-view-switch-card print-hide">
       <h3 class="section-title">表示モード</h3>
-      <div class="planting-view-switch" role="group" aria-label="定植計画表示モード">
-        <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_FIELD ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_FIELD}">作成ビュー（圃場ごと）</button>
-        <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_DATE ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_DATE}">運用ビュー（定植日順）</button>
+      <div class="planting-view-switch" role="group" aria-label="表示モード">
+        <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_FIELD ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_FIELD}">圃場ごと</button>
+        <button type="button" class="secondary-btn planting-view-btn ${displayMode === PLANTING_VIEW_MODE_DATE ? "active" : ""}" data-view-mode="${PLANTING_VIEW_MODE_DATE}">定植日順</button>
       </div>
       <p class="planting-view-filter-title">フィルタ</p>
       <div class="planting-view-filter-row" role="group" aria-label="定植絞り込み">
@@ -683,6 +751,7 @@ function renderFieldCards(rows, state = {}) {
       items.forEach(item => {
         const fieldName = String(item.fieldName || "").trim();
         const actualSummary = buildRecentActualSummary(fieldName, selectedYear);
+        const nextAction = getNextActionMeta(item.assignments, actualSummary);
         const actualTrayText = actualSummary.trayLines.length
           ? actualSummary.trayLines.map(v => escapeHtml(v)).join("<br>")
           : "-";
@@ -703,6 +772,7 @@ function renderFieldCards(rows, state = {}) {
             <td>
               <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
               <div class="field-sub">${escapeHtml(String(item.areaName || "その他"))}</div>
+              <div class="field-next-action ${nextAction.className}">次アクション: ${escapeHtml(nextAction.text)}</div>
             </td>
             <td>
               <div class="plan-sub plan-lines">${whenHtml}</div>
@@ -774,6 +844,7 @@ function renderFieldCards(rows, state = {}) {
           : "-";
 
         const assignments = planningAssignments.get(fieldName) || [];
+        const nextAction = getNextActionMeta(assignments, actualSummary);
         const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
         const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
 
@@ -791,6 +862,7 @@ function renderFieldCards(rows, state = {}) {
             <td>
               <strong>${escapeHtml(fieldName)}</strong><span class="field-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
               <div class="field-sub">${escapeHtml(String(field.area || "その他"))}</div>
+              <div class="field-next-action ${nextAction.className}">次アクション: ${escapeHtml(nextAction.text)}</div>
             </td>
             <td>
               <div class="plan-sub plan-lines">${whenHtml}</div>
@@ -1250,14 +1322,22 @@ function getRemainingTrays(seedId, totalTrays, options = {}) {
   return remain > 0 ? remain : 0;
 }
 
-function upsertAssignment(fieldName, picked, assignedTrayCount) {
+function normalizePlanPlantDateInput(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
+}
+
+function upsertAssignment(fieldName, picked, assignedTrayCount, options = {}) {
   const planningAssignments = getCurrentPlanningAssignments();
   const next = [...(planningAssignments.get(fieldName) || [])];
   const idx = next.findIndex(v => String(v.id || "") === String(picked.id || ""));
+  const planPlantDate = normalizePlanPlantDateInput(options.planPlantDate ?? picked?.planPlantDate);
 
   const payload = {
     ...picked,
-    assignedTrayCount: Math.max(0, Math.floor(Number(assignedTrayCount || 0)))
+    assignedTrayCount: Math.max(0, Math.floor(Number(assignedTrayCount || 0))),
+    planPlantDate: planPlantDate === null ? String(picked?.planPlantDate || "").trim() : planPlantDate
   };
 
   if (idx >= 0) {
@@ -1314,7 +1394,10 @@ function openPlantingPlanModal(fieldName) {
       <tr>
         <td>${escapeHtml(item.variety || "-")}</td>
         <td>${escapeHtml(item.sowDate || "-")}</td>
-        <td>${escapeHtml(item.planPlantDate || "-")}</td>
+        <td>
+          <input type="date" class="form-input plan-assigned-date-input" data-id="${escapeAttr(item.id)}" value="${escapeAttr(String(item.planPlantDate || "").trim())}">
+          <div class="plan-sub">空欄可（後で設定）</div>
+        </td>
         <td>
           <input type="number" min="0" step="1" class="form-input plan-assigned-tray-input" data-id="${escapeAttr(item.id)}" value="${Math.round(getAssignedTrayCount(item))}">
           <div class="plan-sub">全${Number(item.trayCount || 0).toLocaleString()}枚</div>
@@ -1642,9 +1725,16 @@ function openPlantingPlanModal(fieldName) {
       if (!id) return;
 
       const input = Array.from(document.querySelectorAll(".plan-assigned-tray-input")).find(el => String(el.dataset.id || "") === id);
+      const dateInput = Array.from(document.querySelectorAll(".plan-assigned-date-input")).find(el => String(el.dataset.id || "") === id);
       const requested = Math.floor(Number(input?.value || 0));
       if (!(requested >= 0)) {
         alert("更新枚数を確認してください。");
+        return;
+      }
+      const updatedPlanDateRaw = String(dateInput?.value || "").trim();
+      const updatedPlanDate = normalizePlanPlantDateInput(updatedPlanDateRaw);
+      if (updatedPlanDate === null) {
+        alert("定植予定日は YYYY-MM-DD 形式で入力してください。");
         return;
       }
 
@@ -1680,7 +1770,7 @@ function openPlantingPlanModal(fieldName) {
         return;
       }
 
-      upsertAssignment(fieldName, picked, requested);
+      upsertAssignment(fieldName, picked, requested, { planPlantDate: updatedPlanDate });
       openPlantingPlanModal(fieldName);
       renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState || {}), window.currentFilterState || {});
     });

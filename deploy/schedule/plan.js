@@ -5,7 +5,7 @@ import { loadJSON } from "/common/json.js";
 
 import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
 import { renderSeedList } from "./seed/index.js";
-import { renderPlantingList, loadPlantingPlanFromCSV, savePlantingPlan } from "./plantingList.js?v=20260809-1";
+import { renderPlantingList, loadPlantingPlanFromCSV, savePlantingPlan } from "./plantingList.js?v=20260809-3";
 import { setFilterData } from "/common/filter/filter-core.js?v=1";
 
 
@@ -256,7 +256,9 @@ export async function initListPage() {
   document.getElementById("btn-planting").addEventListener("click", () => {
     if (currentMode === "planting") return;
     currentMode = "planting";
-    history.replaceState(null, "", `${location.pathname}?mode=planting`);
+    const params = new URLSearchParams(location.search);
+    params.set("mode", "planting");
+    history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
     applyModeUI();
     renderCurrentMode();
   });
@@ -264,7 +266,9 @@ export async function initListPage() {
   document.getElementById("btn-seed").addEventListener("click", () => {
     if (currentMode === "seed") return;
     currentMode = "seed";
-    history.replaceState(null, "", `${location.pathname}?mode=seed`);
+    const params = new URLSearchParams(location.search);
+    params.set("mode", "seed");
+    history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
     applyModeUI();
     renderCurrentMode();
   });
