@@ -745,6 +745,18 @@
   max-width: 100px;
 }
 
+.plan-tray-input-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plan-tray-hole-label {
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+}
+
 .plan-metric-compact {
   margin: 0;
   font-size: 14px;

@@ -1414,8 +1414,16 @@ function openPlantingPlanModal(fieldName) {
   const planningAssignments = getCurrentPlanningAssignments();
   const assignments = planningAssignments.get(fieldName) || [];
   const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
-  const plannedTray128Default = Math.ceil(plannedPlants / 128);
-  const plannedTray200Default = Math.ceil(plannedPlants / 200);
+  const calcAssignedTrayCountsByType = (items = []) => items.reduce((acc, item) => {
+    const cells = parseTrayCells(item?.trayType);
+    const trayCount = getAssignedTrayCount(item);
+    if (cells === 128) acc.tray128 += trayCount;
+    if (cells === 200) acc.tray200 += trayCount;
+    return acc;
+  }, { tray128: 0, tray200: 0 });
+  const assignedTrayDefault = calcAssignedTrayCountsByType(assignments);
+  const plannedTray128Default = assignedTrayDefault.tray128;
+  const plannedTray200Default = assignedTrayDefault.tray200;
   const baseRequirement = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
   const remainPlantsDefault = Math.max(0, Number(baseRequirement.requiredPlants || 0) - plannedPlants);
   const remainTray128Default = Math.floor(remainPlantsDefault / 128);
@@ -1454,7 +1462,10 @@ function openPlantingPlanModal(fieldName) {
           <div class="plan-sub">空欄可（後で設定）</div>
         </td>
         <td>
-          <input type="number" min="1" step="1" class="form-input plan-assigned-tray-input" data-id="${escapeAttr(item.id)}" value="${Math.round(getAssignedTrayCount(item))}">
+          <div class="plan-tray-input-row">
+            <input type="number" min="1" step="1" class="form-input plan-assigned-tray-input" data-id="${escapeAttr(item.id)}" value="${Math.round(getAssignedTrayCount(item))}">
+            <span class="plan-tray-hole-label">（${parseTrayCells(item.trayType)}穴）</span>
+          </div>
           <div class="plan-sub">全${Number(item.trayCount || 0).toLocaleString()}枚</div>
         </td>
         <td>${getAssignedPlants(item).toLocaleString()}</td>
@@ -1581,9 +1592,10 @@ function openPlantingPlanModal(fieldName) {
     const plantCm = Number(plantInput?.value || 0);
     const capacityPlants = getFieldCapacityPlants(fieldName, bedCm, plantCm);
     const assignedPlants = getAssignedPlantsTotal(assignments);
+    const assignedTray = calcAssignedTrayCountsByType(assignments);
     const remainPlants = Math.max(0, capacityPlants - assignedPlants);
-    const assignedTray128 = Math.ceil(assignedPlants / 128);
-    const assignedTray200 = Math.ceil(assignedPlants / 200);
+    const assignedTray128 = assignedTray.tray128;
+    const assignedTray200 = assignedTray.tray200;
     const remainTray128 = Math.floor(remainPlants / 128);
     const remainTray200 = Math.floor(remainPlants / 200);
 
