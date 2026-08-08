@@ -1416,6 +1416,9 @@ function openPlantingPlanModal(fieldName) {
   const plannedPlants = assignments.reduce((acc, item) => acc + getAssignedPlants(item), 0);
   const plannedTrays = assignments.reduce((acc, item) => acc + getAssignedTrayCount(item), 0);
   const baseRequirement = calcBaseRequirement(fieldName, DEFAULT_BED_SPACING_CM, DEFAULT_PLANT_SPACING_CM);
+  const remainPlantsDefault = Math.max(0, Number(baseRequirement.requiredPlants || 0) - plannedPlants);
+  const remainTray128Default = Math.floor(remainPlantsDefault / 128);
+  const remainTray200Default = Math.floor(remainPlantsDefault / 200);
   const areaText = baseRequirement.areaA > 0 ? `${(baseRequirement.areaA / 10).toFixed(2)}反` : "未設定";
   const requiredTray128Text = baseRequirement.valid ? baseRequirement.requiredTray128.toLocaleString() : "-";
   const requiredTray200Text = baseRequirement.valid ? baseRequirement.requiredTray200.toLocaleString() : "-";
@@ -1475,7 +1478,6 @@ function openPlantingPlanModal(fieldName) {
               <label>株間(cm)</label>
               <input id="plan-plant-spacing" class="form-input" type="number" min="1" step="1" value="${DEFAULT_PLANT_SPACING_CM}">
             </div>
-            <p class="plan-metric-row"><strong>候補基準の定植可能枚数：</strong> <span id="plan-capacity-by-selected">-</span></p>
           </details>
         </div>
 
@@ -1536,6 +1538,7 @@ function openPlantingPlanModal(fieldName) {
         <p class="plan-sub plan-auto-apply-note">変更は自動反映されます（CSV保存は別操作）。</p>
         ${pendingDelete ? `<div class="plan-pending-delete">「${escapeHtml(String(pendingDelete.item?.variety || "(品種未設定)"))}」を削除しました。<button type="button" id="plan-undo-delete-btn" class="secondary-btn">取り消す</button><span class="plan-sub">${pendingDeleteSeconds}秒以内</span></div>` : ""}
 
+        <p class="plan-metric-row plan-remaining-capacity"><strong>あと定植可能：</strong> <span id="plan-remaining-plants">${remainPlantsDefault.toLocaleString()}</span>株（128穴: <span id="plan-remaining-tray128">${remainTray128Default.toLocaleString()}</span>枚 / 200穴: <span id="plan-remaining-tray200">${remainTray200Default.toLocaleString()}</span>枚）</p>
         <p class="plan-metric-row plan-allocation-total"><strong>割り当て合計（未保存）：</strong> ${plannedPlants.toLocaleString()} 株 / ${plannedTrays.toLocaleString()} 枚</p>
       </div>
     `
@@ -1566,9 +1569,25 @@ function openPlantingPlanModal(fieldName) {
   const plantInput = document.getElementById("plan-plant-spacing");
   const requiredTray128El = document.getElementById("plan-required-tray128");
   const requiredTray200El = document.getElementById("plan-required-tray200");
-  const capacityBySelectedEl = document.getElementById("plan-capacity-by-selected");
+  const remainingPlantsEl = document.getElementById("plan-remaining-plants");
+  const remainingTray128El = document.getElementById("plan-remaining-tray128");
+  const remainingTray200El = document.getElementById("plan-remaining-tray200");
   let selectedSeedId = "";
   let draftSelectedSeedId = "";
+
+  const updateRemainingCapacityView = () => {
+    const bedCm = Number(bedInput?.value || 0);
+    const plantCm = Number(plantInput?.value || 0);
+    const capacityPlants = getFieldCapacityPlants(fieldName, bedCm, plantCm);
+    const assignedPlants = getAssignedPlantsTotal(assignments);
+    const remainPlants = Math.max(0, capacityPlants - assignedPlants);
+    const remainTray128 = Math.floor(remainPlants / 128);
+    const remainTray200 = Math.floor(remainPlants / 200);
+
+    if (remainingPlantsEl) remainingPlantsEl.textContent = remainPlants.toLocaleString();
+    if (remainingTray128El) remainingTray128El.textContent = remainTray128.toLocaleString();
+    if (remainingTray200El) remainingTray200El.textContent = remainTray200.toLocaleString();
+  };
 
   const updateBaseRequirementView = () => {
     if (!bedInput || !plantInput || !requiredTray128El || !requiredTray200El) return;
@@ -1577,6 +1596,7 @@ function openPlantingPlanModal(fieldName) {
     const required = calcBaseRequirement(fieldName, bedCm, plantCm);
     requiredTray128El.textContent = required.valid ? required.requiredTray128.toLocaleString() : "-";
     requiredTray200El.textContent = required.valid ? required.requiredTray200.toLocaleString() : "-";
+    updateRemainingCapacityView();
     updateSelectedSeedRemainingView();
   };
 
@@ -1668,7 +1688,6 @@ function openPlantingPlanModal(fieldName) {
     if (!picked) {
       remainingNoteEl.textContent = "";
       assignTraysInput.value = "0";
-      if (capacityBySelectedEl) capacityBySelectedEl.textContent = "-";
       return;
     }
 
@@ -1677,13 +1696,10 @@ function openPlantingPlanModal(fieldName) {
     const bedCm = Number(bedInput?.value || 0);
     const plantCm = Number(plantInput?.value || 0);
     const capacityPlants = getFieldCapacityPlants(fieldName, bedCm, plantCm);
-    const assignedPlantsExcluding = getAssignedPlantsTotal(assignments, { excludeId: id });
-    const fieldRemainPlants = Math.max(0, capacityPlants - assignedPlantsExcluding);
+    const assignedPlantsTotal = getAssignedPlantsTotal(assignments);
+    const fieldRemainPlants = Math.max(0, capacityPlants - assignedPlantsTotal);
     const fieldRemainTrays = Math.floor(fieldRemainPlants / Math.max(1, cells));
     const maxAssignable = Math.max(0, Math.min(remaining, fieldRemainTrays));
-    if (capacityBySelectedEl) {
-      capacityBySelectedEl.textContent = `${fieldRemainTrays.toLocaleString()}枚（${picked.trayType || "tray"}）`;
-    }
     remainingNoteEl.textContent = `入力上限 ${maxAssignable.toLocaleString()}枚（播種ID残 ${remaining.toLocaleString()} / 圃場残 ${fieldRemainTrays.toLocaleString()}）`;
     const currentInput = Math.floor(Number(assignTraysInput.value || 0));
     if (applySuggestedDefault) {
@@ -1721,6 +1737,7 @@ function openPlantingPlanModal(fieldName) {
 
   selectedSeedId = String(seedPlanRows[0]?.id || "").trim();
   draftSelectedSeedId = selectedSeedId;
+  updateRemainingCapacityView();
   updateSelectedSeedSummary();
   updateSelectedSeedRemainingView(true);
 
