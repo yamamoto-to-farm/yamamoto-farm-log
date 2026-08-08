@@ -6,12 +6,15 @@ import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 import { saveLog } from "/common/save/index.js";
+import { buildExpiredFieldNameSet } from "/common/field-contract.js?v=1";
 
 import {
-  openFieldModal,
-  openVarietyModal,
-  setFilterData
-} from "/common/filter.js";
+  filterState,
+  setFilterData,
+  applyFilter
+} from "/common/filter/filter-core.js?v=1";
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 
 import { showInfoModal } from "/common/showInfoModal.js";
 
@@ -23,6 +26,7 @@ let fieldDetailData = {};
 let canDiscard = false;
 let seedPlanRows = [];
 let seedPlanYearLoaded = null;
+let activeFieldNameSet = new Set();
 const planningAssignmentsByYear = new Map(); // year -> Map(fieldName -> [{...}])
 const loadedPlanningAssignmentYears = new Set();
 const areaExpandState = new Map(); // areaName -> boolean
@@ -36,6 +40,78 @@ let filterData = {};
 let initialized = false;
 let plantingViewMode = PLANTING_VIEW_MODE_FIELD;
 let plantingFilterButtonsBound = false;
+
+function normalizePlanFilterState(state = {}) {
+  return {
+    yearMonths: Array.isArray(state?.yearMonths) ? state.yearMonths : [],
+    fields: Array.isArray(state?.fields) ? state.fields : [],
+    varieties: Array.isArray(state?.varieties) ? state.varieties : []
+  };
+}
+
+function syncFilterStateToCore(state = {}) {
+  const next = normalizePlanFilterState(state);
+  filterState.yearMonths = [...next.yearMonths];
+  filterState.fields = [...next.fields];
+  filterState.varieties = [...next.varieties];
+}
+
+function sanitizePlanFilterState(state = {}) {
+  const normalized = normalizePlanFilterState(state);
+  if (!activeFieldNameSet.size) return normalized;
+
+  return {
+    ...normalized,
+    fields: normalized.fields.filter(name => activeFieldNameSet.has(String(name || "").trim()))
+  };
+}
+
+function renderPlanActiveFilters(state = {}) {
+  const area = document.getElementById("activeFilters");
+  if (!area) return;
+
+  const current = sanitizePlanFilterState(state);
+  const rows = [];
+
+  current.yearMonths.forEach(ym => rows.push({ kind: "yearMonths", value: ym }));
+  current.fields.forEach(field => rows.push({ kind: "fields", value: field }));
+  current.varieties.forEach(variety => rows.push({ kind: "varieties", value: variety }));
+
+  if (!rows.length) {
+    area.innerHTML = "";
+    return;
+  }
+
+  const tags = rows.map((item, idx) => `
+    <span class="filter-tag">
+      ${escapeHtml(item.value)}
+      <span class="filter-tag-remove" data-filter-kind="${item.kind}" data-filter-value="${escapeHtml(item.value)}" data-filter-index="${idx}">×</span>
+    </span>
+  `).join("");
+
+  area.innerHTML = `${tags}<button class="filter-reset-btn" id="plan-filter-reset-btn">全解除</button>`;
+
+  area.querySelectorAll(".filter-tag-remove").forEach(el => {
+    el.addEventListener("click", () => {
+      const kind = String(el.getAttribute("data-filter-kind") || "").trim();
+      const value = String(el.getAttribute("data-filter-value") || "").trim();
+      if (!kind || !value) return;
+
+      const next = sanitizePlanFilterState(window.currentFilterState || {});
+      next[kind] = (Array.isArray(next[kind]) ? next[kind] : []).filter(v => String(v || "").trim() !== value);
+      syncFilterStateToCore(next);
+      applyFilter();
+    });
+  });
+
+  const resetBtn = document.getElementById("plan-filter-reset-btn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      syncFilterStateToCore({ yearMonths: [], fields: [], varieties: [] });
+      applyFilter();
+    });
+  }
+}
 
 /* ============================================================
    外部から呼ばれるエントリポイント
@@ -66,7 +142,7 @@ export async function renderPlantingList() {
 
   await loadPlantingPlanFromCSV(selectedYear, { silent: true });
 
-  const state = window.currentFilterState || {};
+  const state = sanitizePlanFilterState(window.currentFilterState || {});
   const filteredPlantingRows = applyAllFilters(plantingRows, state);
   registerPlantingPrintHook();
   renderFieldCards(filteredPlantingRows, state);
@@ -243,6 +319,16 @@ async function initPlantingListPage() {
   varietyData = await loadJSON("/data/varieties.json");
   fieldDetailData = await loadJSON("/data/field-detail.json");
 
+  activeFieldNameSet = new Set(
+    (Array.isArray(fieldData) ? fieldData : [])
+      .map(f => String(f?.name || "").trim())
+      .filter(Boolean)
+  );
+  const expiredSet = buildExpiredFieldNameSet(fieldDetailData || {});
+  activeFieldNameSet = new Set([...activeFieldNameSet].filter(name => !expiredSet.has(name)));
+  fieldData = (Array.isArray(fieldData) ? fieldData : [])
+    .filter(f => activeFieldNameSet.has(String(f?.name || "").trim()));
+
   /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
   plantingRows.forEach(r => {
@@ -285,6 +371,9 @@ async function initPlantingListPage() {
 
   // ▼ フィルタ UI 初期化
   setFilterData(filterData);
+  window.currentFilterState = sanitizePlanFilterState(window.currentFilterState || {});
+  syncFilterStateToCore(window.currentFilterState);
+  renderPlanActiveFilters(window.currentFilterState);
 
   // ▼ list.js がモード切替時に再適用できるよう保存
   window.plantingFilterData = filterData;
@@ -306,21 +395,24 @@ async function initPlantingListPage() {
   }
 
   window.addEventListener("filter:apply", (e) => {
-    window.currentFilterState = e.detail;
+    window.currentFilterState = sanitizePlanFilterState(e.detail || {});
+    renderPlanActiveFilters(window.currentFilterState);
     if (!hasPlanningYearSelection()) {
       renderYearSelectionRequiredState();
       return;
     }
-    renderFieldCards(applyAllFilters(plantingRows, e.detail), e.detail);
+    renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState), window.currentFilterState);
   });
 
   window.addEventListener("filter:reset", () => {
-    window.currentFilterState = {};
+    window.currentFilterState = { yearMonths: [], fields: [], varieties: [] };
+    syncFilterStateToCore(window.currentFilterState);
+    renderPlanActiveFilters(window.currentFilterState);
     if (!hasPlanningYearSelection()) {
       renderYearSelectionRequiredState();
       return;
     }
-    renderFieldCards(plantingRows, {});
+    renderFieldCards(applyAllFilters(plantingRows, window.currentFilterState), window.currentFilterState);
   });
 }
 
@@ -330,6 +422,9 @@ async function initPlantingListPage() {
 function applyAllFilters(rows, state) {
 
   let result = rows;
+  if (activeFieldNameSet.size > 0) {
+    result = result.filter(r => activeFieldNameSet.has(String(r.field || "").trim()));
+  }
 
   if (state.yearMonths?.length) {
     result = result.filter(r => {
