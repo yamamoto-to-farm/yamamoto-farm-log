@@ -1061,47 +1061,47 @@
 }
 
 .diary-save-bar {
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
   position: sticky;
   bottom: 10px;
   z-index: 40;
-  margin: 10px 0 12px;
-  padding: 10px 12px;
-  border: 1px solid #d9e2ee;
+  margin: 8px 0 10px;
+  padding: 6px 8px;
+  border: 1px solid #e4ebf3;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(6px);
 }
 
 #saveDiaryBtn {
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
-  width: min(440px, 100%);
-  min-height: 44px;
-  padding: 11px 24px;
+  width: min(320px, 88%);
+  min-height: 40px;
+  padding: 9px 18px;
   margin: 0;
   border: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #0f766e 0%, #0d9488 100%);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #0f766e 0%, #0f8a82 100%);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(13, 148, 136, 0.32);
-  font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.2);
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 #saveDiaryBtn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #0f766e 0%, #0f8d82 100%);
+  background: linear-gradient(180deg, #0f766e 0%, #0f9388 100%);
   transform: translateY(-1px);
 }
 
 #saveDiaryBtn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 5px 12px rgba(13, 148, 136, 0.28);
+  box-shadow: 0 3px 8px rgba(13, 148, 136, 0.2);
 }
 
 #saveDiaryBtn:disabled {
@@ -1114,12 +1114,12 @@
   .diary-save-bar {
     bottom: 6px;
     margin: 8px 0 10px;
-    padding: 8px 10px;
+    padding: 6px 8px;
   }
 
   #saveDiaryBtn {
-    width: 100%;
-    min-height: 42px;
+    width: min(280px, 92%);
+    min-height: 40px;
   }
 }
 
