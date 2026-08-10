@@ -784,7 +784,8 @@
   background: #f8fbff;
 }
 
-.merge-card-selected {
+.merge-card-selected,
+.edit-card[data-group-index][data-selected="true"] {
   border-color: #14b8a6;
   background: linear-gradient(180deg, #ecfeff 0%, #ccfbf1 100%);
   box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.24);
@@ -796,7 +797,13 @@
 .merge-card-selected .edit-crew-line,
 .merge-card-selected .edit-time-row,
 .merge-card-selected .field-multi-item,
-.merge-card-selected .field-multi-single {
+.merge-card-selected .field-multi-single,
+.edit-card[data-group-index][data-selected="true"] .edit-card-title,
+.edit-card[data-group-index][data-selected="true"] .edit-line,
+.edit-card[data-group-index][data-selected="true"] .edit-crew-line,
+.edit-card[data-group-index][data-selected="true"] .edit-time-row,
+.edit-card[data-group-index][data-selected="true"] .field-multi-item,
+.edit-card[data-group-index][data-selected="true"] .field-multi-single {
   color: #134e4a;
 }
 
@@ -897,20 +904,27 @@
 .edit-card.merge-card-selected p,
 .edit-card.merge-card-selected li,
 .edit-card.merge-card-selected summary,
-.edit-card.merge-card-selected label {
+.edit-card.merge-card-selected label,
+.edit-card[data-group-index][data-selected="true"] p,
+.edit-card[data-group-index][data-selected="true"] li,
+.edit-card[data-group-index][data-selected="true"] summary,
+.edit-card[data-group-index][data-selected="true"] label {
   color: #134e4a;
 }
 
-.edit-card.merge-card-selected strong {
+.edit-card.merge-card-selected strong,
+.edit-card[data-group-index][data-selected="true"] strong {
   color: #0f172a;
 }
 
-.edit-card.merge-card-selected .merged-work-details {
+.edit-card.merge-card-selected .merged-work-details,
+.edit-card[data-group-index][data-selected="true"] .merged-work-details {
   background: rgba(255, 255, 255, 0.55);
   border-color: rgba(20, 184, 166, 0.48);
 }
 
-.edit-card.merge-card-selected .merged-work-list li span {
+.edit-card.merge-card-selected .merged-work-list li span,
+.edit-card[data-group-index][data-selected="true"] .merged-work-list li span {
   color: #134e4a;
 }
 
