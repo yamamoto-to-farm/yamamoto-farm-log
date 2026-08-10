@@ -785,10 +785,10 @@
 }
 
 .merge-card-selected {
-  border-color: #93c5fd;
-  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.22);
-  border-left-color: #2563eb;
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+  border-left-color: #d97706;
 }
 
 .merge-card-selected .edit-card-title,
@@ -797,7 +797,7 @@
 .merge-card-selected .edit-time-row,
 .merge-card-selected .field-multi-item,
 .merge-card-selected .field-multi-single {
-  color: #1e3a8a;
+  color: #7c2d12;
 }
 
 .merge-card-disabled {
@@ -898,20 +898,20 @@
 .edit-card.merge-card-selected li,
 .edit-card.merge-card-selected summary,
 .edit-card.merge-card-selected label {
-  color: #1e3a8a;
+  color: #7c2d12;
 }
 
 .edit-card.merge-card-selected strong {
-  color: #0f172a;
+  color: #5b200d;
 }
 
 .edit-card.merge-card-selected .merged-work-details {
   background: rgba(255, 255, 255, 0.55);
-  border-color: rgba(147, 197, 253, 0.6);
+  border-color: rgba(245, 158, 11, 0.45);
 }
 
 .edit-card.merge-card-selected .merged-work-list li span {
-  color: #1e3a8a;
+  color: #7c2d12;
 }
 
 .diary-memo textarea {
