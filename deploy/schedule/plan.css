@@ -361,6 +361,11 @@
 }
 
 .planting-area-group {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  padding: 16px 18px;
   margin-bottom: 10px;
 }
 
@@ -879,8 +884,7 @@
     margin-bottom: 6mm !important;
   }
 
-  #page-area[data-mode="planting"] #table-area > .planting-area-group,
-  #page-area[data-mode="planting"] #table-area > .card.planting-area-group {
+  #page-area[data-mode="planting"] #table-area > .planting-area-group {
     break-inside: auto !important;
     page-break-inside: auto !important;
     break-before: auto !important;

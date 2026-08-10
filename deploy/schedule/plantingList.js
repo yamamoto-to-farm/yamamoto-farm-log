@@ -754,7 +754,7 @@ function renderFieldCards(rows, state = {}) {
         return sum + Number(summary.areaTan || 0);
       }, 0);
       html += `
-        <section class="card planting-area-group">
+        <section class="planting-area-group">
           <h4 class="section-title">${escapeHtml(dateKey)}（${items.length}件） ${totalAreaTanByDate.toFixed(2)}反</h4>
           <div class="planting-area-body" style="display:block">
             <table class="planting-plan-table">
@@ -840,7 +840,7 @@ function renderFieldCards(rows, state = {}) {
       });
 
       html += `
-        <section class="card planting-area-group ${hasUnsetInArea ? "area-has-unset" : ""}">
+        <section class="planting-area-group ${hasUnsetInArea ? "area-has-unset" : ""}">
           <h4 class="section-title planting-area-title" data-area="${escapeAttr(areaName)}">${expanded ? "▼" : "▶"} ${escapeHtml(areaName)}（${fields.length}圃場）</h4>
           <div class="planting-area-body" style="display:${expanded ? "block" : "none"}">
             <table class="planting-plan-table">
