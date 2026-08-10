@@ -994,6 +994,25 @@
   color: inherit;
 }
 
+.view-card .merged-work-details,
+.view-card .merged-work-details summary,
+.view-card .merged-work-list,
+.view-card .merged-work-list li,
+.view-card .merged-work-list li span {
+  color: #111827;
+}
+
+.merged-work-list .merged-work-field {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.merged-work-list .merged-work-time {
+  color: #475569;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
 .merged-work-list li span:last-child {
   white-space: nowrap;
 }

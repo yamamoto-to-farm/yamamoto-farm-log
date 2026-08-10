@@ -166,7 +166,13 @@ function createFieldBlock(label, values, extraClass = "") {
 
   const wrapper = document.createElement("span");
   wrapper.className = "field-multi-list";
-  list.forEach(value => {
+  list.forEach((value, index) => {
+    if (index > 0) {
+      const sep = document.createElement("span");
+      sep.className = "field-multi-sep";
+      sep.textContent = "／";
+      wrapper.appendChild(sep);
+    }
     const item = document.createElement("span");
     item.className = "field-multi-item";
     item.textContent = value;
@@ -221,11 +227,13 @@ function createSubItemsDetails(subItems, hideField = false) {
     const li = document.createElement("li");
 
     const field = document.createElement("span");
+    field.className = "merged-work-field";
     field.textContent = hideField ? "未入力圃場" : (normalizeMultiText(subItem?.field) || "未入力圃場");
     li.appendChild(field);
 
     const time = document.createElement("span");
-    time.textContent = String(subItem?.end || subItem?.start || subItem?.timestampTime || "-");
+    time.className = "merged-work-time";
+    time.textContent = `／ ${String(subItem?.end || subItem?.start || subItem?.timestampTime || "-")}`;
     li.appendChild(time);
 
     ul.appendChild(li);

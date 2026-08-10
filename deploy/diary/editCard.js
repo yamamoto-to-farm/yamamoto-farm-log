@@ -83,8 +83,8 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
           <ul class="merged-work-list">
             ${subItems.map(subItem => `
               <li>
-                <span>${escapeHtml(normalizeMultiText(subItem.field) || "未入力圃場")}</span>
-                <span>${escapeHtml(subItem.timestampTime || subItem.start || "-")}</span>
+                <span class="merged-work-field">${escapeHtml(normalizeMultiText(subItem.field) || "未入力圃場")}</span>
+                <span class="merged-work-time">／ ${escapeHtml(subItem.timestampTime || subItem.start || "-")}</span>
               </li>
             `).join("")}
           </ul>
@@ -551,11 +551,17 @@ function buildManualMergedGroup(groups) {
   const workerSet = new Set();
   const machineSet = new Set();
 
+  const splitMergeValues = value => {
+    return normalizeMultiText(value)
+      .split(/[\/／,，、]/)
+      .map(v => normalizeMergeScalar(v))
+      .filter(Boolean);
+  };
+
   items.forEach(item => {
     normalizeMultiText(item?.field || "").split("／").map(v => v.trim()).filter(Boolean).forEach(v => fieldSet.add(v));
-    normalizeMultiText(item?.workers || "").split("／").map(v => v.trim()).filter(Boolean).forEach(v => workerSet.add(v));
-    const machine = String(item?.machine || "").trim();
-    if (machine) machineSet.add(machine);
+    splitMergeValues(item?.workers || "").forEach(v => workerSet.add(v));
+    splitMergeValues(item?.machine || "").forEach(v => machineSet.add(v));
   });
 
   const sortedGroups = groups.slice().sort((a, b) => {
