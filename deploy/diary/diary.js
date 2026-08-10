@@ -133,8 +133,6 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
   const savedDates = [...savedDatesSet]
     .filter(date => String(date || "").startsWith(`${ym}-`))
     .sort((a, b) => a.localeCompare(b));
-  const savedPreview = savedDates.slice(0, 8);
-  const savedMoreCount = Math.max(0, savedDates.length - savedPreview.length);
   const prevMonthDate = shiftDateByMonths(selectedDate, -1);
   const nextMonthDate = shiftDateByMonths(selectedDate, 1);
 
@@ -166,14 +164,6 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
       </span>
       <span class="diary-month-mini-count">保存済み ${savedDates.length}日</span>
     </div>
-    <div class="diary-month-mini-saved">
-      <span class="diary-month-mini-saved-label">保存済み日</span>
-      ${savedPreview.map(date => {
-        const day = date.slice(8, 10);
-        return `<button type="button" class="diary-month-mini-saved-chip" data-date="${date}" aria-label="${date}へ移動">${day}</button>`;
-      }).join("")}
-      ${savedMoreCount > 0 ? `<span class="diary-month-mini-saved-more">ほか ${savedMoreCount}日</span>` : ""}
-    </div>
     <div class="diary-month-mini-grid">${cells.join("")}</div>
     <div class="diary-month-mini-legend">青背景: 保存済み日 / 枠線: 選択中の日付</div>
   `;
@@ -195,10 +185,11 @@ function setDiaryMonthMiniOpen(open) {
 
 function bindDiaryMonthToggleButton() {
   const btn = document.getElementById("diaryMonthToggleBtn");
+  const dateInput = document.getElementById("diaryDate");
   if (!btn || btn.dataset.boundMiniToggle === "1") return;
   btn.dataset.boundMiniToggle = "1";
 
-  btn.addEventListener("click", async () => {
+  const toggleMiniCalendar = async () => {
     const host = document.getElementById("diaryMonthMini");
     const nextOpen = host ? host.hidden : true;
     setDiaryMonthMiniOpen(nextOpen);
@@ -206,7 +197,18 @@ function bindDiaryMonthToggleButton() {
       const date = document.getElementById("diaryDate")?.value || getTodayJstDateString();
       await refreshDiaryMonthMini(date);
     }
-  });
+  };
+
+  btn.addEventListener("click", toggleMiniCalendar);
+  if (dateInput) {
+    dateInput.addEventListener("click", toggleMiniCalendar);
+    dateInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        void toggleMiniCalendar();
+      }
+    });
+  }
 }
 
 function bindMonthMiniDateJump({ mode }) {
@@ -220,17 +222,7 @@ function bindMonthMiniDateJump({ mode }) {
     if (monthNav) {
       const targetDate = String(monthNav.dataset.date || "");
       if (!targetDate) return;
-      const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
-      location.href = buildDiaryUrl(mode, targetDate, currentSearch);
-      return;
-    }
-
-    const savedChip = e.target.closest(".diary-month-mini-saved-chip[data-date]");
-    if (savedChip) {
-      const targetDate = String(savedChip.dataset.date || "");
-      if (!targetDate) return;
-      const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
-      location.href = buildDiaryUrl(mode, targetDate, currentSearch);
+      void refreshDiaryMonthMini(targetDate);
       return;
     }
 
@@ -916,13 +908,22 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const dateInput = document.getElementById("diaryDate");
   const prevDayBtn = document.getElementById("prevDayBtn");
+  const lastYearBtn = document.getElementById("lastYearBtn");
   const todayBtn = document.getElementById("todayBtn");
   const nextDayBtn = document.getElementById("nextDayBtn");
   dateInput.value = initialDate;
+  dateInput.readOnly = true;
 
   if (prevDayBtn) {
     prevDayBtn.addEventListener("click", () => {
       dateInput.value = shiftDateByDays(dateInput.value, -1);
+      dateInput.dispatchEvent(new Event("change"));
+    });
+  }
+
+  if (lastYearBtn) {
+    lastYearBtn.addEventListener("click", () => {
+      dateInput.value = shiftDateByMonths(dateInput.value, -12);
       dateInput.dispatchEvent(new Event("change"));
     });
   }
@@ -950,6 +951,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   bindSearchEvents({ mode, dateInput });
   bindMonthMiniDateJump({ mode });
   bindDiaryMonthToggleButton();
+  setDiaryMonthMiniOpen(false);
 
   renderLoadMoreControl(null);
   initCollapse("diarySearchTitle", "diarySearchPanel");

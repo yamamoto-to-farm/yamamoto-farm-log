@@ -129,45 +129,6 @@
   font-weight: 600;
 }
 
-.diary-month-mini-saved {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 10px;
-}
-
-.diary-month-mini-saved-label {
-  color: #475569;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.diary-month-mini-saved-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 24px;
-  padding: 0 8px;
-  border: 1px solid #cfe0ff;
-  border-radius: 999px;
-  background: #eef4ff;
-  color: #1d4ed8;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.diary-month-mini-saved-chip:hover {
-  background: #dbeafe;
-}
-
-.diary-month-mini-saved-more {
-  color: #64748b;
-  font-size: 0.78rem;
-}
-
 .diary-month-mini-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -226,16 +187,23 @@
 }
 
 #diaryDateNav {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   width: 100%;
-  gap: 12px;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+#diaryDateNav > * {
+  flex: 0 0 auto;
 }
 
 #diaryDateNav #diaryDate {
-  justify-self: center;
-  width: 320px;
+  flex: 1 1 240px;
+  min-width: 180px;
+  width: auto;
   max-width: 100%;
   min-height: 42px;
   box-sizing: border-box;
@@ -243,24 +211,35 @@
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  cursor: pointer;
+  background: #fff;
+}
+
+#diaryDateNav #diaryDate[readonly] {
+  user-select: none;
 }
 
 #diaryDateNav .day-nav-btn {
-  min-width: 76px;
-  padding: 10px 14px;
+  min-width: 58px;
+  padding: 10px 10px;
   margin-top: 0;
+  white-space: nowrap;
 }
 
 #prevDayBtn {
-  justify-self: start;
+  order: 1;
 }
 
 #nextDayBtn {
-  justify-self: end;
+  order: 6;
 }
 
 #todayBtn {
-  justify-self: end;
+  order: 5;
+}
+
+#lastYearBtn {
+  order: 2;
 }
 
 .section-title {
@@ -381,6 +360,44 @@
   color: #0f172a;
 }
 
+.field-multi-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.field-multi-block strong {
+  flex: 0 0 auto;
+}
+
+.field-multi-list {
+  display: grid;
+  gap: 4px;
+  padding-left: 10px;
+  margin-top: 1px;
+  border-left: 2px solid #dbeafe;
+}
+
+.field-multi-item,
+.field-multi-single {
+  display: block;
+  color: inherit;
+}
+
+.field-multi-item {
+  position: relative;
+  padding-left: 12px;
+  font-weight: 600;
+}
+
+.field-multi-item::before {
+  content: "・";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #94a3b8;
+}
+
 .edit-crew-line,
 .view-crew-line {
   font-size: 0.88rem;
@@ -396,6 +413,11 @@
 .edit-field-line + .edit-crew-line,
 .view-field-line + .view-crew-line {
   margin-top: 8px;
+}
+
+.edit-field-line.field-multi-block + .edit-crew-line,
+.view-field-line.field-multi-block + .view-crew-line {
+  margin-top: 10px;
 }
 
 .edit-card p,
@@ -444,21 +466,24 @@
 
 @media (max-width: 640px) {
   #diaryDateNav {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  #prevDayBtn,
-  #todayBtn,
-  #nextDayBtn,
-  #diaryDateNav #diaryDate,
-  .diary-month-toggle-btn {
-    justify-self: center;
-    width: min(320px, 100%);
+    gap: 6px;
   }
 
   #diaryDateNav #diaryDate {
+    flex: 1 1 160px;
+    min-width: 140px;
     font-size: 16px;
+  }
+
+  #diaryDateNav .day-nav-btn {
+    min-width: 50px;
+    padding: 8px 8px;
+    font-size: 0.88rem;
+  }
+
+  .diary-month-toggle-btn {
+    min-width: 38px;
+    padding: 0 8px;
   }
 
   .diary-date-card {
@@ -468,29 +493,26 @@
   .diary-month-mini {
     padding: 9px 10px;
   }
-
-  .diary-month-mini-saved {
-    gap: 5px;
-  }
-
-  .diary-month-mini-saved-chip {
-    min-width: 28px;
-    height: 22px;
-    padding: 0 7px;
-  }
 }
 
 #diaryDateNav {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   width: 100%;
-  gap: 12px;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+#diaryDateNav > * {
+  flex: 0 0 auto;
 }
 
 #diaryDateNav #diaryDate {
-  justify-self: center;
-  width: 320px;
+  flex: 1 1 240px;
+  min-width: 180px;
+  width: auto;
   max-width: 100%;
   min-height: 42px;
   box-sizing: border-box;
@@ -501,21 +523,26 @@
 }
 
 #diaryDateNav .day-nav-btn {
-  min-width: 76px;
-  padding: 10px 14px;
+  min-width: 58px;
+  padding: 10px 10px;
   margin-top: 0;
+  white-space: nowrap;
 }
 
 #prevDayBtn {
-  justify-self: start;
+  order: 1;
 }
 
 #nextDayBtn {
-  justify-self: end;
+  order: 6;
 }
 
 #todayBtn {
-  justify-self: end;
+  order: 5;
+}
+
+#lastYearBtn {
+  order: 2;
 }
 
 @media (max-width: 640px) {
@@ -536,15 +563,24 @@
   }
 
   #diaryDateNav {
-    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
-  #prevDayBtn,
-  #todayBtn,
-  #nextDayBtn,
   #diaryDateNav #diaryDate {
-    justify-self: center;
-    width: min(280px, 100%);
+    flex: 1 1 160px;
+    min-width: 140px;
+    font-size: 16px;
+  }
+
+  #diaryDateNav .day-nav-btn {
+    min-width: 50px;
+    padding: 8px 8px;
+    font-size: 0.88rem;
+  }
+
+  .diary-month-toggle-btn {
+    min-width: 38px;
+    padding: 0 8px;
   }
 
   .section-title {
@@ -627,41 +663,13 @@
     margin: 18px auto 0;
   }
 
+  .diary-date-card {
+    padding: 12px;
+  }
+
   .diary-month-mini {
-    #diaryDateNav {
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    #prevDayBtn,
-    #todayBtn,
-    #nextDayBtn,
-    #diaryDateNav #diaryDate {
-      justify-self: center;
-      width: min(320px, 100%);
-    }
-
-    #diaryDateNav #diaryDate {
-      font-size: 16px;
-    }
-
-    .diary-date-card {
-      padding: 12px;
-    }
-
-    .diary-month-mini {
-      padding: 9px 10px;
-    }
-
-    .diary-month-mini-saved {
-      gap: 5px;
-    }
-
-    .diary-month-mini-saved-chip {
-      min-width: 28px;
-      height: 22px;
-      padding: 0 7px;
-}
+    padding: 9px 10px;
+  }
 
 /* 折りたたみ */
 .collapse-title {
@@ -728,9 +736,33 @@
 .merge-select-indicator {
   display: inline-flex;
   align-items: center;
-  color: #64748b;
-  font-size: 0.92rem;
-  font-weight: 600;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.merge-select-indicator:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.merge-select-indicator[aria-pressed="true"] {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.merge-select-indicator:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .merge-unmerge-btn {
@@ -800,21 +832,34 @@
   color: #475569;
 }
 
-.edit-card .edit-workers strong,
-.view-card p strong {
-  color: #1f2937;
-}
-
-.edit-card .edit-line strong,
-.view-card p strong {
-  letter-spacing: 0.01em;
-}
-
 .edit-card .edit-line,
 .view-card .view-field-line,
 .view-card .view-crew-line,
 .view-card .view-time-line {
   margin-top: 4px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.edit-card .edit-line strong,
+.view-card .view-field-line strong,
+.view-card .view-crew-line strong,
+.view-card .view-time-line strong {
+  color: #334155;
+  letter-spacing: 0.01em;
+  font-weight: 700;
+}
+
+.edit-card .edit-field-line,
+.view-card .view-field-line {
+  font-size: 0.96rem;
+}
+
+.edit-card .edit-crew-line,
+.view-card .view-crew-line,
+.view-card .view-time-line {
+  font-size: 0.9rem;
+  color: #64748b;
 }
 
 .edit-card .edit-line:first-of-type,

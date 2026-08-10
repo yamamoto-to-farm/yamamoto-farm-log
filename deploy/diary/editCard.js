@@ -72,6 +72,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
       || existing.type
     ) || "（未入力）";
     const subItems = Array.isArray(item.items) ? item.items : [];
+    const fieldParts = hideField ? [] : getFieldParts(field, subItems);
     const unmergeButtonHtml = subItems.length > 1
       ? `<button type="button" class="secondary-btn merge-unmerge-btn" data-group-index="${idx}">マージ解除</button>`
       : "";
@@ -99,11 +100,11 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
 
     card.innerHTML = `
       <div class="merge-card-head">
-        <div class="merge-select-indicator" aria-hidden="true">クリックで選択</div>
+        <button type="button" class="merge-select-indicator" data-merge-select-toggle aria-pressed="false">選択</button>
         ${unmergeButtonHtml}
       </div>
       <h3 class="edit-title edit-card-title ${getWorkToneClass(getWorkTypeText(item))}">${getWorkTypeText(item)}</h3>
-      ${hideField ? "" : `<p class="edit-line edit-field-line"><strong>圃場：</strong> ${fieldText}</p>`}
+      ${hideField ? "" : renderFieldBlock("圃場", fieldParts)}
       ${hideField
         ? `<p class="edit-line edit-field-line"><strong>播種区分：</strong> ${escapeHtml(sowingCategoryText)}</p>`
         : `<p class="edit-line edit-crew-line"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>`}
@@ -162,6 +163,42 @@ function normalizeMultiText(value) {
 
 function getWorkTypeText(item) {
   return String(item?.type || item?.workType || "").trim();
+}
+
+function getFieldParts(fieldValue, subItems = []) {
+  const subFields = (Array.isArray(subItems) ? subItems : [])
+    .map(item => normalizeMultiText(item?.field))
+    .filter(Boolean);
+  if (subFields.length > 1) return [...new Set(subFields)];
+
+  if (Array.isArray(fieldValue)) {
+    return fieldValue.map(v => String(v || "").trim()).filter(Boolean);
+  }
+
+  const text = String(fieldValue || "").trim();
+  if (!text) return [];
+  if (!/[／/]/.test(text)) return [text];
+
+  return text
+    .split(/[／/]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function renderFieldBlock(label, values) {
+  const list = Array.isArray(values) ? values.filter(Boolean) : [];
+  const items = list.length
+    ? list.length === 1
+      ? `<span class="field-multi-single">${escapeHtml(list[0])}</span>`
+      : `<span class="field-multi-list">${list.map(value => `<span class="field-multi-item">${escapeHtml(value)}</span>`).join("")}</span>`
+    : `<span class="field-multi-single">（未入力）</span>`;
+
+  return `
+    <p class="edit-line edit-field-line field-multi-block">
+      <strong>${label}：</strong>
+      ${items}
+    </p>
+  `;
 }
 
 function isSowingWorkItem(item) {
@@ -326,6 +363,8 @@ function bindManualMergeControls(diary, timestampRows) {
     return Boolean(target.closest("input, button, textarea, select, option, summary, details, label, a"));
   };
 
+  const getSelectToggle = card => card.querySelector("[data-merge-select-toggle]");
+
   const getSelectedCards = () => cards.filter(card => card.dataset.selected === "true");
 
   const updateButtonState = () => {
@@ -342,6 +381,14 @@ function bindManualMergeControls(diary, timestampRows) {
       card.classList.toggle("merge-card-disabled", shouldDisable);
       card.classList.toggle("merge-card-selected", isSelected);
       card.dataset.mergeDisabled = shouldDisable ? "true" : "false";
+
+      const toggle = getSelectToggle(card);
+      if (toggle) {
+        toggle.dataset.state = isSelected ? "selected" : shouldDisable ? "disabled" : "idle";
+        toggle.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        toggle.disabled = shouldDisable;
+        toggle.textContent = isSelected ? "選択中" : shouldDisable ? "選択不可" : "選択";
+      }
     });
 
     if (guideEl) {
@@ -354,6 +401,16 @@ function bindManualMergeControls(diary, timestampRows) {
   };
 
   cards.forEach(card => {
+    const toggle = getSelectToggle(card);
+    if (toggle) {
+      toggle.addEventListener("click", event => {
+        event.stopPropagation();
+        if (card.dataset.mergeDisabled === "true") return;
+        card.dataset.selected = card.dataset.selected === "true" ? "false" : "true";
+        updateButtonState();
+      });
+    }
+
     card.addEventListener("click", event => {
       if (isInteractiveTarget(event.target)) return;
       if (card.dataset.mergeDisabled === "true") return;

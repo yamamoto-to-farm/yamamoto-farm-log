@@ -54,10 +54,11 @@ export async function initViewPageWithOptions(options = {}) {
 function createViewWorkCard(w) {
   const title = String(w?.type || w?.workType || "").trim();
   const isSowing = isSowingWorkItem(w);
-  const fieldLine = isSowing ? "（未入力）" : (normalizeMultiText(w?.field) || "（未入力）");
   const workerLine = normalizeMultiText(w?.workers) || "（未入力）";
   const machineLine = String(w?.machine || "").trim() || "（未入力）";
   const sowingCategoryLine = normalizeSowingCategoryText(w);
+  const subItems = Array.isArray(w?.items) ? w.items : [];
+  const fieldParts = isSowing ? [] : getFieldParts(w?.field, subItems);
 
   const card = document.createElement("div");
   card.className = `card view-card ${getWorkToneClass(title)}`;
@@ -68,14 +69,13 @@ function createViewWorkCard(w) {
   card.appendChild(h3);
 
   if (!isSowing) {
-    card.appendChild(createLine("圃場", fieldLine, "view-field-line"));
+    card.appendChild(createFieldBlock("圃場", fieldParts, "view-field-line"));
     card.appendChild(createWorkerMachineLine(workerLine, machineLine, "view-crew-line"));
   } else {
     card.appendChild(createLine("播種区分", sowingCategoryLine, "view-field-line"));
   }
   card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || ""), "view-time-line"));
 
-  const subItems = Array.isArray(w?.items) ? w.items : [];
   if (subItems.length > 1) {
     card.appendChild(createSubItemsDetails(subItems, isSowing));
   }
@@ -142,6 +142,37 @@ function createLine(label, value, extraClass = "") {
   strong.textContent = `${label}：`;
   p.appendChild(strong);
   p.appendChild(document.createTextNode(` ${value}`));
+  return p;
+}
+
+function createFieldBlock(label, values, extraClass = "") {
+  const p = document.createElement("p");
+  if (extraClass) p.className = `${extraClass} field-multi-block`;
+
+  const strong = document.createElement("strong");
+  strong.textContent = `${label}：`;
+  p.appendChild(strong);
+
+  const list = Array.isArray(values) ? values.filter(Boolean) : [];
+  if (!list.length) {
+    p.appendChild(document.createTextNode(" （未入力）"));
+    return p;
+  }
+
+  if (list.length === 1) {
+    p.appendChild(document.createTextNode(` ${list[0]}`));
+    return p;
+  }
+
+  const wrapper = document.createElement("span");
+  wrapper.className = "field-multi-list";
+  list.forEach(value => {
+    const item = document.createElement("span");
+    item.className = "field-multi-item";
+    item.textContent = value;
+    wrapper.appendChild(item);
+  });
+  p.appendChild(wrapper);
   return p;
 }
 
@@ -219,6 +250,26 @@ function normalizeSowingCategoryText(w) {
   if (nested) return nested;
 
   return normalizeMultiText(w?.workType || w?.type) || "（未入力）";
+}
+
+function getFieldParts(fieldValue, subItems = []) {
+  const subFields = (Array.isArray(subItems) ? subItems : [])
+    .map(item => normalizeMultiText(item?.field))
+    .filter(Boolean);
+  if (subFields.length > 1) return [...new Set(subFields)];
+
+  if (Array.isArray(fieldValue)) {
+    return fieldValue.map(v => String(v || "").trim()).filter(Boolean);
+  }
+
+  const text = String(fieldValue || "").trim();
+  if (!text) return [];
+  if (!/[／/]/.test(text)) return [text];
+
+  return text
+    .split(/[／/]/)
+    .map(v => v.trim())
+    .filter(Boolean);
 }
 
 function normalizeMultiText(value) {
