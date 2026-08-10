@@ -1037,7 +1037,9 @@
 
 /* 作業内容 */
 #workContentWrapper {
-  max-height: min(62vh, 560px);
+  height: min(62vh, 560px);
+  min-height: 180px;
+  max-height: none;
   overflow-y: auto;
   padding-right: 6px;
   margin-bottom: 18px;
