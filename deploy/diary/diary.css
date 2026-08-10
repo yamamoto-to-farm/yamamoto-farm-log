@@ -61,9 +61,10 @@
 }
 
 .diary-month-toggle-btn {
-  min-width: 42px;
-  padding: 0 10px;
-  font-size: 18px;
+  min-width: 58px;
+  padding: 0 12px;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 #form-area {
@@ -208,6 +209,11 @@
   min-height: 42px;
   box-sizing: border-box;
   text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 #diaryDateNav .day-nav-btn,
 #diaryDateNav .diary-month-toggle-btn {
   height: 36px;
@@ -223,7 +229,8 @@
 }
 
 #diaryDateNav #diaryDate[readonly] {
-  min-width: 58px;
+  user-select: none;
+}
 
 #nextDayBtn {
   order: 6;
@@ -366,8 +373,9 @@
 }
 
 .field-multi-list {
-  display: grid;
-  gap: 4px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
   padding-left: 10px;
   margin-top: 1px;
   border-left: 2px solid #dbeafe;
@@ -375,22 +383,18 @@
 
 .field-multi-item,
 .field-multi-single {
-  display: block;
+  display: inline;
   color: inherit;
 }
 
 .field-multi-item {
-  position: relative;
-  padding-left: 12px;
   font-weight: 600;
 }
 
-.field-multi-item::before {
-  content: "・";
-  position: absolute;
-  left: 0;
-  top: 0;
+.field-multi-sep {
   color: #94a3b8;
+  padding: 0 6px;
+  font-weight: 600;
 }
 
 .edit-crew-line,
@@ -574,8 +578,8 @@
   }
 
   .diary-month-toggle-btn {
-    min-width: 38px;
-    padding: 0 8px;
+    min-width: 50px;
+    padding: 8px 8px;
   }
 
   .section-title {
@@ -675,6 +679,15 @@
   user-select: none;
 }
 
+#workListTitle {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .collapse-content {
   display: none;
   margin-bottom: 16px;
@@ -744,10 +757,10 @@
 }
 
 .merge-card-selected {
-  border-color: #bfdbfe;
-  background: #dbeafe;
-  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.24);
-  border-left-color: #93c5fd;
+  border-color: #93c5fd;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.22);
+  border-left-color: #2563eb;
 }
 
 .merge-card-selected .edit-card-title,
@@ -851,6 +864,26 @@
 
 .view-card p:last-of-type {
   margin-bottom: 0;
+}
+
+.edit-card.merge-card-selected p,
+.edit-card.merge-card-selected li,
+.edit-card.merge-card-selected summary,
+.edit-card.merge-card-selected label {
+  color: #1e3a8a;
+}
+
+.edit-card.merge-card-selected strong {
+  color: #0f172a;
+}
+
+.edit-card.merge-card-selected .merged-work-details {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(147, 197, 253, 0.6);
+}
+
+.edit-card.merge-card-selected .merged-work-list li span {
+  color: #1e3a8a;
 }
 
 .diary-memo textarea {

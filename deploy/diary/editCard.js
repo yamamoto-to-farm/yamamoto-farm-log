@@ -187,7 +187,7 @@ function renderFieldBlock(label, values) {
   const items = list.length
     ? list.length === 1
       ? `<span class="field-multi-single">${escapeHtml(list[0])}</span>`
-      : `<span class="field-multi-list">${list.map(value => `<span class="field-multi-item">${escapeHtml(value)}</span>`).join("")}</span>`
+      : `<span class="field-multi-list">${list.map((value, index) => `${index > 0 ? '<span class="field-multi-sep">／</span>' : ''}<span class="field-multi-item">${escapeHtml(value)}</span>`).join("")}</span>`
     : `<span class="field-multi-single">（未入力）</span>`;
 
   return `
