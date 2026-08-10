@@ -360,6 +360,8 @@ function bindManualMergeControls(diary, timestampRows) {
     return Boolean(target.closest("input, button, textarea, select, option, summary, details, label, a"));
   };
 
+  const getMergeKey = value => String(value || "").trim().split(/[：:]/)[0].trim();
+
   const getSelectedCards = () => cards.filter(card => card.dataset.selected === "true");
 
   const updateButtonState = () => {
@@ -368,19 +370,23 @@ function bindManualMergeControls(diary, timestampRows) {
     const selectedType = count > 0
       ? String(selectedCards[0]?.dataset.workType || "").trim()
       : "";
+    const selectedMergeKey = count > 0
+      ? getMergeKey(selectedCards[0]?.dataset.workType || "")
+      : "";
 
     cards.forEach(card => {
       const workType = String(card?.dataset.workType || "").trim();
+      const cardMergeKey = getMergeKey(workType);
       const isSelected = card.dataset.selected === "true";
-      const shouldDisable = Boolean(selectedType) && !isSelected && workType !== selectedType;
+      const shouldDisable = Boolean(selectedMergeKey) && !isSelected && cardMergeKey !== selectedMergeKey;
       card.classList.toggle("merge-card-disabled", shouldDisable);
       card.classList.toggle("merge-card-selected", isSelected);
       card.dataset.mergeDisabled = shouldDisable ? "true" : "false";
     });
 
     if (guideEl) {
-      guideEl.textContent = selectedType
-        ? `選択中: ${selectedType} のカードのみ追加選択できます。`
+      guideEl.textContent = selectedMergeKey
+        ? `選択中: ${selectedMergeKey} 系のカードのみ追加選択できます。`
         : "同じ作業種類のカードを選択するとマージできます。";
     }
 
@@ -416,10 +422,10 @@ function bindManualMergeControls(diary, timestampRows) {
 
     const currentGroups = Array.isArray(window.__currentDiaryWorkGroups) ? [...window.__currentDiaryWorkGroups] : [];
     const selectedGroups = selectedIndexes.map(index => currentGroups[index]).filter(Boolean);
-    const typeSet = [...new Set(selectedGroups.map(group => String(group?.type || "").trim()).filter(Boolean))];
+    const typeSet = [...new Set(selectedGroups.map(group => getMergeKey(group?.type || group?.workType || "")).filter(Boolean))];
 
     if (typeSet.length > 1) {
-      alert("異なる作業種類は一度にマージできません。同じ作業種類で選択してください。");
+      alert("異なる作業区分は一度にマージできません。同じ系統で選択してください。");
       return;
     }
 
