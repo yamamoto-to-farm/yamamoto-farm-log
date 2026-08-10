@@ -967,9 +967,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------------------------------------
   // 保存イベント（編集モードのみ）
   // ---------------------------------------------------------
+  const saveBar = document.querySelector(".diary-save-bar");
   const saveBtn = document.getElementById("saveDiaryBtn");
 
   if (mode === "edit") {
+    if (saveBar) saveBar.style.display = "flex";
     saveBtn.style.display = "block";
     saveBtn.disabled = false;
 
@@ -1008,6 +1010,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
   } else {
+    if (saveBar) saveBar.style.display = "none";
     saveBtn.style.display = "none";
   }
 

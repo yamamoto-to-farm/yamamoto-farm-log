@@ -276,62 +276,55 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
     fallbackBySourceKey.set(key, group);
   });
 
-  const mergedFromSaved = [];
   const coveredSourceKeys = new Set();
 
-  savedGroups
-    .flatMap((group, groupIndex) => expandGroupForManualOnly(group, groupIndex))
-    .forEach(group => {
-      const keys = getGroupSourceKeys(group);
-      const matchedKey = keys.find(key => fallbackBySourceKey.has(key));
-      if (!matchedKey || coveredSourceKeys.has(matchedKey)) return;
+  const hydrateSavedItemWithFallback = (item, parentGroup) => {
+    const key = String(item?.sourceKey || "").trim();
+    const base = key ? fallbackBySourceKey.get(key) : null;
+    if (key && base) coveredSourceKeys.add(key);
 
-      const base = fallbackBySourceKey.get(matchedKey);
-      mergedFromSaved.push({
-        ...base,
-        start: String(group?.start || base?.start || "").trim(),
-        end: String(group?.end || base?.end || "").trim(),
-        machine: String(group?.machine || base?.machine || "").trim()
-      });
-      coveredSourceKeys.add(matchedKey);
-    });
+    return {
+      ...item,
+      sourceKey: String(item?.sourceKey || base?.sourceKey || "").trim(),
+      sessionKey: String(item?.sessionKey || parentGroup?.sessionKey || base?.sessionKey || "").trim(),
+      type: String(item?.type || item?.workType || base?.type || base?.workType || parentGroup?.type || "作業").trim(),
+      workType: String(item?.workType || item?.type || base?.workType || base?.type || parentGroup?.workType || parentGroup?.type || "作業").trim(),
+      field: normalizeMultiText(item?.field || base?.field || ""),
+      workers: normalizeMultiText(item?.workers || base?.workers || ""),
+      machine: String(item?.machine || base?.machine || parentGroup?.machine || "").trim(),
+      start: String(item?.start || base?.start || parentGroup?.start || "").trim(),
+      end: String(item?.end || base?.end || parentGroup?.end || "").trim(),
+      timestampTime: String(item?.end || item?.start || base?.end || base?.start || parentGroup?.end || parentGroup?.start || "").trim()
+    };
+  };
+
+  const mergedFromSaved = savedGroups.map(group => {
+    const sourceItems = Array.isArray(group?.items) && group.items.length ? group.items : [group];
+    const hydratedItems = sourceItems.map(item => hydrateSavedItemWithFallback(item, group));
+
+    const firstStart = hydratedItems.map(item => String(item?.start || "").trim()).find(Boolean) || "";
+    const firstEnd = hydratedItems.map(item => String(item?.end || "").trim()).reverse().find(Boolean) || "";
+
+    return {
+      ...group,
+      sourceKey: String(group?.sourceKey || hydratedItems[0]?.sourceKey || "").trim(),
+      type: String(group?.type || group?.workType || hydratedItems[0]?.type || "作業").trim(),
+      workType: String(group?.workType || group?.type || hydratedItems[0]?.workType || hydratedItems[0]?.type || "作業").trim(),
+      field: normalizeMultiText(group?.field || hydratedItems.map(item => item.field).filter(Boolean).join("／")),
+      workers: normalizeMultiText(group?.workers || hydratedItems.map(item => item.workers).filter(Boolean).join("／")),
+      machine: String(group?.machine || hydratedItems.map(item => item.machine).filter(Boolean).join("／") || "").trim(),
+      start: String(group?.start || firstStart || "").trim(),
+      end: String(group?.end || firstEnd || "").trim(),
+      items: hydratedItems
+    };
+  });
 
   const remaining = fallbackList.filter(group => {
     const key = String(group?.sourceKey || "").trim();
     return !key || !coveredSourceKeys.has(key);
   });
 
-  const unmatchedSaved = savedGroups
-    .flatMap((group, groupIndex) => expandGroupForManualOnly(group, groupIndex))
-    .filter(group => {
-      const keys = getGroupSourceKeys(group);
-      if (!keys.length) return true;
-      return !keys.some(key => coveredSourceKeys.has(key));
-    });
-
-  // 現在の自動抽出ログに一致しない旧グループは表示へ持ち込まない。
-  // （旧ログが日誌に残留する不具合の抑止）
-  void unmatchedSaved;
   return [...mergedFromSaved, ...remaining];
-}
-
-function expandGroupForManualOnly(group, groupIndex) {
-  const items = Array.isArray(group?.items) ? group.items : [];
-  if (items.length <= 1) return [group];
-
-  return items.map((item, itemIndex) => ({
-    groupKey: String(item?.sourceKey || `${group.groupKey || `saved-${groupIndex}`}-${itemIndex}`).trim(),
-    sessionKey: String(item?.sessionKey || "").trim(),
-    sourceKey: String(item?.sourceKey || `${group.groupKey || `saved-${groupIndex}`}-${itemIndex}`).trim(),
-    type: String(item?.type || item?.workType || group?.type || group?.workType || "作業").trim(),
-    workType: String(item?.workType || item?.type || group?.workType || group?.type || "作業").trim(),
-    field: normalizeMultiText(item?.field || ""),
-    workers: normalizeMultiText(item?.workers || ""),
-    machine: String(item?.machine || group?.machine || "").trim(),
-    start: String(item?.start || group?.start || "").trim(),
-    end: String(item?.end || group?.end || "").trim(),
-    items: [{ ...item }]
-  }));
 }
 
 function normalizeSavedGroup(item, index) {
