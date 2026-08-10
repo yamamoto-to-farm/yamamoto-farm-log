@@ -12,6 +12,7 @@ import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
+import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { printCurrentPage } from "/common/utils.js?v=20260716-4";
 
 const SEARCH_LIMIT = 80;
@@ -25,12 +26,30 @@ let activeSearchState = null;
 let isEditPageLoading = false;
 let isDiarySaving = false;
 let isDiaryPdfPrinting = false;
+let diaryRenderSeq = 0;
 
 function shiftDateByDays(dateStr, diffDays) {
   if (!dateStr) return "";
   const base = new Date(`${dateStr}T00:00:00`);
   if (Number.isNaN(base.getTime())) return dateStr;
   base.setDate(base.getDate() + diffDays);
+  const y = base.getFullYear();
+  const m = String(base.getMonth() + 1).padStart(2, "0");
+  const d = String(base.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function shiftDateByMonths(dateStr, diffMonths) {
+  if (!dateStr) return "";
+  const base = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return dateStr;
+
+  const day = base.getDate();
+  base.setDate(1);
+  base.setMonth(base.getMonth() + diffMonths);
+  const lastDay = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+  base.setDate(Math.min(day, lastDay));
+
   const y = base.getFullYear();
   const m = String(base.getMonth() + 1).padStart(2, "0");
   const d = String(base.getDate()).padStart(2, "0");
@@ -111,6 +130,13 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
   const selectedDay = Number(selectedDate.slice(8, 10));
   const labels = ["日", "月", "火", "水", "木", "金", "土"];
   const ym = selectedDate.slice(0, 7);
+  const savedDates = [...savedDatesSet]
+    .filter(date => String(date || "").startsWith(`${ym}-`))
+    .sort((a, b) => a.localeCompare(b));
+  const savedPreview = savedDates.slice(0, 8);
+  const savedMoreCount = Math.max(0, savedDates.length - savedPreview.length);
+  const prevMonthDate = shiftDateByMonths(selectedDate, -1);
+  const nextMonthDate = shiftDateByMonths(selectedDate, 1);
 
   const cells = [];
   labels.forEach(label => {
@@ -132,7 +158,22 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
   }
 
   host.innerHTML = `
-    <div class="diary-month-mini-head">${year}年${month + 1}月（保存日の印付き）</div>
+    <div class="diary-month-mini-head">
+      <span>${year}年${month + 1}月</span>
+      <span class="diary-month-mini-nav">
+        <button type="button" class="diary-month-mini-nav-btn" data-month-nav="prev" data-date="${prevMonthDate}" aria-label="前月へ移動">‹</button>
+        <button type="button" class="diary-month-mini-nav-btn" data-month-nav="next" data-date="${nextMonthDate}" aria-label="翌月へ移動">›</button>
+      </span>
+      <span class="diary-month-mini-count">保存済み ${savedDates.length}日</span>
+    </div>
+    <div class="diary-month-mini-saved">
+      <span class="diary-month-mini-saved-label">保存済み日</span>
+      ${savedPreview.map(date => {
+        const day = date.slice(8, 10);
+        return `<button type="button" class="diary-month-mini-saved-chip" data-date="${date}" aria-label="${date}へ移動">${day}</button>`;
+      }).join("")}
+      ${savedMoreCount > 0 ? `<span class="diary-month-mini-saved-more">ほか ${savedMoreCount}日</span>` : ""}
+    </div>
     <div class="diary-month-mini-grid">${cells.join("")}</div>
     <div class="diary-month-mini-legend">青背景: 保存済み日 / 枠線: 選択中の日付</div>
   `;
@@ -141,7 +182,7 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
 async function refreshDiaryMonthMini(selectedDate) {
   const dates = await loadSavedDatesForMonth(selectedDate);
   const host = document.getElementById("diaryMonthMini");
-  if (host) host.classList.add("diary-month-mini");
+  if (host) host.classList.add("diary-month-mini", "diary-month-inline");
   renderMonthMiniCalendar(selectedDate, new Set(dates));
 }
 
@@ -152,6 +193,24 @@ function bindMonthMiniDateJump({ mode }) {
   host.dataset.boundMiniJump = "1";
 
   host.addEventListener("click", e => {
+    const monthNav = e.target.closest(".diary-month-mini-nav-btn[data-date]");
+    if (monthNav) {
+      const targetDate = String(monthNav.dataset.date || "");
+      if (!targetDate) return;
+      const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
+      location.href = buildDiaryUrl(mode, targetDate, currentSearch);
+      return;
+    }
+
+    const savedChip = e.target.closest(".diary-month-mini-saved-chip[data-date]");
+    if (savedChip) {
+      const targetDate = String(savedChip.dataset.date || "");
+      if (!targetDate) return;
+      const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
+      location.href = buildDiaryUrl(mode, targetDate, currentSearch);
+      return;
+    }
+
     const btn = e.target.closest(".diary-month-mini-cell.is-day[data-date]");
     if (!btn) return;
 
@@ -291,6 +350,63 @@ async function printDiaryAsA4Pdf() {
       btn.textContent = originalText;
     }
   }
+}
+
+async function loadDiaryScreenData(date) {
+  const [diary, logs, timestampRows] = await Promise.all([
+    loadDiaryByDate(date),
+    loadLogsByDate(date),
+    loadTimestampRows(date)
+  ]);
+
+  return { diary, logs, timestampRows };
+}
+
+async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, clearSearch = true }) {
+  const renderSeq = ++diaryRenderSeq;
+  const workList = document.getElementById("workList");
+  if (workList) workList.innerHTML = "<p>作業ログを読み込み中…</p>";
+
+  const editWorkArea = document.getElementById("editWorkArea");
+  if (editWorkArea) editWorkArea.innerHTML = "読み込み中…";
+
+  void refreshDiaryMonthMini(date);
+  void renderWeatherBox(date);
+
+  const data = await loadDiaryScreenData(date);
+  if (renderSeq !== diaryRenderSeq) return;
+
+  if (mode === "edit") {
+    isEditPageLoading = true;
+    if (saveBtn) saveBtn.disabled = true;
+    await initEditPage({ date, ...data });
+    if (renderSeq !== diaryRenderSeq) return;
+    isEditPageLoading = false;
+    if (saveBtn) saveBtn.disabled = false;
+  } else {
+    await initViewPageWithOptions({ date, ...data });
+    if (renderSeq !== diaryRenderSeq) return;
+  }
+
+  void (async () => {
+    await showWorkSummary(date, data.logs);
+    if (renderSeq !== diaryRenderSeq) return;
+    initCollapse("workListTitle", "workList");
+  })();
+
+  const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
+  renderModeSwitch(mode, currentSearch);
+  if (clearSearch) {
+    activeSearchState = null;
+    renderSearchState("", { total: 0, hits: [] });
+    renderLoadMoreControl(null);
+  }
+
+  if (updateHistory) {
+    history.replaceState({}, "", buildDiaryUrl(mode, date, currentSearch));
+  }
+
+  return data;
 }
 
 function bindDiaryPdfButton() {
@@ -810,14 +926,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (searchInput) searchInput.value = urlQuery;
   bindSearchEvents({ mode, dateInput });
   bindMonthMiniDateJump({ mode });
-  await refreshDiaryMonthMini(initialDate);
-
-  // 天気カード表示
-  await renderWeatherBox(initialDate);
-
-  // 作業ログ一覧表示
-  const initialLogs = await loadLogsByDate(initialDate);
-  await showWorkSummary(initialDate, initialLogs);
 
   renderLoadMoreControl(null);
   initCollapse("diarySearchTitle", "diarySearchPanel");
@@ -825,14 +933,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ▼ 折りたたみ（作業ログ一覧）
   initCollapse("workListTitle", "workList");
 
-  // モード別カード表示
-  if (mode === "edit") {
-    isEditPageLoading = true;
-    await initEditPage({ date: initialDate, logs: initialLogs });
-    isEditPageLoading = false;
-  } else {
-    await initViewPageWithOptions({ date: initialDate, logs: initialLogs });
-  }
+  await renderDiaryForDate({ mode, date: initialDate, saveBtn: null, updateHistory: false, clearSearch: false });
 
   // ---------------------------------------------------------
   // 保存イベント（編集モードのみ）
@@ -886,36 +987,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------------------------------------
   dateInput.addEventListener("change", async e => {
     const d = e.target.value;
-    await refreshDiaryMonthMini(d);
-
-    // 天気カード更新
-    await renderWeatherBox(d);
-
-    // 作業ログ一覧更新
-    const logsByDate = await loadLogsByDate(d);
-    await showWorkSummary(d, logsByDate);
-
-    // ▼ 折りたたみ再適用
-    initCollapse("workListTitle", "workList");
-
-    // モード別カード更新
-    if (mode === "edit") {
-      isEditPageLoading = true;
-      saveBtn.disabled = true;
-      await initEditPage({ date: d, logs: logsByDate });
-      isEditPageLoading = false;
-      saveBtn.disabled = false;
-    } else {
-      await initViewPageWithOptions({ date: d, logs: logsByDate });
-    }
-
-    // ★ モード切り替えボタンも更新（新しい日付を反映）
-    const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
-    renderModeSwitch(mode, currentSearch);
-    activeSearchState = null;
-    renderSearchState("", { total: 0, hits: [] });
-    renderLoadMoreControl(null);
-    history.replaceState({}, "", buildDiaryUrl(mode, d, currentSearch));
+    await renderDiaryForDate({ mode, date: d, saveBtn });
   });
 
   // 編集画面から戻る時（BFCache復帰）に古い CSV キャッシュを破棄して再読込する
@@ -925,22 +997,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const d = dateInput.value || getTodayJstDateString();
 
     clearWorkSummaryCache();
-    await refreshDiaryMonthMini(d);
-    await renderWeatherBox(d);
-
-    const logsByDate = await loadLogsByDate(d);
-    await showWorkSummary(d, logsByDate);
-    initCollapse("workListTitle", "workList");
-
-    if (mode === "edit") {
-      isEditPageLoading = true;
-      saveBtn.disabled = true;
-      await initEditPage({ date: d, logs: logsByDate });
-      isEditPageLoading = false;
-      saveBtn.disabled = false;
-    } else {
-      await initViewPageWithOptions({ date: d, logs: logsByDate });
-    }
+    await renderDiaryForDate({ mode, date: d, saveBtn, updateHistory: false });
   });
   // (印刷時の一時処理は削除されました)
 });

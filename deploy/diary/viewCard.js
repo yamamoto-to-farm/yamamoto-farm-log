@@ -18,9 +18,9 @@ export async function initViewPageWithOptions(options = {}) {
   const area = document.getElementById("editWorkArea");
   area.innerHTML = "読み込み中…";
 
-  const diary = await loadDiaryByDate(date);
+  const diary = options?.diary !== undefined ? options.diary : await loadDiaryByDate(date);
   const logs = Array.isArray(options?.logs) ? options.logs : await loadLogsByDate(date);
-  const timestampRows = await loadTimestampRows(date);
+  const timestampRows = Array.isArray(options?.timestampRows) ? options.timestampRows : await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
   const autoSowingCategoryMap = buildSowingCategoryMap(autoList);
   const workList = Array.isArray(diary?.work) && diary.work.length

@@ -1,10 +1,22 @@
 // common/weather/weather.js
 
 export async function loadWeatherYear(year) {
-  const url = `/data/weather/${year}.json`;
+  const cacheKey = String(year || "").trim();
+  if (!cacheKey) return {};
+
+  if (!loadWeatherYear.cache) {
+    loadWeatherYear.cache = new Map();
+  }
+
+  if (loadWeatherYear.cache.has(cacheKey)) {
+    return loadWeatherYear.cache.get(cacheKey);
+  }
+
+  const url = `/data/weather/${cacheKey}.json`;
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
+      loadWeatherYear.cache.set(cacheKey, {});
       return {};
     }
 
@@ -16,14 +28,20 @@ export async function loadWeatherYear(year) {
       }
 
       try {
-        return JSON.parse(text);
+        const parsed = JSON.parse(text);
+        loadWeatherYear.cache.set(cacheKey, parsed);
+        return parsed;
       } catch {
+        loadWeatherYear.cache.set(cacheKey, {});
         return {};
       }
     }
 
-    return await res.json();
+    const json = await res.json();
+    loadWeatherYear.cache.set(cacheKey, json);
+    return json;
   } catch {
+    loadWeatherYear.cache.set(cacheKey, {});
     return {};
   }
 }

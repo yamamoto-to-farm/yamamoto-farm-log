@@ -9,12 +9,14 @@ let searchIndexCache = null;
 let folderListCache = null;
 const csvRowsCache = new Map();
 const folderDateBucketCache = new Map();
+const logsByDateCache = new Map();
 
 function resetWorkSummaryCaches() {
   searchIndexCache = null;
   folderListCache = null;
   csvRowsCache.clear();
   folderDateBucketCache.clear();
+  logsByDateCache.clear();
 }
 
 // list.json を読み込む
@@ -115,6 +117,13 @@ async function loadSearchIndex() {
 
 // 日付一致のログを集約
 export async function loadLogsByDate(date) {
+  const cacheKey = String(date || "").trim();
+  if (!cacheKey) return [];
+
+  if (logsByDateCache.has(cacheKey)) {
+    return logsByDateCache.get(cacheKey).map(row => ({ ...row, data: { ...(row.data || {}) } }));
+  }
+
   const folderList = await loadFolderList();
   const result = [];
 
@@ -135,6 +144,7 @@ export async function loadLogsByDate(date) {
     });
   }
 
+  logsByDateCache.set(cacheKey, result.map(row => ({ ...row, data: { ...(row.data || {}) } })));
   return result;
 }
 

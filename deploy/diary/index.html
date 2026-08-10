@@ -9,13 +9,12 @@
   <link rel="stylesheet" href="/common/css/main.css">
 
   <!-- diaryページ専用CSS -->
-  <link rel="stylesheet" href="/diary/diary.css">
+  <link rel="stylesheet" href="/diary/diary.css?v=20260810-2">
 </head>
 
 <body>
 
   <div id="header"></div>
-  <aside id="diaryMonthMini" class="diary-month-dock" aria-live="polite"></aside>
 
   <div class="page-container" id="form-area" style="display:none;">
     <h1 class="page-title">作業日誌</h1>
@@ -38,13 +37,14 @@
 
     <!-- 日付 -->
     <h2 id="diaryDateTitle" class="section-title">日付</h2>
-    <div class="diary-date-card">
+    <div class="card diary-date-card">
       <div id="diaryDateNav" class="form-field">
         <button id="prevDayBtn" type="button" class="secondary-btn day-nav-btn">前日</button>
         <input type="date" id="diaryDate" class="form-input">
         <button id="todayBtn" type="button" class="secondary-btn day-nav-btn">今日</button>
         <button id="nextDayBtn" type="button" class="secondary-btn day-nav-btn">翌日</button>
       </div>
+      <div id="diaryMonthMini" class="diary-month-mini diary-month-inline" aria-live="polite"></div>
     </div>
 
     <!-- 天気カード -->
@@ -88,7 +88,7 @@
   <script type="module" src="/diary/viewCard.js"></script>
   <script type="module" src="/diary/weather-box.js"></script>
   <script type="module" src="/diary/loadDiary.js"></script>
-  <script type="module" src="/diary/diary.js?v=20260716-9"></script>
+  <script type="module" src="/diary/diary.js?v=20260716-11"></script>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>

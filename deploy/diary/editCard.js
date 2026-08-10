@@ -184,11 +184,11 @@ export async function initEditPage(options = {}) {
   const date = String(options?.date || dateInput.value || "").trim();
 
   // ★ 既存の日誌を読み込む
-  const diary = await loadDiaryByDate(date);   // null の可能性あり
+  const diary = options?.diary !== undefined ? options.diary : await loadDiaryByDate(date);   // null の可能性あり
 
   // ★ 作業ログから自動抽出（type, workers, field, machine）
   const logs = Array.isArray(options?.logs) ? options.logs : await loadLogsByDate(date);
-  const timestampRows = await loadTimestampRows(date);
+  const timestampRows = Array.isArray(options?.timestampRows) ? options.timestampRows : await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
   const hydratedList = mergeSavedDiaryGroups(diary, autoList);
 

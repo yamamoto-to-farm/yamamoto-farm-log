@@ -4,6 +4,7 @@
 // =========================================================
 
 import { loadJSON, saveJSON } from "/common/json.js";
+import { clearDiaryCache } from "./loadDiary.js";
 import {
   showSaveModal,
   completeSaveModal,
@@ -81,6 +82,7 @@ export async function saveDiary(date, autoList) {
   try {
     showSaveModal("保存しています…");
     await saveJSON(savePath, current);
+    clearDiaryCache(date);
     completeSaveModal("保存が完了しました");
   } catch (e) {
     closeSaveModal();
