@@ -156,13 +156,16 @@ export function clearWorkSummaryCache() {
 export async function showWorkSummary(date, preloadedLogs = null) {
   const box = document.getElementById("workList");
   const logs = Array.isArray(preloadedLogs) ? preloadedLogs : await loadLogsByDate(date);
+  const editLogButton = window.currentRole === "admin"
+    ? `<div class="work-list-toolbar"><button type="button" class="secondary-btn work-log-edit-btn" onclick="location.href='${buildEditLogUrl(date)}'">作業ログ編集へ</button></div>`
+    : "";
 
   if (logs.length === 0) {
-    box.innerHTML = "<p>この日の作業ログはありません。</p>";
+    box.innerHTML = `${editLogButton}<p>この日の作業ログはありません。</p>`;
     return;
   }
 
-  box.innerHTML = logs.map(log => {
+  box.innerHTML = `${editLogButton}${logs.map(log => {
     const cols = log.headerName.map(col => log.data[col] ?? "");
     return `
       <div class="work-item">
@@ -170,7 +173,7 @@ export async function showWorkSummary(date, preloadedLogs = null) {
         <p>${cols.join(" / ")}</p>
       </div>
     `;
-  }).join("");
+  }).join("")}`;
 }
 
 export async function searchLogsByKeyword(keyword, options = {}) {

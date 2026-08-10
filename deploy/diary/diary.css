@@ -7,15 +7,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin: 8px 0 18px;
+  gap: 10px;
+  margin: 8px 0 14px;
+  padding: 2px 0;
 }
 
 .mode-switch-left,
 .mode-switch-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .mode-switch-right {
@@ -26,6 +27,16 @@
 
 #modeSwitchArea .mode-btn {
   margin-left: 0;
+}
+
+#modeSwitchArea .mode-switch-left .mode-btn,
+#modeSwitchArea .mode-switch-right .mode-btn {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+#modeSwitchArea .mode-switch-left {
+  flex-wrap: wrap;
 }
 
 .diary-search-bar {
@@ -984,6 +995,17 @@
   padding-right: 6px;
   margin-bottom: 18px;
   border-radius: 6px;
+}
+
+.work-list-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 10px;
+}
+
+.work-log-edit-btn {
+  min-height: 36px;
+  padding: 0 14px;
 }
 
 .diary-save-bar {
