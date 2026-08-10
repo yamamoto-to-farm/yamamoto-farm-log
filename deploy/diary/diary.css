@@ -532,8 +532,16 @@
   order: 1;
 }
 
+#diaryMonthToggleBtn {
+  order: 2;
+}
+
+#diaryDateNav #diaryDate {
+  order: 3;
+}
+
 #nextDayBtn {
-  order: 6;
+  order: 4;
 }
 
 #todayBtn {
@@ -541,7 +549,7 @@
 }
 
 #lastYearBtn {
-  order: 2;
+  order: 6;
 }
 
 @media (max-width: 640px) {
@@ -680,6 +688,15 @@
 }
 
 #workListTitle {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+#diarySearchTitle {
   margin-top: 14px;
   margin-bottom: 8px;
   color: #0f172a;
@@ -969,9 +986,21 @@
   border-radius: 6px;
 }
 
+.diary-save-bar {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0 14px;
+}
+
 #saveDiaryBtn {
-  display: block;
-  margin: 24px auto 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  padding: 10px 24px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 @media print {
