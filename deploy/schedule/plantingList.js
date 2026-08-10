@@ -749,9 +749,13 @@ function renderFieldCards(rows, state = {}) {
     });
 
     groupedByDate.forEach((items, dateKey) => {
+      const totalAreaTanByDate = items.reduce((sum, row) => {
+        const summary = buildPlanTraySummary(row.assignments || []);
+        return sum + Number(summary.areaTan || 0);
+      }, 0);
       html += `
         <section class="card planting-area-group">
-          <h4 class="section-title">${escapeHtml(dateKey)}（${items.length}件）</h4>
+          <h4 class="section-title">${escapeHtml(dateKey)}（${items.length}件） ${totalAreaTanByDate.toFixed(2)}反</h4>
           <div class="planting-area-body" style="display:block">
             <table class="planting-plan-table">
               <colgroup>

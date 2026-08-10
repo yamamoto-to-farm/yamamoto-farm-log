@@ -5,7 +5,7 @@ import { loadJSON } from "/common/json.js";
 
 import { setSeedRowsFromAnnual } from "./seed/seedList-state.js";
 import { renderSeedList } from "./seed/index.js";
-import { renderPlantingList, loadPlantingPlanFromCSV, savePlantingPlan } from "./plantingList.js?v=20260810-1";
+import { renderPlantingList, loadPlantingPlanFromCSV, savePlantingPlan } from "./plantingList.js?v=20260810-3";
 import { setFilterData } from "/common/filter/filter-core.js?v=1";
 
 
@@ -283,9 +283,11 @@ export async function initListPage() {
 function applyModeUI() {
   const btnPlanting = document.getElementById("btn-planting");
   const btnSeed = document.getElementById("btn-seed");
+  const pageArea = document.getElementById("page-area");
 
   btnPlanting.classList.toggle("active", currentMode === "planting");
   btnSeed.classList.toggle("active", currentMode === "seed");
+  if (pageArea) pageArea.dataset.mode = currentMode;
 
   const activeFilters = document.getElementById("activeFilters");
 

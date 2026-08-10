@@ -259,6 +259,10 @@
     display: block !important;
   }
 
+  #page-area[data-mode="planting"] #summary-card {
+    display: none !important;
+  }
+
   #summaryArea {
     display: block !important;
     margin-bottom: 12px;
@@ -873,6 +877,21 @@
     break-after: auto;
     page-break-after: auto;
     margin-bottom: 6mm !important;
+  }
+
+  #page-area[data-mode="planting"] #table-area > .planting-area-group,
+  #page-area[data-mode="planting"] #table-area > .card.planting-area-group {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    break-before: auto !important;
+    page-break-before: auto !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
+    margin-bottom: 4mm !important;
+  }
+
+  #page-area[data-mode="planting"] #table-area > .planting-area-group + .planting-area-group {
+    margin-top: 0 !important;
   }
 
   .planting-plan-table .plan-chip,
