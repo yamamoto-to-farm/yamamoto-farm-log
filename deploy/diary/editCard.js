@@ -99,10 +99,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     card.dataset.selected = "false";
 
     card.innerHTML = `
-      <div class="merge-card-head">
-        <button type="button" class="merge-select-indicator" data-merge-select-toggle aria-pressed="false">選択</button>
-        ${unmergeButtonHtml}
-      </div>
+      ${unmergeButtonHtml ? `<div class="merge-card-head">${unmergeButtonHtml}</div>` : ""}
       <h3 class="edit-title edit-card-title ${getWorkToneClass(getWorkTypeText(item))}">${getWorkTypeText(item)}</h3>
       ${hideField ? "" : renderFieldBlock("圃場", fieldParts)}
       ${hideField
@@ -363,8 +360,6 @@ function bindManualMergeControls(diary, timestampRows) {
     return Boolean(target.closest("input, button, textarea, select, option, summary, details, label, a"));
   };
 
-  const getSelectToggle = card => card.querySelector("[data-merge-select-toggle]");
-
   const getSelectedCards = () => cards.filter(card => card.dataset.selected === "true");
 
   const updateButtonState = () => {
@@ -381,14 +376,6 @@ function bindManualMergeControls(diary, timestampRows) {
       card.classList.toggle("merge-card-disabled", shouldDisable);
       card.classList.toggle("merge-card-selected", isSelected);
       card.dataset.mergeDisabled = shouldDisable ? "true" : "false";
-
-      const toggle = getSelectToggle(card);
-      if (toggle) {
-        toggle.dataset.state = isSelected ? "selected" : shouldDisable ? "disabled" : "idle";
-        toggle.setAttribute("aria-pressed", isSelected ? "true" : "false");
-        toggle.disabled = shouldDisable;
-        toggle.textContent = isSelected ? "選択中" : shouldDisable ? "選択不可" : "選択";
-      }
     });
 
     if (guideEl) {
@@ -401,16 +388,6 @@ function bindManualMergeControls(diary, timestampRows) {
   };
 
   cards.forEach(card => {
-    const toggle = getSelectToggle(card);
-    if (toggle) {
-      toggle.addEventListener("click", event => {
-        event.stopPropagation();
-        if (card.dataset.mergeDisabled === "true") return;
-        card.dataset.selected = card.dataset.selected === "true" ? "false" : "true";
-        updateButtonState();
-      });
-    }
-
     card.addEventListener("click", event => {
       if (isInteractiveTarget(event.target)) return;
       if (card.dataset.mergeDisabled === "true") return;

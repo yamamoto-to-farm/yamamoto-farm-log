@@ -208,27 +208,22 @@
   min-height: 42px;
   box-sizing: border-box;
   text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  background: #fff;
+#diaryDateNav .day-nav-btn,
+#diaryDateNav .diary-month-toggle-btn {
+  height: 36px;
+  min-width: 58px;
+  padding: 0 12px;
+  margin-top: 0;
+  font-size: 0.88rem;
+  line-height: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #diaryDateNav #diaryDate[readonly] {
-  user-select: none;
-}
-
-#diaryDateNav .day-nav-btn {
   min-width: 58px;
-  padding: 10px 10px;
-  margin-top: 0;
-  white-space: nowrap;
-}
-
-#prevDayBtn {
-  order: 1;
-}
 
 #nextDayBtn {
   order: 6;
@@ -482,8 +477,8 @@
   }
 
   .diary-month-toggle-btn {
-    min-width: 38px;
-    padding: 0 8px;
+    min-width: 50px;
+    padding: 8px 8px;
   }
 
   .diary-date-card {
@@ -733,38 +728,6 @@
   margin-bottom: 10px;
 }
 
-.merge-select-indicator {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background: #fff;
-  color: #475569;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.merge-select-indicator:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-}
-
-.merge-select-indicator[aria-pressed="true"] {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #1d4ed8;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
-}
-
-.merge-select-indicator:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 .merge-unmerge-btn {
   margin-left: auto;
 }
@@ -776,18 +739,24 @@
 }
 
 .edit-card[data-group-index]:hover {
-  border-color: #93c5fd;
+  border-color: #bfdbfe;
+  background: #f8fbff;
 }
 
 .merge-card-selected {
-  border-color: #2563eb;
-  background: #eff6ff;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
-  border-left-color: #2563eb;
+  border-color: #bfdbfe;
+  background: #dbeafe;
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.24);
+  border-left-color: #93c5fd;
 }
 
-.merge-card-selected .merge-select-indicator {
-  color: #1d4ed8;
+.merge-card-selected .edit-card-title,
+.merge-card-selected .edit-line,
+.merge-card-selected .edit-crew-line,
+.merge-card-selected .edit-time-row,
+.merge-card-selected .field-multi-item,
+.merge-card-selected .field-multi-single {
+  color: #1e3a8a;
 }
 
 .merge-card-disabled {
@@ -910,6 +879,7 @@
 .merged-work-details summary {
   cursor: pointer;
   font-weight: 700;
+  color: #111827;
 }
 
 .merged-work-list {
@@ -917,13 +887,23 @@
   padding-left: 18px;
   display: grid;
   gap: 4px;
-  color: #475569;
+  color: #111827;
 }
 
 .merged-work-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  color: #111827;
+}
+
+.merged-work-list li span {
+  color: inherit;
+}
+
+.merged-work-list li span:last-child {
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {
@@ -985,7 +965,6 @@
   #workListTitle,
   #workList,
   .merge-toolbar,
-  .merge-select-indicator,
   .merge-unmerge-btn,
   .secondary-btn,
   .btn-primary {
