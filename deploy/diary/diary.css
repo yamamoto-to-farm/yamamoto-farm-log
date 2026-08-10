@@ -41,6 +41,37 @@
   height: 38px;
 }
 
+#diaryMonthMini[hidden] {
+  display: none !important;
+}
+
+.diary-date-card {
+  margin-bottom: 18px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px 12px;
+  border-radius: 14px;
+  border: 1px solid #d8dee7;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.diary-date-card .form-field {
+  margin-bottom: 0;
+}
+
+.diary-month-toggle-btn {
+  min-width: 42px;
+  padding: 0 10px;
+  font-size: 18px;
+}
+
+#form-area {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+
 .diary-month-mini {
   margin-top: 0;
   padding: 10px 12px;
@@ -61,6 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
   color: #334155;
@@ -193,6 +225,223 @@
   font-size: 0.78rem;
 }
 
+#diaryDateNav {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+#diaryDateNav #diaryDate {
+  justify-self: center;
+  width: 320px;
+  max-width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#diaryDateNav .day-nav-btn {
+  min-width: 76px;
+  padding: 10px 14px;
+  margin-top: 0;
+}
+
+#prevDayBtn {
+  justify-self: start;
+}
+
+#nextDayBtn {
+  justify-self: end;
+}
+
+#todayBtn {
+  justify-self: end;
+}
+
+.section-title {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-size: 1.02rem;
+  letter-spacing: 0.02em;
+}
+
+#weatherBox,
+#workList,
+#editWorkArea {
+  display: grid;
+  gap: 12px;
+}
+
+.edit-card,
+.view-card,
+#weatherBox .weather-card,
+.merge-toolbar,
+.diary-search-results,
+.diary-date-card,
+#workList {
+  border-radius: 14px;
+}
+
+.edit-card,
+.view-card,
+#weatherBox .weather-card {
+  border: 1px solid #d8e2ef;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+}
+
+.edit-card h3,
+.view-card h3,
+.weather-card h3 {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf2f7;
+  color: #0f172a;
+}
+
+.edit-card-title,
+.view-card-title {
+  margin-bottom: 12px;
+  font-size: 1.34rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.tone-start { color: #1d4ed8; }
+.tone-field { color: #3730a3; }
+.tone-care { color: #c2410c; }
+.tone-harvest { color: #b45309; }
+.tone-discard { color: #6d28d9; }
+
+.edit-card.tone-start,
+.view-card.tone-start {
+  border-left-color: #1d4ed8;
+}
+
+.edit-card.tone-field,
+.view-card.tone-field {
+  border-left-color: #3730a3;
+}
+
+.edit-card.tone-care,
+.view-card.tone-care {
+  border-left-color: #c2410c;
+}
+
+.edit-card.tone-harvest,
+.view-card.tone-harvest {
+  border-left-color: #b45309;
+}
+
+.edit-card.tone-discard,
+.view-card.tone-discard {
+  border-left-color: #6d28d9;
+}
+
+.edit-card.tone-start .edit-card-title,
+.view-card.tone-start .view-card-title {
+  color: #1d4ed8;
+}
+
+.edit-card.tone-field .edit-card-title,
+.view-card.tone-field .view-card-title {
+  color: #3730a3;
+}
+
+.edit-card.tone-care .edit-card-title,
+.view-card.tone-care .view-card-title {
+  color: #c2410c;
+}
+
+.edit-card.tone-harvest .edit-card-title,
+.view-card.tone-harvest .view-card-title {
+  color: #b45309;
+}
+
+.edit-card.tone-discard .edit-card-title,
+.view-card.tone-discard .view-card-title {
+  color: #6d28d9;
+}
+
+.edit-line,
+.view-card p {
+  color: #334155;
+}
+
+.edit-field-line,
+.view-field-line {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.edit-crew-line,
+.view-crew-line {
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.edit-time-row,
+.view-time-line {
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.edit-field-line + .edit-crew-line,
+.view-field-line + .view-crew-line {
+  margin-top: 8px;
+}
+
+.edit-card p,
+.view-card p,
+.weather-card p {
+  margin: 6px 0;
+}
+
+.edit-card[data-group-index],
+.view-card {
+  border-left-width: 6px;
+  border-left-style: solid;
+}
+
+.merge-toolbar,
+.diary-search-results,
+#summary-card,
+#workList,
+.diary-date-card {
+  border: 1px solid #d8dee7;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.merge-toolbar,
+.diary-search-results,
+#summary-card,
+#workList {
+  padding: 14px 16px;
+}
+
+#weatherBox .weather-card {
+  padding: 14px 16px;
+  margin-bottom: 0;
+}
+
+#workContentWrapper {
+  max-height: min(64vh, 580px);
+  padding: 2px 2px 2px 0;
+  margin-bottom: 18px;
+}
+
+#saveDiaryBtn {
+  margin: 18px auto 0;
+}
+
 @media (max-width: 640px) {
   #diaryDateNav {
     grid-template-columns: 1fr;
@@ -202,7 +451,8 @@
   #prevDayBtn,
   #todayBtn,
   #nextDayBtn,
-  #diaryDateNav #diaryDate {
+  #diaryDateNav #diaryDate,
+  .diary-month-toggle-btn {
     justify-self: center;
     width: min(320px, 100%);
   }
@@ -228,71 +478,6 @@
     height: 22px;
     padding: 0 7px;
   }
-}
-.diary-month-mini-saved-chip:hover {
-  background: #dbeafe;
-}
-
-.diary-month-mini-saved-more {
-  color: #64748b;
-  font-size: 0.78rem;
-}
-
-.diary-month-mini-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.diary-month-mini-cell {
-  min-height: 22px;
-  text-align: center;
-  font-size: 0.78rem;
-  line-height: 22px;
-  border-radius: 999px;
-  color: #1f2937;
-  border: 0;
-  background: transparent;
-  padding: 0;
-}
-
-.diary-month-mini-cell.is-label {
-  color: #64748b;
-  font-weight: 600;
-}
-
-.diary-month-mini-cell.is-empty {
-  visibility: hidden;
-}
-
-.diary-month-mini-cell.has-entry {
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-weight: 700;
-}
-
-.diary-month-mini-cell.is-day {
-  cursor: pointer;
-}
-
-.diary-month-mini-cell.is-day:hover {
-  background: #e2e8f0;
-}
-
-.diary-month-mini-cell.is-day:focus-visible {
-  outline: 2px solid #334155;
-  outline-offset: 1px;
-}
-
-.diary-month-mini-cell.is-selected {
-  outline: 2px solid #0f172a;
-  outline-offset: 0;
-}
-
-.diary-month-mini-legend {
-  margin-top: 6px;
-  color: #475569;
-  font-size: 0.78rem;
 }
 
 #diaryDateNav {
@@ -555,7 +740,7 @@
 .edit-card[data-group-index] {
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, opacity 0.15s ease;
-  border-left: 5px solid #c7d2fe;
+  border-left-color: #c7d2fe;
 }
 
 .edit-card[data-group-index]:hover {
@@ -618,6 +803,23 @@
 .edit-card .edit-workers strong,
 .view-card p strong {
   color: #1f2937;
+}
+
+.edit-card .edit-line strong,
+.view-card p strong {
+  letter-spacing: 0.01em;
+}
+
+.edit-card .edit-line,
+.view-card .view-field-line,
+.view-card .view-crew-line,
+.view-card .view-time-line {
+  margin-top: 4px;
+}
+
+.edit-card .edit-line:first-of-type,
+.view-card .view-field-line:first-of-type {
+  margin-top: 0;
 }
 
 .view-card h3,

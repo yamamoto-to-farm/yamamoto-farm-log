@@ -6,6 +6,7 @@
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 import { buildTimestampDefaults, createSessionKey, loadTimestampRows } from "/common/timestamp.js?v=1";
+import { getWorkToneClass } from "/common/work-tone.js";
 
 // ---------------------------------------------------------
 // 編集カードを描画
@@ -91,7 +92,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
       : "";
 
     const card = document.createElement("div");
-    card.className = "card edit-card";
+    card.className = `card edit-card ${getWorkToneClass(getWorkTypeText(item))}`;
     card.dataset.groupIndex = String(idx);
     card.dataset.workType = getWorkTypeText(item);
     card.dataset.selected = "false";
@@ -101,17 +102,17 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
         <div class="merge-select-indicator" aria-hidden="true">クリックで選択</div>
         ${unmergeButtonHtml}
       </div>
-      <h3 class="edit-title">${getWorkTypeText(item)}</h3>
-      ${hideField ? "" : `<p class="edit-workers"><strong>圃場：</strong> ${fieldText}</p>`}
+      <h3 class="edit-title edit-card-title ${getWorkToneClass(getWorkTypeText(item))}">${getWorkTypeText(item)}</h3>
+      ${hideField ? "" : `<p class="edit-line edit-field-line"><strong>圃場：</strong> ${fieldText}</p>`}
       ${hideField
-        ? `<p class="edit-workers"><strong>播種区分：</strong> ${escapeHtml(sowingCategoryText)}</p>`
-        : `<p class="edit-workers"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>`}
+        ? `<p class="edit-line edit-field-line"><strong>播種区分：</strong> ${escapeHtml(sowingCategoryText)}</p>`
+        : `<p class="edit-line edit-crew-line"><strong>従事者：</strong> ${workersText}　　<strong>作業機械：</strong> ${machineText}</p>`}
       ${subItemHtml}
 
       <input type="hidden" id="field_${idx}" value="${escapeHtml(field)}">
       <input type="hidden" id="machine_${idx}" value="${machine}">
 
-      <div class="time-row">
+      <div class="time-row edit-time-row">
         <label>開始</label>
         <input type="time" id="start_${idx}" class="form-input" value="${start}">
 
@@ -132,7 +133,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
   const memo = diary?.memo || "";
 
   memoCard.innerHTML = `
-    <h3 class="edit-title">日誌メモ</h3>
+    <h3 class="edit-title edit-card-title">日誌メモ</h3>
     <p class="memo-desc">
       この日の作業ログがない場合や、未実装の作業がある場合はここに記入できます。
     </p>

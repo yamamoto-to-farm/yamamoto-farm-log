@@ -5,6 +5,7 @@
 import { loadDiaryByDate } from "./loadDiary.js";
 import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
+import { getWorkToneClass } from "/common/work-tone.js";
 
 /**
  * 閲覧専用カードを描画する
@@ -59,19 +60,20 @@ function createViewWorkCard(w) {
   const sowingCategoryLine = normalizeSowingCategoryText(w);
 
   const card = document.createElement("div");
-  card.className = "card view-card";
+  card.className = `card view-card ${getWorkToneClass(title)}`;
 
   const h3 = document.createElement("h3");
+  h3.className = `view-card-title ${getWorkToneClass(title)}`;
   h3.textContent = title;
   card.appendChild(h3);
 
   if (!isSowing) {
-    card.appendChild(createLine("圃場", fieldLine));
-    card.appendChild(createWorkerMachineLine(workerLine, machineLine));
+    card.appendChild(createLine("圃場", fieldLine, "view-field-line"));
+    card.appendChild(createWorkerMachineLine(workerLine, machineLine, "view-crew-line"));
   } else {
-    card.appendChild(createLine("播種区分", sowingCategoryLine));
+    card.appendChild(createLine("播種区分", sowingCategoryLine, "view-field-line"));
   }
-  card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || "")));
+  card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || ""), "view-time-line"));
 
   const subItems = Array.isArray(w?.items) ? w.items : [];
   if (subItems.length > 1) {
@@ -86,6 +88,7 @@ function createMemoCard(memoValue) {
   card.className = "card view-card diary-memo";
 
   const h3 = document.createElement("h3");
+  h3.className = "view-card-title";
   h3.textContent = "日誌メモ";
   card.appendChild(h3);
 
@@ -132,8 +135,9 @@ function hydrateSowingCategoryForView(workList, categoryMap) {
   });
 }
 
-function createLine(label, value) {
+function createLine(label, value, extraClass = "") {
   const p = document.createElement("p");
+  if (extraClass) p.className = extraClass;
   const strong = document.createElement("strong");
   strong.textContent = `${label}：`;
   p.appendChild(strong);
@@ -141,8 +145,9 @@ function createLine(label, value) {
   return p;
 }
 
-function createWorkerMachineLine(workerLine, machineLine) {
+function createWorkerMachineLine(workerLine, machineLine, extraClass = "") {
   const p = document.createElement("p");
+  if (extraClass) p.className = extraClass;
   const sw = document.createElement("strong");
   sw.textContent = "従事者：";
   p.appendChild(sw);
@@ -155,8 +160,9 @@ function createWorkerMachineLine(workerLine, machineLine) {
   return p;
 }
 
-function createStartEndLine(start, end) {
+function createStartEndLine(start, end, extraClass = "") {
   const p = document.createElement("p");
+  if (extraClass) p.className = extraClass;
   const ss = document.createElement("strong");
   ss.textContent = "開始：";
   p.appendChild(ss);

@@ -186,6 +186,29 @@ async function refreshDiaryMonthMini(selectedDate) {
   renderMonthMiniCalendar(selectedDate, new Set(dates));
 }
 
+function setDiaryMonthMiniOpen(open) {
+  const host = document.getElementById("diaryMonthMini");
+  const btn = document.getElementById("diaryMonthToggleBtn");
+  if (host) host.hidden = !open;
+  if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function bindDiaryMonthToggleButton() {
+  const btn = document.getElementById("diaryMonthToggleBtn");
+  if (!btn || btn.dataset.boundMiniToggle === "1") return;
+  btn.dataset.boundMiniToggle = "1";
+
+  btn.addEventListener("click", async () => {
+    const host = document.getElementById("diaryMonthMini");
+    const nextOpen = host ? host.hidden : true;
+    setDiaryMonthMiniOpen(nextOpen);
+    if (nextOpen) {
+      const date = document.getElementById("diaryDate")?.value || getTodayJstDateString();
+      await refreshDiaryMonthMini(date);
+    }
+  });
+}
+
 function bindMonthMiniDateJump({ mode }) {
   const host = document.getElementById("diaryMonthMini");
   if (!host) return;
@@ -926,6 +949,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (searchInput) searchInput.value = urlQuery;
   bindSearchEvents({ mode, dateInput });
   bindMonthMiniDateJump({ mode });
+  bindDiaryMonthToggleButton();
 
   renderLoadMoreControl(null);
   initCollapse("diarySearchTitle", "diarySearchPanel");
