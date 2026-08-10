@@ -1,12 +1,13 @@
 // seedList-calc.js
+import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 
 // 定植予定日 = 播種日 + 日数
 export function calcPlanPlantDate(sowDate, days) {
   if (!sowDate || !days) return "";
-  const d = new Date(sowDate);
-  if (isNaN(d)) return "";
+  const d = parseDateInputLocal(sowDate);
+  if (!d) return "";
   d.setDate(d.getDate() + Number(days));
-  return d.toISOString().slice(0, 10);
+  return formatLocalYmd(d);
 }
 
 // 計算面積（反）

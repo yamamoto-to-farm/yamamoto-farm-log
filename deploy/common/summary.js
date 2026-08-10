@@ -5,6 +5,7 @@
 import { cb, safeFieldName, safeFileName } from "./utils.js?v=2026033123";
 import { saveLog } from "./save/index.js?v=2026031418";
 import { loadJSON, saveJSON } from "./json.js?v=2026031418";
+import { nowJstIso } from "./date-utils.js";
 
 // ★ 保存モーダル
 import {
@@ -226,7 +227,7 @@ export async function summaryUpdate(plantingRef) {
     .map(x => x.harvestDate)
     .filter(Boolean)
     .sort();
-
+          lastUpdated: nowJstIso()
   const shippingDates = shippingRows
     .map(x => x.shippingDate)
     .filter(Boolean)
@@ -269,7 +270,7 @@ export async function summaryUpdate(plantingRef) {
       firstDate: shippingDates[0] || null,
       lastDate: shippingDates[shippingDates.length - 1] || null
     },
-    lastUpdated: new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString()
+    lastUpdated: nowJstIso()
   };
 
   window._summaryPool[plantingRef] = summary;

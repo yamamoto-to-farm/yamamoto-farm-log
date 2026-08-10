@@ -2,6 +2,7 @@ import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { saveLog } from "../common/save/index.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import { confirmSaveBeforeSubmit } from "../common/save-modal.js";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const DISCARD_REASON_OPTIONS = [
   { value: "補植余り", label: "補植余り" },
@@ -189,7 +190,7 @@ function bindStaticInfo(row, trayType) {
   document.getElementById("remainingTrayText").textContent = `${formatCount(availableTrays)}枚`;
   document.getElementById("remainingPlantText").textContent = `${formatCount(availablePlants)}株`;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalYmd();
   document.getElementById("discardDate").value = today;
 }
 

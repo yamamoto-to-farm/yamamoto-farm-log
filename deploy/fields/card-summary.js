@@ -1,5 +1,6 @@
 // card-summary.js（style.css の h2.section-title に完全対応版）
 import { safeFieldName, safeFileName } from "/common/utils.js";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { loadCSV } from "/common/csv.js";
 import { loadNotesForPlantingRef } from "./notes.js";
 import { renderCultivationOverviewCard } from "./card-cultivation-overview.js?v=20260715-1";
@@ -251,7 +252,7 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
   );
   const plantDate = normalizeDate(s.planting.plantDate || "");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalYmd();
   let cultivationEnd = hasHarvest
     ? s.harvest.lastDate
     : today;

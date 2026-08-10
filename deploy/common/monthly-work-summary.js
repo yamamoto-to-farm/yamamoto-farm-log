@@ -1,5 +1,6 @@
 import { loadCSV } from "./csv.js";
 import { loadJSON, saveJSON } from "./json.js";
+import { nowJstIso } from "./date-utils.js";
 
 export const MONTHLY_WORK_SOURCES = [
   {
@@ -160,7 +161,7 @@ function toDateKey(dateText) {
 }
 
 function nowIso() {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString();
+  return nowJstIso();
 }
 
 function extractDateText(row, dateFields = []) {

@@ -1,6 +1,7 @@
 // seedList-capacity.js
 
 import { getRows } from "./seedList-state.js";
+import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 
 /* ===============================
    育苗ハウス容量チェック（最大同時在庫方式）
@@ -17,9 +18,10 @@ export function checkCapacity() {
   rows.forEach(r => {
     if (r.trayCount > 0 && r.planSowDate) {
       // ★ 冷暗2日後にハウス入り
-      const start = new Date(r.planSowDate);
+      const start = parseDateInputLocal(r.planSowDate);
+      if (!start) return;
       start.setDate(start.getDate() + 2);
-      const startDate = start.toISOString().slice(0, 10);
+      const startDate = formatLocalYmd(start);
 
       events.push({ date: startDate, delta: r.trayCount });
     }
@@ -55,9 +57,10 @@ export function checkCapacity() {
     if (!r.planSowDate || !r.planPlantDate || r.trayCount <= 0) return;
 
     // ★ 行ごとの冷暗2日後
-    const sowStart = new Date(r.planSowDate);
+    const sowStart = parseDateInputLocal(r.planSowDate);
+    if (!sowStart) return;
     sowStart.setDate(sowStart.getDate() + 2);
-    const sowStartStr = sowStart.toISOString().slice(0, 10);
+    const sowStartStr = formatLocalYmd(sowStart);
 
     const over = timeline.some(t =>
       t.date >= sowStartStr &&

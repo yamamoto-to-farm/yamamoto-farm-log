@@ -5,14 +5,14 @@ import {
   calcAreaFromTray,
   calcPlanPlantDate,
   resolveHarvestYM
-} from "./seedList-calc.js";
+} from "./seedList-calc.js?v=20260810-1";
 import {
   openVarietySelectModal,
   openTrayTypeSelectModal,
   openSpacingModal
 } from "./seedList-modal.js";
 import { saveSeedList } from "./seedList-save.js";
-import { checkCapacity } from "./seedList-capacity.js";
+import { checkCapacity } from "./seedList-capacity.js?v=20260810-1";
 
 /* ===============================
    ソート処理

@@ -3,6 +3,7 @@
 import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
 import { safeFileName } from "/common/utils.js?v=1.1";
+import { formatLocalYmd } from "/common/date-utils.js?v=1";
 
 const DEBUG = false;
 const log = (...a) => DEBUG && console.log("[KPI-MONTH]", ...a);
@@ -112,8 +113,8 @@ async function renderMonthPage() {
 
     // 収穫期間
     const dates = map[ref].dates.map(d => new Date(d)).sort((a, b) => a - b);
-    const start = dates.length ? dates[0].toISOString().slice(0, 10) : "-";
-    const end = dates.length ? dates[dates.length - 1].toISOString().slice(0, 10) : "-";
+    const start = dates.length ? formatLocalYmd(dates[0]) : "-";
+    const end = dates.length ? formatLocalYmd(dates[dates.length - 1]) : "-";
     const period = start === end ? start : `${start}〜${end}`;
 
     // 合計用

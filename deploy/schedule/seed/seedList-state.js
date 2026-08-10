@@ -1,6 +1,6 @@
 // seedList-state.js
 
-import { resolveHarvestYM } from "./seedList-calc.js";
+import { resolveHarvestYM } from "./seedList-calc.js?v=20260810-1";
 
 let rows = [];
 

@@ -13,6 +13,7 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import { checkDuplicate } from "../common/duplicate.js";
+import { todayLocalYmd } from "../common/date-utils.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
@@ -90,7 +91,7 @@ export async function initHarvestPage() {
   document.getElementById("harvestDate")
     .addEventListener("change", updatePlantingRefOptions);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalYmd();
   document.getElementById("harvestDate").value = today;
   document.getElementById("shippingDate").value = today;
 

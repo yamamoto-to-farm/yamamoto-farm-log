@@ -4,6 +4,7 @@ import { safeFieldName } from "/common/utils.js?v=1";
 import { rebuildMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { bindModalCloseEvents, closeModal, getFilterData, openModal, setFilterData } from "/common/filter/filter-core.js?v=1";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 let state = {
   fields: [],
@@ -91,7 +92,7 @@ export async function initEditLogPage() {
   applyInitialQueryState();
 
   const dateEl = document.getElementById("target-date");
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
+  if (dateEl && !dateEl.value) dateEl.value = todayLocalYmd();
 
   updateTargetFieldLabel();
   updateTargetModeUI();

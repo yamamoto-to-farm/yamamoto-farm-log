@@ -4,6 +4,7 @@
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
+import { todayLocalYmd } from "../common/date-utils.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
@@ -38,7 +39,7 @@ let checkedOrder = [];
 // 初期化
 // ===============================
 export function initShippingPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalYmd();
   document.getElementById("shippingDate").value = today;
 
   loadUnshipped();
