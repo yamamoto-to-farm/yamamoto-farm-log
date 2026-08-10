@@ -176,6 +176,13 @@ export async function showWorkSummary(date, preloadedLogs = null) {
   }).join("")}`;
 }
 
+function buildEditLogUrl(date) {
+  const params = new URLSearchParams();
+  if (date) params.set("date", date);
+  params.set("mode", "date");
+  return `/admin/edit-log/index.html?${params.toString()}`;
+}
+
 export async function searchLogsByKeyword(keyword, options = {}) {
   const query = normalizeToken(keyword);
   const limit = Number(options?.limit || 80);
