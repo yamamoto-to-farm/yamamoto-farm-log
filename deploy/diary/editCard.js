@@ -96,6 +96,11 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     card.className = `card edit-card ${getWorkToneClass(getWorkTypeText(item))}`;
     card.dataset.groupIndex = String(idx);
     card.dataset.workType = getWorkTypeText(item);
+    card.dataset.mergeKey = buildMergeComparableKey({
+      type: getWorkTypeText(item),
+      workers: item.workers || existing.workers,
+      machine
+    });
     card.dataset.selected = "false";
 
     card.innerHTML = `
@@ -160,6 +165,31 @@ function normalizeMultiText(value) {
 
 function getWorkTypeText(item) {
   return String(item?.type || item?.workType || "").trim();
+}
+
+function normalizeMergeScalar(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeMergeList(value) {
+  const text = normalizeMultiText(value);
+  if (!text) return [];
+
+  return text
+    .split(/[\/／,，、]/)
+    .map(v => normalizeMergeScalar(v))
+    .filter(Boolean)
+    .filter((v, i, arr) => arr.indexOf(v) === i)
+    .sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function buildMergeComparableKey({ type, workers, machine }) {
+  const typeKey = normalizeMergeScalar(type);
+  const workersKey = normalizeMergeList(workers).join("|");
+  const machineKey = normalizeMergeList(machine).join("|");
+  return `${typeKey}__${workersKey}__${machineKey}`;
 }
 
 function getFieldParts(fieldValue, subItems = []) {
@@ -357,27 +387,47 @@ function bindManualMergeControls(diary, timestampRows) {
   if (!mergeBtn || !clearBtn || !cards.length) return;
 
   const isInteractiveTarget = target => {
-    return Boolean(target.closest("input, button, textarea, select, option, summary, details, label, a"));
+    return Boolean(target.closest("input, button, textarea, select, option, a"));
   };
 
   const getSelectedCards = () => cards.filter(card => card.dataset.selected === "true");
 
+  const applySelectedVisual = (card, isSelected) => {
+    if (!card) return;
+    if (isSelected) {
+      card.style.background = "linear-gradient(180deg, #ecfeff 0%, #ccfbf1 100%)";
+      card.style.borderColor = "#14b8a6";
+      card.style.borderLeftColor = "#0f766e";
+      card.style.boxShadow = "0 0 0 2px rgba(20, 184, 166, 0.24)";
+      return;
+    }
+
+    card.style.background = "";
+    card.style.borderColor = "";
+    card.style.borderLeftColor = "";
+    card.style.boxShadow = "";
+  };
+
   const updateButtonState = () => {
     const selectedCards = getSelectedCards();
     const count = selectedCards.length;
+    const selectedMergeKey = count > 0 ? String(selectedCards[0]?.dataset.mergeKey || "") : "";
 
     cards.forEach(card => {
       const isSelected = card.dataset.selected === "true";
-      const shouldDisable = false;
+      const cardMergeKey = String(card?.dataset.mergeKey || "");
+      const shouldDisable = Boolean(selectedMergeKey) && !isSelected && cardMergeKey !== selectedMergeKey;
       card.classList.toggle("merge-card-disabled", shouldDisable);
       card.classList.toggle("merge-card-selected", isSelected);
+      card.classList.toggle("is-selected", isSelected);
       card.dataset.mergeDisabled = shouldDisable ? "true" : "false";
+      applySelectedVisual(card, isSelected);
     });
 
     if (guideEl) {
       guideEl.textContent = count > 0
-        ? `選択中: ${count}件`
-        : "マージしたいカードを選択してください。";
+        ? `選択中: ${count}件（圃場以外が一致するカードのみ追加選択できます）`
+        : "圃場以外（作業種類・従事者・作業機械）が一致するカードを選択してください。";
     }
 
     mergeBtn.disabled = count < 2;
@@ -412,6 +462,16 @@ function bindManualMergeControls(diary, timestampRows) {
 
     const currentGroups = Array.isArray(window.__currentDiaryWorkGroups) ? [...window.__currentDiaryWorkGroups] : [];
     const selectedGroups = selectedIndexes.map(index => currentGroups[index]).filter(Boolean);
+    const mergeKeySet = [...new Set(selectedGroups.map(group => buildMergeComparableKey({
+      type: group?.type || group?.workType || "",
+      workers: group?.workers || "",
+      machine: group?.machine || ""
+    })).filter(Boolean))];
+
+    if (mergeKeySet.length > 1) {
+      alert("圃場以外（作業種類・従事者・作業機械）が一致するカードのみマージできます。");
+      return;
+    }
 
     const mergedGroup = buildManualMergedGroup(selectedGroups);
     const nextGroups = currentGroups.filter((_, index) => !selectedIndexes.includes(index));

@@ -928,6 +928,23 @@
   color: #134e4a;
 }
 
+.edit-card[data-group-index].is-selected {
+  border-color: #14b8a6 !important;
+  border-left-color: #0f766e !important;
+  background: linear-gradient(180deg, #ecfeff 0%, #ccfbf1 100%) !important;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.24) !important;
+}
+
+.edit-card[data-group-index].is-selected .edit-line,
+.edit-card[data-group-index].is-selected .edit-crew-line,
+.edit-card[data-group-index].is-selected .edit-time-row,
+.edit-card[data-group-index].is-selected p,
+.edit-card[data-group-index].is-selected li,
+.edit-card[data-group-index].is-selected summary,
+.edit-card[data-group-index].is-selected label {
+  color: #134e4a !important;
+}
+
 .diary-memo textarea {
   width: 100%;
   resize: vertical;
