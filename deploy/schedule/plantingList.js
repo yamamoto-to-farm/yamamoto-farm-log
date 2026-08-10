@@ -703,29 +703,38 @@ function renderFieldCards(rows, state = {}) {
   `;
 
   if (displayMode === PLANTING_VIEW_MODE_DATE) {
-    const dateRows = [];
+    const dateRowMap = new Map();
+
+    const pushDateRow = (planDate, fieldName, areaName, assignment = null) => {
+      const dateKey = String(planDate || "").trim();
+      const rowKey = `${dateKey}\t${fieldName}`;
+      if (!dateRowMap.has(rowKey)) {
+        dateRowMap.set(rowKey, {
+          planDate: dateKey,
+          fieldName,
+          areaName,
+          assignments: []
+        });
+      }
+      if (assignment) {
+        dateRowMap.get(rowKey).assignments.push(assignment);
+      }
+    };
+
     targetFields.forEach(field => {
       const fieldName = String(field.name || "").trim();
       const areaName = String(field.area || "その他").trim() || "その他";
       const assignments = planningAssignments.get(fieldName) || [];
       if (!assignments.length) {
-        dateRows.push({
-          planDate: "",
-          fieldName,
-          areaName,
-          assignments: []
-        });
+        pushDateRow("", fieldName, areaName);
         return;
       }
       assignments.forEach(item => {
-        dateRows.push({
-          planDate: String(item.planPlantDate || "").trim(),
-          fieldName,
-          areaName,
-          assignments: [item]
-        });
+        pushDateRow(String(item.planPlantDate || "").trim(), fieldName, areaName, item);
       });
     });
+
+    const dateRows = Array.from(dateRowMap.values());
 
     dateRows.sort((a, b) => {
       const ad = String(a.planDate || "").trim();
@@ -787,7 +796,7 @@ function renderFieldCards(rows, state = {}) {
         const plannedPlants = assignments.reduce((acc, v) => acc + getAssignedPlants(v), 0);
         const plannedTrays = assignments.reduce((acc, v) => acc + getAssignedTrayCount(v), 0);
         const assignmentRows = buildAssignmentDisplayRows(assignments);
-        const whenHtml = assignmentRows.datesHtml;
+        const planDateLabel = String(item.planDate || "").trim() || "未設定";
         const whatHtml = assignmentRows.varietiesHtml;
         const planTraySummary = buildPlanTraySummary(assignments);
         const planRowsHtml = planTraySummary.itemLinesHtml;
@@ -802,13 +811,13 @@ function renderFieldCards(rows, state = {}) {
               <div class="field-sub">${escapeHtml(String(item.areaName || "その他"))}</div>
             </td>
             <td>
-              <div class="plan-sub plan-lines">${whenHtml}</div>
+              <div class="plan-sub">${escapeHtml(planDateLabel)}</div>
             </td>
             <td>
               <div class="plan-sub plan-lines">${whatHtml}</div>
             </td>
             <td>
-              <div class="plan-sub"><strong>${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
+              <div class="plan-sub"><strong>合計: ${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
               <div class="plan-sub plan-lines">${planRowsHtml}</div>
               <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
             </td>
@@ -896,7 +905,7 @@ function renderFieldCards(rows, state = {}) {
               <div class="plan-sub plan-lines">${whatHtml}</div>
             </td>
             <td>
-              <div class="plan-sub"><strong>${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
+              <div class="plan-sub"><strong>合計: ${planTraySummary.totalTrays.toLocaleString()}枚 / ${planTraySummary.totalPlants.toLocaleString()}株</strong></div>
               <div class="plan-sub plan-lines">${planRowsHtml}</div>
               <div class="plan-sub">作付面積: ${planTraySummary.areaTan.toFixed(2)}反</div>
             </td>
@@ -1289,7 +1298,7 @@ function buildPlanTraySummary(assignments) {
       const trayType = String(item.trayType || "").trim() || "tray未設定";
       const plants = getAssignedPlants(item);
       const variety = String(item.variety || "").trim() || "(品種未設定)";
-      return `<div class="plan-line">${escapeHtml(variety)}: ${Math.round(trayCount).toLocaleString()}枚（${escapeHtml(trayType)}） / ${Math.round(plants).toLocaleString()}株</div>`;
+      return `<div class="plan-line">${escapeHtml(variety)}: ${Math.round(trayCount).toLocaleString()}枚（${escapeHtml(trayType)}）</div>`;
     })
     .join("");
 
