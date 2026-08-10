@@ -1028,13 +1028,44 @@
 }
 
 #weatherBox .weather-card {
-  padding: 10px 14px;
+  padding: 12px 14px;
   margin-bottom: 10px;
 }
 
 #weatherBox .weather-card p {
-  margin: 4px 0;
+  margin: 2px 0;
   line-height: 1.35;
+}
+
+#weatherBox .weather-summary-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  color: #334155;
+  font-size: 1rem;
+}
+
+#weatherBox .weather-summary-line .weather-main {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+#weatherBox .weather-summary-line strong {
+  color: #0f172a;
+}
+
+@media (max-width: 640px) {
+  #weatherBox .weather-summary-line {
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-x: visible;
+    gap: 6px 10px;
+    font-size: 0.95rem;
+  }
 }
 
 /* 作業内容 */

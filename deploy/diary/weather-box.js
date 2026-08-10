@@ -37,12 +37,11 @@ export async function renderWeatherBox(date) {
   // UI表示（タイトルなし・観測地点なし）
   box.innerHTML = `
     <div class="card weather-card">
-
-      <p class="weather-icon">${icon} ${type}</p>
-
-      <p><strong>最高：</strong> ${data.tmax}℃ / <strong>最低：</strong> ${data.tmin}℃</p>
-      <p><strong>降水量：</strong> ${data.precip}mm / <strong>日照時間：</strong> ${data.sunshine}h</p>
-
+      <p class="weather-summary-line">
+        <span class="weather-main">${icon} ${type}</span>
+        <span><strong>最高：</strong> ${data.tmax}℃ / <strong>最低：</strong> ${data.tmin}℃</span>
+        <span><strong>降水量：</strong> ${data.precip}mm / <strong>日照時間：</strong> ${data.sunshine}h</span>
+      </p>
     </div>
   `;
 }
