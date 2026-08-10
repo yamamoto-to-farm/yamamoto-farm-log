@@ -348,11 +348,23 @@ export async function printInline(selector, title = "印刷") {
     #form-area.diary-print-onepage .diary-print-date-card {
       break-inside: avoid;
       page-break-inside: avoid;
+      margin: 0 0 8px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
     }
     #form-area.diary-print-onepage .diary-print-dateline {
+      display: block;
       margin: 0 !important;
+      padding: 6px 8px;
+      border: 1px solid #cfd8e3;
+      border-radius: 4px;
+      background: #fff;
       font-size: 12px !important;
       font-weight: 600;
+      line-height: 1.35;
       color: #111;
     }
     #form-area.diary-print-onepage .card,

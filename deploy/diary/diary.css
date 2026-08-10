@@ -241,18 +241,19 @@
 
 #diaryDateNav #diaryDate[readonly] {
   user-select: none;
+  cursor: pointer;
 }
 
 #nextDayBtn {
-  order: 6;
+  order: 3;
 }
 
 #todayBtn {
-  order: 5;
+  order: 4;
 }
 
 #lastYearBtn {
-  order: 2;
+  order: 5;
 }
 
 .section-title {
@@ -543,24 +544,20 @@
   order: 1;
 }
 
-#diaryMonthToggleBtn {
+#diaryDateNav #diaryDate {
   order: 2;
 }
 
-#diaryDateNav #diaryDate {
+#nextDayBtn {
   order: 3;
 }
 
-#nextDayBtn {
+#todayBtn {
   order: 4;
 }
 
-#todayBtn {
-  order: 5;
-}
-
 #lastYearBtn {
-  order: 6;
+  order: 5;
 }
 
 @media (max-width: 640px) {

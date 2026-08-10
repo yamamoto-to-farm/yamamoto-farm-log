@@ -13,7 +13,7 @@ import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
-import { printCurrentPage } from "/common/utils.js?v=20260716-4";
+import { printCurrentPage } from "/common/utils.js?v=20260810-1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -179,15 +179,20 @@ async function refreshDiaryMonthMini(selectedDate) {
 function setDiaryMonthMiniOpen(open) {
   const host = document.getElementById("diaryMonthMini");
   const btn = document.getElementById("diaryMonthToggleBtn");
+  const dateInput = document.getElementById("diaryDate");
   if (host) host.hidden = !open;
   if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+  if (dateInput) dateInput.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
 function bindDiaryMonthToggleButton() {
   const btn = document.getElementById("diaryMonthToggleBtn");
   const dateInput = document.getElementById("diaryDate");
-  if (!btn || btn.dataset.boundMiniToggle === "1") return;
-  btn.dataset.boundMiniToggle = "1";
+  if (!btn && !dateInput) return;
+  if (btn && btn.dataset.boundMiniToggle === "1") return;
+  if (btn) btn.dataset.boundMiniToggle = "1";
+  if (dateInput && dateInput.dataset.boundMiniToggle === "1") return;
+  if (dateInput) dateInput.dataset.boundMiniToggle = "1";
 
   const toggleMiniCalendar = async () => {
     const host = document.getElementById("diaryMonthMini");
@@ -199,7 +204,9 @@ function bindDiaryMonthToggleButton() {
     }
   };
 
-  btn.addEventListener("click", toggleMiniCalendar);
+  if (btn) {
+    btn.addEventListener("click", toggleMiniCalendar);
+  }
   if (dateInput) {
     dateInput.addEventListener("click", toggleMiniCalendar);
     dateInput.addEventListener("keydown", event => {

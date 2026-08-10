@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/common/css/main.css">
 
   <!-- diaryページ専用CSS -->
-  <link rel="stylesheet" href="/diary/diary.css?v=20260810-7">
+  <link rel="stylesheet" href="/diary/diary.css?v=20260810-8">
 </head>
 
 <body>
@@ -46,8 +46,7 @@
     <div class="card diary-date-card">
       <div id="diaryDateNav" class="form-field">
         <button id="prevDayBtn" type="button" class="secondary-btn day-nav-btn">前日</button>
-        <button id="diaryMonthToggleBtn" type="button" class="secondary-btn diary-month-toggle-btn" aria-expanded="false" aria-controls="diaryMonthMini" aria-label="ミニカレンダーを開く">📅</button>
-        <input type="text" id="diaryDate" class="form-input" readonly inputmode="none" aria-label="日付">
+        <input type="text" id="diaryDate" class="form-input" readonly inputmode="none" aria-label="日付（クリックでカレンダー表示）" aria-controls="diaryMonthMini" aria-expanded="false">
         <button id="nextDayBtn" type="button" class="secondary-btn day-nav-btn">翌日</button>
         <button id="todayBtn" type="button" class="secondary-btn day-nav-btn">今日</button>
         <button id="lastYearBtn" type="button" class="secondary-btn day-nav-btn" aria-label="昨年の同じ日付へ移動">昨年</button>
@@ -91,7 +90,7 @@
   <script type="module" src="/diary/viewCard.js?v=20260810-1"></script>
   <script type="module" src="/diary/weather-box.js"></script>
   <script type="module" src="/diary/loadDiary.js"></script>
-  <script type="module" src="/diary/diary.js?v=20260810-15"></script>
+  <script type="module" src="/diary/diary.js?v=20260810-16"></script>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
