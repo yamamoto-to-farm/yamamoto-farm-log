@@ -28,7 +28,7 @@ export async function initViewPageWithOptions(options = {}) {
     ? normalizeViewGroups(hydrateSowingCategoryForView(diary.work, autoSowingCategoryMap))
     : normalizeViewGroups(mergeWorkEntries(autoList, timestampRows));
 
-  if (!diary) {
+  if (!diary && !workList.length) {
     area.innerHTML = `
       <div class="card view-card">
         <p>この日の作業日誌はありません。</p>
@@ -43,11 +43,23 @@ export async function initViewPageWithOptions(options = {}) {
   area.innerHTML = "";
   const frag = document.createDocumentFragment();
 
+  if (!diary && workList.length) {
+    const infoCard = document.createElement("div");
+    infoCard.className = "card view-card diary-memo";
+    infoCard.innerHTML = `
+      <h3 class="view-card-title">作業内容</h3>
+      <p>この日の保存済み日誌はありません。作業ログから自動表示しています。</p>
+    `;
+    frag.appendChild(infoCard);
+  }
+
   workList.forEach(w => {
     frag.appendChild(createViewWorkCard(w));
   });
 
-  frag.appendChild(createMemoCard(diary.memo));
+  if (diary) {
+    frag.appendChild(createMemoCard(diary.memo));
+  }
   area.appendChild(frag);
 }
 
