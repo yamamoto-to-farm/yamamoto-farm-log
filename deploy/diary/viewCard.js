@@ -7,6 +7,16 @@ import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-sum
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
 
+const WORK_LOG_TYPE_BY_CARD = [
+  { pattern: /手作業除草/, type: "hand-weeding" },
+  { pattern: /除草|草刈/, type: "weeding" },
+  { pattern: /土づくり|耕起|耕うん|ロータリー|プラソイラ|スタブルカルチ/, type: "tillage" },
+  { pattern: /圃場整備/, type: "field-maintenance" },
+  { pattern: /防除/, type: "pesticide" },
+  { pattern: /施肥/, type: "fertilizer" },
+  { pattern: /潅水|灌水/, type: "watering" }
+];
+
 /**
  * 閲覧専用カードを描画する
  */
@@ -71,6 +81,8 @@ function createViewWorkCard(w) {
   const sowingCategoryLine = normalizeSowingCategoryText(w);
   const subItems = Array.isArray(w?.items) ? w.items : [];
   const fieldParts = isSowing ? [] : getFieldParts(w?.field, subItems);
+  const date = String(document.getElementById("diaryDate")?.value || "").trim();
+  const workLogType = resolveWorkLogType(title);
 
   const card = document.createElement("div");
   card.className = `card view-card ${getWorkToneClass(title)}`;
@@ -81,7 +93,10 @@ function createViewWorkCard(w) {
   card.appendChild(h3);
 
   if (!isSowing) {
-    card.appendChild(createFieldBlock("圃場", fieldParts, "view-field-line"));
+    card.appendChild(createFieldBlock("圃場", fieldParts, {
+      extraClass: "view-field-line",
+      linkBuilder: field => buildFieldWorkLogsUrl({ field, end: date, type: workLogType })
+    }));
     card.appendChild(createWorkerMachineLine(workerLine, machineLine, "view-crew-line"));
   } else {
     card.appendChild(createLine("播種区分", sowingCategoryLine, "view-field-line"));
@@ -157,8 +172,10 @@ function createLine(label, value, extraClass = "") {
   return p;
 }
 
-function createFieldBlock(label, values, extraClass = "") {
+function createFieldBlock(label, values, options = "") {
   const p = document.createElement("p");
+  const extraClass = typeof options === "string" ? options : String(options?.extraClass || "").trim();
+  const linkBuilder = typeof options === "object" ? options?.linkBuilder : null;
   if (extraClass) p.className = `${extraClass} field-multi-block`;
 
   const strong = document.createElement("strong");
@@ -172,7 +189,8 @@ function createFieldBlock(label, values, extraClass = "") {
   }
 
   if (list.length === 1) {
-    p.appendChild(document.createTextNode(` ${list[0]}`));
+    p.appendChild(document.createTextNode(" "));
+    p.appendChild(createFieldValueNode(list[0], linkBuilder));
     return p;
   }
 
@@ -185,13 +203,34 @@ function createFieldBlock(label, values, extraClass = "") {
       sep.textContent = "／";
       wrapper.appendChild(sep);
     }
-    const item = document.createElement("span");
-    item.className = "field-multi-item";
-    item.textContent = value;
-    wrapper.appendChild(item);
+    wrapper.appendChild(createFieldValueNode(value, linkBuilder));
   });
   p.appendChild(wrapper);
   return p;
+}
+
+function createFieldValueNode(value, linkBuilder) {
+  const text = String(value || "").trim();
+  if (!text) {
+    const span = document.createElement("span");
+    span.className = "field-multi-item";
+    span.textContent = "（未入力）";
+    return span;
+  }
+
+  const href = typeof linkBuilder === "function" ? linkBuilder(text) : "";
+  if (!href) {
+    const span = document.createElement("span");
+    span.className = "field-multi-item";
+    span.textContent = text;
+    return span;
+  }
+
+  const link = document.createElement("a");
+  link.className = "field-multi-item field-log-link";
+  link.href = href;
+  link.textContent = text;
+  return link;
 }
 
 function createWorkerMachineLine(workerLine, machineLine, extraClass = "") {
@@ -270,6 +309,32 @@ function normalizeSowingCategoryText(w) {
   if (nested) return nested;
 
   return normalizeMultiText(w?.workType || w?.type) || "（未入力）";
+}
+
+function resolveWorkLogType(title) {
+  const text = String(title || "").trim();
+  const matched = WORK_LOG_TYPE_BY_CARD.find(entry => entry.pattern.test(text));
+  return matched?.type || "all";
+}
+
+function normalizeFieldLinkParam(field) {
+  return String(field || "")
+    .replace(/[()（）]/g, "")
+    .trim();
+}
+
+function buildFieldWorkLogsUrl({ field, end, type }) {
+  const normalizedField = normalizeFieldLinkParam(field);
+  if (!normalizedField) return "";
+
+  const params = new URLSearchParams({
+    field: normalizedField,
+    start: "",
+    end: String(end || "").trim(),
+    type: String(type || "all").trim() || "all"
+  });
+
+  return `/fields/work-logs.html?${params.toString()}`;
 }
 
 function getFieldParts(fieldValue, subItems = []) {
