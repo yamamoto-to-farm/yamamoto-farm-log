@@ -3,6 +3,7 @@ import { renderHeader } from "/common/header.js";
 import { loadCSV } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { loadMonthlyWorkSummary } from "/common/monthly-work-summary.js?v=1";
+import { loadWeatherYear, classifyWeather, weatherIcon } from "/common/weather/weather.js?v=1";
 
 const SOURCES = [
   {
@@ -374,6 +375,66 @@ function buildCalendarDays(ym) {
   return cells;
 }
 
+function parseNumberOrNull(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function formatPrecipMm(value) {
+  if (!Number.isFinite(value)) return "--";
+  const rounded = Math.round(value * 10) / 10;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return rounded.toFixed(1);
+}
+
+function buildDayWeatherData(dateKey, weatherRowsByDate) {
+  const row = weatherRowsByDate?.[dateKey];
+  if (!row || typeof row !== "object") return null;
+
+  const precip = parseNumberOrNull(row.precip);
+  const sunshine = parseNumberOrNull(row.sunshine);
+  const weatherType = classifyWeather(precip ?? 0, sunshine ?? 0);
+  const icon = weatherIcon(weatherType);
+  const precipText = `${formatPrecipMm(precip)}mm`;
+
+  return {
+    icon,
+    weatherType,
+    precipText,
+    tooltip: `${dateKey} 天気: ${weatherType} / 降水量: ${precipText}`
+  };
+}
+
+async function buildWeatherByMonth(visibleMonths) {
+  const months = Array.isArray(visibleMonths) ? visibleMonths : [];
+  const years = [...new Set(months.map(ym => String(ym || "").slice(0, 4)).filter(y => /^\d{4}$/.test(y)))];
+
+  const yearPairs = await Promise.all(
+    years.map(async year => [year, await loadWeatherYear(year)])
+  );
+  const weatherByYear = Object.fromEntries(yearPairs);
+
+  const result = {};
+
+  months.forEach(ym => {
+    const weatherDays = {};
+    const days = buildCalendarDays(ym).filter(Boolean);
+
+    days.forEach(cell => {
+      const year = String(cell.dateKey).slice(0, 4);
+      const weatherRowsByDate = weatherByYear?.[year] || {};
+      const weather = buildDayWeatherData(cell.dateKey, weatherRowsByDate);
+      if (weather) {
+        weatherDays[cell.dateKey] = weather;
+      }
+    });
+
+    result[ym] = weatherDays;
+  });
+
+  return result;
+}
+
 function getVisibleMonths(allMonths, mode, referenceYm) {
   const available = new Set(allMonths);
 
@@ -414,7 +475,7 @@ function renderMonthOptions(months, referenceYm) {
   }).join("");
 }
 
-function renderVisibleMonths(months, monthDataMap, mode, referenceYm, selectedSourceKeys) {
+function renderVisibleMonths(months, monthDataMap, mode, referenceYm, selectedSourceKeys, weatherByMonth = {}) {
   const visibleMonths = getVisibleMonths(months, mode, referenceYm);
   const monthList = document.getElementById("month-list");
   const filterNote = document.getElementById("filter-note");
@@ -436,11 +497,11 @@ function renderVisibleMonths(months, monthDataMap, mode, referenceYm, selectedSo
 
   const openYm = visibleMonths.includes(referenceYm) ? referenceYm : visibleMonths[0];
   monthList.innerHTML = visibleMonths
-    .map(ym => renderMonthCard(ym, monthDataMap[ym] || {}, ym === openYm, selectedSourceKeys))
+    .map(ym => renderMonthCard(ym, monthDataMap[ym] || {}, ym === openYm, selectedSourceKeys, weatherByMonth?.[ym] || {}))
     .join("");
 }
 
-function renderMonthCard(ym, monthData, isOpen, selectedSourceKeys) {
+function renderMonthCard(ym, monthData, isOpen, selectedSourceKeys, monthWeather = {}) {
   const selectedSet = new Set(normalizeSelectedSourceKeys(selectedSourceKeys));
   const totals = SOURCES.map(({ key, label, className }) => ({
     key,
@@ -478,6 +539,7 @@ function renderMonthCard(ym, monthData, isOpen, selectedSourceKeys) {
             if (!cell) return '<div class="calendar-cell is-empty"></div>';
 
             const daySources = dayMap[cell.dateKey] || {};
+            const weather = monthWeather?.[cell.dateKey] || null;
             const href = `/diary/index.html?date=${cell.dateKey}`;
             const filteredEntries = Object.entries(daySources).filter(([sourceKey]) => selectedSet.has(sourceKey));
             const dots = filteredEntries
@@ -493,10 +555,19 @@ function renderMonthCard(ym, monthData, isOpen, selectedSourceKeys) {
                 return `<span class="day-dot ${className}" title="${cell.dateKey} ${label} ${countLabel(count)}"></span>`;
               })
               .join("");
+            const weatherHtml = weather
+              ? `<span class="day-weather" title="${weather.tooltip}"><span class="day-weather-icon">${weather.icon}</span><span class="day-rain">${weather.precipText}</span></span>`
+              : '<span class="day-weather day-weather-empty" aria-hidden="true"></span>';
+            const cardTitle = weather
+              ? `${cell.dateKey} の作業日誌を開く（${weather.weatherType} / 降水量 ${weather.precipText}）`
+              : `${cell.dateKey} の作業日誌を開く`;
 
             return `
-              <a class="calendar-cell ${filteredEntries.length ? "has-work" : ""}" href="${href}" title="${cell.dateKey} の作業日誌を開く">
-                <span class="day-number">${cell.day}</span>
+              <a class="calendar-cell ${filteredEntries.length ? "has-work" : ""}" href="${href}" title="${cardTitle}">
+                <span class="day-top">
+                  <span class="day-number">${cell.day}</span>
+                  ${weatherHtml}
+                </span>
                 <span class="day-dots">${dots}</span>
               </a>
             `;
@@ -542,6 +613,7 @@ async function main() {
   const supportedModes = new Set(["latest4", "around2", "sameMonth"]);
   const initialMode = supportedModes.has(initialFilter.mode) ? initialFilter.mode : "latest4";
   let selectedSourceKeys = normalizeSelectedSourceKeys(initialFilter.selectedSourceKeys);
+  let renderSeq = 0;
 
   renderMonthOptions(months, defaultReferenceYm);
 
@@ -563,21 +635,26 @@ async function main() {
     });
   }
 
-  const applyFilter = () => {
+  const applyFilter = async () => {
+    const currentSeq = ++renderSeq;
     const mode = monthMode.value;
     const ym = referenceMonth.value || defaultReferenceYm;
     const visibleMonths = getVisibleMonths(months, mode, ym);
     const sourceTotalCounts = buildSourceTotalCounts(summary.months, visibleMonths);
     setFilterState(mode, ym, selectedSourceKeys);
     renderSourceFilterChips(selectedSourceKeys, sourceTotalCounts);
-    renderVisibleMonths(months, summary.months, mode, ym, selectedSourceKeys);
+
+    const weatherByMonth = await buildWeatherByMonth(visibleMonths);
+    if (currentSeq !== renderSeq) return;
+
+    renderVisibleMonths(months, summary.months, mode, ym, selectedSourceKeys, weatherByMonth);
   };
 
   monthMode.value = initialMode;
   referenceMonth.value = defaultReferenceYm;
 
-  monthMode.addEventListener("change", applyFilter);
-  referenceMonth.addEventListener("change", applyFilter);
+  monthMode.addEventListener("change", () => { void applyFilter(); });
+  referenceMonth.addEventListener("change", () => { void applyFilter(); });
 
   const sourceFilterArea = document.getElementById("source-filter-chips");
   if (sourceFilterArea) {
@@ -596,11 +673,11 @@ async function main() {
       }
 
       selectedSourceKeys = normalizeSelectedSourceKeys([...set]);
-      applyFilter();
+      void applyFilter();
     });
   }
 
-  applyFilter();
+  void applyFilter();
 }
 
 main();
