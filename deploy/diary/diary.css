@@ -1040,11 +1040,10 @@
 #weatherBox .weather-summary-line {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  gap: 10px;
+  flex-wrap: wrap;
+  white-space: normal;
+  overflow: visible;
   color: #334155;
   font-size: 1rem;
 }
@@ -1060,9 +1059,6 @@
 
 @media (max-width: 640px) {
   #weatherBox .weather-summary-line {
-    flex-wrap: wrap;
-    white-space: normal;
-    overflow-x: visible;
     gap: 6px 10px;
     font-size: 0.95rem;
   }
