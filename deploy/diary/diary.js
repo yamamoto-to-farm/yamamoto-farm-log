@@ -13,7 +13,7 @@ import { renderWeatherBox } from "./weather-box.js";
 import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
-import { printCurrentPage } from "/common/utils.js?v=20260810-1";
+import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const SEARCH_LIMIT = 80;

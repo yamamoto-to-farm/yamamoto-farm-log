@@ -371,7 +371,6 @@ export async function printInline(selector, title = "印刷") {
     #form-area.diary-print-onepage .view-card,
     #form-area.diary-print-onepage .edit-card,
     #form-area.diary-print-onepage .weather-card,
-    #form-area.diary-print-onepage .diary-print-date-card,
     #form-area.diary-print-onepage #workList,
     #form-area.diary-print-onepage #workContentWrapper {
       margin: 0 0 8px !important;
