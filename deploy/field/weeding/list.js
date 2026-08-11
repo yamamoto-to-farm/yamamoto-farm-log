@@ -8,6 +8,7 @@ import { getDefaultPeriodRange } from "/common/date-range.js?v=1";
 import { collectUniqueMethods, matchesSharedListFilters } from "/common/list-filter-utils.js?v=1";
 import { buildPeriodCountSummaryHtml } from "/common/period-summary.js?v=1";
 import { buildAreaLatestModel, getAreaStatusMeta } from "/common/area-latest.js?v=1";
+import { todayLocalValue, localDateValue, diffDateValuesInDays } from "/common/date-utils.js?v=1";
 
 const MODES = {
   spray: {
@@ -36,13 +37,7 @@ const state = {
 };
 
 function toDateValue(dateText) {
-  const date = new Date(`${dateText}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
-}
-
-function getTodayValue() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return localDateValue(dateText);
 }
 
 function ageClass(days) {
@@ -639,7 +634,7 @@ function renderAreaList(modeItems) {
     periodStart: state.periodStart,
     periodEnd: state.periodEnd,
     areaSort: state.areaSort,
-    todayValue: getTodayValue(),
+    todayValue: todayLocalValue(),
     getField: row => row.field,
     getDate: row => row.date,
     getDateValue: row => row.dateValue,
@@ -735,7 +730,7 @@ function render() {
     }
   }
 
-  const today = getTodayValue();
+  const today = todayLocalValue();
 
   const list = [...items].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
@@ -769,7 +764,7 @@ function render() {
 
     sprayFieldRows.forEach(r => {
       const sprayMethod = String(r.sprayMethod || "").trim() || "-";
-      const days = Math.max(0, Math.round((today - toDateValue(r.date)) / 86400000));
+      const days = Math.max(0, diffDateValuesInDays(today, toDateValue(r.date)) || 0);
       const cls = ageClass(days);
       html += `
         <tr>
@@ -804,7 +799,7 @@ function render() {
 
     list.forEach(r => {
       const machineLabel = String(r.machine || "").trim() || "-";
-      const days = Math.max(0, Math.round((today - toDateValue(r.date)) / 86400000));
+      const days = Math.max(0, diffDateValuesInDays(today, toDateValue(r.date)) || 0);
       const cls = ageClass(days);
       html += `
         <tr>

@@ -25,6 +25,20 @@ export function parseDateInputLocal(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+export function localDateValue(value) {
+  const date = parseDateInputLocal(value);
+  return date ? date.getTime() : 0;
+}
+
+export function todayLocalValue(baseDate = new Date()) {
+  return localDateValue(todayLocalYmd(baseDate));
+}
+
+export function diffDateValuesInDays(later, earlier) {
+  const gap = Math.round((Number(later) - Number(earlier)) / 86400000);
+  return Number.isFinite(gap) ? gap : null;
+}
+
 export function nowJstIso(baseMs = Date.now()) {
   return new Date(baseMs + 9 * 60 * 60 * 1000).toISOString();
 }

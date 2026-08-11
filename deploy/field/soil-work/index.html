@@ -121,6 +121,7 @@
     import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
     import { renderHeader } from "/common/header.js?v=1";
     import { initSoilWorkPage } from "./soil-work.js?v=1";
+    import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
@@ -132,8 +133,7 @@
       const params = new URLSearchParams(location.search);
       window.__soil_work_machine = params.get("machine") || "machine1";
 
-      document.getElementById("date").value =
-        new Date().toISOString().slice(0, 10);
+      document.getElementById("date").value = todayLocalYmd();
 
       await initSoilWorkPage();
     });

@@ -128,6 +128,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
+    import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -140,7 +141,7 @@
       document.getElementById("form-area").style.display = "block";
 
       // 日付初期値
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayLocalYmd();
       document.getElementById("harvestDate").value = today;
       document.getElementById("shippingDate").value = today;
 

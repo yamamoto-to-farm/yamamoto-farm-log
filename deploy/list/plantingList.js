@@ -5,6 +5,7 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 import {
   openYearModal,
@@ -255,8 +256,8 @@ function getPostPlantingDays(plantDate, plantingRef) {
     return `${days}日で収穫`;
   }
 
-  const now = new Date();
-  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const today = parseYmdToUtcDate(todayLocalYmd());
+  if (!(today instanceof Date)) return "-";
   const elapsed = diffDays(plant, today);
   if (!Number.isFinite(elapsed)) return "-";
   return `${elapsed}日経過`;

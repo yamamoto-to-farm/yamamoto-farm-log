@@ -174,6 +174,7 @@
     import { renderHeader } from "/common/header.js";
     import { attachWorkDoneButton } from "/common/utils.js";
     import { initPlantingPage } from "./planting.js?v=20260716-2";
+    import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
@@ -186,7 +187,7 @@
       document.getElementById("form-area").style.display = "block";
 
       // 日付初期値
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayLocalYmd();
       document.getElementById("plantDate").value = today;
 
       // 作業完了ボタン

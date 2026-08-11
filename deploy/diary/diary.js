@@ -14,6 +14,7 @@ import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { printCurrentPage } from "/common/utils.js?v=20260810-1";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -81,12 +82,7 @@ function shiftDateByMonths(dateStr, diffMonths) {
 }
 
 function getTodayJstDateString() {
-  const now = new Date();
-  const jst = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60 * 1000);
-  const y = jst.getUTCFullYear();
-  const m = String(jst.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(jst.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return todayLocalYmd();
 }
 
 function parseYmdToDate(ymd) {

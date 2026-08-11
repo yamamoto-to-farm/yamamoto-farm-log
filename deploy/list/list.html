@@ -573,12 +573,12 @@
   <div id="modal-container"></div>
 
   <!-- 一覧ページのメイン JS -->
-  <script type="module" src="./list.js"></script>
+  <script type="module" src="./list.js?v=20260811-1"></script>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initListPage } from "./list.js";
+    import { initListPage } from "./list.js?v=20260811-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();

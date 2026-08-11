@@ -112,6 +112,7 @@
     import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
     import { renderHeader } from "/common/header.js";
     import { initWeedingPage } from "./weeding.js?v=1";
+    import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
@@ -119,7 +120,7 @@
       renderHeader();
       document.getElementById("form-area").style.display = "block";
 
-      document.getElementById("date").value = new Date().toISOString().slice(0, 10);
+      document.getElementById("date").value = todayLocalYmd();
 
       await createWorkerCheckboxes("workers_box");
 

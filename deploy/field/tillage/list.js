@@ -10,6 +10,7 @@ import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { collectUniqueMethods, matchesSharedListFilters } from "/common/list-filter-utils.js?v=1";
 import { buildPeriodCountSummaryHtml } from "/common/period-summary.js?v=1";
 import { buildAreaLatestModel, getAreaStatusMeta } from "/common/area-latest.js?v=1";
+import { todayLocalValue, localDateValue, diffDateValuesInDays } from "/common/date-utils.js?v=1";
 
 const state = {
   fields: [],
@@ -47,9 +48,7 @@ function normalizeDateText(value) {
 
 function toDateValue(dateText) {
   const normalized = normalizeDateText(dateText);
-  if (!normalized) return 0;
-  const date = new Date(`${normalized}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  return normalized ? localDateValue(normalized) : 0;
 }
 
 function formatDaysAgo(days) {
@@ -62,16 +61,6 @@ function formatDaysGap(days) {
   if (days === null || days === undefined) return "初回";
   if (days === 0) return "同日";
   return `${days}日`;
-}
-
-function getTodayValue() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-}
-
-function diffDays(later, earlier) {
-  const gap = Math.round((later - earlier) / 86400000);
-  return Number.isFinite(gap) ? gap : null;
 }
 
 function escapeHtml(value) {
@@ -247,7 +236,7 @@ function normalizeEntry(fieldMeta, entry) {
 async function loadRows() {
   const fields = await loadFieldList();
   const fieldDetail = await loadFieldAreas();
-  const todayValue = getTodayValue();
+  const todayValue = todayLocalValue();
 
   const activeFields = fields.filter(field => {
     const detail = fieldDetail?.[field.name] || null;
@@ -285,7 +274,7 @@ async function loadRows() {
 
     entries.forEach((item, index) => {
       const prev = entries[index - 1] || null;
-      const gapDays = prev ? diffDays(item.dateValue, prev.dateValue) : null;
+      const gapDays = prev ? diffDateValuesInDays(item.dateValue, prev.dateValue) : null;
 
       rows.push({
         ...item,
@@ -296,8 +285,8 @@ async function loadRows() {
     });
 
     const latest = entries[entries.length - 1];
-    const latestAgeDays = diffDays(todayValue, latest.dateValue);
-    const latestGapDays = entries.length > 1 ? diffDays(latest.dateValue, entries[entries.length - 2].dateValue) : null;
+    const latestAgeDays = diffDateValuesInDays(todayValue, latest.dateValue);
+    const latestGapDays = entries.length > 1 ? diffDateValuesInDays(latest.dateValue, entries[entries.length - 2].dateValue) : null;
 
     fieldCards.push({
       field: meta.name,
@@ -487,7 +476,7 @@ function renderAreaList() {
     periodStart: state.periodStart,
     periodEnd: state.periodEnd,
     areaSort: state.areaSort,
-    todayValue: getTodayValue(),
+    todayValue: todayLocalValue(),
     getField: row => row.field,
     getDate: row => row.date,
     getDateValue: row => row.dateValue,
