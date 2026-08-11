@@ -362,11 +362,14 @@ function buildFieldWorkLogsUrl({ field, end, type }) {
   const normalizedField = normalizeFieldLinkParam(field);
   if (!normalizedField) return "";
 
+  const returnPath = `${location.pathname}${location.search}`;
+
   const params = new URLSearchParams({
     field: normalizedField,
     start: "",
     end: String(end || "").trim(),
-    type: String(type || "all").trim() || "all"
+    type: String(type || "all").trim() || "all",
+    return: returnPath
   });
 
   return `/fields/work-logs.html?${params.toString()}`;

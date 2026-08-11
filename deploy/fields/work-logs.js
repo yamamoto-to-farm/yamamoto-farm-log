@@ -1,5 +1,6 @@
 // fields/work-logs.js
 import { safeFieldName } from "/common/utils.js?v=1";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 const VALID_TYPES = [
@@ -21,6 +22,7 @@ export async function initFieldWorkLogsPage() {
   const start = params.get("start") || "";
   const end = params.get("end") || "";
   const type = params.get("type") || "all";
+  const returnPath = params.get("return") || "";
 
   if (!field) {
     alert("field パラメータが必要です");
@@ -43,9 +45,11 @@ export async function initFieldWorkLogsPage() {
 
   const backBtn = document.getElementById("back-field-btn");
   if (backBtn) {
-    backBtn.onclick = () => {
-      location.href = `/fields/index.html?field=${encodeURIComponent(field)}`;
-    };
+    setupSmartBackButton({
+      elementId: "back-field-btn",
+      fallbackPath: `/fields/index.html?field=${encodeURIComponent(field)}`,
+      defaultLabel: "元のページへ戻る"
+    });
   }
 
   const applyBtn = document.getElementById("apply-btn");
@@ -57,6 +61,9 @@ export async function initFieldWorkLogsPage() {
         end: endInput?.value || "",
         type: typeInput?.value || "all"
       });
+      if (isSafeReturnPath(returnPath)) {
+        q.set("return", returnPath);
+      }
       location.href = `/fields/work-logs.html?${q.toString()}`;
     };
   }
@@ -67,6 +74,10 @@ export async function initFieldWorkLogsPage() {
     end: endInput?.value || "",
     type: typeInput?.value || "all"
   });
+}
+
+function isSafeReturnPath(value) {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//");
 }
 
 async function renderRows({ field, start, end, type }) {
