@@ -17,6 +17,16 @@ const WORK_LOG_TYPE_BY_CARD = [
   { pattern: /潅水|灌水/, type: "watering" }
 ];
 
+const WORK_LIST_LINK_RULES = [
+  { pattern: /収穫/, href: "/performance/harvest-kpi.html", kind: "kpi" },
+  { pattern: /播種|定植/, href: "/list/list.html", kind: "list" },
+  { pattern: /施肥/, href: "/fertilizer/list/list.html", kind: "list" },
+  { pattern: /防除/, href: "/pesticide/list/list.html", kind: "list" },
+  { pattern: /土づくり|耕起|耕うん|ロータリー|プラソイラ|スタブルカルチ/, href: "/field/tillage/list.html", kind: "list" },
+  { pattern: /手作業除草|除草（手作業）/, href: "/", kind: "fallback" },
+  { pattern: /除草|草刈/, href: "/field/weeding/list.html", kind: "list" }
+];
+
 /**
  * 閲覧専用カードを描画する
  */
@@ -89,7 +99,20 @@ function createViewWorkCard(w) {
 
   const h3 = document.createElement("h3");
   h3.className = `view-card-title ${getWorkToneClass(title)}`;
-  h3.textContent = title;
+  const titleLinkInfo = resolveWorkTitleLink(title);
+  if (titleLinkInfo?.href) {
+    const titleLink = document.createElement("a");
+    titleLink.className = "work-title-link";
+    if (titleLinkInfo.kind === "fallback") {
+      titleLink.classList.add("is-fallback");
+      titleLink.title = "専用一覧未対応のためトップページへ移動";
+    }
+    titleLink.href = titleLinkInfo.href;
+    titleLink.textContent = title;
+    h3.appendChild(titleLink);
+  } else {
+    h3.textContent = title;
+  }
   card.appendChild(h3);
 
   if (!isSowing) {
@@ -315,6 +338,18 @@ function resolveWorkLogType(title) {
   const text = String(title || "").trim();
   const matched = WORK_LOG_TYPE_BY_CARD.find(entry => entry.pattern.test(text));
   return matched?.type || "all";
+}
+
+function resolveWorkTitleLink(title) {
+  const text = String(title || "").trim();
+  if (!text) return { href: "/", kind: "fallback" };
+
+  const matched = WORK_LIST_LINK_RULES.find(rule => rule.pattern.test(text));
+  if (matched?.href) {
+    return { href: matched.href, kind: matched.kind || "list" };
+  }
+
+  return { href: "/", kind: "fallback" };
 }
 
 function normalizeFieldLinkParam(field) {

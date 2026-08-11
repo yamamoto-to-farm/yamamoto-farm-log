@@ -367,6 +367,28 @@
   color: #334155;
 }
 
+.work-title-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.24);
+}
+
+.work-title-link:hover,
+.work-title-link:focus-visible {
+  color: inherit;
+  border-bottom-color: currentColor;
+  outline: none;
+}
+
+.work-title-link.is-fallback {
+  opacity: 0.72;
+}
+
+.work-title-link.is-fallback:hover,
+.work-title-link.is-fallback:focus-visible {
+  opacity: 1;
+}
+
 .edit-field-line,
 .view-field-line {
   font-size: 1.1rem;
