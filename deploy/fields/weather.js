@@ -5,6 +5,8 @@ import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const GDD_BASE = 10;
+let weatherChart = null;
+let latestComputedRows = [];
 const HELP_CONTENT = {
   gdd: {
     title: "GDD(10)とは",
@@ -239,6 +241,163 @@ function renderInsights(rows) {
   note.textContent = `${tempText} / ${rainText} / 表の薄橙は高温日、薄青は強雨日です。`;
 }
 
+function renderWeatherChart(rows, options = {}) {
+  const showTemp = Boolean(options.showTemp);
+  const canvas = document.getElementById("weather-chart");
+  const empty = document.getElementById("chart-empty");
+  if (!canvas || !empty) return;
+
+  const valid = rows.filter(item => item.hasData);
+  if (!valid.length || typeof window.Chart !== "function") {
+    if (weatherChart) {
+      weatherChart.destroy();
+      weatherChart = null;
+    }
+    canvas.style.display = "none";
+    empty.style.display = "block";
+    return;
+  }
+
+  canvas.style.display = "block";
+  empty.style.display = "none";
+
+  const labels = valid.map(item => item.date.slice(5));
+  const gddCumulative = valid.map(item => Number(item.gddCumulative.toFixed(1)));
+  const precip = valid.map(item => Number(item.precip.toFixed(1)));
+  const tmax = valid.map(item => Number(item.tmax.toFixed(1)));
+  const tmin = valid.map(item => Number(item.tmin.toFixed(1)));
+
+  if (weatherChart) {
+    weatherChart.destroy();
+  }
+
+  const datasets = [
+    {
+      label: "積算GDD(10)",
+      data: gddCumulative,
+      yAxisID: "yGdd",
+      borderColor: "#1d4ed8",
+      backgroundColor: "rgba(29, 78, 216, 0.16)",
+      pointRadius: 0,
+      borderWidth: 2,
+      tension: 0.25
+    },
+    {
+      label: "降水量(mm)",
+      data: precip,
+      yAxisID: "yRain",
+      type: "bar",
+      backgroundColor: "rgba(14, 116, 144, 0.28)",
+      borderColor: "rgba(14, 116, 144, 0.5)",
+      borderWidth: 1,
+      barPercentage: 0.9,
+      categoryPercentage: 0.95
+    }
+  ];
+
+  if (showTemp) {
+    datasets.push(
+      {
+        label: "最高気温(℃)",
+        data: tmax,
+        yAxisID: "yTemp",
+        borderColor: "#ea580c",
+        backgroundColor: "rgba(234, 88, 12, 0.12)",
+        pointRadius: 0,
+        borderWidth: 1.5,
+        tension: 0.25
+      },
+      {
+        label: "最低気温(℃)",
+        data: tmin,
+        yAxisID: "yTemp",
+        borderColor: "#0ea5e9",
+        backgroundColor: "rgba(14, 165, 233, 0.12)",
+        pointRadius: 0,
+        borderWidth: 1.5,
+        tension: 0.25
+      }
+    );
+  }
+
+  const ctx = canvas.getContext("2d");
+  weatherChart = new window.Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: {
+            boxWidth: 10,
+            boxHeight: 10,
+            usePointStyle: false
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxTicksLimit: 12
+          }
+        },
+        yGdd: {
+          type: "linear",
+          position: "left",
+          title: {
+            display: true,
+            text: "積算GDD"
+          },
+          grid: {
+            drawOnChartArea: true
+          }
+        },
+        yTemp: {
+          type: "linear",
+          position: "right",
+          title: {
+            display: true,
+            text: "気温(℃)"
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        },
+        yRain: {
+          type: "linear",
+          position: "right",
+          offset: true,
+          title: {
+            display: true,
+            text: "降水量(mm)"
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function bindChartToggle() {
+  const checkbox = document.getElementById("temp-toggle");
+  if (!checkbox) return;
+
+  checkbox.checked = false;
+  checkbox.addEventListener("change", () => {
+    renderWeatherChart(latestComputedRows, { showTemp: checkbox.checked });
+  });
+}
+
 function buildComputedRows(rawRows) {
   let gddCumulative = 0;
 
@@ -408,6 +567,19 @@ function bindHelpPopovers() {
   window.addEventListener("resize", hideHelpPopover);
 }
 
+function bindListDetailsSummary() {
+  const details = document.querySelector(".list-details");
+  const note = document.getElementById("list-summary-note");
+  if (!details || !note) return;
+
+  const sync = () => {
+    note.textContent = details.open ? "タップで閉じる" : "タップで開く";
+  };
+
+  sync();
+  details.addEventListener("toggle", sync);
+}
+
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -433,6 +605,7 @@ async function main() {
 
   bindMeta(params, periodEnd);
   bindHelpPopovers();
+  bindListDetailsSummary();
   setupSmartBackButton({
     elementId: "back-btn",
     fallbackPath: `/fields/index.html?field=${encodeURIComponent(params.get("field") || "")}`,
@@ -442,9 +615,12 @@ async function main() {
   const dateKeys = buildDateRange(plantDate, periodEnd);
   const weatherRows = await loadWeatherRowsForDates(dateKeys);
   const computedRows = buildComputedRows(weatherRows);
+  latestComputedRows = computedRows;
 
   renderKpiLine(computedRows);
   renderInsights(computedRows);
+  bindChartToggle();
+  renderWeatherChart(computedRows, { showTemp: false });
   renderRows(computedRows);
 
   const area = document.getElementById("page-area");

@@ -65,6 +65,86 @@
       line-height: 1.45;
     }
 
+    .chart-wrap {
+      position: relative;
+      min-height: 260px;
+      margin-top: 12px;
+    }
+
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 8px;
+      gap: 8px;
+    }
+
+    .chart-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9em;
+      color: #334155;
+      user-select: none;
+    }
+
+    .chart-toggle input {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+    }
+
+    .chart-empty {
+      margin-top: 10px;
+      color: #64748b;
+      font-size: 0.9em;
+    }
+
+    .list-details {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .list-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 700;
+      color: #1f2937;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f8fafc;
+      list-style: none;
+    }
+
+    .list-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .list-summary::after {
+      content: "▼";
+      font-size: 11px;
+      color: #64748b;
+      transition: transform 0.16s ease;
+    }
+
+    details[open] > .list-summary::after {
+      transform: rotate(180deg);
+    }
+
+    .list-summary-note {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .list-content {
+      padding: 10px 10px 12px;
+    }
+
     .table-wrap {
       overflow-x: auto;
     }
@@ -196,6 +276,10 @@
         font-size: 13px;
         max-width: calc(100vw - 16px);
       }
+
+      .chart-wrap {
+        min-height: 220px;
+      }
     }
   </style>
 </head>
@@ -236,7 +320,25 @@
       <p class="insight-title">注目ポイント</p>
       <div id="insight-line" class="insight-line"></div>
       <p id="insight-note" class="insight-note"></p>
-      <div class="table-wrap">
+      <div class="chart-toolbar">
+        <label class="chart-toggle" for="temp-toggle">
+          <input id="temp-toggle" type="checkbox">
+          気温を表示
+        </label>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="weather-chart" aria-label="気象推移グラフ" role="img"></canvas>
+      </div>
+      <p id="chart-empty" class="chart-empty" style="display:none;">グラフ表示に必要なデータが不足しています。</p>
+    </div>
+
+    <details class="card list-details">
+      <summary class="list-summary">
+        <span>日別一覧</span>
+        <span id="list-summary-note" class="list-summary-note">タップで開く</span>
+      </summary>
+      <div class="list-content">
+        <div class="table-wrap">
         <table class="log-table">
           <thead>
             <tr>
@@ -259,8 +361,9 @@
           </thead>
           <tbody id="rows"></tbody>
         </table>
+        </div>
       </div>
-    </div>
+    </details>
 
     <div class="back-action-slot">
       <button id="back-btn" class="secondary-btn unified-back-btn" type="button">元のページへ戻る</button>
@@ -272,7 +375,8 @@
       <p id="help-popover-body" class="help-popover-body"></p>
     </div>
 
-    <script type="module" src="./weather.js?v=20260812-4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="./weather.js?v=20260812-6"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 
