@@ -3,6 +3,7 @@ import { renderHeader } from "/common/header.js?v=1";
 import { loadWeatherYear, classifyWeather, weatherIcon } from "/common/weather/weather.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
+import { showInfoModal } from "/common/showInfoModal.js?v=1";
 
 const GDD_BASE = 10;
 let weatherChart = null;
@@ -536,23 +537,20 @@ function bindHelpPopovers() {
     trigger.addEventListener("keydown", event => {
       if (event.key === "Escape") {
         hideHelpPopover();
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        hideHelpPopover();
+        showInfoModal(content.title, `<p>${content.body}</p>`);
       }
     });
 
     trigger.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
-
-      const popover = document.getElementById("help-popover");
-      const isOpen = popover?.classList.contains("is-open");
-      const expanded = trigger.getAttribute("aria-expanded") === "true";
-
-      if (isOpen && expanded) {
-        hideHelpPopover();
-        return;
-      }
-
-      showHelpPopover(trigger, content);
+      hideHelpPopover();
+      showInfoModal(content.title, `<p>${content.body}</p>`);
     });
   });
 
