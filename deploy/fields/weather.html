@@ -130,6 +130,73 @@
       color: #64748b;
       font-size: 0.86em;
     }
+
+    .help-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      margin-left: 4px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: help;
+      background: #f8fbff;
+      vertical-align: middle;
+    }
+
+    .help-popover {
+      position: fixed;
+      z-index: 1200;
+      max-width: min(320px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #dbe3ef;
+      background: #ffffff;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+      color: #0f172a;
+      font-size: 12px;
+      line-height: 1.55;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .help-popover.is-open {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .help-popover-title {
+      margin: 0 0 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .help-popover-body {
+      margin: 0;
+      color: #334155;
+      white-space: normal;
+    }
+
+    @media (max-width: 640px) {
+      .help-trigger {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+      }
+
+      .help-popover {
+        font-size: 13px;
+        max-width: calc(100vw - 16px);
+      }
+    }
   </style>
 </head>
 
@@ -180,8 +247,14 @@
               <th>降水量</th>
               <th>日照時間</th>
               <th>日平均</th>
-              <th>GDD(10)</th>
-              <th>積算GDD(10)</th>
+              <th>
+                GDD(10)
+                <span class="help-trigger" tabindex="0" role="button" aria-label="GDD(10)の説明" data-help-key="gdd">?</span>
+              </th>
+              <th>
+                積算GDD(10)
+                <span class="help-trigger" tabindex="0" role="button" aria-label="積算GDD(10)の説明" data-help-key="gdd-cumulative">?</span>
+              </th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -194,7 +267,12 @@
     </div>
   </div>
 
-  <script type="module" src="./weather.js?v=20260812-2"></script>
+    <div id="help-popover" class="help-popover" aria-hidden="true">
+      <p id="help-popover-title" class="help-popover-title"></p>
+      <p id="help-popover-body" class="help-popover-body"></p>
+    </div>
+
+    <script type="module" src="./weather.js?v=20260812-4"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 

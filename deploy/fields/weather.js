@@ -5,6 +5,16 @@ import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const GDD_BASE = 10;
+const HELP_CONTENT = {
+  gdd: {
+    title: "GDD(10)とは",
+    body: "その日の生育有効温度です。計算式は max(((最高気温+最低気温)/2)-10, 0)。値が大きいほど、その日の生育が進みやすい目安になります。"
+  },
+  "gdd-cumulative": {
+    title: "積算GDD(10)とは",
+    body: "定植日から当日までの GDD(10) の合計です。作付け期間の温度進捗をひと目で比較できます。"
+  }
+};
 
 function normalizeDate(value) {
   const text = String(value || "").trim();
@@ -311,6 +321,93 @@ function bindMeta(params, periodEnd) {
   }
 }
 
+function hideHelpPopover() {
+  const popover = document.getElementById("help-popover");
+  if (!popover) return;
+
+  popover.classList.remove("is-open");
+  popover.setAttribute("aria-hidden", "true");
+  document.querySelectorAll(".help-trigger[aria-expanded='true']").forEach(el => {
+    el.setAttribute("aria-expanded", "false");
+  });
+}
+
+function showHelpPopover(trigger, content) {
+  const popover = document.getElementById("help-popover");
+  const title = document.getElementById("help-popover-title");
+  const body = document.getElementById("help-popover-body");
+  if (!popover || !title || !body || !trigger || !content) return;
+
+  title.textContent = content.title || "";
+  body.textContent = content.body || "";
+
+  const rect = trigger.getBoundingClientRect();
+  const width = popover.offsetWidth || 280;
+  const left = Math.min(
+    Math.max(8, rect.left + window.scrollX - width / 2 + rect.width / 2),
+    window.scrollX + window.innerWidth - width - 8
+  );
+  const top = rect.bottom + window.scrollY + 8;
+
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+  popover.classList.add("is-open");
+  popover.setAttribute("aria-hidden", "false");
+  trigger.setAttribute("aria-expanded", "true");
+}
+
+function bindHelpPopovers() {
+  const triggers = document.querySelectorAll(".help-trigger[data-help-key]");
+  if (!triggers.length) return;
+
+  triggers.forEach(trigger => {
+    trigger.setAttribute("aria-expanded", "false");
+    const key = String(trigger.getAttribute("data-help-key") || "").trim();
+    const content = HELP_CONTENT[key];
+    if (!content) return;
+
+    trigger.addEventListener("mouseenter", () => {
+      showHelpPopover(trigger, content);
+    });
+    trigger.addEventListener("mouseleave", hideHelpPopover);
+    trigger.addEventListener("focus", () => {
+      showHelpPopover(trigger, content);
+    });
+    trigger.addEventListener("blur", hideHelpPopover);
+    trigger.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        hideHelpPopover();
+      }
+    });
+
+    trigger.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const popover = document.getElementById("help-popover");
+      const isOpen = popover?.classList.contains("is-open");
+      const expanded = trigger.getAttribute("aria-expanded") === "true";
+
+      if (isOpen && expanded) {
+        hideHelpPopover();
+        return;
+      }
+
+      showHelpPopover(trigger, content);
+    });
+  });
+
+  document.addEventListener("click", event => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest(".help-trigger")) return;
+    hideHelpPopover();
+  });
+
+  window.addEventListener("scroll", hideHelpPopover, { passive: true });
+  window.addEventListener("resize", hideHelpPopover);
+}
+
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -335,6 +432,7 @@ async function main() {
   }
 
   bindMeta(params, periodEnd);
+  bindHelpPopovers();
   setupSmartBackButton({
     elementId: "back-btn",
     fallbackPath: `/fields/index.html?field=${encodeURIComponent(params.get("field") || "")}`,
