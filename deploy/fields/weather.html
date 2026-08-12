@@ -7,9 +7,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <style>
+    #page-area {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 16px 24px;
+    }
+
+    #page-area > .card,
+    #page-area > details.card {
+      margin-bottom: 14px;
+    }
+
     .toolbar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 10px;
       align-items: end;
       margin-bottom: 12px;
@@ -26,8 +37,8 @@
       background: #f4f8ff;
       border: 1px solid #d9e6ff;
       border-radius: 999px;
-      padding: 5px 10px;
-      font-size: 0.92em;
+      padding: 6px 11px;
+      font-size: 0.96em;
       color: #1f355f;
       white-space: nowrap;
     }
@@ -50,8 +61,8 @@
       display: inline-flex;
       align-items: center;
       border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 0.88em;
+      padding: 5px 11px;
+      font-size: 0.92em;
       border: 1px solid #dbe3ef;
       background: #f8fbff;
       color: #334155;
@@ -67,7 +78,7 @@
 
     .chart-wrap {
       position: relative;
-      min-height: 260px;
+      min-height: 360px;
       margin-top: 12px;
     }
 
@@ -152,16 +163,16 @@
     .log-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 860px;
+      min-width: 980px;
     }
 
     .log-table th,
     .log-table td {
       border-bottom: 1px solid #e5e7eb;
-      padding: 8px;
+      padding: 9px;
       text-align: left;
       vertical-align: top;
-      font-size: 0.95em;
+      font-size: 0.99em;
     }
 
     .log-table th {
@@ -279,6 +290,12 @@
 
       .chart-wrap {
         min-height: 220px;
+      }
+    }
+
+    @media (min-width: 900px) {
+      #page-title {
+        font-size: 36px;
       }
     }
   </style>
