@@ -15,6 +15,7 @@ import { loadJSON } from "/common/json.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -285,6 +286,11 @@ function renderModeSwitch(mode, keyword = "") {
       </button>
     `
     : "";
+  const backOriginButtonHtml = `
+      <button id="diaryBackOriginBtn" class="mode-btn" type="button">
+        元のページへ戻る
+      </button>
+    `;
 
   let rightButtons = `
     <button class="mode-btn ${mode === "view" ? "active" : ""}"
@@ -308,11 +314,26 @@ function renderModeSwitch(mode, keyword = "") {
         作業カレンダー
       </button>
       ${pdfButtonHtml}
+      ${backOriginButtonHtml}
     </div>
     <div class="mode-switch-right">
       ${rightButtons}
     </div>
   `;
+}
+
+function bindDiaryBackOriginButton() {
+  const btn = document.getElementById("diaryBackOriginBtn");
+  if (!btn) return;
+
+  const date = document.getElementById("diaryDate")?.value || "";
+  const fallbackPath = buildMonthlyWorkUrl(date);
+
+  setupSmartBackButton({
+    elementId: "diaryBackOriginBtn",
+    fallbackPath,
+    defaultLabel: "元のページへ戻る"
+  });
 }
 
 async function printDiaryAsA4Pdf() {
@@ -434,6 +455,7 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
 
   const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
   renderModeSwitch(mode, currentSearch);
+  bindDiaryBackOriginButton();
   if (clearSearch) {
     activeSearchState = null;
     renderSearchState("", { total: 0, hits: [] });
@@ -476,6 +498,14 @@ function buildDiaryUrl(mode, date, keyword = "") {
   if (date) params.set("date", date);
   if (keyword) params.set("q", keyword);
   return `index.html?${params.toString()}`;
+}
+
+function buildMonthlyWorkUrl(date) {
+  const ym = String(date || "").slice(0, 7);
+  if (/^\d{4}-\d{2}$/.test(ym)) {
+    return `/schedule/monthly-work/index.html?mode=around2&ym=${ym}`;
+  }
+  return "/schedule/monthly-work/index.html?mode=latest4";
 }
 
 function normalizeToken(value) {

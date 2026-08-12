@@ -136,10 +136,13 @@ function renderRows(rows) {
   }
 
   tbody.innerHTML = rows.map(item => {
+    const diaryUrl = buildDiaryDateUrl(item.date);
+    const dateCell = `<a class="date-link" href="${diaryUrl}">${item.date}</a>`;
+
     if (!item.hasData) {
       return `
         <tr>
-          <td>${item.date}</td>
+          <td>${dateCell}</td>
           <td colspan="8" style="color:#64748b;">データなし</td>
         </tr>
       `;
@@ -151,7 +154,7 @@ function renderRows(rows) {
 
     return `
       <tr class="${rowClasses.join(" ")}">
-        <td>${item.date}</td>
+        <td>${dateCell}</td>
         <td>
           <span class="weather-type">
             <span class="weather-type-icon">${item.icon}</span>
@@ -168,6 +171,15 @@ function renderRows(rows) {
       </tr>
     `;
   }).join("");
+}
+
+function buildDiaryDateUrl(date) {
+  const params = new URLSearchParams({
+    date: String(date || "").trim(),
+    return: `${location.pathname}${location.search}`
+  });
+
+  return `/diary/index.html?${params.toString()}`;
 }
 
 function analyzeRows(rows) {
