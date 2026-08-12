@@ -43,6 +43,8 @@ export async function initFieldWorkLogsPage() {
   const title = document.getElementById("page-title");
   if (title) title.textContent = `${field} 作業記録一覧`;
 
+  renderFieldDetailLinks(field);
+
   const backBtn = document.getElementById("back-field-btn");
   if (backBtn) {
     setupSmartBackButton({
@@ -74,6 +76,41 @@ export async function initFieldWorkLogsPage() {
     end: endInput?.value || "",
     type: typeInput?.value || "all"
   });
+}
+
+function renderFieldDetailLinks(fieldValue) {
+  const host = document.getElementById("field-detail-links");
+  if (!host) return;
+
+  const fields = splitFieldNames(fieldValue);
+  if (!fields.length) {
+    host.innerHTML = "";
+    return;
+  }
+
+  host.innerHTML = fields.map(field => `
+    <button class="secondary-btn" type="button" data-field-detail="${escapeHtml(field)}">${escapeHtml(field)} の圃場詳細</button>
+  `).join("");
+
+  host.querySelectorAll("[data-field-detail]").forEach(button => {
+    button.addEventListener("click", () => {
+      const field = String(button.getAttribute("data-field-detail") || "").trim();
+      if (!field) return;
+      location.href = `/fields/index.html?field=${encodeURIComponent(field)}&return=${encodeURIComponent(location.pathname + location.search)}`;
+    });
+  });
+}
+
+function splitFieldNames(value) {
+  const text = String(value || "").trim();
+  if (!text) return [];
+
+  const list = text
+    .split(/[、,\/／]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  return [...new Set(list)];
 }
 
 function isSafeReturnPath(value) {

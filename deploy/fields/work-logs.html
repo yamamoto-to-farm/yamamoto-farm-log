@@ -117,6 +117,13 @@
       font-size: 12px;
       margin-top: 2px;
     }
+
+    .field-detail-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 
@@ -183,6 +190,7 @@
     </div>
 
     <div class="back-action-slot">
+      <div id="field-detail-links" class="field-detail-links"></div>
       <button id="back-field-btn" class="secondary-btn unified-back-btn" type="button">圃場詳細へ戻る</button>
     </div>
   </div>
@@ -190,7 +198,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js?v=1";
     import { renderHeader } from "/common/header.js?v=1";
-    import { initFieldWorkLogsPage } from "./work-logs.js?v=20260811-2";
+    import { initFieldWorkLogsPage } from "./work-logs.js?v=20260812-3";
 
     window.addEventListener("DOMContentLoaded", async () => {
       if (!await verifyLocalAuth()) return;
