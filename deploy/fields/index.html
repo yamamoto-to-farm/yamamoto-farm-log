@@ -22,6 +22,9 @@
 
     <!-- 地図に戻る -->
     <div class="back-action-slot">
+      <button id="back-origin-btn" class="secondary-btn unified-back-btn" type="button" style="display:none; margin-right:8px;">
+        元のページへ戻る
+      </button>
       <button class="secondary-btn unified-back-btn" type="button" onclick="location.href='/map/index.html'">
         地図に戻る
       </button>
@@ -35,6 +38,7 @@
     import { initAnalysisPage } from "./analysis.js?v=20260812-1";   // 圃場別分析
     import { renderFieldList } from "./index.js?v=20260715-4";        // 圃場一覧
     import { printInline } from "/common/utils.js?v=1";
+    import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -60,6 +64,15 @@
       // ★ 分岐
       if (field) {
         document.getElementById("field-name").textContent = `${field}（圃場詳細）`;
+        const originBtn = document.getElementById("back-origin-btn");
+        if (originBtn) {
+          originBtn.style.display = "inline-flex";
+          setupSmartBackButton({
+            elementId: "back-origin-btn",
+            fallbackPath: "/fields/index.html",
+            defaultLabel: "元のページへ戻る"
+          });
+        }
         initAnalysisPage(field);
 
       } else {
