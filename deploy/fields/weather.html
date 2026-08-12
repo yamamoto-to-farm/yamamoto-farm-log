@@ -32,6 +32,39 @@
       white-space: nowrap;
     }
 
+    .insight-title {
+      margin: 0 0 8px;
+      font-size: 0.95em;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .insight-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .insight-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.88em;
+      border: 1px solid #dbe3ef;
+      background: #f8fbff;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .insight-note {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.85em;
+      line-height: 1.45;
+    }
+
     .table-wrap {
       overflow-x: auto;
     }
@@ -54,6 +87,14 @@
     .log-table th {
       background: #f9fafb;
       font-weight: 700;
+    }
+
+    .weather-row-hot td {
+      background: #fff7ed;
+    }
+
+    .weather-row-rainy td {
+      background: #eff6ff;
     }
 
     .weather-type {
@@ -125,6 +166,9 @@
 
     <div class="card">
       <div id="kpi-line" class="kpi-line"></div>
+      <p class="insight-title">注目ポイント</p>
+      <div id="insight-line" class="insight-line"></div>
+      <p id="insight-note" class="insight-note"></p>
       <div class="table-wrap">
         <table class="log-table">
           <thead>
@@ -150,7 +194,7 @@
     </div>
   </div>
 
-  <script type="module" src="./weather.js?v=20260812-1"></script>
+  <script type="module" src="./weather.js?v=20260812-2"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 

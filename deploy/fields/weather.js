@@ -132,8 +132,12 @@ function renderRows(rows) {
       `;
     }
 
+    const rowClasses = [];
+    if (item.tmax >= 33) rowClasses.push("weather-row-hot");
+    if (item.precip >= 10) rowClasses.push("weather-row-rainy");
+
     return `
-      <tr>
+      <tr class="${rowClasses.join(" ")}">
         <td>${item.date}</td>
         <td>
           <span class="weather-type">
@@ -151,6 +155,78 @@ function renderRows(rows) {
       </tr>
     `;
   }).join("");
+}
+
+function analyzeRows(rows) {
+  const valid = rows.filter(item => item.hasData);
+  if (!valid.length) {
+    return {
+      rainDays: 0,
+      hotDays: 0,
+      heavyRainDays: 0,
+      maxDryStreak: 0,
+      maxTempDay: null,
+      maxRainDay: null
+    };
+  }
+
+  const rainDays = valid.filter(item => item.precip >= 1).length;
+  const hotDays = valid.filter(item => item.tmax >= 33).length;
+  const heavyRainDays = valid.filter(item => item.precip >= 10).length;
+
+  let maxDryStreak = 0;
+  let dryStreak = 0;
+  valid.forEach(item => {
+    if (item.precip < 1) {
+      dryStreak += 1;
+      if (dryStreak > maxDryStreak) maxDryStreak = dryStreak;
+    } else {
+      dryStreak = 0;
+    }
+  });
+
+  const maxTempDay = valid.reduce((best, item) => {
+    if (!best || item.tmax > best.tmax) return item;
+    return best;
+  }, null);
+
+  const maxRainDay = valid.reduce((best, item) => {
+    if (!best || item.precip > best.precip) return item;
+    return best;
+  }, null);
+
+  return {
+    rainDays,
+    hotDays,
+    heavyRainDays,
+    maxDryStreak,
+    maxTempDay,
+    maxRainDay
+  };
+}
+
+function renderInsights(rows) {
+  const line = document.getElementById("insight-line");
+  const note = document.getElementById("insight-note");
+  if (!line || !note) return;
+
+  const stats = analyzeRows(rows);
+
+  line.innerHTML = `
+    <span class="insight-chip">雨日数(1mm以上): ${stats.rainDays}日</span>
+    <span class="insight-chip">高温日数(33℃以上): ${stats.hotDays}日</span>
+    <span class="insight-chip">強雨日数(10mm以上): ${stats.heavyRainDays}日</span>
+    <span class="insight-chip">最大連続無降水: ${stats.maxDryStreak}日</span>
+  `;
+
+  const tempText = stats.maxTempDay
+    ? `最高気温ピーク: ${stats.maxTempDay.date}（${formatNumber(stats.maxTempDay.tmax, 1)}℃）`
+    : "最高気温ピーク: -";
+  const rainText = stats.maxRainDay
+    ? `最大降水日: ${stats.maxRainDay.date}（${formatNumber(stats.maxRainDay.precip, 1)}mm）`
+    : "最大降水日: -";
+
+  note.textContent = `${tempText} / ${rainText} / 表の薄橙は高温日、薄青は強雨日です。`;
 }
 
 function buildComputedRows(rawRows) {
@@ -270,6 +346,7 @@ async function main() {
   const computedRows = buildComputedRows(weatherRows);
 
   renderKpiLine(computedRows);
+  renderInsights(computedRows);
   renderRows(computedRows);
 
   const area = document.getElementById("page-area");
