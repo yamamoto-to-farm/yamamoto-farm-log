@@ -88,7 +88,7 @@ export async function renderSummaryCards(rawFieldName) {
 
   for (const year of Object.keys(grouped).sort()) {
     const cardsHtml = await Promise.all(
-      grouped[year].map(summary => renderSummaryCard(summary, harvestBase, fieldName))
+      grouped[year].map(summary => renderSummaryCard(summary, harvestBase, fieldName, rawFieldName))
     );
 
     html += `
@@ -171,7 +171,7 @@ function getRateClass(rate) {
 /* ===============================
    summary.json → カードHTML
 =============================== */
-async function renderSummaryCard(s, harvestBase, fieldName) {
+async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
 
   const seedRef = s.planting.seedRef;
   const seedlingSummary = getSeedlingSummary(seedRef, s.planting.plantDate);
@@ -287,6 +287,14 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
     })
   ]);
 
+  const weatherPageHref = buildFieldWeatherPageUrl({
+    field: rawFieldName || fieldName,
+    fieldKey: fieldName,
+    plantDate: s?.planting?.plantDate || "",
+    harvestStart: s?.harvest?.firstDate || "",
+    plantingRef: s?.plantingRef || ""
+  });
+
   const notesHTML =
     notes.length > 0
       ? `
@@ -324,6 +332,9 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
         <div class="info-line">収穫回数：${s.harvest.count} 回</div>
         <div class="info-line">収穫合計：${totalAmount} 基（${totalWeight.toFixed(1)} kg）</div>
         <div class="info-line">定植 → 初回収穫：${daysToHarvest} 日</div>
+        <div class="info-line link">
+          ↳ <a href="${weatherPageHref}">気象データを見る</a>
+        </div>
           </div>
         </section>
 
@@ -377,6 +388,19 @@ async function renderSummaryCard(s, harvestBase, fieldName) {
 
     </div>
   `;
+}
+
+function buildFieldWeatherPageUrl({ field, fieldKey, plantDate, harvestStart, plantingRef }) {
+  const params = new URLSearchParams({
+    field: String(field || "").trim(),
+    fieldKey: String(fieldKey || "").trim(),
+    plantDate: String(plantDate || "").trim(),
+    harvestStart: String(harvestStart || "").trim(),
+    plantingRef: String(plantingRef || "").trim(),
+    return: `${location.pathname}${location.search}`
+  });
+
+  return `/fields/weather.html?${params.toString()}`;
 }
 
 function getCultivationStartDate(plantDate, prevHarvestLastDate) {
