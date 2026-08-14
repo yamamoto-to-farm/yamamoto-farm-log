@@ -8,7 +8,7 @@ $varieties = Get-Content $varietiesPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $current = Get-Content $detailPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 $defaultGdd = [ordered]@{
-    mode = "simple"
+    mode = "effective"
     targetGdd = $null
     dapRange = $null
     expectedCropType = $null

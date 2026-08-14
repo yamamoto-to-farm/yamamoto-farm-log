@@ -8,7 +8,7 @@
     "features": "根こぶ病耐病性",
     "memo": "裂球はじまると早い印象",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -27,7 +27,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -46,7 +46,7 @@
     "features": "葉が厚く霜痛みしにくい",
     "memo": "草勢はおとなしい(通路ふさがりにくい)",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -65,7 +65,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -84,7 +84,7 @@
     "features": "定植~収穫まで80日\n球の尖りや角張がなく、作型・気候による球形の乱れが少ない",
     "memo": "黒腐病は「ないと」より強いが、重量は劣る",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -103,7 +103,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -122,7 +122,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -141,7 +141,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -160,7 +160,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -179,7 +179,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -198,7 +198,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -217,7 +217,7 @@
     "features": "undefined",
     "memo": "undefined",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -236,7 +236,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -255,7 +255,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -274,7 +274,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -293,7 +293,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -312,7 +312,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -331,7 +331,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -350,7 +350,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -369,7 +369,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -388,7 +388,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -407,7 +407,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -426,7 +426,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -445,7 +445,7 @@
     "features": "undefined",
     "memo": "undefined",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -464,7 +464,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -483,7 +483,7 @@
     "features": "undefined",
     "memo": "肥切れ・黒腐病注意",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -502,7 +502,7 @@
     "features": "undefined",
     "memo": "undefined",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -521,7 +521,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -540,7 +540,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -559,7 +559,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -578,7 +578,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -597,7 +597,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -616,7 +616,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -635,7 +635,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -654,7 +654,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -673,7 +673,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -692,7 +692,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -711,7 +711,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -730,7 +730,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -749,7 +749,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": "秋冬どり低温期",
@@ -768,7 +768,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -787,7 +787,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -806,7 +806,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -825,7 +825,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -844,7 +844,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -863,7 +863,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -882,7 +882,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -901,7 +901,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -920,7 +920,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -939,7 +939,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -958,7 +958,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -977,7 +977,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -996,7 +996,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1015,7 +1015,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1034,7 +1034,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1053,7 +1053,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1072,7 +1072,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1091,7 +1091,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1110,7 +1110,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1129,7 +1129,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1148,7 +1148,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1167,7 +1167,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1186,7 +1186,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1205,7 +1205,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1224,7 +1224,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
@@ -1243,7 +1243,7 @@
     "features": "",
     "memo": "",
     "gdd": {
-      "mode": "simple",
+      "mode": "effective",
       "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,

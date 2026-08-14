@@ -21,7 +21,7 @@ function createDefaultVarietyDetail() {
     features: "",
     memo: "",
     gdd: {
-      mode: "simple",
+      mode: "effective",
       targetGdd: null,
       dapRange: null,
       expectedCropType: null,

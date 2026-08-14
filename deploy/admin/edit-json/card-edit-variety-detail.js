@@ -94,7 +94,7 @@ async function saveVarietyDetail(dataName, variety) {
     features: document.getElementById("features").value,
     memo: document.getElementById("memo").value,
     gdd: data.gdd || {
-      mode: "simple",
+      mode: "effective",
       targetGdd: null,
       dapRange: null,
       expectedCropType: null,

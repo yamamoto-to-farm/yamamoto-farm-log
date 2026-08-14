@@ -5,6 +5,39 @@ from pathlib import Path
 from typing import Any, Dict
 
 
+def normalize_weather_data(raw_data: Any) -> Dict[str, Dict[str, float]]:
+    normalized: Dict[str, Dict[str, float]] = {}
+    if not isinstance(raw_data, dict):
+        return normalized
+
+    for date_key, values in raw_data.items():
+        if not isinstance(values, dict):
+            continue
+
+        try:
+            tmax = float(values.get("tmax"))
+            tmin = float(values.get("tmin"))
+        except (TypeError, ValueError):
+            continue
+
+        def optional_float(value: Any) -> float:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return 0.0
+
+        normalized[str(date_key)] = {
+            "tmax": tmax,
+            "tmin": tmin,
+            "tmean": (tmax + tmin) / 2.0,
+            "precip": optional_float(values.get("precip")),
+            "sunshine": optional_float(values.get("sunshine")),
+            "station": str(values.get("station") or ""),
+        }
+
+    return normalized
+
+
 def load_weather_json(path: str | Path) -> Dict[str, Dict[str, float]]:
     """Load AME-DAS weather JSON stored by date key.
 
@@ -20,23 +53,7 @@ def load_weather_json(path: str | Path) -> Dict[str, Dict[str, float]]:
     with weather_path.open("r", encoding="utf-8") as fp:
         raw_data = json.load(fp)
 
-    normalized: Dict[str, Dict[str, float]] = {}
-    for date_key, values in raw_data.items():
-        if not isinstance(values, dict):
-            continue
-
-        tmax = float(values.get("tmax", 0.0))
-        tmin = float(values.get("tmin", 0.0))
-        normalized[date_key] = {
-            "tmax": tmax,
-            "tmin": tmin,
-            "tmean": (tmax + tmin) / 2.0,
-            "precip": float(values.get("precip", 0.0)),
-            "sunshine": float(values.get("sunshine", 0.0)),
-            "station": str(values.get("station", "")),
-        }
-
-    return normalized
+    return normalize_weather_data(raw_data)
 
 
 def merge_weather_data(weather_dicts: list[Dict[str, Dict[str, float]]]) -> Dict[str, Dict[str, float]]:

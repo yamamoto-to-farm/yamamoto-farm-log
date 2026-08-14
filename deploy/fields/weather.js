@@ -4,19 +4,21 @@ import { loadWeatherYear, classifyWeather, weatherIcon } from "/common/weather/w
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { showInfoModal } from "/common/showInfoModal.js?v=1";
+import { loadJSON, saveJSON } from "/common/json.js?v=1";
 
-const GDD_BASE = 10;
 const GDD_API_URL = window.GDD_API_URL || new URLSearchParams(location.search).get("gddApi") || "";
 let weatherChart = null;
 let latestComputedRows = [];
+let latestGddThreshold = null;
+let latestGddResult = null;
 const HELP_CONTENT = {
   gdd: {
-    title: "GDD(10)とは",
-    body: "その日の生育有効温度です。計算式は max(((最高気温+最低気温)/2)-10, 0)。値が大きいほど、その日の生育が進みやすい目安になります。"
+    title: "effective GDDとは",
+    body: "0〜30℃に制限した平均気温から基準温度5℃を引いて積算するGDDです。計算式は max(min(平均気温, 30)-5, 0)。"
   },
   "gdd-cumulative": {
-    title: "積算GDD(10)とは",
-    body: "定植日から当日までの GDD(10) の合計です。作付け期間の温度進捗をひと目で比較できます。"
+    title: "積算effective GDDとは",
+    body: "定植日から当日までの effective GDD の合計です。Lambdaのeffectiveモードと同じ計算方式です。"
   }
 };
 
@@ -75,7 +77,8 @@ function parseNumber(value, fallback = NaN) {
 
 function calcDailyGdd(tmax, tmin) {
   const avg = (tmax + tmin) / 2;
-  return Math.max(0, avg - GDD_BASE);
+  const clipped = Math.min(Math.max(avg, 0), 30);
+  return Math.max(0, clipped - 5);
 }
 
 function calcEndDate(plantDate, harvestStart) {
@@ -263,6 +266,7 @@ function renderInsights(rows) {
 
 function renderWeatherChart(rows, options = {}) {
   const showTemp = Boolean(options.showTemp);
+  const gddThreshold = parseNumber(options.gddThreshold, null);
   const canvas = document.getElementById("weather-chart");
   const empty = document.getElementById("chart-empty");
   if (!canvas || !empty) return;
@@ -302,6 +306,17 @@ function renderWeatherChart(rows, options = {}) {
       borderWidth: 2,
       tension: 0.25
     },
+    ...(Number.isFinite(gddThreshold) ? [{
+      label: "目標重量の推定GDD",
+      data: valid.map(() => gddThreshold),
+      yAxisID: "yGdd",
+      borderColor: "#f97316",
+      backgroundColor: "rgba(249, 115, 22, 0.12)",
+      borderDash: [7, 5],
+      pointRadius: 0,
+      borderWidth: 2,
+      tension: 0
+    }] : []),
     {
       label: "降水量(mm)",
       data: precip,
@@ -414,7 +429,10 @@ function bindChartToggle() {
 
   checkbox.checked = false;
   checkbox.addEventListener("change", () => {
-    renderWeatherChart(latestComputedRows, { showTemp: checkbox.checked });
+    renderWeatherChart(latestComputedRows, {
+      showTemp: checkbox.checked,
+      gddThreshold: latestGddThreshold
+    });
   });
 }
 
@@ -604,9 +622,18 @@ function renderGddResult(result) {
   const items = [
     ["現在のsimple GDD", result.simple_gdd],
     ["現在のeffective GDD", result.effective_gdd],
-    ["目標重量", result.target_weight_kg],
-    ["目標到達の推定GDD", result.estimated_gdd_for_target]
+    ["採用GDD", result.selected_gdd],
+    ["目標到達GDD", result.estimated_gdd_for_target]
   ];
+
+  if (result.forecast) {
+    items.push(
+      ["残りGDD", result.forecast.remaining_gdd],
+      ["平均effective GDD/日", result.forecast.average_daily_effective_gdd],
+      ["目標までの日数", result.forecast.estimated_days_to_target ?? "予測不可"],
+      ["目標到達予定日", result.forecast.estimated_target_date || "予測不可"]
+    );
+  }
 
   container.innerHTML = items.map(([label, value]) => `
     <div class="gdd-result-item">
@@ -615,6 +642,45 @@ function renderGddResult(result) {
     </div>
   `).join("");
   container.hidden = false;
+}
+
+function updateTargetGddButtonState(params) {
+  const button = document.getElementById("gdd-update-target-btn");
+  if (!button) return;
+
+  button.disabled = !params.get("harvestStart") || !latestGddResult;
+}
+
+async function updateVarietyTargetGdd(params) {
+  const button = document.getElementById("gdd-update-target-btn");
+  const status = document.getElementById("gdd-status");
+  const plantingRef = params.get("plantingRef") || "";
+  const variety = params.get("variety") || getVarietyFromPlantingRef(plantingRef) || "";
+  const selectedGdd = Number(latestGddResult?.selected_gdd);
+  if (!button || !status || !variety || !Number.isFinite(selectedGdd) || selectedGdd < 0) return;
+
+  if (!confirm(`品種「${variety}」の目標GDDを ${selectedGdd.toFixed(2)} に更新しますか？`)) return;
+
+  button.disabled = true;
+  status.textContent = "品種の目標GDDを保存しています。";
+  try {
+    const detail = await loadJSON("/data/variety-detail.json");
+    const current = detail[variety] || {};
+    const currentGdd = current.gdd && typeof current.gdd === "object" ? current.gdd : {};
+    detail[variety] = {
+      ...current,
+      gdd: {
+        mode: "effective",
+        ...currentGdd,
+        targetGdd: Number(selectedGdd.toFixed(2))
+      }
+    };
+    await saveJSON("data/variety-detail.json", detail);
+    status.textContent = `目標GDDを ${selectedGdd.toFixed(2)} に更新しました。`;
+  } catch (error) {
+    status.textContent = `目標GDDの更新に失敗しました: ${error.message}`;
+    button.disabled = false;
+  }
 }
 
 function bindGddPrediction(params) {
@@ -628,6 +694,11 @@ function bindGddPrediction(params) {
     status.textContent = "GDD API URLが未設定です。gddApiクエリまたはwindow.GDD_API_URLを設定してください。";
     return;
   }
+
+  updateTargetGddButtonState(params);
+  document.getElementById("gdd-update-target-btn")?.addEventListener("click", () => {
+    updateVarietyTargetGdd(params);
+  });
 
   button.addEventListener("click", async () => {
     const targetWeight = Number(targetInput.value);
@@ -663,6 +734,14 @@ function bindGddPrediction(params) {
       }
 
       renderGddResult(result);
+      latestGddResult = result;
+      updateTargetGddButtonState(params);
+      latestGddThreshold = parseNumber(result.estimated_gdd_for_target, null);
+      const tempToggle = document.getElementById("temp-toggle");
+      renderWeatherChart(latestComputedRows, {
+        showTemp: Boolean(tempToggle?.checked),
+        gddThreshold: latestGddThreshold
+      });
       status.textContent = `計算完了: ${result.weather_bucket || "気象データ取得元未表示"}`;
     } catch (error) {
       status.textContent = `GDD予測に失敗しました: ${error.message}`;

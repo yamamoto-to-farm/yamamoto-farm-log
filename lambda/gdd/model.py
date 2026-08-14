@@ -8,7 +8,7 @@ from typing import Dict, List
 class VarietySetting:
     name: str
     expected_crop_type: str | None = None
-    gdd_mode: str = "simple"
+    gdd_mode: str = "effective"
     target_gdd: float | None = None
     dap_range: tuple[int, int] | None = None
     low_sun_correction: float | None = None
@@ -35,7 +35,7 @@ class VarietyConfig:
         return VarietySetting(
             name=variety_name,
             expected_crop_type=gdd.get("expectedCropType", raw.get("想定作型")),
-            gdd_mode=gdd.get("mode", raw.get("積算方式", "simple")),
+            gdd_mode=gdd.get("mode", raw.get("積算方式", "effective")),
             target_gdd=gdd.get("targetGdd", raw.get("目標GDD")),
             dap_range=gdd.get("dapRange", raw.get("目安DAP")),
             low_sun_correction=correction.get("lowSun", correction.get("低日射補正")),
