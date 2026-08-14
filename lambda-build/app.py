@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
+import boto3
+
 from gdd_calculator import compute_gdd_from_planting_to_harvest
-from model import VarietyConfig, fit_single_feature_model, predict_weight_from_gdd
-from weather_loader import load_weather_json
+from model import VarietyConfig, fit_single_feature_model
+from weather_loader import load_weather_json, merge_weather_data
+
+
+S3_BUCKET = os.environ.get("S3_BUCKET_NAME", "yamamoto-farm-log")
 
 
 def _read_event_payload(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -26,15 +32,37 @@ def _safe_weather_path(weather_path: str | None) -> str | None:
     return env_path if env_path else None
 
 
+def _load_weather_data_from_s3(bucket_name: str, start_date: str, end_date: str) -> Dict[str, Dict[str, float]]:
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+    years = sorted({str(year) for year in range(start.year, end.year + 1)})
+
+    s3 = boto3.client("s3", region_name="ap-northeast-1")
+    weather_parts = []
+    for year in years:
+        key = f"data/weather/{year}.json"
+        try:
+            response = s3.get_object(Bucket=bucket_name, Key=key)
+            content = response["Body"].read().decode("utf-8")
+            weather_parts.append(json.loads(content))
+        except Exception:
+            continue
+
+    if not weather_parts:
+        return {}
+    return merge_weather_data(weather_parts)
+
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
-    """Minimal Lambda entrypoint for GDD-based prediction.
+    """Lambda entry point for GDD prediction using S3 weather JSON files.
 
     Expected payload example:
     {
       "planting_date": "2026-01-10",
       "harvest_date": "2026-03-20",
       "variety": "新藍",
-      "weather_path": "./data/weather/2026.json"
+      "target_weight_kg": 2.3,
+      "weather_bucket": "yamamoto-farm-log"
     }
     """
     try:
@@ -48,11 +76,14 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "body": json.dumps({"error": "planting_date and harvest_date are required"}),
             }
 
+        weather_bucket = payload.get("weather_bucket") or S3_BUCKET
         weather_path = _safe_weather_path(payload.get("weather_path"))
+        weather_data: Dict[str, Dict[str, float]] = {}
+
         if weather_path and Path(weather_path).exists():
             weather_data = load_weather_json(weather_path)
         else:
-            weather_data = {}
+            weather_data = _load_weather_data_from_s3(weather_bucket, planting_date, harvest_date)
 
         simple_gdd = compute_gdd_from_planting_to_harvest(
             weather_data,
@@ -92,6 +123,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "variety": payload.get("variety", "新藍"),
                 "planting_date": planting_date,
                 "harvest_date": harvest_date,
+                "weather_bucket": weather_bucket,
                 "simple_gdd": round(simple_gdd, 2),
                 "effective_gdd": round(effective_gdd, 2),
                 "target_weight_kg": target_weight,
@@ -118,6 +150,6 @@ if __name__ == "__main__":
         "harvest_date": "2026-03-20",
         "variety": "新藍",
         "target_weight_kg": 2.3,
-        "weather_path": "../../data/weather/2026.json",
+        "weather_bucket": "yamamoto-farm-log",
     }
     print(lambda_handler(sample, None))

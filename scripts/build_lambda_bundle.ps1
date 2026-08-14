@@ -14,7 +14,7 @@ New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 
 python -m pip install -r (Join-Path $root "requirements.txt") -t $buildDir
 
-Get-ChildItem -Path $srcDir -File | ForEach-Object {
+Get-ChildItem -Path $srcDir -File | Where-Object { $_.Extension -ne ".zip" } | ForEach-Object {
     Copy-Item $_.FullName -Destination $buildDir
 }
 
