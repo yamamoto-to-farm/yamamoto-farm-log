@@ -32,6 +32,10 @@ const HELP_CONTENT = {
   "gdd-target": {
     title: "目標到達GDDとは",
     body: "品種に登録された目標GDD、または目標重量から推定した到達目安です。累積GDDがこの値に達することを目標にします。"
+  },
+  "gdd-period": {
+    title: "Lambda計算期間とは",
+    body: "LambdaがS3の気象データからGDDを積算した開始日と終了日です。ページ側の集計期間と一致しているか確認できます。"
   }
 };
 
@@ -673,6 +677,14 @@ function renderGddResult(result) {
     ["目標到達GDD", result.estimated_gdd_for_target, "gdd-target"]
   ];
 
+  if (result.calculation_start_date && result.calculation_end_date) {
+    items.push([
+      "Lambda計算期間",
+      `${result.calculation_start_date} ～ ${result.calculation_end_date}`,
+      "gdd-period"
+    ]);
+  }
+
   if (result.forecast) {
     items.push(
       ["残りGDD", result.forecast.remaining_gdd, "gdd-target"],
@@ -682,12 +694,15 @@ function renderGddResult(result) {
     );
   }
 
-  container.innerHTML = items.map(([label, value, helpKey]) => `
+  container.innerHTML = items.map(([label, value, helpKey]) => {
+    const displayValue = typeof value === "number" ? formatNumber(value, 2) : String(value ?? "-");
+    return `
     <div class="gdd-result-item">
       <span class="gdd-result-label">${label} <span class="help-trigger" tabindex="0" role="button" aria-label="${label}の説明" data-help-key="${helpKey}">?</span></span>
-      <span class="gdd-result-value">${formatNumber(value, 2)}</span>
+      <span class="gdd-result-value">${displayValue}</span>
     </div>
-  `).join("");
+  `;
+  }).join("");
   container.hidden = false;
   bindHelpPopovers();
 }
@@ -803,7 +818,10 @@ function bindGddPrediction(params, periodEnd) {
         showTemp: Boolean(tempToggle?.checked),
         gddThreshold: latestGddThreshold
       });
-      status.textContent = `計算完了: ${result.weather_bucket || "気象データ取得元未表示"}`;
+      const periodText = result.calculation_start_date && result.calculation_end_date
+        ? ` / ${result.calculation_start_date} ～ ${result.calculation_end_date}`
+        : "";
+      status.textContent = `計算完了: ${result.weather_bucket || "気象データ取得元未表示"}${periodText}`;
     } catch (error) {
       status.textContent = `GDD予測に失敗しました: ${error.message}`;
       status.classList.add("is-error");

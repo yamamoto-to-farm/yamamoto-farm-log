@@ -222,6 +222,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "planting_date": planting_date,
                 "harvest_date": harvest_date,
                 "as_of_date": as_of_date,
+                "calculation_start_date": planting_date,
+                "calculation_end_date": as_of_date,
                 "weather_bucket": weather_bucket,
                 "variety_bucket": variety_bucket,
                 "simple_gdd": round(simple_gdd, 2),
