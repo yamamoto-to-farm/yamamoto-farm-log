@@ -27,7 +27,9 @@ jobs:
             --exclude "logs/*" \
             --exclude "logs/**" \
             --exclude "data/*" \
-            --exclude "data/**"
+            --exclude "data/**" \
+            --exclude "lambda/*" \
+            --exclude "lambda/**"
 
       - name: Create CloudFront invalidation
         uses: chetan/invalidate-cloudfront-action@v2

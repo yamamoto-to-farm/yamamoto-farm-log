@@ -1,0 +1,7 @@
+{
+  "planting_date": "2026-01-10",
+  "harvest_date": "2026-03-20",
+  "variety": "新藍",
+  "target_weight_kg": 2.3,
+  "weather_path": "../../data/weather/2026.json"
+}
