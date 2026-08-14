@@ -6,6 +6,7 @@ import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { showInfoModal } from "/common/showInfoModal.js?v=1";
 
 const GDD_BASE = 10;
+const GDD_API_URL = window.GDD_API_URL || new URLSearchParams(location.search).get("gddApi") || "";
 let weatherChart = null;
 let latestComputedRows = [];
 const HELP_CONTENT = {
@@ -24,6 +25,12 @@ function normalizeDate(value) {
   const m = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) return "";
   return `${m[1]}-${m[2]}-${m[3]}`;
+}
+
+function getVarietyFromPlantingRef(plantingRef) {
+  const parts = String(plantingRef || "").trim().split("-");
+  const variety = parts.length >= 3 ? parts[parts.length - 1].trim() : "";
+  return variety || "";
 }
 
 function parseDateOrNull(value) {
@@ -590,6 +597,82 @@ function bindListDetailsSummary() {
   details.addEventListener("toggle", sync);
 }
 
+function renderGddResult(result) {
+  const container = document.getElementById("gdd-result");
+  if (!container) return;
+
+  const items = [
+    ["現在のsimple GDD", result.simple_gdd],
+    ["現在のeffective GDD", result.effective_gdd],
+    ["目標重量", result.target_weight_kg],
+    ["目標到達の推定GDD", result.estimated_gdd_for_target]
+  ];
+
+  container.innerHTML = items.map(([label, value]) => `
+    <div class="gdd-result-item">
+      <span class="gdd-result-label">${label}</span>
+      <span class="gdd-result-value">${formatNumber(value, 2)}</span>
+    </div>
+  `).join("");
+  container.hidden = false;
+}
+
+function bindGddPrediction(params) {
+  const button = document.getElementById("gdd-predict-btn");
+  const status = document.getElementById("gdd-status");
+  const targetInput = document.getElementById("gdd-target-weight");
+  if (!button || !status || !targetInput) return;
+
+  if (!GDD_API_URL) {
+    button.disabled = true;
+    status.textContent = "GDD API URLが未設定です。gddApiクエリまたはwindow.GDD_API_URLを設定してください。";
+    return;
+  }
+
+  button.addEventListener("click", async () => {
+    const targetWeight = Number(targetInput.value);
+    const plantingRef = params.get("plantingRef") || "";
+    const variety = params.get("variety") || getVarietyFromPlantingRef(plantingRef) || "新藍";
+    if (!Number.isFinite(targetWeight) || targetWeight <= 0) {
+      status.textContent = "目標重量を正しく入力してください。";
+      status.classList.add("is-error");
+      return;
+    }
+
+    button.disabled = true;
+    status.classList.remove("is-error");
+    status.textContent = "LambdaでGDD予測を計算しています。";
+
+    try {
+      const response = await fetch(GDD_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planting_date: normalizeDate(params.get("plantDate") || ""),
+          harvest_date: normalizeDate(params.get("harvestStart") || ""),
+          variety,
+          target_weight_kg: targetWeight,
+          weather_bucket: params.get("weatherBucket") || undefined
+        })
+      });
+
+      const envelope = await response.json();
+      const result = typeof envelope.body === "string" ? JSON.parse(envelope.body) : envelope.body || envelope;
+      if (!response.ok || envelope.statusCode >= 400 || result.error) {
+        throw new Error(result.error || `APIエラー (${response.status})`);
+      }
+
+      renderGddResult(result);
+      status.textContent = `計算完了: ${result.weather_bucket || "気象データ取得元未表示"}`;
+    } catch (error) {
+      status.textContent = `GDD予測に失敗しました: ${error.message}`;
+      status.classList.add("is-error");
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 async function main() {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -632,6 +715,7 @@ async function main() {
   bindChartToggle();
   renderWeatherChart(computedRows, { showTemp: false });
   renderRows(computedRows);
+  bindGddPrediction(params);
 
   const area = document.getElementById("page-area");
   if (area) area.style.display = "block";

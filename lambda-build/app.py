@@ -14,6 +14,7 @@ from weather_loader import load_weather_json, merge_weather_data
 
 
 S3_BUCKET = os.environ.get("S3_BUCKET_NAME", "yamamoto-farm-log")
+VARIETY_DETAIL_KEY = "data/variety-detail.json"
 
 
 def _read_event_payload(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -53,6 +54,16 @@ def _load_weather_data_from_s3(bucket_name: str, start_date: str, end_date: str)
     return merge_weather_data(weather_parts)
 
 
+def _load_variety_settings_from_s3(bucket_name: str) -> Dict[str, Dict[str, object]]:
+    s3 = boto3.client("s3", region_name="ap-northeast-1")
+    response = s3.get_object(Bucket=bucket_name, Key=VARIETY_DETAIL_KEY)
+    content = response["Body"].read().decode("utf-8")
+    settings = json.loads(content)
+    if not isinstance(settings, dict):
+        raise ValueError(f"Invalid variety detail format: s3://{bucket_name}/{VARIETY_DETAIL_KEY}")
+    return settings
+
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda entry point for GDD prediction using S3 weather JSON files.
 
@@ -77,6 +88,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
 
         weather_bucket = payload.get("weather_bucket") or S3_BUCKET
+        variety_bucket = payload.get("variety_bucket") or weather_bucket
         weather_path = _safe_weather_path(payload.get("weather_path"))
         weather_data: Dict[str, Dict[str, float]] = {}
 
@@ -106,16 +118,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         target_weight = float(payload.get("target_weight_kg", 2.3))
         predicted_gdd = (target_weight - model_params["intercept"]) / model_params["coef_gdd"] if model_params["coef_gdd"] else 0.0
 
-        variety_config = VarietyConfig({
-            "新藍": {
-                "想定作型": "秋冬どり低温期",
-                "積算方式": "simple",
-                "目標GDD": None,
-                "目安DAP": (60, 90),
-                "季節補正係数": {"低日射補正": None, "低温補正": None},
-            }
-        })
-        variety = variety_config.get(payload.get("variety", "新藍"))
+        variety_name = payload.get("variety", "新藍")
+        variety_settings = _load_variety_settings_from_s3(variety_bucket)
+        variety_config = VarietyConfig(variety_settings)
+        variety = variety_config.get(variety_name)
 
         response = {
             "statusCode": 200,
@@ -124,6 +130,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "planting_date": planting_date,
                 "harvest_date": harvest_date,
                 "weather_bucket": weather_bucket,
+                "variety_bucket": variety_bucket,
                 "simple_gdd": round(simple_gdd, 2),
                 "effective_gdd": round(effective_gdd, 2),
                 "target_weight_kg": target_weight,
@@ -131,7 +138,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "variety_config": {
                     "expected_crop_type": variety.expected_crop_type,
                     "gdd_mode": variety.gdd_mode,
+                    "target_gdd": variety.target_gdd,
                     "dap_range": variety.dap_range,
+                    "low_sun_correction": variety.low_sun_correction,
+                    "low_temp_correction": variety.low_temp_correction,
                 },
             }, ensure_ascii=False),
         }

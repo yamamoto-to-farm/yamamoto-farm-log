@@ -76,6 +76,68 @@
       line-height: 1.45;
     }
 
+    .gdd-panel-title {
+      margin: 0 0 8px;
+      font-size: 1.05em;
+      color: #1f2937;
+    }
+
+    .gdd-panel-toolbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .gdd-target-field {
+      display: grid;
+      gap: 4px;
+      color: #475569;
+      font-size: 0.9em;
+    }
+
+    .gdd-target-field input {
+      width: 120px;
+    }
+
+    .gdd-status {
+      margin: 10px 0 0;
+      color: #64748b;
+      font-size: 0.9em;
+    }
+
+    .gdd-status.is-error {
+      color: #b91c1c;
+    }
+
+    .gdd-result {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .gdd-result-item {
+      padding: 9px 11px;
+      border: 1px solid #dbe3ef;
+      background: #f8fbff;
+    }
+
+    .gdd-result-label {
+      display: block;
+      color: #64748b;
+      font-size: 0.82em;
+    }
+
+    .gdd-result-value {
+      display: block;
+      margin-top: 3px;
+      color: #1e3a8a;
+      font-size: 1.15em;
+      font-weight: 700;
+    }
+
     .chart-wrap {
       position: relative;
       min-height: 360px;
@@ -345,6 +407,19 @@
       <p class="hint-line">積算温度は簡易GDD（base 10℃）で算出しています。</p>
     </div>
 
+    <div class="card" id="gdd-panel">
+      <h2 class="gdd-panel-title">GDD予測</h2>
+      <div class="gdd-panel-toolbar">
+        <label class="gdd-target-field" for="gdd-target-weight">
+          目標重量 (kg)
+          <input id="gdd-target-weight" class="form-input" type="number" min="0" step="0.1" value="2.3">
+        </label>
+        <button id="gdd-predict-btn" class="primary-btn" type="button">Lambdaで予測</button>
+      </div>
+      <p id="gdd-status" class="gdd-status">Lambda APIの設定を確認しています。</p>
+      <div id="gdd-result" class="gdd-result" hidden></div>
+    </div>
+
     <div class="card">
       <div id="kpi-line" class="kpi-line"></div>
       <p class="insight-title">注目ポイント</p>
@@ -406,7 +481,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="./weather.js?v=20260812-8"></script>
+    <script type="module" src="./weather.js?v=20260815-2"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 

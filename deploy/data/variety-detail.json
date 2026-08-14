@@ -1,1 +1,1256 @@
-{"CTみかさ":{"maker":"中神種苗","sowingPeriod":"8/5~8/13","harvestPeriod":"12月下旬~1月","bestGrowth":"砂土質　粘土質","coldTolerance":"","features":"根こぶ病耐病性","memo":"裂球はじまると早い印象"},"TS-C2010":{"maker":"トヨタネ","sowingPeriod":"8/15~8/20","harvestPeriod":"1月上旬~2月上旬","bestGrowth":"undefined","coldTolerance":"低温肥大性","features":"葉が厚く霜痛みしにくい","memo":"草勢はおとなしい(通路ふさがりにくい)"},"YR888":{"maker":"中神種苗","sowingPeriod":"7/20~8/5","harvestPeriod":"11月中旬~12月上旬","bestGrowth":"粘土質","coldTolerance":"","features":"定植~収穫まで80日\n球の尖りや角張がなく、作型・気候による球形の乱れが少ない","memo":"黒腐病は「ないと」より強いが、重量は劣る"},"ないと":{"maker":"タキイ種苗株式会社","sowingPeriod":"7月中~","harvestPeriod":"11月中旬~12月中旬","bestGrowth":"undefined","coldTolerance":"undefined","features":"undefined","memo":"肥切れ・黒腐病注意"},"風あすか":{"maker":"(有)石井育種場","sowingPeriod":"undefined","harvestPeriod":"undefined","bestGrowth":"undefined","coldTolerance":"undefined","features":"undefined","memo":"undefined"},"なごみ":{"maker":"中神種苗","sowingPeriod":"undefined","harvestPeriod":"undefined","bestGrowth":"undefined","coldTolerance":"undefined","features":"undefined","memo":"undefined"},"おかわり":{"maker":"小林種苗株式会社","sowingPeriod":"undefined","harvestPeriod":"undefined","bestGrowth":"undefined","coldTolerance":"undefined","features":"undefined","memo":"undefined"}}
+{
+  "CTみかさ": {
+    "maker": "中神種苗",
+    "sowingPeriod": "8/5~8/13",
+    "harvestPeriod": "12月下旬~1月",
+    "bestGrowth": "砂土質　粘土質",
+    "coldTolerance": "",
+    "features": "根こぶ病耐病性",
+    "memo": "裂球はじまると早い印象",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "N-831": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "TS-C2010": {
+    "maker": "トヨタネ",
+    "sowingPeriod": "8/15~8/20",
+    "harvestPeriod": "1月上旬~2月上旬",
+    "bestGrowth": "undefined",
+    "coldTolerance": "低温肥大性",
+    "features": "葉が厚く霜痛みしにくい",
+    "memo": "草勢はおとなしい(通路ふさがりにくい)",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YR886": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YR888": {
+    "maker": "中神種苗",
+    "sowingPeriod": "7/20~8/5",
+    "harvestPeriod": "11月中旬~12月上旬",
+    "bestGrowth": "粘土質",
+    "coldTolerance": "",
+    "features": "定植~収穫まで80日\n球の尖りや角張がなく、作型・気候による球形の乱れが少ない",
+    "memo": "黒腐病は「ないと」より強いが、重量は劣る",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "NK889": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YR銀次郎": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YRしぶき": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YRしぶき２号": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YRしわす": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YRむつき(NK502)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "おかわり": {
+    "maker": "小林種苗株式会社",
+    "sowingPeriod": "undefined",
+    "harvestPeriod": "undefined",
+    "bestGrowth": "undefined",
+    "coldTolerance": "undefined",
+    "features": "undefined",
+    "memo": "undefined",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YRたかみね": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YR万代": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YCRきよまさ(C-135)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YCRふゆいろ": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "藍宝ひかり": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "秋よし２号": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "かぐや": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "ロイド(C-147)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "青龍345": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "そらと": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YRあにき": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "風あすか": {
+    "maker": "(有)石井育種場",
+    "sowingPeriod": "undefined",
+    "harvestPeriod": "undefined",
+    "bestGrowth": "undefined",
+    "coldTolerance": "undefined",
+    "features": "undefined",
+    "memo": "undefined",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "たいと": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "ないと": {
+    "maker": "タキイ種苗株式会社",
+    "sowingPeriod": "7月中~",
+    "harvestPeriod": "11月中旬~12月中旬",
+    "bestGrowth": "undefined",
+    "coldTolerance": "undefined",
+    "features": "undefined",
+    "memo": "肥切れ・黒腐病注意",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "なごみ": {
+    "maker": "中神種苗",
+    "sowingPeriod": "undefined",
+    "harvestPeriod": "undefined",
+    "bestGrowth": "undefined",
+    "coldTolerance": "undefined",
+    "features": "undefined",
+    "memo": "undefined",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "翠緑": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬銀河": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬こづち": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬親方": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬五郎": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬勝利": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬大名": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬武将": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬武者": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬藍": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "冬はるか(NC-393)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "夏ごろも": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "はやとよ": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "11月",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": "秋冬どり低温期",
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "藍天": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "龍渓": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "晩抽かんた(NK-018)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "りくと": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "りくよう": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "えんよう": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "みぞれ雪": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "改良愛輝(THY104)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YR天空": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "初夏ごろも": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "初夏9009": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "輝風": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "ときめき": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "長野SE": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "初恋": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "ことみ": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "恋舞": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "YR天馬": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "おきなSP": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "レッドブライト（SRC-001)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "パワールビーレッド": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "ロードライト": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "レッドコメット(MKS-C901)": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "プレミアレッド": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "レッドマーケット": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  },
+  "ネオルビーSP": {
+    "maker": "",
+    "sowingPeriod": "",
+    "harvestPeriod": "",
+    "bestGrowth": "",
+    "coldTolerance": "",
+    "features": "",
+    "memo": "",
+    "gdd": {
+      "mode": "simple",
+      "targetGdd": null,
+      "dapRange": null,
+      "expectedCropType": null,
+      "seasonCorrection": {
+        "lowSun": null,
+        "lowTemp": null
+      }
+    }
+  }
+}

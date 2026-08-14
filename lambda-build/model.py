@@ -26,14 +26,20 @@ class VarietyConfig:
 
     def get(self, variety_name: str) -> VarietySetting:
         raw = self.settings.get(variety_name, {})
+        gdd = raw.get("gdd", {})
+        if not isinstance(gdd, dict):
+            gdd = {}
+        correction = gdd.get("seasonCorrection", raw.get("季節補正係数", {}))
+        if not isinstance(correction, dict):
+            correction = {}
         return VarietySetting(
             name=variety_name,
-            expected_crop_type=raw.get("想定作型"),
-            gdd_mode=raw.get("積算方式", "simple"),
-            target_gdd=raw.get("目標GDD"),
-            dap_range=raw.get("目安DAP"),
-            low_sun_correction=raw.get("季節補正係数", {}).get("低日射補正"),
-            low_temp_correction=raw.get("季節補正係数", {}).get("低温補正"),
+            expected_crop_type=gdd.get("expectedCropType", raw.get("想定作型")),
+            gdd_mode=gdd.get("mode", raw.get("積算方式", "simple")),
+            target_gdd=gdd.get("targetGdd", raw.get("目標GDD")),
+            dap_range=gdd.get("dapRange", raw.get("目安DAP")),
+            low_sun_correction=correction.get("lowSun", correction.get("低日射補正")),
+            low_temp_correction=correction.get("lowTemp", correction.get("低温補正")),
         )
 
 

@@ -19,7 +19,17 @@ function createDefaultVarietyDetail() {
     bestGrowth: "",
     coldTolerance: "",
     features: "",
-    memo: ""
+    memo: "",
+    gdd: {
+      mode: "simple",
+      targetGdd: null,
+      dapRange: null,
+      expectedCropType: null,
+      seasonCorrection: {
+        lowSun: null,
+        lowTemp: null
+      }
+    }
   };
 }
 
@@ -48,7 +58,11 @@ async function syncVarietyDetailByVarieties(varietyList) {
     const prev = currentDetail[name] || {};
     nextDetail[name] = {
       ...template,
-      ...prev
+      ...prev,
+      gdd: {
+        ...template.gdd,
+        ...(prev.gdd || {})
+      }
     };
   });
 

@@ -92,7 +92,17 @@ async function saveVarietyDetail(dataName, variety) {
     bestGrowth: document.getElementById("bestGrowth").value,
     coldTolerance: document.getElementById("coldTolerance").value,
     features: document.getElementById("features").value,
-    memo: document.getElementById("memo").value
+    memo: document.getElementById("memo").value,
+    gdd: data.gdd || {
+      mode: "simple",
+      targetGdd: null,
+      dapRange: null,
+      expectedCropType: null,
+      seasonCorrection: {
+        lowSun: null,
+        lowTemp: null
+      }
+    }
   };
 
   showSaveModal("保存しています…");
