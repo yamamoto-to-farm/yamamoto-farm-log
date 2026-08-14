@@ -268,14 +268,23 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         variety_config = VarietyConfig(variety_settings)
         variety = variety_config.get(variety_name)
         gdd_targets = _load_gdd_targets_from_s3(variety_bucket)
-        annual_plan = _load_annual_plan_from_s3(variety_bucket)
+        try:
+            annual_plan = _load_annual_plan_from_s3(variety_bucket)
+            annual_plan_source = "s3"
+        except Exception:
+            annual_plan = {}
+            annual_plan_source = "unavailable"
         planned_period, plan_match = _find_plan_context(
             annual_plan,
             variety_name,
             str(planting_date),
             str(harvest_date) if harvest_date else None,
         )
-        harvest_target_period = payload.get("harvest_target_period") or planned_period
+        harvest_target_period = (
+            payload.get("harvest_target_period")
+            or (str(harvest_date)[:7] if harvest_date else None)
+            or planned_period
+        )
         configured_target_gdd, target_gdd_source = _select_target_gdd(
             gdd_targets.get(variety_name),
             harvest_target_period,
@@ -321,6 +330,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "variety_bucket": variety_bucket,
                 "harvest_target_period": harvest_target_period,
                 "plan_match": plan_match,
+                "annual_plan_source": annual_plan_source,
                 "simple_gdd": round(simple_gdd, 2),
                 "effective_gdd": round(effective_gdd, 2),
                 "selected_gdd": round(selected_gdd, 2),

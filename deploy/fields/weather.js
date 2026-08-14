@@ -716,19 +716,18 @@ function updateTargetGddButtonState(params) {
   button.disabled = !params.get("harvestStart") || !latestGddResult;
 }
 
-async function updateVarietyTargetGdd(params) {
+async function updateVarietyTargetGdd(params, targetPeriodOverride = "") {
   const button = document.getElementById("gdd-update-target-btn");
   const status = document.getElementById("gdd-status");
   const plantingRef = params.get("plantingRef") || "";
   const variety = params.get("variety") || getVarietyFromPlantingRef(plantingRef) || "";
   const harvestDate = normalizeDate(params.get("harvestStart") || "");
-  const targetPeriod = latestGddResult?.harvest_target_period
+  const targetPeriod = targetPeriodOverride
+    || latestGddResult?.harvest_target_period
     || params.get("harvestTargetPeriod")
     || harvestDate.slice(0, 7);
   const selectedGdd = Number(latestGddResult?.selected_gdd);
   if (!button || !status || !variety || !Number.isFinite(selectedGdd) || selectedGdd < 0) return;
-
-  if (!confirm(`品種「${variety}」の目標GDDを ${selectedGdd.toFixed(2)} に更新しますか？`)) return;
 
   button.disabled = true;
   status.textContent = "品種の目標GDDを保存しています。";
@@ -759,6 +758,52 @@ async function updateVarietyTargetGdd(params) {
   }
 }
 
+function openGddTargetModal(params) {
+  const modal = document.getElementById("gdd-target-modal");
+  const saveButton = document.getElementById("gdd-target-modal-save");
+  const periodInput = document.getElementById("gdd-target-modal-period");
+  const plantingDate = normalizeDate(params.get("plantDate") || "");
+  const harvestDate = normalizeDate(params.get("harvestStart") || "");
+  const plantingRef = params.get("plantingRef") || "";
+  const variety = params.get("variety") || getVarietyFromPlantingRef(plantingRef) || "";
+  const targetPeriod = harvestDate.slice(0, 7)
+    || latestGddResult?.harvest_target_period
+    || params.get("harvestTargetPeriod")
+    || "";
+  const selectedGdd = Number(latestGddResult?.selected_gdd);
+  if (!modal || !saveButton || !periodInput || !variety || !Number.isFinite(selectedGdd) || selectedGdd < 0) return;
+
+  document.getElementById("gdd-target-modal-variety").textContent = variety;
+  periodInput.value = targetPeriod;
+  document.getElementById("gdd-target-modal-gdd").textContent = `${selectedGdd.toFixed(2)} effective GDD`;
+  document.getElementById("gdd-target-modal-range").textContent = `${plantingDate || "-"} ～ ${harvestDate || "-"}`;
+  saveButton.onclick = () => {
+    const selectedPeriod = periodInput.value;
+    if (!/^\d{4}-\d{2}$/.test(selectedPeriod)) {
+      periodInput.setCustomValidity("目標時期を選択してください。");
+      periodInput.reportValidity();
+      return;
+    }
+    periodInput.setCustomValidity("");
+    closeGddTargetModal();
+    updateVarietyTargetGdd(params, selectedPeriod);
+  };
+  modal.hidden = false;
+}
+
+function closeGddTargetModal() {
+  const modal = document.getElementById("gdd-target-modal");
+  if (modal) modal.hidden = true;
+}
+
+function bindGddTargetModal() {
+  document.getElementById("gdd-target-modal-close")?.addEventListener("click", closeGddTargetModal);
+  document.getElementById("gdd-target-modal-cancel")?.addEventListener("click", closeGddTargetModal);
+  document.getElementById("gdd-target-modal")?.addEventListener("click", event => {
+    if (event.target.id === "gdd-target-modal") closeGddTargetModal();
+  });
+}
+
 function bindGddPrediction(params, periodEnd) {
   const button = document.getElementById("gdd-predict-btn");
   const status = document.getElementById("gdd-status");
@@ -771,8 +816,9 @@ function bindGddPrediction(params, periodEnd) {
   }
 
   updateTargetGddButtonState(params);
+  bindGddTargetModal();
   document.getElementById("gdd-update-target-btn")?.addEventListener("click", () => {
-    updateVarietyTargetGdd(params);
+    openGddTargetModal(params);
   });
 
   button.addEventListener("click", async () => {
