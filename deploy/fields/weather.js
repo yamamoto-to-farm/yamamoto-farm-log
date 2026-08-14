@@ -674,7 +674,9 @@ function renderGddResult(result) {
   const items = [
     ["現在のeffective GDD", result.effective_gdd, "gdd-effective"],
     ["採用GDD", result.selected_gdd, "gdd-selected"],
-    ["目標到達GDD", result.estimated_gdd_for_target, "gdd-target"]
+    ...(Number.isFinite(Number(result.estimated_gdd_for_target))
+      ? [["目標到達GDD", result.estimated_gdd_for_target, "gdd-target"]]
+      : [])
   ];
 
   if (result.calculation_start_date && result.calculation_end_date) {
@@ -749,8 +751,7 @@ async function updateVarietyTargetGdd(params) {
 function bindGddPrediction(params, periodEnd) {
   const button = document.getElementById("gdd-predict-btn");
   const status = document.getElementById("gdd-status");
-  const targetInput = document.getElementById("gdd-target-weight");
-  if (!button || !status || !targetInput) return;
+  if (!button || !status) return;
 
   if (!GDD_API_URL) {
     button.disabled = true;
@@ -764,14 +765,8 @@ function bindGddPrediction(params, periodEnd) {
   });
 
   button.addEventListener("click", async () => {
-    const targetWeight = Number(targetInput.value);
     const plantingRef = params.get("plantingRef") || "";
     const variety = params.get("variety") || getVarietyFromPlantingRef(plantingRef) || "新藍";
-    if (!Number.isFinite(targetWeight) || targetWeight <= 0) {
-      status.textContent = "目標重量を正しく入力してください。";
-      status.classList.add("is-error");
-      return;
-    }
 
     button.disabled = true;
     status.classList.remove("is-error");
@@ -789,7 +784,6 @@ function bindGddPrediction(params, periodEnd) {
           planting_date: normalizeDate(params.get("plantDate") || ""),
           ...requestDates,
           variety,
-          target_weight_kg: targetWeight,
           weather_bucket: params.get("weatherBucket") || undefined
         })
       });
@@ -821,7 +815,10 @@ function bindGddPrediction(params, periodEnd) {
       const periodText = result.calculation_start_date && result.calculation_end_date
         ? ` / ${result.calculation_start_date} ～ ${result.calculation_end_date}`
         : "";
-      status.textContent = `計算完了: ${result.weather_bucket || "気象データ取得元未表示"}${periodText}`;
+      const targetText = result.target_gdd_source === "not_available"
+        ? " / 目標GDD未設定"
+        : "";
+      status.textContent = `計算完了: ${result.weather_bucket || "気象データ取得元未表示"}${periodText}${targetText}`;
     } catch (error) {
       status.textContent = `GDD予測に失敗しました: ${error.message}`;
       status.classList.add("is-error");

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Dict, Iterable
 
 
@@ -46,12 +46,7 @@ def compute_gdd_for_date_range(
         date_key = current.isoformat()
         day_data = weather_by_day.get(date_key)
         if day_data is None:
-            current = current.replace(day=current.day + 1) if False else current
-            # fallback: increment by 1 day safely
-            if current.month == 12 and current.day == 31:
-                break
-            next_day = current.fromordinal(current.toordinal() + 1)
-            current = next_day
+            current += timedelta(days=1)
             continue
 
         tmean = _daily_tmean(day_data)
@@ -60,9 +55,7 @@ def compute_gdd_for_date_range(
         else:
             total += simple_gdd_for_day(tmean)
 
-        if current.month == 12 and current.day == 31:
-            break
-        current = current.fromordinal(current.toordinal() + 1)
+        current += timedelta(days=1)
 
     return total
 

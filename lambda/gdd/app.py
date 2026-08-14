@@ -9,7 +9,7 @@ from typing import Any, Dict
 import boto3
 
 from gdd_calculator import compute_gdd_from_planting_to_harvest
-from model import VarietyConfig, fit_single_feature_model
+from model import VarietyConfig
 from weather_loader import load_weather_json, merge_weather_data, normalize_weather_data
 
 
@@ -121,7 +121,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "planting_date": "2026-01-10",
             "as_of_date": "2026-02-15",
             "variety": "新藍",
-            "target_weight_kg": 2.3,
             "weather_bucket": "yamamoto-farm-log"
     }
 
@@ -184,14 +183,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         )
         selected_gdd = effective_gdd if selected_gdd_mode == "effective" else simple_gdd
 
-        model_params = fit_single_feature_model([
-            {"gdd": selected_gdd, "average_ball_weight_kg": 2.0},
-            {"gdd": selected_gdd * 0.9, "average_ball_weight_kg": 1.8},
-        ])
-
-        target_weight = float(payload.get("target_weight_kg", 2.3))
-        predicted_gdd = (target_weight - model_params["intercept"]) / model_params["coef_gdd"] if model_params["coef_gdd"] else 0.0
-
         configured_target_gdd = None
         if variety.target_gdd is not None:
             try:
@@ -199,12 +190,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             except (TypeError, ValueError):
                 configured_target_gdd = None
 
-        target_gdd = (
-            configured_target_gdd
-            if configured_target_gdd is not None
-            else predicted_gdd
-        )
-        target_gdd_source = "variety_config" if configured_target_gdd is not None else "weight_model"
+        target_gdd = configured_target_gdd
+        target_gdd_source = "variety_config" if configured_target_gdd is not None else "not_available"
         forecast = None
         if configured_target_gdd is not None and harvest_date is None:
             forecast = _estimate_days_to_target(
@@ -230,8 +217,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "effective_gdd": round(effective_gdd, 2),
                 "selected_gdd": round(selected_gdd, 2),
                 "selected_gdd_mode": selected_gdd_mode,
-                "target_weight_kg": target_weight,
-                "estimated_gdd_for_target": round(target_gdd, 2),
+                "estimated_gdd_for_target": round(target_gdd, 2) if target_gdd is not None else None,
                 "target_gdd_source": target_gdd_source,
                 "forecast": forecast,
                 "variety_config": {
