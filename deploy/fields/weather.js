@@ -731,7 +731,7 @@ async function updateVarietyTargetGdd(params) {
   }
 }
 
-function bindGddPrediction(params) {
+function bindGddPrediction(params, periodEnd) {
   const button = document.getElementById("gdd-predict-btn");
   const status = document.getElementById("gdd-status");
   const targetInput = document.getElementById("gdd-target-weight");
@@ -763,20 +763,33 @@ function bindGddPrediction(params) {
     status.textContent = "LambdaでGDD予測を計算しています。";
 
     try {
+      const harvestDate = normalizeDate(params.get("harvestStart") || "");
+      const requestDates = harvestDate
+        ? { harvest_date: harvestDate }
+        : { as_of_date: normalizeDate(periodEnd) };
       const response = await fetch(GDD_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planting_date: normalizeDate(params.get("plantDate") || ""),
-          harvest_date: normalizeDate(params.get("harvestStart") || ""),
+          ...requestDates,
           variety,
           target_weight_kg: targetWeight,
           weather_bucket: params.get("weatherBucket") || undefined
         })
       });
 
-      const envelope = await response.json();
-      const result = typeof envelope.body === "string" ? JSON.parse(envelope.body) : envelope.body || envelope;
+      const responseText = await response.text();
+      let envelope;
+      try {
+        envelope = JSON.parse(responseText);
+      } catch {
+        throw new Error(`APIエラー (${response.status}): ${responseText.slice(0, 160) || "応答が空です"}`);
+      }
+
+      const result = typeof envelope.body === "string"
+        ? JSON.parse(envelope.body)
+        : envelope.body || envelope;
       if (!response.ok || envelope.statusCode >= 400 || result.error) {
         throw new Error(result.error || `APIエラー (${response.status})`);
       }
@@ -842,7 +855,7 @@ async function main() {
   bindChartToggle();
   renderWeatherChart(computedRows, { showTemp: false });
   renderRows(computedRows);
-  bindGddPrediction(params);
+  bindGddPrediction(params, periodEnd);
 
   const area = document.getElementById("page-area");
   if (area) area.style.display = "block";
