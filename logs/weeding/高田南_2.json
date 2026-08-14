@@ -9,7 +9,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,石原 孝晋",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp46-05817f"
         },
         {
           "date": "2026-07-09",
@@ -44,7 +45,18 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "土井 琉羽,若月 道昭,山本 直輝",
-          "notes": "周りのみ"
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp46-373sii"
+        },
+        {
+          "date": "2026-06-06",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,石原 孝晋",
+          "notes": "樹木伐採ややあり",
+          "eventId": "ev-msmev7sg-3u0vn2"
         }
       ]
     }

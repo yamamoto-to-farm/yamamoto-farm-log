@@ -1,0 +1,45 @@
+{
+  "field": "ヨコモク南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-27",
+          "distributed": [
+            {
+              "field": "ヨコモク(南)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 120,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "ヨコモク(南)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 80,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "ヨコモク(南)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 80,
+              "category": "堆肥",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph6c-xilfzz"
+        }
+      ]
+    }
+  }
+}

@@ -14,8 +14,8 @@
               "pesticide_id": "HL0004",
               "name": "草枯らしプラボトル",
               "dilution_rate": 100,
-              "total_water_amount": 12,
-              "total_spray_amount": 12,
+              "total_water_amount": 105,
+              "total_spray_amount": 105,
               "unit": "L"
             }
           ],
@@ -35,8 +35,12 @@
           ],
           "sprayMethod": "背負動力噴霧機",
           "machine": "machine1",
-          "workers": "土井 琉羽,山本 直輝",
-          "notes": "周りのみ"
+          "workers": [
+            "土井 琉羽",
+            "山本 直輝"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp6d-ep5t87"
         }
       ]
     }

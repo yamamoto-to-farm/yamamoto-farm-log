@@ -9,7 +9,8 @@
           "pesticides": [],
           "machine": "",
           "workers": "山本 直輝,土井 琉羽",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp78-2ety93"
         },
         {
           "date": "2026-03-10",
@@ -17,7 +18,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "若月 道昭",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp78-oivem9"
         },
         {
           "date": "2026-04-20",
@@ -51,7 +53,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp78-i4an1t"
         },
         {
           "date": "2026-05-19",
@@ -85,7 +88,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp78-oy2bcl"
         },
         {
           "date": "2026-05-27",
@@ -94,7 +98,8 @@
           "mowingMethod": "背負い式刈払機",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp78-zd51r0"
         },
         {
           "date": "2026-07-12",
@@ -128,8 +133,13 @@
           ],
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
-          "workers": "土井 琉羽,石原 孝晋,山本 直輝",
-          "notes": "周りのみ、要樹木伐採"
+          "workers": [
+            "土井 琉羽",
+            "石原 孝晋",
+            "山本 直輝"
+          ],
+          "notes": "周りのみ、要樹木伐採",
+          "eventId": "ev-mrjrqp78-kj2wvn"
         },
         {
           "date": "2026-07-13",
@@ -137,8 +147,11 @@
           "pesticides": [],
           "mowingMethod": "背負い式刈払機",
           "machine": "machine1",
-          "workers": "山本 咲子",
-          "notes": ""
+          "workers": [
+            "山本 咲子"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjrqp78-pnp1x1"
         }
       ]
     }

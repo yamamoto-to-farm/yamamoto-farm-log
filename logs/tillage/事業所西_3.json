@@ -10,7 +10,29 @@
           "speedKmh": 0,
           "machine": "T4",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3ozn-xdlhjj"
+        },
+        {
+          "date": "2026-07-13",
+          "workType": "プラソイラー",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjs3ozn-0ch13h"
+        },
+        {
+          "date": "2026-07-17",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "中島 和則",
+          "notes": "業務委託(耕うん)"
         }
       ]
     }

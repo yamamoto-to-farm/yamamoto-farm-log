@@ -609,6 +609,44 @@
           "machine": "BSA650",
           "workers": "山本 雅彦",
           "notes": ""
+        },
+        {
+          "date": "2026-06-19",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "pesticide_id": "FG0013",
+              "name": "アフェットフロアブル",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 150,
+              "spray_amount": 150,
+              "pesticide_amount": 60,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "三角畑",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 150,
+              "spray_amount": 150,
+              "pesticide_amount": 60,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
         }
       ]
     }

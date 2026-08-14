@@ -36,7 +36,75 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ"
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp5x-dqqe3o"
+        },
+        {
+          "date": "2026-06-30",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": "",
+          "eventId": "ev-msmev7ts-864qwo"
+        },
+        {
+          "date": "2026-08-10",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "草枯れ次郎"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 75,
+              "total_water_amount": 13,
+              "total_spray_amount": 13,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 150,
+              "total_water_amount": 13,
+              "total_spray_amount": 13,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "明輝(南・40a)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 13,
+              "spray_amount": 13,
+              "pesticide_amount": 173.33333333333334,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "明輝(南・40a)",
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 150,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 13,
+              "spray_amount": 13,
+              "pesticide_amount": 86.66666666666667,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 直輝,石原 孝晋",
+          "notes": "樹木伐採",
+          "eventId": "ev-msp92og0-c0kvuw"
         }
       ]
     }

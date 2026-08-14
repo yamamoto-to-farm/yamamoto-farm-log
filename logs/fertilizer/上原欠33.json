@@ -21,6 +21,28 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph9l-loqjep"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-31",
+          "distributed": [
+            {
+              "field": "上原(欠33)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 180,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 直輝",
           "notes": ""
         }
       ]

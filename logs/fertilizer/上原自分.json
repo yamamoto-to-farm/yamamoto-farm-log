@@ -21,7 +21,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph9j-umzoyg"
         },
         {
           "date": "2025-09-19",
@@ -35,7 +36,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": "9/18　2袋施肥"
+          "notes": "9/18　2袋施肥",
+          "eventId": "ev-ms5eph9j-8qx2qj"
         },
         {
           "date": "2025-09-24",
@@ -49,7 +51,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph9j-yp7pfh"
         },
         {
           "date": "2025-10-30",
@@ -63,7 +66,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph9j-n7mxbk"
         },
         {
           "date": "2025-11-08",
@@ -77,7 +81,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph9j-rvjx48"
         }
       ]
     }

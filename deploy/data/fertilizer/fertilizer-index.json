@@ -82,5 +82,29 @@
     "category": "堆肥",
     "name": "JA畜産課 牛糞堆肥",
     "capacity": 1000
+  },
+  {
+    "id": "F004",
+    "category": "BS資材",
+    "name": "GAXY",
+    "capacity": 1
+  },
+  {
+    "id": "F005",
+    "category": "葉面散布剤",
+    "name": "スイカル",
+    "capacity": 1
+  },
+  {
+    "id": "F006",
+    "category": "葉面散布剤",
+    "name": "スミセブンP液剤",
+    "capacity": 500
+  },
+  {
+    "id": "F007",
+    "category": "葉面散布剤",
+    "name": "マグマSi",
+    "capacity": 500
   }
 ]

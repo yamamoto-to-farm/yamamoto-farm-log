@@ -1,0 +1,23 @@
+{
+  "field": "石神",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-21",
+          "workType": "整地",
+          "machine": "EF228",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-21",
+          "workType": "側溝整備（重機）",
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

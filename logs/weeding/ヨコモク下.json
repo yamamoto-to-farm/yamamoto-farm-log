@@ -40,7 +40,8 @@
             "石原 孝晋",
             "土井 琉羽"
           ],
-          "notes": "周りのみ"
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp5k-gn4suu"
         },
         {
           "date": "2026-05-28",
@@ -52,7 +53,8 @@
             "山本 直輝",
             "若月 道昭"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5k-qqg8i7"
         },
         {
           "date": "2026-05-26",
@@ -63,7 +65,8 @@
           "workers": [
             "山本 雅彦"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5k-oy0tsc"
         }
       ]
     }

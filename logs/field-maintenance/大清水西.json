@@ -1,0 +1,30 @@
+{
+  "field": "大清水西",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-06-16",
+          "workType": "溝ざらい",
+          "machine": "machine1",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-06-17",
+          "workType": "溝ざらい",
+          "machine": "machine1",
+          "workers": "若月 道昭,土井 琉羽,山崎",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-21",
+          "workType": "整地",
+          "machine": "EF228",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

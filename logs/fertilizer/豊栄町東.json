@@ -15,7 +15,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph7z-6c70dd"
         },
         {
           "date": "2026-02-02",
@@ -55,7 +56,8 @@
               "bags": 2,
               "total_kg": 40
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph7z-ngp01m"
         },
         {
           "date": "2026-03-22",
@@ -95,7 +97,34 @@
               "bags": 5,
               "total_kg": 100
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph7z-scbkbi"
+        },
+        {
+          "date": "2026-07-29",
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "fertilizer_id": "F302",
+              "name": "炭酸苦土石灰（マグカル）",
+              "amount_kg": 360,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "豊栄町東",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 240,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 直輝,山本 雅彦",
+          "notes": ""
         }
       ]
     }

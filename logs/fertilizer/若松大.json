@@ -7,75 +7,89 @@
           "date": "2025-07-31",
           "distributed": [
             {
-              "field": "若松(大)",
+              "field": "若松(新･小)",
               "fertilizer_id": "F301",
               "name": "エコまぜくん",
-              "amount_kg": 200
+              "amount_kg": 260
             },
             {
-              "field": "若松(大)",
-              "fertilizer_id": "F302",
-              "name": "炭酸苦土石灰（マグカル）",
-              "amount_kg": 200
+              "field": "若松(新･小)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 260
             },
             {
-              "field": "若松(大)",
+              "field": "若松(新･小)",
               "fertilizer_id": "F401",
               "name": "新ふりかけ堆肥eco",
-              "amount_kg": 200
+              "amount_kg": 280
             }
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph5r-fv5m6i"
         },
         {
-          "date": "2025-09-18",
+          "date": "2025-09-09",
           "distributed": [
             {
-              "field": "若松(大)",
+              "field": "若松(新･小)",
               "fertilizer_id": "F001",
               "name": "BBグリーンワイド",
-              "amount_kg": 230
+              "amount_kg": 310
             }
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
-        },
-        {
-          "date": "2025-10-03",
-          "distributed": [
-            {
-              "field": "若松(大)",
-              "fertilizer_id": "F101",
-              "name": "野菜追肥S842",
-              "amount_kg": 160
-            },
-            {
-              "field": "若松(大)",
-              "fertilizer_id": "F202",
-              "name": "ペルカ",
-              "amount_kg": 90
-            }
-          ],
-          "machine": "",
-          "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph5r-q5tjrt"
         },
         {
           "date": "2025-10-19",
           "distributed": [
             {
-              "field": "若松(大)",
+              "field": "若松(新･小)",
               "fertilizer_id": "F101",
               "name": "野菜追肥S842",
-              "amount_kg": 90
+              "amount_kg": 140
             }
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph5r-kgt9kf"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-28",
+          "distributed": [
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 220,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "若松(大)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 140,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
+          "notes": "",
+          "eventId": "ev-ms5eph5r-azgtxk"
         }
       ]
     }

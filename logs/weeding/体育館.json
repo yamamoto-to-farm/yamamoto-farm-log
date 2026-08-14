@@ -9,7 +9,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "山本 直輝,石原 孝晋",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp7w-bhj7av"
         },
         {
           "date": "2026-07-13",
@@ -17,8 +18,50 @@
           "pesticides": [],
           "mowingMethod": "背負い式刈払機",
           "machine": "machine1",
-          "workers": "山本 咲子",
-          "notes": ""
+          "workers": [
+            "山本 咲子"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjrqp7w-qt00av"
+        },
+        {
+          "date": "2026-07-14",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 75,
+              "total_water_amount": 8,
+              "total_spray_amount": 8,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "体育館",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 8,
+              "spray_amount": 8,
+              "pesticide_amount": 106.66666666666667,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": [
+            "山本 直輝",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjugsbk-sfdus4"
         }
       ]
     }

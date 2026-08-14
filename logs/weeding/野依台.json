@@ -9,8 +9,47 @@
           "pesticides": [],
           "mowingMethod": "背負い式刈払機",
           "machine": "machine1",
-          "workers": "山本 咲子",
-          "notes": ""
+          "workers": [
+            "山本 咲子"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjrqp7z-mi72qy"
+        },
+        {
+          "date": "2026-07-14",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 75,
+              "total_water_amount": 8,
+              "total_spray_amount": 8,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "野依台",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.2,
+              "spray_amount": 4.2,
+              "pesticide_amount": 56,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 直輝",
+          "notes": "周りのみ\n新切の中要草刈り（肩丈ほど）",
+          "eventId": "ev-mrk343za-6xxl91"
         }
       ]
     }

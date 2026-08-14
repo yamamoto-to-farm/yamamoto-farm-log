@@ -27,7 +27,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4c-qjngqh"
         },
         {
           "date": "2025-08-08",
@@ -41,7 +42,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4c-v7qznc"
         },
         {
           "date": "2025-09-08",
@@ -55,7 +57,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4c-ankiiu"
         },
         {
           "date": "2025-09-08",
@@ -69,7 +72,39 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4c-u7r8p3"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-26",
+          "distributed": [
+            {
+              "field": "看板前",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 140,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "看板前",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 80,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "山本 直輝,山本 雅彦,土井 琉羽",
+          "notes": "",
+          "eventId": "ev-ms5eph4c-tf7aya"
         }
       ]
     }

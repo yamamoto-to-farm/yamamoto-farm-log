@@ -10,7 +10,8 @@
           "mowingMethod": "フレールモア",
           "machine": "EF228",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp66-my1dui"
         },
         {
           "date": "2026-07-13",
@@ -44,8 +45,22 @@
           ],
           "sprayMethod": "背負動力噴霧機",
           "machine": "machine1",
-          "workers": "土井 琉羽,山本 直輝",
-          "notes": "周りのみ"
+          "workers": [
+            "土井 琉羽",
+            "山本 直輝"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp66-1jsdj4"
+        },
+        {
+          "date": "2026-06-16",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": "山本 雅彦",
+          "notes": "",
+          "eventId": "ev-msmev7uy-5l6jee"
         }
       ]
     }

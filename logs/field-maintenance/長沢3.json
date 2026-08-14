@@ -1,0 +1,16 @@
+{
+  "field": "長沢3",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-25",
+          "workType": "側溝整備（重機）",
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

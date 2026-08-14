@@ -27,7 +27,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph2f-u9fgks"
         },
         {
           "date": "2025-09-01",
@@ -41,7 +42,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph2f-4lnvlh"
         },
         {
           "date": "2025-10-18",
@@ -55,7 +57,39 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph2f-w96az9"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-27",
+          "distributed": [
+            {
+              "field": "大清水(北)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 140,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "大清水(北)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 80,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "山本 雅彦,山本 直輝",
+          "notes": "",
+          "eventId": "ev-ms5eph2f-0xabzp"
         }
       ]
     }

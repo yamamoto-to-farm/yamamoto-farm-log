@@ -21,7 +21,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph6c-ilhd96"
         }
       ]
     },
@@ -65,7 +66,8 @@
               "bags": 4.25,
               "total_kg": 85
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph6c-6ggtx3"
         },
         {
           "date": "2026-03-30",
@@ -93,7 +95,8 @@
               "bags": 0.7,
               "total_kg": 14
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph6c-fcm3z6"
         }
       ]
     }

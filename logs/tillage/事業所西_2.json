@@ -10,7 +10,8 @@
           "speedKmh": 0,
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3oyt-dsuscu"
         },
         {
           "date": "2026-04-29",
@@ -19,7 +20,8 @@
           "speedKmh": 0,
           "machine": "T4",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3oyt-c10s3t"
         },
         {
           "date": "2026-05-17",
@@ -28,7 +30,29 @@
           "speedKmh": 0,
           "machine": "T4",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3oyt-6fwlnb"
+        },
+        {
+          "date": "2026-07-13",
+          "workType": "プラソイラー",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjs3oyt-3d33n8"
+        },
+        {
+          "date": "2026-07-17",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "中島 和則",
+          "notes": "業務委託(耕うん)"
         }
       ]
     }

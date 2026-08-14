@@ -1,0 +1,45 @@
+{
+  "field": "二村牧場大",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-24",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯らしプラボトル"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 200,
+              "total_spray_amount": 200,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "二村牧場(大)",
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 66.7,
+              "spray_amount": 66.7,
+              "pesticide_amount": 667,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,山本 雅彦,山本 咲子",
+          "notes": "",
+          "eventId": "ev-msmev7uq-w55vps"
+        }
+      ]
+    }
+  }
+}

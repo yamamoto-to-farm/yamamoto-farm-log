@@ -10,7 +10,8 @@
           "speedKmh": 0,
           "machine": "machine1",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3p1z-pz9z2w"
         },
         {
           "date": "2026-04-18",
@@ -19,7 +20,8 @@
           "speedKmh": 0,
           "machine": "machine1",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3p1z-a1eccf"
         },
         {
           "date": "2026-05-05",
@@ -28,7 +30,8 @@
           "speedKmh": 2.5,
           "machine": "T4",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3p1z-ycai1e"
         },
         {
           "date": "2026-05-29",
@@ -37,7 +40,8 @@
           "speedKmh": 0,
           "machine": "machine1",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3p1z-03zusu"
         },
         {
           "date": "2026-07-12",
@@ -45,6 +49,25 @@
           "depthCm": 0,
           "speedKmh": 0,
           "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": "",
+          "eventId": "ev-mrjs3p1z-582fom"
+        },
+        {
+          "date": "2026-07-18",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-31",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
           "workers": "山本 雅彦",
           "notes": ""
         }

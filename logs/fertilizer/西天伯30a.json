@@ -1,0 +1,41 @@
+{
+  "field": "西天伯30a",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-29",
+          "distributed": [
+            {
+              "field": "西天伯(30a)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 360,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "西天伯(30a)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 240,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": [
+            "土井 琉羽",
+            "山本 雅彦",
+            "山本 直輝"
+          ],
+          "notes": "",
+          "eventId": "ev-ms5eph69-4uj45w",
+          "workType": "苦土石灰（粒）、エコまぜくん"
+        }
+      ]
+    }
+  }
+}

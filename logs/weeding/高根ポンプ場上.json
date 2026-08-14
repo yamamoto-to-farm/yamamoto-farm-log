@@ -35,7 +35,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp67-zbjb6r"
         },
         {
           "date": "2026-04-14",
@@ -69,7 +70,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp67-1hitcq"
         },
         {
           "date": "2026-05-15",
@@ -103,7 +105,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp67-f1w6nd"
         },
         {
           "date": "2026-07-08",
@@ -138,7 +141,8 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "土井 琉羽,若月 道昭,山本 直輝",
-          "notes": "周りのみ\n法面大きめ"
+          "notes": "周りのみ\n法面大きめ",
+          "eventId": "ev-mrjrqp67-3l1uk6"
         }
       ]
     }

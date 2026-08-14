@@ -14,29 +14,42 @@
               "pesticide_id": "HL0004",
               "name": "草枯らしプラボトル",
               "dilution_rate": 100,
-              "total_water_amount": 90,
-              "total_spray_amount": 90,
+              "total_water_amount": 60,
+              "total_spray_amount": 60,
               "unit": "L"
             }
           ],
           "distributed": [
             {
-              "field": "若松(大)",
+              "field": "若松(新･小)",
               "pesticide_id": "HL0004",
               "name": "草枯らしプラボトル",
               "dilution_rate": 100,
               "unit": "L",
               "water_unit": "L",
-              "water_amount": 45.6,
-              "spray_amount": 45.6,
-              "pesticide_amount": 456,
+              "water_amount": 40.1,
+              "spray_amount": 40.1,
+              "pesticide_amount": 401,
               "pesticide_unit": "ml"
             }
           ],
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
-          "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "大は畑全体\n排水機は周りのみ"
+          "workers": "土井 琉羽,若月 道昭,山本 直輝",
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp6b-24a2kp"
+        },
+        {
+          "date": "2026-05-31",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrmjo6zf-h6i53y"
         }
       ]
     }

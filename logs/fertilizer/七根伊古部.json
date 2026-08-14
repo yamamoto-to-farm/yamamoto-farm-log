@@ -27,7 +27,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph5s-yzbm9v"
         },
         {
           "date": "2025-08-06",
@@ -41,7 +42,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph5s-9pwf6a"
         },
         {
           "date": "2025-10-02",
@@ -61,7 +63,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph5s-qew9qg"
         },
         {
           "date": "2025-10-17",
@@ -75,6 +78,46 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph5s-cw81bj"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-30",
+          "distributed": [
+            {
+              "field": "七根(伊古部)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 400,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "七根(伊古部)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 260,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "七根(伊古部)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 140,
+              "category": "堆肥",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
           "notes": ""
         }
       ]

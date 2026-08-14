@@ -16,6 +16,13 @@
           "machine": "machine1",
           "workers": "若月 道昭,石原 孝晋",
           "notes": ""
+        },
+        {
+          "date": "2026-07-21",
+          "workType": "整地",
+          "machine": "EF228",
+          "workers": "山本 雅彦",
+          "notes": ""
         }
       ]
     }

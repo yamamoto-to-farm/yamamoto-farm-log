@@ -1,6 +1,420 @@
 {
   "version": 2,
-  "updatedAt": "2026-07-18T00:00:00.000Z",
-  "blocks": [],
-  "assignments": {}
+  "updatedAt": "2026-07-25T00:39:52.463Z",
+  "blocks": [
+    {
+      "blockId": "20260718-ないと-01#mryu71d9sylmi",
+      "originSeedRef": "20260718-ないと-01",
+      "trays": 80,
+      "laneId": "west-1",
+      "spanCols": 3,
+      "posX": 0,
+      "posY": 0.5101,
+      "order": 0
+    },
+    {
+      "blockId": "20260720-なごみ-01#mryu71d901xsm",
+      "originSeedRef": "20260720-なごみ-01",
+      "trays": 20,
+      "laneId": "west-1",
+      "spanCols": 3,
+      "posX": 0,
+      "posY": 0.049,
+      "order": 1
+    },
+    {
+      "blockId": "20260718-藍天-02#mryu71d9o9mdy",
+      "originSeedRef": "20260718-藍天-02",
+      "trays": 81.5,
+      "laneId": "west-1",
+      "spanCols": 3,
+      "posX": 0,
+      "posY": 0.17,
+      "order": 2
+    },
+    {
+      "blockId": "20260716-藍天-01#mryu71d9mvtxm",
+      "originSeedRef": "20260716-藍天-01",
+      "trays": 40,
+      "laneId": "west-1",
+      "spanCols": 3,
+      "posX": 0,
+      "posY": 0.834,
+      "order": 3
+    },
+    {
+      "blockId": "20250803-ネオルビーSP-01#mryu71d98i71v",
+      "originSeedRef": "20250803-ネオルビーSP-01",
+      "trays": 64.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 0
+    },
+    {
+      "blockId": "20250810-YR銀次郎-01#mryu71d9tj6bs",
+      "originSeedRef": "20250810-YR銀次郎-01",
+      "trays": 52,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 1
+    },
+    {
+      "blockId": "20250801-翠緑-01#mryu71d9027ol",
+      "originSeedRef": "20250801-翠緑-01",
+      "trays": 51.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 2
+    },
+    {
+      "blockId": "20250807-冬こづち-02#mryu71d9lxsub",
+      "originSeedRef": "20250807-冬こづち-02",
+      "trays": 42.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 3
+    },
+    {
+      "blockId": "20250807-YR万代-01#mryu71d9mkges",
+      "originSeedRef": "20250807-YR万代-01",
+      "trays": 17.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 4
+    },
+    {
+      "blockId": "20250802-パワールビーレッド-01#mryu71d9mamql",
+      "originSeedRef": "20250802-パワールビーレッド-01",
+      "trays": 16.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 5
+    },
+    {
+      "blockId": "20250814-りくと-02#mryu71d9yy7rt",
+      "originSeedRef": "20250814-りくと-02",
+      "trays": 15.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 6
+    },
+    {
+      "blockId": "20250802-プレミアレッド-01#mryu71d9jpzyh",
+      "originSeedRef": "20250802-プレミアレッド-01",
+      "trays": 12,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 7
+    },
+    {
+      "blockId": "20250812-龍渓-01#mryu71d9ucadg",
+      "originSeedRef": "20250812-龍渓-01",
+      "trays": 11,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 8
+    },
+    {
+      "blockId": "20250810-冬五郎-01#mryu71d9lgbl7",
+      "originSeedRef": "20250810-冬五郎-01",
+      "trays": 9.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 9
+    },
+    {
+      "blockId": "20250810-そらと-01#mryu71d9tkoqw",
+      "originSeedRef": "20250810-そらと-01",
+      "trays": 7.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 10
+    },
+    {
+      "blockId": "20250727-レッドコメット(MKS-C901)-01#mryu71d9oieve",
+      "originSeedRef": "20250727-レッドコメット(MKS-C901)-01",
+      "trays": 7,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 11
+    },
+    {
+      "blockId": "20250722-たいと-01#mryu71d9qdnhf",
+      "originSeedRef": "20250722-たいと-01",
+      "trays": 6.7,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 12
+    },
+    {
+      "blockId": "20250711-藍天-01#mryu71d9sz5kr",
+      "originSeedRef": "20250711-藍天-01",
+      "trays": 6,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 13
+    },
+    {
+      "blockId": "20250803-冬こづち-01#mryu71d9k04z7",
+      "originSeedRef": "20250803-冬こづち-01",
+      "trays": 6,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 14
+    },
+    {
+      "blockId": "20250805-藍宝ひかり-01#mryu71d97axq1",
+      "originSeedRef": "20250805-藍宝ひかり-01",
+      "trays": 5.8,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 15
+    },
+    {
+      "blockId": "20250802-冬銀河-01#mryu71d9feeiv",
+      "originSeedRef": "20250802-冬銀河-01",
+      "trays": 4.8,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 16
+    },
+    {
+      "blockId": "20250812-YRたかみね-01#mryu71d9szqmb",
+      "originSeedRef": "20250812-YRたかみね-01",
+      "trays": 4.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 17
+    },
+    {
+      "blockId": "20250718-なごみ-01#mryu71d9i8pxs",
+      "originSeedRef": "20250718-なごみ-01",
+      "trays": 3.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 18
+    },
+    {
+      "blockId": "20250718-ロイド(C-147)-01#mryu71d9e6s47",
+      "originSeedRef": "20250718-ロイド(C-147)-01",
+      "trays": 2.8,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 19
+    },
+    {
+      "blockId": "20250726-ロイド(C-147)-02#mryu71d9tshf9",
+      "originSeedRef": "20250726-ロイド(C-147)-02",
+      "trays": 2.7,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 20
+    },
+    {
+      "blockId": "20250718-おかわり-01#mryu71d9fzruv",
+      "originSeedRef": "20250718-おかわり-01",
+      "trays": 2,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 21
+    },
+    {
+      "blockId": "20250810-TS-C2010-01#mryu71d9jq7oi",
+      "originSeedRef": "20250810-TS-C2010-01",
+      "trays": 1.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 22
+    },
+    {
+      "blockId": "20250720-YR888-01#mryu71d9qnpfa",
+      "originSeedRef": "20250720-YR888-01",
+      "trays": 1,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 23
+    },
+    {
+      "blockId": "20250805-たいと-02#mryu71d9d4idx",
+      "originSeedRef": "20250805-たいと-02",
+      "trays": 0.8,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 24
+    },
+    {
+      "blockId": "20250801-りくと-01#mryu71d9zyxsu",
+      "originSeedRef": "20250801-りくと-01",
+      "trays": 0.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 25
+    },
+    {
+      "blockId": "20250805-冬藍-01#mryu71d9d6g8f",
+      "originSeedRef": "20250805-冬藍-01",
+      "trays": 0.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 26
+    },
+    {
+      "blockId": "20250805-風あすか-01#mryu71d9bvhmp",
+      "originSeedRef": "20250805-風あすか-01",
+      "trays": 0.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 27
+    },
+    {
+      "blockId": "20250806-N-831-01#mryu71d9ixmkl",
+      "originSeedRef": "20250806-N-831-01",
+      "trays": 0.5,
+      "laneId": "",
+      "spanCols": 1,
+      "posX": 0,
+      "posY": 0,
+      "order": 28
+    },
+    {
+      "blockId": "20260720-おかわり-01#mryu71d9a9ere",
+      "originSeedRef": "20260720-おかわり-01",
+      "trays": 20,
+      "laneId": "west-4",
+      "spanCols": 3,
+      "posX": 0,
+      "posY": 0,
+      "order": 0
+    },
+    {
+      "blockId": "20260720-ないと-02#mryu71d9drglx",
+      "originSeedRef": "20260720-ないと-02",
+      "trays": 40,
+      "laneId": "west-2",
+      "spanCols": 2,
+      "posX": 0,
+      "posY": 0,
+      "order": 0
+    },
+    {
+      "blockId": "20260720-YR888-01#mryu71d9o4ygf",
+      "originSeedRef": "20260720-YR888-01",
+      "trays": 81,
+      "laneId": "west-2",
+      "spanCols": 2,
+      "posX": 0,
+      "posY": 0.2429,
+      "order": 1
+    },
+    {
+      "blockId": "20260720-風あすか-01#mryu71d9hq1uk",
+      "originSeedRef": "20260720-風あすか-01",
+      "trays": 41,
+      "laneId": "west-2",
+      "spanCols": 2,
+      "posX": 0,
+      "posY": 0.747,
+      "order": 2
+    },
+    {
+      "blockId": "20260720-ないと-02#mrzn63tdlei9b",
+      "originSeedRef": "20260720-ないと-02",
+      "trays": 39,
+      "laneId": "west-3",
+      "spanCols": 2,
+      "posX": 0,
+      "posY": 0,
+      "order": 0
+    }
+  ],
+  "assignments": {
+    "20260718-ないと-01": {
+      "laneId": "west-1",
+      "order": 0
+    },
+    "20260720-おかわり-01": {
+      "laneId": "west-4",
+      "order": 0
+    },
+    "20260720-ないと-02": {
+      "laneId": "west-2",
+      "order": 0
+    },
+    "20260720-なごみ-01": {
+      "laneId": "west-1",
+      "order": 1
+    },
+    "20260720-YR888-01": {
+      "laneId": "west-2",
+      "order": 1
+    },
+    "20260718-藍天-02": {
+      "laneId": "west-1",
+      "order": 2
+    },
+    "20260720-風あすか-01": {
+      "laneId": "west-2",
+      "order": 2
+    },
+    "20260716-藍天-01": {
+      "laneId": "west-1",
+      "order": 3
+    }
+  }
 }

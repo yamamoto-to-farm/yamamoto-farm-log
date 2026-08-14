@@ -12,7 +12,8 @@
           "workers": [
             "山本 雅彦"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp4d-zgpe6l"
         },
         {
           "date": "2026-05-28",
@@ -24,7 +25,8 @@
             "山本 直輝",
             "若月 道昭"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp4d-xh1sox"
         },
         {
           "date": "2026-07-09",
@@ -59,7 +61,8 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "駐車場全体と周りのみ"
+          "notes": "駐車場全体と周りのみ",
+          "eventId": "ev-mrjrqp4d-v9qyq9"
         }
       ]
     }

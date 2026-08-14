@@ -37,7 +37,8 @@
           "workers": [
             "山本 咲子"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp4d-9885k8"
         },
         {
           "date": "2026-05-06",
@@ -47,7 +48,8 @@
           "workers": [
             "山本 雅彦"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp4d-d1nfwn"
         },
         {
           "date": "2026-07-12",
@@ -81,8 +83,13 @@
           ],
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
-          "workers": "山本 直輝,石原 孝晋,土井 琉羽",
-          "notes": "周りのみ、東側要笹伐採"
+          "workers": [
+            "山本 直輝",
+            "石原 孝晋",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ、東側要笹伐採",
+          "eventId": "ev-mrjrqp4d-udglw0"
         }
       ]
     }

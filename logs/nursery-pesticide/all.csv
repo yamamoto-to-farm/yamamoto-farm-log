@@ -1,1 +1,2 @@
 date,targetCount,targets,pesticides,machine,workers,notes
+"2026-07-25","1","[{""seedRef"":""20260716-藍天-01"",""laneId"":""west-1"",""laneLabel"":""西④"",""zoneId"":""west"",""zoneLabel"":""西棟"",""variety"":""藍天"",""trays"":40,""seedDate"":""2026-07-16""}]","[{""pesticide_id"":""F007"",""name"":""マグマSi"",""dilution_rate"":5000,""total_water_amount"":5,""total_spray_amount"":5,""unit"":""L"",""pesticide_unit"":""ml"",""category"":""葉面散布剤"",""materialType"":""fertilizer"",""sourceMaster"":""fertilizer-index""}]","machine1","山本 咲子",""

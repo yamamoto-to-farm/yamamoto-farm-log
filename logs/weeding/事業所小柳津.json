@@ -12,7 +12,8 @@
           "workers": [
             "山本 直輝"
           ],
-          "notes": "小柳津・上含む　圃場内"
+          "notes": "小柳津・上含む　圃場内",
+          "eventId": "ev-mrjs1zi0-8ahe8h"
         },
         {
           "date": "2026-07-12",
@@ -51,7 +52,8 @@
             "石原 孝晋",
             "土井 琉羽"
           ],
-          "notes": "周りのみ、ハウス側なし、上も"
+          "notes": "周りのみ、ハウス側なし、上も",
+          "eventId": "ev-mrjs1zi0-p183ju"
         },
         {
           "date": "2026-07-01",
@@ -62,7 +64,8 @@
             "山本 直輝",
             "土井 琉羽"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs1zi0-2cvr4r"
         },
         {
           "date": "2026-03-13",
@@ -72,7 +75,8 @@
           "workers": [
             "山本 咲子"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs1zi0-r4780l"
         }
       ]
     }

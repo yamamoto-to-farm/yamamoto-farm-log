@@ -1,4 +1,70 @@
 {
+  "2025": {
+    "year": "2025",
+    "step1": {
+      "months": [
+        {
+          "month": "2025-11",
+          "targetUnits": "46",
+          "unitsPer10a": "9.2",
+          "yieldPer10a": "5600",
+          "needArea": "5.00"
+        },
+        {
+          "month": "2025-12",
+          "targetUnits": "240",
+          "unitsPer10a": "12.6",
+          "yieldPer10a": "6600",
+          "needArea": "19.05"
+        },
+        {
+          "month": "2026-01",
+          "targetUnits": "300",
+          "unitsPer10a": "16.6",
+          "yieldPer10a": "8500",
+          "needArea": "18.07"
+        },
+        {
+          "month": "2026-02",
+          "targetUnits": "310",
+          "unitsPer10a": "20.6",
+          "yieldPer10a": "8500",
+          "needArea": "15.05"
+        },
+        {
+          "month": "2026-03",
+          "targetUnits": "330",
+          "unitsPer10a": "20.6",
+          "yieldPer10a": "9000",
+          "needArea": "16.02"
+        },
+        {
+          "month": "2026-04",
+          "targetUnits": "360",
+          "unitsPer10a": "20",
+          "yieldPer10a": "9000",
+          "needArea": "18.00"
+        },
+        {
+          "month": "2026-05",
+          "targetUnits": "300",
+          "unitsPer10a": "16",
+          "yieldPer10a": "8500",
+          "needArea": "18.75"
+        },
+        {
+          "month": "2026-06",
+          "targetUnits": "300",
+          "unitsPer10a": "16",
+          "yieldPer10a": "8500",
+          "needArea": "18.75"
+        }
+      ]
+    },
+    "step2": {
+      "rows": []
+    }
+  },
   "2026": {
     "year": "2026",
     "step1": {

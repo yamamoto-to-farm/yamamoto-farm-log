@@ -27,7 +27,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4e-ylezco"
         },
         {
           "date": "2025-08-13",
@@ -41,7 +42,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": "南側10a分"
+          "notes": "南側10a分",
+          "eventId": "ev-ms5eph4e-49hvlm"
         },
         {
           "date": "2025-08-17",
@@ -55,7 +57,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4e-ohtbxg"
         },
         {
           "date": "2025-08-24",
@@ -69,7 +72,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4e-n99nfv"
         },
         {
           "date": "2025-09-08",
@@ -83,7 +87,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4e-qvlw82"
         }
       ]
     },
@@ -101,7 +106,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4e-on9mqh"
         },
         {
           "date": "2026-03-15",
@@ -115,7 +121,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph4e-uc8zfj"
         },
         {
           "date": "2026-03-16",
@@ -143,7 +150,8 @@
               "bags": 15,
               "total_kg": 300
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph4e-id2b6s"
         },
         {
           "date": "2026-04-20",
@@ -183,7 +191,35 @@
               "bags": 5.5,
               "total_kg": 110
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph4e-c86tse"
+        },
+        {
+          "date": "2026-07-26",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 600,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 480,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph4e-ayv2jt"
         }
       ]
     }

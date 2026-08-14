@@ -35,8 +35,12 @@
           ],
           "sprayMethod": "背負動力噴霧機",
           "machine": "machine1",
-          "workers": "土井 琉羽,山本 直輝",
-          "notes": "周りのみ"
+          "workers": [
+            "土井 琉羽",
+            "山本 直輝"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp4g-000j5m"
         }
       ]
     }

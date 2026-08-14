@@ -1,0 +1,23 @@
+{
+  "field": "高田南_1",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-19",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "石原 孝晋,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-19",
+          "workType": "側溝整備（重機）",
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

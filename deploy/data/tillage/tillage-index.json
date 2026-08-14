@@ -1,0 +1,753 @@
+{
+  "体育館": {
+    "2026": [
+      "2026-07-01-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "三角畑": {
+    "2026": [
+      "2026-03-10-tillage.json",
+      "2026-03-15-tillage.json",
+      "2026-07-01-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "看板前": {
+    "2026": [
+      "2026-07-01-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "豊栄町東": {
+    "2026": [
+      "2026-01-11-tillage.json",
+      "2026-07-14-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "明輝南_40a": {
+    "2026": [
+      "2026-01-21-tillage.json",
+      "2026-05-28-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "石神": {
+    "2026": [
+      "2026-02-07-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "大清水北": {
+    "2026": [
+      "2026-02-13-tillage.json",
+      "2026-05-16-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "大清水": {
+    "2026": [
+      "2026-02-13-tillage.json",
+      "2026-05-16-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "しあわせ地蔵": {
+    "2026": [
+      "2026-03-10-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "三角畑下": {
+    "2026": [
+      "2026-03-10-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "ヨコモク大": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-23-tillage.json"
+    ]
+  },
+  "ヨコモク下": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-23-tillage.json"
+    ]
+  },
+  "ヨコモクハウス跡": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-23-tillage.json"
+    ]
+  },
+  "小島上": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-05-30-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "小島下": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-05-30-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "小島崖下": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-05-30-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "ハウス跡上": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-05-16-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "ハウス跡下": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-05-16-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "事業所西_4": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-04-29-tillage.json",
+      "2026-05-17-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "事業所西_2": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-04-29-tillage.json",
+      "2026-05-17-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "事業所西_1": {
+    "2026": [
+      "2026-03-13-tillage.json",
+      "2026-04-29-tillage.json",
+      "2026-05-17-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "高田南_2": {
+    "2026": [
+      "2026-03-20-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "高田南_1": {
+    "2026": [
+      "2026-03-20-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "高田南_4": {
+    "2026": [
+      "2026-03-20-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "高田南_3": {
+    "2026": [
+      "2026-03-20-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "高田": {
+    "2026": [
+      "2026-03-20-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "八雲だんご": {
+    "2026": [
+      "2026-03-20-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "高田崖上_小": {
+    "2026": [
+      "2026-05-05-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "高田崖上_中": {
+    "2026": [
+      "2026-05-05-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "高田崖上_大": {
+    "2026": [
+      "2026-05-05-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-16-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "飯村": {
+    "2026": [
+      "2026-07-04-tillage.json"
+    ]
+  },
+  "西天伯30a": {
+    "2026": [
+      "2026-04-18-tillage.json",
+      "2026-05-05-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-18-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "西天伯20a": {
+    "2026": [
+      "2026-04-18-tillage.json",
+      "2026-05-05-tillage.json",
+      "2026-05-29-tillage.json",
+      "2026-07-04-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-18-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "若松東前": {
+    "2026": [
+      "2026-03-24-tillage.json",
+      "2026-05-30-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "信号小野田": {
+    "2026": [
+      "2026-03-24-tillage.json",
+      "2026-05-16-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-23-tillage.json"
+    ]
+  },
+  "中学横": {
+    "2026": [
+      "2026-04-13-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "王崎": {
+    "2026": [
+      "2026-04-13-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "二回": {
+    "2026": [
+      "2026-04-13-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "中日新聞": {
+    "2026": [
+      "2026-04-13-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "池": {
+    "2026": [
+      "2026-04-19-tillage.json",
+      "2026-05-31-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-20-tillage.json",
+      "2026-08-01-tillage.json"
+    ]
+  },
+  "下田中": {
+    "2026": [
+      "2026-04-19-tillage.json",
+      "2026-05-31-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-20-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "下田西": {
+    "2026": [
+      "2026-04-19-tillage.json",
+      "2026-05-31-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-20-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原すいか横_うずら北": {
+    "2026": [
+      "2026-04-27-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原マリエール西": {
+    "2026": [
+      "2026-04-27-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原変形2_5": {
+    "2026": [
+      "2026-04-27-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原自分": {
+    "2026": [
+      "2026-04-27-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原自分前_自分北": {
+    "2026": [
+      "2026-04-27-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原うずら角": {
+    "2026": [
+      "2026-04-27-tillage.json",
+      "2026-06-17-tillage.json",
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "事業所西_3": {
+    "2026": [
+      "2026-04-29-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "事業所小柳津": {
+    "2026": [
+      "2026-04-29-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "事業所南": {
+    "2026": [
+      "2026-04-29-tillage.json",
+      "2026-05-16-tillage.json",
+      "2026-07-14-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "七根伊古部": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "赤沢上": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-06-23-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "赤沢下": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-06-23-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "赤沢東": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "大清水豚": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-05-26-tillage.json"
+    ]
+  },
+  "野依台": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-07-14-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "事業所東_下": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-07-12-tillage.json"
+    ]
+  },
+  "事業所東_上": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-07-12-tillage.json"
+    ]
+  },
+  "そば屋前": {
+    "2026": [
+      "2026-05-26-tillage.json",
+      "2026-05-29-tillage.json"
+    ]
+  },
+  "浜大": {
+    "2026": [
+      "2026-05-28-tillage.json",
+      "2026-06-23-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "浜小": {
+    "2026": [
+      "2026-05-28-tillage.json",
+      "2026-06-23-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "浜中": {
+    "2026": [
+      "2026-05-28-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "高根ポンプ場下": {
+    "2026": [
+      "2026-05-28-tillage.json",
+      "2026-08-04-tillage.json",
+      "2026-08-06-tillage.json"
+    ]
+  },
+  "高根ポンプ場上": {
+    "2026": [
+      "2026-05-28-tillage.json",
+      "2026-08-04-tillage.json",
+      "2026-08-06-tillage.json"
+    ]
+  },
+  "明輝": {
+    "2026": [
+      "2026-05-28-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "上原醍醐": {
+    "2026": [
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原兵藤": {
+    "2026": [
+      "2026-07-10-tillage.json",
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原中学上3_7": {
+    "2026": [
+      "2026-07-10-tillage.json",
+      "2026-07-18-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原家_西": {
+    "2026": [
+      "2026-07-10-tillage.json",
+      "2026-07-18-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原欠33": {
+    "2026": [
+      "2026-07-10-tillage.json",
+      "2026-07-18-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "上原ほいっぷ": {
+    "2026": [
+      "2026-07-10-tillage.json",
+      "2026-07-18-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "東道天下5": {
+    "2026": [
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-08-03-tillage.json",
+      "2026-08-06-tillage.json"
+    ]
+  },
+  "ヨコモク南": {
+    "2026": [
+      "2026-07-12-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-23-tillage.json"
+    ]
+  },
+  "若松排水機横": {
+    "2026": [
+      "2026-07-13-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "彩幸南": {
+    "2026": [
+      "2026-07-13-tillage.json",
+      "2026-07-16-tillage.json"
+    ]
+  },
+  "排水機": {
+    "2026": [
+      "2026-05-31-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-20-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "スシロー": {
+    "2026": [
+      "2026-05-31-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "事業所西_5": {
+    "2026": [
+      "2026-07-14-tillage.json",
+      "2026-07-17-tillage.json"
+    ]
+  },
+  "新切": {
+    "2026": [
+      "2026-07-14-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-07-31-tillage.json"
+    ]
+  },
+  "若松元_大": {
+    "2026": [
+      "2026-05-30-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "若松大": {
+    "2026": [
+      "2026-03-24-tillage.json",
+      "2026-05-30-tillage.json",
+      "2026-07-13-tillage.json",
+      "2026-07-15-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "大清水西": {
+    "2026": [
+      "2026-05-16-tillage.json",
+      "2026-05-26-tillage.json",
+      "2026-07-12-tillage.json",
+      "2026-07-19-tillage.json"
+    ]
+  },
+  "ぎょうざ東1": {
+    "2026": [
+      "2026-06-23-tillage.json",
+      "2026-08-04-tillage.json"
+    ]
+  },
+  "ぎょうざ東3": {
+    "2026": [
+      "2026-06-23-tillage.json",
+      "2026-08-04-tillage.json"
+    ]
+  },
+  "ぎょうざ東2": {
+    "2026": [
+      "2026-06-23-tillage.json",
+      "2026-08-04-tillage.json"
+    ]
+  },
+  "バラ南": {
+    "2026": [
+      "2026-06-23-tillage.json"
+    ]
+  },
+  "バラ東": {
+    "2026": [
+      "2026-06-23-tillage.json"
+    ]
+  },
+  "長沢1": {
+    "2026": [
+      "2026-02-07-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "長沢2": {
+    "2026": [
+      "2026-02-07-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "長沢3": {
+    "2026": [
+      "2026-02-07-tillage.json",
+      "2026-07-11-tillage.json",
+      "2026-07-17-tillage.json",
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "上原マリエール横_マリエール東": {
+    "2026": [
+      "2026-07-19-tillage.json",
+      "2026-08-02-tillage.json"
+    ]
+  },
+  "西七根": {
+    "2026": [
+      "2026-08-03-tillage.json"
+    ]
+  },
+  "若松排水機_大": {
+    "2026": [
+      "2026-08-06-tillage.json"
+    ]
+  }
+}

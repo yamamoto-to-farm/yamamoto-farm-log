@@ -36,7 +36,28 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ\n側溝掘る必要あり\n水抜き必要あり"
+          "notes": "周りのみ\n側溝掘る必要あり\n水抜き必要あり",
+          "eventId": "ev-mrjrqp68-psc76p"
+        },
+        {
+          "date": "2026-07-14",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-mrmjo71f-5chksu"
+        },
+        {
+          "date": "2026-06-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": "",
+          "eventId": "ev-msmev7tn-i4jxqs"
         }
       ]
     }

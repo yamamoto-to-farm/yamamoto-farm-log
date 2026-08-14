@@ -1,0 +1,49 @@
+{
+  "field": "スシロー",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-13",
+          "workType": "プラソイラー",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjs3p1k-imiv7x"
+        },
+        {
+          "date": "2026-05-31",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 20,
+          "speedKmh": 2.8,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-mrmnaxjx-qiniyn"
+        },
+        {
+          "date": "2026-07-17",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-08-02",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

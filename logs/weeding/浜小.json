@@ -37,7 +37,8 @@
           "workers": [
             "山本 咲子"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5f-5l9cly"
         },
         {
           "date": "2026-05-02",
@@ -45,7 +46,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,石原 孝晋",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5f-bm7m2c"
         },
         {
           "date": "2026-07-08",
@@ -80,7 +82,8 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,土井 琉羽,若月 道昭",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5f-ly1iij"
         }
       ]
     }

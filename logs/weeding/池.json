@@ -35,63 +35,54 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5u-oomapc"
         },
         {
-          "date": "2026-07-12",
+          "date": "2026-07-14",
           "workType": "除草剤散布",
           "pesticides": [
-            "ザクサ液剤",
-            "ラウンドアップマックスロード"
+            "草枯らしプラボトル"
           ],
           "pesticideUsage": [
             {
-              "pesticide_id": "HL0001",
-              "name": "ザクサ液剤",
-              "dilution_rate": 50,
-              "total_water_amount": 10,
-              "total_spray_amount": 10,
-              "unit": "L"
-            },
-            {
-              "pesticide_id": "HL0003",
-              "name": "ラウンドアップマックスロード",
-              "dilution_rate": 50,
-              "total_water_amount": 10,
-              "total_spray_amount": 10,
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
+              "total_water_amount": 30,
+              "total_spray_amount": 30,
               "unit": "L"
             }
           ],
           "distributed": [
             {
               "field": "池",
-              "pesticide_id": "HL0001",
-              "name": "ザクサ液剤",
-              "dilution_rate": 50,
+              "pesticide_id": "HL0004",
+              "name": "草枯らしプラボトル",
+              "dilution_rate": 100,
               "unit": "L",
               "water_unit": "L",
-              "water_amount": 3.4,
-              "spray_amount": 3.4,
-              "pesticide_amount": 68,
-              "pesticide_unit": "ml"
-            },
-            {
-              "field": "池",
-              "pesticide_id": "HL0003",
-              "name": "ラウンドアップマックスロード",
-              "dilution_rate": 50,
-              "unit": "L",
-              "water_unit": "L",
-              "water_amount": 3.4,
-              "spray_amount": 3.4,
-              "pesticide_amount": 68,
+              "water_amount": 10.3,
+              "spray_amount": 10.3,
+              "pesticide_amount": 103.00000000000001,
               "pesticide_unit": "ml"
             }
           ],
           "sprayMethod": "背負動力噴霧機",
           "machine": "machine1",
-          "workers": "山本 咲子",
-          "notes": ""
+          "workers": "土井 琉羽,山本 直輝",
+          "notes": "周りのみ\n池は要ゴミ拾い",
+          "eventId": "ev-mrmjqgef-p8m0m3"
+        },
+        {
+          "date": "2026-07-14",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": "山本 直輝,山本 咲子,土井 琉羽",
+          "notes": "池横・祖母の圃場草刈り。右前輪パンクする。",
+          "eventId": "ev-mrmjqgef-vx2ap6"
         }
       ]
     }

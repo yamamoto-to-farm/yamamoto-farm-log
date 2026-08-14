@@ -1,0 +1,19 @@
+{
+  "field": "若松排水機_大",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-03",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": "反対側(伊藤さん耕作予定畑)も草刈り実施",
+          "eventId": "ev-msmev7uf-o7airo"
+        }
+      ]
+    }
+  }
+}

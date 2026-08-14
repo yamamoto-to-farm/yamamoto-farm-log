@@ -9,7 +9,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp43-0u9azj"
         },
         {
           "date": "2026-05-02",
@@ -17,7 +18,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,石原 孝晋",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp43-7d6rq5"
         },
         {
           "date": "2026-05-24",
@@ -26,7 +28,8 @@
           "mowingMethod": "フレールモア",
           "machine": "machine1",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp43-jp4i08"
         },
         {
           "date": "2026-07-08",
@@ -61,7 +64,8 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ\n中腰丈のイタリアン"
+          "notes": "周りのみ\n中腰丈のイタリアン",
+          "eventId": "ev-mrjrqp43-j7ub8w"
         },
         {
           "date": "2026-07-09",
@@ -70,7 +74,8 @@
           "mowingMethod": "オフセットモア",
           "machine": "EF228",
           "workers": "山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp43-m4spkp"
         }
       ]
     }

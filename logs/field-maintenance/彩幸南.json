@@ -1,0 +1,23 @@
+{
+  "field": "彩幸南",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-06-01",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭,土井 琉羽,山本 雅彦,山本 直輝,山崎",
+          "notes": "新しく借りた畑の樹木・ビニール等片付け"
+        },
+        {
+          "date": "2026-06-30",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "山本 雅彦,若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

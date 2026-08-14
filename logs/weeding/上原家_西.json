@@ -35,7 +35,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp64-uwdfia"
         },
         {
           "date": "2026-03-23",
@@ -69,7 +70,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp64-kwg5kw"
         },
         {
           "date": "2026-03-24",
@@ -77,7 +79,8 @@
           "pesticides": [],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp64-4mqfln"
         },
         {
           "date": "2026-07-13",
@@ -111,8 +114,12 @@
           ],
           "sprayMethod": "背負動力噴霧機",
           "machine": "machine1",
-          "workers": "土井 琉羽,山本 直輝",
-          "notes": "周りのみ"
+          "workers": [
+            "土井 琉羽",
+            "山本 直輝"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp64-qjfvph"
         }
       ]
     }

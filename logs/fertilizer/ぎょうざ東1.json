@@ -15,7 +15,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": "ぎょうざ東３　端にふりかけ堆肥３袋"
+          "notes": "ぎょうざ東３　端にふりかけ堆肥３袋",
+          "eventId": "ev-ms5eph5t-eykc3z"
         },
         {
           "date": "2026-02-15",
@@ -55,7 +56,8 @@
               "bags": 2,
               "total_kg": 40
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph5t-03excx"
         },
         {
           "date": "2026-03-29",
@@ -95,7 +97,8 @@
               "bags": 5,
               "total_kg": 100
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph5t-7ob1fo"
         }
       ]
     }

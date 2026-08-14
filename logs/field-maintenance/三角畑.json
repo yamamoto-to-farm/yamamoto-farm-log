@@ -1,0 +1,23 @@
+{
+  "field": "三角畑",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-04",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭,土井 琉羽",
+          "notes": ""
+        },
+        {
+          "date": "2026-08-05",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭,土井 琉羽",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

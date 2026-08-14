@@ -1,0 +1,47 @@
+{
+  "field": "長沢1",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-02-07",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 2.5,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-mrjs3p09-d7tkjg"
+        },
+        {
+          "date": "2026-07-11",
+          "workType": "プラソイラー",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": "",
+          "eventId": "ev-mrjs3p09-2nsuno"
+        },
+        {
+          "date": "2026-07-17",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-08-03",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

@@ -35,7 +35,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp5y-62sbsj"
         },
         {
           "date": "2026-07-12",
@@ -69,8 +70,13 @@
           ],
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
-          "workers": "山本 直輝,石原 孝晋,土井 琉羽",
-          "notes": "周りのみ"
+          "workers": [
+            "山本 直輝",
+            "石原 孝晋",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp5y-jbrph5"
         }
       ]
     }

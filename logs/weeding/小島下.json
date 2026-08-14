@@ -36,7 +36,18 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ"
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp4e-heds01"
+        },
+        {
+          "date": "2026-06-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": "",
+          "eventId": "ev-msmev7wf-kddmcp"
         }
       ]
     }

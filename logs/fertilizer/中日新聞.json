@@ -21,7 +21,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph7d-3se1ci"
         },
         {
           "date": "2025-08-23",
@@ -35,7 +36,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph7d-aasvx9"
         },
         {
           "date": "2025-09-20",
@@ -49,7 +51,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph7d-unwl3b"
         },
         {
           "date": "2025-09-20",
@@ -63,7 +66,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph7d-48ubpi"
         },
         {
           "date": "2025-10-12",
@@ -77,7 +81,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph7d-lr2q3w"
         },
         {
           "date": "2025-10-27",
@@ -91,6 +96,37 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph7d-0sbhdg"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-30",
+          "distributed": [
+            {
+              "field": "中日新聞",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 140,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "中日新聞",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 100,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
           "notes": ""
         }
       ]

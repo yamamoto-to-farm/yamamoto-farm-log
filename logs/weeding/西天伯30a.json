@@ -36,7 +36,87 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ\n要樹木伐採"
+          "notes": "周りのみ\n要樹木伐採",
+          "eventId": "ev-mrjrqp51-jqg4v5"
+        },
+        {
+          "date": "2026-06-05",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrml0zfz-dlgeqs"
+        },
+        {
+          "date": "2026-06-30",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "背負い式刈払機",
+          "machine": "machine1",
+          "workers": "山本 直輝,土井 琉羽",
+          "notes": "",
+          "eventId": "ev-msmev7vt-nqror4"
+        },
+        {
+          "date": "2026-08-11",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "草枯れ次郎"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 75,
+              "total_water_amount": 22.5,
+              "total_spray_amount": 22.5,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 300,
+              "total_water_amount": 22.5,
+              "total_spray_amount": 22.5,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 13.2,
+              "spray_amount": 13.2,
+              "pesticide_amount": 176,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 300,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 13.2,
+              "spray_amount": 13.2,
+              "pesticide_amount": 44,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 直輝,石原 孝晋",
+          "notes": "樹木伐採、草刈り",
+          "eventId": "ev-msp92ofp-qft287"
         }
       ]
     }

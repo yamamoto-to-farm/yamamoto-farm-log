@@ -21,7 +21,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": "20a分"
+          "notes": "20a分",
+          "eventId": "ev-ms5eph9k-p96bhs"
         },
         {
           "date": "2025-09-24",
@@ -35,7 +36,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph9k-nzsfwm"
         },
         {
           "date": "2025-10-30",
@@ -49,7 +51,8 @@
           ],
           "machine": "",
           "workers": "山本 直輝,山本 雅彦",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-ms5eph9k-linck4"
         }
       ]
     }

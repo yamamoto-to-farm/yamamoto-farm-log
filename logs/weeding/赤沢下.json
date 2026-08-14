@@ -35,7 +35,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 咲子",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp6n-jh9icw"
         },
         {
           "date": "2026-07-08",
@@ -70,7 +71,8 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ\n要樹木伐採"
+          "notes": "周りのみ\n要樹木伐採",
+          "eventId": "ev-mrjrqp6n-33u7l1"
         }
       ]
     }

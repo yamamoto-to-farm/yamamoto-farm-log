@@ -1,0 +1,62 @@
+{
+  "field": "若松大",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-03-24",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-mrjs3ozj-rk173v"
+        },
+        {
+          "date": "2026-07-13",
+          "workType": "プラソイラー",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrjs3ozj-n1sk1f"
+        },
+        {
+          "date": "2026-05-30",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 2.8,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-mrmnaxk0-544g6l"
+        },
+        {
+          "date": "2026-07-15",
+          "workType": "スタブルカルチ",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "EG330",
+          "workers": [
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mrmnaxk0-i0qii8"
+        },
+        {
+          "date": "2026-07-19",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "machine1",
+          "workers": "中島 和則",
+          "notes": "業務委託(耕うん)"
+        }
+      ]
+    }
+  }
+}

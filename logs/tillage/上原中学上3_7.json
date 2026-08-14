@@ -10,7 +10,8 @@
           "speedKmh": 3.8,
           "machine": "T4",
           "workers": "山本 直輝",
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjs3p1x-gfe58f"
         },
         {
           "date": "2026-07-10",
@@ -18,6 +19,25 @@
           "depthCm": 20,
           "speedKmh": 3,
           "machine": "EG330",
+          "workers": "山本 雅彦",
+          "notes": "",
+          "eventId": "ev-mrjs3p1x-17wiqd"
+        },
+        {
+          "date": "2026-07-18",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-08-02",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 0,
+          "machine": "T4",
           "workers": "山本 雅彦",
           "notes": ""
         }

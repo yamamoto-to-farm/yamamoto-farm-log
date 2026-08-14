@@ -14,10 +14,10 @@
     "harvestPlanYM": "2026-06"
   },
   "harvest": {
-    "count": 0,
-    "totalAmount": 0,
-    "firstDate": null,
-    "lastDate": null
+    "count": 3,
+    "totalAmount": 68,
+    "firstDate": "2026-06-18",
+    "lastDate": "2026-06-22"
   },
   "shipping": {
     "count": 0,
@@ -25,5 +25,5 @@
     "firstDate": null,
     "lastDate": null
   },
-  "lastUpdated": "2026-07-05T08:56:09.689Z"
+  "lastUpdated": "2026-07-16T07:45:45.571Z"
 }

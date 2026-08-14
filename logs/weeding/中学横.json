@@ -35,8 +35,13 @@
           ],
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
-          "workers": "山本 直輝,若月 道昭,土井 琉羽,100",
-          "notes": "周りのみ\nハウス側散布無し"
+          "workers": [
+            "山本 直輝",
+            "若月 道昭",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ\nハウス側散布無し",
+          "eventId": "ev-mrjrqp5g-693rx5"
         }
       ]
     }

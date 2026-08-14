@@ -36,7 +36,44 @@
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
           "workers": "山本 直輝,若月 道昭,土井 琉羽",
-          "notes": "周りのみ"
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp6c-ukkswy"
+        },
+        {
+          "date": "2026-08-04",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "草枯れ次郎"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 50,
+              "total_water_amount": 15000,
+              "total_spray_amount": 15000,
+              "unit": "ml"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "西七根",
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 50,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 15000,
+              "spray_amount": 15000,
+              "pesticide_amount": 300000,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-msmev7uq-l5mbc3"
         }
       ]
     }

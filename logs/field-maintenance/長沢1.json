@@ -1,0 +1,44 @@
+{
+  "field": "長沢1",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-10",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭",
+          "notes": "笹伐採　1/4"
+        },
+        {
+          "date": "2026-07-18",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-20",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-21",
+          "workType": "側溝整備（重機）",
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-07-23",
+          "workType": "樹木伐採",
+          "machine": "machine1",
+          "workers": "若月 道昭",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

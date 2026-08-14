@@ -15,7 +15,8 @@
           ],
           "machine": "machine1",
           "workers": "山本 直輝",
-          "notes": "ぎょうざ東３　端にふりかけ堆肥３袋"
+          "notes": "ぎょうざ東３　端にふりかけ堆肥３袋",
+          "eventId": "ev-ms5eph5u-g6dfas"
         },
         {
           "date": "2026-01-10",
@@ -55,7 +56,8 @@
               "bags": 1.5,
               "total_kg": 30
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph5u-f8ocqn"
         },
         {
           "date": "2026-03-06",
@@ -95,7 +97,35 @@
               "bags": 1.25,
               "total_kg": 25
             }
-          ]
+          ],
+          "eventId": "ev-ms5eph5u-35err1"
+        },
+        {
+          "date": "2026-07-28",
+          "distributed": [
+            {
+              "field": "若松(排水機横)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 160,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "若松(排水機横)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 100,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
+          "notes": "",
+          "eventId": "ev-ms5eph5u-a8tvw8"
         }
       ]
     }

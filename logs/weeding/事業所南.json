@@ -12,7 +12,8 @@
             "山本 直輝",
             "土井 琉羽"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp6f-lcw8g8"
         },
         {
           "date": "2026-03-13",
@@ -22,7 +23,8 @@
           "workers": [
             "山本 咲子"
           ],
-          "notes": ""
+          "notes": "",
+          "eventId": "ev-mrjrqp6f-u0ox7q"
         },
         {
           "date": "2026-07-12",
@@ -56,8 +58,33 @@
           ],
           "sprayMethod": "エンジン動噴",
           "machine": "machine1",
-          "workers": "石原 孝晋,山本 直輝,土井 琉羽",
-          "notes": "周りのみ"
+          "workers": [
+            "石原 孝晋",
+            "山本 直輝",
+            "土井 琉羽"
+          ],
+          "notes": "周りのみ",
+          "eventId": "ev-mrjrqp6f-9naqmu"
+        },
+        {
+          "date": "2026-07-14",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-mrmjo6zf-vhmrml"
+        },
+        {
+          "date": "2026-06-13",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "EF228",
+          "workers": "山本 雅彦",
+          "notes": "",
+          "eventId": "ev-msmev7ua-a9e8c0"
         }
       ]
     }

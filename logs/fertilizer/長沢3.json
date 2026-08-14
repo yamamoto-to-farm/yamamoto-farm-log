@@ -1,0 +1,150 @@
+{
+  "field": "長沢3",
+  "years": {
+    "2025": {
+      "entries": [
+        {
+          "date": "2025-07-26",
+          "distributed": [
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 220
+            },
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F303",
+              "name": "苦土石灰（粒）",
+              "amount_kg": 340
+            },
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 240
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝",
+          "notes": "",
+          "eventId": "ev-ms5eph5t-oewree"
+        },
+        {
+          "date": "2025-08-19",
+          "distributed": [
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 250
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph5t-mv8p20"
+        },
+        {
+          "date": "2025-08-26",
+          "distributed": [
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 40
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph5t-tauv27"
+        },
+        {
+          "date": "2025-09-11",
+          "distributed": [
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 84
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph5t-oku4vh"
+        },
+        {
+          "date": "2025-10-10",
+          "distributed": [
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 70
+            },
+            {
+              "field": "長沢(23a)",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 70
+            }
+          ],
+          "machine": "",
+          "workers": "山本 直輝,山本 雅彦",
+          "notes": "",
+          "eventId": "ev-ms5eph5t-mo7ap5"
+        }
+      ]
+    },
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-07-28",
+          "distributed": [
+            {
+              "field": "長沢3",
+              "fertilizer_id": "F302",
+              "name": "炭酸苦土石灰（マグカル）",
+              "amount_kg": 240,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "長沢3",
+              "fertilizer_id": "F301",
+              "name": "エコまぜくん",
+              "amount_kg": 160,
+              "category": "改良材",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
+          "notes": "",
+          "eventId": "ev-ms5eph5t-9l6wu1"
+        },
+        {
+          "date": "2026-07-29",
+          "distributed": [
+            {
+              "field": "長沢3",
+              "fertilizer_id": "F401",
+              "name": "新ふりかけ堆肥eco",
+              "amount_kg": 240,
+              "category": "堆肥",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "EG330",
+          "workers": "土井 琉羽,山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}
