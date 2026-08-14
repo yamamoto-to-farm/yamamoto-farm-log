@@ -6,7 +6,8 @@ import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { showInfoModal } from "/common/showInfoModal.js?v=1";
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
 
-const GDD_API_URL = window.GDD_API_URL || new URLSearchParams(location.search).get("gddApi") || "";
+const DEFAULT_GDD_API_URL = "https://lpbzml2cl3gtveyljy2ih6a4zm0rdzqo.lambda-url.ap-northeast-1.on.aws/";
+const GDD_API_URL = window.GDD_API_URL || new URLSearchParams(location.search).get("gddApi") || DEFAULT_GDD_API_URL;
 let weatherChart = null;
 let latestComputedRows = [];
 let latestGddThreshold = null;
@@ -19,6 +20,18 @@ const HELP_CONTENT = {
   "gdd-cumulative": {
     title: "積算effective GDDとは",
     body: "定植日から当日までの effective GDD の合計です。Lambdaのeffectiveモードと同じ計算方式です。"
+  },
+  "gdd-effective": {
+    title: "effective GDDとは",
+    body: "平均気温を0〜30℃に制限し、5℃を差し引いて積算する採用方式のGDDです。計算式は max(min(平均気温, 30)-5, 0) です。"
+  },
+  "gdd-selected": {
+    title: "採用GDDとは",
+    body: "品種設定のGDD方式に基づいて、目標判定に使用しているGDDです。現在はeffective方式を採用しています。"
+  },
+  "gdd-target": {
+    title: "目標到達GDDとは",
+    body: "品種に登録された目標GDD、または目標重量から推定した到達目安です。累積GDDがこの値に達することを目標にします。"
   }
 };
 
@@ -122,7 +135,7 @@ function renderKpiLine(rows) {
   kpi.innerHTML = `
     <span class="kpi-chip">対象日数: ${days}日</span>
     <span class="kpi-chip">観測あり: ${observedDays}日</span>
-    <span class="kpi-chip">積算GDD(10): ${formatNumber(totalGdd, 1)}</span>
+    <span class="kpi-chip">積算effective GDD <span class="help-trigger" tabindex="0" role="button" aria-label="積算effective GDDの説明" data-help-key="gdd-cumulative">?</span>: ${formatNumber(totalGdd, 1)}</span>
     <span class="kpi-chip">降水量合計: ${formatNumber(totalPrecip, 1)}mm</span>
     <span class="kpi-chip">日照時間合計: ${formatNumber(totalSunshine, 1)}h</span>
     <span class="kpi-chip">平均最高: ${formatNumber(avgTmax, 1)}℃</span>
@@ -297,7 +310,7 @@ function renderWeatherChart(rows, options = {}) {
 
   const datasets = [
     {
-      label: "積算GDD(10)",
+      label: "積算effective GDD",
       data: gddCumulative,
       yAxisID: "yGdd",
       borderColor: "#1d4ed8",
@@ -374,14 +387,20 @@ function renderWeatherChart(rows, options = {}) {
           labels: {
             boxWidth: 10,
             boxHeight: 10,
-            usePointStyle: false
+            usePointStyle: false,
+            font: {
+              size: 14
+            }
           }
         }
       },
       scales: {
         x: {
           ticks: {
-            maxTicksLimit: 12
+            maxTicksLimit: 12,
+            font: {
+              size: 13
+            }
           }
         },
         yGdd: {
@@ -389,7 +408,16 @@ function renderWeatherChart(rows, options = {}) {
           position: "left",
           title: {
             display: true,
-            text: "積算GDD"
+            text: "積算GDD",
+            font: {
+              size: 14,
+              weight: "600"
+            }
+          },
+          ticks: {
+            font: {
+              size: 13
+            }
           },
           grid: {
             drawOnChartArea: true
@@ -400,7 +428,16 @@ function renderWeatherChart(rows, options = {}) {
           position: "right",
           title: {
             display: true,
-            text: "気温(℃)"
+            text: "気温(℃)",
+            font: {
+              size: 14,
+              weight: "600"
+            }
+          },
+          ticks: {
+            font: {
+              size: 13
+            }
           },
           grid: {
             drawOnChartArea: false
@@ -412,7 +449,16 @@ function renderWeatherChart(rows, options = {}) {
           offset: true,
           title: {
             display: true,
-            text: "降水量(mm)"
+            text: "降水量(mm)",
+            font: {
+              size: 14,
+              weight: "600"
+            }
+          },
+          ticks: {
+            font: {
+              size: 13
+            }
           },
           grid: {
             drawOnChartArea: false
@@ -558,6 +604,8 @@ function bindHelpPopovers() {
   if (!triggers.length) return;
 
   triggers.forEach(trigger => {
+    if (trigger.dataset.helpBound === "true") return;
+    trigger.dataset.helpBound = "true";
     trigger.setAttribute("aria-expanded", "false");
     const key = String(trigger.getAttribute("data-help-key") || "").trim();
     const content = HELP_CONTENT[key];
@@ -620,28 +668,28 @@ function renderGddResult(result) {
   if (!container) return;
 
   const items = [
-    ["現在のsimple GDD", result.simple_gdd],
-    ["現在のeffective GDD", result.effective_gdd],
-    ["採用GDD", result.selected_gdd],
-    ["目標到達GDD", result.estimated_gdd_for_target]
+    ["現在のeffective GDD", result.effective_gdd, "gdd-effective"],
+    ["採用GDD", result.selected_gdd, "gdd-selected"],
+    ["目標到達GDD", result.estimated_gdd_for_target, "gdd-target"]
   ];
 
   if (result.forecast) {
     items.push(
-      ["残りGDD", result.forecast.remaining_gdd],
-      ["平均effective GDD/日", result.forecast.average_daily_effective_gdd],
-      ["目標までの日数", result.forecast.estimated_days_to_target ?? "予測不可"],
-      ["目標到達予定日", result.forecast.estimated_target_date || "予測不可"]
+      ["残りGDD", result.forecast.remaining_gdd, "gdd-target"],
+      ["平均effective GDD/日", result.forecast.average_daily_effective_gdd, "gdd-effective"],
+      ["目標までの日数", result.forecast.estimated_days_to_target ?? "予測不可", "gdd-target"],
+      ["目標到達予定日", result.forecast.estimated_target_date || "予測不可", "gdd-target"]
     );
   }
 
-  container.innerHTML = items.map(([label, value]) => `
+  container.innerHTML = items.map(([label, value, helpKey]) => `
     <div class="gdd-result-item">
-      <span class="gdd-result-label">${label}</span>
+      <span class="gdd-result-label">${label} <span class="help-trigger" tabindex="0" role="button" aria-label="${label}の説明" data-help-key="${helpKey}">?</span></span>
       <span class="gdd-result-value">${formatNumber(value, 2)}</span>
     </div>
   `).join("");
   container.hidden = false;
+  bindHelpPopovers();
 }
 
 function updateTargetGddButtonState(params) {
