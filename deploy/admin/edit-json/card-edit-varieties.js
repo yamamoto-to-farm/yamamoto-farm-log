@@ -22,7 +22,6 @@ function createDefaultVarietyDetail() {
     memo: "",
     gdd: {
       mode: "effective",
-      targetGdd: null,
       dapRange: null,
       expectedCropType: null,
       seasonCorrection: {
@@ -67,6 +66,24 @@ async function syncVarietyDetailByVarieties(varietyList) {
   });
 
   await saveJSON("data/variety-detail.json", nextDetail);
+
+  let currentTargets = {};
+  try {
+    currentTargets = await loadJSON("/data/gdd-targets.json");
+  } catch {
+    currentTargets = {};
+  }
+
+  const nextTargets = {};
+  varietyList.forEach(item => {
+    const name = String(item.name || "").trim();
+    if (!name) return;
+    const previous = currentTargets[name];
+    nextTargets[name] = previous && typeof previous === "object"
+      ? previous
+      : { mode: "effective", targets: {} };
+  });
+  await saveJSON("data/gdd-targets.json", nextTargets);
 }
 
 export function renderEditCard({ json, container, finalPath }) {
@@ -81,7 +98,7 @@ export function renderEditCard({ json, container, finalPath }) {
     <div class="card">
       <h2>品種一覧</h2>
       <p style="margin:0 0 12px; color:#555;">
-        品種名の追加・削除を保存すると、variety-detail.json も同じ品種名で同期されます。
+        品種名の追加・削除を保存すると、variety-detail.json と gdd-targets.json も同じ品種名で同期されます。
       </p>
 
       <div id="variety-list"></div>

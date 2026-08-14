@@ -721,6 +721,10 @@ async function updateVarietyTargetGdd(params) {
   const status = document.getElementById("gdd-status");
   const plantingRef = params.get("plantingRef") || "";
   const variety = params.get("variety") || getVarietyFromPlantingRef(plantingRef) || "";
+  const harvestDate = normalizeDate(params.get("harvestStart") || "");
+  const targetPeriod = latestGddResult?.harvest_target_period
+    || params.get("harvestTargetPeriod")
+    || harvestDate.slice(0, 7);
   const selectedGdd = Number(latestGddResult?.selected_gdd);
   if (!button || !status || !variety || !Number.isFinite(selectedGdd) || selectedGdd < 0) return;
 
@@ -729,19 +733,26 @@ async function updateVarietyTargetGdd(params) {
   button.disabled = true;
   status.textContent = "品種の目標GDDを保存しています。";
   try {
-    const detail = await loadJSON("/data/variety-detail.json");
-    const current = detail[variety] || {};
-    const currentGdd = current.gdd && typeof current.gdd === "object" ? current.gdd : {};
-    detail[variety] = {
+    const targets = await loadJSON("/data/gdd-targets.json");
+    const current = targets[variety] && typeof targets[variety] === "object"
+      ? targets[variety]
+      : { mode: "effective", targets: {} };
+    const currentTargets = current.targets && typeof current.targets === "object" ? current.targets : {};
+    targets[variety] = {
       ...current,
-      gdd: {
-        mode: "effective",
-        ...currentGdd,
-        targetGdd: Number(selectedGdd.toFixed(2))
+      mode: "effective",
+      targets: {
+        ...currentTargets,
+        [targetPeriod]: {
+          ...(currentTargets[targetPeriod] || {}),
+          targetGdd: Number(selectedGdd.toFixed(2)),
+          status: "provisional",
+          source: "harvest_record"
+        }
       }
     };
-    await saveJSON("data/variety-detail.json", detail);
-    status.textContent = `目標GDDを ${selectedGdd.toFixed(2)} に更新しました。`;
+    await saveJSON("data/gdd-targets.json", targets);
+    status.textContent = `${targetPeriod}の目標GDDを ${selectedGdd.toFixed(2)} に更新しました。`;
   } catch (error) {
     status.textContent = `目標GDDの更新に失敗しました: ${error.message}`;
     button.disabled = false;
@@ -784,7 +795,8 @@ function bindGddPrediction(params, periodEnd) {
           planting_date: normalizeDate(params.get("plantDate") || ""),
           ...requestDates,
           variety,
-          weather_bucket: params.get("weatherBucket") || undefined
+          weather_bucket: params.get("weatherBucket") || undefined,
+          harvest_target_period: params.get("harvestTargetPeriod") || undefined
         })
       });
 

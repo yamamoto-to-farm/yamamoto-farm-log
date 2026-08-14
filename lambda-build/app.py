@@ -15,6 +15,8 @@ from weather_loader import load_weather_json, merge_weather_data, normalize_weat
 
 S3_BUCKET = os.environ.get("S3_BUCKET_NAME", "yamamoto-farm-log")
 VARIETY_DETAIL_KEY = "data/variety-detail.json"
+GDD_TARGETS_KEY = "data/gdd-targets.json"
+ANNUAL_PLAN_KEY = "logs/schedule/annual/annual.json"
 
 
 def _read_event_payload(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -113,6 +115,104 @@ def _load_variety_settings_from_s3(bucket_name: str) -> Dict[str, Dict[str, obje
     return settings
 
 
+def _load_gdd_targets_from_s3(bucket_name: str) -> Dict[str, Dict[str, object]]:
+    s3 = boto3.client("s3", region_name="ap-northeast-1")
+    response = s3.get_object(Bucket=bucket_name, Key=GDD_TARGETS_KEY)
+    content = response["Body"].read().decode("utf-8")
+    targets = json.loads(content)
+    if not isinstance(targets, dict):
+        raise ValueError(f"Invalid GDD target format: s3://{bucket_name}/{GDD_TARGETS_KEY}")
+    return targets
+
+
+def _load_annual_plan_from_s3(bucket_name: str) -> Dict[str, Dict[str, object]]:
+    s3 = boto3.client("s3", region_name="ap-northeast-1")
+    response = s3.get_object(Bucket=bucket_name, Key=ANNUAL_PLAN_KEY)
+    content = response["Body"].read().decode("utf-8")
+    plan = json.loads(content)
+    if not isinstance(plan, dict):
+        raise ValueError(f"Invalid annual plan format: s3://{bucket_name}/{ANNUAL_PLAN_KEY}")
+    return plan
+
+
+def _find_plan_context(
+    annual_plan: Dict[str, Dict[str, object]],
+    variety_name: str,
+    planting_date: str,
+    harvest_date: str | None,
+) -> tuple[str | None, Dict[str, object] | None]:
+    candidates = []
+    for annual_year, annual in annual_plan.items():
+        rows = ((annual or {}).get("step2") or {}).get("rows", [])
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict) or row.get("variety") != variety_name:
+                continue
+            row_plant_date = str(row.get("plantDate") or "")
+            if row_plant_date == planting_date:
+                period = f"{row.get('month')}-{row.get('harvestWeek')}"
+                return period, {
+                    "annual_year": annual_year,
+                    "planned_harvest_month": row.get("month"),
+                    "planned_harvest_week": row.get("harvestWeek"),
+                    "planned_plant_date": row.get("plantDate"),
+                    "match_strategy": "variety_and_plant_date",
+                }
+            candidates.append((row, annual_year))
+
+    if harvest_date:
+        harvest_month = str(harvest_date)[:7]
+        for row, annual_year in candidates:
+            if str(row.get("month") or "") == harvest_month:
+                period = f"{row.get('month')}-{row.get('harvestWeek')}"
+                return period, {
+                    "annual_year": annual_year,
+                    "planned_harvest_month": row.get("month"),
+                    "planned_harvest_week": row.get("harvestWeek"),
+                    "planned_plant_date": row.get("plantDate"),
+                    "match_strategy": "variety_and_harvest_month",
+                }
+
+    return None, None
+
+
+def _select_target_gdd(
+    variety_targets: Dict[str, object] | None,
+    harvest_target_period: str | None,
+    harvest_date: str | None,
+) -> tuple[float | None, str]:
+    if not isinstance(variety_targets, dict):
+        return None, "not_available"
+
+    targets = variety_targets.get("targets", {})
+    if not isinstance(targets, dict):
+        targets = {}
+
+    candidate_keys = []
+    if harvest_target_period:
+        candidate_keys.append(str(harvest_target_period).strip())
+    if harvest_date:
+        candidate_keys.append(str(harvest_date)[:7])
+
+    for key in candidate_keys:
+        entry = targets.get(key)
+        if isinstance(entry, dict):
+            value = entry.get("targetGdd")
+        else:
+            value = entry
+        try:
+            return float(value), f"gdd_targets:{key}"
+        except (TypeError, ValueError):
+            continue
+
+    default_value = variety_targets.get("defaultTargetGdd")
+    try:
+        return float(default_value), "gdd_targets:default"
+    except (TypeError, ValueError):
+        return None, "not_available"
+
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda entry point for GDD prediction using S3 weather JSON files.
 
@@ -167,6 +267,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         variety_settings = _load_variety_settings_from_s3(variety_bucket)
         variety_config = VarietyConfig(variety_settings)
         variety = variety_config.get(variety_name)
+        gdd_targets = _load_gdd_targets_from_s3(variety_bucket)
+        annual_plan = _load_annual_plan_from_s3(variety_bucket)
+        planned_period, plan_match = _find_plan_context(
+            annual_plan,
+            variety_name,
+            str(planting_date),
+            str(harvest_date) if harvest_date else None,
+        )
+        harvest_target_period = payload.get("harvest_target_period") or planned_period
+        configured_target_gdd, target_gdd_source = _select_target_gdd(
+            gdd_targets.get(variety_name),
+            harvest_target_period,
+            harvest_date,
+        )
         selected_gdd_mode = variety.gdd_mode if variety.gdd_mode in {"simple", "effective"} else "effective"
 
         simple_gdd = compute_gdd_from_planting_to_harvest(
@@ -183,15 +297,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         )
         selected_gdd = effective_gdd if selected_gdd_mode == "effective" else simple_gdd
 
-        configured_target_gdd = None
-        if variety.target_gdd is not None:
-            try:
-                configured_target_gdd = float(variety.target_gdd)
-            except (TypeError, ValueError):
-                configured_target_gdd = None
-
         target_gdd = configured_target_gdd
-        target_gdd_source = "variety_config" if configured_target_gdd is not None else "not_available"
         forecast = None
         if configured_target_gdd is not None and harvest_date is None:
             forecast = _estimate_days_to_target(
@@ -213,6 +319,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 "calculation_end_date": as_of_date,
                 "weather_bucket": weather_bucket,
                 "variety_bucket": variety_bucket,
+                "harvest_target_period": harvest_target_period,
+                "plan_match": plan_match,
                 "simple_gdd": round(simple_gdd, 2),
                 "effective_gdd": round(effective_gdd, 2),
                 "selected_gdd": round(selected_gdd, 2),

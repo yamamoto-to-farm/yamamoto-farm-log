@@ -9,7 +9,6 @@
     "memo": "裂球はじまると早い印象",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -28,7 +27,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -47,7 +45,6 @@
     "memo": "草勢はおとなしい(通路ふさがりにくい)",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -66,7 +63,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -85,7 +81,6 @@
     "memo": "黒腐病は「ないと」より強いが、重量は劣る",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -104,7 +99,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -123,7 +117,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -142,7 +135,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -161,7 +153,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -180,7 +171,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -199,7 +189,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -218,7 +207,6 @@
     "memo": "undefined",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -237,7 +225,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -256,7 +243,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -275,7 +261,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -294,7 +279,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -313,7 +297,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -332,7 +315,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -351,7 +333,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -370,7 +351,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -389,7 +369,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -408,7 +387,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -427,7 +405,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -446,7 +423,6 @@
     "memo": "undefined",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -465,7 +441,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -484,7 +459,6 @@
     "memo": "肥切れ・黒腐病注意",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -503,7 +477,6 @@
     "memo": "undefined",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -522,7 +495,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -541,7 +513,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -560,7 +531,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -579,7 +549,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -598,7 +567,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -617,7 +585,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -636,7 +603,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -655,7 +621,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -674,7 +639,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -693,7 +657,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -712,7 +675,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -731,7 +693,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -750,7 +711,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": "秋冬どり低温期",
       "seasonCorrection": {
@@ -769,7 +729,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -788,7 +747,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -807,7 +765,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -826,7 +783,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -845,7 +801,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -864,7 +819,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -883,7 +837,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -902,7 +855,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -921,7 +873,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -940,7 +891,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -959,7 +909,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -978,7 +927,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -997,7 +945,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1016,7 +963,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1035,7 +981,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1054,7 +999,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1073,7 +1017,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1092,7 +1035,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1111,7 +1053,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1130,7 +1071,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1149,7 +1089,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1168,7 +1107,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1187,7 +1125,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1206,7 +1143,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1225,7 +1161,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
@@ -1244,7 +1179,6 @@
     "memo": "",
     "gdd": {
       "mode": "effective",
-      "targetGdd": null,
       "dapRange": null,
       "expectedCropType": null,
       "seasonCorrection": {
