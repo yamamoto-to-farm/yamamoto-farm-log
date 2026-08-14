@@ -114,7 +114,36 @@
     }
 
     .gdd-target-modal {
+      width: min(520px, calc(100% - 32px));
       max-width: 520px;
+      padding: 24px;
+    }
+
+    #gdd-target-modal[hidden] {
+      display: none;
+    }
+
+    .gdd-target-modal .modal-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 50%;
+      background: #fff;
+      color: #475569;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .gdd-target-modal .modal-close:hover,
+    .gdd-target-modal .modal-close:focus-visible {
+      background: #f1f5f9;
+      color: #0f172a;
+      outline: 2px solid #93c5fd;
+      outline-offset: 2px;
     }
 
     .gdd-target-modal-lead {
@@ -149,6 +178,13 @@
       font-weight: 700;
     }
 
+    .gdd-target-summary-row .form-input {
+      width: 100%;
+      max-width: 190px;
+      min-height: 42px;
+      box-sizing: border-box;
+    }
+
     .gdd-target-modal-note {
       margin: 16px 0 0;
       color: #92400e;
@@ -159,7 +195,38 @@
     .gdd-target-modal .modal-footer {
       display: flex;
       justify-content: flex-end;
+      align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .gdd-target-modal .modal-footer button {
+      margin-top: 0;
+    }
+
+    @media (max-width: 640px) {
+      .gdd-target-modal {
+        width: calc(100% - 24px);
+        padding: 20px 16px;
+      }
+
+      .gdd-target-summary-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+
+      .gdd-target-summary-row .form-input {
+        max-width: none;
+      }
+
+      .gdd-target-modal .modal-footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .gdd-target-modal .modal-footer button {
+        width: 100%;
+      }
     }
 
     .gdd-result {
@@ -565,7 +632,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="./weather.js?v=20260815-17"></script>
+    <script type="module" src="./weather.js?v=20260815-18"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 
