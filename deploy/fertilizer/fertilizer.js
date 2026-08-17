@@ -9,7 +9,7 @@ function debugLog(...args) {
 }
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=1";
+import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=20260818-1";
 import { setFilterData, getFilterData } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 

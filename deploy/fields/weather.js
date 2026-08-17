@@ -807,7 +807,16 @@ function bindGddTargetModal() {
 function bindGddPrediction(params, periodEnd) {
   const button = document.getElementById("gdd-predict-btn");
   const status = document.getElementById("gdd-status");
-  if (!button || !status) return;
+  const panelContent = document.getElementById("gdd-panel-content");
+  const panelToggle = document.getElementById("gdd-panel-toggle");
+  if (!button || !status || !panelContent || !panelToggle) return;
+
+  panelToggle.addEventListener("click", () => {
+    const isHidden = panelContent.hidden;
+    panelContent.hidden = !isHidden;
+    panelToggle.setAttribute("aria-expanded", String(isHidden));
+    panelToggle.textContent = isHidden ? "GDDを非表示" : "GDDを表示";
+  });
 
   if (!GDD_API_URL) {
     button.disabled = true;

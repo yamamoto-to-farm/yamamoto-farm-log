@@ -84,6 +84,28 @@
       color: #1f2937;
     }
 
+    .gdd-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .gdd-panel-header .gdd-panel-title {
+      margin: 0;
+    }
+
+    .gdd-panel-toggle {
+      margin: 0;
+      padding: 8px 12px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .gdd-panel-content[hidden] {
+      display: none;
+    }
+
     .gdd-panel-toolbar {
       display: flex;
       align-items: end;
@@ -527,17 +549,24 @@
     </div>
 
     <div class="card" id="gdd-panel">
-      <h2 class="gdd-panel-title">GDD確認・予測</h2>
-      <div class="gdd-panel-toolbar">
-        <button id="gdd-predict-btn" class="primary-btn" type="button">Lambdaで予測</button>
-      </div>
-      <div class="gdd-panel-toolbar">
-        <button id="gdd-update-target-btn" class="secondary-btn" type="button" disabled>
-          この実績GDDを目標時期の目標値に更新
+      <div class="gdd-panel-header">
+        <h2 class="gdd-panel-title">GDD確認・予測</h2>
+        <button id="gdd-panel-toggle" class="secondary-btn gdd-panel-toggle" type="button" aria-expanded="false" aria-controls="gdd-panel-content">
+          GDDを表示
         </button>
       </div>
-      <p id="gdd-status" class="gdd-status">Lambda APIの設定を確認しています。</p>
-      <div id="gdd-result" class="gdd-result" hidden></div>
+      <div id="gdd-panel-content" class="gdd-panel-content" hidden>
+        <div class="gdd-panel-toolbar">
+          <button id="gdd-predict-btn" class="primary-btn" type="button">Lambdaで予測</button>
+        </div>
+        <div class="gdd-panel-toolbar">
+          <button id="gdd-update-target-btn" class="secondary-btn" type="button" disabled>
+            この実績GDDを目標時期の目標値に更新
+          </button>
+        </div>
+        <p id="gdd-status" class="gdd-status">Lambda APIの設定を確認しています。</p>
+        <div id="gdd-result" class="gdd-result" hidden></div>
+      </div>
     </div>
 
     <div id="gdd-target-modal" class="modal-bg" hidden>
@@ -632,7 +661,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="./weather.js?v=20260815-18"></script>
+    <script type="module" src="./weather.js?v=20260815-19"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 
