@@ -6,7 +6,7 @@ function debugLog(...args) {
 }
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=20260818-1";
+import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=20260818-2";
 import { setFilterData, getFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
@@ -266,7 +266,9 @@ async function initFieldFilterData() {
 
 async function initFertilizerFilterData() {
   const [list, detail, pesticideList, pesticideDetail] = await Promise.all([
-    fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now()).then(r => r.json()),
+    fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now(), { cache: "no-store" })
+      .then(r => (r.ok ? r.json() : []))
+      .catch(() => []),
     fetch("/data/fertilizer/fertilizer-detail.json?v=" + Date.now())
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({})),
@@ -278,8 +280,11 @@ async function initFertilizerFilterData() {
       .catch(() => ({}))
   ]);
 
+  const fertilizerList = Array.isArray(list) ? list : [];
+  const pesticideItems = Array.isArray(pesticideList) ? pesticideList : [];
+
   const dict = {};
-  list.forEach(f => {
+  fertilizerList.forEach(f => {
     const byId = detail?.[f.id] || {};
     dict[f.name] = {
       ...byId,
@@ -293,9 +298,9 @@ async function initFertilizerFilterData() {
     };
   });
 
-  const crossTargets = Array.isArray(pesticideList)
-    ? pesticideList.filter(v => CROSS_PESTICIDE_CATEGORIES_FOR_FERTILIZER.includes(String(v?.category || "").trim()))
-    : [];
+  const crossTargets = pesticideItems.filter(v =>
+    CROSS_PESTICIDE_CATEGORIES_FOR_FERTILIZER.includes(String(v?.category || "").trim())
+  );
 
   crossTargets.forEach(f => {
     const byId = pesticideDetail?.[f.id] || {};
@@ -322,12 +327,18 @@ async function initFertilizerFilterData() {
   const parents = [];
   const children = {};
 
-  list.forEach(f => {
+  fertilizerList.forEach(f => {
     if (!children[f.category]) {
       children[f.category] = [];
       parents.push(f.category);
     }
     children[f.category].push(f.name);
+  });
+
+  debugLog("fertilizer filter set", {
+    fertilizerCount: fertilizerList.length,
+    soilDisinfectantCount: crossTargets.length,
+    soilDisinfectants: crossTargets.map(f => f.name)
   });
 
   crossTargets.forEach(f => {
