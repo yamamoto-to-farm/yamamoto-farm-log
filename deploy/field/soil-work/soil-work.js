@@ -21,6 +21,7 @@ const DEFAULT_ATTACHMENT_INDEX = {
   bedmaking: ["スーパー台形成形機"],
   tillage: ["耕うん（ロータリー）", "サブソイラー"]
 };
+const CROSS_PESTICIDE_CATEGORIES_FOR_FERTILIZER = ["土壌消毒剤"];
 
 const MODE_CONFIG = {
   intertill: {
@@ -264,13 +265,58 @@ async function initFieldFilterData() {
 }
 
 async function initFertilizerFilterData() {
-  const res = await fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now());
-  const list = await res.json();
+  const [list, detail, pesticideList, pesticideDetail] = await Promise.all([
+    fetch("/data/fertilizer/fertilizer-index.json?v=" + Date.now()).then(r => r.json()),
+    fetch("/data/fertilizer/fertilizer-detail.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({})),
+    fetch("/data/pesticide/pesticide-index.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : []))
+      .catch(() => ([])),
+    fetch("/data/pesticide/pesticide-detail.json?v=" + Date.now())
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}))
+  ]);
 
   const dict = {};
   list.forEach(f => {
-    dict[f.name] = f;
+    const byId = detail?.[f.id] || {};
+    dict[f.name] = {
+      ...byId,
+      ...f,
+      id: f.id,
+      name: f.name,
+      category: f.category,
+      unit: f.unit,
+      materialType: "fertilizer",
+      sourceMaster: "fertilizer-index"
+    };
   });
+
+  const crossTargets = Array.isArray(pesticideList)
+    ? pesticideList.filter(v => CROSS_PESTICIDE_CATEGORIES_FOR_FERTILIZER.includes(String(v?.category || "").trim()))
+    : [];
+
+  crossTargets.forEach(f => {
+    const byId = pesticideDetail?.[f.id] || {};
+    const packUnit = String(byId?.packaging?.unit || f.unit || "kg").trim() || "kg";
+    const amountPerPack = Number(byId?.packaging?.amountPerPack || 0);
+    const capacityKg = packUnit.toLowerCase() === "g"
+      ? amountPerPack / 1000
+      : amountPerPack;
+
+    dict[f.name] = {
+      ...byId,
+      ...f,
+      id: f.id,
+      name: f.name,
+      category: f.category,
+      capacity: Number.isFinite(capacityKg) && capacityKg > 0 ? capacityKg : 0,
+      materialType: "pesticide",
+      sourceMaster: "pesticide-index"
+    };
+  });
+
   setFertilizerDict(dict);
 
   const parents = [];
@@ -282,6 +328,16 @@ async function initFertilizerFilterData() {
       parents.push(f.category);
     }
     children[f.category].push(f.name);
+  });
+
+  crossTargets.forEach(f => {
+    if (!children[f.category]) {
+      children[f.category] = [];
+      parents.push(f.category);
+    }
+    if (!children[f.category].includes(f.name)) {
+      children[f.category].push(f.name);
+    }
   });
 
   const current = getFilterData();
