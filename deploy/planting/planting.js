@@ -5,7 +5,8 @@ import {
   createWorkerCheckboxes,
   createFieldSelector,
   autoDetectField,
-  getSelectedWorkers
+  getSelectedWorkers,
+  getFinalField
 } from "../common/ui.js";
 
 import { saveLog } from "../common/save/index.js";
@@ -337,18 +338,6 @@ function setupTrayAutoCalc() {
 
 
 // ===============================
-// 圃場の最終決定
-// ===============================
-function getFinalField() {
-  const auto = document.getElementById("field_auto").value;
-  const manual = document.getElementById("field_manual").value;
-  const confirmed = document.getElementById("field_confirm").checked;
-
-  if (confirmed) return auto;
-  if (manual) return manual;
-  return auto;
-}
-
 
 
 // ===============================
