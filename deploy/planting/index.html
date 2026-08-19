@@ -111,12 +111,12 @@
 
       <div id="stock-input" class="form-field">
         <label>株数</label>
-        <input type="number" id="stockCount" class="form-input" inputmode="numeric">
+        <input type="number" id="stockCount" class="form-input" inputmode="decimal" step="any" min="0">
       </div>
 
       <div id="tray-input" class="form-field" style="display:none;">
         <label>枚数</label>
-        <input type="number" id="trayCount" class="form-input" inputmode="numeric">
+        <input type="number" id="trayCount" class="form-input" inputmode="decimal" step="any" min="0">
 
         <p>自動計算：<span id="calcStock">0</span> 株</p>
       </div>
@@ -126,10 +126,10 @@
     <h2 class="section-title">株間・畝間</h2>
     <div class="card">
       <label>株間（cm）</label>
-      <input type="number" id="spacingRow" class="form-input" value="34">
+      <input type="number" id="spacingRow" class="form-input" value="34" inputmode="decimal" step="any" min="0">
 
       <label>畝間（cm）</label>
-      <input type="number" id="spacingBed" class="form-input" value="60">
+      <input type="number" id="spacingBed" class="form-input" value="60" inputmode="decimal" step="any" min="0">
     </div>
 
     <!-- 備考 -->
