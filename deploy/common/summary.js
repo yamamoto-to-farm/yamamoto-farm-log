@@ -181,29 +181,7 @@ function normalizeRef(s) {
     .replace(/\u00A0/g, "");
 }
 
-export async function summaryUpdate(plantingRef) {
-  slog(">>> summaryUpdate START:", plantingRef);
-
-  // ★ "*" の場合は全 plantingRef を再計算
-  if (plantingRef === "*") {
-    slog(">>> summaryUpdate: FULL REBUILD");
-    const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
-
-    for (const p of planting) {
-      if (!p.plantingRef) continue;
-      await summaryUpdate(p.plantingRef);
-    }
-    return;
-  }
-
-  invalidateSummaryCache("harvest");
-  invalidateSummaryCache("weight");
-
-  // ★ retry 付きで最新 CSV を読む
-  const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
-  const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
-  const shipping = await loadCsvWithRetry("logs/weight/all.csv", "weight");
-
+function buildSummaryFromRows(plantingRef, planting, harvest, shipping) {
   const p = planting.find(
     x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
   );
@@ -212,7 +190,7 @@ export async function summaryUpdate(plantingRef) {
 
   if (!p) {
     slog("NO planting found → END");
-    return;
+    return null;
   }
 
   const harvestRows = harvest.filter(
@@ -227,7 +205,7 @@ export async function summaryUpdate(plantingRef) {
     .map(x => x.harvestDate)
     .filter(Boolean)
     .sort();
-          lastUpdated: nowJstIso()
+
   const shippingDates = shippingRows
     .map(x => x.shippingDate)
     .filter(Boolean)
@@ -243,7 +221,7 @@ export async function summaryUpdate(plantingRef) {
     0
   );
 
-  const summary = {
+  return {
     plantingRef,
     planting: {
       plantDate: p.plantDate || "",
@@ -272,10 +250,50 @@ export async function summaryUpdate(plantingRef) {
     },
     lastUpdated: nowJstIso()
   };
+}
 
-  window._summaryPool[plantingRef] = summary;
+export async function summaryUpdate(plantingRef) {
+  slog(">>> summaryUpdate START:", plantingRef);
 
-  slog(">>> summaryUpdate END:", plantingRef);
+  // ★ "*" の場合は全 plantingRef を再計算
+  if (plantingRef === "*") {
+    slog(">>> summaryUpdate: FULL REBUILD");
+    invalidateSummaryCache("all");
+
+    const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
+    const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
+    const shipping = await loadCsvWithRetry("logs/weight/all.csv", "weight");
+    const targets = planting.filter(p => p.plantingRef);
+
+    for (const [index, p] of targets.entries()) {
+      const ref = normalizeRef(p.plantingRef);
+      const summary = buildSummaryFromRows(ref, planting, harvest, shipping);
+      if (summary) window._summaryPool[ref] = summary;
+
+      if ((index + 1) % 20 === 0 || index + 1 === targets.length) {
+        updateSaveModal(`サマリーを集計しています… ${index + 1}/${targets.length}`);
+      }
+    }
+    return;
+  }
+
+  invalidateSummaryCache("harvest");
+  invalidateSummaryCache("weight");
+
+  // ★ retry 付きで最新 CSV を読む
+  const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
+  const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
+  const shipping = await loadCsvWithRetry("logs/weight/all.csv", "weight");
+
+  const ref = normalizeRef(plantingRef);
+  const summary = buildSummaryFromRows(ref, planting, harvest, shipping);
+  if (!summary) {
+    return;
+  }
+
+  window._summaryPool[ref] = summary;
+
+  slog(">>> summaryUpdate END:", ref);
   return summary;
 }
 
@@ -286,6 +304,7 @@ export async function flushSummaryPool() {
   slog("=== FLUSH SUMMARY POOL START ===");
 
   const index = await loadIndexCached();
+  const files = [];
 
   for (const plantingRef of Object.keys(window._summaryPool)) {
     const summary = window._summaryPool[plantingRef];
@@ -301,14 +320,18 @@ export async function flushSummaryPool() {
       index[safeField][year].sort();
     }
 
+    files.push({
+      path: `logs/summary/${safeField}/${year}/${fileName}`,
+      content: JSON.stringify(summary, null, 2)
+    });
+  }
+
+  if (files.length > 0) {
+    updateSaveModal(`サマリーを書き込んでいます… ${files.length}件`);
     await saveLog({
       type: "multi",
-      files: [
-        {
-          path: `logs/summary/${safeField}/${year}/${fileName}`,
-          content: JSON.stringify(summary, null, 2)
-        }
-      ]
+      files,
+      suppressModal: true
     });
   }
 

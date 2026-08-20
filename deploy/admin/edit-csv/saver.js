@@ -1,9 +1,9 @@
 // admin/edit-csv/saver.js
 import { saveLog } from "../../common/save/index.js";
-import { enqueueSummaryUpdate } from "../../common/summary.js";
+import { enqueueSummaryUpdate } from "../../common/summary.js?v=20260820";
 
 // ★ 共通保存モーダル
-import { updateSaveModal } from "../../common/save-modal.js";
+import { updateSaveModal, completeSaveModal } from "../../common/save-modal.js";
 
 /* ---------------------------------------------------------
    デバッグ切り替え（localStorage）
@@ -103,16 +103,17 @@ export async function saveCsvFile(csvType, csvFile) {
     window._csvCache = window._csvCache || {};
     window._csvCache[url] = rows;
 
-    updateSaveModal("CSV の保存が完了しました。サマリー更新を待っています…");
-
     // ------------------------------
     // 5. サマリー更新（本丸）
     // ------------------------------
     dbg("=== summary update START ===");
 
     if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
+      updateSaveModal("CSV の保存が完了しました。サマリー更新を待っています…");
       enqueueSummaryUpdate("*");
       dbg("summary target: ALL (*)");
+    } else {
+      completeSaveModal("CSV の保存が完了しました");
     }
 
     dbg("=== summary update ENQUEUED ===");
