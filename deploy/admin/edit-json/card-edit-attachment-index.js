@@ -1,5 +1,6 @@
 import { saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { nowJstIso } from "/common/date-utils.js?v=1";
 
 function normalizeList(value) {
   if (!Array.isArray(value)) return [];
@@ -74,7 +75,7 @@ export function renderEditCard({ json, container }) {
       bedmaking,
       tillage,
       weeding,
-      updatedAt: new Date().toISOString()
+      updatedAt: nowJstIso()
     };
 
     showSaveModal("保存しています…");

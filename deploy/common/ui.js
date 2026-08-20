@@ -6,6 +6,7 @@ import { openWorkerSelectModal } from "./filter/filter-worker.js";
 import { loadCSV } from "./csv.js";
 import { loadJSON, saveJSON } from "./json.js";
 import { saveLog } from "./save/index.js";
+import { nowJstIso } from "./date-utils.js";
 
 
 // ===============================
@@ -61,7 +62,7 @@ function debugLog(msg) {
 }
 
 function nowIso() {
-  return new Date().toISOString();
+  return nowJstIso();
 }
 
 function nowMs() {

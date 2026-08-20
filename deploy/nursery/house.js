@@ -1,6 +1,7 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js";
 import { saveJSON } from "/common/json.js";
 import { saveLog } from "/common/save/index.js";
+import { nowJstIso } from "/common/date-utils.js";
 
 const LAYOUT_PATH = "logs/nursery/house-layout.json";
 
@@ -356,7 +357,7 @@ async function saveLayout() {
   try {
     const payload = {
       version: 2,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowJstIso(),
       blocks,
       assignments: deriveLegacyAssignments(blocks)
     };

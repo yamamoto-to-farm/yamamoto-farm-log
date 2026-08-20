@@ -127,6 +127,7 @@ export const MONTHLY_WORK_SOURCES = [
 const SUMMARY_PATH = "data/monthly-work-index.json";
 let summaryCache = null;
 let rebuildInFlight = null;
+let recordQueue = Promise.resolve();
 
 function createEmptySummary() {
   return {
@@ -346,7 +347,7 @@ export async function loadMonthlyWorkSummary({ rebuildIfMissing = true, forceReb
   return await rebuildMonthlyWorkSummary();
 }
 
-export async function recordMonthlyWorkEntries(entries) {
+async function recordMonthlyWorkEntriesNow(entries) {
   const list = Array.isArray(entries) ? entries : [entries];
   const summary = await loadMonthlyWorkSummary({ rebuildIfMissing: true });
 
@@ -370,4 +371,10 @@ export async function recordMonthlyWorkEntries(entries) {
 
   await saveJSON(SUMMARY_PATH, summary);
   return summary;
+}
+
+export function recordMonthlyWorkEntries(entries) {
+  const task = recordQueue.then(() => recordMonthlyWorkEntriesNow(entries));
+  recordQueue = task.catch(() => {});
+  return task;
 }

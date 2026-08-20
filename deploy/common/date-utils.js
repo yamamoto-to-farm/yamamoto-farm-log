@@ -40,5 +40,12 @@ export function diffDateValuesInDays(later, earlier) {
 }
 
 export function nowJstIso(baseMs = Date.now()) {
-  return new Date(baseMs + 9 * 60 * 60 * 1000).toISOString();
+  const d = new Date(baseMs + 9 * 60 * 60 * 1000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const h = String(d.getUTCHours()).padStart(2, "0");
+  const min = String(d.getUTCMinutes()).padStart(2, "0");
+  const sec = String(d.getUTCSeconds()).padStart(2, "0");
+  return `${y}-${m}-${day}T${h}:${min}:${sec}+09:00`;
 }

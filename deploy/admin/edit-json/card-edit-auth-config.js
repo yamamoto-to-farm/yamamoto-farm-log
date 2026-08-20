@@ -1,5 +1,6 @@
 import { saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { nowJstIso } from "/common/date-utils.js?v=1";
 
 function toNumberOrFallback(value, fallback, min = 60000) {
   const n = Number(value);
@@ -101,7 +102,7 @@ export function renderEditCard({ json, container }) {
       idleTimeoutMs: Math.floor(idleMin * 60000),
       stepupTtlMs: Math.floor(stepupMin * 60000),
       sensitivePathPrefixes: normalizePathPrefixes(sensitiveText),
-      updatedAt: new Date().toISOString()
+      updatedAt: nowJstIso()
     };
 
     showSaveModal("保存しています…");
