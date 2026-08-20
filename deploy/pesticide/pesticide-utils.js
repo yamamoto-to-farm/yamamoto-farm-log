@@ -89,7 +89,8 @@ export async function savepesticideLog() {
       `日付: ${date}`,
       `圃場: ${fieldsLabel}`,
       `作業者: ${workers}`,
-      `農薬件数: ${pesticides.length}件`
+      `農薬件数: ${pesticides.length}件`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;

@@ -271,7 +271,8 @@ async function saveWeedingLog() {
       `作業区分: ${workType}`,
       `圃場: ${fieldsLabel}`,
       `作業者: ${workers}`,
-      `農薬件数: ${Array.isArray(pesticides) ? pesticides.length : 0}件`
+      `農薬件数: ${Array.isArray(pesticides) ? pesticides.length : 0}件`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;

@@ -148,7 +148,8 @@ async function saveTillageLog() {
       `日付: ${date}`,
       `作業内容: ${type}`,
       `圃場: ${fieldsLabel}`,
-      `作業者: ${workers}`
+      `作業者: ${workers}`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;

@@ -89,7 +89,8 @@ export async function saveFertilizerLog() {
       `日付: ${date}`,
       `圃場: ${fieldsLabel}`,
       `作業者: ${workers}`,
-      `肥料件数: ${fertilizers.length}件`
+      `肥料件数: ${fertilizers.length}件`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;

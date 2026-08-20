@@ -610,6 +610,7 @@ async function saveNurseryPesticideLog(btn) {
       `対象: ${targetLabel}`,
       `作業者: ${workers}`,
       `農薬件数: ${pesticides.length}件`,
+      `備考: ${notes || "なし"}`,
       ...(warnings.length ? [warnings.join(" / ")] : [])
     ]
   });

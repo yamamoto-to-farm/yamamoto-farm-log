@@ -131,7 +131,8 @@ async function saveWateringLog() {
       `作業区分: 潅水`,
       `圃場: ${fieldsLabel}`,
       `作業者: ${workers}`,
-      `潅水時間: ${irrigationMinutes}分`
+      `潅水時間: ${irrigationMinutes}分`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;

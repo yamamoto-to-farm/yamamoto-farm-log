@@ -96,7 +96,8 @@ async function saveHandWeedingLog() {
       `日付: ${date}`,
       `作業区分: 草取り`,
       `圃場: ${fieldsLabel}`,
-      `作業者: ${workers}`
+      `作業者: ${workers}`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;

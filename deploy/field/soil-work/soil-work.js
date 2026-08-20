@@ -432,7 +432,8 @@ async function saveSoilWorkLog(config, mode) {
       `作業内容: ${attachment}`,
       `圃場: ${fieldsLabel}`,
       `作業者: ${workers}`,
-      `同時施肥: ${withFertilizer ? "あり" : "なし"}`
+      `同時施肥: ${withFertilizer ? "あり" : "なし"}`,
+      `備考: ${notes || "なし"}`
     ]
   });
   if (!confirmed) return;
