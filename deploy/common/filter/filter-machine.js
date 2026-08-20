@@ -57,7 +57,13 @@ export function openMachineModal(options = {}) {
 }
 
 function initMachineEvents(children, mode, onSelect) {
-  bindModalCloseEvents();
+  const originalMachines = filterState.machines.slice();
+  let applied = false;
+  bindModalCloseEvents({
+    onClose: () => {
+      if (mode === "filter" && !applied) filterState.machines = originalMachines.slice();
+    }
+  });
 
   document.querySelectorAll(".filter-toggle-btn").forEach(btn => {
     btn.onclick = () => btn.closest(".filter-block").classList.toggle("open");
@@ -95,6 +101,7 @@ function initMachineEvents(children, mode, onSelect) {
     const applyBtn = document.getElementById("apply-machine");
     if (applyBtn) {
       applyBtn.onclick = () => {
+        applied = true;
         applyFilter();
         closeModal();
       };

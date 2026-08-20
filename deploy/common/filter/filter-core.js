@@ -15,15 +15,21 @@ export { openModal, closeModal };
 ============================================================ */
 export function bindModalCloseEvents({
   closeId = "modal-close",
-  bgId = "modal-bg"
+  bgId = "modal-bg",
+  onClose = null
 } = {}) {
   const closeBtn = document.getElementById(closeId);
   const bg = document.getElementById(bgId);
 
-  if (closeBtn) closeBtn.onclick = closeModal;
+  const close = () => {
+    if (onClose) onClose();
+    closeModal();
+  };
+
+  if (closeBtn) closeBtn.onclick = close;
   if (bg) {
     bg.onclick = e => {
-      if (e.target.classList.contains("modal-bg")) closeModal();
+      if (e.target.classList.contains("modal-bg")) close();
     };
   }
 }

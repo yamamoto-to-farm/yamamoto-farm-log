@@ -59,10 +59,17 @@ export function openpesticideModal(options = {}) {
    イベント
 ============================================================ */
 function initpesticideEvents(children, mode, onSelect) {
+  const originalPesticides = filterState.pesticides.slice();
+  let applied = false;
 
-  document.getElementById("modal-close").onclick = closeModal;
+  const cancel = () => {
+    if (mode === "filter" && !applied) filterState.pesticides = originalPesticides.slice();
+    closeModal();
+  };
+
+  document.getElementById("modal-close").onclick = cancel;
   document.getElementById("modal-bg").onclick = e => {
-    if (e.target.classList.contains("modal-bg")) closeModal();
+    if (e.target.classList.contains("modal-bg")) cancel();
   };
 
   // ▼ 親カテゴリ折りたたみ
@@ -92,6 +99,7 @@ function initpesticideEvents(children, mode, onSelect) {
     };
 
     document.getElementById("apply-pesticide").onclick = () => {
+      applied = true;
       applyFilter();
       closeModal();
     };

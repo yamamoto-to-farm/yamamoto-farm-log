@@ -58,10 +58,17 @@ export function openVarietyModal(options = {}) {
    イベント
 ============================================================ */
 function initVarietyEvents(children, mode, onSelect) {
+  const originalVarieties = filterState.varieties.slice();
+  let applied = false;
 
-  document.getElementById("modal-close").onclick = closeModal;
+  const cancel = () => {
+    if (mode === "filter" && !applied) filterState.varieties = originalVarieties.slice();
+    closeModal();
+  };
+
+  document.getElementById("modal-close").onclick = cancel;
   document.getElementById("modal-bg").onclick = e => {
-    if (e.target.classList.contains("modal-bg")) closeModal();
+    if (e.target.classList.contains("modal-bg")) cancel();
   };
 
   // ▼ 親折りたたみ
@@ -101,6 +108,7 @@ function initVarietyEvents(children, mode, onSelect) {
     };
 
     document.getElementById("apply-variety").onclick = () => {
+      applied = true;
       applyFilter();
       closeModal();
     };

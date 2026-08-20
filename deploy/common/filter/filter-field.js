@@ -127,7 +127,13 @@ function initFieldEvents(children, mode, onSelect, selectOptions = {}) {
     selectedField = ""
   } = selectOptions;
 
-  bindModalCloseEvents();
+  const originalFields = filterState.fields.slice();
+  let applied = false;
+  bindModalCloseEvents({
+    onClose: () => {
+      if (mode === "filter" && !applied) filterState.fields = originalFields.slice();
+    }
+  });
 
   let pendingSelectedField = String(selectedField || "").trim();
 
@@ -182,6 +188,7 @@ function initFieldEvents(children, mode, onSelect, selectOptions = {}) {
     };
 
     document.getElementById("apply-field").onclick = () => {
+      applied = true;
       applyFilter();
       closeModal();
     };

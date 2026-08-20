@@ -8,7 +8,6 @@ import { saveLog } from "/common/save/index.js?v=1";
 import { safeFieldName, safeFileName } from "/common/utils.js?v=1";
 import { recordMonthlyWorkEntries } from "/common/monthly-work-summary.js?v=1";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
-import { confirmSaveBeforeSubmit } from "/common/save-modal.js?v=1";
 
 const DEBUG = localStorage.getItem("debugGeneralLog") === "1";
 function debugLog(...args) {
@@ -218,8 +217,7 @@ export async function saveMultiFieldLog({
   type,      // fertilizer / pesticide / water など
   date,      // "2026-05-10"
   fields,    // ["ぎょうざ東1", "ぎょうざ東2"]
-  entry,     // { distributed, machine, worker, notes } など完成形
-  skipConfirm = false
+  entry      // { distributed, machine, worker, notes } など完成形
 }) {
   const year = date.substring(0, 4);
   const savedFields = [];
@@ -228,20 +226,6 @@ export async function saveMultiFieldLog({
   const filesToSave = [];
 
   debugLog("[saveMultiFieldLog] start", { type, date, fields, entry });
-
-  if (!skipConfirm) {
-    const confirmed = await confirmSaveBeforeSubmit({
-      lines: [
-        `日付: ${date || "未入力"}`,
-        `ログ: ${type || "未設定"}`,
-        `圃場: ${(fields || []).join(" / ") || "未選択"}`,
-        `作業者: ${normalizeWorker(entry) || "未入力"}`,
-        `機械: ${normalizeMachine(entry) || "なし"}`,
-        `備考: ${String(entry?.notes || entry?.memo || "").trim() || "なし"}`
-      ]
-    });
-    if (!confirmed) return;
-  }
 
   // 作業区分が欠落したまま保存される再発防止
   if (type === "weeding") {

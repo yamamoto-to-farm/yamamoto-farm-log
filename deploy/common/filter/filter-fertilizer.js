@@ -59,10 +59,17 @@ export function openFertilizerModal(options = {}) {
    イベント
 ============================================================ */
 function initFertilizerEvents(children, mode, onSelect) {
+  const originalFertilizers = filterState.fertilizers.slice();
+  let applied = false;
 
-  document.getElementById("modal-close").onclick = closeModal;
+  const cancel = () => {
+    if (mode === "filter" && !applied) filterState.fertilizers = originalFertilizers.slice();
+    closeModal();
+  };
+
+  document.getElementById("modal-close").onclick = cancel;
   document.getElementById("modal-bg").onclick = e => {
-    if (e.target.classList.contains("modal-bg")) closeModal();
+    if (e.target.classList.contains("modal-bg")) cancel();
   };
 
   // ▼ 親カテゴリ折りたたみ
@@ -92,6 +99,7 @@ function initFertilizerEvents(children, mode, onSelect) {
     };
 
     document.getElementById("apply-fertilizer").onclick = () => {
+      applied = true;
       applyFilter();
       closeModal();
     };
