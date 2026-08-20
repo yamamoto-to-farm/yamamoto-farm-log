@@ -46,7 +46,13 @@ function buildDebugUrl(path) {
 }
 
 function logSeedDebug(event, detail = {}) {
+  if (!isSeedDebugEnabled()) return;
   console.info(`[seedList-debug] ${event}`, detail);
+}
+
+function isSeedDebugEnabled() {
+  return new URLSearchParams(location.search).get("debugSeed") === "1" ||
+    localStorage.getItem("debugSeedList") === "1";
 }
 
 /* ============================================================
@@ -537,7 +543,7 @@ function renderTable(rows) {
 
   window.dispatchEvent(new CustomEvent("list:summary-updated"));
 
-  tableArea.innerHTML = `${buildSeedDebugPanel(rows, state)}${html}`;
+  tableArea.innerHTML = `${isSeedDebugEnabled() ? buildSeedDebugPanel(rows, state) : ""}${html}`;
 
   const dateHeader = document.getElementById("th-seed-date");
   if (dateHeader) {
