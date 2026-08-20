@@ -28,6 +28,12 @@ let canDiscard = false;
 let filterData = {};
 let initialized = false;
 let seedDateSortOrder = null; // null | asc | desc
+let seedDebugInfo = {
+  loadedAt: "",
+  files: []
+};
+
+const DEBUG_THRESHOLD_DATE = "2026-07-16";
 
 /* ============================================================
    外部から呼ばれるエントリポイント
@@ -59,12 +65,17 @@ async function initSeedListPage() {
 
   if (window.currentRole === "admin") canDiscard = true;
 
-  seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
-  plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
-  nurseryRows = normalizeKeys(await loadCSV("/logs/nursery/all.csv").catch(() => []));
-  discardSeedRows = normalizeKeys(await loadCSV("/logs/discard-seed/all.csv").catch(() => []));
-  fieldData = await loadJSON("/data/fields.json");
-  varietyData = await loadJSON("/data/varieties.json");
+  seedDebugInfo = {
+    loadedAt: new Date().toLocaleString("ja-JP"),
+    files: []
+  };
+
+  seedRows = await loadSeedCsvDebug("播種CSV", "/logs/seed/all.csv", ["seedDate"]);
+  plantingRows = await loadSeedCsvDebug("定植CSV", "/logs/planting/all.csv", ["plantDate"]);
+  nurseryRows = await loadSeedCsvDebug("育苗CSV", "/logs/nursery/all.csv", ["date", "nurseryDate"], { optional: true });
+  discardSeedRows = await loadSeedCsvDebug("播種破棄CSV", "/logs/discard-seed/all.csv", ["discardDate"], { optional: true });
+  fieldData = await loadSeedJsonDebug("圃場JSON", "/data/fields.json");
+  varietyData = await loadSeedJsonDebug("品種JSON", "/data/varieties.json");
 
   /* ▼ 年 → 月マップ生成 */
   const ymMap = {};
@@ -134,6 +145,65 @@ async function initSeedListPage() {
   });
 
   applyDefaultSeasonFilterIfNeeded(ymMap);
+}
+
+async function loadSeedCsvDebug(label, path, dateFields = [], options = {}) {
+  const startedAt = performance.now();
+  try {
+    const rows = normalizeKeys(await loadCSV(path));
+    seedDebugInfo.files.push({
+      label,
+      path,
+      status: "OK",
+      rows: rows.length,
+      ms: Math.round(performance.now() - startedAt),
+      ...getDateRangeInfo(rows, dateFields)
+    });
+    return rows;
+  } catch (e) {
+    seedDebugInfo.files.push({
+      label,
+      path,
+      status: options.optional ? "SKIP" : "ERROR",
+      rows: 0,
+      ms: Math.round(performance.now() - startedAt),
+      error: String(e?.message || e)
+    });
+    if (options.optional) return [];
+    throw e;
+  }
+}
+
+async function loadSeedJsonDebug(label, path) {
+  const startedAt = performance.now();
+  const data = await loadJSON(path);
+  const rows = Array.isArray(data) ? data.length : Object.keys(data || {}).length;
+  seedDebugInfo.files.push({
+    label,
+    path,
+    status: "OK",
+    rows,
+    ms: Math.round(performance.now() - startedAt)
+  });
+  return data;
+}
+
+function getDateRangeInfo(rows, dateFields = []) {
+  const dates = [];
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    for (const field of dateFields) {
+      const value = String(row?.[field] || "").trim();
+      if (value) {
+        dates.push(value);
+        break;
+      }
+    }
+  });
+  dates.sort();
+  return {
+    minDate: dates[0] || "",
+    maxDate: dates[dates.length - 1] || ""
+  };
 }
 
 function applyDefaultSeasonFilterIfNeeded(ymMap) {
@@ -372,6 +442,7 @@ function renderTable(rows) {
 
   const tableArea = document.getElementById("table-area");
   const sortedRows = sortRowsByDate(rows, "seedDate", seedDateSortOrder);
+  const state = window.currentFilterState || {};
 
   let html = `
     <table>
@@ -439,7 +510,7 @@ function renderTable(rows) {
 
   window.dispatchEvent(new CustomEvent("list:summary-updated"));
 
-  tableArea.innerHTML = html;
+  tableArea.innerHTML = `${buildSeedDebugPanel(rows, state)}${html}`;
 
   const dateHeader = document.getElementById("th-seed-date");
   if (dateHeader) {
@@ -487,6 +558,55 @@ function renderTable(rows) {
     );
   });
 
+}
+
+function buildSeedDebugPanel(filteredRows, state) {
+  const rawAfterThreshold = seedRows.filter(r => String(r.seedDate || "") > DEBUG_THRESHOLD_DATE);
+  const filteredAfterThreshold = (Array.isArray(filteredRows) ? filteredRows : [])
+    .filter(r => String(r.seedDate || "") > DEBUG_THRESHOLD_DATE);
+  const latestRows = seedRows
+    .slice()
+    .sort((a, b) => String(b.seedDate || "").localeCompare(String(a.seedDate || "")))
+    .slice(0, 8);
+  const selectedYearMonths = Array.isArray(state.yearMonths) ? state.yearMonths : [];
+  const hasHiddenLaterRows = rawAfterThreshold.length > 0 && filteredAfterThreshold.length === 0;
+
+  return `
+    <details class="card" style="margin:0 0 12px; font-size:13px;" open>
+      <summary style="cursor:pointer; font-weight:bold; color:#064e3b;">播種一覧デバッグ</summary>
+      <div style="margin-top:8px; line-height:1.7;">
+        <div>読込時刻: ${escapeHtml(seedDebugInfo.loadedAt || "-")}</div>
+        <div>現在フィルタ: 年月=${escapeHtml(selectedYearMonths.join(" / ") || "なし")} / 圃場=${escapeHtml((state.fields || []).join(" / ") || "なし")} / 品種=${escapeHtml((state.varieties || []).join(" / ") || "なし")}</div>
+        <div>播種CSV: 全${seedRows.length}件 / 表示${filteredRows.length}件 / ${DEBUG_THRESHOLD_DATE}より後: 全${rawAfterThreshold.length}件・表示${filteredAfterThreshold.length}件</div>
+        ${hasHiddenLaterRows ? `<div style="color:#b45309; font-weight:bold;">${DEBUG_THRESHOLD_DATE}より後の播種は読み込めていますが、現在のフィルタで除外されています。</div>` : ""}
+        <table style="margin-top:8px; width:100%; font-size:12px;">
+          <thead><tr><th>種別</th><th>読込パス</th><th>状態</th><th>件数</th><th>日付範囲</th><th>ms</th></tr></thead>
+          <tbody>
+            ${seedDebugInfo.files.map(file => `
+              <tr>
+                <td>${escapeHtml(file.label)}</td>
+                <td>${escapeHtml(file.path)}</td>
+                <td>${escapeHtml(file.status)}${file.error ? `<br>${escapeHtml(file.error)}` : ""}</td>
+                <td>${escapeHtml(file.rows)}</td>
+                <td>${escapeHtml([file.minDate, file.maxDate].filter(Boolean).join(" - ") || "-")}</td>
+                <td>${escapeHtml(file.ms)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <div style="margin-top:8px;">最新日付側サンプル: ${latestRows.map(r => `${escapeHtml(r.seedDate)} ${escapeHtml(r.varietyName)} ${escapeHtml(r.seedRef)}`).join(" / ") || "-"}</div>
+      </div>
+    </details>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function buildSeedDateHeaderLabel() {
