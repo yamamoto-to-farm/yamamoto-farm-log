@@ -232,7 +232,8 @@ async function saveHarvestInner() {
       `圃場: ${data.field || "未設定"}`,
       `作業者: ${data.worker}`,
       `数量: ${data.amount || "未入力"}`,
-      `定植参照: ${data.plantingRef}`
+      `定植参照: ${data.plantingRef}`,
+      `特記事項: ${String(data.issue || "").trim() || "なし"}`
     ]
   });
   if (!confirmed) return;

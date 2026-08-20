@@ -238,7 +238,8 @@ async function saveShipping() {
       `出荷日: ${shippingDate}`,
       `対象件数: ${checkedOrder.length}件`,
       `重量入力数: ${weightList.length}件`,
-      `機械: ${machine || "未設定"}`
+      `機械: ${machine || "未設定"}`,
+      `備考: ${String(notes || "").trim() || "なし"}`
     ]
   });
   if (!confirmed) return;
