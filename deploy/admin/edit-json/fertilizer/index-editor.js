@@ -342,7 +342,7 @@ export function renderEditCard({ json, container, finalPath }) {
 
           <div class="form-row">
             <label class="form-label">容量（kgなど）</label>
-            <input class="form-input fert-capacity" data-index="${index}" value="${escapeHtml(capacity)}" inputmode="decimal">
+            <input class="form-input fert-capacity" data-index="${index}" value="${escapeHtml(capacity)}" inputmode="decimal" pattern="[0-9]*(\\.[0-9]+)?">
           </div>
 
           <button class="secondary-btn delete-fert-btn" data-index="${index}" style="margin-top:8px;">

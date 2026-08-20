@@ -1,6 +1,7 @@
 // admin/edit-csv/saver.js
 import { saveLog } from "../../common/save/index.js";
 import { enqueueSummaryUpdate } from "../../common/summary.js?v=20260820";
+import { parseCsvText } from "/common/csv.js?v=20260820";
 
 // ★ 共通保存モーダル
 import { showSaveModal, updateSaveModal, completeSaveModal } from "../../common/save-modal.js";
@@ -196,6 +197,54 @@ function makeBackupPath(csvType, csvFile) {
   ].join("");
   const safeFile = String(csvFile || "all.csv").replace(/[^a-zA-Z0-9_.-]/g, "_");
   return `logs/${csvType}/backup/${stamp}-${safeFile}`;
+}
+
+function normalizeBackupPath(csvType, rawPath) {
+  const text = String(rawPath || "").trim();
+  if (!text) return "";
+  if (text.startsWith("http://") || text.startsWith("https://")) {
+    return new URL(text).pathname.replace(/^\//, "");
+  }
+  if (text.startsWith("logs/")) return text;
+  return `logs/${csvType}/backup/${text}`;
+}
+
+async function fetchBackupCsv(path) {
+  const url = `https://d3sscxnlo0qnhe.cloudfront.net/${path}?ts=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`バックアップCSVを取得できませんでした: ${res.status}`);
+  return await res.text();
+}
+
+export async function restoreCsvFromBackup(csvType, csvFile) {
+  const backupPath = normalizeBackupPath(csvType, prompt([
+    "復元するバックアップパス、またはバックアップファイル名を入力してください。",
+    `例: logs/${csvType}/backup/20260820-153012-${csvFile}`,
+    `例: 20260820-153012-${csvFile}`
+  ].join("\n")));
+  if (!backupPath) return;
+
+  if (!confirm(`${backupPath}\n\nこのバックアップで logs/${csvType}/${csvFile} を上書き復元します。よろしいですか？`)) return;
+
+  try {
+    showSaveModal("バックアップを読み込んでいます…");
+    const csvText = await fetchBackupCsv(backupPath);
+    const rows = parseCsvText(csvText);
+    if (!rows.length) throw new Error("バックアップCSVが空です");
+
+    updateSaveModal("CSV を復元しています…");
+    await saveLog({
+      type: csvType,
+      replaceCsv: csvText,
+      fileName: csvFile,
+      suppressModal: true
+    });
+
+    completeSaveModal("バックアップから復元しました");
+  } catch (e) {
+    console.error("restoreCsvFromBackup failed:", e);
+    updateSaveModal(`復元に失敗しました: ${String(e?.message || e)}`);
+  }
 }
 
 /* ---------------------------------------------------------

@@ -48,7 +48,6 @@ export function safeFieldName(field) {
 export function cb(url) {
   const v = Date.now();
   const out = url.includes("?") ? `${url}&v=${v}` : `${url}?v=${v}`;
-  console.log("[cb] in =", url, "out =", out);
   return out;
 }
 

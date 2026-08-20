@@ -3,7 +3,7 @@
 import { loadCSV } from "./loader.js";
 import { renderCsvTable } from "./table.js";
 import { attachEditor, addRow, deleteRow, getSelectedRowIndex, sortRows } from "./editor.js";
-import { saveCsvFile } from "./saver.js";
+import { saveCsvFile, restoreCsvFromBackup } from "./saver.js";
 
 console.log("=== admin/edit-csv/edit-csv.js loaded ===");
 
@@ -144,4 +144,10 @@ document.getElementById("saveCsvBtn").addEventListener("click", async () => {
   }
 
   await saveCsvFile(currentType, currentFile);
+});
+
+document.getElementById("restoreCsvBtn").addEventListener("click", async () => {
+  currentType = currentType || csvTypeEl.value;
+  currentFile = currentFile || csvFileEl.value;
+  await restoreCsvFromBackup(currentType, currentFile);
 });

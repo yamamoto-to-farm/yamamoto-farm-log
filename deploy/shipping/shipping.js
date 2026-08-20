@@ -4,6 +4,7 @@
 import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
+import { parseCsvText } from "../common/csv.js?v=20260820";
 import { todayLocalYmd } from "../common/date-utils.js";
 
 // ★ サマリー自動更新
@@ -17,17 +18,8 @@ import {
   confirmSaveBeforeSubmit
 } from "../common/save-modal.js";
 
-
-// ===============================
-// ★ デバッグ：shipping.js が読み込まれたか確認
-// ===============================
-console.log("=== shipping.js loaded ===");
-
-try {
-  console.log("import saveLog:", saveLog);
-} catch (e) {
-  console.error("import saveLog 失敗:", e);
-}
+const DEBUG = localStorage.getItem("debugShipping") === "1";
+const log = (...args) => { if (DEBUG) console.log("[shipping]", ...args); };
 
 // ===============================
 // チェック順管理
@@ -50,34 +42,12 @@ export function initShippingPage() {
 // ★ CSV 読み込み（壊れたヘッダー修正版）
 // ===============================
 async function loadCSV(url) {
-  console.log("[loadCSV] 読み込み開始:", url);
+  log("loadCSV", url);
 
   try {
     const res = await fetch(url + "?ts=" + Date.now());
     const text = await res.text();
-
-    if (!text.trim()) return [];
-
-    const lines = text.trim().split("\n");
-
-    // ★ ヘッダーのダブルクォート・空白を除去
-    const headers = lines[0]
-      .split(",")
-      .map(h => h.replace(/["\s]/g, ""));
-
-    const rows = lines.slice(1).map(line => {
-      const cols = line.split(",");
-      const obj = {};
-      headers.forEach((h, i) => {
-        let v = cols[i] || "";
-        // ★ 値のダブルクォートも除去
-        v = v.replace(/^"+|"+$/g, "").trim();
-        obj[h] = v;
-      });
-      return obj;
-    });
-
-    return rows;
+    return parseCsvText(text);
 
   } catch (e) {
     console.error("[loadCSV] 例外:", e);

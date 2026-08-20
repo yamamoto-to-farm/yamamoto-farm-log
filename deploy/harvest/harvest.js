@@ -13,11 +13,15 @@ import { saveLog } from "../common/save/index.js";
 import { getMachineParam } from "../common/utils.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import { checkDuplicate } from "../common/duplicate.js";
+import { parseCsvText } from "../common/csv.js?v=20260820";
 import { todayLocalYmd } from "../common/date-utils.js";
 
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
 import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=7";
+
+const DEBUG = localStorage.getItem("debugHarvest") === "1";
+const log = (...args) => { if (DEBUG) console.log("[harvest]", ...args); };
 
 // ★ 保存モーダル
 import {
@@ -75,7 +79,7 @@ let plantingCache = null;
 // 初期化
 // ===============================
 export async function initHarvestPage() {
-  console.log("🔥 initHarvestPage() 開始");
+  log("initHarvestPage start");
 
   createWorkerCheckboxes("workers_box");
   const fields = await createFieldSelector("field_auto", "field_area", "field_manual");
@@ -95,7 +99,7 @@ export async function initHarvestPage() {
   document.getElementById("harvestDate").value = today;
   document.getElementById("shippingDate").value = today;
 
-  console.log("🔥 initHarvestPage() 完了");
+  log("initHarvestPage done");
 }
 
 
@@ -108,21 +112,7 @@ async function loadPlantingCSV() {
   const url = "../logs/planting/all.csv?ts=" + Date.now();
   const res = await fetch(url);
   const text = await res.text();
-  if (!text.trim()) return [];
-
-  const lines = text.trim().split("\n");
-
-  const headers = lines[0].split(",").map(h => h.replace(/\r$/, ""));
-
-  const rows = lines.slice(1).map(line => {
-    let cols = line.split(",");
-    cols = cols.map(c => c.replace(/\r$/, ""));
-    while (cols.length < headers.length) cols.push("");
-
-    const obj = {};
-    headers.forEach((h, i) => (obj[h] = cols[i] || ""));
-    return obj;
-  });
+  const rows = parseCsvText(text);
 
   plantingCache = rows;
   return rows;
@@ -133,7 +123,7 @@ async function loadPlantingCSV() {
 // ★ 定植候補更新
 // ===============================
 async function updatePlantingRefOptions() {
-  console.log("🔄 updatePlantingRefOptions() START");
+  log("updatePlantingRefOptions start");
 
   const field = getFinalField();
   const harvestDate = document.getElementById("harvestDate").value;
@@ -142,7 +132,7 @@ async function updatePlantingRefOptions() {
   select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
 
   if (!field || !harvestDate) {
-    console.log("❌ field or harvestDate が未入力");
+    log("field or harvestDate missing");
     return;
   }
 
@@ -180,7 +170,7 @@ async function updatePlantingRefOptions() {
     select.value = finalList[0].plantingRef;
   }
 
-  console.log("🔄 updatePlantingRefOptions() END");
+  log("updatePlantingRefOptions done");
 }
 
 
@@ -204,7 +194,7 @@ function collectHarvestData() {
 // ★ harvest/all.csv を replace 方式で保存（モーダル対応版）
 // ===============================
 async function saveHarvestInner() {
-  console.log("💾 saveHarvestInner()");
+  log("saveHarvestInner");
 
   const data = collectHarvestData();
 

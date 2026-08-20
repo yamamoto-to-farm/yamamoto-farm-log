@@ -1,20 +1,8 @@
 // admin/edit-csv/loader.js
+import { parseCsvText } from "/common/csv.js?v=20260820";
 
 // ★ キャッシュは使わない（常に最新を取得）
 window._csvCache = {};
-
-/**
- * ダブルクォート除去（"値" → 値）
- * RFC4180 準拠の CSV に対応
- */
-function unquote(v) {
-  if (!v) return "";
-  v = v.trim();
-  if (v.startsWith('"') && v.endsWith('"')) {
-    return v.slice(1, -1).replace(/""/g, '"');
-  }
-  return v;
-}
 
 /**
  * CSV を読み込む
@@ -34,18 +22,7 @@ export async function loadCSV(csvType, csvFile) {
     // ★ CloudFront キャッシュ回避（?ts=）
     const res = await fetch(url + "?ts=" + Date.now());
     const text = await res.text();
-
-    if (!text.trim()) return [];
-
-    const lines = text.trim().split("\n");
-    const headers = lines[0].split(",").map(unquote);
-
-    const data = lines.slice(1).map(line => {
-      const cols = line.split(",").map(unquote);
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = cols[i] || "");
-      return obj;
-    });
+    const data = parseCsvText(text);
 
     // ★ 必要ならキャッシュ（ただし毎回破棄される）
     window._csvCache[url] = data;

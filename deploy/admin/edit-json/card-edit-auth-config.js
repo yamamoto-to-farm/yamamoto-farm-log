@@ -51,25 +51,25 @@ export function renderEditCard({ json, container }) {
 
       <div class="form-row">
         <label class="form-label" for="auth-session-ttl">セッション保持時間（分）</label>
-        <input id="auth-session-ttl" class="form-input" type="number" min="1" value="${Math.round(current.sessionTtlMs / 60000)}">
+        <input id="auth-session-ttl" class="form-input" type="number" inputmode="numeric" step="1" min="1" value="${Math.round(current.sessionTtlMs / 60000)}">
         <p style="margin:6px 0 0; color:#666; font-size:0.92em;">ログイン後に再PINなしで利用できる最大時間です。</p>
       </div>
 
       <div class="form-row">
         <label class="form-label" for="auth-heartbeat">セッション確認間隔（分）</label>
-        <input id="auth-heartbeat" class="form-input" type="number" min="1" value="${Math.round(current.heartbeatMs / 60000)}">
+        <input id="auth-heartbeat" class="form-input" type="number" inputmode="numeric" step="1" min="1" value="${Math.round(current.heartbeatMs / 60000)}">
         <p style="margin:6px 0 0; color:#666; font-size:0.92em;">短いほど失効検知は早くなりますが、通信回数は増えます。</p>
       </div>
 
       <div class="form-row">
         <label class="form-label" for="auth-idle-timeout">無操作タイムアウト（分）</label>
-        <input id="auth-idle-timeout" class="form-input" type="number" min="1" value="${Math.round(current.idleTimeoutMs / 60000)}">
+        <input id="auth-idle-timeout" class="form-input" type="number" inputmode="numeric" step="1" min="1" value="${Math.round(current.idleTimeoutMs / 60000)}">
         <p style="margin:6px 0 0; color:#666; font-size:0.92em;">端末放置時の不正利用対策です。共有端末では短め推奨です。</p>
       </div>
 
       <div class="form-row">
         <label class="form-label" for="auth-stepup">重要操作の再認証間隔（分）</label>
-        <input id="auth-stepup" class="form-input" type="number" min="1" value="${Math.round(current.stepupTtlMs / 60000)}">
+        <input id="auth-stepup" class="form-input" type="number" inputmode="numeric" step="1" min="1" value="${Math.round(current.stepupTtlMs / 60000)}">
         <p style="margin:6px 0 0; color:#666; font-size:0.92em;">管理操作のみ、前回認証からこの時間を超えると再PINが必要です。</p>
       </div>
 

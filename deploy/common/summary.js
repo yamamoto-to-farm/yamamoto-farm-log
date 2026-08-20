@@ -128,6 +128,7 @@ let summaryProcessing = false;
 window._summaryUpdating = window._summaryUpdating || false;
 window._summaryPool = window._summaryPool || {};
 window._summaryFullRebuild = window._summaryFullRebuild || false;
+window._summaryFailures = window._summaryFailures || [];
 
 export function enqueueSummaryUpdate(plantingRef) {
   if (!plantingRef) return;
@@ -142,6 +143,7 @@ async function processSummaryQueue() {
 
   if (!window._summaryUpdating) {
     window._summaryUpdating = true;
+    window._summaryFailures = [];
     showSaveModal("サマリーを更新しています…");
   }
 
@@ -159,6 +161,7 @@ async function processSummaryQueue() {
       );
     } catch (e) {
       console.error("summaryUpdate failed:", e);
+      window._summaryFailures.push({ ref, message: String(e?.message || e) });
     }
 
     await new Promise(r => setTimeout(r, 200));
@@ -347,7 +350,14 @@ export async function flushSummaryPool() {
 
   if (window._summaryUpdating) {
     window._summaryUpdating = false;
-    completeSaveModal("サマリーの更新が完了しました");
+    const failures = Array.isArray(window._summaryFailures) ? window._summaryFailures : [];
+    window._summaryFailures = [];
+    if (failures.length > 0) {
+      const refs = failures.slice(0, 5).map(f => f.ref).filter(Boolean).join(" / ");
+      completeSaveModal(`サマリー更新が一部失敗しました（${failures.length}件）${refs ? `: ${refs}` : ""}`);
+    } else {
+      completeSaveModal("サマリーの更新が完了しました");
+    }
   }
 }
 

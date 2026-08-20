@@ -58,10 +58,10 @@ export function openSpacingModal(row, onSelect) {
       <h2>株間・畝間の設定</h2>
 
       <label>株間(cm)</label>
-      <input type="number" id="spacingRowInput" value="${row.spacingRow || 34}" class="seed-modal-input">
+      <input type="number" id="spacingRowInput" value="${row.spacingRow || 34}" class="seed-modal-input" inputmode="decimal" step="any" min="0">
 
       <label>畝間(cm)</label>
-      <input type="number" id="spacingBedInput" value="${row.spacingBed || 60}" class="seed-modal-input">
+      <input type="number" id="spacingBedInput" value="${row.spacingBed || 60}" class="seed-modal-input" inputmode="decimal" step="any" min="0">
 
       <div style="margin-top: 16px;">
         <button id="spacingOkBtn" class="primary-btn">OK</button>

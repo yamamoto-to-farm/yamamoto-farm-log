@@ -532,17 +532,17 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
 
         <div class="edit-line">
           <label>年間使用回数上限</label>
-          <input class="form-input" data-id="${escapeHtml(id)}" data-key="maxApplicationsPerSeason" type="number" value="${p.maxApplicationsPerSeason ?? ""}">
+          <input class="form-input" data-id="${escapeHtml(id)}" data-key="maxApplicationsPerSeason" type="number" inputmode="numeric" step="1" min="0" value="${p.maxApplicationsPerSeason ?? ""}">
         </div>
 
         <div class="edit-line">
           <label>収穫前日数</label>
-          <input class="form-input" data-id="${escapeHtml(id)}" data-key="preHarvestIntervalDays" type="number" value="${p.preHarvestIntervalDays ?? ""}">
+          <input class="form-input" data-id="${escapeHtml(id)}" data-key="preHarvestIntervalDays" type="number" inputmode="numeric" step="1" min="0" value="${p.preHarvestIntervalDays ?? ""}">
         </div>
 
         <div class="edit-line">
           <label>再入場制限時間</label>
-          <input class="form-input" data-id="${escapeHtml(id)}" data-key="reentryIntervalHours" type="number" value="${p.reentryIntervalHours ?? ""}">
+          <input class="form-input" data-id="${escapeHtml(id)}" data-key="reentryIntervalHours" type="number" inputmode="decimal" step="any" min="0" value="${p.reentryIntervalHours ?? ""}">
         </div>
 
         <div class="edit-line">
@@ -565,7 +565,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
               <div class="ingredient-row" data-index="${i}" style="display:grid; grid-template-columns: 1.1fr 0.9fr 0.8fr 0.8fr 0.8fr 1.1fr auto; gap:6px; align-items:center;">
                 <input class="form-input" data-array="ingredient" data-index="${i}" data-field="name" placeholder="成分名" value="${escapeHtml(row.name)}">
                 <input class="form-input" data-array="ingredient" data-index="${i}" data-field="kind" placeholder="区分" value="${escapeHtml(row.kind)}">
-                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="concentrationPercent" type="number" step="any" placeholder="含有率%" value="${escapeHtml(row.concentrationPercent)}">
+                <input class="form-input" data-array="ingredient" data-index="${i}" data-field="concentrationPercent" type="number" inputmode="decimal" step="any" min="0" placeholder="含有率%" value="${escapeHtml(row.concentrationPercent)}">
                 <input class="form-input" data-array="ingredient" data-index="${i}" data-field="resistanceScheme" placeholder="IRAC/FRAC/HRAC" value="${escapeHtml(row.resistanceScheme)}">
                 <input class="form-input" data-array="ingredient" data-index="${i}" data-field="resistanceCode" placeholder="コード" value="${escapeHtml(row.resistanceCode)}">
                 <input class="form-input" data-array="ingredient" data-index="${i}" data-field="source" placeholder="備考/由来" value="${escapeHtml(row.source)}">
@@ -588,9 +588,9 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
                 <input class="form-input" data-array="application" data-index="${i}" data-field="dilution" placeholder="希釈" value="${escapeHtml(row.dilution)}">
                 <input class="form-input" data-array="application" data-index="${i}" data-field="sprayVolume" placeholder="散布液量" value="${escapeHtml(row.sprayVolume)}">
                 <input class="form-input" data-array="application" data-index="${i}" data-field="timing" placeholder="使用時期" value="${escapeHtml(row.timing)}">
-                <input class="form-input" data-array="application" data-index="${i}" data-field="maxProductApplications" type="number" placeholder="製品回数" value="${escapeHtml(row.maxProductApplications)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="maxProductApplications" type="number" inputmode="numeric" step="1" min="0" placeholder="製品回数" value="${escapeHtml(row.maxProductApplications)}">
                 <input class="form-input" data-array="application" data-index="${i}" data-field="method" placeholder="方法" value="${escapeHtml(row.method)}">
-                <input class="form-input" data-array="application" data-index="${i}" data-field="maxActiveIngredientApplications" type="number" placeholder="有効成分回数" value="${escapeHtml(row.maxActiveIngredientApplications)}">
+                <input class="form-input" data-array="application" data-index="${i}" data-field="maxActiveIngredientApplications" type="number" inputmode="numeric" step="1" min="0" placeholder="有効成分回数" value="${escapeHtml(row.maxActiveIngredientApplications)}">
                 <input class="form-input" data-array="application" data-index="${i}" data-field="note" placeholder="備考" value="${escapeHtml(row.note)}">
                 <button type="button" class="secondary-btn" data-action="remove-application" data-index="${i}">削除</button>
               </div>

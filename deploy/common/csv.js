@@ -20,6 +20,41 @@ export function normalizeKeys(rows) {
   });
 }
 
+export function parseCsvText(text) {
+  const normalized = String(text || "").replace(/^\uFEFF/, "").trim();
+  if (!normalized) return [];
+
+  if (window.Papa?.parse) {
+    return normalizeKeys(window.Papa.parse(normalized, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: h => String(h || "").trim(),
+      transform: v => (typeof v === "string" ? v.trim() : v)
+    }).data || []);
+  }
+
+  const lines = normalized
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0 || !lines[0].trim()) return [];
+
+  const headers = parseCsvLine(lines[0]).map((h, i) => {
+    const head = String(h || "").trim();
+    return i === 0 ? head.replace(/^\uFEFF/, "") : head;
+  });
+
+  return lines.slice(1).map(line => {
+    const cols = parseCsvLine(line);
+    const obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = String(cols[i] ?? "").trim();
+    });
+    return obj;
+  });
+}
+
 // ---------------------------------------------------------
 // CSV 読み込み（CloudFront → S3）
 // ---------------------------------------------------------
@@ -39,29 +74,7 @@ export async function loadCSV(path) {
   }
 
   const text = await res.text();
-  const normalized = String(text || "").replace(/\r\n/g, "\n").trim();
-  if (!normalized) return [];
-
-  const lines = normalized
-    .split("\n")
-    .map(line => line.trim())
-    .filter(Boolean);
-
-  if (lines.length === 0 || !lines[0].trim()) return [];
-
-  const headers = parseCsvLine(lines[0]).map((h, i) => {
-    const head = String(h || "").trim();
-    return i === 0 ? head.replace(/^\uFEFF/, "") : head;
-  });
-
-  return lines.slice(1).map(line => {
-    const cols = parseCsvLine(line);
-    const obj = {};
-    headers.forEach((h, i) => {
-      obj[h] = String(cols[i] ?? "");
-    });
-    return obj;
-  });
+  return parseCsvText(text);
 }
 
 function parseCsvLine(line) {
