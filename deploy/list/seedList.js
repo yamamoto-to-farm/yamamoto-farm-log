@@ -2,7 +2,7 @@
 // seedList.js（播種ベース一覧）
 // ===============================
 
-import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260820";
+import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260821-quote-fix";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 
@@ -34,6 +34,20 @@ let seedDebugInfo = {
 };
 
 const DEBUG_THRESHOLD_DATE = "2026-07-16";
+const DEBUG_CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+const DEBUG_S3_BASE = "https://yamamoto-farm-log.s3.ap-northeast-1.amazonaws.com";
+
+function buildDebugUrl(path) {
+  const normalized = String(path || "").trim();
+  if (!normalized) return "";
+  if (/^https?:\/\//.test(normalized)) return normalized;
+  const base = normalized.startsWith("/logs/") ? DEBUG_S3_BASE : DEBUG_CF_BASE;
+  return `${base}${normalized.startsWith("/") ? normalized : `/${normalized}`}`;
+}
+
+function logSeedDebug(event, detail = {}) {
+  console.info(`[seedList-debug] ${event}`, detail);
+}
 
 /* ============================================================
    外部から呼ばれるエントリポイント
@@ -149,26 +163,34 @@ async function initSeedListPage() {
 
 async function loadSeedCsvDebug(label, path, dateFields = [], options = {}) {
   const startedAt = performance.now();
+  const url = buildDebugUrl(path);
+  logSeedDebug("loadCSV:start", { label, path, url });
   try {
     const rows = normalizeKeys(await loadCSV(path));
-    seedDebugInfo.files.push({
+    const info = {
       label,
       path,
+      url,
       status: "OK",
       rows: rows.length,
       ms: Math.round(performance.now() - startedAt),
       ...getDateRangeInfo(rows, dateFields)
-    });
+    };
+    seedDebugInfo.files.push(info);
+    logSeedDebug("loadCSV:success", info);
     return rows;
   } catch (e) {
-    seedDebugInfo.files.push({
+    const info = {
       label,
       path,
+      url,
       status: options.optional ? "SKIP" : "ERROR",
       rows: 0,
       ms: Math.round(performance.now() - startedAt),
       error: String(e?.message || e)
-    });
+    };
+    seedDebugInfo.files.push(info);
+    logSeedDebug("loadCSV:error", info);
     if (options.optional) return [];
     throw e;
   }
@@ -176,15 +198,20 @@ async function loadSeedCsvDebug(label, path, dateFields = [], options = {}) {
 
 async function loadSeedJsonDebug(label, path) {
   const startedAt = performance.now();
+  const url = buildDebugUrl(path);
+  logSeedDebug("loadJSON:start", { label, path, url });
   const data = await loadJSON(path);
   const rows = Array.isArray(data) ? data.length : Object.keys(data || {}).length;
-  seedDebugInfo.files.push({
+  const info = {
     label,
     path,
+    url,
     status: "OK",
     rows,
     ms: Math.round(performance.now() - startedAt)
-  });
+  };
+  seedDebugInfo.files.push(info);
+  logSeedDebug("loadJSON:success", info);
   return data;
 }
 

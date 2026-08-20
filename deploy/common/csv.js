@@ -4,6 +4,7 @@
 
 // ★ CloudFront のベース URL（あなたの環境に合わせて固定）
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
+const S3_BASE = "https://yamamoto-farm-log.s3.ap-northeast-1.amazonaws.com";
 
 // ---------------------------------------------------------
 // normalizeKeys（CSV のキーと値を整形）
@@ -24,15 +25,6 @@ export function parseCsvText(text) {
   const normalized = String(text || "").replace(/^\uFEFF/, "").trim();
   if (!normalized) return [];
 
-  if (window.Papa?.parse) {
-    return normalizeKeys(window.Papa.parse(normalized, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: h => String(h || "").trim(),
-      transform: v => (typeof v === "string" ? v.trim() : v)
-    }).data || []);
-  }
-
   const lines = normalized
     .split("\n")
     .map(line => line.trim())
@@ -49,20 +41,37 @@ export function parseCsvText(text) {
     const cols = parseCsvLine(line);
     const obj = {};
     headers.forEach((h, i) => {
-      obj[h] = String(cols[i] ?? "").trim();
+      obj[h] = normalizeCsvCell(cols[i]);
     });
     return obj;
   });
+}
+
+function normalizeCsvCell(value) {
+  let text = String(value ?? "").trim();
+
+  // Legacy seed CSV has memo values like """""" for blank and
+  // """N60 ホワイトカリウ""" for text. Treat the outer quote marks as CSV noise.
+  if (/^"+$/.test(text)) return "";
+  while (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+    text = text.slice(1, -1).trim();
+    if (/^"+$/.test(text)) return "";
+  }
+
+  return text;
 }
 
 // ---------------------------------------------------------
 // CSV 読み込み（CloudFront → S3）
 // ---------------------------------------------------------
 export async function loadCSV(path) {
-  // 先頭が "/" の場合は CloudFront 絶対パスに変換
-  let url = path.startsWith("/")
-    ? `${CF_BASE}${path}`
-    : `${CF_BASE}/${path}`;
+  const normalizedPath = String(path || "").trim();
+  const base = normalizedPath.replace(/^https?:\/\/[^/]+/, "").startsWith("/logs/")
+    ? S3_BASE
+    : CF_BASE;
+  let url = /^https?:\/\//.test(normalizedPath)
+    ? normalizedPath
+    : `${base}${normalizedPath.startsWith("/") ? normalizedPath : `/${normalizedPath}`}`;
 
   // キャッシュ破棄（常に最新を読む）
   url += `?ts=${Date.now()}`;
