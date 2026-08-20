@@ -11,6 +11,11 @@ let currentRows = null;
 let currentType = "";
 let currentFile = "";
 let sortState = {};
+let originalRows = [];
+
+function cloneRows(rows) {
+  return (Array.isArray(rows) ? rows : []).map(row => ({ ...row }));
+}
 
 const csvTypeEl = document.getElementById("csvType");
 const csvFileEl = document.getElementById("csvFile");
@@ -59,13 +64,17 @@ document.getElementById("loadCsvBtn").addEventListener("click", async () => {
 
   // ★ 正しい呼び出し（URL を渡さない）
   const rows = await loadCSV(currentType, currentFile);
+  originalRows = cloneRows(rows);
+  window._editCsvOriginalRows = cloneRows(rows);
+  window._editCsvOriginalType = currentType;
+  window._editCsvOriginalFile = currentFile;
 
   // テーブル描画
   renderCsvTable(rows);
 
   // 編集ロジックを紐づける
   const table = document.querySelector("#csvTableArea table");
-  currentRows = attachEditor(table);
+  currentRows = attachEditor(table, originalRows);
 
   console.log("✔ editor attached. rows:", currentRows);
 });
@@ -86,7 +95,7 @@ document.getElementById("addRowBtn").addEventListener("click", () => {
   renderCsvTable(currentRows);
 
   const newTable = document.querySelector("#csvTableArea table");
-  currentRows = attachEditor(newTable);
+  currentRows = attachEditor(newTable, originalRows);
 });
 
 // 行削除
@@ -107,7 +116,7 @@ document.getElementById("deleteRowBtn").addEventListener("click", () => {
   renderCsvTable(currentRows);
 
   const newTable = document.querySelector("#csvTableArea table");
-  currentRows = attachEditor(newTable);
+  currentRows = attachEditor(newTable, originalRows);
 });
 
 // 列名クリックでソート
@@ -124,7 +133,7 @@ document.getElementById("csvTableArea").addEventListener("click", e => {
   renderCsvTable(currentRows);
 
   const newTable = document.querySelector("#csvTableArea table");
-  currentRows = attachEditor(newTable);
+  currentRows = attachEditor(newTable, originalRows);
 });
 
 // CSV 保存（全書き換え）

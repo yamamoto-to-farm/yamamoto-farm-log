@@ -127,6 +127,7 @@ let summaryProcessing = false;
 
 window._summaryUpdating = window._summaryUpdating || false;
 window._summaryPool = window._summaryPool || {};
+window._summaryFullRebuild = window._summaryFullRebuild || false;
 
 export function enqueueSummaryUpdate(plantingRef) {
   if (!plantingRef) return;
@@ -259,6 +260,7 @@ export async function summaryUpdate(plantingRef) {
   if (plantingRef === "*") {
     slog(">>> summaryUpdate: FULL REBUILD");
     invalidateSummaryCache("all");
+    window._summaryFullRebuild = true;
 
     const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
     const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
@@ -303,7 +305,7 @@ export async function summaryUpdate(plantingRef) {
 export async function flushSummaryPool() {
   slog("=== FLUSH SUMMARY POOL START ===");
 
-  const index = await loadIndexCached();
+  const index = window._summaryFullRebuild ? {} : await loadIndexCached();
   const files = [];
 
   for (const plantingRef of Object.keys(window._summaryPool)) {
@@ -341,6 +343,7 @@ export async function flushSummaryPool() {
   slog("=== FLUSH SUMMARY POOL END ===");
 
   window._summaryPool = {};
+  window._summaryFullRebuild = false;
 
   if (window._summaryUpdating) {
     window._summaryUpdating = false;

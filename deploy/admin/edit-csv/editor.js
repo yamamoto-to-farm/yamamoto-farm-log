@@ -3,8 +3,37 @@
 // 選択中の行インデックス（行番号クリックで更新）
 let selectedRowIndex = null;
 
+function normalizeCell(value) {
+  return String(value ?? "").trim();
+}
+
+function applyDiffClass(td, rowIndex, key, originalRows) {
+  const originalRow = Array.isArray(originalRows) ? originalRows[rowIndex] : null;
+  if (!originalRow) {
+    td.classList.add("csv-added-cell");
+    td.classList.remove("csv-changed-cell");
+    return;
+  }
+
+  const current = normalizeCell(td.textContent);
+  const original = normalizeCell(originalRow[key]);
+  td.classList.toggle("csv-changed-cell", current !== original);
+  td.classList.remove("csv-added-cell");
+}
+
+function refreshDiffHighlights(tableElement, headers, originalRows) {
+  const trList = tableElement.querySelectorAll("tbody tr");
+  trList.forEach((tr, rowIndex) => {
+    const cells = tr.querySelectorAll("td");
+    tr.classList.toggle("csv-added-row", !originalRows?.[rowIndex]);
+    headers.forEach((h, i) => {
+      applyDiffClass(cells[i + 1], rowIndex, h, originalRows);
+    });
+  });
+}
+
 // テーブルに編集ロジックを紐づけて、rows を返す
-export function attachEditor(tableElement) {
+export function attachEditor(tableElement, originalRows = []) {
   const rows = [];
 
   // ヘッダー取得
@@ -40,6 +69,7 @@ export function attachEditor(tableElement) {
 
       const key = headers[colIndex];
       rows[rowIndex][key] = td.textContent.trim();
+      applyDiffClass(td, rowIndex, key, originalRows);
     },
     true
   );
@@ -70,6 +100,8 @@ export function attachEditor(tableElement) {
     });
     e.target.parentElement.classList.add("selected-row");
   });
+
+  refreshDiffHighlights(tableElement, headers, originalRows);
 
   return rows;
 }

@@ -49,3 +49,13 @@ th.sortable {
 th.sortable:hover {
   background-color: #e8e8e8;
 }
+
+.csv-changed-cell {
+  background-color: #fff2a8;
+  box-shadow: inset 0 0 0 2px #d99b00;
+}
+
+.csv-added-row td,
+.csv-added-cell {
+  background-color: #e7f7ed;
+}
