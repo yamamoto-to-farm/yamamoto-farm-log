@@ -2,7 +2,7 @@
 // plantingList.js（定植ベース一覧）
 // ===============================
 
-import { loadCSV, normalizeKeys } from "/common/csv.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260820";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";

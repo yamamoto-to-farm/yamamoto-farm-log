@@ -2,8 +2,8 @@
 // list.js（一覧ページのモード管理）
 // ===============================
 
-import { renderPlantingList } from "./plantingList.js?v=20260811-1";
-import { renderSeedList } from "./seedList.js";
+import { renderPlantingList } from "./plantingList.js?v=20260821-1";
+import { renderSeedList } from "./seedList.js?v=20260821-1";
 import { setFilterData } from "/common/filter.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 

@@ -2,7 +2,7 @@
 // seedList.js（播種ベース一覧）
 // ===============================
 
-import { loadCSV, normalizeKeys } from "/common/csv.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260820";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
 
@@ -33,9 +33,18 @@ let seedDateSortOrder = null; // null | asc | desc
    外部から呼ばれるエントリポイント
 ============================================================ */
 export async function renderSeedList() {
-  if (!initialized) {
-    await initSeedListPage();
-    initialized = true;
+  try {
+    if (!initialized) {
+      await initSeedListPage();
+      initialized = true;
+    }
+  } catch (e) {
+    console.error("[seedList] 初期化失敗:", e);
+    const tableArea = document.getElementById("table-area");
+    if (tableArea) {
+      tableArea.innerHTML = `<div class="card"><p>播種ログを読み込めませんでした。</p><p>${String(e?.message || e)}</p></div>`;
+    }
+    return;
   }
 
   const state = window.currentFilterState || {};
