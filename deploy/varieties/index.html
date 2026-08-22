@@ -32,8 +32,14 @@
 
   <!-- 戻るボタン（fields と同じ位置） -->
   <div class="back-action-slot">
-    <button class="secondary-btn unified-back-btn" type="button" onclick="location.href='/varieties/index.html'">
+    <button id="variety-back-btn" class="secondary-btn unified-back-btn" type="button">
+      元のページへ戻る
+    </button>
+    <button id="variety-list-back-btn" class="secondary-btn unified-back-btn" type="button" style="display:none;">
       品種一覧に戻る
+    </button>
+    <button id="add-variety-btn" class="secondary-btn" type="button" style="display:none;">
+      新規品種を追加
     </button>
   </div>
 
@@ -41,6 +47,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
+    import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 
     import { renderVarietyList } from "./index.js";      // 品種一覧
     import { initVarietyDetail } from "./detail.js";     // 品種詳細
@@ -70,10 +77,28 @@
       // ★ URL パラメータ取得
       const params = new URLSearchParams(location.search);
       const variety = params.get("variety");
+      const backBtn = document.getElementById("variety-back-btn");
+      const listBackBtn = document.getElementById("variety-list-back-btn");
+      const addVarietyBtn = document.getElementById("add-variety-btn");
+
+      setupSmartBackButton({
+        elementId: "variety-back-btn",
+        fallbackPath: "/",
+        defaultLabel: "元のページへ戻る"
+      });
+
+      if (addVarietyBtn && window.currentRole === "admin") {
+        addVarietyBtn.style.display = "inline-flex";
+        addVarietyBtn.onclick = () => {
+          location.href = "/admin/edit-json/index.html?data=varieties&return=%2Fvarieties%2Findex.html";
+        };
+      }
 
       // ★ 一覧ページ（variety なし） → 生成ボタンを表示
       if (!variety) {
         document.getElementById("index-tools").style.display = "block";
+        if (backBtn) backBtn.style.display = "inline-flex";
+        if (listBackBtn) listBackBtn.style.display = "none";
         showVarietyIndexTimestamp();
         setupRegenVarietyIndexButton();
 
@@ -84,6 +109,13 @@
 
       // ★ 詳細ページ（variety あり） → 生成ボタン非表示
       document.getElementById("index-tools").style.display = "none";
+      if (backBtn) backBtn.style.display = "none";
+      if (listBackBtn) {
+        listBackBtn.style.display = "inline-flex";
+        listBackBtn.onclick = () => {
+          location.href = "/varieties/index.html";
+        };
+      }
 
       document.getElementById("variety-name").textContent = `${variety}（品種詳細）`;
       initVarietyDetail(variety);

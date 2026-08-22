@@ -132,6 +132,8 @@ export function renderEditCard({ json, container, finalPath }) {
           <div class="form-row">
             <label class="form-label">品種名</label>
             <input class="form-input variety-name" data-index="${index}" value="${escapeHtml(name)}">
+      const params = new URLSearchParams(location.search);
+      const initialVariety = String(params.get("variety") || "").trim();
           </div>
 
           <div class="form-row">
@@ -142,17 +144,24 @@ export function renderEditCard({ json, container, finalPath }) {
           <div class="form-row">
             <label class="form-label">収穫月（1-12）</label>
             <input class="form-input variety-harvest-month" data-index="${index}" value="${escapeHtml(harvestMonth)}" inputmode="numeric">
+          <div class="sub-card" style="margin-bottom:14px; background:#f8fbff; border:1px solid #dbeafe;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+              <div>
+                <label class="form-label">品種検索（部分一致）</label>
+                <input id="variety-name-search" class="form-input" style="min-width:220px;" placeholder="品種名・種別で検索">
+              </div>
+              <div>
+                <label class="form-label">編集対象を選択</label>
+                <button id="open-variety-target-modal" class="secondary-btn" type="button" style="min-width:320px; text-align:left;">
+                  品種を選択
+                </button>
+                <div id="variety-target-current" style="margin-top:6px; color:#555;"></div>
+              </div>
+              <button id="add-variety-btn" class="secondary-btn" type="button">＋ 品種を追加</button>
+            </div>
+            <div id="variety-visible-count" style="margin-top:8px; color:#555;"></div>
           </div>
 
-          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-            <button class="secondary-btn jump-variety-detail-btn" data-index="${index}" ${name ? "" : "disabled"}>
-              詳細を開く
-            </button>
-            <button class="secondary-btn delete-variety-btn" data-index="${index}">
-              削除
-            </button>
-          </div>
-        </div>
       `);
     });
 
@@ -161,13 +170,23 @@ export function renderEditCard({ json, container, finalPath }) {
         const idx = Number(btn.dataset.index);
         if (!confirm("この品種を削除しますか？\n保存時に variety-detail からも削除されます。")) return;
         listData.splice(idx, 1);
-        render();
+        const visibleRows = getVisibleRows();
+        if (visibleRows.length === 0) {
+          listEl.innerHTML = `
+            <div class="sub-card" style="margin-bottom:12px; color:#666;">
+              表示対象がありません。種別・品種検索・編集対象の選択条件を見直してください。
+            </div>
+          `;
+          return;
+        }
+
+        visibleRows.forEach(({ item, index }) => {
       };
     });
 
     document.querySelectorAll(".jump-variety-detail-btn").forEach(btn => {
       btn.onclick = () => {
-        const idx = Number(btn.dataset.index);
+            <div class="sub-card" data-index="${index}" style="margin-bottom:12px;">
         const row = btn.closest(".sub-card");
         const nameInput = row?.querySelector(".variety-name");
         const name = nameInput?.value.trim() || "";
@@ -180,7 +199,7 @@ export function renderEditCard({ json, container, finalPath }) {
         location.href = `?data=variety-detail&variety=${encodeURIComponent(name)}`;
       };
     });
-  }
+                <input class="form-input variety-harvest-month" data-index="${index}" value="${escapeHtml(harvestMonth)}" inputmode="numeric" step="1" min="1" max="12">
 
   function buildRowsFromInputs() {
     const names = container.querySelectorAll(".variety-name");
@@ -199,6 +218,17 @@ export function renderEditCard({ json, container, finalPath }) {
         continue;
       }
 
+
+      nameSearchEl.oninput = () => {
+        syncVisibleRowToListData();
+        nameKeyword = nameSearchEl.value || "";
+        selectedVarietyIndex = -1;
+        render();
+      };
+
+      if (openTargetModalBtn) {
+        openTargetModalBtn.onclick = openTargetSelectModal;
+      }
       if (!name) {
         alert(`${i + 1}行目: 品種名は必須です。`);
         return null;
