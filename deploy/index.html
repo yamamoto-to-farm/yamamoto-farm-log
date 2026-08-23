@@ -271,6 +271,34 @@
       font-size: 13px;
       line-height: 1.8;
     }
+    .diary-card__warning {
+      margin: 0 0 10px;
+      color: #b33d3d;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .diary-card__latest {
+      margin: 10px 0 0;
+      padding-top: 9px;
+      border-top: 1px solid #edf2f9;
+      color: #4a5d75;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .diary-card__latest-label {
+      display: block;
+      color: #687b92;
+      font-weight: 700;
+    }
+    .diary-card__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #edf2f9;
+      font-size: 12px;
+    }
     .weather-card__section {
       margin-top: 12px;
       padding-top: 10px;
@@ -781,16 +809,16 @@
 
       diaryCard.innerHTML = `
         <div class="ops-card__label">作業日誌</div>
-        <div class="ops-card__value">${isMissing ? "未入力あり" : "入力済み"}</div>
-        <ul class="ops-card__list">
-          <li>${missingCount >= 2 ? `${missingCount}日連続で未入力` : `昨日までの作業日誌: ${missingCount}件未入力`}</li>
-          <li>${missingText}</li>
-          <li><a href="/diary/index.html">→ 作業日誌を見る</a></li>
-          <li><a href="/schedule/monthly-work/index.html">→ 作業カレンダーを見る</a></li>
-        </ul>
-        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f9; color:#4a5d75; font-size:12px; line-height:1.7;">
-          <strong>直近:</strong> ${latestDateText}<br>
+        <div class="ops-card__value">${isMissing ? `${missingCount}日未入力` : "入力済み"}</div>
+        ${isMissing ? `<p class="diary-card__warning">${missingText}</p>` : ""}
+        <div class="diary-card__latest">
+          <span class="diary-card__latest-label">直近の記録</span>
+          ${latestDateText}<br>
           ${summaryText}
+        </div>
+        <div class="diary-card__actions">
+          <a href="/diary/index.html">作業日誌を見る</a>
+          <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
         </div>
       `;
     }
