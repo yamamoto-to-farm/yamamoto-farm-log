@@ -64,11 +64,11 @@ export function renderFertilizerInputs() {
              pattern="[0-9]*"
              class="bags-input"
              data-name="${name}"
-             value="0"> 袋
+             value=""> 袋
 
       × ${capacity}kg
 
-      = <span class="total-display" data-name="${name}">0</span> kg
+    = <span class="total-display" data-name="${name}">-</span> kg
     </div>
 
     <!-- ★ /10a 表示欄 -->
@@ -106,7 +106,7 @@ function initInputEvents() {
             const totalDisplay = document.querySelector(
                 `.total-display[data-name="${name}"]`
             );
-            if (totalDisplay) totalDisplay.textContent = total;
+            if (totalDisplay) totalDisplay.textContent = input.value.trim() ? total : "-";
 
             // ★ /10a 更新（fertilizer.js 側で totalA をセットして呼ぶ）
             if (window.__fertilizer_totalA) {
