@@ -7,7 +7,7 @@ table {
   border-collapse: collapse;
   margin-top: 20px;
   width: max-content;
-  min-width: 100%;
+  min-width: max-content;
 }
 
 th, td {
@@ -20,14 +20,19 @@ th {
 }
 
 #csvTableArea {
+  width: 100%;
+  min-width: 0;
   margin-top: 20px;
 }
 
 .csv-table-scroll {
+  display: block;
+  width: 100%;
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: visible;
   padding-bottom: 8px;
+  box-sizing: border-box;
 }
 
 .row {
