@@ -778,8 +778,9 @@
 
       const recentEntries = statuses.filter(item => item.workCount > 0);
       const latestEntry = recentEntries.length ? recentEntries[0] : null;
+      const yesterdayAndEarlier = statuses.filter(item => item.ymd !== toYmd(today));
       const trailingMissing = [];
-      for (const item of statuses) {
+      for (const item of yesterdayAndEarlier) {
         if (item.workCount > 0) break;
         trailingMissing.push(item.ymd);
       }
