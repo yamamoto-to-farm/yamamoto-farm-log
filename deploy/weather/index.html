@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>天候詳細 - 山本農園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <style>
+    .weather-detail-page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+    .weather-detail-placeholder {
+      min-height: 220px;
+      padding: 24px;
+      border: 1px solid #dfe7ef;
+      border-radius: 12px;
+      background: #fff;
+      color: #5b6f87;
+    }
+  </style>
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js?v=1";
+    import { renderHeader } from "/common/header.js?v=1";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+      renderHeader();
+    });
+  </script>
+</head>
+<body>
+  <main class="weather-detail-page">
+    <h1>天候詳細</h1>
+    <section class="weather-detail-placeholder" aria-label="天候詳細の準備中">
+      詳細表示は準備中です。
+    </section>
+  </main>
+</body>
+</html>

@@ -534,7 +534,7 @@
       const availableDates = Object.keys(currentWeather || {})
         .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
         .sort();
-      const dates = availableDates.slice(-3).reverse();
+      const dates = availableDates.slice(-3);
       return {
         days: dates.map(date => ({
           date,
@@ -570,6 +570,7 @@
         <div class="weather-card__section">
           <p class="weather-card__section-title">作業判断</p>
           <p class="weather-card__judgment">判断メッセージは今後追加予定です。</p>
+          <p class="weather-card__judgment"><a href="/weather/index.html">→ 天候詳細を見る</a></p>
         </div>
       `;
     }
