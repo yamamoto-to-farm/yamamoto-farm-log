@@ -86,6 +86,20 @@ function getTodayJstDateString() {
   return todayLocalYmd();
 }
 
+function formatDiaryDisplayDate(ymd) {
+  const text = String(ymd || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return "日付を選択";
+  const date = parseYmdToDate(text);
+  if (!date) return "日付を選択";
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return `${date.getMonth() + 1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
+}
+
+function syncDiaryDateDisplay(value) {
+  const display = document.getElementById("diaryDateDisplay");
+  if (display) display.textContent = formatDiaryDisplayDate(value);
+}
+
 function parseYmdToDate(ymd) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""))) return null;
   const dt = new Date(`${ymd}T00:00:00`);
@@ -372,7 +386,7 @@ async function printDiaryAsA4Pdf() {
 
       dateLine = document.createElement("p");
       dateLine.className = "diary-print-dateline";
-      dateLine.textContent = dateValue;
+      dateLine.textContent = formatDiaryDisplayDate(dateValue);
       dateCard.appendChild(dateLine);
 
       const pageTitle = formArea.querySelector(".page-title");
@@ -967,7 +981,18 @@ window.addEventListener("DOMContentLoaded", async () => {
   const todayBtn = document.getElementById("todayBtn");
   const nextDayBtn = document.getElementById("nextDayBtn");
   dateInput.value = initialDate;
+  syncDiaryDateDisplay(initialDate);
   dateInput.readOnly = true;
+  const dateDisplay = document.getElementById("diaryDateDisplay");
+  if (dateDisplay) {
+    dateDisplay.addEventListener("click", () => dateInput.click());
+    dateDisplay.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        dateInput.click();
+      }
+    });
+  }
 
   if (prevDayBtn) {
     prevDayBtn.addEventListener("click", () => {
@@ -1085,6 +1110,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------------------------------------
   dateInput.addEventListener("change", async e => {
     const d = e.target.value;
+    syncDiaryDateDisplay(d);
     await renderDiaryForDate({ mode, date: d, saveBtn });
     scheduleWorkContentWrapperHeightSync();
   });

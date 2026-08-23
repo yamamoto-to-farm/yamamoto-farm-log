@@ -213,16 +213,31 @@
 }
 
 #diaryDateNav #diaryDate {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#diaryDateNav .diary-date-display {
   flex: 1 1 240px;
   min-width: 180px;
-  width: auto;
-  max-width: 100%;
   min-height: 42px;
   box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
   text-align: center;
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  cursor: pointer;
 }
 
 #diaryDateNav .day-nav-btn,
@@ -242,6 +257,13 @@
 #diaryDateNav #diaryDate[readonly] {
   user-select: none;
   cursor: pointer;
+}
+
+#diaryDateNav .diary-date-display:hover,
+#diaryDateNav .diary-date-display:focus-visible {
+  border-color: #7da5d6;
+  background: #f7fbff;
+  outline: none;
 }
 
 #nextDayBtn {
@@ -566,6 +588,35 @@
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+#diaryDateNav #diaryDate {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#diaryDateNav .diary-date-display {
+  order: 2;
+  flex: 1 1 240px;
+  min-width: 180px;
+  min-height: 42px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 #diaryDateNav .day-nav-btn {
