@@ -34,6 +34,18 @@
     .menu-grid.open {
       display: grid;
     }
+    #menu-area {
+      gap: 14px 20px;
+      align-items: start;
+    }
+    .menu-area__title {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 0 0 8px;
+      border-bottom: 1px solid #dfe7ef;
+      color: #1f2f3f;
+      font-size: 20px;
+    }
 
     .ops-dashboard {
       margin: 20px 0 28px;
@@ -70,13 +82,14 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
+      align-items: start;
     }
     .ops-card {
       padding: 14px 16px;
       border-radius: 12px;
       background: #fff;
       border: 1px solid #e6edf5;
-      min-height: 150px;
+      min-height: 126px;
     }
     .ops-card--warn {
       border-left: 5px solid #d94d4d;
@@ -190,6 +203,12 @@
       }
       .ops-dashboard__title {
         font-size: 20px;
+      }
+      #menu-area {
+        display: block !important;
+      }
+      .menu-area__title {
+        margin-bottom: 16px;
       }
       .weather-days {
         gap: 4px;
@@ -570,7 +589,7 @@
       const dashboardTitle = document.querySelector(".ops-dashboard__title");
       if (dashboardTitle) dashboardTitle.textContent = `${toYmd(new Date())}の山本農園`;
       document.getElementById("ops-dashboard").style.display = "block";
-      document.getElementById("menu-area").style.display = "block";
+      document.getElementById("menu-area").style.display = "grid";
 
       const diaryStatus = await loadRecentDiaryStatus();
       renderDiaryCard(diaryStatus);
@@ -680,7 +699,9 @@
     </div>
   </div>
 
-  <div id="menu-area" style="display:none"></div>
+  <div id="menu-area" style="display:none">
+    <h2 class="menu-area__title">メニュー</h2>
+  </div>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
