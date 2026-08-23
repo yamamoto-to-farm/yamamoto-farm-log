@@ -21,6 +21,36 @@ const csvTypeEl = document.getElementById("csvType");
 const csvFileEl = document.getElementById("csvFile");
 const csvSearchInput = document.getElementById("csvSearchInput");
 const csvSearchResult = document.getElementById("csvSearchResult");
+const csvSearchResults = document.getElementById("csvSearchResults");
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderCsvSearchResults(matches) {
+  if (!csvSearchResults) return;
+  if (!matches.length) {
+    csvSearchResults.innerHTML = "";
+    return;
+  }
+
+  csvSearchResults.innerHTML = matches.map(({ row, index }) => {
+    const content = Array.from(row.querySelectorAll("td"))
+      .slice(1)
+      .map(cell => cell.textContent.trim())
+      .filter(Boolean)
+      .join(" / ") || "（内容なし）";
+    return `<button type="button" class="csv-search-result-item" data-search-row="${index}">
+      <span class="csv-search-result-row">${index + 1}行目</span>
+      <span class="csv-search-result-content">${escapeHtml(content)}</span>
+    </button>`;
+  }).join("");
+}
 
 function applyCsvSearch({ scrollToFirst = true } = {}) {
   const table = document.querySelector("#csvTableArea table");
@@ -37,16 +67,20 @@ function applyCsvSearch({ scrollToFirst = true } = {}) {
 
   if (!query) {
     if (csvSearchResult) csvSearchResult.textContent = "";
+    renderCsvSearchResults([]);
     return;
   }
 
-  const matches = rows.filter(row => row.textContent.toLocaleLowerCase().includes(query));
-  matches.forEach(row => row.classList.add("search-match"));
+  const matches = rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => row.textContent.toLocaleLowerCase().includes(query));
+  matches.forEach(({ row }) => row.classList.add("search-match"));
   if (csvSearchResult) csvSearchResult.textContent = `${matches.length}件一致`;
+  renderCsvSearchResults(matches);
 
   if (scrollToFirst && matches[0]) {
     matches[0].classList.add("search-current");
-    matches[0].scrollIntoView({ behavior: "smooth", block: "center" });
+    matches[0].row.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }
 
@@ -203,6 +237,15 @@ document.getElementById("csvRowJumpBtn").addEventListener("click", jumpToCsvRow)
 
 document.getElementById("csvRowInput").addEventListener("keydown", e => {
   if (e.key === "Enter") jumpToCsvRow();
+});
+
+csvSearchResults?.addEventListener("click", e => {
+  const result = e.target.closest("[data-search-row]");
+  if (!result) return;
+  const rowNumber = Number(result.dataset.searchRow) + 1;
+  const input = document.getElementById("csvRowInput");
+  if (input) input.value = rowNumber;
+  jumpToCsvRow();
 });
 
 // CSV 保存（全書き換え）

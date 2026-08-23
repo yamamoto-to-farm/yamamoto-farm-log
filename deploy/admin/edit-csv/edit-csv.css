@@ -48,6 +48,46 @@ th {
   font-size: 13px;
 }
 
+.csv-search-results {
+  display: grid;
+  gap: 4px;
+  max-height: 240px;
+  margin-top: 8px;
+  overflow-y: auto;
+}
+
+.csv-search-result-item {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e1e8f0;
+  border-radius: 6px;
+  background: #f8fbff;
+  color: #41576d;
+  text-align: left;
+  cursor: pointer;
+}
+
+.csv-search-result-item:hover,
+.csv-search-result-item:focus-visible {
+  border-color: #7da5d6;
+  background: #eaf3ff;
+  outline: none;
+}
+
+.csv-search-result-row {
+  color: #2256a5;
+  font-weight: 700;
+}
+
+.csv-search-result-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 button, select {
   padding: 8px 16px;
 }
