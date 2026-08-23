@@ -52,9 +52,8 @@
       margin: 20px 0 28px;
       padding: 18px 20px 8px;
       border: 1px solid #dfe7ef;
-      border-radius: 16px;
-      background: linear-gradient(180deg, #f9fcff 0%, #eef6ff 100%);
-      box-shadow: 0 8px 20px rgba(15, 48, 76, 0.06);
+      border-radius: 8px;
+      background: #fff;
     }
     .ops-dashboard__header {
       display: flex;
@@ -83,14 +82,15 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
-      align-items: start;
+      align-items: stretch;
     }
     .ops-card {
       padding: 14px 16px;
-      border-radius: 12px;
+      border-radius: 8px;
       background: #fff;
       border: 1px solid #e6edf5;
       min-height: 126px;
+      box-sizing: border-box;
     }
     .ops-card--warn {
       border-left: 5px solid #d94d4d;
