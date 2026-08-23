@@ -160,7 +160,7 @@ document.getElementById("loadCsvBtn").addEventListener("click", async () => {
   // 編集ロジックを紐づける
   const table = document.querySelector("#csvTableArea table");
   currentRows = attachEditor(table, originalRows);
-  applyCsvSearch({ scrollToFirst: false });
+  applyCsvSearch({ scrollToFirst: Boolean(csvSearchInput?.value.trim()) });
 
   console.log("✔ editor attached. rows:", currentRows);
 });
@@ -182,7 +182,7 @@ document.getElementById("addRowBtn").addEventListener("click", () => {
 
   const newTable = document.querySelector("#csvTableArea table");
   currentRows = attachEditor(newTable, originalRows);
-  applyCsvSearch({ scrollToFirst: false });
+  applyCsvSearch({ scrollToFirst: Boolean(csvSearchInput?.value.trim()) });
 });
 
 // 行削除
@@ -247,6 +247,23 @@ csvSearchResults?.addEventListener("click", e => {
   if (input) input.value = rowNumber;
   jumpToCsvRow();
 });
+
+const initialParams = new URLSearchParams(location.search);
+const initialType = initialParams.get("type");
+const initialFile = initialParams.get("file");
+const initialSearch = initialParams.get("search");
+
+if (initialType && Array.from(csvTypeEl.options).some(option => option.value === initialType)) {
+  csvTypeEl.value = initialType;
+  refreshCsvFileOptions(initialType);
+}
+if (initialFile && Array.from(csvFileEl.options).some(option => option.value === initialFile)) {
+  csvFileEl.value = initialFile;
+}
+if (initialSearch && csvSearchInput) {
+  csvSearchInput.value = initialSearch;
+  document.getElementById("loadCsvBtn").click();
+}
 
 // CSV 保存（全書き換え）
 document.getElementById("saveCsvBtn").addEventListener("click", async () => {

@@ -563,7 +563,7 @@ function renderTable(rows) {
       const data = getSeedDetail(row);
 
       const discardActionHtml = canDiscard && ref
-        ? `<div style="margin-top:12px;"><button class="secondary-btn" id="seed-modal-discard-btn" type="button">破棄ページへ</button></div>`
+        ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"><button class="secondary-btn" id="seed-modal-discard-btn" type="button">破棄ページへ</button><a class="secondary-btn" href="/admin/edit-csv/index.html?type=seed&amp;file=all.csv&amp;search=${encodeURIComponent(ref)}">CSVを編集</a></div>`
         : "";
 
       showInfoModal(data.title, `${data.html}${discardActionHtml}`);
