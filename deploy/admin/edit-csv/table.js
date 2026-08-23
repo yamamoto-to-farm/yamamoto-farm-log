@@ -74,5 +74,8 @@ export function renderCsvTable(rows) {
   });
 
   table.appendChild(tbody);
-  area.appendChild(table);
+  const scrollArea = document.createElement("div");
+  scrollArea.className = "csv-table-scroll";
+  scrollArea.appendChild(table);
+  area.appendChild(scrollArea);
 }

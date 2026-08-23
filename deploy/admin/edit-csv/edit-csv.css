@@ -6,7 +6,8 @@ body {
 table {
   border-collapse: collapse;
   margin-top: 20px;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
 }
 
 th, td {
@@ -20,6 +21,13 @@ th {
 
 #csvTableArea {
   margin-top: 20px;
+}
+
+.csv-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 8px;
 }
 
 .row {
