@@ -113,6 +113,72 @@
       font-size: 13px;
       line-height: 1.8;
     }
+    .weather-card {
+      grid-column: span 2;
+    }
+    .weather-card__section {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #edf2f9;
+    }
+    .weather-card__section-title {
+      margin: 0 0 8px;
+      color: #5b6f87;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .weather-days {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .weather-day {
+      padding: 8px;
+      border: 1px solid #e6edf5;
+      border-radius: 8px;
+      text-align: center;
+      color: #41576d;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .weather-day__date,
+    .weather-day__type {
+      display: block;
+      color: #1c2b3b;
+      font-weight: 700;
+    }
+    .weather-day__temp,
+    .weather-day__rain {
+      display: block;
+      white-space: nowrap;
+    }
+    .weather-compare {
+      width: 100%;
+      border-collapse: collapse;
+      color: #41576d;
+      font-size: 12px;
+    }
+    .weather-compare th,
+    .weather-compare td {
+      padding: 5px 4px;
+      border-bottom: 1px solid #edf2f9;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .weather-compare th:first-child,
+    .weather-compare td:first-child {
+      text-align: left;
+    }
+    .weather-compare th {
+      color: #5b6f87;
+      font-weight: 700;
+    }
+    .weather-card__judgment {
+      margin: 0;
+      color: #41576d;
+      font-size: 13px;
+      line-height: 1.7;
+    }
     @media (max-width: 768px) {
       .ops-dashboard {
         padding: 14px 12px 6px;
@@ -123,6 +189,16 @@
       }
       .ops-dashboard__title {
         font-size: 20px;
+      }
+      .weather-card {
+        grid-column: auto;
+      }
+      .weather-days {
+        gap: 4px;
+      }
+      .weather-day {
+        padding: 6px 2px;
+        font-size: 11px;
       }
     }
   </style>
@@ -448,39 +524,66 @@
 
     async function loadWeatherStatus() {
       const today = new Date();
-      const weather = await loadWeatherYear(String(today.getFullYear()));
-      const latestDate = Object.keys(weather || {})
+      const currentYear = today.getFullYear();
+      const currentWeather = await loadWeatherYear(String(currentYear));
+      const previousWeather = await loadWeatherYear(String(currentYear - 1));
+      const availableDates = Object.keys(currentWeather || {})
         .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
-        .sort()
-        .pop() || "";
-      const row = latestDate ? weather[latestDate] : null;
-      let workCount = 0;
-      try {
-        const monthly = await loadJSON("/data/monthly-work-index.json");
-        const daySources = monthly?.months?.[latestDate.slice(0, 7)]?.days?.[latestDate] || {};
-        workCount = Object.values(daySources).reduce((sum, count) => sum + Number(count || 0), 0);
-      } catch (error) {
-        workCount = 0;
-      }
-      return { ymd: latestDate, row, workCount };
+        .sort();
+      const dates = availableDates.slice(-3).reverse();
+      return {
+        days: dates.map(date => ({
+          date,
+          row: currentWeather[date] || null,
+          previousRow: previousWeather?.[`${currentYear - 1}${date.slice(4)}`] || null
+        }))
+      };
     }
 
     function renderWeatherCard(status) {
       const card = document.getElementById("ops-weather-card");
       if (!card) return;
-      const row = status?.row;
-      const weatherType = row ? classifyWeather(Number(row.precip || 0), Number(row.sunshine || 0)) : "データなし";
-      const icon = row ? weatherIcon(weatherType) : "-";
-      const workability = row && Number(row.precip || 0) >= 10 ? "雨天注意" : row ? "作業しやすい見込み" : "確認できません";
-      card.className = `ops-card ${row && Number(row.precip || 0) >= 10 ? "ops-card--warn" : "ops-card--info"}`;
+      const days = Array.isArray(status?.days) ? status.days : [];
+      const latest = days[0]?.row;
+      const comparisonRows = days.map(day => {
+        const current = day.row;
+        const previous = day.previousRow;
+        return `<tr>
+          <td>${formatJapaneseYmd(day.date)}</td>
+          <td>${current ? `${Number(current.tmax).toFixed(1)} / ${Number(current.tmin).toFixed(1)}` : "-"}</td>
+          <td>${previous ? `${Number(previous.tmax).toFixed(1)} / ${Number(previous.tmin).toFixed(1)}` : "-"}</td>
+          <td>${current ? `${Number(current.precip).toFixed(1)}` : "-"} / ${previous ? `${Number(previous.precip).toFixed(1)}` : "-"}</td>
+        </tr>`;
+      }).join("");
+      card.className = "ops-card ops-card--info weather-card";
       card.innerHTML = `
         <div class="ops-card__label">天候・作業</div>
-        <div class="ops-card__value">${status?.ymd || "日付不明"} ${icon} ${weatherType}</div>
-        <ul class="ops-card__list">
-          <li>${row ? `${Number(row.tmax || 0).toFixed(1)}℃／${Number(row.tmin || 0).toFixed(1)}℃　${Number(row.precip || 0).toFixed(1)}mm` : "気象データなし"}</li>
-          <li>作業見込み：${workability}</li>
-          <li>対象日の作業記録：${status?.workCount || 0}件</li>
-        </ul>
+        <div class="weather-card__section">
+          <p class="weather-card__section-title">直近3日間の天候実績</p>
+          <div class="weather-days">
+            ${days.length ? days.map(day => {
+              const row = day.row;
+              const type = row ? classifyWeather(Number(row.precip || 0), Number(row.sunshine || 0)) : "データなし";
+              return `<div class="weather-day">
+                <span class="weather-day__date">${formatJapaneseYmd(day.date)}</span>
+                <span class="weather-day__type">${row ? `${weatherIcon(type)} ${type}` : "-"}</span>
+                <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃` : "-"}</span>
+                <span class="weather-day__rain">${row ? `${Number(row.precip).toFixed(1)}mm` : "-"}</span>
+              </div>`;
+            }).join("") : "<div class=\"weather-day\">気象データなし</div>"}
+          </div>
+        </div>
+        <div class="weather-card__section">
+          <p class="weather-card__section-title">前年同日との比較（今年 ／ 前年）</p>
+          <table class="weather-compare">
+            <thead><tr><th>日付</th><th>最高／最低℃</th><th>前年℃</th><th>雨量mm</th></tr></thead>
+            <tbody>${comparisonRows || "<tr><td colspan=\"4\">比較データなし</td></tr>"}</tbody>
+          </table>
+        </div>
+        <div class="weather-card__section">
+          <p class="weather-card__section-title">作業判断</p>
+          <p class="weather-card__judgment">判断メッセージは今後追加予定です。</p>
+        </div>
       `;
     }
 
