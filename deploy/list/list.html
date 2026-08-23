@@ -169,6 +169,17 @@
       font-size: 13px;
     }
 
+    .list-head-actions {
+      margin-top: 10px;
+    }
+
+    .list-head-actions .secondary-btn {
+      display: inline-block;
+      padding: 7px 12px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
     .print-header {
       display: none;
     }
@@ -554,6 +565,9 @@
             <div class="list-head">
               <h2>記録一覧</h2>
               <p>フィルタ条件で絞り込んだデータを表示しています。</p>
+              <div class="list-head-actions">
+                <a class="secondary-btn" href="/admin/edit-csv/index.html">CSVを編集</a>
+              </div>
             </div>
             <div class="log-scroll">
               <div id="table-area"></div>
