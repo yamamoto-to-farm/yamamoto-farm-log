@@ -34,6 +34,97 @@
     .menu-grid.open {
       display: grid;
     }
+
+    .ops-dashboard {
+      margin: 20px 0 28px;
+      padding: 18px 20px 8px;
+      border: 1px solid #dfe7ef;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f9fcff 0%, #eef6ff 100%);
+      box-shadow: 0 8px 20px rgba(15, 48, 76, 0.06);
+    }
+    .ops-dashboard__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .ops-dashboard__title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2f3f;
+    }
+    .ops-dashboard__tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eaf3ff;
+      color: #2256a5;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .ops-dashboard__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .ops-card {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid #e6edf5;
+      min-height: 150px;
+    }
+    .ops-card--warn {
+      border-left: 5px solid #d94d4d;
+    }
+    .ops-card--alert {
+      border-left: 5px solid #ea9b28;
+    }
+    .ops-card--ok {
+      border-left: 5px solid #3a9d67;
+    }
+    .ops-card--info {
+      border-left: 5px solid #4f7ad9;
+    }
+    .ops-card__label {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #5b6f87;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .ops-card__value {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight: 700;
+      color: #1c2b3b;
+    }
+    .ops-card__list {
+      margin: 0;
+      padding-left: 18px;
+      color: #41576d;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    @media (max-width: 768px) {
+      .ops-dashboard {
+        padding: 14px 12px 6px;
+      }
+      .ops-dashboard__header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .ops-dashboard__title {
+        font-size: 20px;
+      }
+    }
   </style>
 
   <script type="module">
@@ -178,6 +269,7 @@
       }
 
       renderHeader();
+      document.getElementById("ops-dashboard").style.display = "block";
       document.getElementById("menu-area").style.display = "block";
 
       const role = window.currentRole;
@@ -253,6 +345,54 @@
     <div>アクセスキーを入力してください</div>
     <input id="pin-input" type="password" class="pin-input">
     <button id="pin-submit" class="pin-submit">OK</button>
+  </div>
+
+  <div id="ops-dashboard" class="ops-dashboard" style="display:none;">
+    <div class="ops-dashboard__header">
+      <h2 class="ops-dashboard__title">運用ハブ</h2>
+      <span class="ops-dashboard__tag">MOCK</span>
+    </div>
+    <div class="ops-dashboard__grid">
+      <article class="ops-card ops-card--warn">
+        <div class="ops-card__label">警告</div>
+        <div class="ops-card__value">3件</div>
+        <ul class="ops-card__list">
+          <li>長沢2：収穫予定まで3日</li>
+          <li>しあわせ地蔵：防除未入力</li>
+          <li>高田南3：作業記録が空き</li>
+        </ul>
+      </article>
+
+      <article class="ops-card ops-card--alert">
+        <div class="ops-card__label">次の作業</div>
+        <div class="ops-card__value">5件</div>
+        <ul class="ops-card__list">
+          <li>長沢2：収穫確認</li>
+          <li>明輝：施肥チェック</li>
+          <li>大清水：除草確認</li>
+        </ul>
+      </article>
+
+      <article class="ops-card ops-card--ok">
+        <div class="ops-card__label">定植追跡</div>
+        <div class="ops-card__value">12件</div>
+        <ul class="ops-card__list">
+          <li>今月定植：12圃場</li>
+          <li>育苗進捗：87%</li>
+          <li>未登録：0件</li>
+        </ul>
+      </article>
+
+      <article class="ops-card ops-card--info">
+        <div class="ops-card__label">天候・作業</div>
+        <div class="ops-card__value">良好</div>
+        <ul class="ops-card__list">
+          <li>雨量：低め</li>
+          <li>作業可否：ほぼ良好</li>
+          <li>今週予定：9件</li>
+        </ul>
+      </article>
+    </div>
   </div>
 
   <div id="menu-area" style="display:none"></div>
