@@ -154,9 +154,19 @@
     }
     .weather-day__previous {
       display: block;
-      margin-top: 2px;
+      margin-top: 7px;
+      padding-top: 5px;
+      border-top: 1px solid #edf2f9;
       color: #8090a4;
       font-size: 11px;
+      line-height: 1.5;
+    }
+    .weather-day__previous-label {
+      display: block;
+      margin-bottom: 2px;
+      color: #687b92;
+      font-size: 10px;
+      font-weight: 700;
     }
     .weather-card__judgment {
       margin: 0;
@@ -542,9 +552,8 @@
               return `<div class="weather-day">
                 <span class="weather-day__date">${formatJapaneseYmd(day.date)}</span>
                 <span class="weather-day__type">${row ? `${weatherIcon(type)} ${type}` : "-"}</span>
-                <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃` : "-"}</span>
-                <span class="weather-day__rain">${row ? `${Number(row.precip).toFixed(1)}mm` : "-"}</span>
-                <span class="weather-day__previous">----昨年---- ${previousRow ? `${Number(previousRow.tmax).toFixed(1)}℃／${Number(previousRow.tmin).toFixed(1)}℃ ${Number(previousRow.precip).toFixed(1)}mm` : "データなし"}</span>
+                <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃　${Number(row.precip).toFixed(1)}mm` : "-"}</span>
+                <span class="weather-day__previous"><span class="weather-day__previous-label">昨年</span>${previousRow ? `${Number(previousRow.tmax).toFixed(1)}℃／${Number(previousRow.tmin).toFixed(1)}℃　${Number(previousRow.precip).toFixed(1)}mm` : "データなし"}</span>
               </div>`;
             }).join("") : "<div class=\"weather-day\">気象データなし</div>"}
           </div>
