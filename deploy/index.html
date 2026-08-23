@@ -152,26 +152,11 @@
       display: block;
       white-space: nowrap;
     }
-    .weather-compare {
-      width: 100%;
-      border-collapse: collapse;
-      color: #41576d;
-      font-size: 12px;
-    }
-    .weather-compare th,
-    .weather-compare td {
-      padding: 5px 4px;
-      border-bottom: 1px solid #edf2f9;
-      text-align: right;
-      white-space: nowrap;
-    }
-    .weather-compare th:first-child,
-    .weather-compare td:first-child {
-      text-align: left;
-    }
-    .weather-compare th {
-      color: #5b6f87;
-      font-weight: 700;
+    .weather-day__previous {
+      display: block;
+      margin-top: 2px;
+      color: #8090a4;
+      font-size: 11px;
     }
     .weather-card__judgment {
       margin: 0;
@@ -544,41 +529,25 @@
       const card = document.getElementById("ops-weather-card");
       if (!card) return;
       const days = Array.isArray(status?.days) ? status.days : [];
-      const latest = days[0]?.row;
-      const comparisonRows = days.map(day => {
-        const current = day.row;
-        const previous = day.previousRow;
-        return `<tr>
-          <td>${formatJapaneseYmd(day.date)}</td>
-          <td>${current ? `${Number(current.tmax).toFixed(1)} / ${Number(current.tmin).toFixed(1)}` : "-"}</td>
-          <td>${previous ? `${Number(previous.tmax).toFixed(1)} / ${Number(previous.tmin).toFixed(1)}` : "-"}</td>
-          <td>${current ? `${Number(current.precip).toFixed(1)}` : "-"} / ${previous ? `${Number(previous.precip).toFixed(1)}` : "-"}</td>
-        </tr>`;
-      }).join("");
       card.className = "ops-card ops-card--info weather-card";
       card.innerHTML = `
         <div class="ops-card__label">天候・作業</div>
         <div class="weather-card__section">
-          <p class="weather-card__section-title">直近3日間の天候実績</p>
+          <p class="weather-card__section-title">直近3日間の天候実績（今年 〜 前年同日）</p>
           <div class="weather-days">
             ${days.length ? days.map(day => {
               const row = day.row;
+              const previousRow = day.previousRow;
               const type = row ? classifyWeather(Number(row.precip || 0), Number(row.sunshine || 0)) : "データなし";
               return `<div class="weather-day">
                 <span class="weather-day__date">${formatJapaneseYmd(day.date)}</span>
                 <span class="weather-day__type">${row ? `${weatherIcon(type)} ${type}` : "-"}</span>
                 <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃` : "-"}</span>
                 <span class="weather-day__rain">${row ? `${Number(row.precip).toFixed(1)}mm` : "-"}</span>
+                <span class="weather-day__previous">----昨年---- ${previousRow ? `${Number(previousRow.tmax).toFixed(1)}℃／${Number(previousRow.tmin).toFixed(1)}℃ ${Number(previousRow.precip).toFixed(1)}mm` : "データなし"}</span>
               </div>`;
             }).join("") : "<div class=\"weather-day\">気象データなし</div>"}
           </div>
-        </div>
-        <div class="weather-card__section">
-          <p class="weather-card__section-title">前年同日との比較（今年 ／ 前年）</p>
-          <table class="weather-compare">
-            <thead><tr><th>日付</th><th>最高／最低℃</th><th>前年℃</th><th>雨量mm</th></tr></thead>
-            <tbody>${comparisonRows || "<tr><td colspan=\"4\">比較データなし</td></tr>"}</tbody>
-          </table>
         </div>
         <div class="weather-card__section">
           <p class="weather-card__section-title">作業判断</p>
