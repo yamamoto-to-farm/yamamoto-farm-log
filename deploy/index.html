@@ -110,31 +110,35 @@
       color: #1f2f3f;
       font-size: 20px;
     }
-    .menu-modal__close {
-      width: 36px;
-      height: 36px;
-      border: 1px solid #dfe7ef;
-      border-radius: 6px;
-      background: #fff;
-      color: #41576d;
-      font-size: 22px;
-      line-height: 1;
-      cursor: pointer;
+    .menu-modal__footer {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid #e6edf5;
     }
-    .menu-modal__close:hover,
-    .menu-modal__close:focus-visible {
-      border-color: #7da5d6;
-      color: #2256a5;
-      outline: none;
+    .menu-modal__close {
+      min-width: 140px;
     }
     .menu-modal__group {
       margin: 0 0 16px;
     }
     .menu-modal__group-title {
-      margin: 0 0 8px;
+      display: list-item;
+      margin: 0;
+      padding: 8px 0;
       color: #5b6f87;
       font-size: 13px;
       font-weight: 700;
+      cursor: pointer;
+    }
+    .menu-modal__group-title:hover,
+    .menu-modal__group-title:focus-visible {
+      color: #2256a5;
+      outline: none;
+    }
+    .menu-modal__group[open] .menu-modal__group-title {
+      color: #1f2f3f;
     }
     .menu-modal__links {
       display: grid;
@@ -489,9 +493,10 @@
         const links = sourceGrid ? sourceGrid.querySelectorAll(".menu-card") : [];
         if (!links.length) return;
 
-        const group = document.createElement("section");
+        const group = document.createElement("details");
         group.className = "menu-modal__group";
-        const heading = document.createElement("h3");
+        if (!groups.children.length) group.open = true;
+        const heading = document.createElement("summary");
         heading.className = "menu-modal__group-title";
         heading.textContent = subTitle;
         const linkGrid = document.createElement("div");
@@ -511,7 +516,7 @@
 
       modal.hidden = false;
       document.body.style.overflow = "hidden";
-      modal.querySelector(".menu-modal__close")?.focus();
+      modal.querySelector("[data-menu-modal-close]")?.focus();
     }
 
     function sortPages(pages) {
@@ -882,9 +887,11 @@
     <section class="menu-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="menu-modal-title">
       <div class="menu-modal__header">
         <h2 id="menu-modal-title" class="menu-modal__title">メニュー</h2>
-        <button type="button" class="menu-modal__close" data-menu-modal-close aria-label="メニューを閉じる">×</button>
       </div>
       <div id="menu-modal-groups"></div>
+      <div class="menu-modal__footer">
+        <button type="button" class="secondary-btn menu-modal__close" data-menu-modal-close>閉じる</button>
+      </div>
     </section>
   </div>
 
