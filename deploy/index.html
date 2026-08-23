@@ -14,22 +14,62 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 
   <style>
-    .category-section, .subcategory-section {
-      margin-bottom: 20px;
+    .category-section {
+      min-width: 0;
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid #e1e8f0;
+      border-radius: 8px;
+      background: #fff;
     }
-    .category-title, .subcategory-title {
-      font-size: 20px;
+    .category-title,
+    .subcategory-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 6px 0;
+      border: 0;
+      background: transparent;
+      color: #1f2f3f;
+      font-size: 18px;
       font-weight: bold;
       cursor: pointer;
-      margin: 10px 0;
+      text-align: left;
+    }
+    .category-title::after,
+    .subcategory-title::after {
+      content: "+";
+      flex: 0 0 auto;
+      margin-left: 12px;
+      color: #6b8198;
+      font-size: 20px;
+      font-weight: 400;
+    }
+    .category-title[aria-expanded="true"]::after,
+    .subcategory-title[aria-expanded="true"]::after {
+      content: "−";
+    }
+    .category-title:hover,
+    .category-title:focus-visible,
+    .subcategory-title:hover,
+    .subcategory-title:focus-visible {
+      color: #2256a5;
+      outline: none;
+    }
+    .subcategory-section {
+      margin: 8px 0 0;
+      padding: 0 0 0 10px;
+      border-left: 2px solid #edf2f9;
     }
     .subcategory-title {
-      font-size: 17px;
-      margin-left: 20px;
+      color: #41576d;
+      font-size: 15px;
     }
     .menu-grid {
       display: none;
-      margin-left: 40px;
+      margin: 4px 0 8px;
+      padding-left: 10px;
     }
     .menu-grid.open {
       display: grid;
@@ -290,19 +330,26 @@
 
         section = document.createElement("section");
         section.dataset.top = top;
+        section.id = `category-${top.replace(/[^\w\u3040-\u30ff]/g, "-")}`;
         section.className = "category-section";
 
         const h2 = document.createElement("h2");
-        h2.className = "category-title";
-        h2.textContent = top;
+        const categoryButton = document.createElement("button");
+        categoryButton.type = "button";
+        categoryButton.className = "category-title";
+        categoryButton.textContent = top;
+        categoryButton.setAttribute("aria-expanded", "false");
 
         const container = document.createElement("div");
         container.className = "subcategory-container";
         container.style.display = "none";
+        container.id = `${section.id}-subcategories`;
+        categoryButton.setAttribute("aria-controls", container.id);
 
         const directGrid = document.createElement("div");
         directGrid.className = "menu-grid direct-grid";
 
+        h2.appendChild(categoryButton);
         section.appendChild(h2);
         section.appendChild(container);
         section.appendChild(directGrid);
@@ -321,13 +368,20 @@
         subSection.dataset.sub = sub;
         subSection.className = "subcategory-section";
 
-        const h3 = document.createElement("div");
-        h3.className = "subcategory-title";
-        h3.textContent = sub;
+        const h3 = document.createElement("h3");
+        const subButton = document.createElement("button");
+        subButton.type = "button";
+        subButton.className = "subcategory-title";
+        subButton.textContent = sub;
+        subButton.setAttribute("aria-expanded", "false");
 
         const grid = document.createElement("div");
         grid.className = "menu-grid";
+        grid.id = `${topSection.id}-${sub.replace(/[^\w\u3040-\u30ff]/g, "-")}-links`;
+        grid.hidden = true;
+        subButton.setAttribute("aria-controls", grid.id);
 
+        h3.appendChild(subButton);
         subSection.appendChild(h3);
         subSection.appendChild(grid);
         topContainer.appendChild(subSection);
@@ -650,19 +704,23 @@
           const section = e.target.parentElement;
           const subContainer = section.querySelector(".subcategory-container");
           const directGrid = section.querySelector(".direct-grid");
+          const isOpen = e.target.getAttribute("aria-expanded") === "true";
 
           if (subContainer) {
-            subContainer.style.display =
-              subContainer.style.display === "none" ? "block" : "none";
+            subContainer.style.display = isOpen ? "none" : "block";
           }
           if (directGrid) {
-            directGrid.classList.toggle("open");
+            directGrid.classList.toggle("open", !isOpen);
           }
+          e.target.setAttribute("aria-expanded", String(!isOpen));
         }
 
         if (e.target.classList.contains("subcategory-title")) {
           const grid = e.target.parentElement.querySelector(".menu-grid");
-          grid.classList.toggle("open");
+          const isOpen = e.target.getAttribute("aria-expanded") === "true";
+          grid.classList.toggle("open", !isOpen);
+          grid.hidden = isOpen;
+          e.target.setAttribute("aria-expanded", String(!isOpen));
         }
       });
     });
