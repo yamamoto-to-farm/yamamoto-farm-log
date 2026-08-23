@@ -277,7 +277,7 @@
     .diary-card__warning {
       margin: 0 0 10px;
       color: #b33d3d;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.6;
     }
     .diary-card__missing-links {
@@ -289,7 +289,7 @@
     .diary-card__preview {
       margin: 0;
       color: #41576d;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.7;
     }
     .diary-card__date-button {
@@ -318,12 +318,13 @@
       padding-top: 9px;
       border-top: 1px solid #edf2f9;
       color: #4a5d75;
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1.7;
     }
     .diary-card__latest-label {
       display: block;
       color: #687b92;
+      font-size: 13px;
       font-weight: 700;
     }
     .diary-card__actions {
@@ -333,7 +334,7 @@
       margin-top: 8px;
       padding-top: 8px;
       border-top: 1px solid #edf2f9;
-      font-size: 12px;
+      font-size: 14px;
     }
     .diary-preview-modal[hidden] {
       display: none;
@@ -807,14 +808,15 @@
 
     function formatJapaneseYmd(ymd) {
       if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd))) return "記録なし";
-      const [, m, d] = String(ymd).split("-");
-      return `${Number(m)}/${Number(d)}`;
+      const [year, month, day] = String(ymd).split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+      return `${month}/${day}（${weekdays[date.getDay()]}）`;
     }
 
     function formatShortDiaryDate(ymd) {
       if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd))) return "日付不明";
-      const [, m, d] = String(ymd).split("-");
-      return `${Number(m)}/${Number(d)}`;
+      return formatJapaneseYmd(ymd);
     }
 
     function escapeHtml(value) {
@@ -971,7 +973,8 @@
       if (!ymd) return "日付未定";
       const date = new Date(`${ymd}T00:00:00`);
       if (Number.isNaN(date.getTime())) return ymd;
-      return `${date.getMonth() + 1}/${date.getDate()}`;
+      const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+      return `${date.getMonth() + 1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
     }
 
     async function loadScheduleStatus() {
