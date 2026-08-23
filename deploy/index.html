@@ -550,9 +550,8 @@
       const days = Array.isArray(status?.days) ? status.days : [];
       card.className = "ops-card ops-card--info weather-card";
       card.innerHTML = `
-        <div class="ops-card__label">天候・作業</div>
         <div class="weather-card__section">
-          <p class="weather-card__section-title">直近3日間の天候実績（今年 〜 前年同日）</p>
+          <p class="weather-card__section-title">天候実績（直近3日間・昨年同日比較）</p>
           <div class="weather-days">
             ${days.length ? days.map(day => {
               const row = day.row;
@@ -690,32 +689,17 @@
 
       <article id="ops-schedule-card" class="ops-card ops-card--alert">
         <div class="ops-card__label">次の作業</div>
-        <div class="ops-card__value">5件</div>
-        <ul class="ops-card__list">
-          <li>長沢2：収穫確認</li>
-          <li>明輝：施肥チェック</li>
-          <li>大清水：除草確認</li>
-        </ul>
+        <div class="ops-card__value">読み込み中...</div>
       </article>
 
       <article id="ops-planting-card" class="ops-card ops-card--ok">
         <div class="ops-card__label">定植追跡</div>
-        <div class="ops-card__value">12件</div>
-        <ul class="ops-card__list">
-          <li>今月定植：12圃場</li>
-          <li>育苗進捗：87%</li>
-          <li>未登録：0件</li>
-        </ul>
+        <div class="ops-card__value">読み込み中...</div>
       </article>
 
       <article id="ops-weather-card" class="ops-card ops-card--info">
-        <div class="ops-card__label">天候・作業</div>
-        <div class="ops-card__value">良好</div>
-        <ul class="ops-card__list">
-          <li>雨量：低め</li>
-          <li>作業可否：ほぼ良好</li>
-          <li>今週予定：9件</li>
-        </ul>
+        <div class="ops-card__label">天候</div>
+        <div class="ops-card__value">読み込み中...</div>
       </article>
     </div>
   </div>
