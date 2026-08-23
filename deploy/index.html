@@ -625,6 +625,14 @@
         const links = sourceGrid ? sourceGrid.querySelectorAll(".menu-card") : [];
         if (!links.length) return;
 
+        if (subTitle === section.dataset.top) {
+          const linkGrid = document.createElement("div");
+          linkGrid.className = "menu-modal__links";
+          links.forEach(link => linkGrid.appendChild(link.cloneNode(true)));
+          groups.appendChild(linkGrid);
+          return;
+        }
+
         const group = document.createElement("details");
         group.className = "menu-modal__group";
         const heading = document.createElement("summary");
