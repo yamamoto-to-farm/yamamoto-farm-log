@@ -141,6 +141,15 @@
       font-size: 12px;
       line-height: 1.6;
     }
+    a.weather-day {
+      display: block;
+      text-decoration: none;
+    }
+    a.weather-day:hover,
+    a.weather-day:focus-visible {
+      border-color: #7da5d6;
+      background: #f7fbff;
+    }
     .weather-day__date,
     .weather-day__type {
       display: block;
@@ -549,12 +558,12 @@
               const row = day.row;
               const previousRow = day.previousRow;
               const type = row ? classifyWeather(Number(row.precip || 0), Number(row.sunshine || 0)) : "データなし";
-              return `<div class="weather-day">
+              return `<a class="weather-day" href="/diary/index.html?date=${day.date}" title="${formatJapaneseYmd(day.date)}の作業日誌を開く">
                 <span class="weather-day__date">${formatJapaneseYmd(day.date)}</span>
                 <span class="weather-day__type">${row ? `${weatherIcon(type)} ${type}` : "-"}</span>
                 <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃　${Number(row.precip).toFixed(1)}mm` : "-"}</span>
                 <span class="weather-day__previous"><span class="weather-day__previous-label">昨年</span>${previousRow ? `${Number(previousRow.tmax).toFixed(1)}℃／${Number(previousRow.tmin).toFixed(1)}℃　${Number(previousRow.precip).toFixed(1)}mm` : "データなし"}</span>
-              </div>`;
+              </a>`;
             }).join("") : "<div class=\"weather-day\">気象データなし</div>"}
           </div>
         </div>
