@@ -57,6 +57,15 @@
       color: #2256a5;
       outline: none;
     }
+    .category-meta {
+      margin: 0 0 4px;
+      color: #8090a4;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .category-meta__breakdown {
+      display: block;
+    }
     .subcategory-section {
       margin: 8px 0 0;
       padding: 0 0 0 10px;
@@ -339,6 +348,9 @@
       .menu-area__title {
         margin-bottom: 16px;
       }
+      .category-meta {
+        font-size: 11px;
+      }
       .weather-days {
         gap: 4px;
       }
@@ -441,11 +453,15 @@
         container.id = `${section.id}-subcategories`;
         categoryButton.setAttribute("aria-controls", container.id);
 
+        const meta = document.createElement("p");
+        meta.className = "category-meta";
+
         const directGrid = document.createElement("div");
         directGrid.className = "menu-grid direct-grid";
 
         h2.appendChild(categoryButton);
         section.appendChild(h2);
+        section.appendChild(meta);
         section.appendChild(container);
         section.appendChild(directGrid);
         document.getElementById("menu-area").appendChild(section);
@@ -482,6 +498,61 @@
         topContainer.appendChild(subSection);
       }
       return subSection.querySelector(".menu-grid");
+    }
+
+    async function renderCategoryUpdateStats() {
+      const section = document.querySelector('section[data-top="記録一覧"]');
+      const meta = section?.querySelector(".category-meta");
+      if (!meta) return;
+
+      const labels = {
+        seed: "播種",
+        nursery: "育苗",
+        "nursery-pesticide": "育苗防除",
+        planting: "定植",
+        harvest: "収穫",
+        pesticide: "防除",
+        fertilizer: "施肥",
+        watering: "潅水",
+        weeding: "除草",
+        tillage: "耕起",
+        "field-maintenance": "圃場整備",
+        "hand-weeding": "手作業除草",
+        intertill: "中耕",
+        bedmaking: "畝立て"
+      };
+      const counts = {};
+      let recordCount = 0;
+      const today = new Date();
+      const start = new Date(today);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 6);
+      const startYmd = toYmd(start);
+      const endYmd = toYmd(today);
+
+      try {
+        const monthly = await loadJSON("/data/monthly-work-index.json");
+        Object.values(monthly?.months || {}).forEach(monthData => {
+          Object.entries(monthData?.days || {}).forEach(([date, sources]) => {
+            if (date < startYmd || date > endYmd) return;
+            Object.entries(sources || {}).forEach(([source, count]) => {
+              const numericCount = Number(count || 0);
+              recordCount += numericCount;
+              counts[source] = (counts[source] || 0) + numericCount;
+            });
+          });
+        });
+      } catch (error) {
+        dlog("record list stats unavailable", error);
+      }
+
+      const breakdown = Object.entries(counts)
+        .filter(([source]) => labels[source])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([source, count]) => `${labels[source]} ${count}件`)
+        .join(" / ");
+      meta.innerHTML = `直近7日間の記録：${recordCount}件${breakdown ? `<span class="category-meta__breakdown">${breakdown}</span>` : ""}`;
     }
 
     function closeMenuModal() {
@@ -811,7 +882,10 @@
         if (!page.roles.includes(role)) return;
         if (page.category.startsWith("管理/")) return;
 
-        const section = ensureTopCategory(page.category.split("/")[0]);
+        if (page.name === "作業日誌") return;
+        const rawTop = page.category.split("/")[0];
+        const top = rawTop === "作業日誌・記録一覧" ? "記録一覧" : rawTop;
+        const section = ensureTopCategory(top);
 
         if (page.category.includes("/")) {
           const [, sub] = page.category.split("/");
@@ -822,6 +896,8 @@
           directGrid.appendChild(createCard(page));
         }
       });
+
+      await renderCategoryUpdateStats();
 
       dlog("menu rendering complete");
     }
