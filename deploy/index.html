@@ -138,6 +138,9 @@
 
     import { showPinGate, verifyLocalAuth } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
+    import { loadJSON } from "./common/json.js?v=1";
+    import { loadCSV } from "./common/csv.js?v=1";
+    import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
 
     const TOP_CATEGORY_ORDER = [
       "作業ログ",
@@ -258,6 +261,226 @@
       });
     }
 
+    function formatJapaneseYmd(ymd) {
+      if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd))) return "記録なし";
+      const [y, m, d] = String(ymd).split("-");
+      return `${Number(m)}月${Number(d)}日`;
+    }
+
+    function toYmd(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function normalizeTypeLabel(typeValue) {
+      if (!typeValue) return "作業";
+      const raw = String(typeValue).trim();
+      if (!raw) return "作業";
+      const colonMatch = raw.match(/[:：](.+)$/);
+      return colonMatch ? colonMatch[1].trim() : raw.replace(/^.+?：/, "").trim() || raw;
+    }
+
+    function summarizeDiaryEntry(diary) {
+      const workList = Array.isArray(diary?.work) ? diary.work : [];
+      if (!workList.length) return "記録なし";
+
+      const typeCounts = {};
+      const fieldSet = new Set();
+
+      workList.forEach(entry => {
+        const typeName = entry?.type || entry?.workType || "作業";
+        const normalized = normalizeTypeLabel(typeName);
+        typeCounts[normalized] = (typeCounts[normalized] || 0) + 1;
+
+        const fields = Array.isArray(entry?.field) ? entry.field : [];
+        fields.forEach(value => {
+          if (value) fieldSet.add(String(value));
+        });
+        if (typeof entry?.field === "string" && entry.field.trim()) {
+          fieldSet.add(entry.field.trim());
+        }
+      });
+
+      const typeText = Object.entries(typeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([label, count]) => `${label} ${count}件`)
+        .join(" / ");
+      return `${typeText || `${workList.length}件`} / 圃場 ${fieldSet.size}箇所`;
+    }
+
+    async function loadRecentDiaryStatus() {
+      const statuses = [];
+      const today = new Date();
+
+      for (let offset = 0; offset < 7; offset += 1) {
+        const date = new Date(today);
+        date.setHours(0, 0, 0, 0);
+        date.setDate(today.getDate() - offset);
+        const ymd = toYmd(date);
+        const year = ymd.slice(0, 4);
+
+        try {
+          const diary = await loadJSON(`/data/diary/${year}/${ymd}.json`);
+          const workList = Array.isArray(diary?.work) ? diary.work : [];
+          statuses.push({ ymd, workCount: workList.length, diary });
+        } catch (error) {
+          statuses.push({ ymd, workCount: 0, diary: null });
+        }
+      }
+
+      const recentEntries = statuses.filter(item => item.workCount > 0);
+      const latestEntry = recentEntries.length ? recentEntries[0] : null;
+      const trailingMissing = [];
+      for (const item of statuses) {
+        if (item.workCount > 0) break;
+        trailingMissing.push(item.ymd);
+      }
+
+      return {
+        missingCount: trailingMissing.length,
+        lastMissingDate: trailingMissing[trailingMissing.length - 1] || null,
+        latestEntry,
+        recentEntries
+      };
+    }
+
+    function renderDiaryCard(status) {
+      const diaryCard = document.getElementById("ops-diary-card");
+      if (!diaryCard) return;
+
+      const missingCount = Number(status?.missingCount || 0);
+      const isMissing = missingCount > 0;
+      const cardClass = missingCount >= 2 ? "ops-card--warn" : isMissing ? "ops-card--alert" : "ops-card--ok";
+      diaryCard.className = `ops-card ${cardClass}`;
+
+      const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
+      const summaryText = status?.latestEntry ? summarizeDiaryEntry(status.latestEntry.diary) : "直近の記録はありません";
+      const missingText = isMissing
+        ? `警告: ${formatJapaneseYmd(status.lastMissingDate)}の日誌が未登録`
+        : "直近の日誌は継続して入力済みです";
+
+      diaryCard.innerHTML = `
+        <div class="ops-card__label">作業日誌</div>
+        <div class="ops-card__value">${isMissing ? "未入力あり" : "入力済み"}</div>
+        <ul class="ops-card__list">
+          <li>${missingCount >= 2 ? `${missingCount}日連続で未入力` : `昨日までの作業日誌: ${missingCount}件未入力`}</li>
+          <li>${missingText}</li>
+          <li><a href="/diary/index.html">→ 作業日誌を見る</a></li>
+        </ul>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f9; color:#4a5d75; font-size:12px; line-height:1.7;">
+          <strong>直近:</strong> ${latestDateText}<br>
+          ${summaryText}
+        </div>
+      `;
+    }
+
+    function formatScheduleDate(ymd) {
+      if (!ymd) return "日付未定";
+      const date = new Date(`${ymd}T00:00:00`);
+      if (Number.isNaN(date.getTime())) return ymd;
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    async function loadScheduleStatus() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const limit = new Date(today);
+      limit.setDate(limit.getDate() + 14);
+
+      try {
+        const rows = await loadCSV(`/logs/schedule/planting/${today.getFullYear()}.csv`);
+        const upcoming = rows
+          .map(row => ({ ...row, planDate: row.planPlantDate || row.plantDate || "" }))
+          .filter(row => row.planDate)
+          .filter(row => {
+            const date = new Date(`${row.planDate}T00:00:00`);
+            return !Number.isNaN(date.getTime()) && date >= today && date <= limit;
+          })
+          .sort((a, b) => a.planDate.localeCompare(b.planDate));
+        return upcoming;
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function renderScheduleCard(rows) {
+      const card = document.getElementById("ops-schedule-card");
+      if (!card) return;
+      const preview = rows.slice(0, 3);
+      card.className = `ops-card ${rows.length ? "ops-card--alert" : "ops-card--ok"}`;
+      card.innerHTML = `
+        <div class="ops-card__label">次の作業</div>
+        <div class="ops-card__value">${rows.length}件</div>
+        <ul class="ops-card__list">
+          ${preview.length ? preview.map(row => `<li>${formatScheduleDate(row.planDate)} ${row.field || "圃場未定"}：定植</li>`).join("") : "<li>14日以内の定植予定はありません</li>"}
+          <li><a href="/schedule/plan.html">→ 定植予定を見る</a></li>
+        </ul>
+      `;
+    }
+
+    async function loadPlantingStatus() {
+      try {
+        const rows = await loadCSV(`/logs/schedule/planting/${new Date().getFullYear()}.csv`);
+        const monthPrefix = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+        return rows.filter(row => String(row.planPlantDate || "").startsWith(monthPrefix));
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function renderPlantingCard(rows) {
+      const card = document.getElementById("ops-planting-card");
+      if (!card) return;
+      const fieldCount = new Set(rows.map(row => row.field).filter(Boolean)).size;
+      card.innerHTML = `
+        <div class="ops-card__label">定植追跡</div>
+        <div class="ops-card__value">${rows.length}件</div>
+        <ul class="ops-card__list">
+          <li>今月の定植予定：${rows.length}件</li>
+          <li>対象圃場：${fieldCount}箇所</li>
+          <li><a href="/schedule/plan.html">→ 定植予定を見る</a></li>
+        </ul>
+      `;
+    }
+
+    async function loadWeatherStatus() {
+      const today = new Date();
+      const ymd = toYmd(today);
+      const weather = await loadWeatherYear(String(today.getFullYear()));
+      const row = weather?.[ymd] || null;
+      let workCount = 0;
+      try {
+        const monthly = await loadJSON("/data/monthly-work-index.json");
+        const daySources = monthly?.months?.[ymd.slice(0, 7)]?.days?.[ymd] || {};
+        workCount = Object.values(daySources).reduce((sum, count) => sum + Number(count || 0), 0);
+      } catch (error) {
+        workCount = 0;
+      }
+      return { ymd, row, workCount };
+    }
+
+    function renderWeatherCard(status) {
+      const card = document.getElementById("ops-weather-card");
+      if (!card) return;
+      const row = status?.row;
+      const weatherType = row ? classifyWeather(Number(row.precip || 0), Number(row.sunshine || 0)) : "データなし";
+      const icon = row ? weatherIcon(weatherType) : "-";
+      const workability = row && Number(row.precip || 0) >= 10 ? "雨天注意" : row ? "作業しやすい見込み" : "確認できません";
+      card.className = `ops-card ${row && Number(row.precip || 0) >= 10 ? "ops-card--warn" : "ops-card--info"}`;
+      card.innerHTML = `
+        <div class="ops-card__label">天候・作業</div>
+        <div class="ops-card__value">${icon} ${weatherType}</div>
+        <ul class="ops-card__list">
+          <li>降水量：${row ? `${Number(row.precip || 0).toFixed(1)}mm` : "データなし"}</li>
+          <li>作業見込み：${workability}</li>
+          <li>今日の作業記録：${status?.workCount || 0}件</li>
+        </ul>
+      `;
+    }
+
     async function bootTopMenu() {
       dlog("PIN OK → renderHeader");
 
@@ -271,6 +494,17 @@
       renderHeader();
       document.getElementById("ops-dashboard").style.display = "block";
       document.getElementById("menu-area").style.display = "block";
+
+      const diaryStatus = await loadRecentDiaryStatus();
+      renderDiaryCard(diaryStatus);
+      const [scheduleRows, plantingRows, weatherStatus] = await Promise.all([
+        loadScheduleStatus(),
+        loadPlantingStatus(),
+        loadWeatherStatus()
+      ]);
+      renderScheduleCard(scheduleRows);
+      renderPlantingCard(plantingRows);
+      renderWeatherCard(weatherStatus);
 
       const role = window.currentRole;
       dlog("currentRole =", role);
@@ -350,25 +584,15 @@
   <div id="ops-dashboard" class="ops-dashboard" style="display:none;">
     <div class="ops-dashboard__header">
       <h2 class="ops-dashboard__title">今日の山本農園</h2>
-      <span class="ops-dashboard__tag">MOCK</span>
+      <span class="ops-dashboard__tag">運用状況</span>
     </div>
     <div class="ops-dashboard__grid">
-      <article class="ops-card ops-card--warn">
+      <article id="ops-diary-card" class="ops-card ops-card--warn">
         <div class="ops-card__label">作業日誌</div>
-        <div class="ops-card__value">未入力あり</div>
-        <ul class="ops-card__list">
-          <li>昨日までの作業日誌: 1件未入力</li>
-          <li>警告: 8月21日の日誌が未登録</li>
-          <li><a href="/diary/index.html">→ 作業日誌を見る</a></li>
-        </ul>
-        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f9; color:#4a5d75; font-size:12px; line-height:1.7;">
-          <strong>直近:</strong> 8月22日<br>
-          収穫 2件 / 防除 1件 / 圃場 3箇所<br>
-          メモ: 長沢2としあわせ地蔵の作業を確認
-        </div>
+        <div class="ops-card__value">読み込み中...</div>
       </article>
 
-      <article class="ops-card ops-card--alert">
+      <article id="ops-schedule-card" class="ops-card ops-card--alert">
         <div class="ops-card__label">次の作業</div>
         <div class="ops-card__value">5件</div>
         <ul class="ops-card__list">
@@ -378,7 +602,7 @@
         </ul>
       </article>
 
-      <article class="ops-card ops-card--ok">
+      <article id="ops-planting-card" class="ops-card ops-card--ok">
         <div class="ops-card__label">定植追跡</div>
         <div class="ops-card__value">12件</div>
         <ul class="ops-card__list">
@@ -388,7 +612,7 @@
         </ul>
       </article>
 
-      <article class="ops-card ops-card--info">
+      <article id="ops-weather-card" class="ops-card ops-card--info">
         <div class="ops-card__label">天候・作業</div>
         <div class="ops-card__value">良好</div>
         <ul class="ops-card__list">
