@@ -309,7 +309,21 @@
     .diary-card__work-details summary {
       display: inline-block;
       color: #2256a5;
+      font-size: 0.95rem;
+      list-style: none;
       cursor: pointer;
+    }
+    .diary-card__work-details summary::-webkit-details-marker {
+      display: none;
+    }
+    .diary-card__work-details summary::before {
+      content: "▶";
+      display: inline-block;
+      margin-right: 5px;
+      font-size: 0.8em;
+    }
+    .diary-card__work-details[open] summary::before {
+      content: "▼";
     }
     .diary-card__work-list {
       display: grid;
