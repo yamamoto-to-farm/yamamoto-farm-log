@@ -113,9 +113,6 @@
       font-size: 13px;
       line-height: 1.8;
     }
-    .weather-card {
-      grid-column: span 2;
-    }
     .weather-card__section {
       margin-top: 12px;
       padding-top: 10px;
@@ -193,9 +190,6 @@
       }
       .ops-dashboard__title {
         font-size: 20px;
-      }
-      .weather-card {
-        grid-column: auto;
       }
       .weather-days {
         gap: 4px;
@@ -486,16 +480,19 @@
       }
     }
 
-    function renderScheduleCard(rows) {
+    function renderScheduleCard(rows, plantingRows) {
       const card = document.getElementById("ops-schedule-card");
       if (!card) return;
       const preview = rows.slice(0, 3);
+      const plannedPlantings = Array.isArray(plantingRows) ? plantingRows : [];
+      const plantingFieldCount = new Set(plannedPlantings.map(row => row.field).filter(Boolean)).size;
       card.className = `ops-card ${rows.length ? "ops-card--alert" : "ops-card--ok"}`;
       card.innerHTML = `
         <div class="ops-card__label">次の作業</div>
         <div class="ops-card__value">${rows.length}件</div>
         <ul class="ops-card__list">
           ${preview.length ? preview.map(row => `<li>${formatScheduleDate(row.planDate)} ${row.field || "圃場未定"}：定植</li>`).join("") : "<li>14日以内の定植予定はありません</li>"}
+          <li>今月の定植予定：${plannedPlantings.length}件（${plantingFieldCount}圃場）</li>
           <li><a href="/schedule/plan.html">→ 定植予定を見る</a></li>
         </ul>
       `;
@@ -509,21 +506,6 @@
       } catch (error) {
         return [];
       }
-    }
-
-    function renderPlantingCard(rows) {
-      const card = document.getElementById("ops-planting-card");
-      if (!card) return;
-      const fieldCount = new Set(rows.map(row => row.field).filter(Boolean)).size;
-      card.innerHTML = `
-        <div class="ops-card__label">定植追跡</div>
-        <div class="ops-card__value">${rows.length}件</div>
-        <ul class="ops-card__list">
-          <li>今月の定植予定：${rows.length}件</li>
-          <li>対象圃場：${fieldCount}箇所</li>
-          <li><a href="/schedule/plan.html">→ 定植予定を見る</a></li>
-        </ul>
-      `;
     }
 
     async function loadWeatherStatus() {
@@ -597,8 +579,7 @@
         loadPlantingStatus(),
         loadWeatherStatus()
       ]);
-      renderScheduleCard(scheduleRows);
-      renderPlantingCard(plantingRows);
+      renderScheduleCard(scheduleRows, plantingRows);
       renderWeatherCard(weatherStatus);
 
       const role = window.currentRole;
@@ -689,11 +670,6 @@
 
       <article id="ops-schedule-card" class="ops-card ops-card--alert">
         <div class="ops-card__label">次の作業</div>
-        <div class="ops-card__value">読み込み中...</div>
-      </article>
-
-      <article id="ops-planting-card" class="ops-card ops-card--ok">
-        <div class="ops-card__label">定植追跡</div>
         <div class="ops-card__value">読み込み中...</div>
       </article>
 
