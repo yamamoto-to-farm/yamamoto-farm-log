@@ -277,6 +277,17 @@
       font-size: 13px;
       line-height: 1.6;
     }
+    .diary-card__missing-links {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0 8px;
+    }
+    .diary-card__preview {
+      margin: 0;
+      color: #41576d;
+      font-size: 13px;
+      line-height: 1.7;
+    }
     .diary-card__latest {
       margin: 10px 0 0;
       padding-top: 9px;
@@ -712,6 +723,12 @@
       return `${Number(m)}月${Number(d)}日`;
     }
 
+    function formatShortDiaryDate(ymd) {
+      if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd))) return "日付不明";
+      const [, m, d] = String(ymd).split("-");
+      return `${Number(m)}/${Number(d)}`;
+    }
+
     function toYmd(date) {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -760,7 +777,7 @@
       const statuses = [];
       const today = new Date();
 
-      for (let offset = 0; offset < 7; offset += 1) {
+      for (let offset = 0; offset <= 7; offset += 1) {
         const date = new Date(today);
         date.setHours(0, 0, 0, 0);
         date.setDate(today.getDate() - offset);
@@ -778,16 +795,12 @@
 
       const recentEntries = statuses.filter(item => item.workCount > 0);
       const latestEntry = recentEntries.length ? recentEntries[0] : null;
-      const yesterdayAndEarlier = statuses.filter(item => item.ymd !== toYmd(today));
-      const trailingMissing = [];
-      for (const item of yesterdayAndEarlier) {
-        if (item.workCount > 0) break;
-        trailingMissing.push(item.ymd);
-      }
+      const monitoredEntries = statuses.filter(item => item.ymd !== toYmd(today));
+      const missingEntries = monitoredEntries.filter(item => item.workCount === 0);
 
       return {
-        missingCount: trailingMissing.length,
-        lastMissingDate: trailingMissing[trailingMissing.length - 1] || null,
+        missingCount: missingEntries.length,
+        missingEntries,
         latestEntry,
         recentEntries
       };
@@ -804,19 +817,20 @@
 
       const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
       const summaryText = status?.latestEntry ? summarizeDiaryEntry(status.latestEntry.diary) : "直近の記録はありません";
-      const missingText = isMissing
-        ? `<a href="/diary/index.html?date=${status.lastMissingDate}">警告: ${formatJapaneseYmd(status.lastMissingDate)}の日誌が未登録</a>`
-        : "直近の日誌は継続して入力済みです";
+      const missingEntries = Array.isArray(status?.missingEntries) ? status.missingEntries : [];
+      const missingLinks = missingEntries.map(item =>
+        `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
+      ).join("・");
 
       diaryCard.innerHTML = `
         <div class="ops-card__label">作業日誌</div>
-        <div class="ops-card__value">${isMissing ? `${missingCount}日未入力` : "入力済み"}</div>
-        ${isMissing ? `<p class="diary-card__warning">${missingText}</p>` : ""}
-        <div class="diary-card__latest">
-          <span class="diary-card__latest-label">直近の記録</span>
-          ${latestDateText}<br>
-          ${summaryText}
-        </div>
+        ${isMissing ? `
+          <div class="ops-card__value">${missingCount}日未入力</div>
+          <p class="diary-card__warning">未入力日：<span class="diary-card__missing-links">${missingLinks}</span></p>
+        ` : `
+          <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateText}<br>${summaryText}</p>
+        `}
+        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateText}<br>${summaryText}</div>` : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
