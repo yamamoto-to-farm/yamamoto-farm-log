@@ -281,6 +281,7 @@
       display: inline-flex;
       flex-wrap: wrap;
       gap: 0 8px;
+      vertical-align: middle;
     }
     .diary-card__preview {
       margin: 0;
@@ -818,15 +819,15 @@
       const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
       const summaryText = status?.latestEntry ? summarizeDiaryEntry(status.latestEntry.diary) : "直近の記録はありません";
       const missingEntries = Array.isArray(status?.missingEntries) ? status.missingEntries : [];
-      const missingLinks = missingEntries.map(item =>
+      const missingLinks = [...missingEntries].reverse().map(item =>
         `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
       ).join("・");
 
       diaryCard.innerHTML = `
         <div class="ops-card__label">作業日誌</div>
         ${isMissing ? `
-          <div class="ops-card__value">${missingCount}日未入力</div>
-          <p class="diary-card__warning">未入力日：<span class="diary-card__missing-links">${missingLinks}</span></p>
+          <div class="ops-card__value">${missingCount}日分の日誌がありません</div>
+          <p class="diary-card__warning">確認が必要な日：<span class="diary-card__missing-links">${missingLinks}</span></p>
         ` : `
           <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateText}<br>${summaryText}</p>
         `}
