@@ -74,6 +74,76 @@
     .menu-grid.open {
       display: grid;
     }
+    .menu-modal[hidden] {
+      display: none;
+    }
+    .menu-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(31, 47, 63, 0.42);
+    }
+    .menu-modal__dialog {
+      width: min(720px, 100%);
+      max-height: min(720px, calc(100vh - 40px));
+      overflow: auto;
+      padding: 20px;
+      border: 1px solid #dfe7ef;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 14px 36px rgba(15, 48, 76, 0.18);
+    }
+    .menu-modal__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e6edf5;
+    }
+    .menu-modal__title {
+      margin: 0;
+      color: #1f2f3f;
+      font-size: 20px;
+    }
+    .menu-modal__close {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #dfe7ef;
+      border-radius: 6px;
+      background: #fff;
+      color: #41576d;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .menu-modal__close:hover,
+    .menu-modal__close:focus-visible {
+      border-color: #7da5d6;
+      color: #2256a5;
+      outline: none;
+    }
+    .menu-modal__group {
+      margin: 0 0 16px;
+    }
+    .menu-modal__group-title {
+      margin: 0 0 8px;
+      color: #5b6f87;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .menu-modal__links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+    }
+    .menu-modal__links .menu-card {
+      margin: 0;
+    }
     #menu-area {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px 20px;
@@ -258,6 +328,13 @@
         padding: 6px 2px;
         font-size: 11px;
       }
+      .menu-modal {
+        padding: 10px;
+      }
+      .menu-modal__dialog {
+        max-height: calc(100vh - 20px);
+        padding: 16px;
+      }
     }
   </style>
 
@@ -387,6 +464,54 @@
         topContainer.appendChild(subSection);
       }
       return subSection.querySelector(".menu-grid");
+    }
+
+    function closeMenuModal() {
+      const modal = document.getElementById("menu-modal");
+      if (!modal) return;
+      modal.hidden = true;
+      document.body.style.overflow = "";
+    }
+
+    function openMenuModal(section) {
+      const modal = document.getElementById("menu-modal");
+      const title = document.getElementById("menu-modal-title");
+      const groups = document.getElementById("menu-modal-groups");
+      if (!modal || !title || !groups || !section) return;
+
+      title.textContent = section.dataset.top || "メニュー";
+      groups.replaceChildren();
+
+      const subSections = section.querySelectorAll(".subcategory-section");
+      subSections.forEach(subSection => {
+        const subTitle = subSection.querySelector(".subcategory-title")?.textContent || "その他";
+        const sourceGrid = subSection.querySelector(".menu-grid");
+        const links = sourceGrid ? sourceGrid.querySelectorAll(".menu-card") : [];
+        if (!links.length) return;
+
+        const group = document.createElement("section");
+        group.className = "menu-modal__group";
+        const heading = document.createElement("h3");
+        heading.className = "menu-modal__group-title";
+        heading.textContent = subTitle;
+        const linkGrid = document.createElement("div");
+        linkGrid.className = "menu-modal__links";
+        links.forEach(link => linkGrid.appendChild(link.cloneNode(true)));
+        group.append(heading, linkGrid);
+        groups.appendChild(group);
+      });
+
+      const directLinks = section.querySelectorAll(".direct-grid > .menu-card");
+      if (directLinks.length) {
+        const linkGrid = document.createElement("div");
+        linkGrid.className = "menu-modal__links";
+        directLinks.forEach(link => linkGrid.appendChild(link.cloneNode(true)));
+        groups.appendChild(linkGrid);
+      }
+
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
+      modal.querySelector(".menu-modal__close")?.focus();
     }
 
     function sortPages(pages) {
@@ -702,27 +827,17 @@
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("category-title")) {
           const section = e.target.closest(".category-section");
-          const subContainer = section.querySelector(".subcategory-container");
-          const directGrid = section.querySelector(".direct-grid");
-          const isOpen = e.target.getAttribute("aria-expanded") === "true";
-
-          if (subContainer) {
-            subContainer.style.display = isOpen ? "none" : "block";
-          }
-          if (directGrid) {
-            directGrid.classList.toggle("open", !isOpen);
-          }
-          e.target.setAttribute("aria-expanded", String(!isOpen));
+          openMenuModal(section);
         }
 
-        if (e.target.classList.contains("subcategory-title")) {
-          const subSection = e.target.closest(".subcategory-section");
-          const grid = subSection.querySelector(".menu-grid");
-          const isOpen = e.target.getAttribute("aria-expanded") === "true";
-          grid.classList.toggle("open", !isOpen);
-          grid.hidden = isOpen;
-          e.target.setAttribute("aria-expanded", String(!isOpen));
-        }
+        if (e.target.closest("[data-menu-modal-close]")) closeMenuModal();
+      });
+
+      document.getElementById("menu-modal")?.addEventListener("click", (e) => {
+        if (e.target.id === "menu-modal") closeMenuModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenuModal();
       });
     });
   </script>
@@ -761,6 +876,16 @@
 
   <div id="menu-area" style="display:none">
     <h2 class="menu-area__title">メニュー</h2>
+  </div>
+
+  <div id="menu-modal" class="menu-modal" hidden>
+    <section class="menu-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="menu-modal-title">
+      <div class="menu-modal__header">
+        <h2 id="menu-modal-title" class="menu-modal__title">メニュー</h2>
+        <button type="button" class="menu-modal__close" data-menu-modal-close aria-label="メニューを閉じる">×</button>
+      </div>
+      <div id="menu-modal-groups"></div>
+    </section>
   </div>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
