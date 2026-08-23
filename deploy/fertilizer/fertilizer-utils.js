@@ -32,7 +32,7 @@ export async function updateSelectedFieldsUI() {
 
   const totalA = await getTotalFieldSize(fields);
   const areaEl = document.getElementById("field-area-total");
-  if (areaEl) areaEl.textContent = `合計面積：${totalA.toFixed(1)} a`;
+  if (areaEl) areaEl.textContent = totalA > 0 ? `合計面積：${totalA.toFixed(1)} a` : "合計面積：-";
 
   updatePer10aAll(totalA);
 
