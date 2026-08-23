@@ -95,6 +95,7 @@
       border-radius: 8px;
       background: #fff;
       box-shadow: 0 14px 36px rgba(15, 48, 76, 0.18);
+      font-size: 0.95rem;
     }
     .menu-modal__header {
       display: flex;
@@ -108,7 +109,7 @@
     .menu-modal__title {
       margin: 0;
       color: #1f2f3f;
-      font-size: 20px;
+      font-size: 1.05rem;
     }
     .menu-modal__footer {
       display: flex;
@@ -119,6 +120,7 @@
     }
     .menu-modal__close {
       min-width: 140px;
+      font-size: 0.95rem;
     }
     .menu-modal__group {
       margin: 0 0 16px;
@@ -128,7 +130,7 @@
       margin: 0;
       padding: 8px 0;
       color: #5b6f87;
-      font-size: 13px;
+      font-size: 0.95rem;
       font-weight: 700;
       cursor: pointer;
     }
@@ -144,6 +146,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 8px;
+      font-size: 0.95rem;
     }
     .menu-modal__links .menu-card {
       margin: 0;
@@ -495,7 +498,6 @@
 
         const group = document.createElement("details");
         group.className = "menu-modal__group";
-        if (!groups.children.length) group.open = true;
         const heading = document.createElement("summary");
         heading.className = "menu-modal__group-title";
         heading.textContent = subTitle;
