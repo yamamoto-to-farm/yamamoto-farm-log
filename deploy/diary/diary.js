@@ -100,6 +100,13 @@ function syncDiaryDateDisplay(value) {
   if (display) display.textContent = formatDiaryDisplayDate(value);
 }
 
+function syncDiaryDayNavigationLabels(value) {
+  const previous = document.getElementById("prevDayBtn");
+  const next = document.getElementById("nextDayBtn");
+  if (previous) previous.textContent = `← ${formatDiaryDisplayDate(shiftDateByDays(value, -1))}`;
+  if (next) next.textContent = `${formatDiaryDisplayDate(shiftDateByDays(value, 1))} →`;
+}
+
 function parseYmdToDate(ymd) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""))) return null;
   const dt = new Date(`${ymd}T00:00:00`);
@@ -982,6 +989,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const nextDayBtn = document.getElementById("nextDayBtn");
   dateInput.value = initialDate;
   syncDiaryDateDisplay(initialDate);
+  syncDiaryDayNavigationLabels(initialDate);
   dateInput.readOnly = true;
   const dateDisplay = document.getElementById("diaryDateDisplay");
   if (dateDisplay) {
@@ -1111,6 +1119,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   dateInput.addEventListener("change", async e => {
     const d = e.target.value;
     syncDiaryDateDisplay(d);
+    syncDiaryDayNavigationLabels(d);
     await renderDiaryForDate({ mode, date: d, saveBtn });
     scheduleWorkContentWrapperHeightSync();
   });
