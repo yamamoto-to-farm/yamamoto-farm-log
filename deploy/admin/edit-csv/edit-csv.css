@@ -25,6 +25,11 @@ th {
   margin-top: 20px;
 }
 
+.csv-table-wrapper {
+  width: 100%;
+  min-width: 0;
+}
+
 .csv-table-scroll {
   display: block;
   width: 100%;
@@ -33,6 +38,17 @@ th {
   overflow-y: visible;
   padding-bottom: 8px;
   box-sizing: border-box;
+}
+
+.csv-table-scroll-top {
+  height: 18px;
+  margin-bottom: 2px;
+  padding-bottom: 0;
+  overflow-y: hidden;
+}
+
+.csv-table-scroll-top-content {
+  height: 1px;
 }
 
 .row {

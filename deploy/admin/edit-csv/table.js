@@ -77,5 +77,33 @@ export function renderCsvTable(rows) {
   const scrollArea = document.createElement("div");
   scrollArea.className = "csv-table-scroll";
   scrollArea.appendChild(table);
-  area.appendChild(scrollArea);
+
+  const topScrollArea = document.createElement("div");
+  topScrollArea.className = "csv-table-scroll csv-table-scroll-top";
+  const topScrollContent = document.createElement("div");
+  topScrollContent.className = "csv-table-scroll-top-content";
+  topScrollArea.appendChild(topScrollContent);
+
+  const syncTopScrollWidth = () => {
+    topScrollContent.style.width = `${scrollArea.scrollWidth}px`;
+  };
+  let syncing = false;
+  topScrollArea.addEventListener("scroll", () => {
+    if (syncing) return;
+    syncing = true;
+    scrollArea.scrollLeft = topScrollArea.scrollLeft;
+    syncing = false;
+  });
+  scrollArea.addEventListener("scroll", () => {
+    if (syncing) return;
+    syncing = true;
+    topScrollArea.scrollLeft = scrollArea.scrollLeft;
+    syncing = false;
+  });
+  requestAnimationFrame(syncTopScrollWidth);
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "csv-table-wrapper";
+  wrapper.append(topScrollArea, scrollArea);
+  area.appendChild(wrapper);
 }
