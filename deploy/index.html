@@ -313,6 +313,23 @@
       text-decoration: underline;
       cursor: pointer;
     }
+    .diary-card__work-details {
+      margin-top: 8px;
+      color: #41576d;
+      font-size: 13px;
+    }
+    .diary-card__work-details summary {
+      display: inline-block;
+      color: #2256a5;
+      cursor: pointer;
+    }
+    .diary-card__work-list {
+      display: grid;
+      gap: 4px;
+      margin: 6px 0 0;
+      padding-left: 18px;
+      line-height: 1.6;
+    }
     .diary-card__latest {
       margin: 10px 0 0;
       padding-top: 9px;
@@ -853,6 +870,29 @@
       return "";
     }
 
+    function renderDiaryWorkDetails(diary) {
+      const workList = Array.isArray(diary?.work) ? diary.work : [];
+      if (!workList.length) return "";
+
+      const items = workList.map(entry => {
+        const type = normalizeTypeLabel(entry?.type || entry?.workType || "作業");
+        const typeHref = getDiaryTypeLink(type);
+        const typeHtml = typeHref
+          ? `<a href="${typeHref}">${escapeHtml(type)}</a>`
+          : escapeHtml(type);
+        const fields = Array.isArray(entry?.field) ? entry.field : [entry?.field];
+        const fieldNames = fields.flatMap(value => String(value || "").split(/[／/,、]/))
+          .map(field => field.trim())
+          .filter(Boolean);
+        const fieldHtml = fieldNames.length
+          ? `：${fieldNames.slice(0, 3).map(field => `<a href="/fields/work-logs.html?field=${encodeURIComponent(field)}">${escapeHtml(field)}</a>`).join("・")}`
+          : "";
+        return `<li>${typeHtml}${fieldHtml}</li>`;
+      }).join("");
+
+      return `<details class="diary-card__work-details"><summary>作業内容を表示（${workList.length}件）</summary><ul class="diary-card__work-list">${items}</ul></details>`;
+    }
+
     function openDiaryPreviewModal(date, diary) {
       const modal = document.getElementById("diary-preview-modal");
       const content = document.getElementById("diary-preview-modal-content");
@@ -942,6 +982,7 @@
         ? `<button type="button" class="diary-card__date-button" data-diary-date="${status.latestEntry.ymd}">${latestDateText}</button>`
         : latestDateText;
       const workCount = status?.latestEntry?.diary?.work?.length || 0;
+      const workDetails = status?.latestEntry ? renderDiaryWorkDetails(status.latestEntry.diary) : "";
       const detailButton = status?.latestEntry
         ? `<button type="button" class="diary-card__detail-button" data-diary-date="${status.latestEntry.ymd}">作業内容を確認（${workCount}件）</button>`
         : "";
@@ -957,8 +998,9 @@
           <p class="diary-card__warning">確認が必要な日：<span class="diary-card__missing-links">${missingLinks}</span></p>
         ` : `
           <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateLink}<br>${detailButton}</p>
+          ${workDetails}
         `}
-        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}<br>${detailButton}</div>` : ""}
+        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}<br>${detailButton}${workDetails}</div>` : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
