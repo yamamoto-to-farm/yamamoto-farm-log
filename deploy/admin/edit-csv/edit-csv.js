@@ -19,6 +19,57 @@ function cloneRows(rows) {
 
 const csvTypeEl = document.getElementById("csvType");
 const csvFileEl = document.getElementById("csvFile");
+const csvSearchInput = document.getElementById("csvSearchInput");
+const csvSearchResult = document.getElementById("csvSearchResult");
+
+function applyCsvSearch({ scrollToFirst = true } = {}) {
+  const table = document.querySelector("#csvTableArea table");
+  if (!table) {
+    if (csvSearchResult) csvSearchResult.textContent = "CSVを読み込んでください";
+    return;
+  }
+
+  const query = String(csvSearchInput?.value || "").trim().toLocaleLowerCase();
+  const rows = Array.from(table.querySelectorAll("tbody tr"));
+  rows.forEach(row => {
+    row.classList.remove("search-match", "search-current");
+  });
+
+  if (!query) {
+    if (csvSearchResult) csvSearchResult.textContent = "";
+    return;
+  }
+
+  const matches = rows.filter(row => row.textContent.toLocaleLowerCase().includes(query));
+  matches.forEach(row => row.classList.add("search-match"));
+  if (csvSearchResult) csvSearchResult.textContent = `${matches.length}件一致`;
+
+  if (scrollToFirst && matches[0]) {
+    matches[0].classList.add("search-current");
+    matches[0].scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function jumpToCsvRow() {
+  const table = document.querySelector("#csvTableArea table");
+  const input = document.getElementById("csvRowInput");
+  if (!table || !input) {
+    alert("先に CSV を読み込んでください");
+    return;
+  }
+
+  const rowNumber = Number(input.value);
+  const rows = table.querySelectorAll("tbody tr");
+  if (!Number.isInteger(rowNumber) || rowNumber < 1 || rowNumber > rows.length) {
+    alert(`行番号は1〜${rows.length}で指定してください`);
+    return;
+  }
+
+  const row = rows[rowNumber - 1];
+  row.querySelector(".row-index")?.click();
+  row.classList.add("search-current");
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+}
 
 function buildYearCsvList() {
   const base = new Date().getFullYear();
@@ -75,6 +126,7 @@ document.getElementById("loadCsvBtn").addEventListener("click", async () => {
   // 編集ロジックを紐づける
   const table = document.querySelector("#csvTableArea table");
   currentRows = attachEditor(table, originalRows);
+  applyCsvSearch({ scrollToFirst: false });
 
   console.log("✔ editor attached. rows:", currentRows);
 });
@@ -96,6 +148,7 @@ document.getElementById("addRowBtn").addEventListener("click", () => {
 
   const newTable = document.querySelector("#csvTableArea table");
   currentRows = attachEditor(newTable, originalRows);
+  applyCsvSearch({ scrollToFirst: false });
 });
 
 // 行削除
@@ -117,6 +170,7 @@ document.getElementById("deleteRowBtn").addEventListener("click", () => {
 
   const newTable = document.querySelector("#csvTableArea table");
   currentRows = attachEditor(newTable, originalRows);
+  applyCsvSearch({ scrollToFirst: false });
 });
 
 // 列名クリックでソート
@@ -134,6 +188,21 @@ document.getElementById("csvTableArea").addEventListener("click", e => {
 
   const newTable = document.querySelector("#csvTableArea table");
   currentRows = attachEditor(newTable, originalRows);
+  applyCsvSearch({ scrollToFirst: false });
+});
+
+document.getElementById("csvSearchBtn").addEventListener("click", () => {
+  applyCsvSearch();
+});
+
+csvSearchInput?.addEventListener("keydown", e => {
+  if (e.key === "Enter") applyCsvSearch();
+});
+
+document.getElementById("csvRowJumpBtn").addEventListener("click", jumpToCsvRow);
+
+document.getElementById("csvRowInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") jumpToCsvRow();
 });
 
 // CSV 保存（全書き換え）

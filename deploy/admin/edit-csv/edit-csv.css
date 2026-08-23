@@ -26,6 +26,28 @@ th {
   margin-top: 15px;
 }
 
+.csv-navigation-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.csv-navigation-row input {
+  width: 160px;
+  padding: 7px 9px;
+}
+
+.csv-navigation-row input[type="number"] {
+  width: 90px;
+}
+
+.csv-search-result {
+  color: #5b6f87;
+  font-size: 13px;
+}
+
 button, select {
   padding: 8px 16px;
 }
@@ -39,6 +61,15 @@ button, select {
 /* 行選択ハイライト */
 .selected-row {
   background-color: #ffe9a8 !important;
+}
+
+.search-match {
+  background-color: #eaf3ff !important;
+}
+
+.search-current {
+  outline: 2px solid #4f7ad9;
+  outline-offset: -2px;
 }
 
 /* ソート可能な列 */

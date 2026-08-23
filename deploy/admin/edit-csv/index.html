@@ -49,6 +49,16 @@
       <button id="deleteRowBtn">選択行を削除</button>
     </div>
 
+    <div class="csv-navigation-row" aria-label="CSV内の検索と行移動">
+      <label for="csvSearchInput">検索：</label>
+      <input id="csvSearchInput" type="search" placeholder="文字を検索">
+      <button id="csvSearchBtn" type="button">検索</button>
+      <span id="csvSearchResult" class="csv-search-result" aria-live="polite"></span>
+      <label for="csvRowInput">行へ：</label>
+      <input id="csvRowInput" type="number" min="1" step="1" placeholder="行番号">
+      <button id="csvRowJumpBtn" type="button">移動</button>
+    </div>
+
     <!-- 下段：テーブル -->
     <div id="csvTableArea"></div>
   </div>
