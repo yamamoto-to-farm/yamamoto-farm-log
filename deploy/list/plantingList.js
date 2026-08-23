@@ -368,7 +368,7 @@ function renderTable(rows) {
       const data = getPlantDetail(ref);
 
       const discardActionHtml = canDiscard && ref
-        ? `<div style="margin-top:12px;"><button class="secondary-btn" id="planting-modal-discard-btn" type="button">破棄ページへ</button></div>`
+        ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"><button class="secondary-btn" id="planting-modal-discard-btn" type="button">破棄ページへ</button><a class="secondary-btn" href="/admin/edit-csv/index.html">CSVを編集</a></div>`
         : "";
 
       showInfoModal(data.title, `${data.html}${discardActionHtml}`);
