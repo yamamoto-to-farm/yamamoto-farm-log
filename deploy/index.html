@@ -63,6 +63,12 @@
       font-size: 12px;
       line-height: 1.5;
     }
+    .category-description {
+      margin: 0 0 4px;
+      color: #687b92;
+      font-size: 12px;
+      line-height: 1.5;
+    }
     .category-meta__breakdown {
       display: block;
     }
@@ -351,6 +357,9 @@
       .category-meta {
         font-size: 11px;
       }
+      .category-description {
+        font-size: 11px;
+      }
       .weather-days {
         gap: 4px;
       }
@@ -407,6 +416,16 @@
       ]
     };
 
+    const CATEGORY_DESCRIPTIONS = {
+      "作業ログ": "作業内容を入力する",
+      "記録一覧": "各種作業記録を確認する",
+      "育苗": "苗の状態と作業を管理する",
+      "圃場": "圃場情報と栽培状況を確認する",
+      "分析": "栽培・収穫データを分析する",
+      "計画": "作業予定と作付計画を確認する",
+      "管理": "マスタやシステム設定を管理する"
+    };
+
     function normalizeCategory(category) {
       const parts = category.split("/");
       if (parts.length === 1) {
@@ -455,12 +474,16 @@
 
         const meta = document.createElement("p");
         meta.className = "category-meta";
+        const description = document.createElement("p");
+        description.className = "category-description";
+        description.textContent = CATEGORY_DESCRIPTIONS[top] || "関連する機能を開く";
 
         const directGrid = document.createElement("div");
         directGrid.className = "menu-grid direct-grid";
 
         h2.appendChild(categoryButton);
         section.appendChild(h2);
+        section.appendChild(description);
         section.appendChild(meta);
         section.appendChild(container);
         section.appendChild(directGrid);
