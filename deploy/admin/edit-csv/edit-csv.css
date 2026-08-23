@@ -17,6 +17,9 @@ th, td {
 
 th {
   background: #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 #csvTableArea {
@@ -34,8 +37,8 @@ th {
   display: block;
   width: 100%;
   max-width: 100%;
-  overflow-x: scroll;
-  overflow-y: visible;
+  max-height: min(62vh, 680px);
+  overflow: auto;
   padding-bottom: 8px;
   box-sizing: border-box;
 }
