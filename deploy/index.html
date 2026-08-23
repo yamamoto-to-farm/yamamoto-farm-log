@@ -271,6 +271,9 @@
       font-size: 13px;
       line-height: 1.8;
     }
+    .ops-card a {
+      font-size: 14px;
+    }
     .diary-card__warning {
       margin: 0 0 10px;
       color: #b33d3d;
@@ -298,22 +301,17 @@
       text-decoration: underline;
       cursor: pointer;
     }
-    .diary-card__details {
-      margin-top: 8px;
-      color: #41576d;
-      font-size: 12px;
-    }
-    .diary-card__details summary {
+    .diary-card__detail-button {
       display: inline-block;
+      margin-top: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
       color: #2256a5;
+      font: inherit;
+      font-size: 14px;
+      text-decoration: underline;
       cursor: pointer;
-    }
-    .diary-card__work-list {
-      display: grid;
-      gap: 4px;
-      margin: 6px 0 0;
-      padding-left: 18px;
-      line-height: 1.6;
     }
     .diary-card__latest {
       margin: 10px 0 0;
@@ -809,8 +807,8 @@
 
     function formatJapaneseYmd(ymd) {
       if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd))) return "記録なし";
-      const [y, m, d] = String(ymd).split("-");
-      return `${Number(m)}月${Number(d)}日`;
+      const [, m, d] = String(ymd).split("-");
+      return `${Number(m)}/${Number(d)}`;
     }
 
     function formatShortDiaryDate(ymd) {
@@ -853,21 +851,6 @@
       return "";
     }
 
-    function getDiaryFieldNames(diary) {
-      const fields = new Set();
-      (Array.isArray(diary?.work) ? diary.work : []).forEach(entry => {
-        const values = Array.isArray(entry?.field) ? entry.field : [entry?.field];
-        values.forEach(value => {
-          String(value || "")
-            .split(/[／/,、]/)
-            .map(field => field.trim())
-            .filter(Boolean)
-            .forEach(field => fields.add(field));
-        });
-      });
-      return [...fields];
-    }
-
     function openDiaryPreviewModal(date, diary) {
       const modal = document.getElementById("diary-preview-modal");
       const content = document.getElementById("diary-preview-modal-content");
@@ -908,67 +891,6 @@
       if (!modal) return;
       modal.hidden = true;
       document.body.style.overflow = "";
-    }
-
-    function renderDiaryWorkDetails(diary) {
-      const workList = Array.isArray(diary?.work) ? diary.work : [];
-      if (!workList.length) return "";
-
-      const items = workList.map(entry => {
-        const rawType = entry?.type || entry?.workType || "作業";
-        const type = normalizeTypeLabel(rawType);
-        const typeHref = getDiaryTypeLink(type);
-        const typeHtml = typeHref
-          ? `<a href="${typeHref}">${escapeHtml(type)}</a>`
-          : escapeHtml(type);
-        const fields = Array.isArray(entry?.field) ? entry.field : [entry?.field];
-        const fieldNames = fields.flatMap(value => String(value || "").split(/[／/,、]/))
-          .map(field => field.trim())
-          .filter(Boolean);
-        const fieldHtml = fieldNames.length
-          ? `：${fieldNames.slice(0, 3).map(field => `<a href="/fields/work-logs.html?field=${encodeURIComponent(field)}">${escapeHtml(field)}</a>`).join("・")}`
-          : "";
-        return `<li>${typeHtml}${fieldHtml}</li>`;
-      }).join("");
-
-      return `<details class="diary-card__details"><summary>作業内容を表示（${workList.length}件）</summary><ul class="diary-card__work-list">${items}</ul></details>`;
-    }
-
-    function summarizeDiaryEntry(diary) {
-      const workList = Array.isArray(diary?.work) ? diary.work : [];
-      if (!workList.length) return "記録なし";
-
-      const typeCounts = {};
-      const fieldSet = new Set();
-
-      workList.forEach(entry => {
-        const typeName = entry?.type || entry?.workType || "作業";
-        const normalized = normalizeTypeLabel(typeName);
-        typeCounts[normalized] = (typeCounts[normalized] || 0) + 1;
-
-        const fields = Array.isArray(entry?.field) ? entry.field : [];
-        fields.forEach(value => {
-          if (value) fieldSet.add(String(value));
-        });
-        if (typeof entry?.field === "string" && entry.field.trim()) {
-          fieldSet.add(entry.field.trim());
-        }
-      });
-
-      const typeText = Object.entries(typeCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([label, count]) => {
-          const text = `${escapeHtml(label)} ${count}件`;
-          const href = getDiaryTypeLink(label);
-          return href ? `<a href="${href}">${text}</a>` : text;
-        })
-        .join(" / ");
-      const fieldNames = getDiaryFieldNames(diary);
-      const fieldText = fieldNames.length
-        ? fieldNames.slice(0, 3).map(field => `<a href="/fields/work-logs.html?field=${encodeURIComponent(field)}">${escapeHtml(field)}</a>`).join("・")
-        : `${fieldSet.size}箇所`;
-      return `${typeText || `${workList.length}件`} / 圃場 ${fieldText}`;
     }
 
     async function loadRecentDiaryStatus() {
@@ -1017,8 +939,10 @@
       const latestDateLink = status?.latestEntry
         ? `<button type="button" class="diary-card__date-button" data-diary-date="${status.latestEntry.ymd}">${latestDateText}</button>`
         : latestDateText;
-      const summaryText = status?.latestEntry ? summarizeDiaryEntry(status.latestEntry.diary) : "直近の記録はありません";
-      const workDetails = status?.latestEntry ? renderDiaryWorkDetails(status.latestEntry.diary) : "";
+      const workCount = status?.latestEntry?.diary?.work?.length || 0;
+      const detailButton = status?.latestEntry
+        ? `<button type="button" class="diary-card__detail-button" data-diary-date="${status.latestEntry.ymd}">作業内容を確認（${workCount}件）</button>`
+        : "";
       const missingEntries = Array.isArray(status?.missingEntries) ? status.missingEntries : [];
       const missingLinks = [...missingEntries].reverse().map(item =>
         `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
@@ -1030,25 +954,24 @@
           <div class="ops-card__value">${missingCount}日分の日誌がありません</div>
           <p class="diary-card__warning">確認が必要な日：<span class="diary-card__missing-links">${missingLinks}</span></p>
         ` : `
-          <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateLink}<br>${summaryText}</p>
-          ${workDetails}
+          <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateLink}<br>${detailButton}</p>
         `}
-        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}<br>${summaryText}${workDetails}</div>` : ""}
+        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}<br>${detailButton}</div>` : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
         </div>
       `;
-      diaryCard.querySelector("[data-diary-date]")?.addEventListener("click", () => {
+      diaryCard.querySelectorAll("[data-diary-date]").forEach(button => button.addEventListener("click", () => {
         openDiaryPreviewModal(status.latestEntry.ymd, status.latestEntry.diary);
-      });
+      }));
     }
 
     function formatScheduleDate(ymd) {
       if (!ymd) return "日付未定";
       const date = new Date(`${ymd}T00:00:00`);
       if (Number.isNaN(date.getTime())) return ymd;
-      return `${date.getMonth() + 1}月${date.getDate()}日`;
+      return `${date.getMonth() + 1}/${date.getDate()}`;
     }
 
     async function loadScheduleStatus() {
@@ -1161,7 +1084,7 @@
 
       renderHeader();
       const dashboardTitle = document.querySelector(".ops-dashboard__title");
-      if (dashboardTitle) dashboardTitle.textContent = `${toYmd(new Date())}の山本農園`;
+      if (dashboardTitle) dashboardTitle.textContent = `${formatJapaneseYmd(toYmd(new Date()))}の山本農園`;
       document.getElementById("ops-dashboard").style.display = "block";
       document.getElementById("menu-area").style.display = "grid";
 
