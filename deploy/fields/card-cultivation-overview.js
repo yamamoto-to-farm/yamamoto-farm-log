@@ -3,13 +3,15 @@ import { safeFieldName } from "/common/utils.js";
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
-export async function renderCultivationOverviewCard({ fieldName, startDate, endDate }) {
+export async function renderCultivationOverviewCard({ fieldName, startDate, endDate, phase = "in-cultivation" }) {
   const safeField = safeFieldName(fieldName || "");
-  if (!safeField || !endDate) {
+  if (!safeField) {
     return "";
   }
 
+  const effectiveEndDate = endDate || getTodayLocalYmd();
   const rangeStartLabel = startDate || "前作なし（全期間）";
+  const statusLabel = phase === "harvested" ? "収穫後の栽培実績" : "栽培中の作業実績";
 
   const [pesticideLog, intertillLog, fertilizerLog] = await Promise.all([
     loadFieldLog("pesticide", safeField),
@@ -28,36 +30,37 @@ export async function renderCultivationOverviewCard({ fieldName, startDate, endD
 
   const q = new URLSearchParams({
     field: fieldName,
-    start: startDate,
-    end: endDate,
+    start: startDate || "",
+    end: effectiveEndDate,
     type: "all"
   }).toString();
 
   const qPesticide = new URLSearchParams({
     field: fieldName,
-    start: startDate,
-    end: endDate,
+    start: startDate || "",
+    end: effectiveEndDate,
     type: "pesticide"
   }).toString();
 
   const qFertilizer = new URLSearchParams({
     field: fieldName,
-    start: startDate,
-    end: endDate,
+    start: startDate || "",
+    end: effectiveEndDate,
     type: "fertilizer"
   }).toString();
 
   const qIntertill = new URLSearchParams({
     field: fieldName,
-    start: startDate,
-    end: endDate,
+    start: startDate || "",
+    end: effectiveEndDate,
     type: "intertill"
   }).toString();
 
   return `
     <h2 class="section-title year-summary-title">栽培概要</h2>
     <div class="info-block year-summary-block">
-      <div class="info-line">集計期間：${escapeHtml(rangeStartLabel)} ～ ${escapeHtml(endDate)}</div>
+      <div class="info-line">状態：${escapeHtml(statusLabel)}</div>
+      <div class="info-line">集計期間：${escapeHtml(rangeStartLabel)} ～ ${escapeHtml(effectiveEndDate)}</div>
       <div class="info-line">防除回数：<a href="/fields/work-logs.html?${qPesticide}">${pesticideCount} 回</a></div>
       <div class="info-line">中耕回数：<a href="/fields/work-logs.html?${qIntertill}">${intertillCount} 回</a></div>
       <div class="info-line">施肥回数：<a href="/fields/work-logs.html?${qFertilizer}">${fertilizerCount} 回</a></div>
@@ -67,6 +70,14 @@ export async function renderCultivationOverviewCard({ fieldName, startDate, endD
       </div>
     </div>
   `;
+}
+
+function getTodayLocalYmd() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 async function loadFieldLog(type, fieldName) {

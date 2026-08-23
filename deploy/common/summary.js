@@ -225,6 +225,16 @@ function buildSummaryFromRows(plantingRef, planting, harvest, shipping) {
     0
   );
 
+  const hasHarvest = !!harvestDates[0] && !!harvestDates[harvestDates.length - 1] && harvestRows.length > 0;
+  const lifecycle = {
+    phase: hasHarvest ? "harvested" : "in-cultivation",
+    hasHarvest,
+    startDate: p.plantDate || "",
+    endDate: harvestDates[harvestDates.length - 1] || "",
+    harvestReady: !!p.harvestPlanYM,
+    statusText: hasHarvest ? "収穫済み" : "栽培中"
+  };
+
   return {
     plantingRef,
     planting: {
@@ -252,6 +262,7 @@ function buildSummaryFromRows(plantingRef, planting, harvest, shipping) {
       firstDate: shippingDates[0] || null,
       lastDate: shippingDates[shippingDates.length - 1] || null
     },
+    lifecycle,
     lastUpdated: nowJstIso()
   };
 }

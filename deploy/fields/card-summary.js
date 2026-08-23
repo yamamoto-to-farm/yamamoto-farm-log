@@ -175,11 +175,12 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
 
   const seedRef = s.planting.seedRef;
   const seedlingSummary = getSeedlingSummary(seedRef, s.planting.plantDate);
-
-  const hasHarvest =
+  const lifecyclePhase = s.lifecycle?.phase || "in-cultivation";
+  const hasHarvest = !!s.lifecycle?.hasHarvest || (
     !!s.harvest.firstDate &&
     !!s.harvest.lastDate &&
-    s.harvest.count > 0;
+    s.harvest.count > 0
+  );
 
   const daysToHarvest = hasHarvest
     ? calcDaysToHarvest(s.planting.plantDate, s.harvest.firstDate)
@@ -228,7 +229,7 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
 
   const rateClass = getRateClass(achieveRate);
 
-  let harvestPeriod = "未収穫";
+  let harvestPeriod = "収穫前";
 
   if (hasHarvest) {
     const firstMD = s.harvest.firstDate.slice(5).replace("-", "/");
@@ -283,7 +284,8 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
     renderCultivationOverviewCard({
       fieldName,
       startDate: cultivationStart,
-      endDate: cultivationEnd
+      endDate: cultivationEnd,
+      phase: lifecyclePhase
     })
   ]);
 
