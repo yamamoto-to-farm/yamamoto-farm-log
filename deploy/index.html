@@ -289,6 +289,32 @@
       font-size: 13px;
       line-height: 1.7;
     }
+    .diary-card__date-button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #2256a5;
+      font: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .diary-card__details {
+      margin-top: 8px;
+      color: #41576d;
+      font-size: 12px;
+    }
+    .diary-card__details summary {
+      display: inline-block;
+      color: #2256a5;
+      cursor: pointer;
+    }
+    .diary-card__work-list {
+      display: grid;
+      gap: 4px;
+      margin: 6px 0 0;
+      padding-left: 18px;
+      line-height: 1.6;
+    }
     .diary-card__latest {
       margin: 10px 0 0;
       padding-top: 9px;
@@ -310,6 +336,69 @@
       padding-top: 8px;
       border-top: 1px solid #edf2f9;
       font-size: 12px;
+    }
+    .diary-preview-modal[hidden] {
+      display: none;
+    }
+    .diary-preview-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(31, 47, 63, 0.42);
+    }
+    .diary-preview-modal__dialog {
+      width: min(620px, 100%);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 20px;
+      border: 1px solid #dfe7ef;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 14px 36px rgba(15, 48, 76, 0.18);
+      font-size: 0.95rem;
+    }
+    .diary-preview-modal__title {
+      margin: 0 0 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e6edf5;
+      color: #1f2f3f;
+      font-size: 1.05rem;
+    }
+    .diary-preview-modal__work {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid #e6edf5;
+      border-radius: 6px;
+      color: #41576d;
+      line-height: 1.7;
+    }
+    .diary-preview-modal__work-title {
+      margin: 0 0 4px;
+      color: #1f2f3f;
+      font-weight: 700;
+    }
+    .diary-preview-modal__memo {
+      margin: 12px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid #e6edf5;
+      color: #41576d;
+      white-space: pre-wrap;
+    }
+    .diary-preview-modal__footer {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e6edf5;
+    }
+    .diary-preview-modal__footer .secondary-btn {
+      min-width: 140px;
+      text-align: center;
+      text-decoration: none;
     }
     .weather-card__section {
       margin-top: 12px;
@@ -730,6 +819,15 @@
       return `${Number(m)}/${Number(d)}`;
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function toYmd(date) {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -743,6 +841,97 @@
       if (!raw) return "作業";
       const colonMatch = raw.match(/[:：](.+)$/);
       return colonMatch ? colonMatch[1].trim() : raw.replace(/^.+?：/, "").trim() || raw;
+    }
+
+    function getDiaryTypeLink(type) {
+      if (/播種|定植/.test(type)) return "/list/list.html";
+      if (/収穫/.test(type)) return "/performance/harvest-kpi.html";
+      if (/施肥/.test(type)) return "/fertilizer/list/list.html";
+      if (/防除/.test(type)) return "/pesticide/list/list.html";
+      if (/除草|草刈/.test(type)) return "/field/weeding/list.html";
+      if (/耕起|土づくり/.test(type)) return "/field/tillage/list.html";
+      return "";
+    }
+
+    function getDiaryFieldNames(diary) {
+      const fields = new Set();
+      (Array.isArray(diary?.work) ? diary.work : []).forEach(entry => {
+        const values = Array.isArray(entry?.field) ? entry.field : [entry?.field];
+        values.forEach(value => {
+          String(value || "")
+            .split(/[／/,、]/)
+            .map(field => field.trim())
+            .filter(Boolean)
+            .forEach(field => fields.add(field));
+        });
+      });
+      return [...fields];
+    }
+
+    function openDiaryPreviewModal(date, diary) {
+      const modal = document.getElementById("diary-preview-modal");
+      const content = document.getElementById("diary-preview-modal-content");
+      if (!modal || !content) return;
+
+      const works = Array.isArray(diary?.work) ? diary.work : [];
+      const workHtml = works.length ? works.map(entry => {
+        const type = normalizeTypeLabel(entry?.type || entry?.workType || "作業");
+        const fields = Array.isArray(entry?.field) ? entry.field : [entry?.field];
+        const fieldText = fields.map(value => String(value || "").trim()).filter(Boolean).join("・") || "圃場未登録";
+        const workers = Array.isArray(entry?.workers) ? entry.workers.join("・") : String(entry?.workers || "").trim();
+        const time = [entry?.start, entry?.end].filter(Boolean).join("〜");
+        return `<div class="diary-preview-modal__work">
+          <p class="diary-preview-modal__work-title">${escapeHtml(type)}</p>
+          <div>圃場：${escapeHtml(fieldText)}</div>
+          ${workers ? `<div>作業者：${escapeHtml(workers)}</div>` : ""}
+          ${time ? `<div>時間：${escapeHtml(time)}</div>` : ""}
+        </div>`;
+      }).join("") : "<p>この日の作業記録はありません。</p>";
+      const memo = String(diary?.memo || "").trim();
+
+      content.innerHTML = `
+        <h2 class="diary-preview-modal__title">作業日誌 ${escapeHtml(formatJapaneseYmd(date))}</h2>
+        ${workHtml}
+        ${memo ? `<p class="diary-preview-modal__memo"><strong>備考</strong><br>${escapeHtml(memo)}</p>` : ""}
+        <div class="diary-preview-modal__footer">
+          <a class="secondary-btn" href="/diary/index.html?date=${encodeURIComponent(date)}">日誌ページで開く</a>
+          <button type="button" class="secondary-btn" data-diary-preview-close>閉じる</button>
+        </div>
+      `;
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
+      content.querySelector("[data-diary-preview-close]")?.focus();
+    }
+
+    function closeDiaryPreviewModal() {
+      const modal = document.getElementById("diary-preview-modal");
+      if (!modal) return;
+      modal.hidden = true;
+      document.body.style.overflow = "";
+    }
+
+    function renderDiaryWorkDetails(diary) {
+      const workList = Array.isArray(diary?.work) ? diary.work : [];
+      if (!workList.length) return "";
+
+      const items = workList.map(entry => {
+        const rawType = entry?.type || entry?.workType || "作業";
+        const type = normalizeTypeLabel(rawType);
+        const typeHref = getDiaryTypeLink(type);
+        const typeHtml = typeHref
+          ? `<a href="${typeHref}">${escapeHtml(type)}</a>`
+          : escapeHtml(type);
+        const fields = Array.isArray(entry?.field) ? entry.field : [entry?.field];
+        const fieldNames = fields.flatMap(value => String(value || "").split(/[／/,、]/))
+          .map(field => field.trim())
+          .filter(Boolean);
+        const fieldHtml = fieldNames.length
+          ? `：${fieldNames.slice(0, 3).map(field => `<a href="/fields/work-logs.html?field=${encodeURIComponent(field)}">${escapeHtml(field)}</a>`).join("・")}`
+          : "";
+        return `<li>${typeHtml}${fieldHtml}</li>`;
+      }).join("");
+
+      return `<details class="diary-card__details"><summary>作業内容を表示（${workList.length}件）</summary><ul class="diary-card__work-list">${items}</ul></details>`;
     }
 
     function summarizeDiaryEntry(diary) {
@@ -769,9 +958,17 @@
       const typeText = Object.entries(typeCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
-        .map(([label, count]) => `${label} ${count}件`)
+        .map(([label, count]) => {
+          const text = `${escapeHtml(label)} ${count}件`;
+          const href = getDiaryTypeLink(label);
+          return href ? `<a href="${href}">${text}</a>` : text;
+        })
         .join(" / ");
-      return `${typeText || `${workList.length}件`} / 圃場 ${fieldSet.size}箇所`;
+      const fieldNames = getDiaryFieldNames(diary);
+      const fieldText = fieldNames.length
+        ? fieldNames.slice(0, 3).map(field => `<a href="/fields/work-logs.html?field=${encodeURIComponent(field)}">${escapeHtml(field)}</a>`).join("・")
+        : `${fieldSet.size}箇所`;
+      return `${typeText || `${workList.length}件`} / 圃場 ${fieldText}`;
     }
 
     async function loadRecentDiaryStatus() {
@@ -817,7 +1014,11 @@
       diaryCard.className = `ops-card ${cardClass}`;
 
       const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
+      const latestDateLink = status?.latestEntry
+        ? `<button type="button" class="diary-card__date-button" data-diary-date="${status.latestEntry.ymd}">${latestDateText}</button>`
+        : latestDateText;
       const summaryText = status?.latestEntry ? summarizeDiaryEntry(status.latestEntry.diary) : "直近の記録はありません";
+      const workDetails = status?.latestEntry ? renderDiaryWorkDetails(status.latestEntry.diary) : "";
       const missingEntries = Array.isArray(status?.missingEntries) ? status.missingEntries : [];
       const missingLinks = [...missingEntries].reverse().map(item =>
         `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
@@ -829,14 +1030,18 @@
           <div class="ops-card__value">${missingCount}日分の日誌がありません</div>
           <p class="diary-card__warning">確認が必要な日：<span class="diary-card__missing-links">${missingLinks}</span></p>
         ` : `
-          <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateText}<br>${summaryText}</p>
+          <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateLink}<br>${summaryText}</p>
+          ${workDetails}
         `}
-        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateText}<br>${summaryText}</div>` : ""}
+        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}<br>${summaryText}${workDetails}</div>` : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
         </div>
       `;
+      diaryCard.querySelector("[data-diary-date]")?.addEventListener("click", () => {
+        openDiaryPreviewModal(status.latestEntry.ymd, status.latestEntry.diary);
+      });
     }
 
     function formatScheduleDate(ymd) {
@@ -1033,6 +1238,14 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeMenuModal();
       });
+
+      document.addEventListener("click", (e) => {
+        if (e.target.closest("[data-diary-preview-close]")) closeDiaryPreviewModal();
+        if (e.target.id === "diary-preview-modal") closeDiaryPreviewModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDiaryPreviewModal();
+      });
     });
   </script>
 </head>
@@ -1081,6 +1294,12 @@
       <div class="menu-modal__footer">
         <button type="button" class="secondary-btn menu-modal__close" data-menu-modal-close>閉じる</button>
       </div>
+    </section>
+  </div>
+
+  <div id="diary-preview-modal" class="diary-preview-modal" hidden>
+    <section class="diary-preview-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="diary-preview-modal-content">
+      <div id="diary-preview-modal-content"></div>
     </section>
   </div>
 
