@@ -37,7 +37,6 @@
       cursor: pointer;
       text-align: left;
     }
-    .category-title::after,
     .subcategory-title::after {
       content: "+";
       flex: 0 0 auto;
@@ -46,9 +45,16 @@
       font-size: 20px;
       font-weight: 400;
     }
-    .category-title[aria-expanded="true"]::after,
     .subcategory-title[aria-expanded="true"]::after {
       content: "−";
+    }
+    .category-title__icon {
+      display: inline-flex;
+      width: 28px;
+      margin-right: 8px;
+      color: #4f7ad9;
+      font-size: 20px;
+      line-height: 1;
     }
     .category-title:hover,
     .category-title:focus-visible,
@@ -426,6 +432,16 @@
       "管理": "マスタやシステム設定を管理する"
     };
 
+    const CATEGORY_ICONS = {
+      "作業ログ": "📝",
+      "記録一覧": "📋",
+      "育苗": "🌱",
+      "圃場": "▧",
+      "分析": "📊",
+      "計画": "📅",
+      "管理": "⚙"
+    };
+
     function normalizeCategory(category) {
       const parts = category.split("/");
       if (parts.length === 1) {
@@ -449,6 +465,10 @@
       return div;
     }
 
+    function isDiaryPage(page) {
+      return page.name === "作業日誌" || page.name === "作業カレンダー";
+    }
+
     function ensureTopCategory(top) {
       let section = document.querySelector(`section[data-top="${top}"]`);
       if (!section) {
@@ -463,7 +483,11 @@
         const categoryButton = document.createElement("button");
         categoryButton.type = "button";
         categoryButton.className = "category-title";
-        categoryButton.textContent = top;
+        const icon = document.createElement("span");
+        icon.className = "category-title__icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = CATEGORY_ICONS[top] || "▣";
+        categoryButton.append(icon, document.createTextNode(top));
         categoryButton.setAttribute("aria-expanded", "false");
 
         const container = document.createElement("div");
@@ -754,6 +778,7 @@
           <li>${missingCount >= 2 ? `${missingCount}日連続で未入力` : `昨日までの作業日誌: ${missingCount}件未入力`}</li>
           <li>${missingText}</li>
           <li><a href="/diary/index.html">→ 作業日誌を見る</a></li>
+          <li><a href="/schedule/monthly-work/index.html">→ 作業カレンダーを見る</a></li>
         </ul>
         <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f9; color:#4a5d75; font-size:12px; line-height:1.7;">
           <strong>直近:</strong> ${latestDateText}<br>
@@ -905,7 +930,7 @@
         if (!page.roles.includes(role)) return;
         if (page.category.startsWith("管理/")) return;
 
-        if (page.name === "作業日誌") return;
+        if (isDiaryPage(page)) return;
         const rawTop = page.category.split("/")[0];
         const top = rawTop === "作業日誌・記録一覧" ? "記録一覧" : rawTop;
         const section = ensureTopCategory(top);
