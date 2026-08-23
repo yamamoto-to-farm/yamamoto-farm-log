@@ -701,7 +701,7 @@
 
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("category-title")) {
-          const section = e.target.parentElement;
+          const section = e.target.closest(".category-section");
           const subContainer = section.querySelector(".subcategory-container");
           const directGrid = section.querySelector(".direct-grid");
           const isOpen = e.target.getAttribute("aria-expanded") === "true";
@@ -716,7 +716,8 @@
         }
 
         if (e.target.classList.contains("subcategory-title")) {
-          const grid = e.target.parentElement.querySelector(".menu-grid");
+          const subSection = e.target.closest(".subcategory-section");
+          const grid = subSection.querySelector(".menu-grid");
           const isOpen = e.target.getAttribute("aria-expanded") === "true";
           grid.classList.toggle("open", !isOpen);
           grid.hidden = isOpen;
