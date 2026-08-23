@@ -359,7 +359,7 @@
       const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
       const summaryText = status?.latestEntry ? summarizeDiaryEntry(status.latestEntry.diary) : "直近の記録はありません";
       const missingText = isMissing
-        ? `警告: ${formatJapaneseYmd(status.lastMissingDate)}の日誌が未登録`
+        ? `<a href="/diary/index.html?date=${status.lastMissingDate}">警告: ${formatJapaneseYmd(status.lastMissingDate)}の日誌が未登録</a>`
         : "直近の日誌は継続して入力済みです";
 
       diaryCard.innerHTML = `
@@ -448,18 +448,21 @@
 
     async function loadWeatherStatus() {
       const today = new Date();
-      const ymd = toYmd(today);
       const weather = await loadWeatherYear(String(today.getFullYear()));
-      const row = weather?.[ymd] || null;
+      const latestDate = Object.keys(weather || {})
+        .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
+        .sort()
+        .pop() || "";
+      const row = latestDate ? weather[latestDate] : null;
       let workCount = 0;
       try {
         const monthly = await loadJSON("/data/monthly-work-index.json");
-        const daySources = monthly?.months?.[ymd.slice(0, 7)]?.days?.[ymd] || {};
+        const daySources = monthly?.months?.[latestDate.slice(0, 7)]?.days?.[latestDate] || {};
         workCount = Object.values(daySources).reduce((sum, count) => sum + Number(count || 0), 0);
       } catch (error) {
         workCount = 0;
       }
-      return { ymd, row, workCount };
+      return { ymd: latestDate, row, workCount };
     }
 
     function renderWeatherCard(status) {
@@ -472,11 +475,11 @@
       card.className = `ops-card ${row && Number(row.precip || 0) >= 10 ? "ops-card--warn" : "ops-card--info"}`;
       card.innerHTML = `
         <div class="ops-card__label">天候・作業</div>
-        <div class="ops-card__value">${icon} ${weatherType}</div>
+        <div class="ops-card__value">${status?.ymd || "日付不明"} ${icon} ${weatherType}</div>
         <ul class="ops-card__list">
-          <li>降水量：${row ? `${Number(row.precip || 0).toFixed(1)}mm` : "データなし"}</li>
+          <li>${row ? `${Number(row.tmax || 0).toFixed(1)}℃／${Number(row.tmin || 0).toFixed(1)}℃　${Number(row.precip || 0).toFixed(1)}mm` : "気象データなし"}</li>
           <li>作業見込み：${workability}</li>
-          <li>今日の作業記録：${status?.workCount || 0}件</li>
+          <li>対象日の作業記録：${status?.workCount || 0}件</li>
         </ul>
       `;
     }
@@ -492,6 +495,8 @@
       }
 
       renderHeader();
+      const dashboardTitle = document.querySelector(".ops-dashboard__title");
+      if (dashboardTitle) dashboardTitle.textContent = `${toYmd(new Date())}の山本農園`;
       document.getElementById("ops-dashboard").style.display = "block";
       document.getElementById("menu-area").style.display = "block";
 
