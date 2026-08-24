@@ -144,6 +144,47 @@ function calcSeedDiscardQuantity(seedRef, discardSeedRows = [], legacyNurseryRow
   return directDiscard + legacyDiscard;
 }
 
+function splitSeedRefs(value) {
+  return String(value || "")
+    .split("/")
+    .map(ref => ref.trim())
+    .filter(Boolean);
+}
+
+function buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows = [], nurseryRows = []) {
+  const remainingByRef = new Map();
+  const usedByRef = new Map();
+
+  (Array.isArray(seedRows) ? seedRows : []).forEach(row => {
+    const ref = String(row?.seedRef || "").trim();
+    if (!ref) return;
+    const seedCount = Number(row?.seedCount || 0);
+    const discarded = calcSeedDiscardQuantity(ref, discardSeedRows, nurseryRows);
+    remainingByRef.set(ref, Math.max(0, seedCount - discarded));
+    usedByRef.set(ref, 0);
+  });
+
+  const chronologicalPlantings = (Array.isArray(plantingRows) ? plantingRows : [])
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) => String(a.row?.plantDate || "").localeCompare(String(b.row?.plantDate || "")) || a.index - b.index);
+
+  chronologicalPlantings.forEach(({ row }) => {
+    let quantityToAllocate = Number(row?.quantity || 0);
+    if (!Number.isFinite(quantityToAllocate) || quantityToAllocate <= 0) return;
+
+    splitSeedRefs(row?.seedRef).forEach(ref => {
+      if (quantityToAllocate <= 0 || !remainingByRef.has(ref)) return;
+      const available = remainingByRef.get(ref) || 0;
+      const allocated = Math.min(available, quantityToAllocate);
+      remainingByRef.set(ref, available - allocated);
+      usedByRef.set(ref, (usedByRef.get(ref) || 0) + allocated);
+      quantityToAllocate -= allocated;
+    });
+  });
+
+  return { remainingByRef, usedByRef };
+}
+
 function bindVarietyModalPicker() {
   const btn = document.getElementById("openVarietyModalBtn");
   const clearBtn = document.getElementById("clearVarietyModalBtn");
@@ -232,18 +273,11 @@ async function updateSeedRefSelector() {
   const discardSeedRows = await loadCSV("logs/discard-seed/all.csv").catch(() => []);
 
   const list = seedRows.filter(r => r.varietyName === variety);
+  const { remainingByRef } = buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows, nurseryRows);
 
   for (const r of list) {
     const seedRef = r.seedRef;
-    const seedCount = Number(r.seedCount);
-
-    const planted = plantingRows
-      .filter(p => (p.seedRef || "").split("/").includes(seedRef))
-      .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-
-    const discarded = calcSeedDiscardQuantity(seedRef, discardSeedRows, nurseryRows);
-
-    const remaining = seedCount - planted - discarded;
+    const remaining = remainingByRef.get(seedRef) || 0;
 
     if (remaining <= 0) continue;
 
@@ -475,21 +509,11 @@ async function savePlantingInner() {
   // ===============================
   // ★ 残数チェック（複数ロットを順位順に消費）
   // ===============================
-  let remain = data.quantity;
+  const { remainingByRef } = buildSeedRemainingMap(seedRows, rows, discardSeedRows, nurseryRows);
+  let remain = Number(data.quantity || 0);
 
   for (const ref of data.seedRefs) {
-    const seedRow = seedRows.find(r => r.seedRef === ref);
-    if (!seedRow) continue;
-
-    const seedCount = Number(seedRow.seedCount);
-
-    const planted = rows
-      .filter(p => (p.seedRef || "").split("/").includes(ref))
-      .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-
-    const discarded = calcSeedDiscardQuantity(ref, discardSeedRows, nurseryRows);
-
-    const available = seedCount - planted - discarded;
+    const available = remainingByRef.get(ref) || 0;
 
     const use = Math.min(available, remain);
     remain -= use;
