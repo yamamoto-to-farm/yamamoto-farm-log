@@ -461,6 +461,10 @@ async function savePlantingInner() {
     alert("作業者は必須です");
     return;
   }
+  if (!Number.isFinite(data.quantity) || data.quantity <= 0) {
+    alert("植え付け株数は0より大きい数値で入力してください");
+    return;
+  }
 
   const notes = data.notes ? data.notes.replace(/[\r\n,]/g, " ") : "";
 
@@ -476,8 +480,6 @@ async function savePlantingInner() {
     `よろしいですか？`;
 
   if (!confirm(confirmMsg)) return;
-
-  showSaveModal("保存しています…");
 
   const seedRows = GLOBAL_SEED_ROWS;
 
@@ -511,9 +513,11 @@ async function savePlantingInner() {
   // ===============================
   const { remainingByRef } = buildSeedRemainingMap(seedRows, rows, discardSeedRows, nurseryRows);
   let remain = Number(data.quantity || 0);
+  let availableTotal = 0;
 
   for (const ref of data.seedRefs) {
     const available = remainingByRef.get(ref) || 0;
+    availableTotal += available;
 
     const use = Math.min(available, remain);
     remain -= use;
@@ -522,9 +526,16 @@ async function savePlantingInner() {
   }
 
   if (remain > 0) {
-    alert("選択した seedRef の残数が不足しています");
+    alert(
+      `選択した播種ロットの残数が不足しています。\n` +
+      `入力株数：${data.quantity.toLocaleString()} 株\n` +
+      `利用可能株数：${availableTotal.toLocaleString()} 株\n` +
+      `不足株数：${remain.toLocaleString()} 株`
+    );
     return;
   }
+
+  showSaveModal("保存しています…");
 
   // ===============================
   // ★ 重複チェック
