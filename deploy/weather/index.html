@@ -7,36 +7,182 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <style>
     .weather-detail-page {
-      max-width: 960px;
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 20px 16px 40px;
+      padding: 12px 16px 36px;
     }
-    .weather-detail-placeholder {
-      min-height: 220px;
-      padding: 24px;
+    .weather-period-card,
+    .weather-chart-card,
+    .weather-list-card {
+      margin-bottom: 14px;
+      padding: 18px;
       border: 1px solid #dfe7ef;
-      border-radius: 12px;
+      border-radius: 8px;
       background: #fff;
-      color: #5b6f87;
+    }
+    .weather-period-grid {
+      display: grid;
+      grid-template-columns: minmax(170px, 1fr) minmax(170px, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .weather-period-field {
+      display: grid;
+      gap: 4px;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .weather-period-field input {
+      min-height: 40px;
+      box-sizing: border-box;
+    }
+    .weather-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .weather-presets .secondary-btn {
+      padding: 7px 11px;
+      font-size: 13px;
+    }
+    .weather-compare-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 12px;
+      color: #475569;
+      font-size: 14px;
+    }
+    .weather-chart-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .weather-chart-heading h2 {
+      margin: 0;
+      color: #1f2937;
+      font-size: 20px;
+    }
+    .weather-chart-status {
+      color: #64748b;
+      font-size: 13px;
+    }
+    .weather-chart-wrap {
+      position: relative;
+      min-height: 400px;
+    }
+    .weather-summary-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .weather-summary-chip {
+      padding: 6px 10px;
+      border: 1px solid #dbe3ef;
+      border-radius: 999px;
+      background: #f8fbff;
+      color: #334155;
+      font-size: 13px;
+    }
+    .weather-list-card details summary {
+      color: #1f2937;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .weather-table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+    .weather-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+    }
+    .weather-table th,
+    .weather-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e6edf5;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .weather-table th:first-child,
+    .weather-table td:first-child {
+      text-align: left;
+    }
+    .weather-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 12px;
+    }
+    .weather-table a {
+      color: #2256a5;
+    }
+    @media (max-width: 720px) {
+      .weather-detail-page { padding: 10px 12px 28px; }
+      .weather-period-card,
+      .weather-chart-card,
+      .weather-list-card { padding: 14px 12px; }
+      .weather-period-grid { grid-template-columns: 1fr; }
+      .weather-period-grid .primary-btn { width: 100%; }
+      .weather-chart-heading { align-items: flex-start; flex-direction: column; }
+      .weather-chart-wrap { min-height: 330px; }
     }
   </style>
-  <script type="module">
-    import { verifyLocalAuth } from "/common/ui.js?v=1";
-    import { renderHeader } from "/common/header.js?v=1";
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const ok = await verifyLocalAuth();
-      if (!ok) return;
-      renderHeader();
-    });
-  </script>
 </head>
 <body>
-  <main class="weather-detail-page">
-    <h1>天候詳細</h1>
-    <section class="weather-detail-placeholder" aria-label="天候詳細の準備中">
-      詳細表示は準備中です。
+  <main id="weather-page" class="weather-detail-page" style="display:none;">
+    <h1 class="page-title">天候詳細</h1>
+
+    <section class="weather-period-card" aria-label="表示期間">
+      <div class="weather-period-grid">
+        <label class="weather-period-field" for="weather-start">開始日
+          <input id="weather-start" class="form-input" type="date">
+        </label>
+        <label class="weather-period-field" for="weather-end">終了日
+          <input id="weather-end" class="form-input" type="date">
+        </label>
+        <button id="weather-apply" class="primary-btn" type="button">表示する</button>
+      </div>
+      <div class="weather-presets" aria-label="期間プリセット">
+        <button class="secondary-btn" type="button" data-days="7">直近7日</button>
+        <button class="secondary-btn" type="button" data-days="30">直近30日</button>
+        <button class="secondary-btn" type="button" data-days="90">直近90日</button>
+      </div>
+      <label class="weather-compare-toggle" for="weather-compare-last-year">
+        <input id="weather-compare-last-year" type="checkbox" checked>
+        昨年同日を比較表示
+      </label>
+    </section>
+
+    <section class="weather-chart-card">
+      <div class="weather-chart-heading">
+        <h2>気温・降水量の推移</h2>
+        <span id="weather-chart-status" class="weather-chart-status"></span>
+      </div>
+      <div id="weather-summary-line" class="weather-summary-line"></div>
+      <div class="weather-chart-wrap">
+        <canvas id="weather-chart" aria-label="気温と降水量の推移グラフ" role="img"></canvas>
+      </div>
+    </section>
+
+    <section class="weather-list-card">
+      <details>
+        <summary>日別一覧</summary>
+        <div class="weather-table-wrap">
+          <table class="weather-table">
+            <thead><tr><th>日付</th><th>天気</th><th>最高</th><th>最低</th><th>降水量</th><th>昨年最高</th><th>昨年最低</th><th>昨年降水量</th></tr></thead>
+            <tbody id="weather-table-body"></tbody>
+          </table>
+        </div>
+      </details>
     </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="./weather.js?v=20260824-1"></script>
 </body>
 </html>
