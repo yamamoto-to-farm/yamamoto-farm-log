@@ -179,9 +179,13 @@
       font-size: 0.9rem;
     }
     #menu-area {
+      display: none;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px 20px;
       align-items: start;
+    }
+    #menu-area.menu-area--visible {
+      display: grid;
     }
     .menu-area__title {
       grid-column: 1 / -1;
@@ -465,8 +469,11 @@
     }
     .weather-day__temp,
     .weather-day__rain {
-      display: block;
+      display: inline;
       white-space: nowrap;
+    }
+    .weather-day__temp::after {
+      content: "　";
     }
     .weather-day__previous {
       display: block;
@@ -501,8 +508,8 @@
       .ops-dashboard__title {
         font-size: 20px;
       }
-      #menu-area {
-        display: block !important;
+      #menu-area.menu-area--visible {
+        display: block;
       }
       .menu-area__title {
         margin-bottom: 16px;
@@ -519,6 +526,13 @@
       .weather-day {
         padding: 6px 2px;
         font-size: 11px;
+      }
+      .weather-day__temp,
+      .weather-day__rain {
+        display: block;
+      }
+      .weather-day__temp::after {
+        content: "";
       }
       .menu-modal {
         padding: 10px;
@@ -1101,8 +1115,9 @@
               return `<a class="weather-day" href="/diary/index.html?date=${day.date}" title="${formatJapaneseYmd(day.date)}の作業日誌を開く">
                 <span class="weather-day__date">${formatJapaneseYmd(day.date)}</span>
                 <span class="weather-day__type">${row ? `${weatherIcon(type)} ${type}` : "-"}</span>
-                <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃　${Number(row.precip).toFixed(1)}mm` : "-"}</span>
-                <span class="weather-day__previous"><span class="weather-day__previous-label">昨年</span>${previousRow ? `${Number(previousRow.tmax).toFixed(1)}℃／${Number(previousRow.tmin).toFixed(1)}℃　${Number(previousRow.precip).toFixed(1)}mm` : "データなし"}</span>
+                <span class="weather-day__temp">${row ? `${Number(row.tmax).toFixed(1)}℃／${Number(row.tmin).toFixed(1)}℃` : "-"}</span>
+                <span class="weather-day__rain">${row ? `${Number(row.precip).toFixed(1)}mm` : ""}</span>
+                <span class="weather-day__previous"><span class="weather-day__previous-label">昨年</span>${previousRow ? `${Number(previousRow.tmax).toFixed(1)}℃／${Number(previousRow.tmin).toFixed(1)}℃<br>${Number(previousRow.precip).toFixed(1)}mm` : "データなし"}</span>
               </a>`;
             }).join("") : "<div class=\"weather-day\">気象データなし</div>"}
           </div>
@@ -1129,7 +1144,7 @@
       const dashboardTitle = document.querySelector(".ops-dashboard__title");
       if (dashboardTitle) dashboardTitle.textContent = `${formatJapaneseYmd(toYmd(new Date()))}の山本農園`;
       document.getElementById("ops-dashboard").style.display = "block";
-      document.getElementById("menu-area").style.display = "grid";
+      document.getElementById("menu-area").classList.add("menu-area--visible");
 
       const diaryStatus = await loadRecentDiaryStatus();
       renderDiaryCard(diaryStatus);
@@ -1247,7 +1262,7 @@
     </div>
   </div>
 
-  <div id="menu-area" style="display:none">
+  <div id="menu-area">
     <h2 class="menu-area__title">メニュー</h2>
   </div>
 
