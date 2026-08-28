@@ -909,6 +909,11 @@
       return `<details class="diary-card__work-details"><summary>作業内容を表示（${workList.length}件）</summary><ul class="diary-card__work-list">${items}</ul></details>`;
     }
 
+    function renderDiaryMemo(diary) {
+      const memo = String(diary?.memo || "").trim();
+      return memo ? `<p class="diary-card__memo"><strong>備考</strong><br>${escapeHtml(memo)}</p>` : "";
+    }
+
     function openDiaryPreviewModal(date, diary) {
       const modal = document.getElementById("diary-preview-modal");
       const content = document.getElementById("diary-preview-modal-content");
@@ -965,16 +970,17 @@
         try {
           const diary = await loadJSON(`/data/diary/${year}/${ymd}.json`);
           const workList = Array.isArray(diary?.work) ? diary.work : [];
-          statuses.push({ ymd, workCount: workList.length, diary });
+          const hasMemo = String(diary?.memo || "").trim().length > 0;
+          statuses.push({ ymd, workCount: workList.length, hasContent: workList.length > 0 || hasMemo, diary });
         } catch (error) {
-          statuses.push({ ymd, workCount: 0, diary: null });
+          statuses.push({ ymd, workCount: 0, hasContent: false, diary: null });
         }
       }
 
-      const recentEntries = statuses.filter(item => item.workCount > 0);
+      const recentEntries = statuses.filter(item => item.hasContent);
       const latestEntry = recentEntries.length ? recentEntries[0] : null;
       const monitoredEntries = statuses.filter(item => item.ymd !== toYmd(today));
-      const missingEntries = monitoredEntries.filter(item => item.workCount === 0);
+      const missingEntries = monitoredEntries.filter(item => !item.hasContent);
 
       return {
         missingCount: missingEntries.length,
@@ -998,6 +1004,7 @@
         ? `<button type="button" class="diary-card__date-button" data-diary-date="${status.latestEntry.ymd}">${latestDateText}の作業日誌</button>`
         : latestDateText;
       const workDetails = status?.latestEntry ? renderDiaryWorkDetails(status.latestEntry.diary) : "";
+      const diaryMemo = status?.latestEntry ? renderDiaryMemo(status.latestEntry.diary) : "";
       const missingEntries = Array.isArray(status?.missingEntries) ? status.missingEntries : [];
       const missingLinks = [...missingEntries].reverse().map(item =>
         `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
@@ -1010,9 +1017,9 @@
           <p class="diary-card__warning">確認が必要な日：<span class="diary-card__missing-links">${missingLinks}</span></p>
         ` : `
           <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateLink}</p>
-          ${workDetails}
+          ${workDetails}${diaryMemo}
         `}
-        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}${workDetails}</div>` : ""}
+        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}${workDetails}${diaryMemo}</div>` : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
