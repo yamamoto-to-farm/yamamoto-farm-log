@@ -184,6 +184,7 @@ function renderChart(rows, compareLastYear) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
       interaction: { mode: "index", intersect: false },
       plugins: { legend: { labels: { boxWidth: 10, font: { size: 13 } } } },
       scales: {
