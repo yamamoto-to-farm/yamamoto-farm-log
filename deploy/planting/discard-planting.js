@@ -217,10 +217,18 @@ export async function saveDiscard() {
           `備考: ${notesClean || "なし"}`
       );
 
-      setTimeout(() => (location.href = "../index.html"), 500);
+      resetDiscardInputs();
     },
     { once: true }
   );
+}
+
+function resetDiscardInputs() {
+  document.getElementById("totalBeds").value = "";
+  document.getElementById("tilledBeds").value = "";
+  document.getElementById("notes").value = "";
+  document.getElementById("discardRate").textContent = "-";
+  document.getElementById("discardQuantity").textContent = "-";
 }
 
 function getCurrentTimeText() {

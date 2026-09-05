@@ -688,7 +688,7 @@ function renderTable(rows) {
         const discardBtn = document.getElementById("planting-modal-discard-btn");
         if (discardBtn) {
           discardBtn.addEventListener("click", () => {
-            location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}`;
+            location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}&return=${encodeURIComponent(location.pathname + location.search)}`;
           });
         }
       }

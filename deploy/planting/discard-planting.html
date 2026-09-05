@@ -55,7 +55,7 @@
 
   <!-- ボタン -->
   <div class="button-row" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
-    <button class="secondary-btn unified-back-btn" type="button" onclick="history.back()">← 定植ページに戻る</button>
+    <button id="backBtn" class="secondary-btn unified-back-btn" type="button">← 元のページへ戻る</button>
     <button id="saveBtn" class="primary-btn">破棄ログを保存</button>
   </div>
 
@@ -76,9 +76,11 @@
   <!-- discard-planting.js -->
   <script type="module">
     import { initDiscardPage, saveDiscard } from "./discard-planting.js";
+    import { setupSmartBackButton } from "/common/navigation-back.js";
 
     window.addEventListener("DOMContentLoaded", () => {
       initDiscardPage();
+      setupSmartBackButton({ elementId: "backBtn", fallbackPath: "/list/list.html?mode=planting" });
     });
 
     document.getElementById("saveBtn").addEventListener("click", () => {
