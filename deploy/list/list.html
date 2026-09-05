@@ -188,7 +188,7 @@
     }
 
     body[data-list-mode="planting"] .log-scroll table {
-      min-width: 1260px;
+      min-width: 1500px;
     }
 
     body[data-list-mode="seed"] .log-scroll table {
@@ -255,6 +255,11 @@
     body[data-list-mode="planting"] .log-scroll th:nth-child(7),
     body[data-list-mode="planting"] .log-scroll td:nth-child(7) {
       width: 130px;
+    }
+
+    body[data-list-mode="planting"] .log-scroll th:nth-child(8),
+    body[data-list-mode="planting"] .log-scroll td:nth-child(8) {
+      width: 240px;
     }
 
     .log-scroll th,
@@ -498,7 +503,7 @@
     }
 
     td.management-cell {
-      white-space: normal;
+      white-space: nowrap;
     }
 
     .management-badge {
@@ -546,6 +551,7 @@
 
     .management-badge.is-muted {
       color: #6b7280;
+      text-decoration: none;
     }
 
     .work-history__period {

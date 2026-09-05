@@ -417,12 +417,15 @@ function buildManagementCell(row, rowIndex) {
   });
 
   if (otherCount) {
-    badges.push(`<button type="button" class="management-badge is-muted" data-row-index="${rowIndex}" data-work-type="__all" title="施肥・除草・かん水を含む全作業履歴">
-      他<span class="management-badge__count">${otherCount}</span>
-    </button>`);
+    badges.push(`<a class="management-badge is-muted" href="${buildWorkLogsUrl(row.field, start, end)}" title="施肥・除草・かん水を含む作業ログを開く">他<span class="management-badge__count">${otherCount}</span></a>`);
   }
 
   return badges.join("") || "-";
+}
+
+function buildWorkLogsUrl(field, start, end, type = "") {
+  const typeParam = type ? `&type=${type}` : "";
+  return `/fields/work-logs.html?field=${encodeURIComponent(field)}&start=${start}&end=${end}${typeParam}&return=${encodeURIComponent(location.pathname + location.search)}`;
 }
 
 // 薬剤・肥料名は圃場別JSONにしか無いため、モーダルを開いたときだけ取得する
@@ -453,22 +456,15 @@ async function loadFieldMaterialNames(type, field) {
 
 async function showManagementModal(row, type) {
   const { start, end, entries } = getManagementEntries(row);
-  const isAll = type === "__all";
   const target = MANAGEMENT_WORK_TYPES.find(item => item.type === type);
+  const list = entries.filter(entry => entry.type === type).slice().reverse();
 
-  const list = (isAll ? entries : entries.filter(entry => entry.type === type))
-    .slice()
-    .reverse();
-
-  const materialTypes = [...new Set(list.map(entry => entry.type))]
-    .filter(entryType => entryType === "pesticide" || entryType === "fertilizer");
-
-  const materialMaps = new Map(await Promise.all(
-    materialTypes.map(async entryType => [entryType, await loadFieldMaterialNames(entryType, row.field)])
-  ));
+  const materialNames = type === "pesticide" || type === "fertilizer"
+    ? await loadFieldMaterialNames(type, row.field)
+    : new Map();
 
   const itemsHtml = list.map(entry => {
-    const material = materialMaps.get(entry.type)?.get(entry.date) || "";
+    const material = materialNames.get(entry.date) || "";
     const detail = [entry.method, entry.machine, entry.worker].filter(Boolean).join(" ／ ");
 
     return `
@@ -483,14 +479,12 @@ async function showManagementModal(row, type) {
     `;
   }).join("");
 
-  const workLogsUrl = `/fields/work-logs.html?field=${encodeURIComponent(row.field)}&start=${start}&end=${end}${isAll ? "" : `&type=${type}`}&return=${encodeURIComponent(location.pathname + location.search)}`;
-
   showInfoModal(
-    `${isAll ? "作業履歴" : `${target.label}履歴`}：${row.field} / ${row.variety}`,
+    `${target.label}履歴：${row.field} / ${row.variety}`,
     `
       <p class="work-history__period">${start} 〜 ${end}（${list.length}件）</p>
       <ul class="work-history">${itemsHtml || "<li class='work-history__item'>記録がありません。</li>"}</ul>
-      <p style="margin-top:12px;"><a class="secondary-btn" href="${workLogsUrl}">作業ログページで開く</a></p>
+      <p style="margin-top:12px;"><a class="secondary-btn" href="${buildWorkLogsUrl(row.field, start, end, type)}">作業ログページで開く</a></p>
     `
   );
 }
@@ -579,7 +573,7 @@ function renderTable(rows) {
     });
   }
 
-  document.querySelectorAll(".management-badge").forEach(badge => {
+  document.querySelectorAll("button.management-badge").forEach(badge => {
     badge.addEventListener("click", () => {
       const target = sortedRows[Number(badge.dataset.rowIndex)];
       if (target) showManagementModal(target, badge.dataset.workType);
