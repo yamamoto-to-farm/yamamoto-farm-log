@@ -278,6 +278,31 @@
     .ops-card a {
       font-size: 14px;
     }
+    .ops-card__section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #e3e9f0;
+    }
+    .ops-card__section-title {
+      margin-bottom: 4px;
+      color: #1c2b3b;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .ops-alert-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 6px;
+      border-radius: 50%;
+      vertical-align: middle;
+    }
+    .ops-alert-dot--alert {
+      background: #dc2626;
+    }
+    .ops-alert-dot--warn {
+      background: #f59e0b;
+    }
     .diary-card__warning {
       margin: 0 0 10px;
       color: #b33d3d;
@@ -1060,13 +1085,16 @@
       }
     }
 
-    function renderScheduleCard(rows, plantingRows) {
+    function renderScheduleCard(rows, plantingRows, managementAlerts) {
       const card = document.getElementById("ops-schedule-card");
       if (!card) return;
       const preview = rows.slice(0, 3);
       const plannedPlantings = Array.isArray(plantingRows) ? plantingRows : [];
       const plantingFieldCount = new Set(plannedPlantings.map(row => row.field).filter(Boolean)).size;
-      card.className = `ops-card ${rows.length ? "ops-card--alert" : "ops-card--ok"}`;
+      const alerts = Array.isArray(managementAlerts) ? managementAlerts : [];
+      const criticalCount = alerts.filter(item => item.severity === "alert").length;
+
+      card.className = `ops-card ${criticalCount ? "ops-card--warn" : rows.length ? "ops-card--alert" : "ops-card--ok"}`;
       card.innerHTML = `
         <div class="ops-card__label">次の作業</div>
         <div class="ops-card__value">${rows.length}件</div>
@@ -1075,7 +1103,123 @@
           <li>今月の定植予定：${plannedPlantings.length}件（${plantingFieldCount}圃場）</li>
           <li><a href="/schedule/plan.html">→ 定植予定を見る</a></li>
         </ul>
+        ${alerts.length ? `
+          <div class="ops-card__section">
+            <div class="ops-card__section-title">管理作業の遅れ ${alerts.length}件${criticalCount ? `（要対応 ${criticalCount}）` : ""}</div>
+            <ul class="ops-card__list">
+              ${alerts.slice(0, 3).map(item => `<li><span class="ops-alert-dot ops-alert-dot--${item.severity}"></span>${item.field}：${item.reason}</li>`).join("")}
+              <li><a href="/list/list.html?mode=planting">→ 管理作業を確認する</a></li>
+            </ul>
+          </div>
+        ` : ""}
       `;
+    }
+
+    // 定植一覧の管理作業しきい値（防除・中耕）と同じ基準で遅れを抽出する
+    async function loadManagementAlerts() {
+      const today = todayYmd();
+
+      const [plantingRows, harvestRows, pesticideRows, intertillRows] = await Promise.all([
+        loadCSV("/logs/planting/all.csv").catch(() => []),
+        loadCSV("/logs/harvest/all.csv").catch(() => []),
+        loadCSV("/logs/pesticide/all.csv").catch(() => []),
+        loadCSV("/logs/intertill/all.csv").catch(() => [])
+      ]);
+
+      const harvestedRefs = new Set(
+        harvestRows.map(row => String(row.plantingRef || "").trim()).filter(Boolean)
+      );
+
+      const lastWorkByField = new Map();
+      const countByField = new Map();
+
+      const collect = (rows, type) => {
+        rows.forEach(row => {
+          const date = String(row.date || "").trim();
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+
+          splitFieldNames(row.field).forEach(field => {
+            const key = `${type}::${field}`;
+            if (!lastWorkByField.has(key) || lastWorkByField.get(key) < date) {
+              lastWorkByField.set(key, date);
+            }
+            if (!countByField.has(key)) countByField.set(key, []);
+            countByField.get(key).push(date);
+          });
+        });
+      };
+
+      collect(pesticideRows, "pesticide");
+      collect(intertillRows, "intertill");
+
+      const alerts = [];
+
+      plantingRows.forEach(row => {
+        const plantDate = String(row.plantDate || "").trim();
+        const field = String(row.field || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(plantDate) || !field) return;
+        if (plantDate > today) return;
+        if (harvestedRefs.has(String(row.plantingRef || "").trim())) return;
+
+        const daysFromPlanting = diffYmdDays(plantDate, today);
+        if (!Number.isFinite(daysFromPlanting)) return;
+
+        const inPeriod = date => date >= plantDate && date <= today;
+
+        const pesticideDates = (countByField.get(`pesticide::${field}`) || []).filter(inPeriod);
+        const intertillDates = (countByField.get(`intertill::${field}`) || []).filter(inPeriod);
+
+        if (!pesticideDates.length) {
+          if (daysFromPlanting >= 10) {
+            alerts.push({ field, severity: "alert", sortKey: 1000 + daysFromPlanting, reason: `防除未実施（定植${daysFromPlanting}日目）` });
+          }
+        } else {
+          const elapsed = diffYmdDays(pesticideDates[pesticideDates.length - 1], today);
+          if (elapsed >= 21) {
+            alerts.push({ field, severity: "alert", sortKey: 1000 + elapsed, reason: `防除から${elapsed}日` });
+          } else if (elapsed >= 14) {
+            alerts.push({ field, severity: "warn", sortKey: elapsed, reason: `防除から${elapsed}日` });
+          }
+        }
+
+        const dueIntertill = [14, 28].filter(day => daysFromPlanting >= day).length;
+        const shortage = dueIntertill - intertillDates.length;
+        if (shortage > 0) {
+          alerts.push({
+            field,
+            severity: shortage >= 2 ? "alert" : "warn",
+            sortKey: (shortage >= 2 ? 1000 : 0) + daysFromPlanting,
+            reason: `中耕${intertillDates.length}回（定植${daysFromPlanting}日目・予定${dueIntertill}回）`
+          });
+        }
+      });
+
+      // 同一圃場で同じ指摘が重複するため1つにまとめる
+      const unique = new Map();
+      alerts.forEach(item => {
+        const key = `${item.field}::${item.reason}`;
+        if (!unique.has(key)) unique.set(key, item);
+      });
+
+      return [...unique.values()].sort((a, b) => b.sortKey - a.sortKey);
+    }
+
+    function splitFieldNames(value) {
+      return String(value ?? "")
+        .split(/[／/,、]/)
+        .map(name => name.trim())
+        .filter(Boolean);
+    }
+
+    function todayYmd() {
+      return toYmd(new Date());
+    }
+
+    function diffYmdDays(fromYmd, toYmdText) {
+      const from = new Date(`${fromYmd}T00:00:00`);
+      const to = new Date(`${toYmdText}T00:00:00`);
+      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return NaN;
+      return Math.round((to - from) / 86400000);
     }
 
     async function loadPlantingStatus() {
@@ -1155,12 +1299,13 @@
 
       const diaryStatus = await loadRecentDiaryStatus();
       renderDiaryCard(diaryStatus);
-      const [scheduleRows, plantingRows, weatherStatus] = await Promise.all([
+      const [scheduleRows, plantingRows, weatherStatus, managementAlerts] = await Promise.all([
         loadScheduleStatus(),
         loadPlantingStatus(),
-        loadWeatherStatus()
+        loadWeatherStatus(),
+        loadManagementAlerts()
       ]);
-      renderScheduleCard(scheduleRows, plantingRows);
+      renderScheduleCard(scheduleRows, plantingRows, managementAlerts);
       renderWeatherCard(weatherStatus);
 
       const role = window.currentRole;
