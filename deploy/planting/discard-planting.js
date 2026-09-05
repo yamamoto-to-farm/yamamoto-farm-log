@@ -172,7 +172,7 @@ export async function saveDiscard() {
   rows.push({
     discardDate,
     plantingRef,
-    discardQty,
+    discardQuantity: discardQty,
     notes: notesClean,
     machine: window.currentMachine ?? "",
     human: window.currentHuman ?? ""
