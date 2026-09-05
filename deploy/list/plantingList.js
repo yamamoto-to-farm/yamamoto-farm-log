@@ -31,10 +31,10 @@ let initialized = false;
 let plantDateSortOrder = null; // null | asc | desc
 
 // 定植後の管理作業（圃場別に日付昇順で保持）
-// pesticide: 最終実施からの経過日数で判定 / intertill: 定植からの予定日で判定
+// badge: true のものだけ一覧にバッジ表示する
 const MANAGEMENT_WORK_TYPES = [
-  { type: "pesticide", label: "防除", csv: "/logs/pesticide/all.csv", warnDays: 14, alertDays: 21 },
-  { type: "intertill", label: "中耕", csv: "/logs/intertill/all.csv", scheduleDays: [14, 28] },
+  { type: "pesticide", label: "防除", csv: "/logs/pesticide/all.csv", badge: true, firstDueDays: 10, warnDays: 14, alertDays: 21 },
+  { type: "intertill", label: "中耕", csv: "/logs/intertill/all.csv", badge: true, scheduleDays: [14, 28] },
   { type: "fertilizer", label: "施肥", csv: "/logs/fertilizer/all.csv" },
   { type: "weeding", label: "除草", csv: "/logs/weeding/all.csv" },
   { type: "watering", label: "かん水", csv: "/logs/watering/all.csv" }
@@ -368,25 +368,19 @@ function buildManagementCell(row, rowIndex) {
   const today = parseYmdToUtcDate(todayLocalYmd());
   const daysFromPlanting = diffDays(parseYmdToUtcDate(start), parseYmdToUtcDate(end));
 
-  const badges = [];
-  let otherCount = 0;
-
-  MANAGEMENT_WORK_TYPES.forEach(config => {
-    const { type, label, warnDays, alertDays, scheduleDays } = config;
+  const badges = MANAGEMENT_WORK_TYPES.filter(config => config.badge).map(config => {
+    const { type, label, warnDays, alertDays, scheduleDays, firstDueDays } = config;
     const list = entries.filter(entry => entry.type === type);
 
-    // しきい値を持たない作業は件数だけをまとめて出す
-    if (!scheduleDays && !alertDays) {
-      otherCount += list.length;
-      return;
-    }
-
-    // 予定日を持つ作業は未実施でもバッジを出して遅れを見せる
     const dueCount = scheduleDays && Number.isFinite(daysFromPlanting)
       ? scheduleDays.filter(day => daysFromPlanting >= day).length
       : 0;
+    const isOverdueFirst = !list.length
+      && Number.isFinite(firstDueDays)
+      && Number.isFinite(daysFromPlanting)
+      && daysFromPlanting >= firstDueDays;
 
-    if (!list.length && !dueCount) return;
+    if (!list.length && !dueCount && !isOverdueFirst) return "";
 
     const lastDate = list.length ? list[list.length - 1].date : "";
     const elapsed = lastDate ? diffDays(parseYmdToUtcDate(lastDate), today) : null;
@@ -399,6 +393,9 @@ function buildManagementCell(row, rowIndex) {
       if (shortage >= 2) stateClass = " is-alert";
       else if (shortage === 1) stateClass = " is-warn";
       tooltip += `／定植${daysFromPlanting}日目・予定${dueCount}回（${scheduleDays.join("・")}日目）`;
+    } else if (isOverdueFirst) {
+      stateClass = " is-alert";
+      tooltip += `／定植${daysFromPlanting}日目で未実施（${firstDueDays}日以内に実施）`;
     } else if (Number.isFinite(elapsed)) {
       if (elapsed >= alertDays) stateClass = " is-alert";
       else if (elapsed >= warnDays) stateClass = " is-warn";
@@ -411,21 +408,47 @@ function buildManagementCell(row, rowIndex) {
       ? "未"
       : (stateClass ? `${elapsed}d` : "");
 
-    badges.push(`<button type="button" class="management-badge${stateClass}" data-row-index="${rowIndex}" data-work-type="${type}" title="${tooltip}">
+    return `<button type="button" class="management-badge${stateClass}" data-row-index="${rowIndex}" data-work-type="${type}" title="${tooltip}">
       ${label}<span class="management-badge__count">${list.length}</span>${elapsedText ? `<span class="management-badge__elapsed">${elapsedText}</span>` : ""}
-    </button>`);
-  });
+    </button>`;
+  }).filter(Boolean).join("");
 
-  if (otherCount) {
-    badges.push(`<a class="management-badge is-muted" href="${buildWorkLogsUrl(row.field, start, end)}" title="施肥・除草・かん水を含む作業ログを開く">他<span class="management-badge__count">${otherCount}</span></a>`);
-  }
-
-  return badges.join("") || "-";
+  return badges || `<span class="management-cell__empty">-</span>`;
 }
 
 function buildWorkLogsUrl(field, start, end, type = "") {
   const typeParam = type ? `&type=${type}` : "";
   return `/fields/work-logs.html?field=${encodeURIComponent(field)}&start=${start}&end=${end}${typeParam}&return=${encodeURIComponent(location.pathname + location.search)}`;
+}
+
+function showManagementHelpModal() {
+  showInfoModal(
+    "管理作業列の見方",
+    `
+      <ul class="work-history">
+        <li class="work-history__item">
+          <div class="work-history__head"><span class="work-history__label">防除・中耕のバッジ</span></div>
+          <div class="work-history__detail">クリックすると、その作業の履歴を表示します。数字は定植日から現在（収穫済みは初収穫日）までの実施回数です。</div>
+        </li>
+        <li class="work-history__item">
+          <div class="work-history__head"><span class="work-history__label">セルのクリック</span></div>
+          <div class="work-history__detail">バッジ以外の場所をクリックすると、同じ期間の全作業（施肥・除草・かん水などを含む）を作業ログページで表示します。</div>
+        </li>
+        <li class="work-history__item">
+          <div class="work-history__head"><span class="work-history__label">色の意味</span></div>
+          <div class="work-history__detail">
+            <span class="management-badge">白</span> 通常<br>
+            <span class="management-badge is-warn">黄</span> 注意：防除は最終実施から14日以上、中耕は予定より1回不足<br>
+            <span class="management-badge is-alert">赤</span> 警告：防除は最終実施から21日以上または定植10日以上で未実施、中耕は予定より2回不足
+          </div>
+        </li>
+        <li class="work-history__item">
+          <div class="work-history__head"><span class="work-history__label">中耕の予定</span></div>
+          <div class="work-history__detail">定植から14日目・28日目を目安とし、経過日数に応じて予定回数と実績を比較します。</div>
+        </li>
+      </ul>
+    `
+  );
 }
 
 // 薬剤・肥料名は圃場別JSONにしか無いため、モーダルを開いたときだけ取得する
@@ -513,7 +536,7 @@ function renderTable(rows) {
           <th>播種日</th>
           <th>育苗日数</th>
           <th>定植後経過日数</th>
-          <th class="management-cell">管理作業</th>
+          <th class="management-cell">管理作業<button type="button" id="management-help-btn" class="management-help" title="管理作業列の見方" aria-label="管理作業列の見方">?</button></th>
         </tr>
       </thead>
       <tbody>
@@ -536,6 +559,7 @@ function renderTable(rows) {
     totalAreaTan += areaTan;
 
     const ref = r.plantingRef ?? "";
+    const period = getManagementEntries(r);
 
     html += `<tr>
       <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
@@ -545,7 +569,7 @@ function renderTable(rows) {
       <td>${getSeedDates(r.seedRef)}</td>
       <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
       <td>${getPostPlantingDays(r.plantDate, ref)}</td>
-      <td class="management-cell">${buildManagementCell(r, rowIndex)}</td>
+      <td class="management-cell" data-work-logs-url="${period.start ? buildWorkLogsUrl(r.field, period.start, period.end) : ""}" title="クリックでこの期間の全作業を表示">${buildManagementCell(r, rowIndex)}</td>
     </tr>`;
   });
 
@@ -574,11 +598,23 @@ function renderTable(rows) {
   }
 
   document.querySelectorAll("button.management-badge").forEach(badge => {
-    badge.addEventListener("click", () => {
+    badge.addEventListener("click", (event) => {
+      event.stopPropagation();
       const target = sortedRows[Number(badge.dataset.rowIndex)];
       if (target) showManagementModal(target, badge.dataset.workType);
     });
   });
+
+  document.querySelectorAll("td.management-cell").forEach(cell => {
+    const url = cell.dataset.workLogsUrl;
+    if (!url) return;
+    cell.classList.add("is-clickable");
+    cell.addEventListener("click", () => {
+      location.href = url;
+    });
+  });
+
+  document.getElementById("management-help-btn")?.addEventListener("click", showManagementHelpModal);
 
   document.querySelectorAll(".plant-date-cell").forEach(cell => {
     cell.addEventListener("click", () => {
