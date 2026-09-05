@@ -30,6 +30,17 @@ let filterData = {};
 let initialized = false;
 let plantDateSortOrder = null; // null | asc | desc
 
+// 定植後の管理作業（圃場別に日付昇順で保持）
+const MANAGEMENT_WORK_TYPES = [
+  { type: "pesticide", label: "防除", csv: "/logs/pesticide/all.csv" },
+  { type: "intertill", label: "中耕", csv: "/logs/intertill/all.csv" },
+  { type: "fertilizer", label: "施肥", csv: "/logs/fertilizer/all.csv" },
+  { type: "weeding", label: "除草", csv: "/logs/weeding/all.csv" },
+  { type: "watering", label: "かん水", csv: "/logs/watering/all.csv" }
+];
+
+let managementLogsByField = new Map();
+
 export async function renderPlantingList() {
   if (!initialized) {
     await initPlantingListPage();
@@ -51,6 +62,7 @@ async function initPlantingListPage() {
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
   harvestStartDateMap = buildHarvestStartDateMap(harvestRows);
+  managementLogsByField = await loadManagementLogs();
 
   const ymMap = {};
   plantingRows.forEach(r => {
@@ -288,6 +300,124 @@ function getPlantDetail(plantingRef) {
   };
 }
 
+// ===============================
+// 管理作業（定植後の防除・中耕など）
+// ===============================
+async function loadManagementLogs() {
+  const byField = new Map();
+
+  await Promise.all(MANAGEMENT_WORK_TYPES.map(async ({ type, label, csv }) => {
+    const rows = normalizeKeys(await loadCSV(csv).catch(() => []));
+
+    rows.forEach(row => {
+      const date = String(row.date || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+
+      splitFieldNames(row.field).forEach(field => {
+        if (!byField.has(field)) byField.set(field, []);
+        byField.get(field).push({
+          type,
+          label,
+          date,
+          workType: String(row.workType || "").trim(),
+          method: String(row.method || "").trim(),
+          machine: String(row.machine || "").trim(),
+          worker: String(row.worker || "").trim()
+        });
+      });
+    });
+  }));
+
+  byField.forEach(list => list.sort((a, b) => a.date.localeCompare(b.date)));
+  return byField;
+}
+
+function splitFieldNames(value) {
+  return String(value ?? "")
+    .split(/[／/,、]/)
+    .map(name => name.trim())
+    .filter(Boolean);
+}
+
+// 定植日〜（初収穫日 or 本日）の期間に入る作業のみ対象にする
+function getManagementEntries(row) {
+  const start = String(row?.plantDate || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { start: "", end: "", entries: [] };
+
+  const harvestStart = harvestStartDateMap[String(row?.plantingRef ?? "").trim()];
+  const end = harvestStart instanceof Date
+    ? formatUtcDateToYmd(harvestStart)
+    : todayLocalYmd();
+
+  const entries = (managementLogsByField.get(String(row?.field || "").trim()) || [])
+    .filter(entry => entry.date >= start && entry.date <= end);
+
+  return { start, end, entries };
+}
+
+function formatUtcDateToYmd(date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function buildManagementCell(row, rowIndex) {
+  const { entries } = getManagementEntries(row);
+  if (!entries.length) return "-";
+
+  const today = parseYmdToUtcDate(todayLocalYmd());
+
+  return MANAGEMENT_WORK_TYPES.map(({ type, label }) => {
+    const list = entries.filter(entry => entry.type === type);
+    if (!list.length) return "";
+
+    const lastDate = list[list.length - 1].date;
+    const elapsed = diffDays(parseYmdToUtcDate(lastDate), today);
+    const elapsedText = Number.isFinite(elapsed)
+      ? (elapsed === 0 ? "本日" : `${elapsed}日前`)
+      : "";
+
+    return `<button type="button" class="management-badge" data-row-index="${rowIndex}" data-work-type="${type}" title="${label}の履歴を表示">
+      ${label} ${list.length}${elapsedText ? `<span class="management-badge__elapsed">（${elapsedText}）</span>` : ""}
+    </button>`;
+  }).filter(Boolean).join(" ");
+}
+
+function showManagementModal(row, type) {
+  const { start, end, entries } = getManagementEntries(row);
+  const target = MANAGEMENT_WORK_TYPES.find(item => item.type === type);
+  const list = entries.filter(entry => entry.type === type).slice().reverse();
+
+  const rowsHtml = list.map(entry => `
+    <tr>
+      <td>${entry.date}</td>
+      <td>${escapeHtml(entry.workType || target.label)}</td>
+      <td>${escapeHtml([entry.method, entry.machine].filter(Boolean).join(" / ") || "-")}</td>
+      <td>${escapeHtml(entry.worker || "-")}</td>
+    </tr>
+  `).join("");
+
+  const workLogsUrl = `/fields/work-logs.html?field=${encodeURIComponent(row.field)}&start=${start}&end=${end}&type=${type}&return=${encodeURIComponent(location.pathname + location.search)}`;
+
+  showInfoModal(
+    `${target.label}履歴：${row.field} / ${row.variety}`,
+    `
+      <p>対象期間：${start} 〜 ${end}（${list.length}件）</p>
+      <table>
+        <thead><tr><th>日付</th><th>作業</th><th>方法 / 機械</th><th>作業者</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <p style="margin-top:12px;"><a class="secondary-btn" href="${workLogsUrl}">作業ログページで開く</a></p>
+    `
+  );
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function renderTable(rows) {
 
   const tableArea = document.getElementById("table-area");
@@ -304,6 +434,7 @@ function renderTable(rows) {
           <th>播種日</th>
           <th>育苗日数</th>
           <th>定植後経過日数</th>
+          <th class="management-cell">管理作業</th>
         </tr>
       </thead>
       <tbody>
@@ -312,7 +443,7 @@ function renderTable(rows) {
   let totalQuantity = 0;
   let totalAreaTan = 0;
 
-  sortedRows.forEach(r => {
+  sortedRows.forEach((r, rowIndex) => {
 
     const spacing = {
       row: Number(r.spacingRow || 0),
@@ -335,6 +466,7 @@ function renderTable(rows) {
       <td>${getSeedDates(r.seedRef)}</td>
       <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
       <td>${getPostPlantingDays(r.plantDate, ref)}</td>
+      <td class="management-cell">${buildManagementCell(r, rowIndex)}</td>
     </tr>`;
   });
 
@@ -361,6 +493,13 @@ function renderTable(rows) {
       renderTable(rows);
     });
   }
+
+  document.querySelectorAll(".management-badge").forEach(badge => {
+    badge.addEventListener("click", () => {
+      const target = sortedRows[Number(badge.dataset.rowIndex)];
+      if (target) showManagementModal(target, badge.dataset.workType);
+    });
+  });
 
   document.querySelectorAll(".plant-date-cell").forEach(cell => {
     cell.addEventListener("click", () => {
