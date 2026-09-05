@@ -544,7 +544,7 @@ function renderTable(rows) {
           <th>播種日</th>
           <th>育苗日数</th>
           <th>定植後経過日数</th>
-          <th class="management-cell">管理作業<button type="button" id="management-help-btn" class="management-help" title="管理作業列の見方" aria-label="管理作業列の見方">?</button></th>
+          <th class="management-cell print-hide">管理作業<button type="button" id="management-help-btn" class="management-help" title="管理作業列の見方" aria-label="管理作業列の見方">?</button></th>
         </tr>
       </thead>
       <tbody>
@@ -577,7 +577,7 @@ function renderTable(rows) {
       <td>${getSeedDates(r.seedRef)}</td>
       <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
       <td>${getPostPlantingDays(r.plantDate, ref)}</td>
-      <td class="management-cell" data-work-logs-url="${period.start ? buildWorkLogsUrl(r.field, period.start, period.end) : ""}" title="クリックでこの期間の全作業を表示">${buildManagementCell(r, rowIndex)}</td>
+      <td class="management-cell print-hide" data-work-logs-url="${period.start ? buildWorkLogsUrl(r.field, period.start, period.end) : ""}" title="クリックでこの期間の全作業を表示">${buildManagementCell(r, rowIndex)}</td>
     </tr>`;
   });
 
