@@ -345,17 +345,16 @@ function splitFieldNames(value) {
 // 定植日〜（初収穫日 or 本日）の期間に入る作業のみ対象にする
 function getManagementEntries(row) {
   const start = String(row?.plantDate || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { start: "", end: "", entries: [] };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { start: "", end: "", entries: [], isHarvested: false };
 
   const harvestStart = harvestStartDateMap[String(row?.plantingRef ?? "").trim()];
-  const end = harvestStart instanceof Date
-    ? formatUtcDateToYmd(harvestStart)
-    : todayLocalYmd();
+  const isHarvested = harvestStart instanceof Date;
+  const end = isHarvested ? formatUtcDateToYmd(harvestStart) : todayLocalYmd();
 
   const entries = (managementLogsByField.get(String(row?.field || "").trim()) || [])
     .filter(entry => entry.date >= start && entry.date <= end);
 
-  return { start, end, entries };
+  return { start, end, entries, isHarvested };
 }
 
 function formatUtcDateToYmd(date) {
@@ -363,7 +362,7 @@ function formatUtcDateToYmd(date) {
 }
 
 function buildManagementCell(row, rowIndex) {
-  const { start, end, entries } = getManagementEntries(row);
+  const { start, end, entries, isHarvested } = getManagementEntries(row);
   if (!start) return "-";
 
   const today = parseYmdToUtcDate(todayLocalYmd());
@@ -372,6 +371,15 @@ function buildManagementCell(row, rowIndex) {
   const badges = MANAGEMENT_WORK_TYPES.filter(config => config.badge).map(config => {
     const { type, label, warnDays, alertDays, scheduleDays, firstDueDays } = config;
     const list = entries.filter(entry => entry.type === type);
+
+    // 収穫済みは過去ログの未入力もあるため、実績表示のみとして警告しない
+    if (isHarvested) {
+      if (!list.length) return "";
+      const lastDate = list[list.length - 1].date;
+      return `<button type="button" class="management-badge" data-row-index="${rowIndex}" data-work-type="${type}" title="${label}：全${list.length}回／最終 ${lastDate}／収穫済み">
+        ${label}<span class="management-badge__count">${list.length}</span>
+      </button>`;
+    }
 
     const dueCount = scheduleDays && Number.isFinite(daysFromPlanting)
       ? scheduleDays.filter(day => daysFromPlanting >= day).length
@@ -446,6 +454,10 @@ function showManagementHelpModal() {
         <li class="work-history__item">
           <div class="work-history__head"><span class="work-history__label">中耕の予定</span></div>
           <div class="work-history__detail">定植から14日目・28日目を目安とし、経過日数に応じて予定回数と実績を比較します。</div>
+        </li>
+        <li class="work-history__item">
+          <div class="work-history__head"><span class="work-history__label">収穫済みのロット</span></div>
+          <div class="work-history__detail">収穫記録があるロットは色分けの対象外です（過去の作業ログが未入力の場合があるため、回数のみ表示します）。</div>
         </li>
       </ul>
     `
