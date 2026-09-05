@@ -1119,16 +1119,25 @@
     async function loadManagementAlerts() {
       const today = todayYmd();
 
-      const [plantingRows, harvestRows, pesticideRows, intertillRows] = await Promise.all([
+      const [plantingRows, harvestRows, pesticideRows, intertillRows, discardRows] = await Promise.all([
         loadCSV("/logs/planting/all.csv").catch(() => []),
         loadCSV("/logs/harvest/all.csv").catch(() => []),
         loadCSV("/logs/pesticide/all.csv").catch(() => []),
-        loadCSV("/logs/intertill/all.csv").catch(() => [])
+        loadCSV("/logs/intertill/all.csv").catch(() => []),
+        loadCSV("/logs/discard-planting/all.csv").catch(() => [])
       ]);
 
       const harvestedRefs = new Set(
         harvestRows.map(row => String(row.plantingRef || "").trim()).filter(Boolean)
       );
+
+      const discardedByRef = new Map();
+      discardRows.forEach(row => {
+        const ref = String(row.plantingRef || "").trim();
+        const quantity = Number(row.discardQuantity || 0);
+        if (!ref || !Number.isFinite(quantity)) return;
+        discardedByRef.set(ref, (discardedByRef.get(ref) || 0) + quantity);
+      });
 
       const lastWorkByField = new Map();
       const countByField = new Map();
@@ -1159,7 +1168,13 @@
         const field = String(row.field || "").trim();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(plantDate) || !field) return;
         if (plantDate > today) return;
-        if (harvestedRefs.has(String(row.plantingRef || "").trim())) return;
+
+        const ref = String(row.plantingRef || "").trim();
+        if (harvestedRefs.has(ref)) return;
+
+        const quantity = Number(row.quantity || 0);
+        const discarded = Number(discardedByRef.get(ref) || 0);
+        if (quantity > 0 && discarded >= quantity) return;
 
         const daysFromPlanting = diffYmdDays(plantDate, today);
         if (!Number.isFinite(daysFromPlanting)) return;

@@ -26,6 +26,7 @@ let fieldData = [];
 let varietyData = [];
 let canDiscard = false;
 let harvestStartDateMap = {};
+let discardQuantityMap = {};
 
 let filterData = {};
 let initialized = false;
@@ -61,6 +62,9 @@ async function initPlantingListPage() {
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
   harvestRows = normalizeKeys(await loadCSV("/logs/harvest/all.csv").catch(() => []));
+  discardQuantityMap = buildDiscardQuantityMap(
+    normalizeKeys(await loadCSV("/logs/discard-planting/all.csv").catch(() => []))
+  );
 
   fieldData = await loadJSON("/data/fields.json");
   varietyData = await loadJSON("/data/varieties.json");
@@ -287,10 +291,14 @@ function getPlantDetail(plantingRef) {
     };
   }
 
+  const discarded = Number(discardQuantityMap[plantingRef] || 0);
+  const remaining = Math.max(0, Number(row.quantity || 0) - discarded);
+
   return {
     title: `定植情報：${plantingRef}`,
     html: `
       <p><b>株数：</b>${row.quantity}</p>
+      ${discarded ? `<p><b>破棄株数：</b>${discarded.toLocaleString()}（残 ${remaining.toLocaleString()} 株）</p>` : ""}
       <p><b>株間：</b>${row.spacingRow} cm</p>
       <p><b>畝間：</b>${row.spacingBed} cm</p>
       <p><b>トレイ種別：</b>${row.trayType}</p>
@@ -345,16 +353,36 @@ function splitFieldNames(value) {
 // 定植日〜（初収穫日 or 本日）の期間に入る作業のみ対象にする
 function getManagementEntries(row) {
   const start = String(row?.plantDate || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { start: "", end: "", entries: [], isHarvested: false };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) {
+    return { start: "", end: "", entries: [], isHarvested: false, isFullyDiscarded: false };
+  }
 
-  const harvestStart = harvestStartDateMap[String(row?.plantingRef ?? "").trim()];
+  const ref = String(row?.plantingRef ?? "").trim();
+  const harvestStart = harvestStartDateMap[ref];
   const isHarvested = harvestStart instanceof Date;
   const end = isHarvested ? formatUtcDateToYmd(harvestStart) : todayLocalYmd();
+
+  const quantity = Number(row?.quantity || 0);
+  const discarded = Number(discardQuantityMap[ref] || 0);
+  const isFullyDiscarded = quantity > 0 && discarded >= quantity;
 
   const entries = (managementLogsByField.get(String(row?.field || "").trim()) || [])
     .filter(entry => entry.date >= start && entry.date <= end);
 
-  return { start, end, entries, isHarvested };
+  return { start, end, entries, isHarvested, isFullyDiscarded };
+}
+
+function buildDiscardQuantityMap(rows) {
+  const map = {};
+
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const ref = String(row?.plantingRef || "").trim();
+    const quantity = Number(row?.discardQuantity || 0);
+    if (!ref || !Number.isFinite(quantity)) return;
+    map[ref] = (map[ref] || 0) + quantity;
+  });
+
+  return map;
 }
 
 function formatUtcDateToYmd(date) {
@@ -362,8 +390,12 @@ function formatUtcDateToYmd(date) {
 }
 
 function buildManagementCell(row, rowIndex) {
-  const { start, end, entries, isHarvested } = getManagementEntries(row);
+  const { start, end, entries, isHarvested, isFullyDiscarded } = getManagementEntries(row);
   if (!start) return "-";
+
+  if (isFullyDiscarded) {
+    return `<span class="management-cell__empty" title="全量破棄済みのため対象外">破棄済</span>`;
+  }
 
   const today = parseYmdToUtcDate(todayLocalYmd());
   const daysFromPlanting = diffDays(parseYmdToUtcDate(start), parseYmdToUtcDate(end));
@@ -572,20 +604,24 @@ function renderTable(rows) {
       bed: Number(r.spacingBed || 0)
     };
 
-    const areaM2 = calcAreaM2(r.quantity, spacing.row, spacing.bed);
-    const areaTan = calcAreaTan(areaM2);
+    const ref = r.plantingRef ?? "";
+    const plantedQuantity = Number(r.quantity || 0);
+    const discarded = Number(discardQuantityMap[ref] || 0);
+    const remainingQuantity = Math.max(0, plantedQuantity - discarded);
 
-    totalQuantity += Number(r.quantity || 0);
+    const areaTan = calcAreaTan(calcAreaM2(remainingQuantity, spacing.row, spacing.bed));
+    const plantedAreaTan = calcAreaTan(calcAreaM2(plantedQuantity, spacing.row, spacing.bed));
+
+    totalQuantity += remainingQuantity;
     totalAreaTan += areaTan;
 
-    const ref = r.plantingRef ?? "";
     const period = getManagementEntries(r);
 
     html += `<tr>
       <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
       <td><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
       <td><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
-      <td>${areaTan.toFixed(2)}</td>
+      <td>${areaTan.toFixed(2)}${discarded ? `<span class="area-discarded" title="破棄 ${discarded.toLocaleString()}株を除いた現存面積">定植時 ${plantedAreaTan.toFixed(2)}</span>` : ""}</td>
       <td>${getSeedDates(r.seedRef)}</td>
       <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
       <td class="print-hide">${getPostPlantingDays(r.plantDate, ref)}</td>
@@ -601,7 +637,8 @@ function renderTable(rows) {
   document.getElementById("countArea").textContent = `${rows.length} 件`;
   document.getElementById("summaryArea").innerHTML =
     `株数合計：${totalQuantity.toLocaleString()} 株　
-     面積合計：${totalAreaTan.toFixed(2)} 反`;
+     面積合計：${totalAreaTan.toFixed(2)} 反　
+     <span class="summary-note">（破棄株数を除いた現存分）</span>`;
 
   window.dispatchEvent(new CustomEvent("list:summary-updated"));
 
