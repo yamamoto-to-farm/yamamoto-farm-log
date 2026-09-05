@@ -52,8 +52,7 @@ export async function initPlantingPage() {
   GLOBAL_SEED_ROWS = await loadCSV("logs/seed/all.csv");
 
   await setupVarietySelector();
-  setupInputModeSwitch();
-  setupTrayAutoCalc();
+  applyTrayTypeFromSeedRefs();
 }
 
 
@@ -343,137 +342,124 @@ function updateSeedRefOrderLabels() {
 
 
 // ===============================
-// 株数 / 枚数 切り替え
+// セルトレイ種別ごとの入力欄（播種ロットから自動生成）
 // ===============================
-function setupInputModeSwitch() {
-  const radios = document.querySelectorAll("input[name='mode']");
-  radios.forEach(r => {
-    r.addEventListener("change", () => refreshQuantityInputs());
-  });
-
-  document
-    .querySelectorAll("input[name='trayType']")
-    .forEach(cb => cb.addEventListener("change", () => {
-      ensureTrayTypeSelected(cb);
-      refreshQuantityInputs();
-    }));
-
-  refreshQuantityInputs();
-}
-
-function getSelectedTrayTypes() {
-  return [...document.querySelectorAll("input[name='trayType']:checked")]
-    .map(cb => Number(cb.value))
-    .filter(type => SUPPORTED_TRAY_TYPES.includes(type));
-}
-
-// トレイ種別は最低1つ必要なので、全解除された場合は直前の操作を取り消す
-function ensureTrayTypeSelected(changedCheckbox) {
-  if (getSelectedTrayTypes().length === 0 && changedCheckbox) {
-    changedCheckbox.checked = true;
-  }
-}
-
-function setTrayTypeSelection(types) {
-  const target = types.filter(type => SUPPORTED_TRAY_TYPES.includes(type));
-  if (!target.length) return;
-
-  document.querySelectorAll("input[name='trayType']").forEach(cb => {
-    cb.checked = target.includes(Number(cb.value));
-  });
-}
-
-// 選択中の播種ロットのトレイ種別からセルトレイ種別を自動選択する
-function applyTrayTypeFromSeedRefs() {
-  const types = [...new Set(
+function getActiveTrayTypes() {
+  return [...new Set(
     seedRefOrder
       .map(ref => SEED_TRAY_TYPE_BY_REF.get(ref))
       .filter(type => SUPPORTED_TRAY_TYPES.includes(type))
   )].sort((a, b) => a - b);
+}
 
-  const note = document.getElementById("trayTypeNote");
+// 種別が不明なロットは先頭グループにまとめる
+function getSeedRefsByTrayType(types) {
+  const unknownRefs = seedRefOrder.filter(ref => !SEED_TRAY_TYPE_BY_REF.has(ref));
 
-  if (types.length) setTrayTypeSelection(types);
+  return types.map((type, index) => {
+    const refs = seedRefOrder.filter(ref => SEED_TRAY_TYPE_BY_REF.get(ref) === type);
+    return index === 0 ? [...refs, ...unknownRefs] : refs;
+  });
+}
 
-  if (note) {
-    if (types.length > 1) {
-      note.textContent = `選択した播種ロットに ${types.join("穴・")}穴 が含まれるため、両方を選択しました。種別ごとに枚数を入力してください。`;
-      note.style.display = "block";
-    } else if (types.length === 1) {
-      note.textContent = `播種ロットに合わせて ${types[0]}穴 を自動選択しました。`;
-      note.style.display = "block";
-    } else {
-      note.style.display = "none";
-    }
+function applyTrayTypeFromSeedRefs() {
+  const types = getActiveTrayTypes();
+  const display = document.getElementById("trayTypeDisplay");
+
+  if (display) {
+    display.textContent = types.length
+      ? `${types.map(type => `${type}穴`).join("・")}（播種ロットから自動設定）`
+      : "播種ロットを選択すると自動で決まります";
   }
 
-  refreshQuantityInputs();
+  renderQuantityInputs(types);
 }
 
-function refreshQuantityInputs() {
-  const selectedTypes = getSelectedTrayTypes();
-  const isMixed = selectedTypes.length > 1;
-  const mode = document.querySelector("input[name='mode']:checked")?.value || "stock";
+function renderQuantityInputs(types) {
+  const container = document.getElementById("quantityInputs");
+  if (!container) return;
 
-  const singleArea = document.getElementById("single-tray-input");
-  const mixedArea = document.getElementById("mixed-tray-input");
-  if (singleArea) singleArea.style.display = isMixed ? "none" : "block";
-  if (mixedArea) mixedArea.style.display = isMixed ? "block" : "none";
+  const signature = types.join(",");
+  if (container.dataset.trayTypes === signature) return;
+  container.dataset.trayTypes = signature;
 
-  document.getElementById("stock-input").style.display =
-    !isMixed && mode === "stock" ? "block" : "none";
-  document.getElementById("tray-input").style.display =
-    !isMixed && mode === "tray" ? "block" : "none";
-
-  SUPPORTED_TRAY_TYPES.forEach(type => {
-    const wrapper = document.getElementById(`trayCount${type}`)?.closest(".form-field");
-    if (wrapper) wrapper.style.display = selectedTypes.includes(type) ? "block" : "none";
-  });
-
-  updateTrayCalcDisplay();
-}
-
-// ===============================
-// 枚数 → 株数 自動計算
-// ===============================
-function setupTrayAutoCalc() {
-  document.getElementById("trayCount").addEventListener("input", updateTrayCalcDisplay);
-  SUPPORTED_TRAY_TYPES.forEach(type => {
-    document.getElementById(`trayCount${type}`)?.addEventListener("input", updateTrayCalcDisplay);
-  });
-}
-
-function updateTrayCalcDisplay() {
-  const selectedTypes = getSelectedTrayTypes();
-
-  if (selectedTypes.length > 1) {
-    const total = buildMixedTrayGroups(selectedTypes)
-      .reduce((sum, group) => sum + group.quantity, 0);
-    document.getElementById("calcStockMixed").textContent = total;
+  if (!types.length) {
+    container.innerHTML = "";
     return;
   }
 
-  const count = parseFloat(document.getElementById("trayCount").value || 0);
-  const type = selectedTypes[0] || 0;
-  document.getElementById("calcStock").textContent = isNaN(count) ? 0 : count * type;
+  const refsByType = getSeedRefsByTrayType(types);
+  const isMixed = types.length > 1;
+
+  container.innerHTML = types.map((type, index) => `
+    <div class="form-field" data-tray-type="${type}">
+      <hr style="margin: 15px 0;">
+      ${isMixed ? `<label><b>${type}穴</b>（${refsByType[index].join(" → ") || "対象ロットなし"}）</label>` : ""}
+
+      <label>入力方法</label>
+      <label><input type="radio" name="mode_${type}" value="stock" checked> 株数で入力</label>
+      <label><input type="radio" name="mode_${type}" value="tray"> セルトレイ枚数で入力</label>
+
+      <div class="form-field" data-input="stock">
+        <label>株数</label>
+        <input type="number" class="form-input" data-field="stockCount" inputmode="decimal" step="any" min="0">
+      </div>
+
+      <div class="form-field" data-input="tray" style="display:none;">
+        <label>枚数</label>
+        <input type="number" class="form-input" data-field="trayCount" inputmode="decimal" step="any" min="0">
+
+        <p>自動計算：<span data-field="calcStock">0</span> 株</p>
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll("[data-tray-type]").forEach(block => {
+    block.querySelectorAll("input[type='radio']").forEach(radio => {
+      radio.addEventListener("change", () => refreshTrayBlock(block));
+    });
+    block.querySelector("[data-field='trayCount']")
+      ?.addEventListener("input", () => refreshTrayBlock(block));
+    refreshTrayBlock(block);
+  });
 }
 
-// 混在時はトレイ種別ごとに行を分けて保存する
-function buildMixedTrayGroups(selectedTypes) {
-  const unknownRefs = seedRefOrder.filter(ref => !SEED_TRAY_TYPE_BY_REF.has(ref));
+function refreshTrayBlock(block) {
+  const type = Number(block.dataset.trayType);
+  const mode = block.querySelector("input[type='radio']:checked")?.value || "stock";
 
-  return selectedTypes.map((type, index) => {
-    const trayCount = parseFloat(document.getElementById(`trayCount${type}`)?.value || 0);
-    const safeCount = Number.isFinite(trayCount) ? trayCount : 0;
-    const seedRefs = seedRefOrder.filter(ref => SEED_TRAY_TYPE_BY_REF.get(ref) === type);
+  block.querySelector("[data-input='stock']").style.display = mode === "stock" ? "block" : "none";
+  block.querySelector("[data-input='tray']").style.display = mode === "tray" ? "block" : "none";
+
+  const count = parseFloat(block.querySelector("[data-field='trayCount']").value || 0);
+  block.querySelector("[data-field='calcStock']").textContent =
+    Number.isFinite(count) ? count * type : 0;
+}
+
+function buildTrayGroups() {
+  const types = getActiveTrayTypes();
+  const refsByType = getSeedRefsByTrayType(types);
+
+  return types.map((type, index) => {
+    const block = document.querySelector(`[data-tray-type="${type}"]`);
+    if (!block) return null;
+
+    const mode = block.querySelector("input[type='radio']:checked")?.value || "stock";
+    const trayCount = mode === "tray"
+      ? parseFloat(block.querySelector("[data-field='trayCount']").value)
+      : null;
+    const quantity = mode === "tray"
+      ? (Number.isFinite(trayCount) ? trayCount * type : 0)
+      : Number(block.querySelector("[data-field='stockCount']").value || 0);
 
     return {
       trayType: type,
-      trayCount: safeCount,
-      quantity: safeCount * type,
-      seedRefs: index === 0 ? [...seedRefs, ...unknownRefs] : seedRefs
+      trayCount,
+      inputMode: mode,
+      quantity: Number.isFinite(quantity) ? quantity : 0,
+      seedRefs: refsByType[index]
     };
-  }).filter(group => group.quantity > 0);
+  }).filter(Boolean);
 }
 
 
@@ -498,29 +484,7 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
 // 入力データ収集（複数 seedRef 対応）
 // ===============================
 function collectPlantingData() {
-  const mode = document.querySelector("input[name='mode']:checked").value;
-  const selectedTypes = getSelectedTrayTypes();
-  const isMixed = selectedTypes.length > 1;
-  const trayType = selectedTypes[0] || 0;
-
-  let groups = [];
-
-  if (isMixed) {
-    groups = buildMixedTrayGroups(selectedTypes);
-  } else {
-    let quantity = 0;
-    let trayCount = null;
-
-    if (mode === "stock") {
-      quantity = Number(document.getElementById("stockCount").value);
-    } else {
-      trayCount = parseFloat(document.getElementById("trayCount").value);
-      quantity = trayCount * trayType;
-    }
-
-    groups = [{ trayType, trayCount, quantity, seedRefs: seedRefOrder }];
-  }
-
+  const groups = buildTrayGroups();
   const quantity = groups.reduce((sum, group) => sum + (Number(group.quantity) || 0), 0);
 
   const varietyName = document.getElementById("variety").value;
@@ -544,10 +508,9 @@ function collectPlantingData() {
     seedRefs: seedRefOrder,
 
     quantity,
-    trayType,
+    trayType: groups[0]?.trayType || 0,
     trayCount: groups[0]?.trayCount ?? null,
-    inputMode: isMixed ? "tray" : mode,
-    isMixedTray: isMixed,
+    inputMode: groups[0]?.inputMode || "stock",
     groups,
 
     spacingRow: Number(document.getElementById("spacingRow").value),
@@ -582,8 +545,18 @@ async function savePlantingInner() {
     alert("作業者は必須です");
     return;
   }
+  if (!data.trayType) {
+    alert("播種ロットにセルトレイ種別が登録されていません");
+    return;
+  }
   if (!Number.isFinite(data.quantity) || data.quantity <= 0) {
     alert("植え付け株数は0より大きい数値で入力してください");
+    return;
+  }
+
+  const invalidGroup = data.groups.find(group => group.quantity <= 0);
+  if (invalidGroup) {
+    alert(`${invalidGroup.trayType}穴の株数・枚数を入力してください。`);
     return;
   }
 
