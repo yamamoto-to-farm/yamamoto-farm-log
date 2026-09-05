@@ -31,15 +31,17 @@ let initialized = false;
 let plantDateSortOrder = null; // null | asc | desc
 
 // 定植後の管理作業（圃場別に日付昇順で保持）
+// pesticide: 最終実施からの経過日数で判定 / intertill: 定植からの予定日で判定
 const MANAGEMENT_WORK_TYPES = [
-  { type: "pesticide", label: "防除", csv: "/logs/pesticide/all.csv" },
-  { type: "intertill", label: "中耕", csv: "/logs/intertill/all.csv" },
+  { type: "pesticide", label: "防除", csv: "/logs/pesticide/all.csv", warnDays: 14, alertDays: 21 },
+  { type: "intertill", label: "中耕", csv: "/logs/intertill/all.csv", scheduleDays: [14, 28] },
   { type: "fertilizer", label: "施肥", csv: "/logs/fertilizer/all.csv" },
   { type: "weeding", label: "除草", csv: "/logs/weeding/all.csv" },
   { type: "watering", label: "かん水", csv: "/logs/watering/all.csv" }
 ];
 
 let managementLogsByField = new Map();
+const fieldLogCache = new Map();
 
 export async function renderPlantingList() {
   if (!initialized) {
@@ -360,36 +362,91 @@ function formatUtcDateToYmd(date) {
 }
 
 function buildManagementCell(row, rowIndex) {
-  const { entries } = getManagementEntries(row);
-  if (!entries.length) return "-";
+  const { start, end, entries } = getManagementEntries(row);
+  if (!start) return "-";
 
   const today = parseYmdToUtcDate(todayLocalYmd());
+  const daysFromPlanting = diffDays(parseYmdToUtcDate(start), parseYmdToUtcDate(end));
 
-  return MANAGEMENT_WORK_TYPES.map(({ type, label }) => {
+  const badges = MANAGEMENT_WORK_TYPES.map(config => {
+    const { type, label, warnDays, alertDays, scheduleDays } = config;
     const list = entries.filter(entry => entry.type === type);
-    if (!list.length) return "";
 
-    const lastDate = list[list.length - 1].date;
-    const elapsed = diffDays(parseYmdToUtcDate(lastDate), today);
+    // 予定日を持つ作業は未実施でもバッジを出して遅れを見せる
+    const dueCount = scheduleDays && Number.isFinite(daysFromPlanting)
+      ? scheduleDays.filter(day => daysFromPlanting >= day).length
+      : 0;
+
+    if (!list.length && !dueCount) return "";
+
+    const lastDate = list.length ? list[list.length - 1].date : "";
+    const elapsed = lastDate ? diffDays(parseYmdToUtcDate(lastDate), today) : null;
+
+    let stateClass = "";
+    let tooltip = `${label}：全${list.length}回`;
+
+    if (scheduleDays) {
+      const shortage = dueCount - list.length;
+      if (shortage >= 2) stateClass = " is-alert";
+      else if (shortage === 1) stateClass = " is-warn";
+      tooltip += `／定植${daysFromPlanting}日目・予定${dueCount}回（${scheduleDays.join("・")}日目）`;
+    } else if (Number.isFinite(elapsed) && alertDays) {
+      if (elapsed >= alertDays) stateClass = " is-alert";
+      else if (elapsed >= warnDays) stateClass = " is-warn";
+    }
+
+    if (lastDate) tooltip += `／最終 ${lastDate}`;
+
     const elapsedText = Number.isFinite(elapsed)
-      ? (elapsed === 0 ? "本日" : `${elapsed}日前`)
-      : "";
+      ? (elapsed === 0 ? "本日" : `${elapsed}d`)
+      : "未実施";
 
-    return `<button type="button" class="management-badge" data-row-index="${rowIndex}" data-work-type="${type}" title="${label}の履歴を表示">
-      ${label} ${list.length}${elapsedText ? `<span class="management-badge__elapsed">（${elapsedText}）</span>` : ""}
+    return `<button type="button" class="management-badge${stateClass}" data-row-index="${rowIndex}" data-work-type="${type}" title="${tooltip}">
+      ${label}<span class="management-badge__count">${list.length}</span><span class="management-badge__elapsed">${elapsedText}</span>
     </button>`;
-  }).filter(Boolean).join(" ");
+  }).filter(Boolean).join("");
+
+  return badges || "-";
 }
 
-function showManagementModal(row, type) {
+// 薬剤・肥料名は圃場別JSONにしか無いため、モーダルを開いたときだけ取得する
+async function loadFieldMaterialNames(type, field) {
+  const cacheKey = `${type}::${field}`;
+  if (fieldLogCache.has(cacheKey)) return fieldLogCache.get(cacheKey);
+
+  const names = new Map();
+
+  try {
+    const data = await loadJSON(`/logs/${type}/${encodeURIComponent(field)}.json`);
+    Object.values(data?.years || {}).forEach(year => {
+      (year?.entries || []).forEach(entry => {
+        const date = String(entry?.date || "").slice(0, 10);
+        if (!date) return;
+        const list = Array.isArray(entry?.distributed) ? entry.distributed : [];
+        const text = [...new Set(list.map(item => String(item?.name || "").trim()).filter(Boolean))].join("、");
+        if (text) names.set(date, text);
+      });
+    });
+  } catch {
+    // 圃場別JSONが無い場合は名称なしで表示する
+  }
+
+  fieldLogCache.set(cacheKey, names);
+  return names;
+}
+
+async function showManagementModal(row, type) {
   const { start, end, entries } = getManagementEntries(row);
   const target = MANAGEMENT_WORK_TYPES.find(item => item.type === type);
   const list = entries.filter(entry => entry.type === type).slice().reverse();
+  const materialNames = await loadFieldMaterialNames(type, row.field);
+  const hasMaterial = materialNames.size > 0;
 
   const rowsHtml = list.map(entry => `
     <tr>
       <td>${entry.date}</td>
       <td>${escapeHtml(entry.workType || target.label)}</td>
+      ${hasMaterial ? `<td>${escapeHtml(materialNames.get(entry.date) || "-")}</td>` : ""}
       <td>${escapeHtml([entry.method, entry.machine].filter(Boolean).join(" / ") || "-")}</td>
       <td>${escapeHtml(entry.worker || "-")}</td>
     </tr>
@@ -402,7 +459,7 @@ function showManagementModal(row, type) {
     `
       <p>対象期間：${start} 〜 ${end}（${list.length}件）</p>
       <table>
-        <thead><tr><th>日付</th><th>作業</th><th>方法 / 機械</th><th>作業者</th></tr></thead>
+        <thead><tr><th>日付</th><th>作業</th>${hasMaterial ? "<th>使用資材</th>" : ""}<th>方法 / 機械</th><th>作業者</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
       <p style="margin-top:12px;"><a class="secondary-btn" href="${workLogsUrl}">作業ログページで開く</a></p>

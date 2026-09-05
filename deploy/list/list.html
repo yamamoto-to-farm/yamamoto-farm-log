@@ -494,17 +494,25 @@
     }
 
     .management-cell {
-      white-space: nowrap;
+      min-width: 150px;
+    }
+
+    td.management-cell {
+      white-space: normal;
     }
 
     .management-badge {
-      margin: 2px 4px 2px 0;
-      padding: 3px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
       border: 1px solid #d1d5db;
       border-radius: 999px;
       background: #f8fafc;
       color: #1f2937;
       font-size: 12px;
+      line-height: 1.6;
+      white-space: nowrap;
       cursor: pointer;
     }
 
@@ -513,8 +521,27 @@
       border-color: #a5b4fc;
     }
 
+    .management-badge__count {
+      font-weight: 700;
+    }
+
     .management-badge__elapsed {
       color: #6b7280;
+      font-size: 11px;
+    }
+
+    .management-badge.is-warn {
+      border-color: #fbbf24;
+      background: #fffbeb;
+    }
+
+    .management-badge.is-alert {
+      border-color: #f87171;
+      background: #fef2f2;
+    }
+
+    .management-badge.is-alert .management-badge__elapsed {
+      color: #b91c1c;
     }
   </style>
 
