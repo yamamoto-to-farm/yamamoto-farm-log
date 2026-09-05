@@ -368,16 +368,25 @@ function buildManagementCell(row, rowIndex) {
   const today = parseYmdToUtcDate(todayLocalYmd());
   const daysFromPlanting = diffDays(parseYmdToUtcDate(start), parseYmdToUtcDate(end));
 
-  const badges = MANAGEMENT_WORK_TYPES.map(config => {
+  const badges = [];
+  let otherCount = 0;
+
+  MANAGEMENT_WORK_TYPES.forEach(config => {
     const { type, label, warnDays, alertDays, scheduleDays } = config;
     const list = entries.filter(entry => entry.type === type);
+
+    // しきい値を持たない作業は件数だけをまとめて出す
+    if (!scheduleDays && !alertDays) {
+      otherCount += list.length;
+      return;
+    }
 
     // 予定日を持つ作業は未実施でもバッジを出して遅れを見せる
     const dueCount = scheduleDays && Number.isFinite(daysFromPlanting)
       ? scheduleDays.filter(day => daysFromPlanting >= day).length
       : 0;
 
-    if (!list.length && !dueCount) return "";
+    if (!list.length && !dueCount) return;
 
     const lastDate = list.length ? list[list.length - 1].date : "";
     const elapsed = lastDate ? diffDays(parseYmdToUtcDate(lastDate), today) : null;
@@ -390,23 +399,30 @@ function buildManagementCell(row, rowIndex) {
       if (shortage >= 2) stateClass = " is-alert";
       else if (shortage === 1) stateClass = " is-warn";
       tooltip += `／定植${daysFromPlanting}日目・予定${dueCount}回（${scheduleDays.join("・")}日目）`;
-    } else if (Number.isFinite(elapsed) && alertDays) {
+    } else if (Number.isFinite(elapsed)) {
       if (elapsed >= alertDays) stateClass = " is-alert";
       else if (elapsed >= warnDays) stateClass = " is-warn";
     }
 
-    if (lastDate) tooltip += `／最終 ${lastDate}`;
+    if (lastDate) tooltip += `／最終 ${lastDate}（${elapsed}日前）`;
 
-    const elapsedText = Number.isFinite(elapsed)
-      ? (elapsed === 0 ? "本日" : `${elapsed}d`)
-      : "未実施";
+    // 経過日数は判断が要るときだけ添える
+    const elapsedText = !list.length
+      ? "未"
+      : (stateClass ? `${elapsed}d` : "");
 
-    return `<button type="button" class="management-badge${stateClass}" data-row-index="${rowIndex}" data-work-type="${type}" title="${tooltip}">
-      ${label}<span class="management-badge__count">${list.length}</span><span class="management-badge__elapsed">${elapsedText}</span>
-    </button>`;
-  }).filter(Boolean).join("");
+    badges.push(`<button type="button" class="management-badge${stateClass}" data-row-index="${rowIndex}" data-work-type="${type}" title="${tooltip}">
+      ${label}<span class="management-badge__count">${list.length}</span>${elapsedText ? `<span class="management-badge__elapsed">${elapsedText}</span>` : ""}
+    </button>`);
+  });
 
-  return badges || "-";
+  if (otherCount) {
+    badges.push(`<button type="button" class="management-badge is-muted" data-row-index="${rowIndex}" data-work-type="__all" title="施肥・除草・かん水を含む全作業履歴">
+      他<span class="management-badge__count">${otherCount}</span>
+    </button>`);
+  }
+
+  return badges.join("") || "-";
 }
 
 // 薬剤・肥料名は圃場別JSONにしか無いため、モーダルを開いたときだけ取得する
@@ -437,31 +453,43 @@ async function loadFieldMaterialNames(type, field) {
 
 async function showManagementModal(row, type) {
   const { start, end, entries } = getManagementEntries(row);
+  const isAll = type === "__all";
   const target = MANAGEMENT_WORK_TYPES.find(item => item.type === type);
-  const list = entries.filter(entry => entry.type === type).slice().reverse();
-  const materialNames = await loadFieldMaterialNames(type, row.field);
-  const hasMaterial = materialNames.size > 0;
 
-  const rowsHtml = list.map(entry => `
-    <tr>
-      <td>${entry.date}</td>
-      <td>${escapeHtml(entry.workType || target.label)}</td>
-      ${hasMaterial ? `<td>${escapeHtml(materialNames.get(entry.date) || "-")}</td>` : ""}
-      <td>${escapeHtml([entry.method, entry.machine].filter(Boolean).join(" / ") || "-")}</td>
-      <td>${escapeHtml(entry.worker || "-")}</td>
-    </tr>
-  `).join("");
+  const list = (isAll ? entries : entries.filter(entry => entry.type === type))
+    .slice()
+    .reverse();
 
-  const workLogsUrl = `/fields/work-logs.html?field=${encodeURIComponent(row.field)}&start=${start}&end=${end}&type=${type}&return=${encodeURIComponent(location.pathname + location.search)}`;
+  const materialTypes = [...new Set(list.map(entry => entry.type))]
+    .filter(entryType => entryType === "pesticide" || entryType === "fertilizer");
+
+  const materialMaps = new Map(await Promise.all(
+    materialTypes.map(async entryType => [entryType, await loadFieldMaterialNames(entryType, row.field)])
+  ));
+
+  const itemsHtml = list.map(entry => {
+    const material = materialMaps.get(entry.type)?.get(entry.date) || "";
+    const detail = [entry.method, entry.machine, entry.worker].filter(Boolean).join(" ／ ");
+
+    return `
+      <li class="work-history__item">
+        <div class="work-history__head">
+          <span class="work-history__date">${entry.date}</span>
+          <span class="work-history__label">${escapeHtml(entry.workType || entry.label)}</span>
+        </div>
+        ${material ? `<div class="work-history__material">${escapeHtml(material)}</div>` : ""}
+        ${detail ? `<div class="work-history__detail">${escapeHtml(detail)}</div>` : ""}
+      </li>
+    `;
+  }).join("");
+
+  const workLogsUrl = `/fields/work-logs.html?field=${encodeURIComponent(row.field)}&start=${start}&end=${end}${isAll ? "" : `&type=${type}`}&return=${encodeURIComponent(location.pathname + location.search)}`;
 
   showInfoModal(
-    `${target.label}履歴：${row.field} / ${row.variety}`,
+    `${isAll ? "作業履歴" : `${target.label}履歴`}：${row.field} / ${row.variety}`,
     `
-      <p>対象期間：${start} 〜 ${end}（${list.length}件）</p>
-      <table>
-        <thead><tr><th>日付</th><th>作業</th>${hasMaterial ? "<th>使用資材</th>" : ""}<th>方法 / 機械</th><th>作業者</th></tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
+      <p class="work-history__period">${start} 〜 ${end}（${list.length}件）</p>
+      <ul class="work-history">${itemsHtml || "<li class='work-history__item'>記録がありません。</li>"}</ul>
       <p style="margin-top:12px;"><a class="secondary-btn" href="${workLogsUrl}">作業ログページで開く</a></p>
     `
   );
