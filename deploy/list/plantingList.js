@@ -5,6 +5,7 @@
 import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260821-quote-fix";
 import { loadJSON } from "/common/json.js";
 import { calcAreaM2, calcAreaTan } from "/fields/analysis-utils.js";
+import { safeFieldName } from "/common/utils.js?v=1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 import {
@@ -453,28 +454,35 @@ function showManagementHelpModal() {
 
 // 薬剤・肥料名は圃場別JSONにしか無いため、モーダルを開いたときだけ取得する
 async function loadFieldMaterialNames(type, field) {
-  const cacheKey = `${type}::${field}`;
+  const safeField = safeFieldName(field);
+  const cacheKey = `${type}::${safeField}`;
   if (fieldLogCache.has(cacheKey)) return fieldLogCache.get(cacheKey);
 
   const names = new Map();
 
   try {
-    const data = await loadJSON(`/logs/${type}/${encodeURIComponent(field)}.json`);
+    const data = await loadJSON(`/logs/${type}/${encodeURIComponent(safeField)}.json`);
     Object.values(data?.years || {}).forEach(year => {
       (year?.entries || []).forEach(entry => {
         const date = String(entry?.date || "").slice(0, 10);
         if (!date) return;
+
         const list = Array.isArray(entry?.distributed) ? entry.distributed : [];
-        const text = [...new Set(list.map(item => String(item?.name || "").trim()).filter(Boolean))].join("、");
-        if (text) names.set(date, text);
+        const merged = names.get(date) || new Set();
+        list.forEach(item => {
+          const name = String(item?.name || "").trim();
+          if (name) merged.add(name);
+        });
+        if (merged.size) names.set(date, merged);
       });
     });
   } catch {
     // 圃場別JSONが無い場合は名称なしで表示する
   }
 
-  fieldLogCache.set(cacheKey, names);
-  return names;
+  const result = new Map([...names].map(([date, set]) => [date, [...set].join("、")]));
+  fieldLogCache.set(cacheKey, result);
+  return result;
 }
 
 async function showManagementModal(row, type) {
