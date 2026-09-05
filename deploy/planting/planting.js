@@ -32,6 +32,11 @@ let GLOBAL_SEED_ROWS = null;
 // ★ 複数 seedRef の順位管理（shipping.js と同じ）
 let seedRefOrder = [];
 
+// seedRef ごとのセルトレイ種別（播種ログ由来）
+const SEED_TRAY_TYPE_BY_REF = new Map();
+
+const SUPPORTED_TRAY_TYPES = [128, 200];
+
 
 // ===============================
 // 初期化
@@ -263,6 +268,8 @@ async function updateSeedRefSelector() {
 
   area.innerHTML = "";
   seedRefOrder = [];
+  SEED_TRAY_TYPE_BY_REF.clear();
+  applyTrayTypeFromSeedRefs();
 
   if (!variety) return;
 
@@ -281,13 +288,18 @@ async function updateSeedRefSelector() {
 
     if (remaining <= 0) continue;
 
+    const rowTrayType = Number(r.trayType || 0);
+    if (SUPPORTED_TRAY_TYPES.includes(rowTrayType)) {
+      SEED_TRAY_TYPE_BY_REF.set(seedRef, rowTrayType);
+    }
+
     const div = document.createElement("div");
     div.className = "card";
 
     div.innerHTML = `
       <label>
         <input type="checkbox" class="seedRefCheck" value="${seedRef}">
-        ${seedRef}（残 ${remaining} 株）
+        ${seedRef}（残 ${remaining} 株${rowTrayType ? ` / ${rowTrayType}穴` : ""}）
       </label>
       <span class="order-label" data-key="${seedRef}">順番：－</span>
     `;
@@ -311,6 +323,7 @@ function onSeedRefCheckChange(ref, checked) {
     seedRefOrder = seedRefOrder.filter(r => r !== ref);
   }
   updateSeedRefOrderLabels();
+  applyTrayTypeFromSeedRefs();
 }
 
 function updateSeedRefOrderLabels() {
@@ -335,38 +348,132 @@ function updateSeedRefOrderLabels() {
 function setupInputModeSwitch() {
   const radios = document.querySelectorAll("input[name='mode']");
   radios.forEach(r => {
-    r.addEventListener("change", () => {
-      const mode = document.querySelector("input[name='mode']:checked").value;
-      document.getElementById("stock-input").style.display =
-        mode === "stock" ? "block" : "none";
-      document.getElementById("tray-input").style.display =
-        mode === "tray" ? "block" : "none";
-    });
+    r.addEventListener("change", () => refreshQuantityInputs());
+  });
+
+  document
+    .querySelectorAll("input[name='trayType']")
+    .forEach(cb => cb.addEventListener("change", () => {
+      ensureTrayTypeSelected(cb);
+      refreshQuantityInputs();
+    }));
+
+  refreshQuantityInputs();
+}
+
+function getSelectedTrayTypes() {
+  return [...document.querySelectorAll("input[name='trayType']:checked")]
+    .map(cb => Number(cb.value))
+    .filter(type => SUPPORTED_TRAY_TYPES.includes(type));
+}
+
+// トレイ種別は最低1つ必要なので、全解除された場合は直前の操作を取り消す
+function ensureTrayTypeSelected(changedCheckbox) {
+  if (getSelectedTrayTypes().length === 0 && changedCheckbox) {
+    changedCheckbox.checked = true;
+  }
+}
+
+function setTrayTypeSelection(types) {
+  const target = types.filter(type => SUPPORTED_TRAY_TYPES.includes(type));
+  if (!target.length) return;
+
+  document.querySelectorAll("input[name='trayType']").forEach(cb => {
+    cb.checked = target.includes(Number(cb.value));
   });
 }
 
+// 選択中の播種ロットのトレイ種別からセルトレイ種別を自動選択する
+function applyTrayTypeFromSeedRefs() {
+  const types = [...new Set(
+    seedRefOrder
+      .map(ref => SEED_TRAY_TYPE_BY_REF.get(ref))
+      .filter(type => SUPPORTED_TRAY_TYPES.includes(type))
+  )].sort((a, b) => a - b);
 
+  const note = document.getElementById("trayTypeNote");
+
+  if (types.length) setTrayTypeSelection(types);
+
+  if (note) {
+    if (types.length > 1) {
+      note.textContent = `選択した播種ロットに ${types.join("穴・")}穴 が含まれるため、両方を選択しました。種別ごとに枚数を入力してください。`;
+      note.style.display = "block";
+    } else if (types.length === 1) {
+      note.textContent = `播種ロットに合わせて ${types[0]}穴 を自動選択しました。`;
+      note.style.display = "block";
+    } else {
+      note.style.display = "none";
+    }
+  }
+
+  refreshQuantityInputs();
+}
+
+function refreshQuantityInputs() {
+  const selectedTypes = getSelectedTrayTypes();
+  const isMixed = selectedTypes.length > 1;
+  const mode = document.querySelector("input[name='mode']:checked")?.value || "stock";
+
+  const singleArea = document.getElementById("single-tray-input");
+  const mixedArea = document.getElementById("mixed-tray-input");
+  if (singleArea) singleArea.style.display = isMixed ? "none" : "block";
+  if (mixedArea) mixedArea.style.display = isMixed ? "block" : "none";
+
+  document.getElementById("stock-input").style.display =
+    !isMixed && mode === "stock" ? "block" : "none";
+  document.getElementById("tray-input").style.display =
+    !isMixed && mode === "tray" ? "block" : "none";
+
+  SUPPORTED_TRAY_TYPES.forEach(type => {
+    const wrapper = document.getElementById(`trayCount${type}`)?.closest(".form-field");
+    if (wrapper) wrapper.style.display = selectedTypes.includes(type) ? "block" : "none";
+  });
+
+  updateTrayCalcDisplay();
+}
 
 // ===============================
 // 枚数 → 株数 自動計算
 // ===============================
 function setupTrayAutoCalc() {
-  const update = () => {
-    const count = parseFloat(document.getElementById("trayCount").value || 0);
-    const type = Number(document.querySelector("input[name='trayType']:checked").value);
+  document.getElementById("trayCount").addEventListener("input", updateTrayCalcDisplay);
+  SUPPORTED_TRAY_TYPES.forEach(type => {
+    document.getElementById(`trayCount${type}`)?.addEventListener("input", updateTrayCalcDisplay);
+  });
+}
 
-    if (!isNaN(count)) {
-      const stock = count * type;
-      document.getElementById("calcStock").textContent = stock;
-    } else {
-      document.getElementById("calcStock").textContent = 0;
-    }
-  };
+function updateTrayCalcDisplay() {
+  const selectedTypes = getSelectedTrayTypes();
 
-  document.getElementById("trayCount").addEventListener("input", update);
-  document
-    .querySelectorAll("input[name='trayType']")
-    .forEach(r => r.addEventListener("change", update));
+  if (selectedTypes.length > 1) {
+    const total = buildMixedTrayGroups(selectedTypes)
+      .reduce((sum, group) => sum + group.quantity, 0);
+    document.getElementById("calcStockMixed").textContent = total;
+    return;
+  }
+
+  const count = parseFloat(document.getElementById("trayCount").value || 0);
+  const type = selectedTypes[0] || 0;
+  document.getElementById("calcStock").textContent = isNaN(count) ? 0 : count * type;
+}
+
+// 混在時はトレイ種別ごとに行を分けて保存する
+function buildMixedTrayGroups(selectedTypes) {
+  const unknownRefs = seedRefOrder.filter(ref => !SEED_TRAY_TYPE_BY_REF.has(ref));
+
+  return selectedTypes.map((type, index) => {
+    const trayCount = parseFloat(document.getElementById(`trayCount${type}`)?.value || 0);
+    const safeCount = Number.isFinite(trayCount) ? trayCount : 0;
+    const seedRefs = seedRefOrder.filter(ref => SEED_TRAY_TYPE_BY_REF.get(ref) === type);
+
+    return {
+      trayType: type,
+      trayCount: safeCount,
+      quantity: safeCount * type,
+      seedRefs: index === 0 ? [...seedRefs, ...unknownRefs] : seedRefs
+    };
+  }).filter(group => group.quantity > 0);
 }
 
 
@@ -392,17 +499,29 @@ function calcHarvestPlanYM(plantDate, harvestMonth) {
 // ===============================
 function collectPlantingData() {
   const mode = document.querySelector("input[name='mode']:checked").value;
-  const trayType = Number(document.querySelector("input[name='trayType']:checked").value);
+  const selectedTypes = getSelectedTrayTypes();
+  const isMixed = selectedTypes.length > 1;
+  const trayType = selectedTypes[0] || 0;
 
-  let quantity = 0;
-  let trayCount = null;
+  let groups = [];
 
-  if (mode === "stock") {
-    quantity = Number(document.getElementById("stockCount").value);
+  if (isMixed) {
+    groups = buildMixedTrayGroups(selectedTypes);
   } else {
-    trayCount = parseFloat(document.getElementById("trayCount").value);
-    quantity = trayCount * trayType;
+    let quantity = 0;
+    let trayCount = null;
+
+    if (mode === "stock") {
+      quantity = Number(document.getElementById("stockCount").value);
+    } else {
+      trayCount = parseFloat(document.getElementById("trayCount").value);
+      quantity = trayCount * trayType;
+    }
+
+    groups = [{ trayType, trayCount, quantity, seedRefs: seedRefOrder }];
   }
+
+  const quantity = groups.reduce((sum, group) => sum + (Number(group.quantity) || 0), 0);
 
   const varietyName = document.getElementById("variety").value;
   const variety = VARIETY_LIST.find(v => v.name === varietyName);
@@ -426,8 +545,10 @@ function collectPlantingData() {
 
     quantity,
     trayType,
-    trayCount,
-    inputMode: mode,
+    trayCount: groups[0]?.trayCount ?? null,
+    inputMode: isMixed ? "tray" : mode,
+    isMixedTray: isMixed,
+    groups,
 
     spacingRow: Number(document.getElementById("spacingRow").value),
     spacingBed: Number(document.getElementById("spacingBed").value),
@@ -466,7 +587,17 @@ async function savePlantingInner() {
     return;
   }
 
+  const emptyGroup = data.groups.find(group => group.seedRefs.length === 0);
+  if (emptyGroup) {
+    alert(`${emptyGroup.trayType}穴の播種ロットが選択されていません。`);
+    return;
+  }
+
   const notes = data.notes ? data.notes.replace(/[\r\n,]/g, " ") : "";
+
+  const trayBreakdown = data.groups
+    .map(group => `  ${group.trayType}穴: ${group.quantity.toLocaleString()}株（${group.seedRefs.join(" → ")}）`)
+    .join("\n");
 
   const confirmMsg =
     `以下の内容で保存します。\n\n` +
@@ -474,6 +605,7 @@ async function savePlantingInner() {
     `圃場: ${data.field}\n` +
     `品種: ${data.variety}\n` +
     `播種ロット:\n  ${data.seedRefs.join(" → ")}\n` +
+    `トレイ種別:\n${trayBreakdown}\n` +
     `株数: ${data.quantity}\n` +
     `作業者: ${data.worker}\n` +
     `備考: ${notes || "なし"}\n\n` +
@@ -512,27 +644,31 @@ async function savePlantingInner() {
   // ★ 残数チェック（複数ロットを順位順に消費）
   // ===============================
   const { remainingByRef } = buildSeedRemainingMap(seedRows, rows, discardSeedRows, nurseryRows);
-  let remain = Number(data.quantity || 0);
-  let availableTotal = 0;
 
-  for (const ref of data.seedRefs) {
-    const available = remainingByRef.get(ref) || 0;
-    availableTotal += available;
+  for (const group of data.groups) {
+    let remain = Number(group.quantity || 0);
+    let availableTotal = 0;
 
-    const use = Math.min(available, remain);
-    remain -= use;
+    for (const ref of group.seedRefs) {
+      const available = remainingByRef.get(ref) || 0;
+      availableTotal += available;
 
-    if (remain <= 0) break;
-  }
+      const use = Math.min(available, remain);
+      remain -= use;
 
-  if (remain > 0) {
-    alert(
-      `選択した播種ロットの残数が不足しています。\n` +
-      `入力株数：${data.quantity.toLocaleString()} 株\n` +
-      `利用可能株数：${availableTotal.toLocaleString()} 株\n` +
-      `不足株数：${remain.toLocaleString()} 株`
-    );
-    return;
+      if (remain <= 0) break;
+    }
+
+    if (remain > 0) {
+      alert(
+        `選択した播種ロットの残数が不足しています。\n` +
+        `トレイ種別：${group.trayType}穴\n` +
+        `入力株数：${Number(group.quantity || 0).toLocaleString()} 株\n` +
+        `利用可能株数：${availableTotal.toLocaleString()} 株\n` +
+        `不足株数：${remain.toLocaleString()} 株`
+      );
+      return;
+    }
   }
 
   showSaveModal("保存しています…");
@@ -560,25 +696,27 @@ async function savePlantingInner() {
   const human = window.currentHuman || "";
 
   // ===============================
-  // ★ 新しい行を追加（複数 seedRef）
+  // ★ 新しい行を追加（トレイ種別ごとに1行）
   // ===============================
-  rows.push({
-    plantDate: data.plantDate,
-    worker: data.worker.replace(/,/g, "／"),
-    field: data.field,
-    variety: data.variety,
+  data.groups.forEach(group => {
+    rows.push({
+      plantDate: data.plantDate,
+      worker: data.worker.replace(/,/g, "／"),
+      field: data.field,
+      variety: data.variety,
 
-    seedRef: data.seedRefs.join("/"),
+      seedRef: group.seedRefs.join("/"),
 
-    quantity: data.quantity,
-    trayType: data.trayType,
-    spacingRow: data.spacingRow,
-    spacingBed: data.spacingBed,
-    harvestPlanYM: data.harvestPlanYM,
-    notes,
-    machine,
-    human,
-    plantingRef
+      quantity: group.quantity,
+      trayType: group.trayType,
+      spacingRow: data.spacingRow,
+      spacingBed: data.spacingBed,
+      harvestPlanYM: data.harvestPlanYM,
+      notes,
+      machine,
+      human,
+      plantingRef
+    });
   });
 
   const csvText = Papa.unparse(rows);
@@ -587,7 +725,7 @@ async function savePlantingInner() {
     type: "planting",
     replaceCsv: csvText,
     fileName: "all.csv",
-    summary: { date: data.plantDate, sourceKey: "planting", count: 1 }
+    summary: { date: data.plantDate, sourceKey: "planting", count: data.groups.length }
   });
 
   await saveTimestampRows([{

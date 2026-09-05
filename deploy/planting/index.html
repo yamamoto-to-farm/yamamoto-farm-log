@@ -100,25 +100,44 @@
     <div class="card">
 
       <label>セルトレイ種別</label>
-      <label><input type="radio" name="trayType" value="128" checked>128穴</label>
-      <label><input type="radio" name="trayType" value="200">200穴</label>
+      <label><input type="checkbox" name="trayType" value="128" checked>128穴</label>
+      <label><input type="checkbox" name="trayType" value="200">200穴</label>
+      <p id="trayTypeNote" style="display:none; margin:6px 0 0; color:#b45309;"></p>
 
       <hr style="margin: 15px 0;">
 
-      <label>入力方法</label>
-      <label><input type="radio" name="mode" value="stock" checked> 株数で入力</label>
-      <label><input type="radio" name="mode" value="tray"> セルトレイ枚数で入力</label>
+      <div id="single-tray-input">
+        <label>入力方法</label>
+        <label><input type="radio" name="mode" value="stock" checked> 株数で入力</label>
+        <label><input type="radio" name="mode" value="tray"> セルトレイ枚数で入力</label>
 
-      <div id="stock-input" class="form-field">
-        <label>株数</label>
-        <input type="number" id="stockCount" class="form-input" inputmode="decimal" step="any" min="0">
+        <div id="stock-input" class="form-field">
+          <label>株数</label>
+          <input type="number" id="stockCount" class="form-input" inputmode="decimal" step="any" min="0">
+        </div>
+
+        <div id="tray-input" class="form-field" style="display:none;">
+          <label>枚数</label>
+          <input type="number" id="trayCount" class="form-input" inputmode="decimal" step="any" min="0">
+
+          <p>自動計算：<span id="calcStock">0</span> 株</p>
+        </div>
       </div>
 
-      <div id="tray-input" class="form-field" style="display:none;">
-        <label>枚数</label>
-        <input type="number" id="trayCount" class="form-input" inputmode="decimal" step="any" min="0">
+      <div id="mixed-tray-input" class="form-field" style="display:none;">
+        <label>枚数（トレイ種別ごと）</label>
 
-        <p>自動計算：<span id="calcStock">0</span> 株</p>
+        <div class="form-field">
+          <label for="trayCount128">128穴の枚数</label>
+          <input type="number" id="trayCount128" class="form-input" inputmode="decimal" step="any" min="0">
+        </div>
+
+        <div class="form-field">
+          <label for="trayCount200">200穴の枚数</label>
+          <input type="number" id="trayCount200" class="form-input" inputmode="decimal" step="any" min="0">
+        </div>
+
+        <p>自動計算：<span id="calcStockMixed">0</span> 株</p>
       </div>
     </div>
 
