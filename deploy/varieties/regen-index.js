@@ -37,7 +37,10 @@ export async function regenerateVarietyIndex() {
     for (const row of plantingRows) {
         const variety = row.variety || "不明品種";
         const plantingRef = row.plantingRef;
-        const seedRef = row.seedRef || null;
+        const seedRefs = String(row.seedRef || "")
+            .split("/")
+            .map(ref => ref.trim())
+            .filter(Boolean);
         const year = row.plantDate?.substring(0, 4) || "unknown";
 
         if (!plantingRef) continue;
@@ -60,8 +63,10 @@ export async function regenerateVarietyIndex() {
             });
         }
 
-        if (seedRef && !varietyIndex[variety][year].seed.includes(seedRef)) {
-            varietyIndex[variety][year].seed.push(seedRef);
+        for (const seedRef of seedRefs) {
+            if (!varietyIndex[variety][year].seed.includes(seedRef)) {
+                varietyIndex[variety][year].seed.push(seedRef);
+            }
         }
     }
 

@@ -40,10 +40,12 @@ export async function renderVarietySummaryCards(varietyName) {
         /* -------------------------
            ★ 播種（seedRef）
         ------------------------- */
-        if (seed.length > 0) {
+        const seedRefs = [...new Set(seed.flatMap(splitSeedRefs))];
+
+        if (seedRefs.length > 0) {
             html += `<h3>播種</h3>`;
 
-            seed.forEach(ref => {
+          seedRefs.forEach(ref => {
                 const row = seedRows.find(r => r.seedRef === ref);
 
                 html += `
@@ -135,6 +137,13 @@ export async function renderVarietySummaryCards(varietyName) {
     }
 
     return html;
+}
+
+function splitSeedRefs(value) {
+  return String(value || "")
+    .split("/")
+    .map(ref => ref.trim())
+    .filter(Boolean);
 }
 
 /* ===============================
