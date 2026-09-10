@@ -37,6 +37,8 @@ export async function renderVarietySummaryCards(varietyName) {
           <div class="card">
     `;
 
+        const plantingSummaries = [];
+
         /* -------------------------
            ★ 播種（seedRef）
         ------------------------- */
@@ -125,9 +127,14 @@ export async function renderVarietySummaryCards(varietyName) {
                     continue;
                 }
 
+                plantingSummaries.push(summaryData);
                 html += renderSummaryCard(summaryData);
             }
         }
+
+            if (plantingSummaries.length > 0) {
+              html += renderVarietyAggregateCard(plantingSummaries);
+            }
 
         html += `
           </div>
@@ -145,6 +152,57 @@ function splitSeedRefs(value) {
     .map(ref => ref.trim())
     .filter(Boolean);
 }
+
+  function renderVarietyAggregateCard(summaries) {
+    const totalAreaM2 = summaries.reduce((total, summary) => {
+      const areaM2 = summary.planting.areaM2 ?? calcAreaM2(
+        Number(summary.planting.quantity || 0),
+        Number(summary.planting.spacing?.row || 0),
+        Number(summary.planting.spacing?.bed || 0)
+      );
+      return total + Number(areaM2 || 0);
+    }, 0);
+    const totalAreaTan = calcAreaTan(totalAreaM2);
+    const totalHarvestCount = summaries.reduce(
+      (total, summary) => total + Number(summary.harvest?.count || 0),
+      0
+    );
+    const totalHarvestAmount = summaries.reduce(
+      (total, summary) => total + Number(summary.harvest?.totalAmount || 0),
+      0
+    );
+    const totalShippingWeight = summaries.reduce(
+      (total, summary) => total + Number(summary.shipping?.totalWeight || 0),
+      0
+    );
+    const harvestStartDates = summaries
+      .map(summary => summary.harvest?.firstDate)
+      .filter(Boolean)
+      .sort();
+    const harvestEndDates = summaries
+      .map(summary => summary.harvest?.lastDate)
+      .filter(Boolean)
+      .sort();
+    const averageYield = totalAreaTan > 0
+      ? `${(totalHarvestAmount / totalAreaTan).toFixed(1)} 基／反`
+      : "—";
+    const averageShippingWeight = totalHarvestAmount > 0
+      ? `${(totalShippingWeight / totalHarvestAmount).toFixed(2)} kg／基`
+      : "—";
+
+    return `
+      <div class="variety-aggregate-card">
+      <h3>品種全体</h3>
+      <div class="variety-aggregate-grid">
+        <div class="info-line">収穫開始日：${harvestStartDates[0] || "—"}</div>
+          <div class="info-line">最終収穫日：${harvestEndDates[harvestEndDates.length - 1] || "—"}</div>
+        <div class="info-line">収穫回数：${totalHarvestCount}回</div>
+        <div class="info-line">平均反収：${averageYield}</div>
+        <div class="info-line">平均出荷重量：${averageShippingWeight}</div>
+      </div>
+      </div>
+    `;
+  }
 
 /* ===============================
    summary.json → カードHTML

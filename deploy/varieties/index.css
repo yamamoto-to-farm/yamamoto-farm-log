@@ -76,3 +76,27 @@
   margin-bottom: 16px;
 }
 
+.variety-aggregate-card {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.variety-aggregate-card h3 {
+  margin: 0 0 8px;
+}
+
+.variety-aggregate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 18px;
+}
+
+@media (max-width: 640px) {
+  .variety-aggregate-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
