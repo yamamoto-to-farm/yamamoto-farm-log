@@ -34,7 +34,6 @@ export async function renderVarietySummaryCards(varietyName) {
       <details>
         <summary>${year} 年</summary>
         <div class="year-block">
-          <div class="card">
     `;
 
         const plantingSummaries = [];
@@ -45,13 +44,16 @@ export async function renderVarietySummaryCards(varietyName) {
         const seedRefs = [...new Set(seed.flatMap(splitSeedRefs))];
 
         if (seedRefs.length > 0) {
-            html += `<h3>播種</h3>`;
+            html += `
+              <section class="variety-section-card variety-seed-card">
+                <h3>播種</h3>
+            `;
 
-          seedRefs.forEach(ref => {
+            seedRefs.forEach(ref => {
                 const row = seedRows.find(r => r.seedRef === ref);
 
                 html += `
-          <div class="seed-card">
+          <div class="seed-item">
             <div class="info-line">播種日：${row?.seedDate || "-"}</div>
             <div class="info-line">
               数量：${row?.trayCount || "-"}枚（${row?.trayType || "-"}穴）
@@ -59,13 +61,19 @@ export async function renderVarietySummaryCards(varietyName) {
           </div>
         `;
             });
+
+            html += `</section>`;
         }
 
         /* -------------------------
            ★ 定植（summary.json を使う）
         ------------------------- */
         if (planting.length > 0) {
-            html += `<h3 style="margin-top:16px;">定植</h3>`;
+            html += `
+              <section class="variety-section-card variety-planting-section">
+                <h3>定植</h3>
+                <div class="variety-planting-grid">
+            `;
 
             for (const p of planting) {
                 const fileNameRaw = p.fileName; // variety-index.json の fileName（safeFileName 済み）
@@ -92,9 +100,9 @@ export async function renderVarietySummaryCards(varietyName) {
 
                 if (!field) {
                     html += `
-            <div class="planting-card">
+            <article class="planting-card">
               <div class="info-line" style="color:#c00;">圃場名が特定できません（summary-index.json 未登録）</div>
-            </div>
+            </article>
           `;
                     continue;
                 }
@@ -120,9 +128,9 @@ export async function renderVarietySummaryCards(varietyName) {
                         console.error("[summary load failed]", summaryPath);
                     }
                     html += `
-            <div class="planting-card">
+            <article class="planting-card">
               <div class="info-line" style="color:#c00;">summary.json が見つかりません</div>
-            </div>
+            </article>
           `;
                     continue;
                 }
@@ -130,14 +138,18 @@ export async function renderVarietySummaryCards(varietyName) {
                 plantingSummaries.push(summaryData);
                 html += renderSummaryCard(summaryData);
             }
+
+            html += `
+                </div>
+              </section>
+            `;
         }
 
-            if (plantingSummaries.length > 0) {
-              html += renderVarietyAggregateCard(plantingSummaries);
-            }
+        if (plantingSummaries.length > 0) {
+            html += renderVarietyAggregateCard(plantingSummaries);
+        }
 
         html += `
-          </div>
         </div>
       </details>
     `;
@@ -236,7 +248,7 @@ function renderSummaryCard(s) {
     }
 
     return `
-    <div class="planting-card">
+    <article class="planting-card">
 
       <div class="info-line">
         圃場：
@@ -265,6 +277,6 @@ function renderSummaryCard(s) {
       </div>
 
       <div class="info-line" style="font-size:12px; color:#666;">最終更新：${updatedJST}</div>
-    </div>
+    </article>
   `;
 }

@@ -66,18 +66,52 @@
   background: #eef7ff;
 }
 
-/* 播種（seedRef）1件ごとの余白 */
-.seed-card {
-  margin-bottom: 12px;
+.variety-section-card {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
 }
 
-/* 定植（plantingRef）1件ごとの余白 */
+.variety-section-card h3 {
+  margin: 0 0 10px;
+}
+
+.variety-seed-card {
+  background: #f8fbff;
+}
+
+.seed-item {
+  padding: 8px 0;
+  border-top: 1px solid #edf1f5;
+}
+
+.seed-item:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.variety-planting-section {
+  background: #fbfcfd;
+}
+
+.variety-planting-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+}
+
 .planting-card {
-  margin-bottom: 16px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #ffffff;
 }
 
 .variety-aggregate-card {
-  margin-top: 18px;
+  margin: 12px 0;
   padding: 12px 14px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
