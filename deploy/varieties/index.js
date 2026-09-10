@@ -50,6 +50,11 @@ export async function renderVarietyList() {
     --------------------------------------------------------- */
     let tableHtml = `
       <table class="variety-table">
+        <colgroup>
+          <col style="width:46%;">
+          <col style="width:27%;">
+          <col style="width:27%;">
+        </colgroup>
         <thead>
           <tr>
             <th>品種名</th>

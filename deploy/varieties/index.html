@@ -8,39 +8,40 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-
-  <!-- ★ 品種ページ専用デザイン -->
+  <link rel="stylesheet" href="./index.css?v=20260910-1">
 </head>
 
 <body>
 
-  <!-- ★ ページタイトル（動的に変更される） -->
-  <h1 id="variety-name" class="page-title"></h1>
+  <div id="page-area">
+    <!-- ★ ページタイトル（動的に変更される） -->
+    <h1 id="variety-name" class="page-title"></h1>
 
-  <!-- ★ インデックス再生成ボタン + 最終更新（一覧ページのみ表示） -->
-  <div id="index-tools" style="margin: 10px 0; display:none;">
-    <button class="secondary-btn" id="regen-variety-index">
-      品種インデックスを再生成
-    </button>
-    <span style="margin-left: 12px; font-size: 14px;">
-      最終更新：<span id="variety-index-ts">読み込み中…</span>
-    </span>
-  </div>
+    <!-- ★ インデックス再生成ボタン + 最終更新（一覧ページのみ表示） -->
+    <div id="index-tools" class="variety-index-tools" style="display:none;">
+      <button class="secondary-btn" id="regen-variety-index">
+        品種インデックスを再生成
+      </button>
+      <span class="variety-index-updated">
+        最終更新：<span id="variety-index-ts">読み込み中…</span>
+      </span>
+    </div>
 
-  <!-- ★ 品種一覧 or 品種詳細 -->
-  <div id="variety-container">読み込み中…</div>
+    <!-- ★ 品種一覧 or 品種詳細 -->
+    <div id="variety-container">読み込み中…</div>
 
-  <!-- 戻るボタン（fields と同じ位置） -->
-  <div class="back-action-slot">
-    <button id="variety-back-btn" class="secondary-btn unified-back-btn" type="button">
-      元のページへ戻る
-    </button>
-    <button id="variety-list-back-btn" class="secondary-btn unified-back-btn" type="button" style="display:none;">
-      品種一覧に戻る
-    </button>
-    <button id="add-variety-btn" class="secondary-btn" type="button" style="display:none;">
-      新規品種を追加
-    </button>
+    <!-- 戻るボタン（fields と同じ位置） -->
+    <div class="back-action-slot">
+      <button id="variety-back-btn" class="secondary-btn unified-back-btn" type="button">
+        元のページへ戻る
+      </button>
+      <button id="variety-list-back-btn" class="secondary-btn unified-back-btn" type="button" style="display:none;">
+        品種一覧に戻る
+      </button>
+      <button id="add-variety-btn" class="secondary-btn" type="button" style="display:none;">
+        新規品種を追加
+      </button>
+    </div>
   </div>
 
   <!-- 認証チェック & メイン処理 -->
