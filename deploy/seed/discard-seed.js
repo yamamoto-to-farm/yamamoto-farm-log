@@ -3,6 +3,7 @@ import { saveLog } from "../common/save/index.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
 import { confirmSaveBeforeSubmit } from "../common/save-modal.js";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
+import { buildSeedRemainingMap } from "/common/seed-remaining.js?v=1";
 
 const DISCARD_REASON_OPTIONS = [
   { value: "補植余り", label: "補植余り" },
@@ -27,17 +28,15 @@ export async function initDiscardSeedPage() {
     return;
   }
 
-  const [seedRowsRaw, plantingRowsRaw, discardPlantingRaw, discardSeedRaw, legacyNurseryRaw] = await Promise.all([
+  const [seedRowsRaw, plantingRowsRaw, discardSeedRaw, legacyNurseryRaw] = await Promise.all([
     loadCSV("/logs/seed/all.csv").catch(() => []),
     loadCSV("/logs/planting/all.csv").catch(() => []),
-    loadCSV("/logs/discard-planting/all.csv").catch(() => []),
     loadCSV("/logs/discard-seed/all.csv").catch(() => []),
     loadCSV("/logs/nursery/all.csv").catch(() => [])
   ]);
 
   const seedRows = normalizeKeys(seedRowsRaw || []);
   const plantingRows = normalizeKeys(plantingRowsRaw || []);
-  const discardPlantingRows = normalizeKeys(discardPlantingRaw || []);
   const discardSeedRows = normalizeKeys(discardSeedRaw || []);
   const legacyNurseryRows = normalizeKeys(legacyNurseryRaw || []);
 
@@ -48,12 +47,12 @@ export async function initDiscardSeedPage() {
   }
 
   const trayType = Number(seedRow.trayType || 0) || deriveTrayType(seedRow);
-  const totalTrays = Number(seedRow.trayCount || 0);
-  const plantedTrays = calcPlantedTrays(seedRef, plantingRows);
-  const discardPlantingTrays = calcDiscardPlantingTrays(seedRef, plantingRows, discardPlantingRows);
-  const discardSeedTrays = calcDiscardSeedTrays(seedRef, discardSeedRows, legacyNurseryRows, trayType);
 
-  availableTrays = Math.max(0, round1(totalTrays - plantedTrays - discardPlantingTrays - discardSeedTrays));
+  // 残数計算は /common/seed-remaining.js に統一（一覧・定植ページと共通化）
+  const { remainingByRef } = buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows, legacyNurseryRows);
+  const remainingPlants = Math.max(0, Number(remainingByRef.get(seedRef) || 0));
+
+  availableTrays = trayType > 0 ? round1(remainingPlants / trayType) : 0;
   availablePlants = Math.max(0, round1(availableTrays * trayType));
 
   bindStaticInfo(seedRow, trayType);
@@ -209,71 +208,6 @@ function bindInputs(trayType) {
 
   discardTraysInput.addEventListener("input", update);
   update();
-}
-
-function calcPlantedTrays(ref, plantingRows) {
-  return (Array.isArray(plantingRows) ? plantingRows : []).reduce((sum, row) => {
-    const refs = splitSeedRefs(row.seedRef);
-    if (!refs.includes(ref)) return sum;
-
-    const trayType = Number(row.trayType || 0) || 128;
-    let trays = Number(row.trayCount || 0);
-    if (!(trays > 0)) {
-      const qty = Number(row.quantity || 0);
-      trays = trayType > 0 ? qty / trayType : 0;
-    }
-    const perRef = refs.length ? trays / refs.length : 0;
-    return sum + perRef;
-  }, 0);
-}
-
-function calcDiscardPlantingTrays(ref, plantingRows, discardRows) {
-  const plantingByRef = new Map();
-  (Array.isArray(plantingRows) ? plantingRows : []).forEach(row => {
-    const plantingRef = String(row.plantingRef || "").trim();
-    if (plantingRef) plantingByRef.set(plantingRef, row);
-  });
-
-  return (Array.isArray(discardRows) ? discardRows : []).reduce((sum, row) => {
-    const planting = plantingByRef.get(String(row.plantingRef || "").trim());
-    if (!planting) return sum;
-
-    const refs = splitSeedRefs(planting.seedRef);
-    if (!refs.includes(ref)) return sum;
-
-    const trayType = Number(planting.trayType || 0) || 128;
-    const qty = Number(row.discardQuantity || row.discard || 0);
-    const trays = trayType > 0 ? qty / trayType : 0;
-    const perRef = refs.length ? trays / refs.length : 0;
-    return sum + perRef;
-  }, 0);
-}
-
-function calcDiscardSeedTrays(ref, discardSeedRows, legacyNurseryRows, trayType) {
-  const currentDiscard = (Array.isArray(discardSeedRows) ? discardSeedRows : []).reduce((sum, row) => {
-    if (String(row.seedRef || "").trim() !== ref) return sum;
-    let trays = Number(row.discardTrays || 0);
-    if (!(trays > 0)) {
-      const qty = Number(row.discardQuantity || 0);
-      const rowTrayType = Number(row.trayType || 0) || trayType;
-      trays = rowTrayType > 0 ? qty / rowTrayType : 0;
-    }
-    return sum + (Number.isFinite(trays) ? trays : 0);
-  }, 0);
-
-  const legacyDiscard = (Array.isArray(legacyNurseryRows) ? legacyNurseryRows : []).reduce((sum, row) => {
-    if (String(row.seedRef || "").trim() !== ref) return sum;
-    return sum + Number(row.discard || 0);
-  }, 0);
-
-  return currentDiscard + legacyDiscard;
-}
-
-function splitSeedRefs(raw) {
-  return String(raw || "")
-    .split(/[\/／,]/)
-    .map(v => String(v || "").trim())
-    .filter(Boolean);
 }
 
 function deriveTrayType(row) {

@@ -16,6 +16,7 @@ import {
 } from "/common/filter.js";
 
 import { showInfoModal } from "/common/showInfoModal.js";
+import { buildSeedRemainingMap, calcSeedDiscardQuantity } from "/common/seed-remaining.js?v=1";
 
 let seedRows = [];
 let plantingRows = [];
@@ -330,46 +331,7 @@ function parseSeedRefs(value) {
     .filter(Boolean);
 }
 
-function buildSeedUsageMap() {
-  const plantedMap = {};
-  const discardMap = {};
-
-  plantingRows.forEach(row => {
-    const qty = Number(row.quantity || 0);
-    if (!Number.isFinite(qty) || qty === 0) return;
-
-    parseSeedRefs(row.seedRef).forEach(ref => {
-      plantedMap[ref] = (plantedMap[ref] || 0) + qty;
-    });
-  });
-
-  nurseryRows.forEach(row => {
-    const ref = normalizeRef(row.seedRef);
-    if (!ref) return;
-
-    const discard = Number(row.discard || 0);
-    if (!Number.isFinite(discard) || discard === 0) return;
-
-    discardMap[ref] = (discardMap[ref] || 0) + discard;
-  });
-
-  discardSeedRows.forEach(row => {
-    const ref = normalizeRef(row.seedRef);
-    if (!ref) return;
-
-    let discard = Number(row.discardQuantity || 0);
-    if (!Number.isFinite(discard) || discard <= 0) {
-      const trays = Number(row.discardTrays || 0);
-      const trayType = Number(row.trayType || 0);
-      discard = Number.isFinite(trays) && Number.isFinite(trayType) ? trays * trayType : 0;
-    }
-    if (!Number.isFinite(discard) || discard === 0) return;
-
-    discardMap[ref] = (discardMap[ref] || 0) + discard;
-  });
-
-  return { plantedMap, discardMap };
-}
+// 播種ロットの残数計算は /common/seed-remaining.js に統一（定植・破棄ページと共通化）
 
 function formatCount(value) {
   const num = Number(value || 0);
@@ -414,8 +376,8 @@ function resolveTrayUnit(seedRow) {
   return null;
 }
 
-function renderRemainingStockCell(seedRow, usageMap) {
-  const info = getRemainingSeedInfo(seedRow, usageMap);
+function renderRemainingStockCell(seedRow, remainingByRef) {
+  const info = getRemainingSeedInfo(seedRow, remainingByRef);
 
   if (!info.trayUnit) {
     if (info.discarded > 0) {
@@ -430,15 +392,10 @@ function renderRemainingStockCell(seedRow, usageMap) {
   return formatTrayWithType(info.remainingTrays, info.trayType);
 }
 
-function getRemainingSeedInfo(seedRow, usageMap) {
-  const seedRef = seedRow?.seedRef;
-  const seedCount = Number(seedRow?.seedCount || 0);
-  const ref = normalizeRef(seedRef);
-  const planted = Number(usageMap.plantedMap[ref] || 0);
-  const discarded = Number(usageMap.discardMap[ref] || 0);
-  const total = Number(seedCount || 0);
-  const remainingRaw = total - planted - discarded;
-  const remaining = Math.max(0, remainingRaw);
+function getRemainingSeedInfo(seedRow, remainingByRef) {
+  const ref = normalizeRef(seedRow?.seedRef);
+  const remaining = Math.max(0, Number(remainingByRef.get(ref) || 0));
+  const discarded = calcSeedDiscardQuantity(ref, discardSeedRows, nurseryRows);
 
   const trayUnit = resolveTrayUnit(seedRow);
   const trayType = Number(seedRow?.trayType || 0);
@@ -511,7 +468,7 @@ function renderTable(rows) {
   let remainingTray200 = 0;
   let remainingSeed = 0;
   let remainingAreaTan = 0;
-  const usageMap = buildSeedUsageMap();
+  const { remainingByRef } = buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows, nurseryRows);
 
   sortedRows.forEach(r => {
 
@@ -525,7 +482,7 @@ function renderTable(rows) {
     totalSeed += seedCount;
     totalAreaTan += areaTan;
 
-    const remainingInfo = getRemainingSeedInfo(r, usageMap);
+    const remainingInfo = getRemainingSeedInfo(r, remainingByRef);
     if (trayType === 128) remainingTray128 += remainingInfo.remainingTrays;
     if (trayType === 200) remainingTray200 += remainingInfo.remainingTrays;
     remainingSeed += remainingInfo.remaining;
@@ -545,7 +502,7 @@ function renderTable(rows) {
 
       <td>${formatTrayWithType(tray, trayType)}</td>
       <td>${areaTan.toFixed(2)}</td>
-      <td>${renderRemainingStockCell(r, usageMap)}</td>
+      <td>${renderRemainingStockCell(r, remainingByRef)}</td>
       <td>${plantingHtml}</td>
     </tr>`;
   });
