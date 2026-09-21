@@ -321,7 +321,7 @@ function buildPlantingRefsTotalHtml(plantingRefs, trayType) {
   if (!(trayType > 0) || plantingRefs.length < 2) return "";
 
   const totalQuantity = plantingRefs.reduce((sum, { quantity }) => sum + Number(quantity || 0), 0);
-  return `<div style="text-align:right; font-weight:700; margin-top:4px;">計 ${formatTrayCount(totalQuantity / trayType)}</div>`;
+  return `<div style="text-align:right; margin-top:4px; white-space:nowrap;">計 ${formatTrayCount(totalQuantity / trayType)}</div>`;
 }
 
 function normalizeRef(value) {
