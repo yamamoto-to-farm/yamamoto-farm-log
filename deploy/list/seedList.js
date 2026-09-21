@@ -314,7 +314,11 @@ function getPlantingRefs(seedRef) {
     if (!r.seedRef) return;
     const srefs = parseSeedRefs(r.seedRef);
     if (srefs.some(s => refs.includes(s))) {
-      plantingRefs.push(r.plantingRef);
+      plantingRefs.push({
+        plantingRef: r.plantingRef,
+        quantity: Number(r.quantity || 0),
+        trayType: Number(r.trayType || 0)
+      });
     }
   });
 
@@ -491,7 +495,12 @@ function renderTable(rows) {
 
     const plantingRefs = getPlantingRefs(r.seedRef);
     const plantingHtml = plantingRefs.length
-      ? plantingRefs.map(ref => `<a href="#" class="planting-ref-link" data-ref="${escapeHtml(ref)}">${escapeHtml(ref)}</a>`).join("<br>")
+      ? plantingRefs.map(({ plantingRef, quantity, trayType: plantingTrayType }) => {
+          const trayText = plantingTrayType > 0
+            ? `（${formatTrayCount(quantity / plantingTrayType)}）`
+            : "";
+          return `<a href="#" class="planting-ref-link" data-ref="${escapeHtml(plantingRef)}">${escapeHtml(plantingRef)}</a>${trayText}`;
+        }).join("<br>")
       : "-";
 
     html += `<tr>
