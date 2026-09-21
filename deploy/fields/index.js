@@ -66,8 +66,16 @@ export async function renderFieldList({ view = "active" } = {}) {
       <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="area" checked>耕作面積</label>
       <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="official-area" checked>登記面積合計</label>
       <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="owner" checked>地権者名</label>
+      <label class="field-column-toggle">
+        <input type="checkbox" id="address-expand-checkbox">
+        所在を複数筆展開表示
+      </label>
     </div>
   `);
+
+  document.getElementById("address-expand-checkbox")?.addEventListener("change", (event) => {
+    container.classList.toggle("show-address-expanded", event.target.checked);
+  });
 
   document.querySelectorAll(".field-col-checkbox").forEach(checkbox => {
     checkbox.addEventListener("change", () => {
@@ -199,7 +207,7 @@ export async function renderFieldList({ view = "active" } = {}) {
       const addressTitleAttr = addressSummary.fullText
         ? ` title="${escapeHtml(addressSummary.fullText)}"`
         : "";
-      const addressHtml = addressSummary.mainText === "未入力"
+      const addressCollapsedHtml = addressSummary.mainText === "未入力"
         ? `<span class="field-address-empty">未入力</span>`
         : `
           <span class="field-address-main">${escapeHtml(addressSummary.mainText)}</span>
@@ -208,6 +216,13 @@ export async function renderFieldList({ view = "active" } = {}) {
             : ""
           }
         `;
+      const addressExpandedHtml = addressSummary.addresses.length
+        ? addressSummary.addresses.map(a => `<div class="field-address-line">${escapeHtml(a)}</div>`).join("")
+        : `<span class="field-address-empty">未入力</span>`;
+      const addressHtml = `
+        <span class="field-address-collapsed">${addressCollapsedHtml}</span>
+        <span class="field-address-expanded">${addressExpandedHtml}</span>
+      `;
 
       const cultivatingIconHtml = isCultivating && cultivatingPlantingRefs.length
         ? `<button type="button" class="field-cultivating-icon" data-planting-refs="${escapeHtml(JSON.stringify(cultivatingPlantingRefs))}" title="栽培中の定植記録を見る${cultivatingPlantingRefs.length > 1 ? `（${cultivatingPlantingRefs.length}件）` : ""}">🌱</button>`
@@ -291,7 +306,8 @@ function summarizeFieldAddress(detail) {
     return {
       mainText: "未入力",
       restCount: 0,
-      fullText: ""
+      fullText: "",
+      addresses: []
     };
   }
 
@@ -307,7 +323,8 @@ function summarizeFieldAddress(detail) {
       return {
         mainText: first,
         restCount: rest,
-        fullText: parcelAddresses.join("／")
+        fullText: parcelAddresses.join("／"),
+        addresses: parcelAddresses
       };
     }
   }
@@ -318,14 +335,16 @@ function summarizeFieldAddress(detail) {
     return {
       mainText: direct,
       restCount: 0,
-      fullText: direct
+      fullText: direct,
+      addresses: [direct]
     };
   }
 
   return {
     mainText: "未入力",
     restCount: 0,
-    fullText: ""
+    fullText: "",
+    addresses: []
   };
 }
 
@@ -351,6 +370,7 @@ function getOwnerNamesText(detail) {
   )];
 
   return owners.length ? owners.join("／") : "未入力";
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
