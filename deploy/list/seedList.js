@@ -415,6 +415,22 @@ function resolveTrayUnit(seedRow) {
 }
 
 function renderRemainingStockCell(seedRow, usageMap) {
+  const info = getRemainingSeedInfo(seedRow, usageMap);
+
+  if (!info.trayUnit) {
+    if (info.discarded > 0) {
+      return `${formatCount(info.remaining)}<div style="font-size:12px;color:#6b7280;">破棄:${formatCount(info.discarded)}株</div>`;
+    }
+    return `${formatCount(info.remaining)}株`;
+  }
+
+  if (info.discarded > 0) {
+    return `${formatTrayWithType(info.remainingTrays, info.trayType)}<div style="font-size:12px;color:#6b7280;">破棄:${formatTrayWithType(info.discardedTrays, info.trayType)}</div>`;
+  }
+  return formatTrayWithType(info.remainingTrays, info.trayType);
+}
+
+function getRemainingSeedInfo(seedRow, usageMap) {
   const seedRef = seedRow?.seedRef;
   const seedCount = Number(seedRow?.seedCount || 0);
   const ref = normalizeRef(seedRef);
@@ -425,21 +441,16 @@ function renderRemainingStockCell(seedRow, usageMap) {
   const remaining = Math.max(0, remainingRaw);
 
   const trayUnit = resolveTrayUnit(seedRow);
-  if (!trayUnit) {
-    if (discarded > 0) {
-      return `${formatCount(remaining)}<div style="font-size:12px;color:#6b7280;">破棄:${formatCount(discarded)}株</div>`;
-    }
-    return `${formatCount(remaining)}株`;
-  }
-
-  const remainingTrays = remaining / trayUnit;
-  const discardedTrays = discarded / trayUnit;
   const trayType = Number(seedRow?.trayType || 0);
 
-  if (discarded > 0) {
-    return `${formatTrayWithType(remainingTrays, trayType)}<div style="font-size:12px;color:#6b7280;">破棄:${formatTrayWithType(discardedTrays, trayType)}</div>`;
-  }
-  return formatTrayWithType(remainingTrays, trayType);
+  return {
+    remaining,
+    discarded,
+    trayUnit,
+    trayType,
+    remainingTrays: trayUnit ? remaining / trayUnit : 0,
+    discardedTrays: trayUnit ? discarded / trayUnit : 0
+  };
 }
 
 /* ============================================================
@@ -496,6 +507,10 @@ function renderTable(rows) {
   let totalTray200 = 0;
   let totalSeed = 0;
   let totalAreaTan = 0;
+  let remainingTray128 = 0;
+  let remainingTray200 = 0;
+  let remainingSeed = 0;
+  let remainingAreaTan = 0;
   const usageMap = buildSeedUsageMap();
 
   sortedRows.forEach(r => {
@@ -509,6 +524,12 @@ function renderTable(rows) {
     if (trayType === 200) totalTray200 += tray;
     totalSeed += seedCount;
     totalAreaTan += areaTan;
+
+    const remainingInfo = getRemainingSeedInfo(r, usageMap);
+    if (trayType === 128) remainingTray128 += remainingInfo.remainingTrays;
+    if (trayType === 200) remainingTray200 += remainingInfo.remainingTrays;
+    remainingSeed += remainingInfo.remaining;
+    remainingAreaTan += calcSeedAreaTan(remainingInfo.remaining);
 
     const plantingRefs = getPlantingRefs(r.seedRef);
     const plantingHtml = plantingRefs.length ? plantingRefs.join("<br>") : "-";
@@ -539,7 +560,12 @@ function renderTable(rows) {
     `総枚数：${formatTrayWithType(totalTray128, 128)}<br>
      総枚数：${formatTrayWithType(totalTray200, 200)}<br>
      総株数：${totalSeed.toLocaleString()} 株<br>
-     予定面積合計：${totalAreaTan.toFixed(2)} 反`;
+     予定面積合計：${totalAreaTan.toFixed(2)} 反<br>
+     <hr style="margin:8px 0;">
+     残り枚数：${formatTrayWithType(remainingTray128, 128)}<br>
+     残り枚数：${formatTrayWithType(remainingTray200, 200)}<br>
+     残り株数：${formatCount(remainingSeed)} 株<br>
+     残り面積合計：${remainingAreaTan.toFixed(2)} 反`;
 
   window.dispatchEvent(new CustomEvent("list:summary-updated"));
 
