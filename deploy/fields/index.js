@@ -1,6 +1,9 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
+import { safeFieldName } from "/common/utils.js";
 import { buildExpiredFieldNameSet } from "/common/field-contract.js?v=1";
+
+const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
 // ▼ デバッグフラグ（true でログ ON）
 const DEBUG_FIELD_LIST = true;
@@ -18,6 +21,9 @@ export async function renderFieldList({ view = "active" } = {}) {
   const expiredSet = buildExpiredFieldNameSet(fieldDetail);
   const isExpiredView = view === "expired";
   const targetFields = fields.filter(f => isExpiredView ? expiredSet.has(f.name) : !expiredSet.has(f.name));
+
+  // ★ 定植記録はあるが収穫記録がまだない圃場（＝栽培中）を判定
+  const cultivatingFieldSet = await buildCultivatingFieldSet(targetFields);
 
   container.insertAdjacentHTML("beforeend", `
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
@@ -38,7 +44,20 @@ export async function renderFieldList({ view = "active" } = {}) {
         契約終了した圃場一覧
       </button>
     </div>
+    <div class="field-cultivating-toggle-row">
+      <label class="field-cultivating-toggle">
+        <input type="checkbox" id="cultivating-toggle-checkbox">
+        栽培中の圃場をハイライト表示
+      </label>
+    </div>
   `);
+
+  const toggleCheckbox = document.getElementById("cultivating-toggle-checkbox");
+  if (toggleCheckbox) {
+    toggleCheckbox.addEventListener("change", () => {
+      container.classList.toggle("show-cultivating", toggleCheckbox.checked);
+    });
+  }
 
   if (targetFields.length === 0) {
     container.insertAdjacentHTML("beforeend", `
@@ -158,8 +177,10 @@ export async function renderFieldList({ view = "active" } = {}) {
           }
         `;
 
+      const isCultivating = cultivatingFieldSet.has(field.name);
+
       tableHtml += `
-        <tr class="field-row" data-name="${field.name}">
+        <tr class="field-row${isCultivating ? " field-cultivating" : ""}" data-name="${field.name}">
           <td>${escapeHtml(field.name)}</td>
           <td class="field-address-col"${addressTitleAttr}>${addressHtml}</td>
           <td class="field-area-col">${display}</td>
@@ -265,4 +286,51 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/* -----------------------------------------
+   定植記録はあるが収穫記録がまだない圃場（＝栽培中）を判定
+----------------------------------------- */
+async function buildCultivatingFieldSet(targetFields) {
+  const summaryIndex = await loadJSON("data/summary-index.json").catch(() => ({}));
+
+  const results = await Promise.all(
+    targetFields.map(async field => {
+      const latestSummary = await loadLatestSummaryForField(summaryIndex, field.name);
+      if (!latestSummary) return null;
+
+      const hasHarvest = !!latestSummary.lifecycle?.hasHarvest || (
+        !!latestSummary.harvest?.firstDate &&
+        !!latestSummary.harvest?.lastDate &&
+        latestSummary.harvest?.count > 0
+      );
+
+      return hasHarvest ? null : field.name;
+    })
+  );
+
+  return new Set(results.filter(Boolean));
+}
+
+async function loadLatestSummaryForField(summaryIndex, fieldName) {
+  const key = summaryIndex[fieldName] ? fieldName : safeFieldName(fieldName);
+  const byYear = summaryIndex?.[key];
+  if (!byYear || typeof byYear !== "object") return null;
+
+  const years = Object.keys(byYear).sort();
+  const latestYear = years[years.length - 1];
+  const files = Array.isArray(byYear[latestYear]) ? byYear[latestYear] : [];
+  if (files.length === 0) return null;
+
+  // ファイル名は「日付-圃場名-品種」形式のため、日付順で最新を取得
+  const latestFile = [...files].sort().at(-1);
+
+  try {
+    const url = `${CF_BASE}/logs/summary/${key}/${latestYear}/${latestFile}?ts=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }

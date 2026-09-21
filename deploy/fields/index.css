@@ -79,6 +79,29 @@
   background: #eef7ff;
 }
 
+/* 栽培中ハイライト切替 */
+.field-cultivating-toggle-row {
+  margin-bottom: 12px;
+}
+
+.field-cultivating-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+.show-cultivating .field-row.field-cultivating {
+  background: #e3f5e6;
+}
+
+.show-cultivating .field-row.field-cultivating:hover {
+  background: #d1eed7;
+}
+
 /* 稼働中/契約終了 切替ボタン */
 .field-view-btn {
   padding: 12px 18px;
