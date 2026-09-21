@@ -26,7 +26,7 @@ export async function renderFieldList({ view = "active" } = {}) {
   const cultivatingFieldSet = await buildCultivatingFieldSet(targetFields);
 
   container.insertAdjacentHTML("beforeend", `
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+    <div class="field-view-toolbar">
       <button
         class="field-view-btn ${isExpiredView ? "" : "is-active"}"
         type="button"
@@ -43,8 +43,6 @@ export async function renderFieldList({ view = "active" } = {}) {
       >
         契約終了した圃場一覧
       </button>
-    </div>
-    <div class="field-cultivating-toggle-row">
       <label class="field-cultivating-toggle">
         <input type="checkbox" id="cultivating-toggle-checkbox">
         栽培中の圃場をハイライト表示
