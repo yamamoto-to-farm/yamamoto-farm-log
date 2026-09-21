@@ -304,36 +304,21 @@ function applyAllFilters(rows, state) {
 /* ============================================================
    定植ID（seedRef → plantingRef[]）
 ============================================================ */
-function getPlantingRefs(seedRef) {
-  if (!seedRef) return [];
-  const refs = parseSeedRefs(seedRef);
+function getPlantingRefs(seedRef, allocationsByRef) {
+  const ref = normalizeRef(seedRef);
+  if (!ref) return [];
 
-  const plantingRefs = [];
+  // 複数 seedRef を同時に併記した定植記録も、このロットに按分された分だけを抽出
+  const allocations = allocationsByRef.get(ref) || [];
 
-  plantingRows.forEach(r => {
-    if (!r.seedRef) return;
-    const srefs = parseSeedRefs(r.seedRef);
-    if (srefs.some(s => refs.includes(s))) {
-      plantingRefs.push({
-        plantingRef: r.plantingRef,
-        quantity: Number(r.quantity || 0),
-        trayType: Number(r.trayType || 0)
-      });
-    }
-  });
-
-  return plantingRefs;
+  return allocations.map(({ plantingRef, allocated }) => ({
+    plantingRef,
+    quantity: allocated
+  }));
 }
 
 function normalizeRef(value) {
   return String(value ?? "").replace(/\s+/g, "").trim();
-}
-
-function parseSeedRefs(value) {
-  return String(value ?? "")
-    .split(/[\/,]/)
-    .map(normalizeRef)
-    .filter(Boolean);
 }
 
 // 播種ロットの残数計算は /common/seed-remaining.js に統一（定植・破棄ページと共通化）
@@ -473,7 +458,7 @@ function renderTable(rows) {
   let remainingTray200 = 0;
   let remainingSeed = 0;
   let remainingAreaTan = 0;
-  const { remainingByRef } = buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows, nurseryRows);
+  const { remainingByRef, allocationsByRef } = buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows, nurseryRows);
 
   sortedRows.forEach(r => {
 
@@ -493,11 +478,12 @@ function renderTable(rows) {
     remainingSeed += remainingInfo.remaining;
     remainingAreaTan += calcSeedAreaTan(remainingInfo.remaining);
 
-    const plantingRefs = getPlantingRefs(r.seedRef);
+    const plantingRefs = getPlantingRefs(r.seedRef, allocationsByRef);
     const plantingHtml = plantingRefs.length
-      ? plantingRefs.map(({ plantingRef, quantity, trayType: plantingTrayType }) => {
-          const trayText = plantingTrayType > 0
-            ? `（${formatTrayCount(quantity / plantingTrayType)}）`
+      ? plantingRefs.map(({ plantingRef, quantity }) => {
+          // このロット自体の trayType で換算（定植記録側の trayTypeは他ロットと混在することがあり信頼できない）
+          const trayText = trayType > 0
+            ? `（${formatTrayCount(quantity / trayType)}）`
             : "";
           return `<a href="#" class="planting-ref-link" data-ref="${escapeHtml(plantingRef)}">${escapeHtml(plantingRef)}</a>${trayText}`;
         }).join("<br>")

@@ -36,6 +36,7 @@ export function calcSeedDiscardQuantity(seedRef, discardSeedRows = [], legacyNur
 export function buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows = [], nurseryRows = []) {
   const remainingByRef = new Map();
   const usedByRef = new Map();
+  const allocationsByRef = new Map(); // ref -> [{ plantingRef, allocated }]（複数ロット併記時の按分内訳）
 
   (Array.isArray(seedRows) ? seedRows : []).forEach(row => {
     const ref = String(row?.seedRef || "").trim();
@@ -44,6 +45,7 @@ export function buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows = 
     const discarded = calcSeedDiscardQuantity(ref, discardSeedRows, nurseryRows);
     remainingByRef.set(ref, Math.max(0, seedCount - discarded));
     usedByRef.set(ref, 0);
+    allocationsByRef.set(ref, []);
   });
 
   const chronologicalPlantings = (Array.isArray(plantingRows) ? plantingRows : [])
@@ -61,8 +63,15 @@ export function buildSeedRemainingMap(seedRows, plantingRows, discardSeedRows = 
       remainingByRef.set(ref, available - allocated);
       usedByRef.set(ref, (usedByRef.get(ref) || 0) + allocated);
       quantityToAllocate -= allocated;
+
+      if (allocated > 0) {
+        allocationsByRef.get(ref).push({
+          plantingRef: String(row?.plantingRef || "").trim(),
+          allocated
+        });
+      }
     });
   });
 
-  return { remainingByRef, usedByRef };
+  return { remainingByRef, usedByRef, allocationsByRef };
 }
