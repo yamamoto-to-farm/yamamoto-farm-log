@@ -317,13 +317,6 @@ function getPlantingRefs(seedRef, allocationsByRef) {
   }));
 }
 
-function buildPlantingRefsTotalHtml(plantingRefs, trayType) {
-  if (!(trayType > 0) || plantingRefs.length < 2) return "";
-
-  const totalQuantity = plantingRefs.reduce((sum, { quantity }) => sum + Number(quantity || 0), 0);
-  return `<div style="text-align:right; margin-top:4px; white-space:nowrap;">計 ${formatTrayCount(totalQuantity / trayType)}</div>`;
-}
-
 function normalizeRef(value) {
   return String(value ?? "").replace(/\s+/g, "").trim();
 }
@@ -486,6 +479,7 @@ function renderTable(rows) {
     remainingAreaTan += calcSeedAreaTan(remainingInfo.remaining);
 
     const plantingRefs = getPlantingRefs(r.seedRef, allocationsByRef);
+    const totalQuantity = plantingRefs.reduce((sum, { quantity }) => sum + Number(quantity || 0), 0);
     const plantingHtml = plantingRefs.length
       ? plantingRefs.map(({ plantingRef, quantity }) => {
           // このロット自体の trayType で換算（定植記録側の trayTypeは他ロットと混在することがあり信頼できない）
@@ -493,7 +487,7 @@ function renderTable(rows) {
             ? `（${formatTrayCount(quantity / trayType)}）`
             : "";
           return `<a href="#" class="planting-ref-link" data-ref="${escapeHtml(plantingRef)}">${escapeHtml(plantingRef)}</a>${trayText}`;
-        }).join("<br>") + buildPlantingRefsTotalHtml(plantingRefs, trayType)
+        }).join("<br>")
       : "-";
 
     html += `<tr>
@@ -508,7 +502,7 @@ function renderTable(rows) {
       <td>${formatTrayWithType(tray, trayType)}</td>
       <td>${areaTan.toFixed(2)}</td>
       <td>${renderRemainingStockCell(r, remainingByRef)}</td>
-      <td>${plantingHtml}</td>
+      <td class="planting-refs-cell"${plantingRefs.length >= 2 ? ` data-seed-ref="${escapeHtml(r.seedRef)}" data-total-quantity="${totalQuantity}" data-tray-type="${trayType}"` : ""}>${plantingHtml}</td>
     </tr>`;
   });
 
@@ -541,7 +535,20 @@ function renderTable(rows) {
       seedDateSortOrder = seedDateSortOrder === "asc" ? "desc" : "asc";
       renderTable(rows);
     });
-  }
+  }  /* ▲ 定植 ID セルの余白クリックで合計枚数をモーダル表示 */
+  document.querySelectorAll(".planting-refs-cell[data-seed-ref]").forEach(cell => {
+    cell.classList.add("is-clickable");
+    cell.addEventListener("click", (event) => {
+      if (event.target.closest(".planting-ref-link")) return;
+      const totalQuantity = Number(cell.dataset.totalQuantity || 0);
+      const cellTrayType = Number(cell.dataset.trayType || 0);
+      const totalText = cellTrayType > 0 ? formatTrayCount(totalQuantity / cellTrayType) : `${formatCount(totalQuantity)}株`;
+      showInfoModal(
+        `定植記録 合計（${cell.dataset.seedRef}）`,
+        `<p><b>合計：</b>${totalText}（${formatCount(totalQuantity)}株）</p>`
+      );
+    });
+  });
   /* ▲ 定植 ID クリックで定植一覧と同じモーダルを表示 */
   document.querySelectorAll(".planting-ref-link").forEach(link => {
     link.addEventListener("click", (event) => {

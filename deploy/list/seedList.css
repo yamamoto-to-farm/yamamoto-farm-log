@@ -12,6 +12,15 @@
   background: #eef7ff;
 }
 
+/* ▼ 定植ID列の合計クリック（複数件ある場合のみ付与） */
+.planting-refs-cell.is-clickable {
+  cursor: pointer;
+}
+
+.planting-refs-cell.is-clickable:hover {
+  background: #eef7ff;
+}
+
 /* ▼ 列幅（播種一覧専用） */
 #table-area table th:nth-child(1),
 #table-area table td:nth-child(1) {
