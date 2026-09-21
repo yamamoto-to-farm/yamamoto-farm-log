@@ -105,24 +105,42 @@ async function loadPlanting() {
 // 自動計算セットアップ
 // ===============================
 function setupAutoCalc() {
+  const totalBedsInput = document.getElementById("totalBeds");
+  const tilledBedsInput = document.getElementById("tilledBeds");
+  const wholeFieldCheckbox = document.getElementById("wholeFieldDiscard");
+
   const calc = () => {
-    const total = Number(document.getElementById("totalBeds").value);
-    const tilled = Number(document.getElementById("tilledBeds").value);
+    const plantingQty = Number(plantingRow?.quantity ?? 0);
+
+    // ★ 圃場全体を破棄する場合は畝数入力を使わず100%破棄として計算
+    if (wholeFieldCheckbox.checked) {
+      document.getElementById("discardRate").textContent = 100;
+      document.getElementById("discardQuantity").textContent = Math.ceil(plantingQty);
+      return;
+    }
+
+    const total = Number(totalBedsInput.value);
+    const tilled = Number(tilledBedsInput.value);
 
     if (!total || total <= 0) return;
 
     const rate = tilled / total;
     const discardRate = Math.min(Math.max(rate, 0), 1);
-
-    const plantingQty = Number(plantingRow?.quantity ?? 0);
     const discardQty = Math.ceil(plantingQty * discardRate);
 
     document.getElementById("discardRate").textContent = Math.round(discardRate * 100);
     document.getElementById("discardQuantity").textContent = discardQty;
   };
 
-  document.getElementById("totalBeds").addEventListener("input", calc);
-  document.getElementById("tilledBeds").addEventListener("input", calc);
+  wholeFieldCheckbox.addEventListener("change", () => {
+    const isWhole = wholeFieldCheckbox.checked;
+    totalBedsInput.disabled = isWhole;
+    tilledBedsInput.disabled = isWhole;
+    calc();
+  });
+
+  totalBedsInput.addEventListener("input", calc);
+  tilledBedsInput.addEventListener("input", calc);
 }
 
 // ===============================
