@@ -185,7 +185,7 @@ function normalizeRef(s) {
     .replace(/\u00A0/g, "");
 }
 
-function buildSummaryFromRows(plantingRef, planting, harvest, shipping) {
+function buildSummaryFromRows(plantingRef, planting, harvest, shipping, discardPlanting = []) {
   const p = planting.find(
     x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
   );
@@ -202,6 +202,10 @@ function buildSummaryFromRows(plantingRef, planting, harvest, shipping) {
   );
 
   const shippingRows = shipping.filter(
+    x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
+  );
+
+  const discardRows = discardPlanting.filter(
     x => normalizeRef(x.plantingRef) === normalizeRef(plantingRef)
   );
 
@@ -225,14 +229,25 @@ function buildSummaryFromRows(plantingRef, planting, harvest, shipping) {
     0
   );
 
+  const discardTotalQuantity = discardRows.reduce(
+    (s, x) => s + Number(x.discardQuantity || 0),
+    0
+  );
+
+  const plantingQuantity = Number(p.quantity || 0);
+  // 端数（1株未満）は誤差として許容し、ほぼ全量破棄されていれば「破棄済み」扱いにする
+  const isFullyDiscarded = plantingQuantity > 0 && discardTotalQuantity >= plantingQuantity - 1;
+
   const hasHarvest = !!harvestDates[0] && !!harvestDates[harvestDates.length - 1] && harvestRows.length > 0;
   const lifecycle = {
-    phase: hasHarvest ? "harvested" : "in-cultivation",
+    phase: hasHarvest ? "harvested" : (isFullyDiscarded ? "discarded" : "in-cultivation"),
     hasHarvest,
+    discardedFully: isFullyDiscarded,
+    discardTotalQuantity,
     startDate: p.plantDate || "",
     endDate: harvestDates[harvestDates.length - 1] || "",
     harvestReady: !!p.harvestPlanYM,
-    statusText: hasHarvest ? "収穫済み" : "栽培中"
+    statusText: hasHarvest ? "収穫済み" : (isFullyDiscarded ? "破棄済み" : "栽培中")
   };
 
   return {
@@ -279,11 +294,12 @@ export async function summaryUpdate(plantingRef) {
     const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
     const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
     const shipping = await loadCsvWithRetry("logs/weight/all.csv", "weight");
+    const discardPlanting = await loadCsvWithRetry("logs/discard-planting/all.csv", "discard-planting");
     const targets = planting.filter(p => p.plantingRef);
 
     for (const [index, p] of targets.entries()) {
       const ref = normalizeRef(p.plantingRef);
-      const summary = buildSummaryFromRows(ref, planting, harvest, shipping);
+      const summary = buildSummaryFromRows(ref, planting, harvest, shipping, discardPlanting);
       if (summary) window._summaryPool[ref] = summary;
 
       if ((index + 1) % 20 === 0 || index + 1 === targets.length) {
@@ -300,9 +316,10 @@ export async function summaryUpdate(plantingRef) {
   const planting = await loadCsvWithRetry("logs/planting/all.csv", "planting");
   const harvest = await loadCsvWithRetry("logs/harvest/all.csv", "harvest");
   const shipping = await loadCsvWithRetry("logs/weight/all.csv", "weight");
+  const discardPlanting = await loadCsvWithRetry("logs/discard-planting/all.csv", "discard-planting");
 
   const ref = normalizeRef(plantingRef);
-  const summary = buildSummaryFromRows(ref, planting, harvest, shipping);
+  const summary = buildSummaryFromRows(ref, planting, harvest, shipping, discardPlanting);
   if (!summary) {
     return;
   }

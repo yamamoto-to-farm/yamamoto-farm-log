@@ -3,7 +3,7 @@ import { safeFieldName, safeFileName } from "/common/utils.js";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { loadCSV } from "/common/csv.js";
 import { loadNotesForPlantingRef } from "./notes.js";
-import { renderCultivationOverviewCard } from "./card-cultivation-overview.js?v=20260715-1";
+import { renderCultivationOverviewCard } from "./card-cultivation-overview.js?v=20260921-1";
 
 import {
   calcAreaM2,
@@ -297,8 +297,8 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
     plantingRef: s?.plantingRef || ""
   });
 
-  // 収穫記録があれば破棄不要（一部収穫→残り破棄はメモ・収穫情報側で管理）
-  const canDiscardPlanting = window.currentRole === "admin" && !hasHarvest && !!s.plantingRef;
+  // 収穫記録があれば破棄不要（一部収穫→残り破棄はメモ・収穫情報側で管理）。既に全量破棄済みの場合も不要
+  const canDiscardPlanting = window.currentRole === "admin" && !hasHarvest && !s.lifecycle?.discardedFully && !!s.plantingRef;
   const discardPlantingHTML = canDiscardPlanting
     ? `
         <div class="info-line link">

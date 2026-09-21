@@ -11,7 +11,11 @@ export async function renderCultivationOverviewCard({ fieldName, startDate, endD
 
   const effectiveEndDate = endDate || getTodayLocalYmd();
   const rangeStartLabel = startDate || "前作なし（全期間）";
-  const statusLabel = phase === "harvested" ? "収穫後の栽培実績" : "栽培中の作業実績";
+  const statusLabel = phase === "harvested"
+    ? "収穫後の栽培実績"
+    : phase === "discarded"
+      ? "破棄済みの栽培実績"
+      : "栽培中の作業実績";
 
   const [pesticideLog, intertillLog, fertilizerLog] = await Promise.all([
     loadFieldLog("pesticide", safeField),

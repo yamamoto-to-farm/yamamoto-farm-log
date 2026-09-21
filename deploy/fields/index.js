@@ -316,7 +316,10 @@ async function buildCultivatingFieldSet(targetFields) {
         latestSummary.harvest?.count > 0
       );
 
-      return hasHarvest ? null : field.name;
+      // 全量破棄された作付けも「栽培中」からは除外する
+      const discardedFully = !!latestSummary.lifecycle?.discardedFully;
+
+      return (hasHarvest || discardedFully) ? null : field.name;
     })
   );
 

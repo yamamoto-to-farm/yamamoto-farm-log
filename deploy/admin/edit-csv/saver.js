@@ -1,6 +1,6 @@
 // admin/edit-csv/saver.js
 import { saveLog } from "../../common/save/index.js";
-import { enqueueSummaryUpdate } from "../../common/summary.js?v=20260820";
+import { enqueueSummaryUpdate } from "../../common/summary.js?v=20260921-1";
 import { parseCsvText } from "/common/csv.js?v=20260820";
 
 // ★ 共通保存モーダル
