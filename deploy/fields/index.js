@@ -98,6 +98,7 @@ export async function renderFieldList({ view = "active" } = {}) {
   for (const [groupName, fieldList] of Object.entries(groups)) {
 
     let areaTotalHan = 0;
+    let cultivatingAreaTotalForGroup = 0;
 
     const groupDiv = document.createElement("div");
     groupDiv.className = "field-group";
@@ -171,6 +172,9 @@ export async function renderFieldList({ view = "active" } = {}) {
 
       areaTotalHan += sizeHan;
 
+      const isCultivating = cultivatingFieldSet.has(field.name);
+      if (isCultivating) cultivatingAreaTotalForGroup += sizeHan;
+
       const addressSummary = summarizeFieldAddress(detail);
       const addressTitleAttr = addressSummary.fullText
         ? ` title="${escapeHtml(addressSummary.fullText)}"`
@@ -184,8 +188,6 @@ export async function renderFieldList({ view = "active" } = {}) {
             : ""
           }
         `;
-
-      const isCultivating = cultivatingFieldSet.has(field.name);
 
       tableHtml += `
         <tr class="field-row${isCultivating ? " field-cultivating" : ""}" data-name="${field.name}">
@@ -201,6 +203,7 @@ export async function renderFieldList({ view = "active" } = {}) {
       </table>
       <div class="field-area-total-row">
         ${groupName}エリア合計：${areaTotalHan.toFixed(2)}反
+        <span class="field-area-total-breakdown">（栽培中：${cultivatingAreaTotalForGroup.toFixed(2)}反　空き圃場：${(areaTotalHan - cultivatingAreaTotalForGroup).toFixed(2)}反）</span>
       </div>
     `;
 

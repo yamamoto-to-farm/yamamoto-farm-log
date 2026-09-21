@@ -70,6 +70,17 @@
   border-radius: 6px;
 }
 
+.field-area-total-breakdown {
+  display: none;
+  margin-left: 6px;
+  font-weight: 400;
+  color: #2f855a;
+}
+
+.show-cultivating .field-area-total-breakdown {
+  display: inline;
+}
+
 /* 行クリック */
 .field-row {
   cursor: pointer;

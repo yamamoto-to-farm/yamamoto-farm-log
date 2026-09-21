@@ -15,6 +15,7 @@ const DEBUG = false;
 import { loadCSV } from "/common/csv.js";
 import { saveLog } from "/common/save/index.js";
 import { saveTimestampRows } from "/common/timestamp.js?v=1";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import {
   showSaveModal,
   updateSaveModal,
@@ -95,6 +96,9 @@ async function loadPlanting() {
   document.getElementById("field").textContent = plantingRow.field;
   document.getElementById("variety").textContent = plantingRow.variety;
   document.getElementById("quantity").textContent = plantingRow.quantity;
+
+  // ★ 他の作業ログページと同様、破棄日は初期値として今日の日付を入れておく
+  document.getElementById("discardDate").value = todayLocalYmd();
 }
 
 // ===============================
