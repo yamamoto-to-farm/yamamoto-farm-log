@@ -431,6 +431,17 @@ export async function printInline(selector, title = "印刷") {
   // 対象ノードを深くコピーして iframe に挿入
   const clone = target.cloneNode(true);
 
+  // 印刷用 iframe には元ページの CSS（列の表示/非表示切替など）が読み込まれないため、
+  // 元ノード側の実際の描画状態（display:none）をクローン側にインライン化して引き継ぐ
+  const originalAllEls = target.querySelectorAll("*");
+  const cloneAllEls = clone.querySelectorAll("*");
+  originalAllEls.forEach((el, index) => {
+    if (window.getComputedStyle(el).display === "none") {
+      const cloneEl = cloneAllEls[index];
+      if (cloneEl) cloneEl.style.display = "none";
+    }
+  });
+
   const hasVisibleHeading = !!clone.querySelector("h1, .page-title");
   if (!hasVisibleHeading && title) {
     const titleEl = doc.createElement("h1");

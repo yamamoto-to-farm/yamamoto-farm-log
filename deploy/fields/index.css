@@ -8,6 +8,14 @@
   margin-bottom: 10px;
 }
 
+/* 印刷時はツールバー（表示切替チェックボックス等）を非表示にする */
+@media print {
+  .field-view-toolbar,
+  .field-column-toggle-row {
+    display: none !important;
+  }
+}
+
 /* 列幅を固定（圃場名：70%、面積：30%） */
 .field-table colgroup col:nth-child(1) {
   width: 70%;
