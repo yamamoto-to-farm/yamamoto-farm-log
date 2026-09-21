@@ -132,6 +132,22 @@
   background: #d1eed7;
 }
 
+.field-cultivating-icon {
+  display: none;
+  margin-left: 6px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.show-cultivating .field-cultivating-icon {
+  display: inline;
+}
+
 /* 稼働中/契約終了 切替ボタン */
 .field-view-btn {
   padding: 12px 18px;

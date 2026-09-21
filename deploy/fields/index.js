@@ -2,6 +2,7 @@
 import { loadJSON } from "/common/json.js";
 import { safeFieldName } from "/common/utils.js";
 import { buildExpiredFieldNameSet } from "/common/field-contract.js?v=1";
+import { showPlantingDetailModal } from "/common/planting-detail.js?v=1";
 
 const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
@@ -174,6 +175,7 @@ export async function renderFieldList({ view = "active" } = {}) {
 
       const isCultivating = cultivatingFieldSet.has(field.name);
       if (isCultivating) cultivatingAreaTotalForGroup += sizeHan;
+      const cultivatingPlantingRef = cultivatingFieldSet.get(field.name) || "";
 
       const addressSummary = summarizeFieldAddress(detail);
       const addressTitleAttr = addressSummary.fullText
@@ -189,9 +191,13 @@ export async function renderFieldList({ view = "active" } = {}) {
           }
         `;
 
+      const cultivatingIconHtml = isCultivating && cultivatingPlantingRef
+        ? `<button type="button" class="field-cultivating-icon" data-planting-ref="${escapeHtml(cultivatingPlantingRef)}" title="栽培中の定植記録を見る">🌱</button>`
+        : "";
+
       tableHtml += `
         <tr class="field-row${isCultivating ? " field-cultivating" : ""}" data-name="${field.name}">
-          <td>${escapeHtml(field.name)}</td>
+          <td>${escapeHtml(field.name)}${cultivatingIconHtml}</td>
           <td class="field-address-col"${addressTitleAttr}>${addressHtml}</td>
           <td class="field-area-col">${display}</td>
         </tr>
@@ -243,6 +249,14 @@ function attachEvents() {
     row.addEventListener("click", () => {
       const name = row.dataset.name;
       location.href = `/fields/index.html?field=${encodeURIComponent(name)}`;
+    });
+  });
+
+  // ▼ 栽培中アイコンクリック → 定植記録モーダル（行クリックの詳細遷移は抑止）
+  document.querySelectorAll(".field-cultivating-icon").forEach(icon => {
+    icon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      showPlantingDetailModal(icon.dataset.plantingRef, { canDiscard: window.currentRole === "admin" });
     });
   });
 }
@@ -301,11 +315,12 @@ function escapeHtml(value) {
 
 /* -----------------------------------------
    定植記録はあるが収穫記録がまだない圃場（＝栽培中）を判定
+   戻り値: Map<圃場名, 最新のplantingRef>
 ----------------------------------------- */
 async function buildCultivatingFieldSet(targetFields) {
   const summaryIndex = await loadJSON("data/summary-index.json").catch(() => ({}));
 
-  const results = await Promise.all(
+  const entries = await Promise.all(
     targetFields.map(async field => {
       const latestSummary = await loadLatestSummaryForField(summaryIndex, field.name);
       if (!latestSummary) return null;
@@ -319,11 +334,12 @@ async function buildCultivatingFieldSet(targetFields) {
       // 全量破棄された作付けも「栽培中」からは除外する
       const discardedFully = !!latestSummary.lifecycle?.discardedFully;
 
-      return (hasHarvest || discardedFully) ? null : field.name;
+      if (hasHarvest || discardedFully) return null;
+      return [field.name, latestSummary.plantingRef || ""];
     })
   );
 
-  return new Set(results.filter(Boolean));
+  return new Map(entries.filter(Boolean));
 }
 
 async function loadLatestSummaryForField(summaryIndex, fieldName) {
