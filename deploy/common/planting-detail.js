@@ -63,20 +63,44 @@ export async function getPlantingDetail(plantingRef) {
   };
 }
 
-export async function showPlantingDetailModal(plantingRef, { canDiscard = false } = {}) {
-  const data = await getPlantingDetail(plantingRef);
+// plantingRefOrList: 単一の plantingRef、または複数まとめて切り替え表示したい場合は配列を渡す
+export async function showPlantingDetailModal(plantingRefOrList, { canDiscard = false, index = 0 } = {}) {
+  const refs = Array.isArray(plantingRefOrList) ? plantingRefOrList : [plantingRefOrList];
+  const safeIndex = Math.min(Math.max(index, 0), Math.max(refs.length - 1, 0));
+  const currentRef = refs[safeIndex];
 
-  const discardActionHtml = canDiscard && plantingRef
-    ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"><button class="secondary-btn" id="planting-modal-discard-btn" type="button">破棄ページへ</button><a class="secondary-btn" href="/admin/edit-csv/index.html?type=planting&file=all.csv&search=${encodeURIComponent(plantingRef)}">CSVを編集</a></div>`
+  const data = await getPlantingDetail(currentRef);
+
+  const navHtml = refs.length > 1
+    ? `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:12px;">
+        <button class="secondary-btn" id="planting-modal-prev" type="button" ${safeIndex === 0 ? "disabled" : ""}>← 前へ</button>
+        <span>${safeIndex + 1} / ${refs.length}</span>
+        <button class="secondary-btn" id="planting-modal-next" type="button" ${safeIndex === refs.length - 1 ? "disabled" : ""}>次へ →</button>
+      </div>
+    `
     : "";
 
-  showInfoModal(data.title, `${data.html}${discardActionHtml}`);
+  const discardActionHtml = canDiscard && currentRef
+    ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"><button class="secondary-btn" id="planting-modal-discard-btn" type="button">破棄ページへ</button><a class="secondary-btn" href="/admin/edit-csv/index.html?type=planting&file=all.csv&search=${encodeURIComponent(currentRef)}">CSVを編集</a></div>`
+    : "";
 
-  if (canDiscard && plantingRef) {
+  showInfoModal(data.title, `${data.html}${navHtml}${discardActionHtml}`);
+
+  if (refs.length > 1) {
+    document.getElementById("planting-modal-prev")?.addEventListener("click", () => {
+      showPlantingDetailModal(refs, { canDiscard, index: safeIndex - 1 });
+    });
+    document.getElementById("planting-modal-next")?.addEventListener("click", () => {
+      showPlantingDetailModal(refs, { canDiscard, index: safeIndex + 1 });
+    });
+  }
+
+  if (canDiscard && currentRef) {
     const discardBtn = document.getElementById("planting-modal-discard-btn");
     if (discardBtn) {
       discardBtn.addEventListener("click", () => {
-        location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(plantingRef)}&return=${encodeURIComponent(location.pathname + location.search)}`;
+        location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(currentRef)}&return=${encodeURIComponent(location.pathname + location.search)}`;
       });
     }
   }

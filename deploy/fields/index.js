@@ -175,7 +175,7 @@ export async function renderFieldList({ view = "active" } = {}) {
 
       const isCultivating = cultivatingFieldSet.has(field.name);
       if (isCultivating) cultivatingAreaTotalForGroup += sizeHan;
-      const cultivatingPlantingRef = cultivatingFieldSet.get(field.name) || "";
+      const cultivatingPlantingRefs = cultivatingFieldSet.get(field.name) || [];
 
       const addressSummary = summarizeFieldAddress(detail);
       const addressTitleAttr = addressSummary.fullText
@@ -191,8 +191,8 @@ export async function renderFieldList({ view = "active" } = {}) {
           }
         `;
 
-      const cultivatingIconHtml = isCultivating && cultivatingPlantingRef
-        ? `<button type="button" class="field-cultivating-icon" data-planting-ref="${escapeHtml(cultivatingPlantingRef)}" title="栽培中の定植記録を見る">🌱</button>`
+      const cultivatingIconHtml = isCultivating && cultivatingPlantingRefs.length
+        ? `<button type="button" class="field-cultivating-icon" data-planting-refs="${escapeHtml(JSON.stringify(cultivatingPlantingRefs))}" title="栽培中の定植記録を見る${cultivatingPlantingRefs.length > 1 ? `（${cultivatingPlantingRefs.length}件）` : ""}">🌱</button>`
         : "";
 
       tableHtml += `
@@ -256,7 +256,8 @@ function attachEvents() {
   document.querySelectorAll(".field-cultivating-icon").forEach(icon => {
     icon.addEventListener("click", (event) => {
       event.stopPropagation();
-      showPlantingDetailModal(icon.dataset.plantingRef, { canDiscard: window.currentRole === "admin" });
+      const refs = JSON.parse(icon.dataset.plantingRefs || "[]");
+      showPlantingDetailModal(refs, { canDiscard: window.currentRole === "admin" });
     });
   });
 }
@@ -315,52 +316,59 @@ function escapeHtml(value) {
 
 /* -----------------------------------------
    定植記録はあるが収穫記録がまだない圃場（＝栽培中）を判定
-   戻り値: Map<圃場名, 最新のplantingRef>
+   戻り値: Map<圃場名, 栽培中のplantingRef配列>（同時期に複数品種を定植している場合も全て拾う）
 ----------------------------------------- */
 async function buildCultivatingFieldSet(targetFields) {
   const summaryIndex = await loadJSON("data/summary-index.json").catch(() => ({}));
 
   const entries = await Promise.all(
     targetFields.map(async field => {
-      const latestSummary = await loadLatestSummaryForField(summaryIndex, field.name);
-      if (!latestSummary) return null;
+      const summaries = await loadLatestYearSummariesForField(summaryIndex, field.name);
+      if (!summaries.length) return null;
 
-      const hasHarvest = !!latestSummary.lifecycle?.hasHarvest || (
-        !!latestSummary.harvest?.firstDate &&
-        !!latestSummary.harvest?.lastDate &&
-        latestSummary.harvest?.count > 0
-      );
+      const cultivatingRefs = summaries
+        .filter(summary => {
+          const hasHarvest = !!summary.lifecycle?.hasHarvest || (
+            !!summary.harvest?.firstDate &&
+            !!summary.harvest?.lastDate &&
+            summary.harvest?.count > 0
+          );
+          const discardedFully = !!summary.lifecycle?.discardedFully;
+          return !hasHarvest && !discardedFully;
+        })
+        .map(summary => summary.plantingRef)
+        .filter(Boolean);
 
-      // 全量破棄された作付けも「栽培中」からは除外する
-      const discardedFully = !!latestSummary.lifecycle?.discardedFully;
-
-      if (hasHarvest || discardedFully) return null;
-      return [field.name, latestSummary.plantingRef || ""];
+      if (!cultivatingRefs.length) return null;
+      return [field.name, cultivatingRefs];
     })
   );
 
   return new Map(entries.filter(Boolean));
 }
 
-async function loadLatestSummaryForField(summaryIndex, fieldName) {
+async function loadLatestYearSummariesForField(summaryIndex, fieldName) {
   const key = summaryIndex[fieldName] ? fieldName : safeFieldName(fieldName);
   const byYear = summaryIndex?.[key];
-  if (!byYear || typeof byYear !== "object") return null;
+  if (!byYear || typeof byYear !== "object") return [];
 
   const years = Object.keys(byYear).sort();
   const latestYear = years[years.length - 1];
   const files = Array.isArray(byYear[latestYear]) ? byYear[latestYear] : [];
-  if (files.length === 0) return null;
+  if (files.length === 0) return [];
 
-  // ファイル名は「日付-圃場名-品種」形式のため、日付順で最新を取得
-  const latestFile = [...files].sort().at(-1);
+  const summaries = await Promise.all(
+    files.map(async file => {
+      try {
+        const url = `${CF_BASE}/logs/summary/${key}/${latestYear}/${file}?ts=${Date.now()}`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    })
+  );
 
-  try {
-    const url = `${CF_BASE}/logs/summary/${key}/${latestYear}/${latestFile}?ts=${Date.now()}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
+  return summaries.filter(Boolean);
 }
