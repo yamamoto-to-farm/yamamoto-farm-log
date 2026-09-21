@@ -297,6 +297,16 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
     plantingRef: s?.plantingRef || ""
   });
 
+  // 収穫記録があれば破棄不要（一部収穫→残り破棄はメモ・収穫情報側で管理）
+  const canDiscardPlanting = window.currentRole === "admin" && !hasHarvest && !!s.plantingRef;
+  const discardPlantingHTML = canDiscardPlanting
+    ? `
+        <div class="info-line link">
+          ↳ <a href="/planting/discard-planting.html?ref=${encodeURIComponent(s.plantingRef)}&return=${encodeURIComponent(location.pathname + location.search)}">破棄ページへ</a>
+        </div>
+      `
+    : "";
+
   const notesHTML =
     notes.length > 0
       ? `
@@ -324,6 +334,7 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
         <div class="info-line">定植株数：${s.planting.quantity} 株（セルトレイ：${s.planting.trayType || "-"}穴）</div>
         <div class="info-line">株間 × 条間：${spacingText}</div>
         <div class="info-line">作付け面積：${areaTan.toFixed(2)} 反（${areaM2.toFixed(1)} ㎡）</div>
+        ${discardPlantingHTML}
           </div>
         </section>
 
