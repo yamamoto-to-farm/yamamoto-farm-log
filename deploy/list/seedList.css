@@ -26,7 +26,7 @@
 
 #table-area table th:nth-child(3),
 #table-area table td:nth-child(3) {
-  width: 80px;
+  width: 65px;
   text-align: right;
 }
 
@@ -38,26 +38,16 @@
 
 #table-area table th:nth-child(5),
 #table-area table td:nth-child(5) {
-  width: 160px;
+  width: 130px;
   white-space: nowrap;
 }
 
-/* ===============================
-   操作列（破棄）を細くする（播種一覧専用）
-=============================== */
-
-/* ▼ 操作列の幅固定 */
-#table-area table th:last-child,
-#table-area table td:last-child {
-  width: 60px;
-  white-space: nowrap;
-  text-align: center;
-}
-
-/* ▼ 破棄ボタンをコンパクトに */
-.discard-btn {
-  padding: 2px 6px;
-  font-size: 12px;
+/* ▼ 定植ID列（最終列）は広めに確保し、他の操作列向けルールの影響を受けないようにする */
+#table-area table th:nth-child(6),
+#table-area table td:nth-child(6) {
+  width: 220px;
+  white-space: normal;
+  text-align: left;
 }
 
 /* ===============================
@@ -70,12 +60,6 @@
   #filter-card,
   #activeFilters,
   #modal-container {
-    display: none !important;
-  }
-
-  /* ▼ 操作列（破棄）を非表示 */
-  #table-area table th:last-child,
-  #table-area table td:last-child {
     display: none !important;
   }
 
@@ -99,16 +83,16 @@
 
   #table-area table th:nth-child(3),
   #table-area table td:nth-child(3) {
-    width: 70px;
+    width: 60px;
   }
 
   #table-area table th:nth-child(4),
   #table-area table td:nth-child(4) {
-    width: 120px;
+    width: 110px;
   }
 
   #table-area table th:nth-child(5),
   #table-area table td:nth-child(5) {
-    width: 150px;
+    width: 110px;
   }
 }

@@ -33,6 +33,7 @@
    pages（ページ固有）
 =============================== */
 @import url("../../list/plantingList.css") layer(pages);
+@import url("../../list/seedList.css") layer(pages);
 @import url("../../schedule/seed/seedList.css") layer(pages);
 @import url("../../schedule/plan.css") layer(pages);
 @import url("../../schedule/annual/annual.css") layer(pages);
