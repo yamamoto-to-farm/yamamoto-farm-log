@@ -36,7 +36,7 @@ export async function renderFieldList({ view = "active" } = {}) {
   });
 
   container.insertAdjacentHTML("beforeend", `
-    <div class="field-view-toolbar">
+    <div class="field-view-toolbar print-hide">
       <button
         class="field-view-btn ${isExpiredView ? "" : "is-active"}"
         type="button"
@@ -60,7 +60,7 @@ export async function renderFieldList({ view = "active" } = {}) {
       <span class="field-cultivating-total" id="cultivating-total-label">栽培中合計：${cultivatingAreaTotal.toFixed(2)}反</span>
     </div>
 
-    <div class="field-column-toggle-row">
+    <div class="field-column-toggle-row print-hide">
       <span class="field-column-toggle-label">表示する列：</span>
       <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="field-name" checked>圃場名</label>
       <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="area" checked>耕作面積</label>
