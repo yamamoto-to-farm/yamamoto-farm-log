@@ -98,6 +98,19 @@
   color: #374151;
   cursor: pointer;
   user-select: none;
+  white-space: nowrap;
+}
+
+.field-cultivating-total {
+  display: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2f855a;
+  white-space: nowrap;
+}
+
+.show-cultivating .field-cultivating-total {
+  display: inline;
 }
 
 .show-cultivating .field-row.field-cultivating {

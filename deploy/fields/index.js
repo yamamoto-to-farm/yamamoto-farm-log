@@ -25,6 +25,15 @@ export async function renderFieldList({ view = "active" } = {}) {
   // ★ 定植記録はあるが収穫記録がまだない圃場（＝栽培中）を判定
   const cultivatingFieldSet = await buildCultivatingFieldSet(targetFields);
 
+  // ★ 栽培中圃場の耕作面積合計（反）
+  let cultivatingAreaTotal = 0;
+  targetFields.forEach(field => {
+    if (!cultivatingFieldSet.has(field.name)) return;
+    const detail = fieldDetail[field.name];
+    const sizeA = detail && detail.size != null ? Number(detail.size) : NaN;
+    if (!isNaN(sizeA)) cultivatingAreaTotal += sizeA / 10;
+  });
+
   container.insertAdjacentHTML("beforeend", `
     <div class="field-view-toolbar">
       <button
@@ -47,6 +56,7 @@ export async function renderFieldList({ view = "active" } = {}) {
         <input type="checkbox" id="cultivating-toggle-checkbox">
         栽培中の圃場をハイライト表示
       </label>
+      <span class="field-cultivating-total" id="cultivating-total-label">栽培中合計：${cultivatingAreaTotal.toFixed(2)}反</span>
     </div>
   `);
 
