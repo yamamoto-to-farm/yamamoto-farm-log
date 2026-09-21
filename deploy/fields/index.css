@@ -180,6 +180,23 @@
   display: none;
 }
 
+/* 所在：折りたたみ表示 / 展開表示の切替 */
+.field-address-expanded {
+  display: none;
+}
+
+.show-address-expanded .field-address-collapsed {
+  display: none;
+}
+
+.show-address-expanded .field-address-expanded {
+  display: block;
+}
+
+.field-address-line {
+  padding: 1px 0;
+}
+
 /* 稼働中/契約終了 切替ボタン */
 .field-view-btn {
   padding: 12px 18px;
