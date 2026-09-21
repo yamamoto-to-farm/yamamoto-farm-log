@@ -59,7 +59,21 @@ export async function renderFieldList({ view = "active" } = {}) {
       </label>
       <span class="field-cultivating-total" id="cultivating-total-label">栽培中合計：${cultivatingAreaTotal.toFixed(2)}反</span>
     </div>
+
+    <div class="field-column-toggle-row">
+      <span class="field-column-toggle-label">表示する列：</span>
+      <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="field-name" checked>圃場名</label>
+      <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="area" checked>耕作面積</label>
+      <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="official-area" checked>登記面積合計</label>
+      <label class="field-column-toggle"><input type="checkbox" class="field-col-checkbox" data-col="owner" checked>地権者名</label>
+    </div>
   `);
+
+  document.querySelectorAll(".field-col-checkbox").forEach(checkbox => {
+    checkbox.addEventListener("change", () => {
+      container.classList.toggle(`hide-col-${checkbox.dataset.col}`, !checkbox.checked);
+    });
+  });
 
   const toggleCheckbox = document.getElementById("cultivating-toggle-checkbox");
   if (toggleCheckbox) {
@@ -117,15 +131,19 @@ export async function renderFieldList({ view = "active" } = {}) {
     let tableHtml = `
       <table class="field-table">
         <colgroup>
-          <col style="width:42%;">
-          <col style="width:38%;">
-          <col style="width:20%;">
+          <col class="col-field-name" style="width:26%;">
+          <col style="width:26%;">
+          <col class="col-area" style="width:14%;">
+          <col class="col-official-area" style="width:16%;">
+          <col class="col-owner" style="width:18%;">
         </colgroup>
         <thead>
           <tr>
-            <th>圃場名</th>
+            <th class="col-field-name">圃場名</th>
             <th class="field-address-col">所在</th>
-            <th class="field-area-col">耕作面積（反）</th>
+            <th class="field-area-col col-area">耕作面積（反）</th>
+            <th class="field-area-col col-official-area">登記面積合計（反）</th>
+            <th class="col-owner">地権者名</th>
           </tr>
         </thead>
         <tbody>
@@ -195,11 +213,17 @@ export async function renderFieldList({ view = "active" } = {}) {
         ? `<button type="button" class="field-cultivating-icon" data-planting-refs="${escapeHtml(JSON.stringify(cultivatingPlantingRefs))}" title="栽培中の定植記録を見る${cultivatingPlantingRefs.length > 1 ? `（${cultivatingPlantingRefs.length}件）` : ""}">🌱</button>`
         : "";
 
+      const officialAreaHan = calcOfficialAreaTotalHan(detail);
+      const officialAreaDisplay = officialAreaHan > 0 ? officialAreaHan.toFixed(2) : "未入力";
+      const ownerNamesText = getOwnerNamesText(detail);
+
       tableHtml += `
         <tr class="field-row${isCultivating ? " field-cultivating" : ""}" data-name="${field.name}">
-          <td>${escapeHtml(field.name)}${cultivatingIconHtml}</td>
+          <td class="col-field-name">${escapeHtml(field.name)}${cultivatingIconHtml}</td>
           <td class="field-address-col"${addressTitleAttr}>${addressHtml}</td>
-          <td class="field-area-col">${display}</td>
+          <td class="field-area-col col-area">${display}</td>
+          <td class="field-area-col col-official-area">${officialAreaDisplay}</td>
+          <td class="col-owner">${escapeHtml(ownerNamesText)}</td>
         </tr>
       `;
     });
@@ -304,6 +328,29 @@ function summarizeFieldAddress(detail) {
     fullText: ""
   };
 }
+
+function calcOfficialAreaTotalHan(detail) {
+  if (!detail || !Array.isArray(detail.parcels)) return 0;
+
+  const totalM2 = detail.parcels.reduce((sum, p) => {
+    const raw = String(p?.officialArea || "").replace(/,/g, "").replace(/[^\d.]/g, "");
+    const value = Number(raw);
+    return Number.isFinite(value) ? sum + value : sum;
+  }, 0);
+
+  return totalM2 / 990; // ㎡ → 反
+}
+
+function getOwnerNamesText(detail) {
+  if (!detail || !Array.isArray(detail.parcels)) return "未入力";
+
+  const owners = [...new Set(
+    detail.parcels
+      .map(p => String(p?.owner || "").trim())
+      .filter(v => v && v !== "未入力")
+  )];
+
+  return owners.length ? owners.join("／") : "未入力";
 
 function escapeHtml(value) {
   return String(value ?? "")

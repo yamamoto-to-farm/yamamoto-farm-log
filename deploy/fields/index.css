@@ -148,6 +148,38 @@
   display: inline;
 }
 
+/* 列の表示・非表示切替 */
+.field-column-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.field-column-toggle-label {
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.field-column-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.hide-col-field-name .col-field-name,
+.hide-col-area .col-area,
+.hide-col-official-area .col-official-area,
+.hide-col-owner .col-owner {
+  display: none;
+}
+
 /* 稼働中/契約終了 切替ボタン */
 .field-view-btn {
   padding: 12px 18px;
