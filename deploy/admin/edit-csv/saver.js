@@ -154,7 +154,7 @@ function confirmChanges(changes) {
 }
 
 function getSummaryTargets(csvType, changes) {
-  if (!["planting", "harvest", "weight"].includes(csvType)) return [];
+  if (!["planting", "harvest", "weight", "discard-planting"].includes(csvType)) return [];
   if (csvType === "planting" && changes.some(c =>
     c.type === "deleted" ||
     (c.type === "cell" && ["plantingRef", "field", "plantDate"].includes(c.header))
@@ -374,7 +374,7 @@ export async function saveCsvFile(csvType, csvFile) {
     // ------------------------------
     dbg("=== summary update START ===");
 
-    if (csvType === "planting" || csvType === "harvest" || csvType === "weight") {
+    if (csvType === "planting" || csvType === "harvest" || csvType === "weight" || csvType === "discard-planting") {
       if (summaryTargets.length > 0) {
         updateSaveModal("CSV の保存が完了しました。サマリー更新を待っています…");
         summaryTargets.forEach(ref => enqueueSummaryUpdate(ref));
