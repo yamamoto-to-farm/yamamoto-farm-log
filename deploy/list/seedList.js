@@ -17,6 +17,7 @@ import {
 
 import { showInfoModal } from "/common/showInfoModal.js";
 import { buildSeedRemainingMap, calcSeedDiscardQuantity } from "/common/seed-remaining.js?v=1";
+import { showPlantingDetailModal } from "/common/planting-detail.js?v=1";
 
 let seedRows = [];
 let plantingRows = [];
@@ -489,7 +490,9 @@ function renderTable(rows) {
     remainingAreaTan += calcSeedAreaTan(remainingInfo.remaining);
 
     const plantingRefs = getPlantingRefs(r.seedRef);
-    const plantingHtml = plantingRefs.length ? plantingRefs.join("<br>") : "-";
+    const plantingHtml = plantingRefs.length
+      ? plantingRefs.map(ref => `<a href="#" class="planting-ref-link" data-ref="${escapeHtml(ref)}">${escapeHtml(ref)}</a>`).join("<br>")
+      : "-";
 
     html += `<tr>
       <td class="seed-date-cell" data-id="${r.seedRef}">${r.seedDate ?? ""}</td>
@@ -537,7 +540,13 @@ function renderTable(rows) {
       renderTable(rows);
     });
   }
-
+  /* ▲ 定植 ID クリックで定植一覧と同じモーダルを表示 */
+  document.querySelectorAll(".planting-ref-link").forEach(link => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      showPlantingDetailModal(link.dataset.ref, { canDiscard });
+    });
+  });
   /* ▼ 播種日クリックでモーダル */
   document.querySelectorAll(".seed-date-cell").forEach(cell => {
     cell.addEventListener("click", () => {
