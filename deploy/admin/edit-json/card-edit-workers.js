@@ -56,14 +56,17 @@ export function renderEditCard({ dataName, json, container }) {
 
   function syncEditorToList() {
     if (selectedIndex < 0 || !workerList[selectedIndex]) return;
-    const role = editorEl.querySelector(".worker-role")?.value || "worker";
+    const roleInput = editorEl.querySelector(".worker-role");
+    const nameInput = editorEl.querySelector(".worker-name");
+    const displayInput = editorEl.querySelector(".worker-display");
+    if (!roleInput || !nameInput || !displayInput) return;
     const pinInput = editorEl.querySelector(".worker-pin");
     workerList[selectedIndex] = {
       ...workerList[selectedIndex],
       pin: pinInput?.value.trim() || "",
-      name: editorEl.querySelector(".worker-name")?.value.trim() || "",
-      display: editorEl.querySelector(".worker-display")?.value.trim() || "",
-      role
+      name: nameInput.value.trim(),
+      display: displayInput.value.trim(),
+      role: roleInput.value || workerList[selectedIndex].role || "worker"
     };
   }
 
@@ -115,6 +118,7 @@ export function renderEditCard({ dataName, json, container }) {
         </button>
       </div>
     `);
+    editorEl.querySelector(".worker-role").value = role;
 
     editorEl.querySelector(".worker-role").addEventListener("change", event => {
       syncEditorToList();
