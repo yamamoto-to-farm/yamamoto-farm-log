@@ -345,7 +345,7 @@
     },
     {
       "id": "access",
-      "name": "アクセス権限（PIN）管理",
+      "name": "従業員一覧",
       "path": "access.html",
       "category": "管理/ツール",
       "roles": ["admin"],

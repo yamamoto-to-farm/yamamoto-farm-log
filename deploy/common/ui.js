@@ -490,11 +490,16 @@ export async function createWorkerCheckboxes(containerId) {
   box.innerHTML = "";
 
   // 既存選択値（あれば維持）
-  const selected = readSelectedWorkers(box);
+  const retiredNames = new Set(workers
+    .filter(worker => worker?.role === "worker" && worker.employmentStatus === "retired")
+    .map(worker => String(worker.display || "").trim())
+    .filter(Boolean));
+  const selected = readSelectedWorkers(box).filter(name => !retiredNames.has(name));
+  const selectableWorkers = workers.filter(worker => !(worker?.role === "worker" && worker.employmentStatus === "retired"));
 
   // 既定選択: 未選択時はログイン中ユーザーを自動選択
   if (!selected.length) {
-    const defaultWorker = resolveDefaultWorkerDisplay(workers);
+    const defaultWorker = resolveDefaultWorkerDisplay(selectableWorkers);
     if (defaultWorker) selected.push(defaultWorker);
   }
 
@@ -523,7 +528,7 @@ export async function createWorkerCheckboxes(containerId) {
 
   openBtn.addEventListener("click", () => {
     openWorkerSelectModal({
-      workers,
+      workers: selectableWorkers,
       selected,
       onApply(next) {
         selected.length = 0;
@@ -664,7 +669,7 @@ export function showPinGate(containerId, onSuccess) {
       const users = await resWorkers.json();
 
       // PIN 一致ユーザーを検索
-      const user = users.find(u => u.pin === pin);
+      const user = users.find(u => u.pin === pin && !(u.role === "worker" && u.employmentStatus === "retired"));
 
       if (!user) {
         alert("PIN が違います");
@@ -743,7 +748,11 @@ export async function verifyLocalAuth(options = {}) {
     const users = await res.json();
 
     // localStorage の情報が workers.json に存在するか確認
-    const user = users.find(u => u.name === savedHuman && u.role === savedRole);
+    const user = users.find(u =>
+      u.name === savedHuman &&
+      u.role === savedRole &&
+      !(u.role === "worker" && u.employmentStatus === "retired")
+    );
 
     if (!user) {
       // 退職者 or 削除されたユーザー
