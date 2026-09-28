@@ -26,7 +26,28 @@ window.addEventListener("DOMContentLoaded", async () => {
   const list = document.getElementById("employee-list");
   const employeeIndices = () => accounts
     .map((account, index) => account?.role === "worker" ? index : -1)
-    .filter(index => index >= 0);
+    .filter(index => index >= 0)
+    .sort((leftIndex, rightIndex) => {
+      const left = accounts[leftIndex];
+      const right = accounts[rightIndex];
+      const leftRetired = left.employmentStatus === "retired";
+      const rightRetired = right.employmentStatus === "retired";
+
+      if (leftRetired !== rightRetired) return leftRetired ? 1 : -1;
+
+      const displayOrder = String(left.display || "").localeCompare(
+        String(right.display || ""),
+        "ja",
+        { sensitivity: "base" }
+      );
+      if (displayOrder !== 0) return displayOrder;
+
+      return String(left.name || "").localeCompare(
+        String(right.name || ""),
+        "ja",
+        { sensitivity: "base" }
+      );
+    });
 
   function render() {
     const indices = employeeIndices();
