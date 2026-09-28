@@ -9,20 +9,28 @@ export function renderEditCard({ dataName, json, container }) {
 
   const workerList = Array.isArray(json) ? [...json] : Array.isArray(json?.workers) ? [...json.workers] : [];
   let selectedIndex = -1;
+  let draftIndex = -1;
 
-  function getNextWorkerPin() {
+  function getNextPin(role) {
     const usedPins = new Set(workerList.map(item => String(item?.pin || "").trim()).filter(Boolean));
-    const yNumbers = workerList
-      .map(item => String(item?.pin || "").trim().match(/^Y(\d+)$/i))
+    const pattern = role === "worker" ? /^Y(\d+)$/i : /^(\d+)$/;
+    const prefix = role === "worker" ? "Y" : "";
+    const numbers = workerList
+      .map(item => String(item?.pin || "").trim().match(pattern))
       .filter(Boolean)
       .map(match => Number(match[1]));
-    let nextNumber = Math.max(0, ...yNumbers) + 1;
-    let nextPin = `Y${String(nextNumber).padStart(3, "0")}`;
+    let nextNumber = Math.max(0, ...numbers) + 1;
+    let nextPin = `${prefix}${String(nextNumber).padStart(3, "0")}`;
     while (usedPins.has(nextPin)) {
       nextNumber += 1;
-      nextPin = `Y${String(nextNumber).padStart(3, "0")}`;
+      nextPin = `${prefix}${String(nextNumber).padStart(3, "0")}`;
     }
     return nextPin;
+  }
+
+  function isPinValidForRole(pin, role) {
+    if (role === "worker") return /^Y\d{3,}$/i.test(pin);
+    return /^\d{3}$/.test(pin);
   }
 
   container.insertAdjacentHTML("beforeend", `
@@ -137,6 +145,14 @@ export function renderEditCard({ dataName, json, container }) {
 
     editorEl.querySelector(".worker-role").addEventListener("change", event => {
       syncEditorToList();
+      const nextRole = event.target.value;
+      const pinInput = editorEl.querySelector(".worker-pin");
+      const currentPin = String(pinInput?.value || "").trim();
+      if (!isPinValidForRole(currentPin, nextRole)) {
+        const nextPin = getNextPin(nextRole);
+        if (pinInput) pinInput.value = nextPin;
+        workerList[selectedIndex].pin = nextPin;
+      }
       roleFilterEl.value = event.target.value;
       renderTargets();
     });
@@ -151,6 +167,7 @@ export function renderEditCard({ dataName, json, container }) {
       } else {
         if (!confirm("このユーザーを削除しますか？")) return;
         workerList.splice(selectedIndex, 1);
+        if (selectedIndex === draftIndex) draftIndex = -1;
         selectedIndex = -1;
       }
       renderTargets();
@@ -188,11 +205,22 @@ export function renderEditCard({ dataName, json, container }) {
 
   document.getElementById("add-worker-btn").onclick = () => {
     syncEditorToList();
+    if (draftIndex >= 0) {
+      const draft = workerList[draftIndex];
+      if (draft && (!String(draft.name || "").trim() || !String(draft.display || "").trim())) {
+        selectedIndex = draftIndex;
+        renderTargets();
+        alert("入力中のアカウントがあります。識別名と表示名を入力してから、次のアカウントを追加してください。");
+        return;
+      }
+    }
+
+    draftIndex = workerList.length;
     workerList.push({
-      pin: getNextWorkerPin(),
+      pin: getNextPin("worker"),
       name: "",
       display: "",
-      role: "family"
+      role: "worker"
     });
     searchEl.value = "";
     roleFilterEl.value = "all";
@@ -209,9 +237,14 @@ export function renderEditCard({ dataName, json, container }) {
       const name = String(item.name || "").trim();
       const display = String(item.display || "").trim();
       const pin = String(item.pin || "").trim();
-      if (!name && !display && !pin) continue;
+      if (!name && !display) continue;
       if (!name || !display) {
         alert("識別名と表示名を入力してください。");
+        return;
+      }
+      const isRetiredWithoutPin = item.role === "worker" && item.employmentStatus === "retired" && !pin;
+      if (!isRetiredWithoutPin && !isPinValidForRole(pin, item.role || "worker")) {
+        alert(`${display} のPINが権限に合っていません。従業員はY＋3桁以上、家族・管理者は数字3桁で入力してください。`);
         return;
       }
       if (names.has(name)) {
@@ -219,6 +252,10 @@ export function renderEditCard({ dataName, json, container }) {
         return;
       }
       names.add(name);
+      if (newWorkers.some(existing => existing.pin === pin)) {
+        alert(`PIN「${pin}」が重複しています。`);
+        return;
+      }
       newWorkers.push({
         ...item,
         pin: item.role === "worker" && item.employmentStatus === "retired" ? "" : pin,
@@ -233,6 +270,10 @@ export function renderEditCard({ dataName, json, container }) {
       const savePath = `data/${dataName}.json`;
       await saveJSON(savePath, newWorkers);
       await bumpAuthVersion("workers.json saved");
+      workerList.splice(0, workerList.length, ...newWorkers);
+      draftIndex = -1;
+      selectedIndex = workerList.length ? Math.min(selectedIndex, workerList.length - 1) : -1;
+      renderTargets();
       completeSaveModal("保存が完了しました");
     } catch (error) {
       console.error("ログイン権限の保存に失敗しました:", error);
