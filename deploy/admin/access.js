@@ -123,12 +123,11 @@ window.addEventListener("DOMContentLoaded", async () => {
       nextAccounts[index] = {
         ...previous,
         role: "worker",
-        employmentStatus,
-        pin: employmentStatus === "retired" ? "" : String(previous.pin || "")
+        employmentStatus
       };
     }
 
-    if (retiring && !confirm("退職済みにする従業員のPINを削除し、ログインできなくします。従業員情報は保存して残します。続けますか？")) return;
+    if (retiring && !confirm("退職済みにするとログインできなくなります。PINは従業員番号として欠番のまま保持します。続けますか？")) return;
 
     showSaveModal("保存しています…");
     try {

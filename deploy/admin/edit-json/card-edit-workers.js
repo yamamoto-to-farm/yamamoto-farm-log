@@ -37,7 +37,7 @@ export function renderEditCard({ dataName, json, container }) {
     <div class="card">
       <h2>ログイン権限管理</h2>
       <p style="margin:0 0 12px; color:#555;">
-        ログイン用PINと権限を管理します。従業員の識別名・表示名・在籍状況は従業員在籍状況で管理し、この画面ではPINと権限のみ変更できます。管理者・家族アカウントの追加や基本情報の編集もここで行います。
+        ログイン用PINと権限を管理します。従業員の識別名・表示名・在籍状況は従業員在籍状況で管理し、この画面ではPINと権限のみ変更できます。退職者のPINは従業員番号として欠番のまま保持します。管理者・家族アカウントの追加や基本情報の編集もここで行います。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
@@ -122,7 +122,7 @@ export function renderEditCard({ dataName, json, container }) {
         ${role === "worker" ? `<div class="info-line">${retired ? "退職済み（従業員情報は保持）" : "在籍中"}</div>` : ""}
         <div class="form-row">
           <label class="form-label">PIN</label>
-          <input class="form-input worker-pin" value="${escapeHtml(retired ? "" : item.pin ?? "")}" placeholder="${retired ? "退職者は設定できません" : "ログイン用PIN"}" ${retired ? "disabled" : ""}>
+          <input class="form-input worker-pin" value="${escapeHtml(item.pin ?? "")}" placeholder="${retired ? "欠番として保持" : "ログイン用PIN"}" ${retired ? "disabled" : ""}>
         </div>
         <div class="form-row">
           <label class="form-label">識別名</label>
@@ -136,9 +136,7 @@ export function renderEditCard({ dataName, json, container }) {
           <label class="form-label">権限</label>
           <select class="form-input worker-role">${renderRoleOptions(role)}</select>
         </div>
-        <button class="secondary-btn delete-worker-btn" type="button" style="margin-top:8px;">
-          ${role === "worker" ? "アクセス権を削除" : "ユーザーを削除"}
-        </button>
+        ${role !== "worker" ? '<button class="secondary-btn delete-worker-btn" type="button" style="margin-top:8px;">ユーザーを削除</button>' : ""}
       </div>
     `);
     editorEl.querySelector(".worker-role").value = role;
@@ -157,21 +155,17 @@ export function renderEditCard({ dataName, json, container }) {
       renderTargets();
     });
 
-    editorEl.querySelector(".delete-worker-btn").addEventListener("click", () => {
-      syncEditorToList();
-      const current = workerList[selectedIndex];
-      if (current?.role === "worker") {
-        if (!confirm("この従業員のPINだけを削除し、従業員情報は残しますか？")) return;
-        current.pin = "";
-        editorEl.querySelector(".worker-pin").value = "";
-      } else {
+    const deleteButton = editorEl.querySelector(".delete-worker-btn");
+    if (deleteButton) {
+      deleteButton.addEventListener("click", () => {
+        syncEditorToList();
         if (!confirm("このユーザーを削除しますか？")) return;
         workerList.splice(selectedIndex, 1);
         if (selectedIndex === draftIndex) draftIndex = -1;
         selectedIndex = -1;
-      }
-      renderTargets();
-    });
+        renderTargets();
+      });
+    }
   }
 
   function renderTargets() {
