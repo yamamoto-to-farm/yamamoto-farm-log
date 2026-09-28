@@ -37,7 +37,7 @@ export function renderEditCard({ dataName, json, container }) {
     <div class="card">
       <h2>ログイン権限管理</h2>
       <p style="margin:0 0 12px; color:#555;">
-        ログイン用PIN・権限・識別名・表示名を管理します。従業員の在籍状況は従業員在籍状況で管理し、退職者のPINは従業員番号として欠番のまま保持します。管理者・家族アカウントの追加や基本情報の編集もここで行います。
+        ログイン用PIN・権限・識別名・表示名を管理します。従業員の在籍状況は在籍状況管理で管理し、退職者のPINは従業員番号として欠番のまま保持します。管理者・家族アカウントの追加や基本情報の編集もここで行います。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
