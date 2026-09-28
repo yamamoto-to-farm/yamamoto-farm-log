@@ -31,7 +31,7 @@ export async function renderFieldList({ view = "active" } = {}) {
     const detail = fieldDetail[field.name];
     const sizeA = detail && detail.size != null ? Number(detail.size) : NaN;
     if (!isNaN(sizeA)) cultivatingAreaTotal += sizeA / 10;
-  }
+  });
 
   container.insertAdjacentHTML("beforeend", `
     <div class="field-view-toolbar print-hide">
