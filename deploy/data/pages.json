@@ -344,9 +344,27 @@
       "openLog": false
     },
     {
+      "id": "login-permissions",
+      "name": "ログイン権限管理",
+      "path": "edit-json/index.html?data=workers",
+      "category": "管理/ツール",
+      "roles": ["admin"],
+      "icon": "assets/icons/access.png",
+      "openLog": false
+    },
+    {
       "id": "access",
-      "name": "従業員在籍状況",
+      "name": "在籍状況管理",
       "path": "access.html",
+      "category": "管理/ツール",
+      "roles": ["admin"],
+      "icon": "assets/icons/access.png",
+      "openLog": false
+    },
+    {
+      "id": "security-log",
+      "name": "ログイン履歴",
+      "path": "security-log.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",

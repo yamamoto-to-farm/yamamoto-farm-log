@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ログイン履歴</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+</head>
+<body>
+  <main id="page-area" class="page-container" style="display:none;">
+    <h1 class="page-title">ログイン履歴</h1>
+    <p class="info-line">ログイン、ログアウト、期限切れ、認証失効などの履歴を表示します。</p>
+
+    <div class="card">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div>
+          <label class="form-label" for="event-filter">イベント</label>
+          <select id="event-filter" class="form-input">
+            <option value="all">すべて</option>
+            <option value="login">ログイン</option>
+            <option value="logout">ログアウト</option>
+            <option value="expired">期限切れ</option>
+            <option value="revoked">認証失効</option>
+            <option value="revoke-all">全セッション失効</option>
+            <option value="stepup-required">再認証</option>
+          </select>
+        </div>
+        <div style="min-width:220px; flex:1;">
+          <label class="form-label" for="human-filter">ユーザー検索</label>
+          <input id="human-filter" class="form-input" type="search" placeholder="識別名・表示名">
+        </div>
+      </div>
+      <p id="log-count" class="info-line" style="margin-bottom:0;"></p>
+      <div id="log-table"></div>
+    </div>
+
+    <div class="back-action-slot">
+      <a class="secondary-btn" href="/admin/index.html">管理ページに戻る</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
+    import { loadCSV } from "/common/csv.js?v=1";
+
+    const eventLabels = {
+      login: "ログイン",
+      logout: "ログアウト",
+      expired: "期限切れ",
+      revoked: "認証失効",
+      "revoke-all": "全セッション失効",
+      "stepup-required": "再認証"
+    };
+
+    const escapeHtml = value => String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+    const formatTimestamp = value => {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? String(value || "") : date.toLocaleString("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    };
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verifyLocalAuth();
+      if (!ok) return;
+      if (window.currentRole !== "admin") {
+        alert("このページは管理者のみ利用できます");
+        location.href = "/admin/index.html";
+        return;
+      }
+
+      renderHeader({ adminPage: true });
+      document.getElementById("page-area").style.display = "block";
+
+      let rows;
+      try {
+        rows = await loadCSV("/logs/security/all.csv");
+      } catch (error) {
+        console.error("ログイン履歴の読み込みに失敗しました:", error);
+        document.getElementById("log-table").innerHTML = '<p class="info-line">ログイン履歴を読み込めませんでした。</p>';
+        return;
+      }
+
+      rows.sort((a, b) => String(b.timestamp || "").localeCompare(String(a.timestamp || "")));
+      const eventFilter = document.getElementById("event-filter");
+      const humanFilter = document.getElementById("human-filter");
+      const table = document.getElementById("log-table");
+      const count = document.getElementById("log-count");
+
+      function render() {
+        const event = eventFilter.value;
+        const query = humanFilter.value.trim().toLocaleLowerCase();
+        const filtered = rows.filter(row => {
+          if (event !== "all" && row.event !== event) return false;
+          if (!query) return true;
+          return [row.human, row.role].some(value => String(value || "").toLocaleLowerCase().includes(query));
+        });
+
+        count.textContent = `${filtered.length}件（全${rows.length}件）`;
+        if (!filtered.length) {
+          table.innerHTML = '<p class="info-line">該当する履歴はありません。</p>';
+          return;
+        }
+
+        table.innerHTML = `
+          <table style="margin-top:14px;">
+            <thead>
+              <tr>
+                <th>日時</th>
+                <th>ユーザー</th>
+                <th>権限</th>
+                <th>イベント</th>
+                <th>詳細</th>
+                <th>ページ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filtered.map(row => `
+                <tr>
+                  <td style="text-align:left; white-space:nowrap;">${escapeHtml(formatTimestamp(row.timestamp))}</td>
+                  <td style="text-align:left;">${escapeHtml(row.human || "-")}</td>
+                  <td style="text-align:left;">${escapeHtml(row.role || "-")}</td>
+                  <td style="text-align:left;">${escapeHtml(eventLabels[row.event] || row.event || "-")}</td>
+                  <td style="text-align:left;">${escapeHtml(row.detail || "-")}</td>
+                  <td style="text-align:left;">${escapeHtml(row.path || "-")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      eventFilter.addEventListener("change", render);
+      humanFilter.addEventListener("input", render);
+      render();
+    });
+  </script>
+
+  <script src="/common/sw-register.js?v=20260713-1"></script>
+</body>
+</html>
