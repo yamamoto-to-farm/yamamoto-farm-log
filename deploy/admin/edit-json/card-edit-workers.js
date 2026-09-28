@@ -14,7 +14,7 @@ export function renderEditCard({ dataName, json, container }) {
     <div class="card">
       <h2>アクセス権限</h2>
       <p style="margin:0 0 12px; color:#555;">
-        権限と表示名で対象を絞り、一人ずつ編集できます。退職者の情報や在籍状況は従業員一覧で管理できます。
+        権限と表示名で対象を絞り、PIN と権限を編集します。従業員の識別名・表示名・在籍状況は従業員一覧で管理します。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
@@ -34,7 +34,7 @@ export function renderEditCard({ dataName, json, container }) {
             <label class="form-label" for="worker-target">編集対象</label>
             <select id="worker-target" class="form-input"></select>
           </div>
-          <button id="add-worker-btn" class="secondary-btn" type="button">＋ ユーザーを追加</button>
+          <button id="add-worker-btn" class="secondary-btn" type="button">＋ アカウントを追加</button>
         </div>
         <div id="worker-count" style="margin-top:8px; color:#555;"></div>
       </div>
@@ -64,8 +64,8 @@ export function renderEditCard({ dataName, json, container }) {
     workerList[selectedIndex] = {
       ...workerList[selectedIndex],
       pin: pinInput?.value.trim() || "",
-      name: nameInput.value.trim(),
-      display: displayInput.value.trim(),
+      name: nameInput.readOnly ? workerList[selectedIndex].name : nameInput.value.trim(),
+      display: displayInput.readOnly ? workerList[selectedIndex].display : displayInput.value.trim(),
       role: roleInput.value || workerList[selectedIndex].role || "worker"
     };
   }
@@ -103,11 +103,11 @@ export function renderEditCard({ dataName, json, container }) {
         </div>
         <div class="form-row">
           <label class="form-label">識別名</label>
-          <input class="form-input worker-name" value="${escapeHtml(item.name ?? "")}">
+          <input class="form-input worker-name" value="${escapeHtml(item.name ?? "")}" ${role === "worker" ? "readonly" : ""}>
         </div>
         <div class="form-row">
           <label class="form-label">表示名</label>
-          <input class="form-input worker-display" value="${escapeHtml(item.display ?? "")}">
+          <input class="form-input worker-display" value="${escapeHtml(item.display ?? "")}" ${role === "worker" ? "readonly" : ""}>
         </div>
         <div class="form-row">
           <label class="form-label">権限</label>
@@ -177,10 +177,10 @@ export function renderEditCard({ dataName, json, container }) {
       pin: "",
       name: "",
       display: "",
-      role: "worker"
+      role: "family"
     });
     searchEl.value = "";
-    roleFilterEl.value = "worker";
+    roleFilterEl.value = "family";
     editorEl.innerHTML = "";
     selectedIndex = workerList.length - 1;
     renderTargets();
