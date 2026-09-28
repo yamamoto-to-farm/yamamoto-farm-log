@@ -37,7 +37,7 @@ export function renderEditCard({ dataName, json, container }) {
     <div class="card">
       <h2>ログイン権限管理</h2>
       <p style="margin:0 0 12px; color:#555;">
-        ログイン用PINと権限を管理します。従業員の識別名・表示名・在籍状況は従業員在籍状況で管理し、この画面ではPINと権限のみ変更できます。退職者のPINは従業員番号として欠番のまま保持します。管理者・家族アカウントの追加や基本情報の編集もここで行います。
+        ログイン用PIN・権限・識別名・表示名を管理します。従業員の在籍状況は従業員在籍状況で管理し、退職者のPINは従業員番号として欠番のまま保持します。管理者・家族アカウントの追加や基本情報の編集もここで行います。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
@@ -87,8 +87,8 @@ export function renderEditCard({ dataName, json, container }) {
     workerList[selectedIndex] = {
       ...workerList[selectedIndex],
       pin: pinInput?.value.trim() || "",
-      name: nameInput.readOnly ? workerList[selectedIndex].name : nameInput.value.trim(),
-      display: displayInput.readOnly ? workerList[selectedIndex].display : displayInput.value.trim(),
+      name: nameInput.value.trim(),
+      display: displayInput.value.trim(),
       role: roleInput.value || workerList[selectedIndex].role || "worker"
     };
   }
@@ -117,7 +117,8 @@ export function renderEditCard({ dataName, json, container }) {
 
     const role = item.role || "worker";
     const retired = role === "worker" && item.employmentStatus === "retired";
-    editorEl.insertAdjacentHTML("beforeend", `
+    const isDraft = selectedIndex === draftIndex;
+      editorEl.insertAdjacentHTML("beforeend", `
       <div class="sub-card">
         ${role === "worker" ? `<div class="info-line">${retired ? "退職済み（従業員情報は保持）" : "在籍中"}</div>` : ""}
         <div class="form-row">
@@ -126,11 +127,11 @@ export function renderEditCard({ dataName, json, container }) {
         </div>
         <div class="form-row">
           <label class="form-label">識別名</label>
-          <input class="form-input worker-name" value="${escapeHtml(item.name ?? "")}" ${role === "worker" ? "readonly" : ""}>
+            <input class="form-input worker-name" value="${escapeHtml(item.name ?? "")}">
         </div>
         <div class="form-row">
           <label class="form-label">表示名</label>
-          <input class="form-input worker-display" value="${escapeHtml(item.display ?? "")}" ${role === "worker" ? "readonly" : ""}>
+            <input class="form-input worker-display" value="${escapeHtml(item.display ?? "")}">
         </div>
         <div class="form-row">
           <label class="form-label">権限</label>
