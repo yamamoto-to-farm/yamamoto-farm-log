@@ -188,7 +188,7 @@ function renderJsonList(container) {
       title: "権限・機械",
       items: [
         {
-          label: "アクセス権限",
+          label: "ログイン権限管理",
           file: "workers.json",
           data: "workers",
           desc: "ログインユーザーとロール設定"
