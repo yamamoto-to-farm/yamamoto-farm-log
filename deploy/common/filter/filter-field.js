@@ -61,7 +61,9 @@ export async function openFieldModal(options = {}) {
     onSelect = null,      // 選択モード時のコールバック
     includeExpired = false,
     selectWithConfirm = false,
-    selectedField = ""
+    selectedField = "",
+    fieldMeta = {},
+    showAreaLabels = true
   } = options;
 
   // ★★★ 安全ガード（最重要）★★★
@@ -75,14 +77,17 @@ export async function openFieldModal(options = {}) {
         <h3>圃場の選択</h3>
 
         ${parents.map(area => `
-          <div class="filter-block" data-area="${area}">
-            <div class="filter-header">
-              <span class="filter-label" data-area="${area}">${area}</span>
+          <div class="filter-block open${showAreaLabels ? "" : " field-modal-no-area"}" data-area="${area}">
+            ${showAreaLabels ? `<div class="filter-header">
+              <span class="filter-label" data-area="${area}">${escapeHtml(area)}</span>
               <span class="filter-toggle-btn" data-area="${area}">▼</span>
-            </div>
+            </div>` : ""}
             <div class="filter-children">
               ${(children[area] || []).map(name => `
-                <div class="select-item" data-field="${name}">${name}</div>
+                <div class="select-item" data-field="${escapeHtml(name)}">
+                  <span>${escapeHtml(name)}</span>
+                  ${renderFieldMeta(fieldMeta[name])}
+                </div>
               `).join("")}
             </div>
           </div>
@@ -116,6 +121,25 @@ export async function openFieldModal(options = {}) {
     selectWithConfirm,
     selectedField
   });
+}
+
+function renderFieldMeta(meta) {
+  if (!meta) return "";
+  const sizeText = meta.size == null || meta.size === ""
+    ? "耕作面積：未入力"
+    : `耕作面積：${escapeHtml(meta.size)}反`;
+  const statusText = meta.cultivating ? "栽培中" : "空き";
+  const statusClass = meta.cultivating ? " is-cultivating" : "";
+  return `<span class="field-select-meta"><span>${sizeText}</span><span class="field-select-status${statusClass}">${statusText}</span></span>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /* ============================================================

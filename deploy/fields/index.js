@@ -1,10 +1,8 @@
 // analysis/index.js
 import { loadJSON } from "/common/json.js";
-import { safeFieldName } from "/common/utils.js";
 import { buildExpiredFieldNameSet } from "/common/field-contract.js?v=1";
+import { buildCultivatingFieldSet } from "/common/cultivation.js?v=1";
 import { showPlantingDetailModal } from "/common/planting-detail.js?v=1";
-
-const CF_BASE = "https://d3sscxnlo0qnhe.cloudfront.net";
 
 // ▼ デバッグフラグ（true でログ ON）
 const DEBUG_FIELD_LIST = true;
@@ -33,7 +31,7 @@ export async function renderFieldList({ view = "active" } = {}) {
     const detail = fieldDetail[field.name];
     const sizeA = detail && detail.size != null ? Number(detail.size) : NaN;
     if (!isNaN(sizeA)) cultivatingAreaTotal += sizeA / 10;
-  });
+  }
 
   container.insertAdjacentHTML("beforeend", `
     <div class="field-view-toolbar print-hide">
@@ -379,63 +377,4 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-/* -----------------------------------------
-   定植記録はあるが収穫記録がまだない圃場（＝栽培中）を判定
-   戻り値: Map<圃場名, 栽培中のplantingRef配列>（同時期に複数品種を定植している場合も全て拾う）
------------------------------------------ */
-async function buildCultivatingFieldSet(targetFields) {
-  const summaryIndex = await loadJSON("data/summary-index.json").catch(() => ({}));
-
-  const entries = await Promise.all(
-    targetFields.map(async field => {
-      const summaries = await loadLatestYearSummariesForField(summaryIndex, field.name);
-      if (!summaries.length) return null;
-
-      const cultivatingRefs = summaries
-        .filter(summary => {
-          const hasHarvest = !!summary.lifecycle?.hasHarvest || (
-            !!summary.harvest?.firstDate &&
-            !!summary.harvest?.lastDate &&
-            summary.harvest?.count > 0
-          );
-          const discardedFully = !!summary.lifecycle?.discardedFully;
-          return !hasHarvest && !discardedFully;
-        })
-        .map(summary => summary.plantingRef)
-        .filter(Boolean);
-
-      if (!cultivatingRefs.length) return null;
-      return [field.name, cultivatingRefs];
-    })
-  );
-
-  return new Map(entries.filter(Boolean));
-}
-
-async function loadLatestYearSummariesForField(summaryIndex, fieldName) {
-  const key = summaryIndex[fieldName] ? fieldName : safeFieldName(fieldName);
-  const byYear = summaryIndex?.[key];
-  if (!byYear || typeof byYear !== "object") return [];
-
-  const years = Object.keys(byYear).sort();
-  const latestYear = years[years.length - 1];
-  const files = Array.isArray(byYear[latestYear]) ? byYear[latestYear] : [];
-  if (files.length === 0) return [];
-
-  const summaries = await Promise.all(
-    files.map(async file => {
-      try {
-        const url = `${CF_BASE}/logs/summary/${key}/${latestYear}/${file}?ts=${Date.now()}`;
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        return await res.json();
-      } catch {
-        return null;
-      }
-    })
-  );
-
-  return summaries.filter(Boolean);
 }

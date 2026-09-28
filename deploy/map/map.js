@@ -3,6 +3,7 @@
 import { openFieldModal } from "../common/filter/filter-field.js?v=1";
 import { setFilterData } from "../common/filter/filter-core.js?v=1";
 import { loadJSON } from "../common/json.js?v=1";
+import { buildCultivatingFieldSet } from "../common/cultivation.js?v=1";
 
 export function initMap() {
 
@@ -71,8 +72,13 @@ export function initMap() {
     });
   }
 
-  loadJSON("/data/fields.json")
-    .then(fields => {
+  Promise.all([
+    loadJSON("/data/fields.json"),
+    loadJSON("/data/field-detail.json").catch(() => ({}))
+  ])
+    .then(async ([fields, fieldDetail]) => {
+
+      const fieldMeta = await buildFieldMeta(fields, fieldDetail);
 
       /* ============================================================
          ★ フィルタデータをセット（filter-field.js が使う）
@@ -160,6 +166,8 @@ export function initMap() {
 
         openFieldModal({
           mode: "select",
+          fieldMeta,
+          showAreaLabels: false,
           onSelect: (selectedName) => {
             applySelection(selectedName);
           }
@@ -190,4 +198,16 @@ export function initMap() {
     .catch(err => {
       console.error("[map] fields.json load failed", err);
     });
+}
+
+async function buildFieldMeta(fields, fieldDetail) {
+  const cultivatingFieldSet = await buildCultivatingFieldSet(fields);
+  const entries = await Promise.all(fields.map(async field => {
+    const detail = fieldDetail?.[field.name];
+    const sizeA = Number(detail?.size);
+    const size = Number.isFinite(sizeA) && sizeA > 0 ? (sizeA / 10).toFixed(2) : null;
+    const cultivating = cultivatingFieldSet.has(field.name);
+    return [field.name, { size, cultivating }];
+  }));
+  return Object.fromEntries(entries);
 }
