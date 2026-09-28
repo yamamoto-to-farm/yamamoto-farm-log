@@ -29,65 +29,56 @@ window.addEventListener("DOMContentLoaded", async () => {
     .filter(index => index >= 0);
 
   function render() {
-    list.innerHTML = "";
     const indices = employeeIndices();
     if (!indices.length) {
+      list.innerHTML = "";
       const empty = document.createElement("p");
       empty.className = "info-line";
       empty.textContent = "従業員はまだ登録されていません。";
       list.appendChild(empty);
+      return;
     }
+
+    list.innerHTML = `
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th scope="col">表示名</th>
+            <th scope="col">識別名</th>
+            <th scope="col">在籍状況</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    `;
+    const tbody = list.querySelector("tbody");
 
     indices.forEach(index => {
       const employee = accounts[index];
-      const section = document.createElement("section");
-      section.className = "card employee-row";
-      section.dataset.index = String(index);
+      const row = document.createElement("tr");
+      row.className = "employee-row";
+      row.dataset.index = String(index);
 
-      const idRow = document.createElement("div");
-      idRow.className = "form-row";
-      const idLabel = document.createElement("label");
-      idLabel.className = "form-label";
-      idLabel.textContent = "識別名";
-      const idInput = document.createElement("input");
-      idInput.className = "form-input employee-name";
-      idInput.value = String(employee.name || "");
-      idInput.autocomplete = "off";
-      idRow.append(idLabel, idInput);
+      const displayCell = document.createElement("td");
+      displayCell.style.textAlign = "left";
+      displayCell.textContent = String(employee.display || "（未設定）");
 
-      const displayRow = document.createElement("div");
-      displayRow.className = "form-row";
-      const displayLabel = document.createElement("label");
-      displayLabel.className = "form-label";
-      displayLabel.textContent = "表示名";
-      const displayInput = document.createElement("input");
-      displayInput.className = "form-input employee-display";
-      displayInput.value = String(employee.display || "");
-      displayInput.autocomplete = "off";
-      displayRow.append(displayLabel, displayInput);
+      const nameCell = document.createElement("td");
+      nameCell.style.textAlign = "left";
+      nameCell.textContent = String(employee.name || "（未設定）");
 
-      const statusRow = document.createElement("div");
-      statusRow.className = "form-row";
-      const statusLabel = document.createElement("label");
-      statusLabel.className = "form-label";
-      statusLabel.textContent = "在籍状況";
+      const statusCell = document.createElement("td");
+      statusCell.style.textAlign = "center";
       const statusSelect = document.createElement("select");
       statusSelect.className = "form-input employee-status";
       statusSelect.innerHTML = '<option value="active">在籍中</option><option value="retired">退職済み</option>';
       statusSelect.value = employee.employmentStatus === "retired" ? "retired" : "active";
-      statusRow.append(statusLabel, statusSelect);
+      statusCell.appendChild(statusSelect);
 
-      section.append(idRow, displayRow, statusRow);
-      list.appendChild(section);
+      row.append(displayCell, nameCell, statusCell);
+      tbody.appendChild(row);
     });
   }
-
-  document.getElementById("add-employee-btn").addEventListener("click", () => {
-    accounts.push({ pin: "", name: "", display: "", role: "worker", employmentStatus: "active" });
-    render();
-    list.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "center" });
-    list.lastElementChild?.querySelector(".employee-name")?.focus();
-  });
 
   document.getElementById("save-employees-btn").addEventListener("click", async () => {
     const nextAccounts = accounts.map(account => ({ ...account }));
@@ -99,24 +90,17 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     for (const row of list.querySelectorAll(".employee-row")) {
       const index = Number(row.dataset.index);
-      const name = row.querySelector(".employee-name").value.trim();
-      const display = row.querySelector(".employee-display").value.trim();
       const employmentStatus = row.querySelector(".employee-status").value;
-      if (!name || !display) {
-        alert("識別名と表示名を入力してください。");
-        return;
-      }
+      const previous = nextAccounts[index];
+      const name = String(previous.name || "").trim();
       if (usedNames.has(name)) {
         alert(`識別名「${name}」が重複しています。`);
         return;
       }
       usedNames.add(name);
-      const previous = nextAccounts[index];
       if (employmentStatus === "retired" && previous.employmentStatus !== "retired") retiring = true;
       nextAccounts[index] = {
         ...previous,
-        name,
-        display,
         role: "worker",
         employmentStatus,
         pin: employmentStatus === "retired" ? "" : String(previous.pin || "")
