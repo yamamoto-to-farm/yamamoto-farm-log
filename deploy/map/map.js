@@ -122,6 +122,12 @@ export function initMap() {
         const popupHtml = `
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
+            <div style="margin-bottom:10px; color:#555;">
+              耕作面積：${fieldMeta[field.name]?.size ?? "未入力"}反
+              <span style="margin-left:8px; color:${fieldMeta[field.name]?.cultivating ? "#27834a" : "#666"}; font-weight:700;">
+                ${fieldMeta[field.name]?.cultivating ? "栽培中" : "空き"}
+              </span>
+            </div>
 
             <button id="nav-${safeId}"
               style="margin:4px; padding:4px 10px;">
@@ -166,8 +172,6 @@ export function initMap() {
 
         openFieldModal({
           mode: "select",
-          fieldMeta,
-          showAreaLabels: false,
           onSelect: (selectedName) => {
             applySelection(selectedName);
           }

@@ -63,26 +63,6 @@
   font-weight: bold;
 }
 
-.field-modal-no-area .select-item {
-  display: block;
-  margin: 4px 8px;
-  text-align: left;
-}
-
-.field-select-meta {
-  display: flex;
-  gap: 10px;
-  margin-top: 3px;
-  color: #666;
-  font-size: 0.85em;
-  font-weight: normal;
-}
-
-.field-select-status.is-cultivating {
-  color: #27834a;
-  font-weight: 700;
-}
-
 /* ------------------------------
    filter（子要素開閉）
 ------------------------------ */
