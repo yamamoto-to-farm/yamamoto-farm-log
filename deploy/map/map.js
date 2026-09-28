@@ -124,9 +124,9 @@ export function initMap() {
             <strong>${field.name}</strong><br><br>
             <div style="margin-bottom:10px; color:#555;">
               耕作面積：${fieldMeta[field.name]?.size ?? "未入力"}反
-              <span style="margin-left:8px; color:${fieldMeta[field.name]?.cultivating ? "#27834a" : "#666"}; font-weight:700;">
-                ${fieldMeta[field.name]?.cultivating ? "栽培中" : "空き"}
-              </span>
+              ${fieldMeta[field.name]?.cultivating
+                ? '<span style="margin-left:8px; color:#27834a; font-weight:700;">栽培中</span>'
+                : ""}
             </div>
 
             <button id="nav-${safeId}"
