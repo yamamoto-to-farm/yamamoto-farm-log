@@ -195,7 +195,7 @@ export function renderEditCard({ dataName, json, container }) {
       role: "family"
     });
     searchEl.value = "";
-    roleFilterEl.value = "family";
+    roleFilterEl.value = "all";
     editorEl.innerHTML = "";
     selectedIndex = workerList.length - 1;
     renderTargets();
