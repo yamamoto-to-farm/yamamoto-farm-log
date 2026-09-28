@@ -14,7 +14,7 @@ export function renderEditCard({ dataName, json, container }) {
     <div class="card">
       <h2>アクセス権限</h2>
       <p style="margin:0 0 12px; color:#555;">
-        権限と表示名で対象を絞り、PIN と権限を編集します。従業員の識別名・表示名・在籍状況は従業員一覧で管理します。
+        ログイン用PINと権限を管理します。従業員の識別名・表示名・在籍状況は従業員一覧で管理し、この画面ではPINと権限のみ変更できます。管理者・家族アカウントの追加や基本情報の編集もここで行います。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
