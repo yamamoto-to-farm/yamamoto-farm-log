@@ -345,7 +345,7 @@
     },
     {
       "id": "access",
-      "name": "従業員一覧",
+      "name": "従業員在籍状況",
       "path": "access.html",
       "category": "管理/ツール",
       "roles": ["admin"],

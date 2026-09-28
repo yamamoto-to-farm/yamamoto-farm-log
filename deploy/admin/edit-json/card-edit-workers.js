@@ -5,16 +5,16 @@ import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
 
 export function renderEditCard({ dataName, json, container }) {
   const title = document.getElementById("page-title");
-  if (title) title.textContent = "アクセス権限（workers.json）";
+  if (title) title.textContent = "ログイン権限管理（workers.json）";
 
   const workerList = Array.isArray(json) ? [...json] : Array.isArray(json?.workers) ? [...json.workers] : [];
   let selectedIndex = -1;
 
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
-      <h2>アクセス権限</h2>
+      <h2>ログイン権限管理</h2>
       <p style="margin:0 0 12px; color:#555;">
-        ログイン用PINと権限を管理します。従業員の識別名・表示名・在籍状況は従業員一覧で管理し、この画面ではPINと権限のみ変更できます。管理者・家族アカウントの追加や基本情報の編集もここで行います。
+        ログイン用PINと権限を管理します。従業員の識別名・表示名・在籍状況は従業員在籍状況で管理し、この画面ではPINと権限のみ変更できます。管理者・家族アカウントの追加や基本情報の編集もここで行います。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
@@ -42,7 +42,7 @@ export function renderEditCard({ dataName, json, container }) {
       <div id="worker-editor"></div>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;">
-        <a class="secondary-btn" href="/admin/access.html">従業員一覧</a>
+        <a class="secondary-btn" href="/admin/access.html">従業員在籍状況</a>
         <button id="save-btn" class="primary-btn" type="button">保存する</button>
       </div>
     </div>
@@ -220,7 +220,7 @@ export function renderEditCard({ dataName, json, container }) {
       await bumpAuthVersion("workers.json saved");
       completeSaveModal("保存が完了しました");
     } catch (error) {
-      console.error("アクセス権限の保存に失敗しました:", error);
+      console.error("ログイン権限の保存に失敗しました:", error);
       completeSaveModal("保存に失敗しました");
     }
   };
