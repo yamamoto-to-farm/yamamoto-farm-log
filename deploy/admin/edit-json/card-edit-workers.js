@@ -10,6 +10,21 @@ export function renderEditCard({ dataName, json, container }) {
   const workerList = Array.isArray(json) ? [...json] : Array.isArray(json?.workers) ? [...json.workers] : [];
   let selectedIndex = -1;
 
+  function getNextWorkerPin() {
+    const usedPins = new Set(workerList.map(item => String(item?.pin || "").trim()).filter(Boolean));
+    const yNumbers = workerList
+      .map(item => String(item?.pin || "").trim().match(/^Y(\d+)$/i))
+      .filter(Boolean)
+      .map(match => Number(match[1]));
+    let nextNumber = Math.max(0, ...yNumbers) + 1;
+    let nextPin = `Y${String(nextNumber).padStart(3, "0")}`;
+    while (usedPins.has(nextPin)) {
+      nextNumber += 1;
+      nextPin = `Y${String(nextNumber).padStart(3, "0")}`;
+    }
+    return nextPin;
+  }
+
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
       <h2>ログイン権限管理</h2>
@@ -34,7 +49,7 @@ export function renderEditCard({ dataName, json, container }) {
             <label class="form-label" for="worker-target">編集対象</label>
             <select id="worker-target" class="form-input"></select>
           </div>
-          <button id="add-worker-btn" class="secondary-btn" type="button">＋ アカウントを追加</button>
+          <button id="add-worker-btn" class="secondary-btn" type="button">＋ アカウントを追加（PIN自動採番）</button>
         </div>
         <div id="worker-count" style="margin-top:8px; color:#555;"></div>
       </div>
@@ -174,7 +189,7 @@ export function renderEditCard({ dataName, json, container }) {
   document.getElementById("add-worker-btn").onclick = () => {
     syncEditorToList();
     workerList.push({
-      pin: "",
+      pin: getNextWorkerPin(),
       name: "",
       display: "",
       role: "family"
