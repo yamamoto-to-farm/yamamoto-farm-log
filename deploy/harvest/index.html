@@ -77,13 +77,14 @@
       </div>
     </div>
 
-    <!-- 紐づける定植記録 -->
-    <h2 class="section-title">紐づける定植記録</h2>
+    <!-- 収穫対象 -->
+    <h2 class="section-title">収穫対象</h2>
     <div class="card">
-      <label for="plantingRef">定植記録（収穫予定 ±1ヶ月）</label>
+      <label for="plantingRef">収穫対象</label>
       <select id="plantingRef" class="form-input">
-        <option value="">該当する定植記録を選択</option>
+        <option value="">圃場と収穫日を入力してください</option>
       </select>
+      <p class="info-line">収穫予定月の初日から±50日以内を優先します。同じ品種の複数ロットは播種日の古い順に扱います。該当候補がない場合は手動で選択してください。</p>
     </div>
 
     <!-- 収穫量・特記事項 -->
@@ -146,7 +147,7 @@
       document.getElementById("shippingDate").value = today;
 
       // harvest.js をロードして初期化
-      const module = await import("./harvest.js?v=20260717-1");
+      const module = await import("./harvest.js?v=20260929-2");
       module.initHarvestPage();
     });
   </script>

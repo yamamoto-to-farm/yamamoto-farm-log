@@ -21,6 +21,7 @@ import { enqueueSummaryUpdate } from "../common/summary.js";
 import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=7";
 
 const DEBUG = localStorage.getItem("debugHarvest") === "1";
+const HARVEST_PLAN_WINDOW_DAYS = 50;
 const log = (...args) => { if (DEBUG) console.log("[harvest]", ...args); };
 
 // ★ 保存モーダル
@@ -45,28 +46,6 @@ function normalizeFieldName(name) {
 }
 
 
-// ===============================
-// 日数差を計算
-// ===============================
-function diffDays(dateA, dateB) {
-  const a = new Date(dateA);
-  const b = new Date(dateB);
-  return Math.floor((a - b) / 86400000);
-}
-
-
-// ===============================
-// 予定日数を YM から推定
-// ===============================
-function calcPlannedDays(plantDate, harvestPlanYM) {
-  if (!plantDate) return null;
-  if (!harvestPlanYM || !harvestPlanYM.includes("-")) return null;
-
-  const [y, m] = harvestPlanYM.split("-");
-  const plannedHarvest = new Date(`${y}-${m}-01`);
-
-  return diffDays(plannedHarvest, plantDate);
-}
 
 
 // ===============================
@@ -129,7 +108,7 @@ async function updatePlantingRefOptions() {
   const harvestDate = document.getElementById("harvestDate").value;
   const select = document.getElementById("plantingRef");
 
-  select.innerHTML = "<option value=''>該当する定植記録を選択</option>";
+  select.innerHTML = "<option value=''>候補を読み込んでいます…</option>";
 
   if (!field || !harvestDate) {
     log("field or harvestDate missing");
@@ -145,28 +124,50 @@ async function updatePlantingRefOptions() {
 
   if (candidates.length === 0) return;
 
-  const strongMatches = candidates.filter(p => {
+  const eligible = candidates.filter(p => {
     if (!p.plantDate) return false;
-
-    const actualDays = diffDays(harvestDate, p.plantDate);
-    const plannedDays = calcPlannedDays(p.plantDate, p.harvestPlanYM);
-
-    if (plannedDays === null) return false;
-    return Math.abs(actualDays - plannedDays) <= 60;
+    return new Date(p.plantDate) <= new Date(harvestDate);
   });
 
-  let finalList = strongMatches.length > 0 ? strongMatches : candidates;
+  const plannedMatches = eligible.filter(p => {
+    const plannedMonth = String(p.harvestPlanYM || "").trim();
+    if (!/^\d{4}-\d{2}$/.test(plannedMonth)) return false;
+    const plannedDate = new Date(`${plannedMonth}-01T00:00:00`);
+    const actualDate = new Date(`${harvestDate}T00:00:00`);
+    if (Number.isNaN(plannedDate.getTime()) || Number.isNaN(actualDate.getTime())) return false;
+    return Math.abs(actualDate.getTime() - plannedDate.getTime()) <= HARVEST_PLAN_WINDOW_DAYS * 86400000;
+  });
 
-  finalList.sort((a, b) => new Date(b.plantDate) - new Date(a.plantDate));
+  const hasPlannedMatches = plannedMatches.length > 0;
+  const finalList = hasPlannedMatches ? plannedMatches : eligible;
+  const varietySet = new Set(finalList.map(p => String(p.variety || "").trim()).filter(Boolean));
+  const canAutoSelect = hasPlannedMatches && varietySet.size === 1;
+
+  finalList.sort((a, b) => {
+    if (hasPlannedMatches) {
+      const varietyOrder = String(a.variety || "").localeCompare(String(b.variety || ""), "ja");
+      if (varietyOrder !== 0) return varietyOrder;
+      return String(a.seedRef || "").localeCompare(String(b.seedRef || ""), "ja");
+    }
+    return new Date(b.plantDate) - new Date(a.plantDate);
+  });
+
+  select.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = canAutoSelect
+    ? "収穫予定±50日の候補から自動選択"
+    : (hasPlannedMatches ? "品種が複数あります。収穫対象を選択" : "予定月±50日に候補なし。収穫対象を選択");
+  select.appendChild(placeholder);
 
   finalList.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.plantingRef;
-    opt.textContent = `${p.plantDate} / ${p.variety} / ${p.quantity}株`;
+    opt.textContent = `${p.plantDate} / ${p.variety} / ${Number(p.quantity || 0).toLocaleString()}株`;
     select.appendChild(opt);
   });
 
-  if (finalList.length === 1) {
+  if (canAutoSelect && finalList.length >= 1) {
     select.value = finalList[0].plantingRef;
   }
 
@@ -203,7 +204,7 @@ async function saveHarvestInner() {
     return;
   }
   if (!data.plantingRef) {
-    alert("定植記録を選択してください");
+    alert("収穫対象を選択してください");
     return;
   }
   if (!String(data.worker || "").trim()) {
