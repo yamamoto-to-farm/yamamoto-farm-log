@@ -25,5 +25,15 @@
     "firstDate": "2026-02-04",
     "lastDate": "2026-02-06"
   },
-  "lastUpdated": "2026-07-05T08:55:53.639Z"
+  "lifecycle": {
+    "phase": "harvested",
+    "hasHarvest": true,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2025-09-08",
+    "endDate": "2026-02-05",
+    "harvestReady": true,
+    "statusText": "収穫済み"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
 }

@@ -600,17 +600,25 @@ async function savePlantingInner() {
     return;
   }
 
-  // ===============================
-  // ★ plantingRef（現状維持）
-  // ===============================
-  const plantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}`;
   const machine = getMachineParam();
   const human = window.currentHuman || "";
+  const plantingRefs = [];
+  const usedPlantingRefs = new Set(rows.map(row => String(row.plantingRef || "").trim()).filter(Boolean));
 
   // ===============================
   // ★ 新しい行を追加（トレイ種別ごとに1行）
   // ===============================
   data.groups.forEach(group => {
+    const seedKey = group.seedRefs.join("+");
+    const basePlantingRef = `${data.plantDate.replace(/-/g, "")}-${data.field}-${data.variety}-${seedKey}-${group.trayType}`;
+    let plantingRef = basePlantingRef;
+    let sequence = 2;
+    while (usedPlantingRefs.has(plantingRef) || plantingRefs.includes(plantingRef)) {
+      plantingRef = `${basePlantingRef}-${sequence}`;
+      sequence += 1;
+    }
+    usedPlantingRefs.add(plantingRef);
+    plantingRefs.push(plantingRef);
     rows.push({
       plantDate: data.plantDate,
       worker: data.worker.replace(/,/g, "／"),
@@ -653,7 +661,7 @@ async function savePlantingInner() {
   });
 
   updateSaveModal("サマリーを更新しています…");
-  enqueueSummaryUpdate(plantingRef);
+  Array.from(new Set(plantingRefs)).forEach(ref => enqueueSummaryUpdate(ref));
 
   window.addEventListener(
     "summaryQueueEmpty",

@@ -34,6 +34,58 @@
           "notes": "",
           "eventId": "ev-ms5eph62-li2pif",
           "workType": "苦土石灰（粒）、エコまぜくん"
+        },
+        {
+          "date": "2026-09-02",
+          "distributed": [
+            {
+              "field": "西天伯(20a)",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 280.8,
+              "category": "BB",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "西天伯(20a)",
+              "fertilizer_id": "SD0001",
+              "name": "フロンサイド粉剤",
+              "amount_kg": 45.4,
+              "category": "土壌消毒剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "SL350",
+          "workers": "山本 直輝",
+          "sourceWork": "bedmaking",
+          "sourceWorkType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "sourceRidgeWidthCm": 60,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[畝立てログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "bags": 34,
+              "total_kg": 680,
+              "category": "BB",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "fertilizer_id": "SD0001",
+              "name": "フロンサイド粉剤",
+              "bags": 5.5,
+              "total_kg": 110,
+              "category": "土壌消毒剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ]
         }
       ]
     }

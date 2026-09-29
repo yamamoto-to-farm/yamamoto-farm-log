@@ -16,6 +16,13 @@
           "machine": "machine1",
           "workers": "若月 道昭,土井 琉羽",
           "notes": ""
+        },
+        {
+          "date": "2026-08-07",
+          "workType": "側溝整備（重機）",
+          "machine": "machine1",
+          "workers": "山本 雅彦,土井 琉羽",
+          "notes": "法面等補修"
         }
       ]
     }

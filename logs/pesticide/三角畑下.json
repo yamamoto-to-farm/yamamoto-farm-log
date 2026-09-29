@@ -594,6 +594,196 @@
           "machine": "BSA650",
           "workers": "山本 雅彦",
           "notes": ""
+        },
+        {
+          "date": "2026-08-23",
+          "distributed": [
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 178.2,
+              "spray_amount": 178.2,
+              "pesticide_amount": 2376,
+              "pesticide_unit": "ml",
+              "category": "選択制除草剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦,若月 道昭",
+          "notes": ""
+        },
+        {
+          "date": "2026-08-29",
+          "distributed": [
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 11.5,
+              "spray_amount": 11.5,
+              "pesticide_amount": 5.75,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 11.5,
+              "spray_amount": 11.5,
+              "pesticide_amount": 4.6,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 11.5,
+              "spray_amount": 11.5,
+              "pesticide_amount": 0.0115,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-09-05",
+          "distributed": [
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 8.4,
+              "spray_amount": 8.4,
+              "pesticide_amount": 4.2,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "ボルドーz 500倍\nプレバソン　2000倍"
+        },
+        {
+          "date": "2026-09-12",
+          "distributed": [
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.8,
+              "spray_amount": 4.8,
+              "pesticide_amount": 2.4,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.8,
+              "spray_amount": 4.8,
+              "pesticide_amount": 0.0048,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "FG0011",
+              "name": "バリダシン液剤５",
+              "dilution_rate": 800,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.8,
+              "spray_amount": 4.8,
+              "pesticide_amount": 6,
+              "pesticide_unit": "cc",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "プレバソン　2000倍"
+        },
+        {
+          "date": "2026-09-18",
+          "distributed": [
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "FG0017",
+              "name": "セイビアーフロアブル２０",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.4,
+              "spray_amount": 4.4,
+              "pesticide_amount": 4.4,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "三角畑(下)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 4.4,
+              "spray_amount": 4.4,
+              "pesticide_amount": 2.2,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "マッチ　2000倍"
         }
       ]
     }

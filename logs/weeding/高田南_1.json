@@ -57,6 +57,41 @@
           "workers": "山本 直輝,若月 道昭,石原 孝晋",
           "notes": "樹木伐採ややあり",
           "eventId": "ev-msmev7v5-ecmjog"
+        },
+        {
+          "date": "2026-08-26",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 600,
+              "total_spray_amount": 600,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "高田(南・1)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 136.6,
+              "spray_amount": 136.6,
+              "pesticide_amount": 1365.9999999999998,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": "南・4は周囲のみ"
         }
       ]
     }

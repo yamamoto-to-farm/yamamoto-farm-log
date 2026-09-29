@@ -116,6 +116,62 @@
           "workers": "土井 琉羽,山本 直輝,石原 孝晋",
           "notes": "草刈り、樹木伐採\n三角畑は道路側のみ",
           "eventId": "ev-msp92odz-d1j9j3"
+        },
+        {
+          "date": "2026-09-05",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "ラウンドアップマックスロード"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 75,
+              "total_spray_amount": 75,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 200,
+              "total_water_amount": 75,
+              "total_spray_amount": 75,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "看板前",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 5.5,
+              "spray_amount": 5.5,
+              "pesticide_amount": 55,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "看板前",
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 200,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 5.5,
+              "spray_amount": 5.5,
+              "pesticide_amount": 27.5,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": "周囲のみ"
         }
       ]
     }

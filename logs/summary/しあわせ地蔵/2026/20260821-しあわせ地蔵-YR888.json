@@ -1,0 +1,39 @@
+{
+  "plantingRef": "20260821-しあわせ地蔵-YR888",
+  "planting": {
+    "plantDate": "2026-08-21",
+    "field": "しあわせ地蔵",
+    "variety": "YR888",
+    "seedRef": "20260720-YR888-01/20260725-YR888-02",
+    "quantity": 6144,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-12"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2026-08-21",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
+}

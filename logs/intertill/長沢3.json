@@ -1,0 +1,31 @@
+{
+  "field": "長沢3",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-01",
+          "workType": "爪カルチ(リッチャー)",
+          "attachment": "爪カルチ(リッチャー)",
+          "ridgeWidthCm": null,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "JB13",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-09-18",
+          "workType": "爪カルチ(リッチャー)",
+          "attachment": "爪カルチ(リッチャー)",
+          "ridgeWidthCm": null,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

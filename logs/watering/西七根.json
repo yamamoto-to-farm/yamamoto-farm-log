@@ -1,0 +1,19 @@
+{
+  "field": "西七根",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-17",
+          "workType": "潅水",
+          "startTime": "",
+          "endTime": "",
+          "irrigationMinutes": 90,
+          "machine": "",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

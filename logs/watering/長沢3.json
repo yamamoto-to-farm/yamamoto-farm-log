@@ -1,0 +1,29 @@
+{
+  "field": "長沢3",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-19",
+          "workType": "潅水",
+          "startTime": "06:30",
+          "endTime": "11:30",
+          "irrigationMinutes": 300,
+          "machine": "",
+          "workers": "山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-08-22",
+          "workType": "潅水",
+          "startTime": "11:30",
+          "endTime": "16:30",
+          "irrigationMinutes": 300,
+          "machine": "",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

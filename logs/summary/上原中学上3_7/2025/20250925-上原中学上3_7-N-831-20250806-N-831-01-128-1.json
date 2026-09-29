@@ -1,5 +1,5 @@
 {
-  "plantingRef": "20250925-上原(中学上3.7)-N-831",
+  "plantingRef": "20250925-上原(中学上3.7)-N-831-20250806-N-831-01-128-1",
   "planting": {
     "plantDate": "2025-09-25",
     "field": "上原(中学上3.7)",
@@ -25,5 +25,15 @@
     "firstDate": "2026-04-05",
     "lastDate": "2026-04-06"
   },
-  "lastUpdated": "2026-07-05T08:56:02.311Z"
+  "lifecycle": {
+    "phase": "harvested",
+    "hasHarvest": true,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2025-09-25",
+    "endDate": "2026-04-05",
+    "harvestReady": true,
+    "statusText": "収穫済み"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
 }

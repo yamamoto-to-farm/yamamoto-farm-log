@@ -1,0 +1,32 @@
+{
+  "field": "八雲だんご",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-08",
+          "distributed": [
+            {
+              "field": "八雲だんご",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 130,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 70,
+              "spray_amount": 70,
+              "pesticide_amount": 538.4615384615385,
+              "pesticide_unit": "ml",
+              "category": "選択制除草剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

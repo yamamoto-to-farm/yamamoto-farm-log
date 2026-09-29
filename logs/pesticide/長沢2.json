@@ -1,0 +1,176 @@
+{
+  "field": "長沢2",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-29",
+          "distributed": [
+            {
+              "field": "長沢2",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 16.3,
+              "spray_amount": 16.3,
+              "pesticide_amount": 8.15,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "長沢2",
+              "pesticide_id": "IN0007",
+              "name": "ディアナSC",
+              "dilution_rate": 2500,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 16.3,
+              "spray_amount": 16.3,
+              "pesticide_amount": 6.5200000000000005,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "長沢2",
+              "pesticide_id": "FG0005",
+              "name": "リゾレックス水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 16.3,
+              "spray_amount": 16.3,
+              "pesticide_amount": 0.016300000000000002,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-09-05",
+          "distributed": [
+            {
+              "field": "長沢2",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 11.8,
+              "spray_amount": 11.8,
+              "pesticide_amount": 5.9,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "ボルドーz 500倍\nプレバソン　2000倍"
+        },
+        {
+          "date": "2026-09-12",
+          "distributed": [
+            {
+              "field": "長沢2",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 6.8,
+              "spray_amount": 6.8,
+              "pesticide_amount": 3.4,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "長沢2",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 6.8,
+              "spray_amount": 6.8,
+              "pesticide_amount": 0.0068,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "長沢2",
+              "pesticide_id": "FG0011",
+              "name": "バリダシン液剤５",
+              "dilution_rate": 800,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 6.8,
+              "spray_amount": 6.8,
+              "pesticide_amount": 8.5,
+              "pesticide_unit": "cc",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "プレバソン　2000倍"
+        },
+        {
+          "date": "2026-09-18",
+          "distributed": [
+            {
+              "field": "長沢2",
+              "pesticide_id": "FG0017",
+              "name": "セイビアーフロアブル２０",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 6.2,
+              "spray_amount": 6.2,
+              "pesticide_amount": 6.2,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "長沢2",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 6.2,
+              "spray_amount": 6.2,
+              "pesticide_amount": 3.1,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "マッチ　2000倍"
+        }
+      ]
+    }
+  }
+}

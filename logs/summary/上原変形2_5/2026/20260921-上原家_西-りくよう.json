@@ -1,0 +1,37 @@
+{
+  "plantingRef": "20260921-上原(家・西)-りくよう",
+  "planting": {
+    "plantDate": "2026-09-19",
+    "field": "上原(変形2.5)",
+    "variety": "りくよう",
+    "seedRef": "20260814-りくよう-01",
+    "quantity": 200,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2027-04"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "startDate": "2026-09-19",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-21T11:47:27+09:00"
+}

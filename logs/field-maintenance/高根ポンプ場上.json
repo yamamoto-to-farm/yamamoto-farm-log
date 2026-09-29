@@ -1,0 +1,16 @@
+{
+  "field": "高根ポンプ場上",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-07",
+          "workType": "側溝整備（重機）",
+          "machine": "machine1",
+          "workers": "山本 雅彦,土井 琉羽",
+          "notes": "法面等補修"
+        }
+      ]
+    }
+  }
+}

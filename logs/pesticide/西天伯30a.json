@@ -1,0 +1,100 @@
+{
+  "field": "西天伯30a",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-12",
+          "distributed": [
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "IN0008",
+              "name": "ブロフレアSC",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 9.6,
+              "spray_amount": 9.6,
+              "pesticide_amount": 4.8,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "FG0008",
+              "name": "ロブラール水和剤",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 9.6,
+              "spray_amount": 9.6,
+              "pesticide_amount": 0.0096,
+              "pesticide_unit": "g",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "FG0011",
+              "name": "バリダシン液剤５",
+              "dilution_rate": 800,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 9.6,
+              "spray_amount": 9.6,
+              "pesticide_amount": 12,
+              "pesticide_unit": "cc",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "プレバソン　2000倍"
+        },
+        {
+          "date": "2026-09-18",
+          "distributed": [
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "FG0017",
+              "name": "セイビアーフロアブル２０",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 8.7,
+              "spray_amount": 8.7,
+              "pesticide_amount": 8.7,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 8.7,
+              "spray_amount": 8.7,
+              "pesticide_amount": 4.35,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "マッチ　2000倍"
+        }
+      ]
+    }
+  }
+}

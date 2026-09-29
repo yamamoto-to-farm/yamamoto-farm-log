@@ -1,0 +1,39 @@
+{
+  "plantingRef": "20260919-上原(変形2.5)-冬勝利",
+  "planting": {
+    "plantDate": "2026-09-19",
+    "field": "上原(変形2.5)",
+    "variety": "冬勝利",
+    "seedRef": "20260819-冬勝利-01",
+    "quantity": 11008,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2027-03"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2026-09-19",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
+}

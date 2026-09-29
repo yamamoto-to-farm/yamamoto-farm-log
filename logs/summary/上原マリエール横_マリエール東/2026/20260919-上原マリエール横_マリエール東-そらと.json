@@ -1,0 +1,37 @@
+{
+  "plantingRef": "20260919-上原(マリエール横、マリエール東)-そらと",
+  "planting": {
+    "plantDate": "2026-09-19",
+    "field": "上原(マリエール横、マリエール東)",
+    "variety": "そらと",
+    "seedRef": "20260806-そらと-01/20260812-そらと-02",
+    "quantity": 4600,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2027-03"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "startDate": "2026-09-19",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-21T09:31:27+09:00"
+}

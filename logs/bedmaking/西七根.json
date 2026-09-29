@@ -1,0 +1,20 @@
+{
+  "field": "西七根",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-08-16",
+          "workType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "ridgeWidthCm": 60,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "SL350",
+          "workers": "山本 直輝,石原 孝晋",
+          "notes": "SL350リアウィンドウに誤って作業機を当ててしまいまう。農機課よぶ"
+        }
+      ]
+    }
+  }
+}

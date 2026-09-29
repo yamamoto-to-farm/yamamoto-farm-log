@@ -1,0 +1,39 @@
+{
+  "plantingRef": "20260914-彩幸(南)-N-831",
+  "planting": {
+    "plantDate": "2026-09-14",
+    "field": "彩幸(南)",
+    "variety": "N-831",
+    "seedRef": "20260806-N-831-01",
+    "quantity": 5700,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2027-02"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2026-09-14",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
+}

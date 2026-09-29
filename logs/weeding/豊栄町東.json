@@ -58,6 +58,62 @@
           "workers": "山本 直輝,若月 道昭",
           "notes": "",
           "eventId": "ev-msmev7tn-i4jxqs"
+        },
+        {
+          "date": "2026-08-26",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤",
+            "草枯れ次郎"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 400,
+              "total_water_amount": 50,
+              "total_spray_amount": 50,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 100,
+              "total_water_amount": 200,
+              "total_spray_amount": 200,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 400,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 50,
+              "spray_amount": 50,
+              "pesticide_amount": 125,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "豊栄町東",
+              "pesticide_id": "HL0005",
+              "name": "草枯れ次郎",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 200,
+              "spray_amount": 200,
+              "pesticide_amount": 2000,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": ""
         }
       ]
     }

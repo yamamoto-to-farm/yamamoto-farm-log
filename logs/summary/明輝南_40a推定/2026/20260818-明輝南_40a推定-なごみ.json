@@ -1,0 +1,29 @@
+{
+  "plantingRef": "20260818-明輝(南・40a)（推定）-なごみ",
+  "planting": {
+    "plantDate": "2026-08-18",
+    "field": "明輝(南・40a)（推定）",
+    "variety": "なごみ",
+    "seedRef": "20260720-なごみ-01",
+    "quantity": 2432,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-12"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lastUpdated": "2026-08-19T11:08:27.492Z"
+}

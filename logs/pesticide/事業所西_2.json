@@ -1,0 +1,47 @@
+{
+  "field": "事業所西_2",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-18",
+          "distributed": [
+            {
+              "field": "事業所(西・２)",
+              "pesticide_id": "FG0017",
+              "name": "セイビアーフロアブル２０",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 5.8,
+              "spray_amount": 5.8,
+              "pesticide_amount": 5.8,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "事業所(西・２)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 5.8,
+              "spray_amount": 5.8,
+              "pesticide_amount": 2.9,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "マッチ　2000倍"
+        }
+      ]
+    }
+  }
+}

@@ -23,6 +23,15 @@
           "machine": "machine1",
           "workers": "中島 和則",
           "notes": "業務委託（耕うん）"
+        },
+        {
+          "date": "2026-08-22",
+          "workType": "耕うん（ロータリー）",
+          "depthCm": 0,
+          "speedKmh": 2.3,
+          "machine": "T4",
+          "workers": "山本 直輝",
+          "notes": ""
         }
       ]
     }

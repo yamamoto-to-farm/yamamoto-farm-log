@@ -1,0 +1,55 @@
+{
+  "field": "上原変形2_5",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-10",
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 153.5,
+              "spray_amount": 153.5,
+              "pesticide_amount": 1.535,
+              "pesticide_unit": "L",
+              "category": "茎葉除草剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 直輝",
+          "notes": ""
+        },
+        {
+          "date": "2026-09-22",
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 25.3,
+              "spray_amount": 25.3,
+              "pesticide_amount": 12.65,
+              "pesticide_unit": "ml",
+              "category": "選択制除草剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

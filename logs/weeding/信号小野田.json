@@ -108,6 +108,62 @@
           "workers": "石原 孝晋,山本 直輝",
           "notes": "",
           "eventId": "ev-msp92oeu-c0bicq"
+        },
+        {
+          "date": "2026-09-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "ラウンドアップマックスロード"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 400,
+              "total_spray_amount": 400,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 200,
+              "total_water_amount": 400,
+              "total_spray_amount": 400,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "信号（小野田）",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 116.3,
+              "spray_amount": 116.3,
+              "pesticide_amount": 1163,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "信号（小野田）",
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 200,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 116.3,
+              "spray_amount": 116.3,
+              "pesticide_amount": 581.5,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": ""
         }
       ]
     }

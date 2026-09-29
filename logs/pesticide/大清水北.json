@@ -1,0 +1,70 @@
+{
+  "field": "大清水北",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-05",
+          "distributed": [
+            {
+              "field": "大清水(北)",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 23.6,
+              "spray_amount": 23.6,
+              "pesticide_amount": 11.8,
+              "pesticide_unit": "ml",
+              "category": "選択制除草剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        },
+        {
+          "date": "2026-09-18",
+          "distributed": [
+            {
+              "field": "大清水(北)",
+              "pesticide_id": "FG0017",
+              "name": "セイビアーフロアブル２０",
+              "dilution_rate": 1000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 3.5,
+              "spray_amount": 3.5,
+              "pesticide_amount": 3.5,
+              "pesticide_unit": "ml",
+              "category": "殺菌剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            },
+            {
+              "field": "大清水(北)",
+              "pesticide_id": "IN0004",
+              "name": "グレーシア乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 3.5,
+              "spray_amount": 3.5,
+              "pesticide_amount": 1.75,
+              "pesticide_unit": "ml",
+              "category": "殺虫剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": "マッチ　2000倍"
+        }
+      ]
+    }
+  }
+}

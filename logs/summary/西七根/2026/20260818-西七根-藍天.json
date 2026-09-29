@@ -1,0 +1,37 @@
+{
+  "plantingRef": "20260818-西七根-藍天",
+  "planting": {
+    "plantDate": "2026-08-17",
+    "field": "西七根",
+    "variety": "藍天",
+    "seedRef": "20260716-藍天-01",
+    "quantity": 5056,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-11"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "startDate": "2026-08-17",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-21T12:25:17+09:00"
+}

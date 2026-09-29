@@ -38,6 +38,15 @@
           "workers": "山本 直輝,山本 雅彦,山本 咲子",
           "notes": "",
           "eventId": "ev-msmev7ni-2ids3u"
+        },
+        {
+          "date": "2026-07-25",
+          "workType": "草刈り",
+          "pesticides": [],
+          "mowingMethod": "フレールモア",
+          "machine": "machine1",
+          "workers": "山本 雅彦",
+          "notes": ""
         }
       ]
     }

@@ -25,5 +25,15 @@
     "firstDate": null,
     "lastDate": null
   },
-  "lastUpdated": "2026-07-05T08:56:06.391Z"
+  "lifecycle": {
+    "phase": "discarded",
+    "hasHarvest": false,
+    "discardedFully": true,
+    "discardTotalQuantity": 2023,
+    "startDate": "2026-01-10",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "破棄済み"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
 }

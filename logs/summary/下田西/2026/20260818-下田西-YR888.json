@@ -1,0 +1,37 @@
+{
+  "plantingRef": "20260818-下田(西)-YR888",
+  "planting": {
+    "plantDate": "2026-08-18",
+    "field": "下田(西)",
+    "variety": "YR888",
+    "seedRef": "20260720-YR888-01",
+    "quantity": 1344,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2026-12"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "startDate": "2026-08-18",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-08-24T02:16:33+09:00"
+}

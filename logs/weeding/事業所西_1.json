@@ -58,6 +58,41 @@
           "eventId": "ev-mrml0zfo-6jdnsc",
           "pesticideUsage": [],
           "distributed": []
+        },
+        {
+          "date": "2026-08-25",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 700,
+              "total_spray_amount": 700,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "事業所(西・１)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 107.2,
+              "spray_amount": 107.2,
+              "pesticide_amount": 1072,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": ""
         }
       ]
     }

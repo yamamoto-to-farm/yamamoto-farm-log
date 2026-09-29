@@ -74,6 +74,97 @@
           "workers": "山本 直輝",
           "notes": "",
           "eventId": "ev-msmev7uq-l5mbc3"
+        },
+        {
+          "date": "2026-08-16",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "バスタ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 75,
+              "total_water_amount": 10,
+              "total_spray_amount": 10,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "西七根",
+              "pesticide_id": "HL0002",
+              "name": "バスタ液剤",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 10,
+              "spray_amount": 10,
+              "pesticide_amount": 133.33333333333334,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "山本 咲子",
+          "notes": ""
+        },
+        {
+          "date": "2026-09-17",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "ラウンドアップマックスロード"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 75,
+              "total_water_amount": 25,
+              "total_spray_amount": 25,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 150,
+              "total_water_amount": 25,
+              "total_spray_amount": 25,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "西七根",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 75,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 25,
+              "spray_amount": 25,
+              "pesticide_amount": 333.3333333333333,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "西七根",
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 150,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 25,
+              "spray_amount": 25,
+              "pesticide_amount": 166.66666666666666,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "背負動力噴霧機",
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 直輝",
+          "notes": "西側崩れ"
         }
       ]
     }

@@ -38,6 +38,76 @@
           "workers": "山本 直輝,土井 琉羽,若月 道昭",
           "notes": "周りのみ\n高田（崖下・小）は家庭菜園のため道路側のみ",
           "eventId": "ev-mrjrqp5j-j9zqx3"
+        },
+        {
+          "date": "2026-08-26",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 600,
+              "total_spray_amount": 600,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "高田(崖上・大)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 221.9,
+              "spray_amount": 221.9,
+              "pesticide_amount": 2219,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": "南・4は周囲のみ"
+        },
+        {
+          "date": "2026-09-12",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 600,
+              "total_spray_amount": 600,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "高田(崖上・大)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 179.1,
+              "spray_amount": 179.1,
+              "pesticide_amount": 1791,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "山本 直輝,若月 道昭,石原 孝晋",
+          "notes": ""
         }
       ]
     }

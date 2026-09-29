@@ -1,9 +1,69 @@
 timestamp,event,human,role,sessionId,detail,path
-2026-08-14T00:36:25.150Z,expired,naoki,admin,90f67884-f558-4b0b-a8bc-645c0944a301,issuedAt=1786610033746,/fields/weather.html
-2026-08-14T02:31:39.319Z,expired,naoki,admin,af18731b-8528-43c9-bbaf-e4b1032e8fcb,idle-timeout:3600000,/fields/weather.html
-2026-08-14T02:31:45.776Z,login,naoki,admin,673822aa-ffda-4018-942b-aa8db7d5c34e,sessionVersion=1,/index.html
-2026-08-14T06:31:29.708Z,login,sakiko,family,1b7bfa65-a36e-471e-9545-f73427ed0707,sessionVersion=1,/
-2026-08-14T06:31:32.404Z,login,sakiko,family,708c48e2-2ccb-4fae-9717-4aedd306e79b,sessionVersion=1,/
-2026-08-14T08:41:46.786Z,expired,sakiko,family,708c48e2-2ccb-4fae-9717-4aedd306e79b,idle-timeout:3600000,/list/list.html
-2026-08-14T12:45:35.479Z,login,naoki,admin,3748f507-1838-4710-92d5-12d261d3ecf2,sessionVersion=1,/index.html
-2026-08-14T15:22:45.652Z,login,naoki,admin,11c5ab90-7714-4d99-bb5d-32a580d7d841,sessionVersion=1,/index.html
+2026-09-26T13:35:07+09:00,expired,naoki,admin,dc9f3d10-5bc1-4739-8f2a-6f794dd48584,issuedAt=1790367941999,/fields/index.html
+2026-09-26T17:56:06+09:00,expired,naoki,admin,fc779034-2d9a-48a6-9e77-04f822251506,issuedAt=1790381284212,/
+2026-09-26T17:56:12+09:00,login,naoki,admin,58cc92b0-f55b-41f2-a531-8b31202f36d0,sessionVersion=1,/
+2026-09-26T17:56:16+09:00,logout,naoki,admin,58cc92b0-f55b-41f2-a531-8b31202f36d0,manual,/
+2026-09-26T17:56:35+09:00,login,naoki,admin,ac1893b5-e23a-463e-97a8-5042470030ff,sessionVersion=1,/index.html
+2026-09-27T06:49:16+09:00,login,naoki,admin,80df6fdc-1cbe-4564-a881-8a36f43a4029,sessionVersion=1,/index.html
+2026-09-27T06:49:26+09:00,login,naoki,admin,cb5a789a-e915-4c72-8d03-04493ab69197,sessionVersion=1,/index.html
+2026-09-27T07:19:28+09:00,stepup-required,naoki,admin,cb5a789a-e915-4c72-8d03-04493ab69197,path=/admin/edit-csv/index.html,/admin/edit-csv/index.html
+2026-09-27T07:19:34+09:00,login,naoki,admin,d8aedeae-4039-4e0e-80df-543ce1fe7a5d,sessionVersion=1,/index.html
+2026-09-27T07:43:26+09:00,revoke-all,naoki,admin,d8aedeae-4039-4e0e-80df-543ce1fe7a5d,employee roster updated;authVersion=2,/admin/access.html
+2026-09-27T07:43:30+09:00,revoked,naoki,admin,d8aedeae-4039-4e0e-80df-543ce1fe7a5d,version-mismatch:1->2,/admin/access.html
+2026-09-27T07:43:35+09:00,login,naoki,admin,fb52d03f-bd0f-46d5-b230-7f3f7edef3d6,sessionVersion=2,/index.html
+2026-09-27T07:48:49+09:00,revoke-all,naoki,admin,fb52d03f-bd0f-46d5-b230-7f3f7edef3d6,employee roster updated;authVersion=3,/admin/access.html
+2026-09-27T07:48:52+09:00,revoked,naoki,admin,fb52d03f-bd0f-46d5-b230-7f3f7edef3d6,version-mismatch:2->3,/admin/access.html
+2026-09-27T07:48:57+09:00,login,naoki,admin,813b08e1-4ae2-44f3-959c-510d6d7312b5,sessionVersion=3,/index.html
+2026-09-27T07:49:02+09:00,login,naoki,admin,1193ba88-5e7f-459e-b5c8-11a26746ed9e,sessionVersion=3,/index.html
+2026-09-27T07:49:23+09:00,logout,naoki,admin,1193ba88-5e7f-459e-b5c8-11a26746ed9e,manual,/admin/edit-csv/index.html
+2026-09-27T07:49:35+09:00,login,wakatsuki,worker,87585b13-a70f-47c7-85ac-7fe9cda35da8,sessionVersion=3,/index.html
+2026-09-27T07:49:44+09:00,logout,wakatsuki,worker,87585b13-a70f-47c7-85ac-7fe9cda35da8,manual,/index.html
+2026-09-27T07:49:55+09:00,login,doi,worker,d9180792-3675-41f8-963d-45b6d6678a7e,sessionVersion=3,/index.html
+2026-09-27T07:49:59+09:00,logout,doi,worker,d9180792-3675-41f8-963d-45b6d6678a7e,manual,/index.html
+2026-09-27T07:50:07+09:00,login,naoki,admin,bec5f23e-0770-4d3d-97cf-c6e31bc65dd6,sessionVersion=3,/index.html
+2026-09-27T13:31:29+09:00,expired,naoki,admin,ac1893b5-e23a-463e-97a8-5042470030ff,issuedAt=1790412995341,/field/soil-work/index.html
+2026-09-27T13:32:08+09:00,login,naoki,admin,77f79638-11e0-4f08-b4ad-e505f397785b,sessionVersion=3,/index.html
+2026-09-27T19:33:42+09:00,expired,naoki,admin,77f79638-11e0-4f08-b4ad-e505f397785b,idle-timeout:3600000,/list/list.html
+2026-09-27T19:34:52+09:00,login,naoki,admin,d3020962-5601-4248-b67c-fc4a9775615d,sessionVersion=3,/index.html
+2026-09-27T21:18:38+09:00,expired,sakiko,family,d185b9cd-1d17-48a7-a135-15884ae7f7af,issuedAt=1790165816706,/list/list.html
+2026-09-28T07:30:39+09:00,expired,naoki,admin,d3020962-5601-4248-b67c-fc4a9775615d,issuedAt=1790505292725,/index.html
+2026-09-28T07:33:23+09:00,login,naoki,admin,a0185250-6b5a-4f03-b3ad-159d242d10a1,sessionVersion=3,/index.html
+2026-09-28T14:00:06+09:00,expired,naoki,admin,a0185250-6b5a-4f03-b3ad-159d242d10a1,idle-timeout:3600000,/varieties/index.html
+2026-09-28T14:00:11+09:00,login,naoki,admin,49854578-eada-456c-a190-a5dc2a943296,sessionVersion=3,/index.html
+2026-09-28T17:50:54+09:00,login,naoki,admin,aeaa1938-83ab-419c-bd33-080eaa1c8ce5,sessionVersion=3,/index.html
+2026-09-28T18:17:10+09:00,revoke-all,naoki,admin,aeaa1938-83ab-419c-bd33-080eaa1c8ce5,workers.json saved;authVersion=4,/admin/edit-json/index.html
+2026-09-28T18:17:14+09:00,revoked,naoki,admin,aeaa1938-83ab-419c-bd33-080eaa1c8ce5,version-mismatch:3->4,/admin/edit-json/index.html
+2026-09-28T18:18:14+09:00,login,naoki,admin,de588563-e1a5-495c-9dff-115b6ef6f5c5,sessionVersion=4,/index.html
+2026-09-28T18:25:50+09:00,revoke-all,naoki,admin,de588563-e1a5-495c-9dff-115b6ef6f5c5,employee roster updated;authVersion=5,/admin/access.html
+2026-09-28T18:25:55+09:00,revoked,naoki,admin,de588563-e1a5-495c-9dff-115b6ef6f5c5,version-mismatch:4->5,/admin/access.html
+2026-09-28T18:26:00+09:00,login,naoki,admin,0911383c-d0c2-4f8d-b895-877c536e2c77,sessionVersion=5,/index.html
+2026-09-28T18:31:50+09:00,revoke-all,naoki,admin,0911383c-d0c2-4f8d-b895-877c536e2c77,workers.json saved;authVersion=6,/admin/edit-json/index.html
+2026-09-28T18:31:54+09:00,revoked,naoki,admin,0911383c-d0c2-4f8d-b895-877c536e2c77,version-mismatch:5->6,/admin/edit-json/index.html
+2026-09-28T18:31:59+09:00,login,naoki,admin,87e879b9-6ea5-4b5f-8167-82315392d105,sessionVersion=6,/index.html
+2026-09-28T18:32:28+09:00,revoke-all,naoki,admin,87e879b9-6ea5-4b5f-8167-82315392d105,employee roster updated;authVersion=7,/admin/access.html
+2026-09-28T18:32:30+09:00,revoked,naoki,admin,87e879b9-6ea5-4b5f-8167-82315392d105,version-mismatch:6->7,/admin/access.html
+2026-09-28T18:32:35+09:00,login,naoki,admin,a7234d8e-08f2-414b-b117-442a2058868a,sessionVersion=7,/index.html
+2026-09-28T18:33:49+09:00,revoke-all,naoki,admin,a7234d8e-08f2-414b-b117-442a2058868a,workers.json saved;authVersion=8,/admin/edit-json/index.html
+2026-09-28T18:33:51+09:00,revoked,naoki,admin,a7234d8e-08f2-414b-b117-442a2058868a,version-mismatch:7->8,/admin/edit-json/index.html
+2026-09-28T18:33:56+09:00,login,naoki,admin,08af88a7-6b74-489e-83fc-cb037972027d,sessionVersion=8,/index.html
+2026-09-28T18:34:12+09:00,revoke-all,naoki,admin,08af88a7-6b74-489e-83fc-cb037972027d,employee roster updated;authVersion=9,/admin/access.html
+2026-09-28T18:34:15+09:00,revoked,naoki,admin,08af88a7-6b74-489e-83fc-cb037972027d,version-mismatch:8->9,/admin/access.html
+2026-09-28T18:34:19+09:00,login,naoki,admin,b26fb6a3-4898-44e0-8ce5-f3e4f726038d,sessionVersion=9,/index.html
+2026-09-28T18:34:46+09:00,revoke-all,naoki,admin,b26fb6a3-4898-44e0-8ce5-f3e4f726038d,employee roster updated;authVersion=10,/admin/access.html
+2026-09-28T18:34:48+09:00,revoked,naoki,admin,b26fb6a3-4898-44e0-8ce5-f3e4f726038d,version-mismatch:9->10,/admin/access.html
+2026-09-28T18:34:53+09:00,login,naoki,admin,cc6d45d6-4c55-487e-91d6-2dc48c8e55ea,sessionVersion=10,/index.html
+2026-09-28T18:35:08+09:00,revoke-all,naoki,admin,cc6d45d6-4c55-487e-91d6-2dc48c8e55ea,workers.json saved;authVersion=11,/admin/edit-json/index.html
+2026-09-28T18:35:10+09:00,revoked,naoki,admin,cc6d45d6-4c55-487e-91d6-2dc48c8e55ea,version-mismatch:10->11,/admin/edit-json/index.html
+2026-09-28T18:35:15+09:00,login,naoki,admin,df411fbc-54c3-4b37-9a7b-5981f080501c,sessionVersion=11,/index.html
+2026-09-28T18:35:23+09:00,revoke-all,naoki,admin,df411fbc-54c3-4b37-9a7b-5981f080501c,employee roster updated;authVersion=12,/admin/access.html
+2026-09-28T18:35:25+09:00,revoked,naoki,admin,df411fbc-54c3-4b37-9a7b-5981f080501c,version-mismatch:11->12,/admin/access.html
+2026-09-28T18:35:29+09:00,login,naoki,admin,1e48d7e6-b3ae-4900-8082-a7feeaa95eb4,sessionVersion=12,/index.html
+2026-09-28T19:13:16+09:00,logout,naoki,admin,1e48d7e6-b3ae-4900-8082-a7feeaa95eb4,manual,/map/index.html
+2026-09-28T19:13:23+09:00,login,kimura,worker,5bf8a785-b2d7-44b6-99ac-98f762e7038d,sessionVersion=12,/index.html
+2026-09-28T19:15:34+09:00,logout,kimura,worker,5bf8a785-b2d7-44b6-99ac-98f762e7038d,manual,/map/index.html
+2026-09-28T19:15:38+09:00,login,naoki,admin,a7c512fa-e1f1-4573-8aa2-05fc7340e5e4,sessionVersion=12,/index.html
+2026-09-29T07:24:10+09:00,expired,naoki,admin,a7c512fa-e1f1-4573-8aa2-05fc7340e5e4,issuedAt=1790590538951,/
+2026-09-29T07:24:14+09:00,login,naoki,admin,036bd665-7577-4811-a7b8-4a4659538227,sessionVersion=12,/
+2026-09-29T16:32:09+09:00,expired,naoki,admin,036bd665-7577-4811-a7b8-4a4659538227,issuedAt=1790634254294,/planting/index.html
+2026-09-29T16:32:13+09:00,login,naoki,admin,afeeed7e-d08b-48b8-b02c-07db6e990a5b,sessionVersion=12,/index.html
+2026-09-29T16:53:41+09:00,login,naoki,admin,629ca185-b496-44f7-9393-48cbdbc81031,sessionVersion=12,/index.html

@@ -1,0 +1,32 @@
+{
+  "field": "七根伊古部",
+  "years": {
+    "2026": {
+      "entries": [
+        {
+          "date": "2026-09-22",
+          "distributed": [
+            {
+              "field": "七根(伊古部)",
+              "pesticide_id": "SL0001",
+              "name": "フィールドスターP乳剤",
+              "dilution_rate": 2000,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 36.4,
+              "spray_amount": 36.4,
+              "pesticide_amount": 18.2,
+              "pesticide_unit": "ml",
+              "category": "選択制除草剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "BSA650",
+          "workers": "山本 雅彦",
+          "notes": ""
+        }
+      ]
+    }
+  }
+}

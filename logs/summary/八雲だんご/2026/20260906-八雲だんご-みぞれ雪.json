@@ -1,0 +1,39 @@
+{
+  "plantingRef": "20260906-八雲だんご-みぞれ雪",
+  "planting": {
+    "plantDate": "2026-09-06",
+    "field": "八雲だんご",
+    "variety": "みぞれ雪",
+    "seedRef": "20260806-みぞれ雪-01/20260810-みぞれ雪-02",
+    "quantity": 8254,
+    "trayType": 128,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2027-02"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2026-09-06",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-29T16:55:04+09:00"
+}

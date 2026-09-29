@@ -220,6 +220,58 @@
           "workers": "山本 直輝,山本 雅彦",
           "notes": "",
           "eventId": "ev-ms5eph4e-ayv2jt"
+        },
+        {
+          "date": "2026-08-20",
+          "distributed": [
+            {
+              "field": "三角畑",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 540,
+              "category": "BB",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "三角畑",
+              "fertilizer_id": "SD0001",
+              "name": "フロンサイド粉剤",
+              "amount_kg": 100,
+              "category": "土壌消毒剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "SL350",
+          "workers": "山本 直輝,若月 道昭",
+          "sourceWork": "bedmaking",
+          "sourceWorkType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "sourceRidgeWidthCm": 60,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[畝立てログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "bags": 27,
+              "total_kg": 540,
+              "category": "BB",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "fertilizer_id": "SD0001",
+              "name": "フロンサイド粉剤",
+              "bags": 5,
+              "total_kg": 100,
+              "category": "土壌消毒剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ]
         }
       ]
     }

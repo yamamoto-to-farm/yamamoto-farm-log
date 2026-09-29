@@ -47,6 +47,41 @@
           "workers": "土井 琉羽,若月 道昭,山本 直輝",
           "notes": "周りのみ",
           "eventId": "ev-mrjrqp69-26jo9o"
+        },
+        {
+          "date": "2026-08-25",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 80,
+              "total_water_amount": 600,
+              "total_spray_amount": 600,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "大清水(北)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 80,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 108.8,
+              "spray_amount": 108.8,
+              "pesticide_amount": 1359.9999999999998,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": ""
         }
       ]
     }

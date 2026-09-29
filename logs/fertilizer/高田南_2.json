@@ -108,8 +108,14 @@
             }
           ],
           "machine": "EG330",
-          "workers": "土井 琉羽,山本 直輝,山本 雅彦",
-          "notes": ""
+          "workers": [
+            "土井 琉羽",
+            "山本 直輝",
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mt1xnl18-yqiosf",
+          "workType": "苦土石灰（粒）、エコまぜくん"
         }
       ]
     }

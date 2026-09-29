@@ -101,7 +101,7 @@
           "eventId": "ev-ms5eph7z-scbkbi"
         },
         {
-          "date": "2026-07-29",
+          "date": "2026-07-28",
           "distributed": [
             {
               "field": "豊栄町東",
@@ -123,8 +123,13 @@
             }
           ],
           "machine": "EG330",
-          "workers": "土井 琉羽,山本 直輝,山本 雅彦",
-          "notes": ""
+          "workers": [
+            "山本 直輝",
+            "山本 雅彦"
+          ],
+          "notes": "",
+          "eventId": "ev-mt1xnkz9-9guzfn",
+          "workType": "炭酸苦土石灰（マグカル）、エコまぜくん"
         }
       ]
     }

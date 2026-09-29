@@ -122,10 +122,15 @@
               "sourceMaster": "fertilizer-index"
             }
           ],
-          "machine": "machine1",
-          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
+          "machine": "EG330",
+          "workers": [
+            "土井 琉羽",
+            "山本 雅彦",
+            "山本 直輝"
+          ],
           "notes": "",
-          "eventId": "ev-ms5eph5t-9l6wu1"
+          "eventId": "ev-ms5eph5t-9l6wu1",
+          "workType": "炭酸苦土石灰（マグカル）、エコまぜくん"
         },
         {
           "date": "2026-07-29",
@@ -141,8 +146,134 @@
             }
           ],
           "machine": "EG330",
-          "workers": "土井 琉羽,山本 直輝",
-          "notes": ""
+          "workers": [
+            "土井 琉羽",
+            "山本 直輝"
+          ],
+          "notes": "",
+          "eventId": "ev-mt1xo9vm-4i0you",
+          "workType": "新ふりかけ堆肥eco"
+        },
+        {
+          "date": "2026-08-17",
+          "distributed": [
+            {
+              "field": "長沢3",
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "amount_kg": 520,
+              "category": "BB",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "field": "長沢3",
+              "fertilizer_id": "SD0001",
+              "name": "フロンサイド粉剤",
+              "amount_kg": 40,
+              "category": "土壌消毒剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "machine": "SL350",
+          "workers": "山本 直輝,若月 道昭",
+          "sourceWork": "bedmaking",
+          "sourceWorkType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "sourceRidgeWidthCm": 60,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[畝立てログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F001",
+              "name": "BBグリーンワイド",
+              "bags": 26,
+              "total_kg": 520,
+              "category": "BB",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            },
+            {
+              "fertilizer_id": "SD0001",
+              "name": "フロンサイド粉剤",
+              "bags": 2,
+              "total_kg": 40,
+              "category": "土壌消毒剤",
+              "materialType": "pesticide",
+              "sourceMaster": "pesticide-index"
+            }
+          ],
+          "eventId": "ev-mt6239an-wbtfft"
+        },
+        {
+          "date": "2026-09-01",
+          "distributed": [
+            {
+              "field": "長沢3",
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "amount_kg": 71.4,
+              "category": "窒素肥料",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "JB13",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "爪カルチ(リッチャー)",
+          "attachment": "爪カルチ(リッチャー)",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F202",
+              "name": "ペルカ",
+              "bags": 6,
+              "total_kg": 120,
+              "category": "窒素肥料",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ]
+        },
+        {
+          "date": "2026-09-18",
+          "distributed": [
+            {
+              "field": "長沢3",
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "amount_kg": 100,
+              "category": "化成",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ],
+          "machine": "machine1",
+          "workers": "山本 直輝",
+          "sourceWork": "intertill",
+          "sourceWorkType": "爪カルチ(リッチャー)",
+          "attachment": "爪カルチ(リッチャー)",
+          "sourceRidgeWidthCm": null,
+          "sourceRidgeHeightCm": null,
+          "sourceRidgeCount": null,
+          "notes": "[中耕ログ同時施肥]",
+          "fertilizerItems": [
+            {
+              "fertilizer_id": "F101",
+              "name": "野菜追肥S842",
+              "bags": 5,
+              "total_kg": 100,
+              "category": "化成",
+              "materialType": "fertilizer",
+              "sourceMaster": "fertilizer-index"
+            }
+          ]
         }
       ]
     }

@@ -13,6 +13,17 @@
           "machine": "machine1",
           "workers": "山本 直輝",
           "notes": ""
+        },
+        {
+          "date": "2026-08-20",
+          "workType": "スーパー台形成形機",
+          "attachment": "スーパー台形成形機",
+          "ridgeWidthCm": 60,
+          "ridgeHeightCm": null,
+          "ridgeCount": null,
+          "machine": "SL350",
+          "workers": "山本 直輝,若月 道昭",
+          "notes": "1/4ほど8/21に畝立て"
         }
       ]
     }

@@ -62,6 +62,62 @@
           ],
           "notes": "周りのみ",
           "eventId": "ev-mrjugsbk-sfdus4"
+        },
+        {
+          "date": "2026-09-13",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤",
+            "ラウンドアップマックスロード"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 350,
+              "total_spray_amount": 350,
+              "unit": "L"
+            },
+            {
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 200,
+              "total_water_amount": 350,
+              "total_spray_amount": 350,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "体育館",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 350,
+              "spray_amount": 350,
+              "pesticide_amount": 3500,
+              "pesticide_unit": "ml"
+            },
+            {
+              "field": "体育館",
+              "pesticide_id": "HL0003",
+              "name": "ラウンドアップマックスロード",
+              "dilution_rate": 200,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 350,
+              "spray_amount": 350,
+              "pesticide_amount": 1750,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "エンジン動噴",
+          "machine": "machine1",
+          "workers": "土井 琉羽,山本 直輝,若月 道昭,石原 孝晋",
+          "notes": "畑の中にも散布"
         }
       ]
     }

@@ -1,0 +1,39 @@
+{
+  "plantingRef": "20260924-ヨコモク(下)-N-831-20260810-N-831-02-200-1",
+  "planting": {
+    "plantDate": "2026-09-24",
+    "field": "ヨコモク(下)",
+    "variety": "N-831",
+    "seedRef": "20260810-N-831-02",
+    "quantity": 1800,
+    "trayType": 200,
+    "spacing": {
+      "row": 34,
+      "bed": 60
+    },
+    "harvestPlanYM": "2027-02"
+  },
+  "harvest": {
+    "count": 0,
+    "totalAmount": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "shipping": {
+    "count": 0,
+    "totalWeight": 0,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "lifecycle": {
+    "phase": "in-cultivation",
+    "hasHarvest": false,
+    "discardedFully": false,
+    "discardTotalQuantity": 0,
+    "startDate": "2026-09-24",
+    "endDate": "",
+    "harvestReady": true,
+    "statusText": "栽培中"
+  },
+  "lastUpdated": "2026-09-29T17:10:10+09:00"
+}

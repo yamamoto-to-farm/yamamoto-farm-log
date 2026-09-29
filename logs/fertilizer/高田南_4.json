@@ -93,8 +93,14 @@
             }
           ],
           "machine": "EG330",
-          "workers": "土井 琉羽,山本 雅彦,山本 直輝",
-          "notes": "畑面積間違い"
+          "workers": [
+            "土井 琉羽",
+            "山本 雅彦",
+            "山本 直輝"
+          ],
+          "notes": "畑面積間違い",
+          "eventId": "ev-mt1xnkz4-fkhr2m",
+          "workType": "苦土石灰（粒）、エコまぜくん"
         }
       ]
     }

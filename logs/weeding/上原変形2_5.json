@@ -61,6 +61,41 @@
           "workers": "山本 雅彦",
           "notes": "",
           "eventId": "ev-msmev7wu-knnuo4"
+        },
+        {
+          "date": "2026-09-09",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 200,
+              "total_spray_amount": 200,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "上原(変形2.5)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 116.3,
+              "spray_amount": 116.3,
+              "pesticide_amount": 1163,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": "変形はほぼ周りのみ"
         }
       ]
     }

@@ -117,6 +117,41 @@
           "workers": "土井 琉羽,山本 直輝,石原 孝晋",
           "notes": "樹木伐採、草刈り",
           "eventId": "ev-msp92ofp-qft287"
+        },
+        {
+          "date": "2026-08-26",
+          "workType": "除草剤散布",
+          "pesticides": [
+            "ザクサ液剤"
+          ],
+          "pesticideUsage": [
+            {
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "total_water_amount": 450,
+              "total_spray_amount": 450,
+              "unit": "L"
+            }
+          ],
+          "distributed": [
+            {
+              "field": "西天伯(30a)",
+              "pesticide_id": "HL0001",
+              "name": "ザクサ液剤",
+              "dilution_rate": 100,
+              "unit": "L",
+              "water_unit": "L",
+              "water_amount": 264.2,
+              "spray_amount": 264.2,
+              "pesticide_amount": 2642,
+              "pesticide_unit": "ml"
+            }
+          ],
+          "sprayMethod": "小型ブームスプレーヤ(BSM201)",
+          "machine": "EF228",
+          "workers": "山本 直輝",
+          "notes": "30a草少ないところはメモリ1.0"
         }
       ]
     }
