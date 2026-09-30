@@ -169,7 +169,9 @@
       });
 
       initFilterButtons();
-      initKpiPage();
+      const currentYear = String(new Date().getFullYear());
+      const defaultYear = years.includes(currentYear) ? currentYear : years[years.length - 1];
+      initKpiPage(defaultYear);
     });
 
     function initFilterButtons() {
@@ -198,7 +200,7 @@
       container.innerHTML = parts.join(" ");
     }
 
-    async function initKpiPage() {
+    async function initKpiPage(defaultYear) {
       const DEBUG = localStorage.getItem("debugKPI") === "1";
 
       if (DEBUG) {
@@ -214,11 +216,7 @@
       log("① OK kpi-container が存在します");
       log("② renderKpiPage() を実行します（デフォルト: 今年のみ）…");
 
-      const currentYear = new Date().getFullYear();
       // 今年に予定または出荷実績がなければ、最も新しい対象年を初期表示する。
-      const defaultYear = years.includes(String(currentYear))
-        ? String(currentYear)
-        : years[years.length - 1];
       const defaultFilters = { years: defaultYear ? [defaultYear] : [] };
       setActiveFiltersUI(defaultFilters);
 
