@@ -76,7 +76,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=1.5";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20260930-1";
     import { loadJSON } from "/common/json.js";
     import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {
@@ -99,8 +99,8 @@
       document.getElementById("page-area").style.display = "block";
 
       /* ===============================
-         ▼ planting/all.csv, weight/all.csv & varieties.json から
-            フィルタ用データを構築（年は shippingDate ベース）
+        ▼ planting/all.csv, weight/all.csv & varieties.json から
+          フィルタ用データを構築（予定年・出荷実績年を自動集約）
       =============================== */
       const plantingRows = normalizeKeys(
         await loadCSV("/logs/planting/all.csv")
@@ -110,12 +110,17 @@
       );
       const varietiesData = await loadJSON("/data/varieties.json");
 
-      // 年一覧（weightRows の shippingDate の year を基準にする）
+      // 予定年（harvestPlanYM）と出荷実績年（shippingDate）を統合
       const years = [...new Set(
-        weightRows
-          .map(r => r.shippingDate)
-          .filter(Boolean)
-          .map(d => new Date(d).getFullYear())
+        [
+          ...plantingRows
+            .map(r => String(r.harvestPlanYM || "").match(/^(\d{4})-\d{2}$/)?.[1])
+            .filter(Boolean),
+          ...weightRows
+            .map(r => r.shippingDate)
+            .filter(Boolean)
+            .map(d => String(new Date(d).getFullYear()))
+        ]
       )].sort();
 
       // 品種タイプマップ（varietyType → varieties）
@@ -156,7 +161,7 @@
       }
 
       /* ===============================
-         ▼ kpi-filter.js に渡す（年は shippingDate ベース）
+         ▼ kpi-filter.js に渡す（予定年・出荷実績年）
       =============================== */
       setKpiFilterData({
         years,
@@ -210,8 +215,11 @@
       log("② renderKpiPage() を実行します（デフォルト: 今年のみ）…");
 
       const currentYear = new Date().getFullYear();
-      // ここは UI 側での初期表示。実際の有効年は renderKpiPage が weightRows を見て決める。
-      const defaultFilters = { years: [String(currentYear)] };
+      // 今年に予定または出荷実績がなければ、最も新しい対象年を初期表示する。
+      const defaultYear = years.includes(String(currentYear))
+        ? String(currentYear)
+        : years[years.length - 1];
+      const defaultFilters = { years: defaultYear ? [defaultYear] : [] };
       setActiveFiltersUI(defaultFilters);
 
       try {

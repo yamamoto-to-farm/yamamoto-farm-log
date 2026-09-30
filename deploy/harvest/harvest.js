@@ -52,6 +52,7 @@ function normalizeFieldName(name) {
 // planting CSV キャッシュ
 // ===============================
 let plantingCache = null;
+let plantingOptionsRequestId = 0;
 
 
 // ===============================
@@ -104,74 +105,99 @@ async function loadPlantingCSV() {
 async function updatePlantingRefOptions() {
   log("updatePlantingRefOptions start");
 
+  const requestId = ++plantingOptionsRequestId;
   const field = getFinalField();
   const harvestDate = document.getElementById("harvestDate").value;
   const select = document.getElementById("plantingRef");
 
-  select.innerHTML = "<option value=''>候補を読み込んでいます…</option>";
+  setPlantingRefMessage(select, "候補を読み込んでいます…");
 
   if (!field || !harvestDate) {
     log("field or harvestDate missing");
+    setPlantingRefMessage(select, "圃場と収穫日を入力してください");
     return;
   }
 
-  const plantingList = await loadPlantingCSV();
-  const nf = normalizeFieldName(field);
+  try {
+    const plantingList = await loadPlantingCSV();
+    if (requestId !== plantingOptionsRequestId) return;
+    const nf = normalizeFieldName(field);
 
-  const candidates = plantingList.filter(p =>
-    normalizeFieldName(p.field || "") === nf
-  );
+    const candidates = plantingList.filter(p =>
+      normalizeFieldName(p.field || "") === nf
+    );
 
-  if (candidates.length === 0) return;
-
-  const eligible = candidates.filter(p => {
-    if (!p.plantDate) return false;
-    return new Date(p.plantDate) <= new Date(harvestDate);
-  });
-
-  const plannedMatches = eligible.filter(p => {
-    const plannedMonth = String(p.harvestPlanYM || "").trim();
-    if (!/^\d{4}-\d{2}$/.test(plannedMonth)) return false;
-    const plannedDate = new Date(`${plannedMonth}-01T00:00:00`);
-    const actualDate = new Date(`${harvestDate}T00:00:00`);
-    if (Number.isNaN(plannedDate.getTime()) || Number.isNaN(actualDate.getTime())) return false;
-    return Math.abs(actualDate.getTime() - plannedDate.getTime()) <= HARVEST_PLAN_WINDOW_DAYS * 86400000;
-  });
-
-  const hasPlannedMatches = plannedMatches.length > 0;
-  const finalList = hasPlannedMatches ? plannedMatches : eligible;
-  const varietySet = new Set(finalList.map(p => String(p.variety || "").trim()).filter(Boolean));
-  const canAutoSelect = hasPlannedMatches && varietySet.size === 1;
-
-  finalList.sort((a, b) => {
-    if (hasPlannedMatches) {
-      const varietyOrder = String(a.variety || "").localeCompare(String(b.variety || ""), "ja");
-      if (varietyOrder !== 0) return varietyOrder;
-      return String(a.seedRef || "").localeCompare(String(b.seedRef || ""), "ja");
+    if (candidates.length === 0) {
+      setPlantingRefMessage(select, "この圃場の定植記録が見つかりません");
+      return;
     }
-    return new Date(b.plantDate) - new Date(a.plantDate);
-  });
 
-  select.innerHTML = "";
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = canAutoSelect
-    ? "収穫予定±50日の候補から自動選択"
-    : (hasPlannedMatches ? "品種が複数あります。収穫対象を選択" : "予定月±50日に候補なし。収穫対象を選択");
-  select.appendChild(placeholder);
+    const eligible = candidates.filter(p => {
+      if (!p.plantDate) return false;
+      return new Date(p.plantDate) <= new Date(harvestDate);
+    });
 
-  finalList.forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p.plantingRef;
-    opt.textContent = `${p.plantDate} / ${p.variety} / ${Number(p.quantity || 0).toLocaleString()}株`;
-    select.appendChild(opt);
-  });
+    if (eligible.length === 0) {
+      setPlantingRefMessage(select, "収穫日以前の定植記録がありません");
+      return;
+    }
 
-  if (canAutoSelect && finalList.length >= 1) {
-    select.value = finalList[0].plantingRef;
+    const plannedMatches = eligible.filter(p => {
+      const plannedMonth = String(p.harvestPlanYM || "").trim();
+      if (!/^\d{4}-\d{2}$/.test(plannedMonth)) return false;
+      const plannedDate = new Date(`${plannedMonth}-01T00:00:00`);
+      const actualDate = new Date(`${harvestDate}T00:00:00`);
+      if (Number.isNaN(plannedDate.getTime()) || Number.isNaN(actualDate.getTime())) return false;
+      return Math.abs(actualDate.getTime() - plannedDate.getTime()) <= HARVEST_PLAN_WINDOW_DAYS * 86400000;
+    });
+
+    const hasPlannedMatches = plannedMatches.length > 0;
+    const finalList = hasPlannedMatches ? plannedMatches : eligible;
+    const varietySet = new Set(finalList.map(p => String(p.variety || "").trim()).filter(Boolean));
+    const canAutoSelect = hasPlannedMatches && varietySet.size === 1;
+
+    finalList.sort((a, b) => {
+      if (hasPlannedMatches) {
+        const varietyOrder = String(a.variety || "").localeCompare(String(b.variety || ""), "ja");
+        if (varietyOrder !== 0) return varietyOrder;
+        return String(a.seedRef || "").localeCompare(String(b.seedRef || ""), "ja");
+      }
+      return new Date(b.plantDate) - new Date(a.plantDate);
+    });
+
+    select.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = canAutoSelect
+      ? "収穫予定±50日の候補から自動選択"
+      : (hasPlannedMatches ? "品種が複数あります。収穫対象を選択" : "予定月±50日に候補なし。収穫対象を選択");
+    select.appendChild(placeholder);
+
+    finalList.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.plantingRef;
+      opt.textContent = `${p.plantDate} / ${p.variety} / ${Number(p.quantity || 0).toLocaleString()}株`;
+      select.appendChild(opt);
+    });
+
+    if (canAutoSelect && finalList.length >= 1) {
+      select.value = finalList[0].plantingRef;
+    }
+
+    log("updatePlantingRefOptions done", { field, harvestDate, candidateCount: finalList.length });
+  } catch (error) {
+    if (requestId !== plantingOptionsRequestId) return;
+    console.error("収穫対象の候補読み込みに失敗しました:", error);
+    setPlantingRefMessage(select, "定植記録を読み込めませんでした。圃場を選び直してください");
   }
+}
 
-  log("updatePlantingRefOptions done");
+function setPlantingRefMessage(select, message) {
+  select.innerHTML = "";
+  const option = document.createElement("option");
+  option.value = "";
+  option.textContent = message;
+  select.appendChild(option);
 }
 
 

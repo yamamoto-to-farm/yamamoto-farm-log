@@ -1,5 +1,5 @@
 // harvest-kpi.js
-// KPI 年度ページ（CSV 直接集計版 / shippingDate ベース / month-kpi と完全一致）
+// KPI 年度ページ（予定は定植CSV、実績はshippingDateベース）
 // v1.3 - summary-index.json キャッシュ化 + findSummaryPath の逆引きマップ最適化
 // さらに renderKpiPage は filters が未指定の場合に「今年のみ」をデフォルト適用
 
@@ -125,12 +125,18 @@ export async function renderKpiPage(filters = null) {
   const harvestBase = await loadJSON("/data/harvestBase.json");
   const annualAll = await loadJSON("/logs/schedule/annual/annual.json").catch(() => ({}));
 
-  // shippingDate の年から年度一覧を作る（月次と完全一致)
+  // 予定対象年と実績対象年の和集合を年フィルターに使う。
   let years = [...new Set(
-    weightRows
-      .map(r => parseYearFromDate(r.shippingDate))
-      .filter(Number.isInteger)
-  )].sort();
+    [
+      ...plantingRows
+        .map(row => String(row.harvestPlanYM || "").match(/^(\d{4})-\d{2}$/)?.[1])
+        .filter(Boolean)
+        .map(Number),
+      ...weightRows
+        .map(r => parseYearFromDate(r.shippingDate))
+        .filter(Number.isInteger)
+    ]
+  )].sort((a, b) => a - b);
 
   // デフォルトフィルタ: 指定がなければ今年のみを描画
   const currentYear = new Date().getFullYear();
@@ -166,7 +172,12 @@ export async function renderKpiPage(filters = null) {
       .map(r => safeFileName(r.plantingRef))
       .filter(Boolean);
 
-    const uniqueRefs = [...new Set(refsInYear)];
+    const plannedRefsInYear = plantingRows
+      .filter(row => String(row.harvestPlanYM || "").startsWith(`${year}-`))
+      .map(row => safeFileName(row.plantingRef))
+      .filter(Boolean);
+
+    const uniqueRefs = [...new Set([...refsInYear, ...plannedRefsInYear])];
 
     let refList = uniqueRefs.map(ref => {
       const row = plantingRows.find(p =>
@@ -212,15 +223,13 @@ async function renderKpiForYear(year, refList, plantingRows, weightRows, harvest
   );
 
   /* ------------------------------
-     予定面積（CSV ベース）
-     ※ refList に含まれる ref のみ
-     ※ harvestPlanYM の「年」も一致したものだけ使う
+    予定面積（定植CSVベース）
+    出荷実績の有無にかかわらず、対象年の全予定作付けを集計する。
   ------------------------------ */
   const planArea = Array(12).fill(0);
 
   plantingRows.forEach(row => {
-    const ref = safeFileName(row.plantingRef);
-    if (!refList.some(r => r.normalizedRef === ref)) return;
+    if (refList.length && !refList.some(ref => ref.variety === row.variety)) return;
 
     const ym = row.harvestPlanYM;
     if (!ym) return;
