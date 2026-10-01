@@ -337,8 +337,107 @@
     }
 
     #summaryArea {
-      font-size: 16px;
-      line-height: 1.4;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.45;
+    }
+
+    .seed-summary-group {
+      padding: 8px 0;
+    }
+
+    .seed-summary-group + .seed-summary-group {
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .seed-summary-group h3 {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 5px;
+      color: #374151;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .seed-summary-group h3::before {
+      width: 3px;
+      height: 13px;
+      flex: 0 0 3px;
+      background: #2f855a;
+      content: "";
+    }
+
+    .seed-summary-group--discard h3::before {
+      background: #c0564b;
+    }
+
+    .seed-summary-group--remaining h3::before {
+      background: #397b78;
+    }
+
+    .seed-summary-rows {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px 18px;
+    }
+
+    .seed-summary-row {
+      display: flex;
+      min-width: 0;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px dotted #e5e7eb;
+    }
+
+    .seed-summary-row span {
+      min-width: 0;
+      color: #5b6470;
+      font-size: 12px;
+    }
+
+    .seed-summary-row strong {
+      color: #17212b;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .seed-summary-tray-values {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 2px 12px;
+    }
+
+    .seed-summary-row .seed-summary-tray-values span {
+      color: #17212b;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 440px) {
+      .seed-summary-rows {
+        grid-template-columns: 1fr;
+      }
+
+      .seed-summary-tray-row {
+        flex-wrap: wrap;
+      }
+
+      .seed-summary-tray-row > span:first-child {
+        flex-basis: 100%;
+      }
+
+      .seed-summary-tray-values {
+        width: 100%;
+        justify-content: space-between;
+      }
     }
 
     @media (max-width: 1024px) {

@@ -522,21 +522,33 @@ function renderTable(rows) {
   document.getElementById("countArea").textContent = `${rows.length} 件`;
   const discardRate = totalSeed > 0 ? (discardedSeed / totalSeed) * 100 : 0;
   document.getElementById("summaryArea").innerHTML =
-    `総枚数：${formatTrayWithType(totalTray128, 128)}<br>
-     総枚数：${formatTrayWithType(totalTray200, 200)}<br>
-     総株数：${totalSeed.toLocaleString()} 株<br>
-     予定面積合計：${totalAreaTan.toFixed(2)} 反<br>
-     <hr style="margin:8px 0;">
-     破棄枚数：${formatTrayWithType(discardedTray128, 128)}<br>
-     破棄枚数：${formatTrayWithType(discardedTray200, 200)}<br>
-     破棄株数：${formatCount(discardedSeed)} 株<br>
-     破棄相当面積：${discardedAreaTan.toFixed(2)} 反<br>
-     破棄率：${discardRate.toFixed(1)}%<br>
-     <hr style="margin:8px 0;">
-     残り枚数：${formatTrayWithType(remainingTray128, 128)}<br>
-     残り枚数：${formatTrayWithType(remainingTray200, 200)}<br>
-     残り株数：${formatCount(remainingSeed)} 株<br>
-     残り面積合計：${remainingAreaTan.toFixed(2)} 反`;
+    `<div class="seed-summary">
+      <section class="seed-summary-group">
+        <h3>播種実績</h3>
+        <div class="seed-summary-rows">
+          <div class="seed-summary-row seed-summary-tray-row"><span>総枚数</span><strong class="seed-summary-tray-values"><span>${formatTrayCount(totalTray128)}（128穴）</span><span>${formatTrayCount(totalTray200)}（200穴）</span></strong></div>
+          <div class="seed-summary-row"><span>総株数</span><strong>${totalSeed.toLocaleString()} 株</strong></div>
+          <div class="seed-summary-row"><span>予定面積</span><strong>${totalAreaTan.toFixed(2)} 反</strong></div>
+        </div>
+      </section>
+      <section class="seed-summary-group seed-summary-group--discard">
+        <h3>破棄</h3>
+        <div class="seed-summary-rows">
+          <div class="seed-summary-row seed-summary-tray-row"><span>破棄枚数</span><strong class="seed-summary-tray-values"><span>${formatTrayCount(discardedTray128)}（128穴）</span><span>${formatTrayCount(discardedTray200)}（200穴）</span></strong></div>
+          <div class="seed-summary-row"><span>破棄株数</span><strong>${formatCount(discardedSeed)} 株</strong></div>
+          <div class="seed-summary-row"><span>破棄相当面積</span><strong>${discardedAreaTan.toFixed(2)} 反</strong></div>
+          <div class="seed-summary-row"><span>破棄率</span><strong>${discardRate.toFixed(1)}%</strong></div>
+        </div>
+      </section>
+      <section class="seed-summary-group seed-summary-group--remaining">
+        <h3>残り</h3>
+        <div class="seed-summary-rows">
+          <div class="seed-summary-row seed-summary-tray-row"><span>残り枚数</span><strong class="seed-summary-tray-values"><span>${formatTrayCount(remainingTray128)}（128穴）</span><span>${formatTrayCount(remainingTray200)}（200穴）</span></strong></div>
+          <div class="seed-summary-row"><span>残り株数</span><strong>${formatCount(remainingSeed)} 株</strong></div>
+          <div class="seed-summary-row"><span>残り面積</span><strong>${remainingAreaTan.toFixed(2)} 反</strong></div>
+        </div>
+      </section>
+    </div>`;
 
   window.dispatchEvent(new CustomEvent("list:summary-updated"));
 
