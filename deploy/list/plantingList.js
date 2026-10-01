@@ -32,6 +32,8 @@ let discardQuantityMap = {};
 let filterData = {};
 let initialized = false;
 let plantDateSortOrder = null; // null | asc | desc
+let selectedPlantingDate = "";
+let plantingCalendarMonth = "";
 
 // 定植後の管理作業（圃場別に日付昇順で保持）
 // badge: true のものだけ一覧にバッジ表示する
@@ -69,6 +71,8 @@ async function initPlantingListPage() {
       if (scrollArea) scrollArea.scrollLeft = 0;
     });
   });
+
+  bindPlantingDateCalendar();
 
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
@@ -135,6 +139,7 @@ async function initPlantingListPage() {
   window.addEventListener("filter:reset", () => {
     if (window.currentListMode !== "planting") return;  // ★ 追加
     window.currentFilterState = {};
+    selectedPlantingDate = "";
     renderTable(plantingRows);
   });
 
@@ -180,7 +185,14 @@ function applyDefaultSeasonFilterIfNeeded(ymMap) {
 }
 
 function applyAllFilters(rows, state) {
+  let result = applyBaseFilters(rows, state);
+  if (selectedPlantingDate) {
+    result = result.filter(row => String(row?.plantDate || "").trim() === selectedPlantingDate);
+  }
+  return result;
+}
 
+function applyBaseFilters(rows, state) {
   let result = rows;
 
   if (state.yearMonths?.length) {
@@ -200,6 +212,126 @@ function applyAllFilters(rows, state) {
   }
 
   return result;
+}
+
+function bindPlantingDateCalendar() {
+  const trigger = document.getElementById("planting-date-calendar-btn");
+  const dialog = document.getElementById("planting-date-calendar");
+  const clearButton = document.getElementById("planting-date-calendar-clear");
+  if (!trigger || !dialog || trigger.dataset.bound === "1") return;
+  trigger.dataset.bound = "1";
+
+  trigger.addEventListener("click", () => {
+    const availableDates = getPlantingDateCounts();
+    if (!plantingCalendarMonth) {
+      const latestDate = [...availableDates.keys()].sort().at(-1);
+      const anchorDate = selectedPlantingDate || latestDate || todayLocalYmd();
+      plantingCalendarMonth = anchorDate.slice(0, 7);
+    }
+    renderPlantingDateCalendar();
+    dialog.showModal();
+    trigger.setAttribute("aria-expanded", "true");
+  });
+
+  dialog.addEventListener("close", () => {
+    trigger.setAttribute("aria-expanded", "false");
+  });
+
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog || event.target.closest("[data-calendar-close]")) {
+      dialog.close();
+      return;
+    }
+
+    const monthButton = event.target.closest("[data-calendar-month]");
+    if (monthButton) {
+      shiftPlantingCalendarMonth(Number(monthButton.dataset.calendarMonth));
+      renderPlantingDateCalendar();
+      return;
+    }
+
+    const dateButton = event.target.closest(".planting-date-calendar__day[data-date]");
+    if (dateButton && !dateButton.disabled) {
+      selectedPlantingDate = dateButton.dataset.date || "";
+      plantingCalendarMonth = selectedPlantingDate.slice(0, 7);
+      updatePlantingDateButton();
+      dialog.close();
+      renderTable(applyAllFilters(plantingRows, window.currentFilterState || {}));
+    }
+  });
+
+  clearButton?.addEventListener("click", () => {
+    selectedPlantingDate = "";
+    updatePlantingDateButton();
+    renderPlantingDateCalendar();
+    renderTable(applyAllFilters(plantingRows, window.currentFilterState || {}));
+  });
+
+  updatePlantingDateButton();
+}
+
+function updatePlantingDateButton() {
+  const trigger = document.getElementById("planting-date-calendar-btn");
+  if (!trigger) return;
+  trigger.textContent = selectedPlantingDate
+    ? `日付：${selectedPlantingDate}`
+    : "日付で絞込";
+  trigger.classList.toggle("is-active", Boolean(selectedPlantingDate));
+  trigger.title = selectedPlantingDate
+    ? `選択中の日付：${selectedPlantingDate}`
+    : "定植日を選択";
+}
+
+function getPlantingDateCounts() {
+  const counts = new Map();
+  const rows = applyBaseFilters(plantingRows, window.currentFilterState || {});
+  rows.forEach(row => {
+    const date = String(row?.plantDate || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    counts.set(date, (counts.get(date) || 0) + 1);
+  });
+  return counts;
+}
+
+function renderPlantingDateCalendar() {
+  const monthLabel = document.getElementById("planting-date-calendar-month");
+  const grid = document.getElementById("planting-date-calendar-grid");
+  const clearButton = document.getElementById("planting-date-calendar-clear");
+  if (!monthLabel || !grid || !plantingCalendarMonth) return;
+
+  const [year, month] = plantingCalendarMonth.split("-").map(Number);
+  if (!year || !month || month < 1 || month > 12) return;
+
+  const monthText = `${year}-${String(month).padStart(2, "0")}`;
+  const firstWeekday = new Date(year, month - 1, 1).getDay();
+  const lastDay = new Date(year, month, 0).getDate();
+  const labels = ["日", "月", "火", "水", "木", "金", "土"];
+  const dateCounts = getPlantingDateCounts();
+  const matchingDayCount = [...dateCounts.keys()].filter(date => date.startsWith(`${monthText}-`)).length;
+  const cells = labels.map(label => `<div class="planting-date-calendar__weekday">${label}</div>`);
+
+  for (let index = 0; index < firstWeekday; index += 1) {
+    cells.push('<div class="planting-date-calendar__empty" aria-hidden="true"></div>');
+  }
+
+  for (let day = 1; day <= lastDay; day += 1) {
+    const date = `${monthText}-${String(day).padStart(2, "0")}`;
+    const count = dateCounts.get(date) || 0;
+    const classes = ["planting-date-calendar__day"];
+    if (count) classes.push("has-record");
+    if (date === selectedPlantingDate) classes.push("is-selected");
+    cells.push(`<button class="${classes.join(" ")}" type="button" data-date="${date}" aria-label="${date}、${count}件" title="${count ? `${count}件` : "該当なし"}"${count ? "" : " disabled"}>${day}</button>`);
+  }
+
+  monthLabel.textContent = `${year}年${month}月（該当 ${matchingDayCount}日）`;
+  grid.innerHTML = cells.join("");
+  if (clearButton) clearButton.disabled = !selectedPlantingDate;
+}
+
+function shiftPlantingCalendarMonth(offset) {
+  const [year, month] = plantingCalendarMonth.split("-").map(Number);
+  const date = new Date(year, month - 1 + offset, 1);
+  plantingCalendarMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function getSeedDates(seedRef) {
@@ -602,6 +734,10 @@ function renderTable(rows) {
 
   let totalQuantity = 0;
   let totalAreaTan = 0;
+  let plantedTotalQuantity = 0;
+  let plantedTotalAreaTan = 0;
+  let discardedTotalQuantity = 0;
+  let discardedTotalAreaTan = 0;
 
   sortedRows.forEach((r, rowIndex) => {
 
@@ -618,6 +754,10 @@ function renderTable(rows) {
     const areaTan = calcAreaTan(calcAreaM2(remainingQuantity, spacing.row, spacing.bed));
     const plantedAreaTan = calcAreaTan(calcAreaM2(plantedQuantity, spacing.row, spacing.bed));
 
+    plantedTotalQuantity += plantedQuantity;
+    plantedTotalAreaTan += plantedAreaTan;
+    discardedTotalQuantity += discarded;
+    discardedTotalAreaTan += calcAreaTan(calcAreaM2(discarded, spacing.row, spacing.bed));
     totalQuantity += remainingQuantity;
     totalAreaTan += areaTan;
 
@@ -642,10 +782,39 @@ function renderTable(rows) {
   `;
 
   document.getElementById("countArea").textContent = `${rows.length} 件`;
+  const discardRate = plantedTotalQuantity > 0
+    ? (discardedTotalQuantity / plantedTotalQuantity) * 100
+    : 0;
   document.getElementById("summaryArea").innerHTML =
-    `株数合計：${totalQuantity.toLocaleString()} 株　
-     面積合計：${totalAreaTan.toFixed(2)} 反　
-     <span class="summary-note">（破棄株数を除いた現存分）</span>`;
+    `<div class="planting-summary">
+      <section class="planting-summary-group">
+        <h3>定植時</h3>
+        <div class="planting-summary-rows">
+          <div class="planting-summary-row"><span>株数</span><strong>${plantedTotalQuantity.toLocaleString()} 株</strong></div>
+          <div class="planting-summary-row"><span>面積</span><strong>${plantedTotalAreaTan.toFixed(2)} 反</strong></div>
+        </div>
+      </section>
+      <section class="planting-summary-group planting-summary-group--discard">
+        <h3>破棄</h3>
+        <div class="planting-summary-rows">
+          <div class="planting-summary-row"><span>破棄株数</span><strong>${discardedTotalQuantity.toLocaleString()} 株</strong></div>
+          <div class="planting-summary-row"><span>破棄相当面積</span><strong>${discardedTotalAreaTan.toFixed(2)} 反</strong></div>
+          <div class="planting-summary-row"><span>破棄率</span><strong>${discardRate.toFixed(1)}%</strong></div>
+        </div>
+      </section>
+      <section class="planting-summary-group planting-summary-group--current">
+        <h3>現存</h3>
+        <div class="planting-summary-rows">
+          <div class="planting-summary-row"><span>株数</span><strong>${totalQuantity.toLocaleString()} 株</strong></div>
+          <div class="planting-summary-row"><span>面積</span><strong>${totalAreaTan.toFixed(2)} 反</strong></div>
+        </div>
+      </section>
+    </div>`;
+
+  updatePlantingDateButton();
+  if (document.getElementById("planting-date-calendar")?.open) {
+    renderPlantingDateCalendar();
+  }
 
   window.dispatchEvent(new CustomEvent("list:summary-updated"));
 

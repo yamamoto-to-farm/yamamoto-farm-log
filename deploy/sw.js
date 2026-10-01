@@ -1,4 +1,4 @@
-const CACHE_NAME = "yamamoto-farm-runtime-v20260927-1";
+const CACHE_NAME = "yamamoto-farm-runtime-v20261002-1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
