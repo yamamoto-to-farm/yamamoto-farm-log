@@ -80,17 +80,9 @@ export function attachWorkDoneButton() {
    （summary-index.json を利用）
 --------------------------------------------------------- */
 export async function resolveFieldFromFileName(fileName) {
-  // 1. fileName から圃場名を抽出
-  //    形式：YYYYMMDD-圃場名-品種.json
-  const parts = fileName.replace(".json", "").split("-");
-  if (parts.length < 3) return null;
+  const targetFile = safeFileName(String(fileName || "").replace(/\.json$/i, "")) + ".json";
+  if (targetFile === ".json") return null;
 
-  const rawField = parts[1]; // 生の圃場名（括弧・中黒あり）
-
-  // 2. safeFileName() で正規化
-  const normalizedField = safeFileName(rawField);
-
-  // 3. summary-index.json を読み込む
   let sIndex = {};
   try {
     sIndex = await loadJSON("/data/summary-index.json");
@@ -99,13 +91,17 @@ export async function resolveFieldFromFileName(fileName) {
     return null;
   }
 
-  // 4. 正規化名と一致するキーを探す
-  if (sIndex[normalizedField]) {
-    return normalizedField; // 正しい field 名
+  // Resolve by the indexed filename; plantingRef may contain hyphens and field names can change.
+  for (const [fieldKey, byYear] of Object.entries(sIndex || {})) {
+    for (const files of Object.values(byYear || {})) {
+      if (!Array.isArray(files)) continue;
+      if (files.some(file => safeFileName(String(file).replace(/\.json$/i, "")) + ".json" === targetFile)) {
+        return fieldKey;
+      }
+    }
   }
 
-  // 5. 見つからない場合
-  console.warn("[resolveField] field not found:", normalizedField);
+  console.warn("[resolveField] summary file not found in index:", targetFile);
   return null;
 }
 /* ============================================================

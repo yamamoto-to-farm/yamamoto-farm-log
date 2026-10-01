@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- 共通 CSS -->
-  <link rel="stylesheet" href="/common/css/main.css?v=20260921-1">
+  <link rel="stylesheet" href="/common/css/main.css?v=20260930-1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
 
   <!-- フィルタ UI 共通 CSS -->
@@ -169,6 +169,35 @@
       font-size: 13px;
     }
 
+    #planting-column-toggles {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      padding: 0 10px 10px;
+      color: #4b5563;
+      font-size: 13px;
+    }
+
+    #planting-column-toggles .column-toggle-title { font-weight: 700; }
+    #planting-column-toggles label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    #planting-column-toggles input { margin: 0; }
+    body[data-list-mode="seed"] #planting-column-toggles { display: none; }
+
+    #table-area.hide-planting-col-tray .col-tray,
+    #table-area.hide-planting-col-seed-date .col-seed-date,
+    #table-area.hide-planting-col-nursery-days .col-nursery-days,
+    #table-area.hide-planting-col-post-days .col-post-days,
+    #table-area.hide-planting-col-management .col-management {
+      display: none;
+    }
+
     .print-header {
       display: none;
     }
@@ -188,6 +217,7 @@
     }
 
     body[data-list-mode="planting"] .log-scroll table {
+      width: 1500px;
       min-width: 1500px;
     }
 
@@ -196,71 +226,36 @@
     }
 
     body[data-list-mode="seed"] .log-scroll th:nth-child(1),
-    body[data-list-mode="seed"] .log-scroll td:nth-child(1) {
-      width: 110px;
-    }
-
+    body[data-list-mode="seed"] .log-scroll td:nth-child(1) { width: 110px; }
     body[data-list-mode="seed"] .log-scroll th:nth-child(2),
-    body[data-list-mode="seed"] .log-scroll td:nth-child(2) {
-      width: 140px;
-    }
-
+    body[data-list-mode="seed"] .log-scroll td:nth-child(2) { width: 140px; }
     body[data-list-mode="seed"] .log-scroll th:nth-child(3),
-    body[data-list-mode="seed"] .log-scroll td:nth-child(3) {
-      width: 135px;
-    }
-
+    body[data-list-mode="seed"] .log-scroll td:nth-child(3) { width: 135px; }
     body[data-list-mode="seed"] .log-scroll th:nth-child(4),
-    body[data-list-mode="seed"] .log-scroll td:nth-child(4) {
-      width: 100px;
-    }
-
+    body[data-list-mode="seed"] .log-scroll td:nth-child(4) { width: 100px; }
     body[data-list-mode="seed"] .log-scroll th:nth-child(5),
-    body[data-list-mode="seed"] .log-scroll td:nth-child(5) {
-      width: 160px;
-    }
-
+    body[data-list-mode="seed"] .log-scroll td:nth-child(5) { width: 160px; }
     body[data-list-mode="seed"] .log-scroll th:nth-child(6),
-    body[data-list-mode="seed"] .log-scroll td:nth-child(6) {
-      width: 280px;
-    }
+    body[data-list-mode="seed"] .log-scroll td:nth-child(6) { width: 280px; }
 
-    body[data-list-mode="planting"] .log-scroll th:nth-child(1),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(1) {
-      width: 110px;
-    }
-
-    body[data-list-mode="planting"] .log-scroll th:nth-child(2),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(2) {
-      width: 165px;
-    }
-
-    body[data-list-mode="planting"] .log-scroll th:nth-child(3),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(3) {
-      width: 165px;
-    }
-
-    body[data-list-mode="planting"] .log-scroll th:nth-child(4),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(4) {
-      width: 88px;
-    }
-
-    body[data-list-mode="planting"] .log-scroll th:nth-child(5),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(5) {
-      width: 110px;
-    }
-
-    body[data-list-mode="planting"] .log-scroll th:nth-child(6),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(6),
-    body[data-list-mode="planting"] .log-scroll th:nth-child(7),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(7) {
-      width: 130px;
-    }
-
-    body[data-list-mode="planting"] .log-scroll th:nth-child(8),
-    body[data-list-mode="planting"] .log-scroll td:nth-child(8) {
-      width: 240px;
-    }
+    body[data-list-mode="planting"] .log-scroll th.col-plant-date,
+    body[data-list-mode="planting"] .log-scroll td.col-plant-date { width: 110px; }
+    body[data-list-mode="planting"] .log-scroll th.col-field,
+    body[data-list-mode="planting"] .log-scroll td.col-field { width: 165px; }
+    body[data-list-mode="planting"] .log-scroll th.col-variety,
+    body[data-list-mode="planting"] .log-scroll td.col-variety { width: 165px; }
+    body[data-list-mode="planting"] .log-scroll th.col-tray,
+    body[data-list-mode="planting"] .log-scroll td.col-tray { width: 190px; }
+    body[data-list-mode="planting"] .log-scroll th.col-area,
+    body[data-list-mode="planting"] .log-scroll td.col-area { width: 110px; }
+    body[data-list-mode="planting"] .log-scroll th.col-seed-date,
+    body[data-list-mode="planting"] .log-scroll td.col-seed-date { width: 160px; }
+    body[data-list-mode="planting"] .log-scroll th.col-nursery-days,
+    body[data-list-mode="planting"] .log-scroll td.col-nursery-days { width: 120px; }
+    body[data-list-mode="planting"] .log-scroll th.col-post-days,
+    body[data-list-mode="planting"] .log-scroll td.col-post-days { width: 160px; }
+    body[data-list-mode="planting"] .log-scroll th.col-management,
+    body[data-list-mode="planting"] .log-scroll td.col-management { width: 320px; }
 
     .log-scroll th,
     .log-scroll td {
@@ -710,6 +705,14 @@
               <h2>記録一覧</h2>
               <p>フィルタ条件で絞り込んだデータを表示しています。</p>
             </div>
+            <div id="planting-column-toggles" class="print-hide" aria-label="定植一覧の表示列">
+              <span class="column-toggle-title">表示列：</span>
+              <label><input type="checkbox" data-planting-col="tray" checked>トレイ種別</label>
+              <label><input type="checkbox" data-planting-col="seed-date" checked>播種日</label>
+              <label><input type="checkbox" data-planting-col="nursery-days" checked>育苗日数</label>
+              <label><input type="checkbox" data-planting-col="post-days" checked>定植後経過</label>
+              <label><input type="checkbox" data-planting-col="management" checked>管理作業</label>
+            </div>
             <div class="log-scroll">
               <div id="table-area"></div>
             </div>
@@ -728,12 +731,12 @@
   <div id="modal-container"></div>
 
   <!-- 一覧ページのメイン JS -->
-  <script type="module" src="./list.js?v=20260821-1"></script>
+  <script type="module" src="./list.js?v=20260930-5"></script>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initListPage } from "./list.js?v=20260821-1";
+    import { initListPage } from "./list.js?v=20260930-5";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();

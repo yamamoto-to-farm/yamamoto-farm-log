@@ -36,6 +36,79 @@
       background: #f8fafc;
       cursor: default;
     }
+    .kpi-table th .kpi-header-label {
+      vertical-align: middle;
+    }
+    .kpi-help-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      margin-left: 4px;
+      padding: 0;
+      border: 1px solid #7b8794;
+      border-radius: 50%;
+      background: #fff;
+      color: #52606d;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .kpi-help-button:hover,
+    .kpi-help-button:focus-visible {
+      border-color: #1261a0;
+      color: #1261a0;
+      outline: 2px solid #bfdbfe;
+      outline-offset: 1px;
+    }
+    .kpi-planting-modal {
+      width: min(1000px, calc(100vw - 32px));
+      max-width: none;
+      padding: 18px;
+    }
+    .kpi-planting-modal-content {
+      max-height: calc(100vh - 170px);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .kpi-planting-table {
+      width: 100%;
+      table-layout: fixed;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .kpi-planting-table th,
+    .kpi-planting-table td {
+      padding: 6px;
+      text-align: left;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .kpi-planting-table th:nth-child(1) { width: 13%; }
+    .kpi-planting-table th:nth-child(2) { width: 17%; }
+    .kpi-planting-table th:nth-child(3) { width: 14%; }
+    .kpi-planting-table th:nth-child(4) { width: 30%; }
+    .kpi-planting-table th:nth-child(5) { width: 12%; }
+    .kpi-planting-table th:nth-child(6) { width: 14%; }
+    .kpi-planting-date {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #1261a0;
+      text-decoration: underline;
+      cursor: pointer;
+      font: inherit;
+    }
+    @media (max-width: 600px) {
+      .kpi-planting-modal { width: calc(100vw - 16px); padding: 12px; }
+      .kpi-planting-table { font-size: 12px; }
+      .kpi-planting-table th,
+      .kpi-planting-table td { padding: 4px; }
+    }
   </style>
 
   <script type="module" src="/common/ui.js?v=1"></script>
@@ -76,7 +149,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20260930-1";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20260930-8";
     import { loadJSON } from "/common/json.js";
     import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {

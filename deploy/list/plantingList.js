@@ -18,6 +18,7 @@ import {
 } from "/common/filter.js";
 
 import { showInfoModal } from "/common/showInfoModal.js";
+import { showPlantingDetailModal } from "/common/planting-detail.js?v=20260930-1";
 
 let plantingRows = [];
 let seedRows = [];
@@ -58,6 +59,16 @@ export async function renderPlantingList() {
 async function initPlantingListPage() {
 
   if (window.currentRole === "admin") canDiscard = true;
+
+  document.querySelectorAll("[data-planting-col]").forEach(checkbox => {
+    checkbox.addEventListener("change", () => {
+      const column = checkbox.dataset.plantingCol;
+      const tableArea = document.getElementById("table-area");
+      tableArea?.classList.toggle(`hide-planting-col-${column}`, !checkbox.checked);
+      const scrollArea = tableArea?.closest(".log-scroll");
+      if (scrollArea) scrollArea.scrollLeft = 0;
+    });
+  });
 
   plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv"));
@@ -214,6 +225,29 @@ function parseSeedRefs(value) {
     .filter(Boolean);
 }
 
+function getTrayBreakdown(row) {
+  const ref = String(row?.plantingRef || "").trim();
+  const matchingRows = ref
+    ? plantingRows.filter(item => String(item?.plantingRef || "").trim() === ref)
+    : [row];
+  const quantitiesByTray = new Map();
+
+  matchingRows.forEach(item => {
+    const trayType = String(item?.trayType || "").trim();
+    if (!trayType) return;
+    quantitiesByTray.set(
+      trayType,
+      (quantitiesByTray.get(trayType) || 0) + Number(item?.quantity || 0)
+    );
+  });
+
+  if (!quantitiesByTray.size) return "-";
+  return [...quantitiesByTray.entries()]
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([trayType, quantity]) => `${escapeHtml(trayType)}穴：${quantity.toLocaleString()}株`)
+    .join("<br>");
+}
+
 function parseYmdToUtcDate(value) {
   const text = String(value ?? "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
@@ -280,35 +314,6 @@ function getPostPlantingDays(plantDate, plantingRef) {
   const elapsed = diffDays(plant, today);
   if (!Number.isFinite(elapsed)) return "-";
   return `${elapsed}日経過`;
-}
-
-function getPlantDetail(plantingRef) {
-  const row = plantingRows.find(r => r.plantingRef === plantingRef);
-  if (!row) {
-    return {
-      title: "データなし",
-      html: "<p>該当データがありません。</p>"
-    };
-  }
-
-  const discarded = Number(discardQuantityMap[plantingRef] || 0);
-  const remaining = Math.max(0, Number(row.quantity || 0) - discarded);
-
-  return {
-    title: `定植情報：${plantingRef}`,
-    html: `
-      <p><b>株数：</b>${row.quantity}</p>
-      ${discarded ? `<p><b>破棄株数：</b>${discarded.toLocaleString()}（残 ${remaining.toLocaleString()} 株）</p>` : ""}
-      <p><b>株間：</b>${row.spacingRow} cm</p>
-      <p><b>畝間：</b>${row.spacingBed} cm</p>
-      <p><b>トレイ種別：</b>${row.trayType}</p>
-      <p><b>収穫予定：</b>${row.harvestPlanYM ?? ""}</p>
-      <p><b>播種ID：</b>${row.seedRef}</p>
-      <p><b>作業者：</b>${row.worker ?? ""}</p>
-      <p><b>機械：</b>${row.machine ?? ""}</p>
-      <p><b>メモ：</b><br>${row.notes ?? ""}</p>
-    `
-  };
 }
 
 // ===============================
@@ -581,14 +586,15 @@ function renderTable(rows) {
     <table>
       <thead>
         <tr>
-          <th id="th-plant-date">${buildPlantDateHeaderLabel()}</th>
-          <th>圃場</th>
-          <th>品種</th>
-          <th>面積(反)</th>
-          <th>播種日</th>
-          <th>育苗日数</th>
-          <th class="print-hide">定植後経過日数</th>
-          <th class="management-cell print-hide">管理作業<button type="button" id="management-help-btn" class="management-help" title="管理作業列の見方" aria-label="管理作業列の見方">?</button></th>
+          <th class="col-plant-date" id="th-plant-date">${buildPlantDateHeaderLabel()}</th>
+          <th class="col-field">圃場</th>
+          <th class="col-variety">品種</th>
+          <th class="col-tray">トレイ種別</th>
+          <th class="col-area">面積(反)</th>
+          <th class="col-seed-date">播種日</th>
+          <th class="col-nursery-days">育苗日数</th>
+          <th class="col-post-days print-hide">定植後経過日数</th>
+          <th class="col-management management-cell print-hide">管理作業<button type="button" id="management-help-btn" class="management-help" title="管理作業列の見方" aria-label="管理作業列の見方">?</button></th>
         </tr>
       </thead>
       <tbody>
@@ -618,14 +624,15 @@ function renderTable(rows) {
     const period = getManagementEntries(r);
 
     html += `<tr>
-      <td class="plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
-      <td><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
-      <td><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
-      <td>${areaTan.toFixed(2)}${discarded ? `<span class="area-discarded" title="破棄 ${discarded.toLocaleString()}株を除いた現存面積">定植時 ${plantedAreaTan.toFixed(2)}</span>` : ""}</td>
-      <td>${getSeedDates(r.seedRef)}</td>
-      <td>${getNurseryDays(r.seedRef, r.plantDate)}</td>
-      <td class="print-hide">${getPostPlantingDays(r.plantDate, ref)}</td>
-      <td class="management-cell print-hide" data-work-logs-url="${period.start ? buildWorkLogsUrl(r.field, period.start, period.end) : ""}" title="クリックでこの期間の全作業を表示">${buildManagementCell(r, rowIndex)}</td>
+      <td class="col-plant-date plant-date-cell" data-id="${ref}">${r.plantDate ?? ""}</td>
+      <td class="col-field"><a href="/fields/index.html?field=${encodeURIComponent(r.field)}">${r.field}</a></td>
+      <td class="col-variety"><a href="/varieties/index.html?variety=${encodeURIComponent(r.variety)}">${r.variety}</a></td>
+      <td class="col-tray">${getTrayBreakdown(r)}</td>
+      <td class="col-area">${areaTan.toFixed(2)}${discarded ? `<span class="area-discarded" title="破棄 ${discarded.toLocaleString()}株を除いた現存面積">定植時 ${plantedAreaTan.toFixed(2)}</span>` : ""}</td>
+      <td class="col-seed-date">${getSeedDates(r.seedRef)}</td>
+      <td class="col-nursery-days">${getNurseryDays(r.seedRef, r.plantDate)}</td>
+      <td class="col-post-days print-hide">${getPostPlantingDays(r.plantDate, ref)}</td>
+      <td class="col-management management-cell print-hide" data-work-logs-url="${period.start ? buildWorkLogsUrl(r.field, period.start, period.end) : ""}" title="クリックでこの期間の全作業を表示">${buildManagementCell(r, rowIndex)}</td>
     </tr>`;
   });
 
@@ -676,22 +683,7 @@ function renderTable(rows) {
   document.querySelectorAll(".plant-date-cell").forEach(cell => {
     cell.addEventListener("click", () => {
       const ref = cell.dataset.id;
-      const data = getPlantDetail(ref);
-
-      const discardActionHtml = canDiscard && ref
-        ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"><button class="secondary-btn" id="planting-modal-discard-btn" type="button">破棄ページへ</button><a class="secondary-btn" href="/admin/edit-csv/index.html?type=planting&amp;file=all.csv&amp;search=${encodeURIComponent(ref)}">CSVを編集</a></div>`
-        : "";
-
-      showInfoModal(data.title, `${data.html}${discardActionHtml}`);
-
-      if (canDiscard && ref) {
-        const discardBtn = document.getElementById("planting-modal-discard-btn");
-        if (discardBtn) {
-          discardBtn.addEventListener("click", () => {
-            location.href = `/planting/discard-planting.html?ref=${encodeURIComponent(ref)}&return=${encodeURIComponent(location.pathname + location.search)}`;
-          });
-        }
-      }
+      showPlantingDetailModal(ref, { canDiscard });
     });
   });
 }

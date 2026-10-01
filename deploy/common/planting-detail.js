@@ -5,6 +5,7 @@ import { showInfoModal } from "/common/showInfoModal.js";
 
 let plantingRowsCache = null;
 let discardMapCache = null;
+let seedRowsCache = null;
 let loadingPromise = null;
 
 async function ensureLoaded() {
@@ -12,10 +13,12 @@ async function ensureLoaded() {
   if (!loadingPromise) {
     loadingPromise = Promise.all([
       loadCSV("/logs/planting/all.csv").catch(() => []),
-      loadCSV("/logs/discard-planting/all.csv").catch(() => [])
-    ]).then(([plantingRaw, discardRaw]) => {
+      loadCSV("/logs/discard-planting/all.csv").catch(() => []),
+      loadCSV("/logs/seed/all.csv").catch(() => [])
+    ]).then(([plantingRaw, discardRaw, seedRaw]) => {
       plantingRowsCache = normalizeKeys(plantingRaw || []);
       discardMapCache = buildDiscardQuantityMap(normalizeKeys(discardRaw || []));
+      seedRowsCache = normalizeKeys(seedRaw || []);
     });
   }
   await loadingPromise;
@@ -42,23 +45,34 @@ export async function getPlantingDetail(plantingRef) {
 
   const discarded = Number(discardMapCache[plantingRef] || 0);
   const remaining = Math.max(0, Number(row.quantity || 0) - discarded);
+  const seedRefs = String(row.seedRef || "").split(/[\/,]/).map(ref => ref.trim()).filter(Boolean);
+  const seedDates = seedRefs
+    .map(ref => seedRowsCache.find(seed => String(seed.seedRef || "").replace(/\s+/g, "") === ref.replace(/\s+/g, ""))?.seedDate)
+    .filter(Boolean);
+  const uniqueSeedDates = [...new Set(seedDates)];
+  const escapeHtml = value => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
   return {
     title: `定植情報：${plantingRef}`,
     html: `
-      <p><b>圃場：</b>${row.field ?? ""}</p>
-      <p><b>品種：</b>${row.variety ?? ""}</p>
-      <p><b>定植日：</b>${row.plantDate ?? ""}</p>
-      <p><b>株数：</b>${row.quantity}</p>
+      <p><b>圃場：</b>${escapeHtml(row.field)}</p>
+      <p><b>品種：</b>${escapeHtml(row.variety)}</p>
+      <p><b>定植日：</b>${escapeHtml(row.plantDate)}</p>
+      <p><b>株数：</b>${escapeHtml(row.quantity)}</p>
       ${discarded ? `<p><b>破棄株数：</b>${discarded.toLocaleString()}（残 ${remaining.toLocaleString()} 株）</p>` : ""}
-      <p><b>株間：</b>${row.spacingRow} cm</p>
-      <p><b>畝間：</b>${row.spacingBed} cm</p>
-      <p><b>トレイ種別：</b>${row.trayType}</p>
-      <p><b>収穫予定：</b>${row.harvestPlanYM ?? ""}</p>
-      <p><b>播種ID：</b>${row.seedRef}</p>
-      <p><b>作業者：</b>${row.worker ?? ""}</p>
-      <p><b>機械：</b>${row.machine ?? ""}</p>
-      <p><b>メモ：</b><br>${row.notes ?? ""}</p>
+      <p><b>株間：</b>${escapeHtml(row.spacingRow)} cm</p>
+      <p><b>畝間：</b>${escapeHtml(row.spacingBed)} cm</p>
+      <p><b>トレイ種別：</b>${escapeHtml(row.trayType)}</p>
+      <p><b>収穫予定：</b>${escapeHtml(row.harvestPlanYM)}</p>
+      <p><b>播種日：</b>${uniqueSeedDates.length ? uniqueSeedDates.map(escapeHtml).join("、") : "未登録"}</p>
+      <p><b>作業者：</b>${escapeHtml(row.worker)}</p>
+      <p><b>機械：</b>${escapeHtml(row.machine)}</p>
+      <p><b>メモ：</b><br>${escapeHtml(row.notes)}</p>
     `
   };
 }
