@@ -4,6 +4,7 @@ import { loadJSON } from "/common/json.js?v=1.1";
 import { loadCSV } from "/common/csv.js?v=1.1";
 import { safeFileName } from "/common/utils.js?v=1.1";
 import { formatLocalYmd } from "/common/date-utils.js?v=1";
+import { calcAreaTanFromSummaryPlanting } from "./kpi-utils.js?v=20261001-1";
 
 const DEBUG = false;
 const log = (...a) => DEBUG && console.log("[KPI-MONTH]", ...a);
@@ -36,16 +37,6 @@ async function loadSummaryByRef(plantingRef) {
     }
   }
   return null;
-}
-
-/* ===============================
-   面積（反）
-=============================== */
-function calcAreaTan(planting) {
-  const qty = Number(planting.quantity || 0);
-  const row = Number(planting.spacing.row || 0);
-  const bed = Number(planting.spacing.bed || 0);
-  return (qty * row * bed) / 10000000;
 }
 
 /* ===============================
@@ -107,7 +98,7 @@ async function renderMonthPage() {
     const variety = planting.variety || "-";
     const field = planting.field || "-";
 
-    const area = calcAreaTan(planting);
+    const area = calcAreaTanFromSummaryPlanting(planting);
     const kg = map[ref].kg;
     const units = map[ref].units;
 

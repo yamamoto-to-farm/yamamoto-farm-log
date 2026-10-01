@@ -14,7 +14,7 @@ import {
   groupWeightByRef,
   calcTargets,
   calcHarvestAreaMonthly
-} from "./kpi-utils.js";
+} from "./kpi-utils.js?v=20261001-1";
 
 /* ---------------------------------------------------------
    summary-index.json キャッシュ & 逆引きマップ

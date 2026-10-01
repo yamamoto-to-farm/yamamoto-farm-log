@@ -11,7 +11,7 @@ export function calcAreaTanFromPlantingRow(row) {
 
   if (!qty || !rowSpace || !bedSpace) return 0;
 
-  return (qty * rowSpace * bedSpace) / 10000000;
+  return (qty * rowSpace * bedSpace) / 9900000;
 }
 
 /* ===============================
@@ -26,7 +26,7 @@ export function calcAreaTanFromSummaryPlanting(planting) {
 
   if (!qty || !rowSpace || !bedSpace) return 0;
 
-  return (qty * rowSpace * bedSpace) / 10000000;
+  return (qty * rowSpace * bedSpace) / 9900000;
 }
 
 /* ===============================
