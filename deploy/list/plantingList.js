@@ -32,7 +32,8 @@ let discardQuantityMap = {};
 let filterData = {};
 let initialized = false;
 let plantDateSortOrder = null; // null | asc | desc
-let selectedPlantingDate = "";
+let selectedPlantingDates = [];
+let draftPlantingDates = [];
 let plantingCalendarMonth = "";
 
 // 定植後の管理作業（圃場別に日付昇順で保持）
@@ -139,7 +140,8 @@ async function initPlantingListPage() {
   window.addEventListener("filter:reset", () => {
     if (window.currentListMode !== "planting") return;  // ★ 追加
     window.currentFilterState = {};
-    selectedPlantingDate = "";
+    selectedPlantingDates = [];
+    draftPlantingDates = [];
     renderTable(plantingRows);
   });
 
@@ -186,8 +188,9 @@ function applyDefaultSeasonFilterIfNeeded(ymMap) {
 
 function applyAllFilters(rows, state) {
   let result = applyBaseFilters(rows, state);
-  if (selectedPlantingDate) {
-    result = result.filter(row => String(row?.plantDate || "").trim() === selectedPlantingDate);
+  if (selectedPlantingDates.length) {
+    const selectedDates = new Set(selectedPlantingDates);
+    result = result.filter(row => selectedDates.has(String(row?.plantDate || "").trim()));
   }
   return result;
 }
@@ -218,14 +221,16 @@ function bindPlantingDateCalendar() {
   const trigger = document.getElementById("planting-date-calendar-btn");
   const dialog = document.getElementById("planting-date-calendar");
   const clearButton = document.getElementById("planting-date-calendar-clear");
+  const applyButton = document.getElementById("planting-date-calendar-apply");
   if (!trigger || !dialog || trigger.dataset.bound === "1") return;
   trigger.dataset.bound = "1";
 
   trigger.addEventListener("click", () => {
+    draftPlantingDates = [...selectedPlantingDates];
     const availableDates = getPlantingDateCounts();
     if (!plantingCalendarMonth) {
       const latestDate = [...availableDates.keys()].sort().at(-1);
-      const anchorDate = selectedPlantingDate || latestDate || todayLocalYmd();
+      const anchorDate = selectedPlantingDates[0] || latestDate || todayLocalYmd();
       plantingCalendarMonth = anchorDate.slice(0, 7);
     }
     renderPlantingDateCalendar();
@@ -252,18 +257,23 @@ function bindPlantingDateCalendar() {
 
     const dateButton = event.target.closest(".planting-date-calendar__day[data-date]");
     if (dateButton && !dateButton.disabled) {
-      selectedPlantingDate = dateButton.dataset.date || "";
-      plantingCalendarMonth = selectedPlantingDate.slice(0, 7);
-      updatePlantingDateButton();
-      dialog.close();
-      renderTable(applyAllFilters(plantingRows, window.currentFilterState || {}));
+      const date = dateButton.dataset.date || "";
+      draftPlantingDates = draftPlantingDates.includes(date)
+        ? draftPlantingDates.filter(selectedDate => selectedDate !== date)
+        : [...draftPlantingDates, date].sort();
+      renderPlantingDateCalendar();
     }
   });
 
   clearButton?.addEventListener("click", () => {
-    selectedPlantingDate = "";
-    updatePlantingDateButton();
+    draftPlantingDates = [];
     renderPlantingDateCalendar();
+  });
+
+  applyButton?.addEventListener("click", () => {
+    selectedPlantingDates = [...draftPlantingDates].sort();
+    updatePlantingDateButton();
+    dialog.close();
     renderTable(applyAllFilters(plantingRows, window.currentFilterState || {}));
   });
 
@@ -273,12 +283,14 @@ function bindPlantingDateCalendar() {
 function updatePlantingDateButton() {
   const trigger = document.getElementById("planting-date-calendar-btn");
   if (!trigger) return;
-  trigger.textContent = selectedPlantingDate
-    ? `日付：${selectedPlantingDate}`
+  trigger.textContent = selectedPlantingDates.length === 1
+    ? `日付：${selectedPlantingDates[0]}`
+    : selectedPlantingDates.length
+      ? `日付：${selectedPlantingDates.length}日`
     : "日付で絞込";
-  trigger.classList.toggle("is-active", Boolean(selectedPlantingDate));
-  trigger.title = selectedPlantingDate
-    ? `選択中の日付：${selectedPlantingDate}`
+  trigger.classList.toggle("is-active", selectedPlantingDates.length > 0);
+  trigger.title = selectedPlantingDates.length
+    ? `選択中の日付：${selectedPlantingDates.join("、")}`
     : "定植日を選択";
 }
 
@@ -297,6 +309,8 @@ function renderPlantingDateCalendar() {
   const monthLabel = document.getElementById("planting-date-calendar-month");
   const grid = document.getElementById("planting-date-calendar-grid");
   const clearButton = document.getElementById("planting-date-calendar-clear");
+  const applyButton = document.getElementById("planting-date-calendar-apply");
+  const selectionLabel = document.getElementById("planting-date-calendar-selection");
   if (!monthLabel || !grid || !plantingCalendarMonth) return;
 
   const [year, month] = plantingCalendarMonth.split("-").map(Number);
@@ -319,13 +333,25 @@ function renderPlantingDateCalendar() {
     const count = dateCounts.get(date) || 0;
     const classes = ["planting-date-calendar__day"];
     if (count) classes.push("has-record");
-    if (date === selectedPlantingDate) classes.push("is-selected");
-    cells.push(`<button class="${classes.join(" ")}" type="button" data-date="${date}" aria-label="${date}、${count}件" title="${count ? `${count}件` : "該当なし"}"${count ? "" : " disabled"}>${day}</button>`);
+    if (draftPlantingDates.includes(date)) classes.push("is-selected");
+    cells.push(`<button class="${classes.join(" ")}" type="button" data-date="${date}" aria-pressed="${draftPlantingDates.includes(date)}" aria-label="${date}、${count}件" title="${count ? `${count}件` : "該当なし"}"${count ? "" : " disabled"}>${day}</button>`);
   }
 
   monthLabel.textContent = `${year}年${month}月（該当 ${matchingDayCount}日）`;
   grid.innerHTML = cells.join("");
-  if (clearButton) clearButton.disabled = !selectedPlantingDate;
+  if (selectionLabel) {
+    selectionLabel.textContent = draftPlantingDates.length
+      ? `${draftPlantingDates.length}日選択中`
+      : "日付を選択してください";
+  }
+  if (clearButton) clearButton.disabled = draftPlantingDates.length === 0;
+  if (applyButton) applyButton.disabled = arePlantingDateSelectionsEqual();
+}
+
+function arePlantingDateSelectionsEqual() {
+  const selected = [...selectedPlantingDates].sort();
+  const draft = [...draftPlantingDates].sort();
+  return selected.length === draft.length && selected.every((date, index) => date === draft[index]);
 }
 
 function shiftPlantingCalendarMonth(offset) {
