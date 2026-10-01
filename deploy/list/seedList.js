@@ -454,6 +454,10 @@ function renderTable(rows) {
   let totalTray200 = 0;
   let totalSeed = 0;
   let totalAreaTan = 0;
+  let discardedTray128 = 0;
+  let discardedTray200 = 0;
+  let discardedSeed = 0;
+  let discardedAreaTan = 0;
   let remainingTray128 = 0;
   let remainingTray200 = 0;
   let remainingSeed = 0;
@@ -473,6 +477,10 @@ function renderTable(rows) {
     totalAreaTan += areaTan;
 
     const remainingInfo = getRemainingSeedInfo(r, remainingByRef);
+    if (trayType === 128) discardedTray128 += remainingInfo.discardedTrays;
+    if (trayType === 200) discardedTray200 += remainingInfo.discardedTrays;
+    discardedSeed += remainingInfo.discarded;
+    discardedAreaTan += calcSeedAreaTan(remainingInfo.discarded);
     if (trayType === 128) remainingTray128 += remainingInfo.remainingTrays;
     if (trayType === 200) remainingTray200 += remainingInfo.remainingTrays;
     remainingSeed += remainingInfo.remaining;
@@ -512,11 +520,18 @@ function renderTable(rows) {
   `;
 
   document.getElementById("countArea").textContent = `${rows.length} 件`;
+  const discardRate = totalSeed > 0 ? (discardedSeed / totalSeed) * 100 : 0;
   document.getElementById("summaryArea").innerHTML =
     `総枚数：${formatTrayWithType(totalTray128, 128)}<br>
      総枚数：${formatTrayWithType(totalTray200, 200)}<br>
      総株数：${totalSeed.toLocaleString()} 株<br>
      予定面積合計：${totalAreaTan.toFixed(2)} 反<br>
+     <hr style="margin:8px 0;">
+     破棄枚数：${formatTrayWithType(discardedTray128, 128)}<br>
+     破棄枚数：${formatTrayWithType(discardedTray200, 200)}<br>
+     破棄株数：${formatCount(discardedSeed)} 株<br>
+     破棄相当面積：${discardedAreaTan.toFixed(2)} 反<br>
+     破棄率：${discardRate.toFixed(1)}%<br>
      <hr style="margin:8px 0;">
      残り枚数：${formatTrayWithType(remainingTray128, 128)}<br>
      残り枚数：${formatTrayWithType(remainingTray200, 200)}<br>
