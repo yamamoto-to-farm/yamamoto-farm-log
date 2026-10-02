@@ -70,19 +70,27 @@ export function renderEditCard({ dataName, json, container }) {
       groupedPages.get(category).push(page);
     });
 
-    return [...groupedPages.entries()].map(([category, pages]) => `
-      <section style="margin-top:12px;">
-        <h3 style="margin:0 0 6px; font-size:14px;">${escapeHtml(category)}</h3>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px;">
-          ${pages.map(page => `
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:9px 10px; border:1px solid #e1e1e1; border-radius:8px; background:#fff; line-height:1.4; cursor:pointer;">
-              <input type="checkbox" class="machine-page-check" value="${escapeHtml(page.id)}" ${selected.has(page.id) ? "checked" : ""}>
-              <span>${escapeHtml(page.name)}<small style="display:block; color:#777;">${escapeHtml(page.id)}</small></span>
-            </label>
-          `).join("")}
-        </div>
-      </section>
-    `).join("");
+    return [...groupedPages.entries()].map(([category, pages]) => {
+      const selectedCount = pages.filter(page => selected.has(page.id)).length;
+      return `
+        <details class="machine-page-category" style="margin-top:8px; border:1px solid #e1e1e1; border-radius:8px; background:#fff;">
+          <summary style="padding:10px 12px; cursor:pointer; font-weight:700;">
+            <span style="display:flex; justify-content:space-between; gap:12px;">
+              <span>${escapeHtml(category)}</span>
+              <small class="machine-category-count" style="color:#666; font-weight:400; white-space:nowrap;">${selectedCount} / ${pages.length} 選択</small>
+            </span>
+          </summary>
+          <div style="padding:0 12px 8px;">
+            ${pages.map(page => `
+              <label style="display:flex; align-items:flex-start; gap:9px; padding:9px 2px; border-top:1px solid #edf0f2; line-height:1.4; cursor:pointer;">
+                <input type="checkbox" class="machine-page-check" value="${escapeHtml(page.id)}" ${selected.has(page.id) ? "checked" : ""} style="width:auto; flex:0 0 auto; margin:3px 0 0;">
+                <span style="min-width:0; overflow-wrap:anywhere;">${escapeHtml(page.name)}<small style="display:block; color:#777;">${escapeHtml(page.id)}</small></span>
+              </label>
+            `).join("")}
+          </div>
+        </details>
+      `;
+    }).join("");
   }
 
   function syncEditorToList() {
@@ -157,6 +165,12 @@ export function renderEditCard({ dataName, json, container }) {
     const count = editorEl.querySelectorAll(".machine-page-check:checked").length;
     const label = editorEl.querySelector("#machine-page-count");
     if (label) label.textContent = `${count} ページ選択中`;
+    editorEl.querySelectorAll(".machine-page-category").forEach(category => {
+      const selectedCount = category.querySelectorAll(".machine-page-check:checked").length;
+      const totalCount = category.querySelectorAll(".machine-page-check").length;
+      const categoryLabel = category.querySelector(".machine-category-count");
+      if (categoryLabel) categoryLabel.textContent = `${selectedCount} / ${totalCount} 選択`;
+    });
   }
 
   function renderTargets() {

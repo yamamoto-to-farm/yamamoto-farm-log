@@ -78,7 +78,7 @@
 
     .filter-summary-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(400px, 1fr);
+      grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
       gap: 10px;
       align-items: start;
     }
@@ -189,198 +189,6 @@
     }
     #planting-column-toggles input { margin: 0; }
     body[data-list-mode="seed"] #planting-column-toggles { display: none; }
-
-    #planting-date-calendar-btn {
-      min-height: 30px;
-      padding: 3px 10px;
-      border: 1px solid #b8c9c2;
-      border-radius: 6px;
-      background: #fff;
-      color: #245b48;
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    #planting-date-calendar-btn.is-active {
-      border-color: #2f855a;
-      background: #e8f4ed;
-    }
-
-    .planting-date-calendar {
-      box-sizing: border-box;
-      width: min(420px, calc(100vw - 32px));
-      max-width: none;
-      padding: 16px;
-      border: 1px solid #d6dee5;
-      border-radius: 12px;
-      background: #fff;
-      color: #1f2937;
-      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2);
-    }
-
-    .planting-date-calendar::backdrop {
-      background: rgba(15, 23, 42, 0.42);
-    }
-
-    .planting-date-calendar__head,
-    .planting-date-calendar__month,
-    .planting-date-calendar__foot {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .planting-date-calendar__head h2 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .planting-date-calendar__month {
-      margin: 14px 0 10px;
-    }
-
-    .planting-date-calendar__month strong {
-      font-size: 16px;
-    }
-
-    .planting-date-calendar__nav,
-    .planting-date-calendar__close,
-    .planting-date-calendar__clear {
-      min-height: 32px;
-      padding: 4px 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      background: #fff;
-      color: #374151;
-      font: inherit;
-      cursor: pointer;
-    }
-
-    .planting-date-calendar__grid {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 4px;
-    }
-
-    .planting-date-calendar__weekday,
-    .planting-date-calendar__empty,
-    .planting-date-calendar__day {
-      display: flex;
-      min-width: 0;
-      min-height: 40px;
-      align-items: center;
-      justify-content: center;
-      border-radius: 7px;
-    }
-
-    .planting-date-calendar__weekday {
-      min-height: 26px;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .planting-date-calendar__day {
-      position: relative;
-      flex-direction: column;
-      gap: 2px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: #9ca3af;
-      font: inherit;
-    }
-
-    .planting-date-calendar__day.has-record {
-      background: #edf6f0;
-      color: #245b48;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .planting-date-calendar__day.has-record:hover {
-      border-color: #7eaa91;
-      background: #dceee2;
-    }
-
-    .planting-date-calendar__day.is-selected {
-      border-color: #245b48;
-      background: #245b48;
-      color: #fff;
-    }
-
-    .planting-date-calendar__day:disabled {
-      cursor: default;
-    }
-
-    .planting-date-calendar__day.has-record::after {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: currentColor;
-      content: "";
-    }
-
-    .planting-date-calendar__legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin: 10px 0 14px;
-      color: #5b6470;
-      font-size: 12px;
-    }
-
-    .planting-date-calendar__selection {
-      margin: 0 0 8px;
-      color: #475569;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .planting-date-calendar__legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .planting-date-calendar__legend span:first-child::before {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #2f855a;
-      content: "";
-    }
-
-    .planting-date-calendar__foot {
-      justify-content: space-between;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 10px;
-    }
-
-    .planting-date-calendar__clear:disabled {
-      color: #9ca3af;
-      cursor: default;
-    }
-
-    .planting-date-calendar__apply {
-      min-height: 34px;
-      padding: 4px 14px;
-      border: 1px solid #28794f;
-      border-radius: 6px;
-      background: #2f855a;
-      color: #fff;
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .planting-date-calendar__apply:disabled {
-      border-color: #cbd5e1;
-      background: #e2e8f0;
-      color: #64748b;
-      cursor: default;
-    }
 
     #table-area.hide-planting-col-tray .col-tray,
     #table-area.hide-planting-col-seed-date .col-seed-date,
@@ -529,176 +337,8 @@
     }
 
     #summaryArea {
-      font-size: 14px;
-      font-weight: 400;
-      line-height: 1.45;
-    }
-
-    .seed-summary-group {
-      padding: 8px 0;
-    }
-
-    .seed-summary-group + .seed-summary-group {
-      border-top: 1px solid #e5e7eb;
-    }
-
-    .seed-summary-group h3 {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin: 0 0 5px;
-      color: #374151;
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1.3;
-    }
-
-    .seed-summary-group h3::before {
-      width: 3px;
-      height: 13px;
-      flex: 0 0 3px;
-      background: #2f855a;
-      content: "";
-    }
-
-    .seed-summary-group--discard h3::before {
-      background: #c0564b;
-    }
-
-    .seed-summary-group--remaining h3::before {
-      background: #397b78;
-    }
-
-    .seed-summary-rows {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 2px 18px;
-    }
-
-    .seed-summary-row {
-      display: flex;
-      min-width: 0;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 3px 0;
-      border-bottom: 1px dotted #e5e7eb;
-    }
-
-    .seed-summary-row span {
-      min-width: 0;
-      color: #5b6470;
-      font-size: 12px;
-    }
-
-    .seed-summary-row strong {
-      color: #17212b;
-      font-size: 14px;
-      font-weight: 700;
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    .seed-summary-tray-values {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 2px 12px;
-    }
-
-    .seed-summary-row .seed-summary-tray-values span {
-      color: #17212b;
-      font-size: 14px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .planting-summary-group {
-      padding: 8px 0;
-    }
-
-    .planting-summary-group + .planting-summary-group {
-      border-top: 1px solid #e5e7eb;
-    }
-
-    .planting-summary-group h3 {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin: 0 0 5px;
-      color: #374151;
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1.3;
-    }
-
-    .planting-summary-group h3::before {
-      width: 3px;
-      height: 13px;
-      flex: 0 0 3px;
-      background: #2f855a;
-      content: "";
-    }
-
-    .planting-summary-group--discard h3::before {
-      background: #c0564b;
-    }
-
-    .planting-summary-group--current h3::before {
-      background: #397b78;
-    }
-
-    .planting-summary-rows {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 2px 18px;
-    }
-
-    .planting-summary-row {
-      display: flex;
-      min-width: 0;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 3px 0;
-      border-bottom: 1px dotted #e5e7eb;
-    }
-
-    .planting-summary-row span {
-      min-width: 0;
-      color: #5b6470;
-      font-size: 12px;
-    }
-
-    .planting-summary-row strong {
-      color: #17212b;
-      font-size: 14px;
-      font-weight: 700;
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    @media (max-width: 440px) {
-      .seed-summary-rows {
-        grid-template-columns: 1fr;
-      }
-
-      .planting-summary-rows {
-        grid-template-columns: 1fr;
-      }
-
-      .seed-summary-tray-row {
-        flex-wrap: wrap;
-      }
-
-      .seed-summary-tray-row > span:first-child {
-        flex-basis: 100%;
-      }
-
-      .seed-summary-tray-values {
-        width: 100%;
-        justify-content: space-between;
-      }
+      font-size: 16px;
+      line-height: 1.4;
     }
 
     @media (max-width: 1024px) {
@@ -728,7 +368,6 @@
       .filter-card .filter-open-btn,
       .back-action-slot,
       #modal-container,
-      #planting-date-calendar,
       #list-back-btn,
       .log-scroll .primary-btn,
       .log-scroll .secondary-btn {
@@ -1073,29 +712,7 @@
               <label><input type="checkbox" data-planting-col="nursery-days" checked>育苗日数</label>
               <label><input type="checkbox" data-planting-col="post-days" checked>定植後経過</label>
               <label><input type="checkbox" data-planting-col="management" checked>管理作業</label>
-              <button id="planting-date-calendar-btn" type="button" aria-haspopup="dialog" aria-controls="planting-date-calendar">日付で絞込</button>
             </div>
-            <dialog id="planting-date-calendar" class="planting-date-calendar print-hide" aria-labelledby="planting-date-calendar-title">
-              <div class="planting-date-calendar__head">
-                <h2 id="planting-date-calendar-title">定植日で絞り込み</h2>
-                <button class="planting-date-calendar__close" type="button" data-calendar-close>閉じる</button>
-              </div>
-              <div class="planting-date-calendar__month">
-                <button class="planting-date-calendar__nav" type="button" data-calendar-month="-1">前月</button>
-                <strong id="planting-date-calendar-month"></strong>
-                <button class="planting-date-calendar__nav" type="button" data-calendar-month="1">翌月</button>
-              </div>
-              <p id="planting-date-calendar-selection" class="planting-date-calendar__selection">日付を選択してください</p>
-              <div id="planting-date-calendar-grid" class="planting-date-calendar__grid" aria-label="定植日の選択"></div>
-              <div class="planting-date-calendar__legend">
-                <span>該当データあり</span>
-                <span>選択中</span>
-              </div>
-              <div class="planting-date-calendar__foot">
-                <button id="planting-date-calendar-clear" class="planting-date-calendar__clear" type="button">選択を解除</button>
-                <button id="planting-date-calendar-apply" class="planting-date-calendar__apply" type="button" disabled>適用</button>
-              </div>
-            </dialog>
             <div class="log-scroll">
               <div id="table-area"></div>
             </div>
@@ -1114,12 +731,12 @@
   <div id="modal-container"></div>
 
   <!-- 一覧ページのメイン JS -->
-  <script type="module" src="./list.js?v=20261002-2"></script>
+  <script type="module" src="./list.js?v=20260930-5"></script>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initListPage } from "./list.js?v=20261002-2";
+    import { initListPage } from "./list.js?v=20260930-5";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
