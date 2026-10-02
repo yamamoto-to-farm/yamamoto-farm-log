@@ -74,8 +74,9 @@ export function renderEditCard({ dataName, json, container }) {
       const selectedCount = pages.filter(page => selected.has(page.id)).length;
       return `
         <details class="machine-page-category" style="margin-top:8px; border:1px solid #e1e1e1; border-radius:8px; background:#fff;">
-          <summary style="padding:10px 12px; cursor:pointer; font-weight:700;">
-            <span style="display:inline-flex; width:calc(100% - 1em); align-items:center; justify-content:space-between; gap:12px; vertical-align:middle;">
+          <summary style="display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; font-weight:700; list-style:none;">
+            <span class="machine-page-chevron" aria-hidden="true" style="flex:0 0 12px; font-size:12px; line-height:1; text-align:center;">▶</span>
+            <span style="display:flex; min-width:0; flex:1; align-items:center; justify-content:space-between; gap:12px;">
               <span>${escapeHtml(category)}</span>
               <small class="machine-category-count" style="color:#666; font-weight:400; white-space:nowrap;">${selectedCount} / ${pages.length} 選択</small>
             </span>
@@ -148,6 +149,12 @@ export function renderEditCard({ dataName, json, container }) {
         <button class="secondary-btn delete-machine-btn" type="button" style="margin-top:12px;">機械を削除</button>
       </div>
     `);
+    editorEl.querySelectorAll(".machine-page-category").forEach(category => {
+      category.addEventListener("toggle", () => {
+        const chevron = category.querySelector(".machine-page-chevron");
+        if (chevron) chevron.textContent = category.open ? "▼" : "▶";
+      });
+    });
     updatePageCount();
 
     editorEl.querySelector(".delete-machine-btn").addEventListener("click", () => {
