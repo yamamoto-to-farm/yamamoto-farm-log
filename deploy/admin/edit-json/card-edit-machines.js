@@ -1,6 +1,6 @@
 // admin/edit-json/card-edit-machines.js
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
-import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { showSaveModal, completeSaveModal, confirmSaveBeforeSubmit } from "/common/save-modal.js?v=1";
 
 export function renderEditCard({ dataName, json, container }) {
   const title = document.getElementById("page-title");
@@ -227,7 +227,7 @@ export function renderEditCard({ dataName, json, container }) {
     machineList.push({
       id: "",
       name: "",
-      allowedPageIds: selectablePages.map(page => page.id)
+      allowedPageIds: []
     });
     searchEl.value = "";
     editorEl.innerHTML = "";
@@ -262,6 +262,17 @@ export function renderEditCard({ dataName, json, container }) {
         allowedPageIds: normalizePageIdList(item.allowedPageIds)
       });
     }
+
+    const confirmed = await confirmSaveBeforeSubmit({
+      title: "以下の機械設定を保存します。",
+      lines: [
+        `保存台数: ${newMachines.length}台`,
+        ...newMachines.map(machine =>
+          `${machine.id} / ${machine.name} / 作業ページ ${machine.allowedPageIds.length}件`
+        )
+      ]
+    });
+    if (!confirmed) return;
 
     showSaveModal("保存しています…");
     try {
