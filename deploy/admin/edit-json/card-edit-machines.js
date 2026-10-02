@@ -75,7 +75,7 @@ export function renderEditCard({ dataName, json, container }) {
       return `
         <details class="machine-page-category" style="margin-top:8px; border:1px solid #e1e1e1; border-radius:8px; background:#fff;">
           <summary style="padding:10px 12px; cursor:pointer; font-weight:700;">
-            <span style="display:flex; justify-content:space-between; gap:12px;">
+            <span style="display:inline-flex; width:calc(100% - 1em); align-items:center; justify-content:space-between; gap:12px; vertical-align:middle;">
               <span>${escapeHtml(category)}</span>
               <small class="machine-category-count" style="color:#666; font-weight:400; white-space:nowrap;">${selectedCount} / ${pages.length} 選択</small>
             </span>

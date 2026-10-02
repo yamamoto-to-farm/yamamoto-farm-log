@@ -3,7 +3,7 @@ import { loadJSON } from "/common/json.js?v=1";
 
 function resolveEditorModulePath(dataName) {
   const explicitMap = {
-    machines: "./card-edit-machines.js?v=20261002-1",
+    machines: "./card-edit-machines.js?v=20261002-2",
     "fertilizer-index": "./fertilizer/index-editor.js",
     "fertilizer-detail": "./fertilizer/detail-editor.js",
     "pesticide-index": "./pesticide/index-editor.js",
