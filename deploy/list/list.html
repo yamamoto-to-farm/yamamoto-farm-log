@@ -78,7 +78,7 @@
 
     .filter-summary-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+      grid-template-columns: minmax(0, 1fr) minmax(400px, 1fr);
       gap: 10px;
       align-items: start;
     }
@@ -189,6 +189,31 @@
     }
     #planting-column-toggles input { margin: 0; }
     body[data-list-mode="seed"] #planting-column-toggles { display: none; }
+
+    #planting-date-calendar {
+      box-sizing: border-box;
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid #d6dee5;
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+    }
+    #planting-date-calendar::backdrop { background: rgba(15, 23, 42, .42); }
+    .planting-calendar-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .planting-calendar-head h2 { margin: 0; font-size: 18px; }
+    #planting-date-calendar button, #planting-date-calendar-btn { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #245b48; cursor: pointer; }
+    #planting-date-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+    #planting-date-calendar-grid button { position: relative; height: 42px; padding: 0; }
+    #planting-date-calendar-grid .has-record { background: #edf6f0; font-weight: 700; }
+    #planting-date-calendar-grid .has-record::after { content: ""; position: absolute; bottom: 4px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+    #planting-date-calendar-grid .is-selected, #planting-date-calendar #planting-date-calendar-apply { background: #245b48; color: #fff; }
+    #planting-date-calendar-grid button:disabled { color: #9ca3af; cursor: default; }
+    #planting-date-calendar-selection { margin: 8px 0; font-size: 13px; }
+    .planting-calendar-footer { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+    @media print { #planting-date-calendar { display: none !important; } }
 
     #table-area.hide-planting-col-tray .col-tray,
     #table-area.hide-planting-col-seed-date .col-seed-date,
@@ -337,8 +362,58 @@
     }
 
     #summaryArea {
-      font-size: 16px;
-      line-height: 1.4;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.45;
+    }
+
+    .seed-summary-group, .planting-summary-group { padding: 8px 0; }
+    .seed-summary-group + .seed-summary-group,
+    .planting-summary-group + .planting-summary-group { border-top: 1px solid #e5e7eb; }
+    .seed-summary-group h3, .planting-summary-group h3 {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 5px;
+      color: #374151;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .seed-summary-group h3::before, .planting-summary-group h3::before {
+      width: 3px;
+      height: 13px;
+      flex: 0 0 3px;
+      background: #2f855a;
+      content: "";
+    }
+    .seed-summary-group--discard h3::before,
+    .planting-summary-group--discard h3::before { background: #c0564b; }
+    .seed-summary-group--remaining h3::before,
+    .planting-summary-group--current h3::before { background: #397b78; }
+    .seed-summary-rows, .planting-summary-rows {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px 18px;
+    }
+    .seed-summary-row, .planting-summary-row {
+      display: flex;
+      min-width: 0;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px dotted #e5e7eb;
+    }
+    .seed-summary-row > span, .planting-summary-row > span { min-width: 0; color: #5b6470; font-size: 12px; }
+    .seed-summary-row strong, .planting-summary-row strong { color: #17212b; font-size: 14px; font-weight: 700; text-align: right; white-space: nowrap; }
+    .seed-summary-tray-row { grid-column: 1 / -1; }
+    .seed-summary-tray-values { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px 12px; }
+    @media (max-width: 440px) {
+      .seed-summary-rows, .planting-summary-rows { grid-template-columns: 1fr; }
+      .seed-summary-tray-row { flex-wrap: wrap; }
+      .seed-summary-tray-row > span { flex-basis: 100%; }
+      .seed-summary-tray-values { width: 100%; justify-content: space-between; }
     }
 
     @media (max-width: 1024px) {
@@ -712,7 +787,25 @@
               <label><input type="checkbox" data-planting-col="nursery-days" checked>育苗日数</label>
               <label><input type="checkbox" data-planting-col="post-days" checked>定植後経過</label>
               <label><input type="checkbox" data-planting-col="management" checked>管理作業</label>
+              <button id="planting-date-calendar-btn" type="button" aria-haspopup="dialog" aria-controls="planting-date-calendar">日付で絞込</button>
             </div>
+            <dialog id="planting-date-calendar" class="print-hide" aria-labelledby="planting-date-calendar-title">
+              <div class="planting-calendar-head">
+                <h2 id="planting-date-calendar-title">定植日で絞り込み</h2>
+                <button type="button" data-calendar-close>閉じる</button>
+              </div>
+              <div class="planting-calendar-head">
+                <button type="button" data-calendar-month="-1" aria-label="前月">&lt;</button>
+                <strong id="planting-date-calendar-month"></strong>
+                <button type="button" data-calendar-month="1" aria-label="翌月">&gt;</button>
+              </div>
+              <p id="planting-date-calendar-selection" aria-live="polite"></p>
+              <div id="planting-date-calendar-grid" aria-label="定植日の選択"></div>
+              <div class="planting-calendar-footer">
+                <button id="planting-date-calendar-clear" type="button">選択を解除</button>
+                <button id="planting-date-calendar-apply" type="button">適用</button>
+              </div>
+            </dialog>
             <div class="log-scroll">
               <div id="table-area"></div>
             </div>
@@ -731,12 +824,12 @@
   <div id="modal-container"></div>
 
   <!-- 一覧ページのメイン JS -->
-  <script type="module" src="./list.js?v=20260930-5"></script>
+  <script type="module" src="./list.js?v=20261005-1"></script>
 
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { initListPage } from "./list.js?v=20260930-5";
+    import { initListPage } from "./list.js?v=20261005-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
       const ok = await verifyLocalAuth();
