@@ -13,7 +13,7 @@
     </style>
 </head>
 
-<body>
+<body style="visibility:hidden;">
     <h1>共通UIパーツ一覧（開発用）</h1>
 
     <!-- 作業者 -->
@@ -58,7 +58,10 @@
     </div>
 
 <script type="module">
-    import { createWorkerCheckboxes, createFieldSelector, autoDetectField } from "./ui.js";
+    import { createWorkerCheckboxes, createFieldSelector, autoDetectField, verifyLocalAuth } from "./ui.js";
+
+    if (!await verifyLocalAuth()) throw new Error("Page access denied");
+    document.body.style.visibility = "visible";
 
     createWorkerCheckboxes("workers_box");
 

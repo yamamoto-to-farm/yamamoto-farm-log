@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 </head>
 
-<body>
+<body style="visibility:hidden;">
 
   <h1>定植後の破棄（植え直し）</h1>
 
@@ -84,13 +84,17 @@
   <script type="module">
     import { initDiscardPage, saveDiscard } from "./discard-planting.js";
     import { setupSmartBackButton } from "/common/navigation-back.js";
+    import { verifyLocalAuth } from "/common/ui.js";
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!await verifyLocalAuth()) return;
+      document.body.style.visibility = "visible";
       initDiscardPage();
       setupSmartBackButton({ elementId: "backBtn", fallbackPath: "/list/list.html?mode=planting" });
     });
 
-    document.getElementById("saveBtn").addEventListener("click", () => {
+    document.getElementById("saveBtn").addEventListener("click", async () => {
+      if (!await verifyLocalAuth()) return;
       saveDiscard();
     });
   </script>

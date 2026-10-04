@@ -37,12 +37,17 @@
   </style>
 </head>
 
-<body>
+<body style="visibility:hidden;">
 
   <!-- ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
-    renderNavbar();
+    import { verifyLocalAuth } from "/common/ui.js";
+    if (await verifyLocalAuth()) {
+      renderNavbar();
+      document.body.style.visibility = "visible";
+      await import("/analysis/field-performance.js?v=20261005-access-1");
+    }
   </script>
 
   <h1>ロット別生産性分析（作付面積 × 反収）</h1>
@@ -74,7 +79,6 @@
   </table>
 
   <!-- JS -->
-  <script type="module" src="/analysis/field-performance.js?v=1.1"></script>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>

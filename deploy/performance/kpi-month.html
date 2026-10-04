@@ -9,12 +9,17 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
 </head>
 
-<body>
+<body style="visibility:hidden;">
 
   <!-- ★ ナビバー -->
   <script type="module">
     import { renderNavbar } from "/common/header.js?v=1.1";
-    renderNavbar();
+    import { verifyLocalAuth } from "/common/ui.js";
+    if (await verifyLocalAuth()) {
+      renderNavbar();
+      document.body.style.visibility = "visible";
+      await import("/performance/kpi-month.js?v=20261005-access-1");
+    }
   </script>
 
   <h1 id="month-title">読み込み中...</h1>
@@ -40,7 +45,6 @@
   </table>
 
   <!-- JS 読み込み -->
-  <script type="module" src="/performance/kpi-month.js?v=20261001-1"></script>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>

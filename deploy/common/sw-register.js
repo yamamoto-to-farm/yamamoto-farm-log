@@ -1,7 +1,7 @@
 (() => {
   if (!("serviceWorker" in navigator)) return;
 
-  const BUILD = "20260820-1";
+  const BUILD = "20261005-access-1";
   const BUILD_KEY = "yamamotoFarmBuildVersion";
 
   const showUpdateNotice = (reload) => {

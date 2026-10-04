@@ -7,6 +7,7 @@ import { loadCSV } from "./csv.js";
 import { loadJSON, saveJSON } from "./json.js";
 import { saveLog } from "./save/index.js";
 import { nowJstIso } from "./date-utils.js";
+import { getPageAccess, loadAccessPages } from "./page-access.js?v=20261005-1";
 
 
 // ===============================
@@ -678,6 +679,7 @@ export function showPinGate(containerId, onSuccess) {
 
       // 認証成功 → グローバル変数に保存
       await issueAuthSession(user);
+      if (!await verifyLocalAuth()) return;
 
       // PIN UI を非表示
       container.style.display = "none";
@@ -772,6 +774,14 @@ export async function verifyLocalAuth(options = {}) {
         alert("ログイン状態が更新されました。再ログインしてください。");
       }
       if (shouldRedirect) redirectWithReturnUrl();
+      return false;
+    }
+
+    const accessPages = await loadAccessPages();
+    const access = getPageAccess(accessPages, options?.path ?? location.href, savedRole);
+    if (!access.allowed) {
+      if (!options?.silent) alert("このページを閲覧する権限がありません。");
+      if (shouldRedirect) location.replace("/");
       return false;
     }
 

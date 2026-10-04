@@ -142,6 +142,7 @@
 
       const workPages = (pages || []).filter(p => {
         if (!p || p.openLog !== true || !p.path) return false;
+        if (!Array.isArray(p.roles) || !p.roles.includes(window.currentRole)) return false;
         if (!allowSet) return true;
         return allowSet.has(String(p.id || ""));
       });

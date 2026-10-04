@@ -641,7 +641,7 @@
       const res = await fetch(`data/pages.json?v=${Date.now()}`);
       const json = await res.json();
       dlog("pages.json loaded:", json.pages);
-      return json.pages;
+      return json.pages.filter(page => !page.accessOnly);
     }
 
     function createCard(page) {
@@ -1332,8 +1332,8 @@
       pages.forEach(page => {
         dlog("check page:", page.name, "roles:", page.roles);
 
-        if (!page.roles.includes(role)) return;
-        if (page.category.startsWith("管理/")) return;
+        if (!page.roles.includes(role) || page.accessOnly) return;
+        if (page.category.startsWith("管理/") && page.id !== "summary-manager") return;
 
         if (isDiaryPage(page)) return;
         const rawTop = page.category.split("/")[0];

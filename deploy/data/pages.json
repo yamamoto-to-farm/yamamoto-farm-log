@@ -1,5 +1,26 @@
 {
   "pages": [
+    { "id": "top-access", "path": "/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "machine-hub-access", "path": "/machine-work-hub.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "open-log-access", "path": "/open-log.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "common-access", "path": "/common/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "save-modal-access", "path": "/common/save-modal.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "discard-planting-access", "path": "/planting/discard-planting.html", "roles": ["admin"], "accessOnly": true },
+    { "id": "discard-seed-access", "path": "/seed/discard-seed.html", "roles": ["admin"], "accessOnly": true },
+    { "id": "analysis-access", "path": "/analysis/index.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "analysis-field-access", "path": "/analysis/field-performance.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "kpi-month-access", "path": "/performance/kpi-month.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "annual-access", "path": "/schedule/annual/index.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "field-weather-access", "path": "/fields/weather.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "field-work-logs-access", "path": "/fields/work-logs.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "fertilizer-month-access", "path": "/fertilizer/list/month.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "pesticide-month-access", "path": "/pesticide/list/month.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "soil-work-access", "path": "/field/soil-work/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "house-east-access", "path": "/nursery/house-east.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "house-outside-access", "path": "/nursery/house-outside.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "house-west-access", "path": "/nursery/house-west.html", "roles": ["family", "admin"], "accessOnly": true },
+    { "id": "nursery-pesticide-access", "path": "/nursery/pesticide/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "weather-access", "path": "/weather/index.html", "roles": ["family", "admin"], "accessOnly": true },
     {
       "id": "seed",
       "name": "播種ログ",
@@ -301,7 +322,7 @@
     {
       "id": "edit-json",
       "name": "管理データ編集（JSON）",
-      "path": "edit-json/index.html",
+      "path": "/admin/edit-json/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/json.png",
@@ -310,7 +331,7 @@
     {
       "id": "edit-csv",
       "name": "記録データ編集（CSV）",
-      "path": "edit-csv/index.html",
+      "path": "/admin/edit-csv/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/csv.png",
@@ -319,7 +340,7 @@
     {
       "id": "edit-log",
       "name": "記録データ編集（ログ）",
-      "path": "edit-log/index.html",
+      "path": "/admin/edit-log/index.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/json.png",
@@ -328,7 +349,7 @@
     {
       "id": "machine-qr",
       "name": "QRコード生成ツール",
-      "path": "machine-qr.html",
+      "path": "/admin/machine-qr.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/qr.png",
@@ -337,7 +358,7 @@
     {
       "id": "summary-manager",
       "name": "サマリー閲覧",
-      "path": "summary-manager.html",
+      "path": "/admin/summary-view/index.html",
       "category": "管理/ツール",
       "roles": ["family", "admin"],
       "icon": "assets/icons/summary.png",
@@ -346,7 +367,7 @@
     {
       "id": "login-permissions",
       "name": "ログイン権限管理",
-      "path": "edit-json/index.html?data=workers",
+      "path": "/admin/edit-json/index.html?data=workers",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",
@@ -355,7 +376,7 @@
     {
       "id": "access",
       "name": "在籍状況管理",
-      "path": "access.html",
+      "path": "/admin/access.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",
@@ -364,7 +385,7 @@
     {
       "id": "security-log",
       "name": "ログイン履歴",
-      "path": "security-log.html",
+      "path": "/admin/security-log.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",
@@ -373,7 +394,7 @@
     {
       "id": "roadmap",
       "name": "次の進化ロードマップ",
-      "path": "roadmap.html",
+      "path": "/admin/roadmap.html",
       "category": "管理/ツール",
       "roles": ["admin"],
       "icon": "assets/icons/roadmap.png",

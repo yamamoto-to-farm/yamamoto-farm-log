@@ -187,7 +187,7 @@
       };
 
       // ページ一覧
-      [machineHubOption, ...pages].forEach(p => {
+      [machineHubOption, ...pages.filter(page => !page.accessOnly)].forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.id;
         opt.textContent = p.name;
