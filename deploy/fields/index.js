@@ -51,6 +51,14 @@ export async function renderFieldList({ view = "active" } = {}) {
       >
         契約終了した圃場一覧
       </button>
+      ${window.currentRole === "admin" ? `
+        <a
+          class="secondary-btn"
+          href="/admin/edit-json/index.html?data=fields&return=%2Ffields%2Findex.html"
+        >
+          圃場基本情報を編集
+        </a>
+      ` : ""}
       <label class="field-cultivating-toggle">
         <input type="checkbox" id="cultivating-toggle-checkbox">
         栽培中の圃場をハイライト表示
