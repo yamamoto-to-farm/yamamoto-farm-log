@@ -196,6 +196,9 @@ export async function printInline(selector, title = "印刷") {
     }
     thead { display: table-header-group; }
     tr, img { break-inside: avoid; }
+    .show-cultivating .field-row.field-cultivating > td {
+      background-color: #e3f5e6 !important;
+    }
     ul, ol {
       margin: 0 0 12px 18px;
       padding: 0;
@@ -609,6 +612,5 @@ export async function printCurrentPage(title = document.title || "印刷") {
     }
   }
 }
-
 
 
