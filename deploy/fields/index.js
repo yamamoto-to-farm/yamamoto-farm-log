@@ -76,11 +76,19 @@ export async function renderFieldList({ view = "active" } = {}) {
         <input type="checkbox" id="address-expand-checkbox">
         所在を複数筆展開表示
       </label>
+      <label class="field-column-toggle">
+        <input type="checkbox" id="owner-expand-checkbox">
+        地権者を複数人展開表示
+      </label>
     </div>
   `);
 
   document.getElementById("address-expand-checkbox")?.addEventListener("change", (event) => {
     container.classList.toggle("show-address-expanded", event.target.checked);
+  });
+
+  document.getElementById("owner-expand-checkbox")?.addEventListener("change", (event) => {
+    container.classList.toggle("show-owner-expanded", event.target.checked);
   });
 
   document.querySelectorAll(".field-col-checkbox").forEach(checkbox => {
@@ -236,7 +244,11 @@ export async function renderFieldList({ view = "active" } = {}) {
 
       const officialAreaHan = calcOfficialAreaTotalHan(detail);
       const officialAreaDisplay = officialAreaHan > 0 ? officialAreaHan.toFixed(2) : "未入力";
-      const ownerNamesText = getOwnerNamesText(detail);
+      const ownerNames = getOwnerNames(detail);
+      const ownerNamesText = ownerNames.length ? ownerNames.join("／") : "未入力";
+      const ownerNamesExpandedHtml = ownerNames.length
+        ? ownerNames.map(name => `<div class="field-owner-line">${escapeHtml(name)}</div>`).join("")
+        : `<span class="field-address-empty">未入力</span>`;
 
       tableHtml += `
         <tr class="field-row${isCultivating ? " field-cultivating" : ""}" data-name="${field.name}">
@@ -244,7 +256,10 @@ export async function renderFieldList({ view = "active" } = {}) {
           <td class="field-address-col"${addressTitleAttr}>${addressHtml}</td>
           <td class="field-area-col col-area">${display}</td>
           <td class="field-area-col col-official-area">${officialAreaDisplay}</td>
-          <td class="col-owner">${escapeHtml(ownerNamesText)}</td>
+          <td class="col-owner">
+            <span class="field-owner-collapsed">${escapeHtml(ownerNamesText)}</span>
+            <span class="field-owner-expanded">${ownerNamesExpandedHtml}</span>
+          </td>
         </tr>
       `;
     });
@@ -366,16 +381,14 @@ function calcOfficialAreaTotalHan(detail) {
   return totalM2 / 990; // ㎡ → 反
 }
 
-function getOwnerNamesText(detail) {
-  if (!detail || !Array.isArray(detail.parcels)) return "未入力";
+function getOwnerNames(detail) {
+  if (!detail || !Array.isArray(detail.parcels)) return [];
 
-  const owners = [...new Set(
+  return [...new Set(
     detail.parcels
       .map(p => String(p?.owner || "").trim())
       .filter(v => v && v !== "未入力")
   )];
-
-  return owners.length ? owners.join("／") : "未入力";
 }
 
 function escapeHtml(value) {

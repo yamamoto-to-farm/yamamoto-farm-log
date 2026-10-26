@@ -201,7 +201,23 @@
   display: block;
 }
 
+.field-owner-expanded {
+  display: none;
+}
+
+.show-owner-expanded .field-owner-collapsed {
+  display: none;
+}
+
+.show-owner-expanded .field-owner-expanded {
+  display: block;
+}
+
 .field-address-line {
+  padding: 1px 0;
+}
+
+.field-owner-line {
   padding: 1px 0;
 }
 
