@@ -1,5 +1,7 @@
 {
   "pages": [
+    { "id": "field-photos", "name": "圃場写真（専用ログイン）", "path": "photos/index.html", "category": "圃場", "roles": ["worker", "family", "admin"] },
+    { "id": "photo-callback-access", "path": "/photos/callback.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "top-access", "path": "/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "machine-hub-access", "path": "/machine-work-hub.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "open-log-access", "path": "/open-log.html", "roles": ["worker", "family", "admin"], "accessOnly": true },

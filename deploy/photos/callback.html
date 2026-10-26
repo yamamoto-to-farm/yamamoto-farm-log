@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>写真ログイン確認 - 山本農園</title>
+</head>
+<body>
+  <p id="status" role="status">ログインを確認しています…</p>
+  <a href="/photos/index.html">写真ページへ戻る</a>
+  <script type="module">
+    import { finishLogin } from "./auth.js";
+    finishLogin().catch(error => {
+      console.error("[photos] login failed", error);
+      document.getElementById("status").textContent = error.message;
+    });
+  </script>
+</body>
+</html>

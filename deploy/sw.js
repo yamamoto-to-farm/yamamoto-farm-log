@@ -1,4 +1,4 @@
-const CACHE_NAME = "yamamoto-farm-runtime-v20261005-access-1";
+const CACHE_NAME = "yamamoto-farm-runtime-v20261026-photos-1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -25,6 +25,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/photos/")) return;
 
   const isNurseryLayout = url.pathname === "/logs/nursery/house-layout.json";
 

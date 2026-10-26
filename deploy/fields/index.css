@@ -14,6 +14,12 @@
   .field-column-toggle-row {
     display: none !important;
   }
+
+  .show-cultivating .field-row.field-cultivating > td {
+    background-color: #e3f5e6 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 
 /* 列幅を固定（圃場名：70%、面積：30%） */

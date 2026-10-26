@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>圃場写真 - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
+  <link rel="stylesheet" href="./photos.css">
+</head>
+<body>
+  <main id="page-area">
+    <h1 class="page-title">圃場写真（農園内限定）</h1>
+    <p>写真専用のログインが必要です。写真のURLは共有しないでください。</p>
+    <p id="status" role="status" aria-live="polite"></p>
+    <button id="login" class="primary-btn" type="button">写真用ログイン</button>
+    <button id="logout" class="secondary-btn" type="button" hidden>写真用ログアウト</button>
+    <section id="photo-area" hidden>
+      <label for="field">圃場</label>
+      <select id="field" class="form-input"><option value="">圃場を選択してください</option></select>
+      <form id="upload-form" class="card">
+        <h2>写真を追加</h2>
+        <label for="image">画像（1枚ずつ、元画像20MB以下）</label>
+        <input id="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <p>長辺1920px以下のJPEGに変換します。HEICはJPEG等に変換して選択してください。</p>
+        <img id="preview" alt="アップロード前の写真" hidden>
+        <label for="taken-on">撮影日</label>
+        <input id="taken-on" class="form-input" type="date" required>
+        <label for="note">メモ</label>
+        <textarea id="note" class="form-textarea" maxlength="1000"></textarea>
+        <button id="upload" class="primary-btn" type="submit">写真を保存</button>
+      </form>
+      <button id="refresh" class="secondary-btn" type="button">一覧を更新</button>
+      <p>撮影日の新しい順に表示します。「続きを読み込む」で取得済みの写真を追加します。閲覧URLの有効期間は5分です。</p>
+      <div id="gallery"></div>
+      <button id="more" class="secondary-btn" type="button" hidden>続きを読み込む</button>
+    </section>
+    <p><a id="field-back" href="/fields/index.html">圃場一覧へ</a> ／ <a href="/index.html">トップへ</a></p>
+    <dialog id="viewer">
+      <button id="close-viewer" type="button" class="secondary-btn">閉じる</button>
+      <img id="full-image" alt="">
+      <p id="caption"></p>
+    </dialog>
+  </main>
+  <script type="module" src="./photos.js"></script>
+</body>
+</html>
