@@ -232,7 +232,7 @@ export async function renderFieldList({ view = "active" } = {}) {
         `;
       const addressEntries = getParcelAddresses(detail);
       const addressExpandedHtml = addressEntries.length
-        ? addressEntries.map(({ index, address }) => `<div class="field-address-line">${index}. ${escapeHtml(address)}</div>`).join("")
+        ? addressEntries.map(address => `<div class="field-address-line">${escapeHtml(address)}</div>`).join("")
         : `<span class="field-address-empty">未入力</span>`;
       const addressHtml = `
         <span class="field-address-collapsed">${addressCollapsedHtml}</span>
@@ -249,7 +249,7 @@ export async function renderFieldList({ view = "active" } = {}) {
       const ownerNamesText = ownerNames.length ? ownerNames.join("／") : "未入力";
       const ownerEntries = getParcelOwners(detail);
       const ownerNamesExpandedHtml = ownerEntries.length
-        ? ownerEntries.map(({ index, owner }) => `<div class="field-owner-line">${index}. ${escapeHtml(owner)}</div>`).join("")
+        ? ownerEntries.map(owner => `<div class="field-owner-line">${escapeHtml(owner)}</div>`).join("")
         : `<span class="field-address-empty">未入力</span>`;
 
       tableHtml += `
@@ -373,18 +373,15 @@ function summarizeFieldAddress(detail) {
 
 function getParcelAddresses(detail) {
   if (Array.isArray(detail?.parcels) && detail.parcels.length) {
-    return detail.parcels.map((parcel, index) => {
+    return detail.parcels.map(parcel => {
       const address = String(parcel?.address || "").trim();
-      return {
-        index: index + 1,
-        address: address && address !== "未入力" ? address : "未入力"
-      };
+      return address && address !== "未入力" ? address : "未入力";
     });
   }
 
   const address = String(detail?.address || "").trim();
   return address && address !== "未入力"
-    ? [{ index: 1, address }]
+    ? [address]
     : [];
 }
 
@@ -413,12 +410,9 @@ function getOwnerNames(detail) {
 function getParcelOwners(detail) {
   if (!detail || !Array.isArray(detail.parcels)) return [];
 
-  return detail.parcels.map((parcel, index) => {
+  return detail.parcels.map(parcel => {
     const owner = String(parcel?.owner || "").trim();
-    return {
-      index: index + 1,
-      owner: owner && owner !== "未入力" ? owner : "未入力"
-    };
+    return owner && owner !== "未入力" ? owner : "未入力";
   });
 }
 
