@@ -78,7 +78,7 @@ export async function renderFieldList({ view = "active" } = {}) {
       </label>
       <label class="field-column-toggle">
         <input type="checkbox" id="owner-expand-checkbox">
-        地権者を複数人展開表示
+        地権者を筆ごとに展開表示
       </label>
     </div>
   `);
@@ -230,8 +230,9 @@ export async function renderFieldList({ view = "active" } = {}) {
             : ""
           }
         `;
-      const addressExpandedHtml = addressSummary.addresses.length
-        ? addressSummary.addresses.map(a => `<div class="field-address-line">${escapeHtml(a)}</div>`).join("")
+      const addressEntries = getParcelAddresses(detail);
+      const addressExpandedHtml = addressEntries.length
+        ? addressEntries.map(({ index, address }) => `<div class="field-address-line">${index}. ${escapeHtml(address)}</div>`).join("")
         : `<span class="field-address-empty">未入力</span>`;
       const addressHtml = `
         <span class="field-address-collapsed">${addressCollapsedHtml}</span>
@@ -246,8 +247,9 @@ export async function renderFieldList({ view = "active" } = {}) {
       const officialAreaDisplay = officialAreaHan > 0 ? officialAreaHan.toFixed(2) : "未入力";
       const ownerNames = getOwnerNames(detail);
       const ownerNamesText = ownerNames.length ? ownerNames.join("／") : "未入力";
-      const ownerNamesExpandedHtml = ownerNames.length
-        ? ownerNames.map(name => `<div class="field-owner-line">${escapeHtml(name)}</div>`).join("")
+      const ownerEntries = getParcelOwners(detail);
+      const ownerNamesExpandedHtml = ownerEntries.length
+        ? ownerEntries.map(({ index, owner }) => `<div class="field-owner-line">${index}. ${escapeHtml(owner)}</div>`).join("")
         : `<span class="field-address-empty">未入力</span>`;
 
       tableHtml += `
@@ -369,6 +371,23 @@ function summarizeFieldAddress(detail) {
   };
 }
 
+function getParcelAddresses(detail) {
+  if (Array.isArray(detail?.parcels) && detail.parcels.length) {
+    return detail.parcels.map((parcel, index) => {
+      const address = String(parcel?.address || "").trim();
+      return {
+        index: index + 1,
+        address: address && address !== "未入力" ? address : "未入力"
+      };
+    });
+  }
+
+  const address = String(detail?.address || "").trim();
+  return address && address !== "未入力"
+    ? [{ index: 1, address }]
+    : [];
+}
+
 function calcOfficialAreaTotalHan(detail) {
   if (!detail || !Array.isArray(detail.parcels)) return 0;
 
@@ -389,6 +408,18 @@ function getOwnerNames(detail) {
       .map(p => String(p?.owner || "").trim())
       .filter(v => v && v !== "未入力")
   )];
+}
+
+function getParcelOwners(detail) {
+  if (!detail || !Array.isArray(detail.parcels)) return [];
+
+  return detail.parcels.map((parcel, index) => {
+    const owner = String(parcel?.owner || "").trim();
+    return {
+      index: index + 1,
+      owner: owner && owner !== "未入力" ? owner : "未入力"
+    };
+  });
 }
 
 function escapeHtml(value) {
