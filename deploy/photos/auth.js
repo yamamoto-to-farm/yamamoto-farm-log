@@ -24,6 +24,17 @@ export function hasSession() {
   return !!readSession();
 }
 
+// 表示用途のみ。権限判定には使わない(検証は API Gateway 側)。
+export function getUsername() {
+  try {
+    const part = readSession().accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(decodeURIComponent(escape(atob(part))));
+    return typeof claims.username === "string" ? claims.username : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 export function getToken() {
   const session = readSession();
   if (!session || Date.now() >= session.expiresAt - 30000) return null;

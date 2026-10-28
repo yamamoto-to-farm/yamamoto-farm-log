@@ -8,6 +8,7 @@ import { loadJSON, saveJSON } from "./json.js";
 import { saveLog } from "./save/index.js";
 import { nowJstIso } from "./date-utils.js";
 import { getPageAccess, loadAccessPages } from "./page-access.js?v=20261005-1";
+import { hasSession, ensureToken, getUsername, login as cognitoLogin, clearSession as clearCognitoSession } from "/photos/auth.js?v=20261029-1";
 
 
 // ===============================
@@ -285,6 +286,7 @@ export async function logoutAndRedirect(reason = "logout") {
   }
 
   clearAuthStorage();
+  clearCognitoSession();
   location.href = "/index.html";
 }
 
@@ -659,6 +661,41 @@ export function showPinGate(containerId, onSuccess) {
     console.error("PIN UI が見つかりません");
     return;
   }
+
+  async function finishWithUser(user) {
+    await issueAuthSession(user);
+    if (!await verifyLocalAuth()) return false;
+    container.style.display = "none";
+    if (onSuccess) onSuccess();
+    return true;
+  }
+
+  // Cognito ログイン済みなら workers.json の同名ユーザーとして自動ログイン
+  async function cognitoAuthenticate() {
+    if (!hasSession() || !await ensureToken()) return false;
+    const username = getUsername();
+    const res = await fetch("/data/workers.json?v=" + Date.now());
+    const users = await res.json();
+    const user = users.find(u => u.name === username && !(u.role === "worker" && u.employmentStatus === "retired"));
+    if (!user) {
+      alert("このユーザーはこのシステムの利用者として登録されていません");
+      clearCognitoSession();
+      return false;
+    }
+    return finishWithUser(user);
+  }
+
+  if (!container.querySelector("[data-cognito-login]")) {
+    const cognitoButton = document.createElement("button");
+    cognitoButton.type = "button";
+    cognitoButton.dataset.cognitoLogin = "1";
+    cognitoButton.className = "pin-submit";
+    cognitoButton.textContent = "ユーザーID・パスワードでログイン";
+    cognitoButton.onclick = () => cognitoLogin("/index.html");
+    container.appendChild(cognitoButton);
+  }
+
+  cognitoAuthenticate().catch(e => console.error("Cognito 自動ログイン失敗:", e));
 
   async function authenticate() {
     const pin = input.value.trim();
