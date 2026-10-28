@@ -2,6 +2,21 @@
 
 This project contains the static farm log web application and the experimental GDD forecasting Lambda package.
 
+## Shared login policy
+
+`deploy/data/auth-config.json` controls the shared local session policy.
+An explicit empty `sensitivePathPrefixes: []` disables path-specific
+reauthentication; admin pages then use the same session expiry (8 hours) and
+idle timeout (60 minutes) as other pages. Role and page-access checks remain
+enabled. Missing or malformed path settings retain the `/admin/` default.
+The authentication-settings editor saves an empty path field as `[]`.
+
+Deploy the updated shared UI and settings editor before uploading
+`deploy/data/auth-config.json` to S3 as `data/auth-config.json` (the site sync
+excludes `data/`). Invalidate `/data/auth-config.json` in CloudFront and reload
+open pages so their in-memory configuration is refreshed.
+Tests: `node --test tests\auth-policy.test.cjs`.
+
 ## Private field photos
 
 The `/photos/index.html` page uses a separate Cognito authorization-code login

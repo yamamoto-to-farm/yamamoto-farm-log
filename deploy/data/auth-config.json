@@ -3,8 +3,6 @@
   "heartbeatMs": 300000,
   "idleTimeoutMs": 3600000,
   "stepupTtlMs": 1800000,
-  "sensitivePathPrefixes": [
-    "/admin/"
-  ],
+  "sensitivePathPrefixes": [],
   "updatedAt": ""
 }

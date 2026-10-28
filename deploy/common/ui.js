@@ -79,6 +79,7 @@ function normalizeMs(value, fallbackMs, minMs = 60 * 1000) {
 
 function normalizePathPrefixes(list) {
   if (!Array.isArray(list)) return [...DEFAULT_AUTH_CONFIG.sensitivePathPrefixes];
+  if (list.length === 0) return [];
 
   const normalized = list
     .map(v => String(v || "").trim())

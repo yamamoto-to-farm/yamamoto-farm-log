@@ -9,6 +9,7 @@ function toNumberOrFallback(value, fallback, min = 60000) {
 }
 
 function normalizePathPrefixes(text) {
+  if (!String(text || "").trim()) return [];
   const values = String(text || "")
     .split(/\r?\n/)
     .map(v => v.trim())
@@ -45,7 +46,7 @@ export function renderEditCard({ json, container }) {
           ・セッション確認間隔: 失効状態を検知するチェック間隔（推奨 5分）<br>
           ・無操作タイムアウト: 操作がない場合に再認証するまでの時間（推奨 30〜60分）<br>
           ・重要操作の再認証間隔: 管理画面の再認証間隔（推奨 30分）<br>
-          ・重要操作パス: 再認証対象にするURL接頭辞（例: /admin/）
+          ・重要操作パス: 再認証対象にするURL接頭辞（空欄で専用の再認証を無効化）
         </p>
       </div>
 
@@ -76,7 +77,7 @@ export function renderEditCard({ json, container }) {
       <div class="form-row">
         <label class="form-label" for="auth-sensitive-prefixes">重要操作パス（1行1件、先頭は /）</label>
         <textarea id="auth-sensitive-prefixes" class="form-input" rows="4">${current.sensitivePathPrefixes.join("\n")}</textarea>
-        <p style="margin:6px 0 0; color:#666; font-size:0.92em;">例: /admin/ を指定すると、/admin/ 配下を再認証対象にします。</p>
+        <p style="margin:6px 0 0; color:#666; font-size:0.92em;">例: /admin/ を指定すると、/admin/ 配下を再認証対象にします。空欄なら通常ページと同じ条件です。有効期限・無操作タイムアウト・閲覧権限の確認は継続します。</p>
       </div>
 
       <button id="save-auth-config-btn" class="primary-btn" style="margin-top:20px;">保存する</button>
