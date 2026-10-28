@@ -2,8 +2,11 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { config } from "./config.js";
 import { clearSession, ensureToken, hasSession, login } from "./auth.js";
-import { openPhotoUploadModal } from "./upload.js?v=20261029-1";
+import { openPhotoUploadModal } from "./upload.js?v=20261029-2";
 import { setTopPhoto } from "./top.js";
+import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { setFilterData } from "/common/filter/filter-core.js?v=1";
 
 const element = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -213,9 +216,27 @@ async function makeTop() {
   }
 }
 
+function setField(name) {
+  element("field").value = name;
+  element("field-selected").textContent = name || "すべての圃場";
+  element("clear-field-btn").hidden = !name;
+}
+
 function bind() {
   element("search").addEventListener("click", search);
-  element("field").addEventListener("change", search);
+  element("open-field-modal").addEventListener("click", () => openFieldModal({
+    mode: "select",
+    includeExpired: true,
+    selectedField: element("field").value,
+    onSelect: name => {
+      setField(name);
+      search();
+    }
+  }));
+  element("clear-field-btn").addEventListener("click", () => {
+    setField("");
+    search();
+  });
   for (const button of document.querySelectorAll("[data-range]")) {
     button.addEventListener("click", () => {
       setRange(button.dataset.range);
@@ -228,7 +249,8 @@ function bind() {
     finally { element("more").disabled = false; }
   });
   element("add").addEventListener("click", () => openPhotoUploadModal({
-    getFields: () => (element("field").value ? [element("field").value] : fieldNames),
+    pickFromAll: true,
+    initialField: element("field").value,
     getDate: () => ymd(new Date()),
     onUploaded: () => search()
   }));
@@ -248,13 +270,25 @@ function bind() {
 async function init() {
   if (!(await verifyLocalAuth())) return;
   renderHeader();
+  setupSmartBackButton({ elementId: "photos-back-btn", fallbackPath: "/index.html" });
   element("page-area").hidden = false;
   bind();
   const response = await fetch("/data/fields.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`圃場一覧を読み込めません（${response.status}）。`);
-  fieldNames = (await response.json()).map(field => field.name).filter(Boolean);
-  for (const name of fieldNames) element("field").append(new Option(name, name));
-  element("field").value = params.get("field") || "";
+  fieldNames = (await response.json());
+  const parents = [];
+  const children = {};
+  for (const field of fieldNames) {
+    if (!field.name) continue;
+    if (!children[field.area]) {
+      children[field.area] = [];
+      parents.push(field.area);
+    }
+    children[field.area].push(field.name);
+  }
+  setFilterData({ fields: { parents, children } });
+  fieldNames = fieldNames.map(field => field.name).filter(Boolean);
+  setField(params.get("field") || "");
   setRange("30");
   if (params.get("from")) element("from").value = params.get("from");
   if (params.get("to")) element("to").value = params.get("to");

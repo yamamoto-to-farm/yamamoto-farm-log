@@ -6,21 +6,27 @@
   <meta name="referrer" content="no-referrer">
   <title>写真一覧 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
-  <link rel="stylesheet" href="/photos/upload.css?v=20261029-1">
-  <link rel="stylesheet" href="./photos.css?v=20261029-2">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
+  <link rel="stylesheet" href="/photos/upload.css?v=20261029-2">
+  <link rel="stylesheet" href="./photos.css?v=20261029-5">
 </head>
 <body>
   <div id="header"></div>
 
-  <main class="page-container" id="page-area" hidden>
+  <div id="page-area" hidden>
     <h1 class="page-title">写真一覧</h1>
     <p class="photos-note">農園内限定です。写真のURLは共有しないでください。</p>
+    <div class="list-shell">
 
-    <section class="card photos-filter">
+    <section class="card list-filter-card photos-filter">
       <div class="photos-filter-row">
-        <label>圃場
-          <select id="field" class="form-input"><option value="">すべての圃場</option></select>
-        </label>
+        <div class="photos-field-picker">
+          <span class="photos-field-label">圃場</span>
+          <input id="field" type="hidden" value="">
+          <button id="open-field-modal" class="filter-open-btn" type="button">圃場を選択</button>
+          <span id="field-selected" class="photos-field-selected">すべての圃場</span>
+          <button id="clear-field-btn" class="secondary-btn" type="button" hidden>解除</button>
+        </div>
         <label>開始日<input id="from" class="form-input" type="date"></label>
         <label>終了日<input id="to" class="form-input" type="date"></label>
       </div>
@@ -43,7 +49,14 @@
     </div>
     <div id="gallery"></div>
     <button id="more" class="secondary-btn" type="button" hidden>続きを読み込む</button>
-  </main>
+
+    <div class="back-action-slot">
+      <button id="photos-back-btn" class="secondary-btn unified-back-btn" type="button">戻る</button>
+    </div>
+    </div>
+  </div>
+
+  <div id="modal-container"></div>
 
   <dialog id="viewer">
     <div class="viewer-bar">
@@ -62,7 +75,7 @@
     <p id="viewer-status" role="status" aria-live="polite"></p>
   </dialog>
 
-  <script type="module" src="./photos.js?v=20261029-2"></script>
+  <script type="module" src="./photos.js?v=20261029-5"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

@@ -76,7 +76,12 @@ function buildDialog() {
       <h2>写真を追加</h2>
       <p class="photo-upload-message" role="status" aria-live="polite"></p>
       <div class="photo-upload-body">
-        <label>圃場<select class="form-input" name="field"></select></label>
+        <label data-select-label>圃場<select class="form-input" name="field"></select></label>
+        <div class="photo-upload-picker" data-picker hidden>
+          <span class="photo-upload-picker-label">圃場</span>
+          <button type="button" class="filter-open-btn" data-pick>圃場を選択</button>
+          <strong data-picked>未選択</strong>
+        </div>
         <label>撮影日<input class="form-input" name="takenOn" type="date" required></label>
         <label>写真（1枚ずつ）<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>
         <label>メモ<textarea class="form-textarea" name="note" maxlength="1000"></textarea></label>
@@ -95,24 +100,64 @@ function buildDialog() {
  * getFields: 選択可能な圃場名の配列を返す関数 / getDate: 撮影日(YYYY-MM-DD)の初期値を返す関数
  * onUploaded: 1枚保存するたびに呼ばれる
  */
-export function openPhotoUploadModal({ getFields, getDate, onUploaded }) {
+export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromAll = false, initialField = "" }) {
   dialog ||= buildDialog();
   const form = dialog.querySelector("form");
   const message = dialog.querySelector(".photo-upload-message");
   const body = dialog.querySelector(".photo-upload-body");
   const saveButton = dialog.querySelector("[data-save]");
   const select = form.elements.field;
+  const picker = dialog.querySelector("[data-picker]");
   const say = (text, isError = false) => {
     message.textContent = text;
     message.style.color = isError ? "#b3261e" : "";
   };
 
-  const fields = [...new Set((getFields() || []).filter(Boolean))];
-  select.replaceChildren(...fields.map(name => new Option(name, name)));
+  const setPicked = name => {
+    select.replaceChildren(...(name ? [new Option(name, name)] : []));
+    picker.querySelector("[data-picked]").textContent = name || "未選択";
+  };
+
+  const fields = pickFromAll ? ["*"] : [...new Set((getFields() || []).filter(Boolean))];
+  if (pickFromAll) {
+    setPicked(initialField);
+  } else {
+    select.replaceChildren(...fields.map(name => new Option(name, name)));
+  }
+  dialog.querySelector("[data-select-label]").hidden = pickFromAll;
+  picker.hidden = !pickFromAll;
   form.elements.takenOn.value = getDate() || "";
   form.elements.image.value = "";
   form.elements.note.value = "";
   say("");
+
+  // 共通の圃場モーダルは<dialog>の背面に出るため、選択中だけ閉じて再表示する
+  picker.querySelector("[data-pick]").onclick = async () => {
+    const { openFieldModal } = await import("/common/filter/filter-field.js?v=1");
+    const container = document.getElementById("modal-container");
+    let reopened = false;
+    const reopen = () => {
+      if (reopened) return;
+      reopened = true;
+      observer.disconnect();
+      if (!dialog.open) dialog.showModal();
+    };
+    const observer = new MutationObserver(() => {
+      if (!container.hasChildNodes()) reopen();
+    });
+    dialog.close();
+    openFieldModal({
+      mode: "select",
+      includeExpired: true,
+      selectedField: select.value,
+      onSelect: name => {
+        setPicked(name);
+        say("");
+      }
+    }).then(() => {
+      observer.observe(document.getElementById("modal-container"), { childList: true });
+    });
+  };
 
   const loggedIn = hasSession();
   body.hidden = !fields.length || !loggedIn;

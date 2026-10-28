@@ -1,5 +1,9 @@
 [hidden] { display: none !important; }
 .photos-note { color: #555; margin: 0 0 12px; }
+.photos-field-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 100%; }
+.photos-field-label { font-weight: 600; }
+.photos-field-selected { font-weight: 600; }
+.photos-field-picker button { margin: 0; }
 .photos-filter label { display: block; font-weight: 600; flex: 1 1 140px; }
 .photos-filter .form-input { margin-top: 4px; }
 .photos-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: flex-end; }
