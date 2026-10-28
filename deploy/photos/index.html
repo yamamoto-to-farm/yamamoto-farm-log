@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="/photos/upload.css?v=20261029-2">
-  <link rel="stylesheet" href="./photos.css?v=20261029-5">
+  <link rel="stylesheet" href="./photos.css?v=20261029-6">
 </head>
 <body>
   <div id="header"></div>
@@ -22,7 +22,6 @@
       <div class="photos-filter-row">
         <div class="photos-field-picker">
           <span class="photos-field-label">圃場</span>
-          <input id="field" type="hidden" value="">
           <button id="open-field-modal" class="filter-open-btn" type="button">圃場を選択</button>
           <span id="field-selected" class="photos-field-selected">すべての圃場</span>
           <button id="clear-field-btn" class="secondary-btn" type="button" hidden>解除</button>
@@ -30,16 +29,18 @@
         <label>開始日<input id="from" class="form-input" type="date"></label>
         <label>終了日<input id="to" class="form-input" type="date"></label>
       </div>
-      <div class="photos-filter-row photos-presets">
+      <div class="photos-filter-toolbar">
+      <div class="photos-filter-row photos-presets" role="group" aria-label="撮影期間の選択">
         <button type="button" class="secondary-btn" data-range="month">今月</button>
         <button type="button" class="secondary-btn" data-range="30">直近30日</button>
         <button type="button" class="secondary-btn" data-range="90">直近90日</button>
         <button type="button" class="secondary-btn" data-range="year">今年</button>
         <button type="button" class="secondary-btn" data-range="all">全期間</button>
       </div>
-      <div class="photos-filter-row">
+      <div class="photos-filter-row photos-filter-actions">
         <button id="search" class="primary-btn" type="button">検索</button>
         <button id="add" class="secondary-btn" type="button">📷 写真を追加</button>
+      </div>
       </div>
     </section>
 
@@ -75,7 +76,7 @@
     <p id="viewer-status" role="status" aria-live="polite"></p>
   </dialog>
 
-  <script type="module" src="./photos.js?v=20261029-5"></script>
+  <script type="module" src="./photos.js?v=20261029-6"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

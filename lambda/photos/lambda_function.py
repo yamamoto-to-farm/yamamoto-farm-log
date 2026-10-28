@@ -132,16 +132,26 @@ def search_photos(bucket, prefix, data, claims):
     if start > end:
         raise RequestError(400, "開始日は終了日以前にしてください。")
     field = text(data, "field", 100, required=False)
+    fields = {field} if field else set()
+    if "fields" in data:
+        try:
+            values = json.loads(data["fields"])
+        except (ValueError, TypeError) as error:
+            raise RequestError(400, "圃場の指定が不正です。") from error
+        if not isinstance(values, list):
+            raise RequestError(400, "圃場は配列で指定してください。")
+        for value in values:
+            fields.add(text({"field": value}, "field", 100))
     cursor = text(data, "cursor", 10, required=False)
     if cursor and not cursor.isdigit():
         raise RequestError(400, "一覧の続きの取得に失敗しました。一覧を更新してください。")
     offset = int(cursor or 0)
 
     keys = sorted(list_date_keys(bucket, prefix, start, end), reverse=True)
-    if field:
+    if fields:
         with ThreadPoolExecutor(max_workers=8) as pool:
             records = list(pool.map(lambda key: read_json_or_none(bucket, key), keys))
-        matched = [record for record in records if record and record.get("field") == field]
+        matched = [record for record in records if record and record.get("field") in fields]
     else:
         matched = None
     total = len(matched) if matched is not None else len(keys)

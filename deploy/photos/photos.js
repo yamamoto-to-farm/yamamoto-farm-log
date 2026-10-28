@@ -6,7 +6,7 @@ import { openPhotoUploadModal } from "./upload.js?v=20261029-2";
 import { setTopPhoto } from "./top.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { setFilterData } from "/common/filter/filter-core.js?v=1";
+import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 
 const element = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -19,6 +19,7 @@ let cursor = null;
 let total = 0;
 let current = -1;
 let generation = 0;
+let selectedFields = [];
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -70,7 +71,9 @@ function setRange(kind) {
 
 function syncUrl() {
   const url = new URL(location.href);
-  for (const key of ["field", "from", "to"]) {
+  url.searchParams.delete("field");
+  for (const field of selectedFields) url.searchParams.append("field", field);
+  for (const key of ["from", "to"]) {
     const value = element(key).value;
     if (value) url.searchParams.set(key, value);
     else url.searchParams.delete(key);
@@ -130,7 +133,7 @@ async function load(append = false) {
   const requestGeneration = ++generation;
   status("写真を読み込み中…");
   const query = { from, to };
-  if (element("field").value) query.field = element("field").value;
+  if (selectedFields.length) query.fields = JSON.stringify(selectedFields);
   if (append && cursor) query.cursor = cursor;
   const result = await api("/photos/search", { query });
   if (requestGeneration !== generation) return;
@@ -216,25 +219,27 @@ async function makeTop() {
   }
 }
 
-function setField(name) {
-  element("field").value = name;
-  element("field-selected").textContent = name || "すべての圃場";
-  element("clear-field-btn").hidden = !name;
+function setFields(names) {
+  selectedFields = [...new Set(names)];
+  filterState.fields = selectedFields.slice();
+  element("field-selected").textContent = selectedFields.length
+    ? selectedFields.join("、")
+    : "すべての圃場";
+  element("clear-field-btn").hidden = !selectedFields.length;
 }
 
 function bind() {
   element("search").addEventListener("click", search);
-  element("open-field-modal").addEventListener("click", () => openFieldModal({
-    mode: "select",
-    includeExpired: true,
-    selectedField: element("field").value,
-    onSelect: name => {
-      setField(name);
-      search();
-    }
-  }));
+  element("open-field-modal").addEventListener("click", () => {
+    filterState.fields = selectedFields.slice();
+    openFieldModal({ mode: "filter", includeExpired: true }).catch(report);
+  });
+  window.addEventListener("filter:apply", () => {
+    setFields(filterState.fields);
+    search();
+  });
   element("clear-field-btn").addEventListener("click", () => {
-    setField("");
+    setFields([]);
     search();
   });
   for (const button of document.querySelectorAll("[data-range]")) {
@@ -250,7 +255,7 @@ function bind() {
   });
   element("add").addEventListener("click", () => openPhotoUploadModal({
     pickFromAll: true,
-    initialField: element("field").value,
+    initialField: selectedFields.length === 1 ? selectedFields[0] : "",
     getDate: () => ymd(new Date()),
     onUploaded: () => search()
   }));
@@ -288,7 +293,7 @@ async function init() {
   }
   setFilterData({ fields: { parents, children } });
   fieldNames = fieldNames.map(field => field.name).filter(Boolean);
-  setField(params.get("field") || "");
+  setFields(params.getAll("field").filter(Boolean));
   setRange("30");
   if (params.get("from")) element("from").value = params.get("from");
   if (params.get("to")) element("to").value = params.get("to");

@@ -1,14 +1,22 @@
 [hidden] { display: none !important; }
 .photos-note { color: #555; margin: 0 0 12px; }
-.photos-field-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 100%; }
-.photos-field-label { font-weight: 600; }
-.photos-field-selected { font-weight: 600; }
-.photos-field-picker button { margin: 0; }
-.photos-filter label { display: block; font-weight: 600; flex: 1 1 140px; }
-.photos-filter .form-input { margin-top: 4px; }
-.photos-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: flex-end; }
-.photos-filter-row .primary-btn,
-.photos-filter-row .secondary-btn { margin: 0; }
+.photos-filter { padding: 16px; }
+.photos-field-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.photos-field-label { font-weight: 600; flex-basis: 100%; }
+.photos-field-selected { font-weight: 600; overflow-wrap: anywhere; }
+.photos-filter label { display: block; font-weight: 600; flex: 0 1 180px; min-width: 0; }
+.photos-filter .form-input { margin: 6px 0 0; width: 100%; min-width: 0; box-sizing: border-box; height: 40px; }
+.photos-filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.photos-filter button { margin: 0; min-height: 40px; padding: 8px 12px; font-size: 14px; white-space: nowrap; }
+.photos-filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #e2e8f0; margin-top: 16px; padding-top: 12px; }
+.photos-filter-actions { margin-left: auto; }
+@media (max-width: 640px) {
+  .photos-field-picker { flex-basis: 100%; }
+  .photos-filter label { flex: 1 1 140px; }
+  .photos-filter-toolbar { align-items: stretch; }
+  .photos-filter-actions { width: 100%; margin-left: 0; }
+  .photos-filter-actions button { flex: 1; }
+}
 #status { white-space: pre-wrap; min-height: 1.4em; }
 #status.error, #viewer-status.error { color: #b91c1c; }
 #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }

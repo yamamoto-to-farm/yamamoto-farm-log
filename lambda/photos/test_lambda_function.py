@@ -275,6 +275,40 @@ class PhotoApiTests(unittest.TestCase):
         self.assertEqual((len(body["photos"]), body["cursor"]), (4, None))
         self.assertTrue(all(p["field"] == "A" for p in body["photos"]))
 
+    def test_search_multiple_fields_paginates_without_duplicates(self):
+        records = [self.record("2026-10-%02d" % d, "a", field="A") for d in range(1, 26)]
+        records += [self.record("2026-10-26", "b", field="B"),
+                    self.record("2026-10-27", "c", field="C")]
+        self.serve(records)
+        query = {"from": "2026-10-01", "to": "2026-10-31",
+                 "fields": json.dumps(["A", "B", "A"])}
+        status, first = self.call("GET /photos/search", query)
+        self.assertEqual((status, first["total"], len(first["photos"])), (200, 26, 24))
+        self.assertEqual(first["photos"][0]["field"], "B")
+        status, second = self.call("GET /photos/search", {**query, "cursor": first["cursor"]})
+        self.assertEqual((status, len(second["photos"]), second["cursor"]), (200, 2, None))
+        combined = first["photos"] + second["photos"]
+        self.assertEqual(len({p["id"] for p in combined}), 26)
+        self.assertEqual({p["field"] for p in combined}, {"A", "B"})
+        self.assertEqual([p["takenOn"] for p in combined],
+                         sorted((p["takenOn"] for p in combined), reverse=True))
+
+    def test_search_empty_fields_means_all_and_legacy_field_is_supported(self):
+        self.serve([self.record("2026-10-01", "a", field="A"),
+                    self.record("2026-10-02", "b", field="B")])
+        query = {"from": "2026-10-01", "to": "2026-10-31", "fields": "[]"}
+        self.assertEqual(self.call("GET /photos/search", query)[1]["total"], 2)
+        self.assertEqual(self.call("GET /photos/search", {**query, "field": "A"})[1]["total"], 1)
+
+    def test_search_rejects_invalid_fields(self):
+        for value in ["invalid", "null", "{}", '"A"', '[""]', "[1]", '[null]',
+                      json.dumps(["A" * 101])]:
+            with self.subTest(value=value):
+                status, _ = self.call("GET /photos/search", {
+                    "from": "2026-10-01", "to": "2026-10-31", "fields": value})
+                self.assertEqual(status, 400)
+        fake_s3.list_objects_v2.assert_not_called()
+
     def test_search_stops_after_end_date_and_validates_input(self):
         self.serve([self.record("2026-10-01", "a"), self.record("2026-11-05", "b")])
         status, body = self.call("GET /photos/search", {"from": "2026-10-01", "to": "2026-10-31"})

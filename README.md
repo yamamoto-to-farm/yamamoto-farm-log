@@ -28,15 +28,24 @@ removed while its placement is reconsidered; the photo page remains available.
   `photos/` and `photos/*`; `s3:GetObject` and `s3:PutObject` on
   `arn:aws:s3:::yamamoto-farm-private-photos/photos/*`. Keep the basic CloudWatch
   Logs policy. No delete permission or access to the public bucket is required.
-- HTTP API Lambda proxy integration: payload format **2.0**. All three routes
+- HTTP API Lambda proxy integration: payload format **2.0**. All routes
   below must use JWT authorizer `farm-photos-cognito` and required scope
   **openid**:
 
   | Method | Path | Purpose |
   | --- | --- | --- |
   | GET | `/photos` | List a field's completed photos, 20 per page |
+  | GET | `/photos/search` | Search by date range and optional fields, 24 per page |
   | POST | `/photos/uploads` | Issue a 5-minute size-limited S3 POST |
   | POST | `/photos/complete` | Validate upload and publish its metadata |
+
+- Photo search requires `from` and `to` (YYYY-MM-DD). Optional `fields` is a
+  JSON-encoded array of field names; omitted or empty means all fields. The
+  legacy single `field` parameter remains supported. Follow the returned
+  `cursor` with the same search conditions. The gallery URL uses repeated
+  `field` parameters to restore multiple selections. Gallery filters support
+  area-wide selection; photo uploads still select exactly one destination.
+  Redeploy the Lambda before publishing the multi-field gallery frontend.
 
 - JWT issuer:
   `https://cognito-idp.ap-northeast-1.amazonaws.com/  ap-northeast-1_OFiPcQjkC`;
