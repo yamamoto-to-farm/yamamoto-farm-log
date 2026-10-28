@@ -12,6 +12,7 @@ import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 import { showSaveModal, closeSaveModal, completeSaveModal, confirmSaveBeforeSubmit } from "/common/save-modal.js?v=1";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261029-1";
 
 export async function initWateringPage() {
   debugLog("initWateringPage start");
@@ -37,7 +38,10 @@ export async function initWateringPage() {
 
   await updateSelectedFieldsUI();
 
-  const btnSave = document.getElementById("save-btn");
+  mountPhotoAttach(document.getElementById("field-area-total").parentElement, {
+    getFields: () => filterState.fields || [],
+    getDate: () => document.getElementById("date")?.value || ""
+  }); = document.getElementById("save-btn");
   if (btnSave) {
     btnSave.onclick = saveWateringLog;
   }

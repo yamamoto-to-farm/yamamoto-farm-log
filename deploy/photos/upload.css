@@ -1,0 +1,9 @@
+.photo-attach { margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.photo-attach-count { color: #27834a; font-weight: 700; }
+.photo-upload-modal { width: min(92vw, 420px); max-height: 92vh; }
+.photo-upload-modal::backdrop { background: rgb(0 0 0 / 55%); }
+.photo-upload-form label { display: block; margin-top: 10px; font-weight: 700; }
+.photo-upload-form input, .photo-upload-form select, .photo-upload-form textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font-weight: 400; }
+.photo-upload-actions { display: flex; gap: 8px; margin-top: 14px; }
+.photo-upload-message { min-height: 1.2em; margin: 6px 0 0; }
+@media print { .photo-attach { display: none !important; } }
