@@ -23,6 +23,7 @@ import { enqueueSummaryUpdate } from "../common/summary.js";
 import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=7";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261029-1";
 import { buildSeedRemainingMap } from "/common/seed-remaining.js?v=1";
 
 
@@ -48,6 +49,11 @@ export async function initPlantingPage() {
   const fields = await createFieldSelector("field_auto", "field_area", "field_manual");
   autoDetectField("field_auto", "field_area", "field_manual");
   setupFieldModalPicker({ fields });
+
+  mountPhotoAttach(document.getElementById("fieldSelectedResult").parentElement, {
+    getFields: () => [getFinalField()],
+    getDate: () => document.getElementById("plantDate")?.value || ""
+  });
 
   // ★ seed/all.csv を1回だけ読み込む（403対策）
   GLOBAL_SEED_ROWS = await loadCSV("logs/seed/all.csv");

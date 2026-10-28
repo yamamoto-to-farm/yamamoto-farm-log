@@ -7,6 +7,7 @@ function debugLog(...args) {
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { openpesticideModal } from "/common/filter/filter-pesticide.js?v=1";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261029-1";
 import { setFilterData, getFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";
@@ -27,6 +28,11 @@ export async function initWeedingPage() {
   await applyMethodOptions();
 
   initActiveFilterUI();
+
+  mountPhotoAttach(document.getElementById("field-area-total").parentElement, {
+    getFields: () => filterState.fields || [],
+    getDate: () => document.getElementById("date")?.value || ""
+  });
 
   const btnField = document.getElementById("open-field-modal");
   if (btnField) {
