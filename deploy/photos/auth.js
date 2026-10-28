@@ -132,10 +132,10 @@ export async function finishLogin() {
   location.replace(destination);
 }
 
-export function logout() {
+export function logout(logoutUri = config.logout) {
   clearSession();
   sessionStorage.removeItem(TRANSACTION);
   const url = new URL("/logout", config.domain);
-  url.search = new URLSearchParams({ client_id: config.clientId, logout_uri: config.logout });
+  url.search = new URLSearchParams({ client_id: config.clientId, logout_uri: logoutUri });
   location.assign(url);
 }

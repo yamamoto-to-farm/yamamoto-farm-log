@@ -8,7 +8,7 @@ import { loadJSON, saveJSON } from "./json.js";
 import { saveLog } from "./save/index.js";
 import { nowJstIso } from "./date-utils.js";
 import { getPageAccess, loadAccessPages } from "./page-access.js?v=20261005-1";
-import { hasSession, ensureToken, getUsername, login as cognitoLogin, clearSession as clearCognitoSession } from "/photos/auth.js?v=20261029-1";
+import { hasSession, ensureToken, getUsername, login as cognitoLogin, logout as cognitoLogout, clearSession as clearCognitoSession } from "/photos/auth.js?v=20261029-2";
 
 
 // ===============================
@@ -286,7 +286,10 @@ export async function logoutAndRedirect(reason = "logout") {
   }
 
   clearAuthStorage();
-  clearCognitoSession();
+  if (hasSession()) {
+    cognitoLogout(location.origin + "/index.html");
+    return;
+  }
   location.href = "/index.html";
 }
 
