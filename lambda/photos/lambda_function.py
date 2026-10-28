@@ -17,8 +17,8 @@ LOGGER.setLevel(logging.INFO)
 S3 = boto3.client("s3", config=Config(signature_version="s3v4"))
 MAX_BYTES = 5 * 1024 * 1024
 PHOTO_ID = re.compile(r"^\d{8}T\d{12}Z_[0-9a-f]{32}$")
-CLIENT_ID = "49clkkvo6651mitlepretf5dji"
-ISSUER = "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_zoUQkOISD"
+CLIENT_ID = "mg1q2dnn576jln28m5sja6eaf"
+ISSUER = "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_OFiPcQjkC"
 
 
 class RequestError(Exception):

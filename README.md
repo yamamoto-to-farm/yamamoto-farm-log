@@ -39,8 +39,8 @@ removed while its placement is reconsidered; the photo page remains available.
   | POST | `/photos/complete` | Validate upload and publish its metadata |
 
 - JWT issuer:
-  `https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_zoUQkOISD`;
-  audience: `49clkkvo6651mitlepretf5dji`. Lambda also requires the verified
+  `https://cognito-idp.ap-northeast-1.amazonaws.com/  ap-northeast-1_OFiPcQjkC`;
+    audience: `mg1q2dnn576jln28m5sja6eaf`. Lambda also requires the verified
   claims to identify an access token for this client and issuer.
 - Ensure API Gateway has Lambda invoke permission for **each** route. The
   console integration normally adds this; if necessary use Lambda's

@@ -8,18 +8,62 @@ function base64url(bytes) {
 }
 
 export function clearSession() {
-  sessionStorage.removeItem(SESSION);
+  localStorage.removeItem(SESSION);
+}
+
+function readSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SESSION));
+    return session && typeof session.refreshToken === "string" ? session : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export function hasSession() {
+  return !!readSession();
 }
 
 export function getToken() {
-  const raw = sessionStorage.getItem(SESSION);
-  if (!raw) return null;
-  const session = JSON.parse(raw);
-  if (Date.now() >= session.expiresAt - 30000) {
+  const session = readSession();
+  if (!session || Date.now() >= session.expiresAt - 30000) return null;
+  return session.accessToken;
+}
+
+let refreshing = null;
+
+async function refreshSession(session) {
+  const response = await fetch(`${config.domain}/oauth2/token`, {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token", client_id: config.clientId, refresh_token: session.refreshToken
+    })
+  });
+  if (response.status === 400 || response.status === 401) {
     clearSession();
     return null;
   }
-  return session.accessToken;
+  if (!response.ok) throw new Error(`ログインの更新に失敗しました（${response.status}）。`);
+  const token = await response.json();
+  if (typeof token.access_token !== "string" || !Number.isFinite(token.expires_in) || token.expires_in <= 0) {
+    throw new Error("認証サーバーの応答が不正です。");
+  }
+  localStorage.setItem(SESSION, JSON.stringify({
+    accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1000,
+    refreshToken: session.refreshToken
+  }));
+  return token.access_token;
+}
+
+// 有効なアクセストークンを返す。期限切れならリフレッシュトークンで更新する。
+export async function ensureToken() {
+  const current = getToken();
+  if (current) return current;
+  const session = readSession();
+  if (!session) return null;
+  refreshing ||= refreshSession(session).finally(() => { refreshing = null; });
+  return refreshing;
 }
 
 export async function login(field) {
@@ -33,7 +77,7 @@ export async function login(field) {
   const url = new URL("/oauth2/authorize", config.domain);
   url.search = new URLSearchParams({
     client_id: config.clientId, redirect_uri: config.callback,
-    response_type: "code", scope: "openid email",
+    response_type: "code", scope: "openid",
     state, code_challenge: challenge, code_challenge_method: "S256"
   });
   location.assign(url);
@@ -63,11 +107,13 @@ export async function finishLogin() {
   if (!response.ok) throw new Error(`ログイン確認に失敗しました（${response.status}）。`);
   const token = await response.json();
   if (token.token_type !== "Bearer" || typeof token.access_token !== "string" ||
+      typeof token.refresh_token !== "string" ||
       !Number.isFinite(token.expires_in) || token.expires_in <= 0) {
     throw new Error("認証サーバーの応答が不正です。");
   }
-  sessionStorage.setItem(SESSION, JSON.stringify({
-    accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1000
+  localStorage.setItem(SESSION, JSON.stringify({
+    accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1000,
+    refreshToken: token.refresh_token
   }));
   const destination = new URL("/photos/index.html", location.origin);
   if (transaction.field) destination.searchParams.set("field", transaction.field);

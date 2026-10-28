@@ -1,5 +1,5 @@
 import { config } from "./config.js";
-import { clearSession, getToken, login, logout } from "./auth.js";
+import { clearSession, ensureToken, hasSession, login, logout } from "./auth.js";
 
 const element = id => document.getElementById(id);
 let selectedField = new URLSearchParams(location.search).get("field") || "";
@@ -15,7 +15,7 @@ function status(message, isError = false) {
 }
 
 function showSession() {
-  const authenticated = !!getToken();
+  const authenticated = hasSession();
   element("login").hidden = authenticated;
   element("logout").hidden = !authenticated;
   element("photo-area").hidden = !authenticated;
@@ -36,7 +36,7 @@ function report(error) {
 }
 
 async function api(path, data, signal) {
-  const token = getToken();
+  const token = await ensureToken();
   if (!token) throw new Error("写真用ログインの期限が切れました。再ログインしてください。");
   const url = new URL(`${config.api}${path}`);
   const options = {
