@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { clearSession, ensureToken, hasSession, login } from "./auth.js";
+import { fetchTopPhoto, setTopPhoto } from "./top.js";
 
 const MAX_PAGES = 10;
 let dialog;
@@ -50,7 +51,11 @@ function show(photo) {
   modal.showModal();
 }
 
-function render(container, photos, showField) {
+function canSetTop() {
+  return ["admin", "family"].includes(window.currentRole);
+}
+
+function render(container, photos, showField, topId, onSetTop) {
   const grid = document.createElement("div");
   grid.className = "photo-panel-grid";
   for (const photo of photos) {
@@ -68,6 +73,21 @@ function render(container, photos, showField) {
     const caption = document.createElement("figcaption");
     caption.textContent = showField ? `${photo.field}${photo.note ? "　" + photo.note : ""}` : `${photo.takenOn}${photo.note ? "　" + photo.note : ""}`;
     figure.append(button, caption);
+    if (onSetTop) {
+      if (photo.id === topId) {
+        const mark = document.createElement("span");
+        mark.className = "photo-panel-top";
+        mark.textContent = "★トップ写真";
+        figure.append(mark);
+      } else if (canSetTop()) {
+        const set = document.createElement("button");
+        set.type = "button";
+        set.className = "secondary-btn photo-panel-set-top";
+        set.textContent = "トップ写真にする";
+        set.addEventListener("click", () => onSetTop(photo, set));
+        figure.append(set);
+      }
+    }
     grid.append(figure);
   }
   container.replaceChildren(grid);
@@ -105,7 +125,22 @@ export async function mountPhotoPanel(container, query) {
     if (!isCurrent()) return;
     if (photos === null) message("ログインの有効期限が切れました。", true);
     else if (!photos.length) message("写真はありません。");
-    else render(container, photos, !!query.date);
+    else if (query.field) {
+      let topId = (await fetchTopPhoto(query.field).catch(() => null))?.id;
+      if (!isCurrent()) return;
+      const draw = () => render(container, photos, false, topId, async (photo, button) => {
+        button.disabled = true;
+        try {
+          await setTopPhoto(query.field, photo.id);
+          topId = photo.id;
+          draw();
+        } catch (error) {
+          button.disabled = false;
+          alert(error.message);
+        }
+      });
+      draw();
+    } else render(container, photos, !!query.date);
   } catch (error) {
     console.error("[photos]", error);
     if (isCurrent()) message(error.message);

@@ -4,6 +4,47 @@ import { openFieldModal } from "../common/filter/filter-field.js?v=1";
 import { setFilterData } from "../common/filter/filter-core.js?v=1";
 import { loadJSON } from "../common/json.js?v=1";
 import { buildCultivatingFieldSet } from "../common/cultivation.js?v=1";
+import { fetchTopPhoto } from "/photos/top.js?v=20261029-2";
+
+let topViewer;
+
+function openTopViewer(photo) {
+  if (!topViewer) {
+    topViewer = document.createElement("dialog");
+    topViewer.style.cssText = "max-width:95vw;max-height:95vh;padding:8px;";
+    topViewer.innerHTML = '<button type="button">閉じる</button><br><img alt="" style="max-width:90vw;max-height:80vh;"><p style="margin:4px 0 0;"></p>';
+    topViewer.querySelector("button").addEventListener("click", () => topViewer.close());
+    topViewer.addEventListener("close", () => topViewer.querySelector("img").removeAttribute("src"));
+    document.body.append(topViewer);
+  }
+  topViewer.querySelector("img").src = photo.url;
+  topViewer.querySelector("p").textContent = `${photo.field}　${photo.takenOn}${photo.note ? "　" + photo.note : ""}`;
+  topViewer.showModal();
+}
+
+// 圃場のトップ写真を取得してポップアップに表示する。写真がなければ何も出さない。
+async function showTopPhoto(containerId, fieldName) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  try {
+    const photo = await fetchTopPhoto(fieldName);
+    if (!photo || !document.body.contains(container)) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("aria-label", "トップ写真を拡大");
+    button.style.cssText = "border:0;padding:0;background:none;cursor:pointer;";
+    const image = document.createElement("img");
+    image.src = photo.url;
+    image.alt = `${fieldName}のトップ写真`;
+    image.referrerPolicy = "no-referrer";
+    image.style.cssText = "display:block;width:200px;max-width:100%;height:140px;object-fit:cover;border-radius:6px;";
+    button.append(image);
+    button.addEventListener("click", () => openTopViewer(photo));
+    container.replaceChildren(button);
+  } catch (error) {
+    console.error("[map] top photo failed", error);
+  }
+}
 
 export function initMap() {
 
@@ -122,6 +163,7 @@ export function initMap() {
         const popupHtml = `
           <div style="text-align:center;">
             <strong>${field.name}</strong><br><br>
+            <div id="top-${safeId}" style="margin-bottom:8px;"></div>
             <div style="margin-bottom:10px; color:#555;">
               耕作面積：${fieldMeta[field.name]?.size ?? "未入力"}反
               ${fieldMeta[field.name]?.cultivating
@@ -144,6 +186,7 @@ export function initMap() {
         marker.bindPopup(popupHtml);
 
         marker.on("popupopen", () => {
+          void showTopPhoto(`top-${safeId}`, field.name);
           const navBtn = document.getElementById(`nav-${safeId}`);
           if (navBtn) {
             navBtn.addEventListener("click", () => {

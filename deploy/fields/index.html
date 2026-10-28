@@ -9,7 +9,7 @@
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
   <link rel="stylesheet" href="./index.css?v=20261027-1">
-  <link rel="stylesheet" href="/photos/panel.css?v=20261029-1">
+  <link rel="stylesheet" href="/photos/panel.css?v=20261029-2">
 </head>
 
 <body>
@@ -83,7 +83,7 @@
         initAnalysisPage(field);
         document.getElementById("field-photos-link").href = `/photos/index.html?field=${encodeURIComponent(field)}`;
         document.getElementById("field-photos").hidden = false;
-        import("/photos/panel.js?v=20261029-1")
+        import("/photos/panel.js?v=20261029-2")
           .then(panel => panel.mountPhotoPanel(document.getElementById("field-photos-body"), { field }))
           .catch(error => console.error("[photos]", error));
 

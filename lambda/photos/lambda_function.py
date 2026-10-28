@@ -129,7 +129,7 @@ def lambda_handler(event, context):
         if not prefix or prefix.startswith("/") or not prefix.endswith("/"):
             raise RuntimeError("PHOTO_PREFIX must be a nonempty relative prefix ending with /")
         route = event.get("routeKey")
-        if route in ("GET /photos", "GET /photos/by-date"):
+        if route in ("GET /photos", "GET /photos/by-date", "GET /photos/top"):
             data = event.get("queryStringParameters") or {}
         else:
             raw = event.get("body") or "{}"
@@ -163,6 +163,29 @@ def lambda_handler(event, context):
         field = text(data, "field", 100)
         field_key = hashlib.sha256(field.encode("utf-8")).hexdigest()
         root = f"{prefix}fields/{field_key}/"
+
+        if route == "GET /photos/top":
+            try:
+                top = read_json(bucket, f"{prefix}tops/{field_key}.json")
+                record = read_json(bucket, f"{root}records/{top['id']}.json")
+            except RequestError:
+                return response(200, {"photo": None})
+            return response(200, {"photo": public_photo(bucket, record)})
+
+        if route == "POST /photos/top":
+            # API Gateway検証済みの cognito:groups のみ信頼する。値は "[admin family]" 形式で届く。
+            groups = str(claims.get("cognito:groups", "")).strip("[]").replace(",", " ").split()
+            if not {"admin", "family"} & set(groups):
+                raise RequestError(403, "トップ写真を設定する権限がありません。")
+            photo_id = text(data, "id", 80)
+            if not PHOTO_ID.fullmatch(photo_id):
+                raise RequestError(400, "写真IDが不正です。")
+            read_json(bucket, f"{root}records/{photo_id}.json")
+            write_json(bucket, f"{prefix}tops/{field_key}.json", {
+                "id": photo_id, "field": field, "setBy": claims["sub"],
+                "setAt": datetime.now(timezone.utc).isoformat(),
+            })
+            return response(200, {"id": photo_id})
 
         if route == "POST /photos/uploads":
             taken_on = text(data, "takenOn", 10)

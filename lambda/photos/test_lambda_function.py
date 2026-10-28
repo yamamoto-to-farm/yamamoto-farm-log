@@ -44,7 +44,7 @@ class PhotoApiTests(unittest.TestCase):
             "routeKey": route,
             "requestContext": {"authorizer": {"jwt": {"claims": self.claims if claims is None else claims}}},
         }
-        if route in ("GET /photos", "GET /photos/by-date"):
+        if route in ("GET /photos", "GET /photos/by-date", "GET /photos/top"):
             event["queryStringParameters"] = data
         else:
             event["body"] = json.dumps(data)
@@ -138,6 +138,44 @@ class PhotoApiTests(unittest.TestCase):
         self.assertEqual(fake_s3.list_objects_v2.call_args.kwargs["Prefix"], "photos/by-date/2026-10-26/")
         self.assertNotIn("imageKey", body["photos"][0])
         self.assertNotIn("uploadedBy", body["photos"][0])
+
+    def test_top_photo_requires_admin_or_family_group(self):
+        pid = "20261026T090000123456Z_" + "a" * 32
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(self.metadata()).encode())}
+        for groups in (None, "[worker]"):
+            claims = dict(self.claims)
+            if groups:
+                claims["cognito:groups"] = groups
+            self.assertEqual(self.call("POST /photos/top", {"field": "A", "id": pid}, claims)[0], 403)
+        fake_s3.put_object.assert_not_called()
+        for groups in ("[family]", "[worker admin]"):
+            fake_s3.put_object.reset_mock()
+            fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(self.metadata()).encode())}
+            status, _ = self.call("POST /photos/top", {"field": "A", "id": pid}, {**self.claims, "cognito:groups": groups})
+            self.assertEqual(status, 200)
+            self.assertIn("photos/tops/", fake_s3.put_object.call_args.kwargs["Key"])
+
+    def test_top_photo_must_exist_and_have_valid_id(self):
+        claims = {**self.claims, "cognito:groups": "[admin]"}
+        self.assertEqual(self.call("POST /photos/top", {"field": "A", "id": "../x"}, claims)[0], 400)
+        fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+        pid = "20261026T090000123456Z_" + "a" * 32
+        self.assertEqual(self.call("POST /photos/top", {"field": "A", "id": pid}, claims)[0], 404)
+        fake_s3.put_object.assert_not_called()
+
+    def test_get_top_returns_photo_or_none(self):
+        metadata = self.metadata()
+        fake_s3.generate_presigned_url.return_value = "https://signed.invalid/image"
+        fake_s3.get_object.side_effect = [
+            {"Body": io.BytesIO(json.dumps({"id": metadata["id"]}).encode())},
+            {"Body": io.BytesIO(json.dumps(metadata).encode())},
+        ]
+        status, body = self.call("GET /photos/top", {"field": "A"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["photo"]["url"], "https://signed.invalid/image")
+        self.assertNotIn("uploadedBy", body["photo"])
+        fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+        self.assertEqual(self.call("GET /photos/top", {"field": "A"}), (200, {"photo": None}))
 
     def test_by_date_rejects_bad_date_and_anonymous(self):
         self.assertEqual(self.call("GET /photos/by-date", {"date": "2026-13-01"})[0], 400)
