@@ -1,0 +1,11 @@
+.photo-panel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.photo-panel-grid figure { margin: 0; overflow-wrap: anywhere; }
+.photo-panel-grid button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.photo-panel-grid img { display: block; width: 100%; height: 130px; object-fit: cover; border-radius: 6px; }
+.photo-panel-grid figcaption { font-size: 12px; margin-top: 4px; }
+.photo-panel-message { margin: 0 0 8px; }
+.photo-panel-viewer { max-width: 95vw; max-height: 95vh; }
+.photo-panel-viewer::backdrop { background: rgb(0 0 0 / 70%); }
+.photo-panel-viewer img { display: block; max-width: 85vw; max-height: 75vh; }
+.photo-panel-viewer p { white-space: pre-wrap; }
+@media print { .photo-panel { display: none !important; } }

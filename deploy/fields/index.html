@@ -9,6 +9,7 @@
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
   <link rel="stylesheet" href="./index.css?v=20261027-1">
+  <link rel="stylesheet" href="/photos/panel.css?v=20261029-1">
 </head>
 
 <body>
@@ -19,6 +20,12 @@
 
     <!-- ★ 分析カード or 圃場一覧 -->
     <div id="analysis-container">読み込み中…</div>
+
+    <section id="field-photos" class="card photo-panel" hidden>
+      <h2 class="section-title">圃場の写真</h2>
+      <div id="field-photos-body"></div>
+      <p><a id="field-photos-link" href="/photos/index.html">写真の追加・一覧ページへ</a></p>
+    </section>
 
     <!-- 地図に戻る -->
     <div class="back-action-slot">
@@ -74,6 +81,11 @@
           });
         }
         initAnalysisPage(field);
+        document.getElementById("field-photos-link").href = `/photos/index.html?field=${encodeURIComponent(field)}`;
+        document.getElementById("field-photos").hidden = false;
+        import("/photos/panel.js?v=20261029-1")
+          .then(panel => panel.mountPhotoPanel(document.getElementById("field-photos-body"), { field }))
+          .catch(error => console.error("[photos]", error));
 
       } else {
         document.getElementById("field-name").textContent =

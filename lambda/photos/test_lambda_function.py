@@ -44,7 +44,7 @@ class PhotoApiTests(unittest.TestCase):
             "routeKey": route,
             "requestContext": {"authorizer": {"jwt": {"claims": self.claims if claims is None else claims}}},
         }
-        if route == "GET /photos":
+        if route in ("GET /photos", "GET /photos/by-date"):
             event["queryStringParameters"] = data
         else:
             event["body"] = json.dumps(data)
@@ -124,7 +124,40 @@ class PhotoApiTests(unittest.TestCase):
         status, body = self.call("POST /photos/complete", {"field": "A", "id": metadata["id"]})
         self.assertEqual(status, 200)
         self.assertEqual(body["id"], metadata["id"])
-        self.assertIn("/records/", fake_s3.put_object.call_args.kwargs["Key"])
+        keys = [c.kwargs["Key"] for c in fake_s3.put_object.call_args_list]
+        self.assertTrue(any("/records/" in key for key in keys))
+        self.assertIn(f"photos/by-date/2026-10-26/{metadata['id']}.json", keys)
+
+    def test_by_date_lists_all_fields_without_private_fields(self):
+        metadata = self.metadata()
+        fake_s3.list_objects_v2.return_value = {"Contents": [{"Key": "photos/by-date/2026-10-26/x.json"}]}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(metadata).encode())}
+        fake_s3.generate_presigned_url.return_value = "https://signed.invalid/image"
+        status, body = self.call("GET /photos/by-date", {"date": "2026-10-26"})
+        self.assertEqual(status, 200)
+        self.assertEqual(fake_s3.list_objects_v2.call_args.kwargs["Prefix"], "photos/by-date/2026-10-26/")
+        self.assertNotIn("imageKey", body["photos"][0])
+        self.assertNotIn("uploadedBy", body["photos"][0])
+
+    def test_by_date_rejects_bad_date_and_anonymous(self):
+        self.assertEqual(self.call("GET /photos/by-date", {"date": "2026-13-01"})[0], 400)
+        self.assertEqual(self.call("GET /photos/by-date", {"date": "../"})[0], 400)
+        self.assertEqual(self.call("GET /photos/by-date", {"date": "2026-10-26"}, {})[0], 401)
+
+    def test_backfill_indexes_only_records(self):
+        metadata = self.metadata()
+        fake_s3.list_objects_v2.return_value = {"Contents": [
+            {"Key": "photos/fields/h/images/a.jpg"}, {"Key": "photos/fields/h/records/a.json"}]}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(metadata).encode())}
+        result = api.lambda_handler({"action": "backfill"}, None)
+        self.assertEqual(result, {"indexed": 1})
+        self.assertIn("by-date/2026-10-26/", fake_s3.put_object.call_args.kwargs["Key"])
+
+    def test_api_event_cannot_trigger_backfill(self):
+        fake_s3.list_objects_v2.return_value = {"Contents": []}
+        status, _ = self.call("GET /photos/by-date", {"date": "2026-10-26", "action": "backfill"})
+        self.assertEqual(status, 200)
+        fake_s3.put_object.assert_not_called()
 
     def test_other_user_cannot_complete_upload(self):
         metadata = self.metadata("user-2")

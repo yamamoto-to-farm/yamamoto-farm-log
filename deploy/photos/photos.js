@@ -200,7 +200,11 @@ async function upload(event) {
   }
 }
 
-element("login").addEventListener("click", () => login(selectedField).catch(report));
+element("login").addEventListener("click", () => {
+  const target = new URL("/photos/index.html", location.origin);
+  if (selectedField) target.searchParams.set("field", selectedField);
+  login(target.pathname + target.search).catch(report);
+});
 element("logout").addEventListener("click", () => {
   logout();
   showSession();

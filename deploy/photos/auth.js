@@ -66,14 +66,14 @@ export async function ensureToken() {
   return refreshing;
 }
 
-export async function login(field) {
+export async function login(returnTo = "/photos/index.html") {
   clearSession();
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const state = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const challenge = base64url(new Uint8Array(
     await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))
   ));
-  sessionStorage.setItem(TRANSACTION, JSON.stringify({ verifier, state, field, createdAt: Date.now() }));
+  sessionStorage.setItem(TRANSACTION, JSON.stringify({ verifier, state, returnTo, createdAt: Date.now() }));
   const url = new URL("/oauth2/authorize", config.domain);
   url.search = new URLSearchParams({
     client_id: config.clientId, redirect_uri: config.callback,
@@ -115,8 +115,9 @@ export async function finishLogin() {
     accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1000,
     refreshToken: token.refresh_token
   }));
-  const destination = new URL("/photos/index.html", location.origin);
-  if (transaction.field) destination.searchParams.set("field", transaction.field);
+  // 同一オリジンの相対パスのみ許可(オープンリダイレクト防止)
+  const destination = new URL(transaction.returnTo || "/photos/index.html", location.origin);
+  if (destination.origin !== location.origin) destination.href = new URL("/photos/index.html", location.origin).href;
   location.replace(destination);
 }
 

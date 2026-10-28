@@ -67,7 +67,51 @@ def write_json(bucket, key, data):
     )
 
 
+def valid_date(value, message):
+    try:
+        if date.fromisoformat(value).isoformat() != value:
+            raise ValueError("noncanonical date")
+    except ValueError as error:
+        raise RequestError(400, message) from error
+
+
+def public_photo(bucket, metadata):
+    metadata = dict(metadata)
+    metadata.pop("uploadedBy", None)
+    image_key = metadata.pop("imageKey")
+    metadata["url"] = S3.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": bucket, "Key": image_key,
+            "ResponseContentType": "image/jpeg",
+            "ResponseContentDisposition": "inline",
+            "ResponseCacheControl": "no-store",
+        },
+        ExpiresIn=300,
+    )
+    return metadata
+
+
+def backfill_date_index(bucket, prefix):
+    # Lambdaコンソールから {"action": "backfill"} で手動実行する(API経由では到達不可)。
+    count = 0
+    options = {"Bucket": bucket, "Prefix": f"{prefix}fields/"}
+    while True:
+        listing = S3.list_objects_v2(**options)
+        for item in listing.get("Contents", []):
+            if "/records/" not in item["Key"]:
+                continue
+            metadata = read_json(bucket, item["Key"])
+            write_json(bucket, f"{prefix}by-date/{metadata['takenOn']}/{metadata['id']}.json", metadata)
+            count += 1
+        if not listing.get("IsTruncated"):
+            return count
+        options["ContinuationToken"] = listing["NextContinuationToken"]
+
+
 def lambda_handler(event, context):
+    if event.get("action") == "backfill" and "routeKey" not in event:
+        return {"indexed": backfill_date_index(os.environ["PHOTO_BUCKET"], os.environ["PHOTO_PREFIX"])}
     try:
         # Trust only API Gateway's verified claims, never request body/localStorage roles.
         claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
@@ -85,7 +129,7 @@ def lambda_handler(event, context):
         if not prefix or prefix.startswith("/") or not prefix.endswith("/"):
             raise RuntimeError("PHOTO_PREFIX must be a nonempty relative prefix ending with /")
         route = event.get("routeKey")
-        if route == "GET /photos":
+        if route in ("GET /photos", "GET /photos/by-date"):
             data = event.get("queryStringParameters") or {}
         else:
             raw = event.get("body") or "{}"
@@ -100,18 +144,31 @@ def lambda_handler(event, context):
             if not isinstance(data, dict):
                 raise RequestError(400, "JSONオブジェクトを指定してください。")
 
+        if route == "GET /photos/by-date":
+            day = text(data, "date", 10)
+            valid_date(day, "日付が不正です。")
+            options = {"Bucket": bucket, "Prefix": f"{prefix}by-date/{day}/", "MaxKeys": 50}
+            cursor = text(data, "cursor", 4096, required=False)
+            if cursor:
+                options["ContinuationToken"] = cursor
+            try:
+                listing = S3.list_objects_v2(**options)
+            except ClientError as error:
+                if cursor and error.response["Error"]["Code"] in ("InvalidArgument", "InvalidToken"):
+                    raise RequestError(400, "一覧の続きの取得に失敗しました。一覧を更新してください。") from error
+                raise
+            photos = [public_photo(bucket, read_json(bucket, item["Key"])) for item in listing.get("Contents", [])]
+            return response(200, {"photos": photos, "cursor": listing.get("NextContinuationToken")})
+
         field = text(data, "field", 100)
         field_key = hashlib.sha256(field.encode("utf-8")).hexdigest()
         root = f"{prefix}fields/{field_key}/"
 
         if route == "POST /photos/uploads":
             taken_on = text(data, "takenOn", 10)
-            try:
-                if date.fromisoformat(taken_on).isoformat() != taken_on:
-                    raise ValueError("noncanonical date")
-            except ValueError as error:
-                raise RequestError(400, "撮影日が不正です。") from error
+            valid_date(taken_on, "撮影日が不正です。")
             note = text(data, "note", 1000, required=False)
+            log_id = text(data, "logId", 100, required=False)
             photo_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_") + uuid.uuid4().hex
             image_key = f"{root}images/{photo_id}.jpg"
             metadata = {
@@ -119,6 +176,8 @@ def lambda_handler(event, context):
                 "uploadedAt": datetime.now(timezone.utc).isoformat(),
                 "uploadedBy": claims["sub"], "imageKey": image_key,
             }
+            if log_id:
+                metadata["logId"] = log_id
             write_json(bucket, f"{root}pending/{photo_id}.json", metadata)
             upload = S3.generate_presigned_post(
                 Bucket=bucket, Key=image_key,
@@ -152,6 +211,7 @@ def lambda_handler(event, context):
                 if stream.read() != b"\xff\xd8\xff":
                     raise RequestError(400, "JPEG画像ではありません。")
             write_json(bucket, f"{root}records/{photo_id}.json", metadata)
+            write_json(bucket, f"{prefix}by-date/{metadata['takenOn']}/{photo_id}.json", metadata)
             return response(200, {"id": photo_id})
 
         if route == "GET /photos":
@@ -167,20 +227,7 @@ def lambda_handler(event, context):
                 raise
             photos = []
             for item in listing.get("Contents", []):
-                metadata = read_json(bucket, item["Key"])
-                metadata.pop("uploadedBy", None)
-                image_key = metadata.pop("imageKey")
-                metadata["url"] = S3.generate_presigned_url(
-                    "get_object",
-                    Params={
-                        "Bucket": bucket, "Key": image_key,
-                        "ResponseContentType": "image/jpeg",
-                        "ResponseContentDisposition": "inline",
-                        "ResponseCacheControl": "no-store",
-                    },
-                    ExpiresIn=300,
-                )
-                photos.append(metadata)
+                photos.append(public_photo(bucket, read_json(bucket, item["Key"])))
             return response(200, {"photos": photos, "cursor": listing.get("NextContinuationToken")})
 
         raise RequestError(404, "APIルートが見つかりません。")

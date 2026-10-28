@@ -10,6 +10,7 @@ import { initViewPageWithOptions } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
+import { renderDayPhotos } from "./day-photos.js?v=20261029-1";
 import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
@@ -452,6 +453,7 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
 
   void refreshDiaryMonthMini(date);
   void renderWeatherBox(date);
+  void renderDayPhotos(date);
 
   const data = await loadDiaryScreenData(date);
   if (renderSeq !== diaryRenderSeq) return;
