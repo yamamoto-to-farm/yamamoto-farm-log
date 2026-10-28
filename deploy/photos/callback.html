@@ -4,16 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>写真ログイン確認 - 山本農園</title>
+  <title>ログイン中 - 山本農園</title>
 </head>
 <body>
-  <p id="status" role="status">ログインを確認しています…</p>
-  <a href="/photos/index.html">写真ページへ戻る</a>
+  <div id="error" hidden>
+    <p id="status" role="status"></p>
+    <a href="/index.html">トップへ戻る</a>
+  </div>
   <script type="module">
-    import { finishLogin } from "./auth.js";
+    import { finishLogin } from "./auth.js?v=20261029-2";
     finishLogin().catch(error => {
       console.error("[photos] login failed", error);
       document.getElementById("status").textContent = error.message;
+      document.getElementById("error").hidden = false;
     });
   </script>
 </body>
