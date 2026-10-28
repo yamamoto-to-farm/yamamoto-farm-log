@@ -76,7 +76,9 @@ removed while its placement is reconsidered; the photo page remains available.
   Frontend edit tests: `node --test tests\photos-edit.test.cjs`.
 
 - Diary layout: date navigation and weather share a row above 760px and stack
-  on smaller screens. Clicking the date opens a calendar dialog; day photos
+  on smaller screens. Work cards use compact spacing and expand with their
+  content, using page scrolling instead of a nested work-content scrollbar.
+  Clicking the date opens a calendar dialog; day photos
   load only when "この日の写真を見る" opens its dialog. The button loads only a
   count via authenticated `GET /photos/by-date?date=YYYY-MM-DD&countOnly=1`
   (`{"total": N}`), listing index keys without reading photo metadata or images.

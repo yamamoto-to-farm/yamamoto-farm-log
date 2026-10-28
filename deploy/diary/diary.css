@@ -523,7 +523,6 @@
 }
 
 #workContentWrapper {
-  max-height: min(64vh, 580px);
   padding: 2px 2px 2px 0;
   margin-bottom: 18px;
 }
@@ -755,7 +754,6 @@
   }
 
   #workContentWrapper {
-    max-height: min(64vh, 580px);
     padding: 2px 2px 2px 0;
     margin-bottom: 18px;
   }
@@ -1152,14 +1150,42 @@
 
 /* 作業内容 */
 #workContentWrapper {
-  height: min(62vh, 560px);
-  min-height: 180px;
+  height: auto;
+  min-height: 0;
   max-height: none;
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
-  padding-right: 6px;
+  overflow: visible;
   margin-bottom: 18px;
-  border-radius: 6px;
+}
+
+@media screen {
+  .edit-card,
+  .view-card {
+    padding: 12px 16px;
+    margin-bottom: 12px;
+  }
+
+  .edit-card h3,
+  .view-card h3 {
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+  }
+
+  .merged-work-details {
+    margin-top: 8px;
+    padding: 0 10px;
+    border-radius: 8px;
+  }
+
+  .merged-work-details summary {
+    margin: 0;
+    padding: 6px 0;
+    font-size: 0.95rem;
+    line-height: 24px;
+  }
+
+  .merged-work-list {
+    margin: 0 0 10px;
+  }
 }
 
 .work-list-toolbar {

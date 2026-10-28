@@ -30,31 +30,7 @@ let isEditPageLoading = false;
 let isDiarySaving = false;
 let isDiaryPdfPrinting = false;
 let diaryRenderSeq = 0;
-let workContentHeightRaf = 0;
 let diaryCalendarSeq = 0;
-
-function applyWorkContentWrapperHeight() {
-  const wrapper = document.getElementById("workContentWrapper");
-  if (!wrapper) return;
-
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  if (!viewportHeight) return;
-
-  const rect = wrapper.getBoundingClientRect();
-  const bottomGap = 12;
-  const minHeight = viewportHeight <= 760 ? 180 : 220;
-  const nextHeight = Math.max(minHeight, Math.floor(viewportHeight - rect.top - bottomGap));
-
-  wrapper.style.height = `${nextHeight}px`;
-}
-
-function scheduleWorkContentWrapperHeightSync() {
-  if (workContentHeightRaf) return;
-  workContentHeightRaf = window.requestAnimationFrame(() => {
-    workContentHeightRaf = 0;
-    applyWorkContentWrapperHeight();
-  });
-}
 
 function shiftDateByDays(dateStr, diffDays) {
   if (!dateStr) return "";
@@ -522,8 +498,6 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
   if (updateHistory) {
     history.replaceState({}, "", buildDiaryUrl(mode, date, currentSearch));
   }
-
-  scheduleWorkContentWrapperHeightSync();
 
   return data;
 }
@@ -1080,21 +1054,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ▼ 折りたたみ（作業ログ一覧）
   initCollapse("workListTitle", "workList");
 
-  const recalcTargets = ["diarySearchTitle", "workListTitle", "diaryMonthToggleBtn", "diaryDate"];
-  recalcTargets.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el || el.dataset.boundHeightSync === "1") return;
-    el.dataset.boundHeightSync = "1";
-    el.addEventListener("click", () => {
-      window.setTimeout(scheduleWorkContentWrapperHeightSync, 220);
-    });
-  });
-
-  window.addEventListener("resize", scheduleWorkContentWrapperHeightSync, { passive: true });
-  window.addEventListener("orientationchange", scheduleWorkContentWrapperHeightSync);
-
   await renderDiaryForDate({ mode, date: initialDate, saveBtn: null, updateHistory: false, clearSearch: false });
-  scheduleWorkContentWrapperHeightSync();
 
   // ---------------------------------------------------------
   // 保存イベント（編集モードのみ）
@@ -1154,7 +1114,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     syncDiaryDateDisplay(d);
     syncDiaryDayNavigationLabels(d);
     await renderDiaryForDate({ mode, date: d, saveBtn });
-    scheduleWorkContentWrapperHeightSync();
   });
 
   // 編集画面から戻る時（BFCache復帰）に古い CSV キャッシュを破棄して再読込する
@@ -1165,7 +1124,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     clearWorkSummaryCache();
     await renderDiaryForDate({ mode, date: d, saveBtn, updateHistory: false });
-    scheduleWorkContentWrapperHeightSync();
   });
   // (印刷時の一時処理は削除されました)
 });
