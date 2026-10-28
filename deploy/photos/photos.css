@@ -37,3 +37,7 @@
 .viewer-actions a { text-decoration: none; display: inline-block; }
 .danger-btn { padding: 10px 14px; border: 0; border-radius: 8px; background: #b91c1c; color: #fff; font-weight: 600; cursor: pointer; margin-left: auto; }
 .danger-btn:disabled { opacity: .5; }
+.photo-edit-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+.photo-edit-form label { display: block; font-weight: 600; margin-top: 8px; }
+.photo-edit-form .form-input, .photo-edit-form .form-textarea { width: 100%; box-sizing: border-box; }
+.photo-edit-form .viewer-actions { margin-top: 12px; }

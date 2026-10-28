@@ -20,6 +20,7 @@ let total = 0;
 let current = -1;
 let generation = 0;
 let selectedFields = [];
+let editingBusy = false;
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -170,6 +171,8 @@ function openViewer(index) {
   element("next").disabled = index === photos.length - 1 && !cursor;
   element("set-top").hidden = !canManageTop();
   element("delete").hidden = !photo.canDelete;
+  element("edit-photo").hidden = !photo.canEdit;
+  element("photo-edit-form").hidden = true;
   element("open-diary").href = `/diary/index.html?mode=view&date=${photo.takenOn}`;
   viewerStatus("");
   if (!element("viewer").open) element("viewer").showModal();
@@ -181,6 +184,7 @@ function viewerStatus(message, isError = false) {
 }
 
 async function step(delta) {
+  if (editingBusy || !element("photo-edit-form").hidden) return;
   const next = current + delta;
   if (next < 0) return;
   if (next >= photos.length) {
@@ -216,6 +220,50 @@ async function makeTop() {
     viewerStatus(`「${photo.field}」のトップ写真に設定しました。`);
   } catch (error) {
     viewerStatus(error.message, true);
+  }
+}
+
+function startEditing() {
+  const photo = photos[current];
+  if (!photo?.canEdit) return;
+  element("edit-taken-on").value = photo.takenOn;
+  element("edit-note").value = photo.note || "";
+  element("photo-edit-form").hidden = false;
+  viewerStatus("");
+  element("edit-note").focus();
+}
+
+async function saveEditing(event) {
+  event.preventDefault();
+  if (editingBusy) return;
+  const photo = photos[current];
+  if (!photo?.canEdit) return;
+  editingBusy = true;
+  const controls = [...element("viewer").querySelectorAll("button, input, textarea")];
+  const previous = controls.map(control => control.disabled);
+  controls.forEach(control => { control.disabled = true; });
+  let saved = false;
+  try {
+    viewerStatus("変更を保存しています…");
+    await api("/photos/edit", { body: {
+      field: photo.field, id: photo.id,
+      takenOn: element("edit-taken-on").value, note: element("edit-note").value
+    } });
+    saved = true;
+    element("photo-edit-form").hidden = true;
+    element("viewer").close();
+    await load();
+    status("写真のメモ・撮影日を更新しました。");
+  } catch (error) {
+    console.error("[photos] edit failed", error);
+    if (saved) {
+      report(new Error(`変更は保存されましたが、一覧を更新できませんでした。「検索」で更新してください。 ${error.message}`));
+    } else {
+      viewerStatus(error.message, true);
+    }
+  } finally {
+    editingBusy = false;
+    controls.forEach((control, index) => { control.disabled = previous[index]; });
   }
 }
 
@@ -265,6 +313,15 @@ function bind() {
   element("close-viewer").addEventListener("click", () => element("viewer").close());
   element("viewer").addEventListener("close", () => element("full-image").removeAttribute("src"));
   element("set-top").addEventListener("click", makeTop);
+  element("edit-photo").addEventListener("click", startEditing);
+  element("photo-edit-form").addEventListener("submit", saveEditing);
+  element("cancel-edit").addEventListener("click", () => {
+    element("photo-edit-form").hidden = true;
+    viewerStatus("");
+  });
+  element("viewer").addEventListener("cancel", event => {
+    if (editingBusy) event.preventDefault();
+  });
   element("delete").addEventListener("click", removeCurrent);
   element("viewer").addEventListener("keydown", event => {
     if (event.key === "ArrowLeft") step(-1);

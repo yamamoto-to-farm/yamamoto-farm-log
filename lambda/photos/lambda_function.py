@@ -100,8 +100,11 @@ def user_groups(claims):
     return set(str(claims.get("cognito:groups", "")).strip("[]").replace(",", " ").split())
 
 
-def list_date_keys(bucket, prefix, start, end):
+def list_date_keys(bucket, prefix, start, end, field=None):
     base = f"{prefix}by-date/"
+    if field is not None:
+        digest = hashlib.sha256(field.encode("utf-8")).hexdigest()
+        base = f"{prefix}by-field-date/{digest}/"
     options = {"Bucket": bucket, "Prefix": base, "StartAfter": f"{base}{start}/"}
     keys = []
     while True:
@@ -110,7 +113,8 @@ def list_date_keys(bucket, prefix, start, end):
             if item["Key"][len(base):len(base) + 10] > end:
                 return keys
             keys.append(item["Key"])
-            if len(keys) > MAX_SEARCH_KEYS:
+            limit = 100000 if os.environ.get("PHOTO_SEARCH_INDEX_VERSION") == "2" else MAX_SEARCH_KEYS
+            if len(keys) > limit:
                 raise RequestError(400, "対象の写真が多すぎます。期間を狭めてください。")
         if not listing.get("IsTruncated"):
             return keys
@@ -122,6 +126,39 @@ def read_json_or_none(bucket, key):
         return read_json(bucket, key)
     except RequestError:
         return None
+
+
+def field_date_key(prefix, metadata):
+    digest = hashlib.sha256(metadata["field"].encode("utf-8")).hexdigest()
+    return f"{prefix}by-field-date/{digest}/{metadata['takenOn']}/{metadata['id']}.json"
+
+
+def write_indexes(bucket, prefix, metadata):
+    write_json(bucket, field_date_key(prefix, metadata), metadata)
+    write_json(bucket, f"{prefix}by-date/{metadata['takenOn']}/{metadata['id']}.json", metadata)
+
+
+def edit_photo(bucket, prefix, root, data, claims):
+    if not {"admin", "family"} & user_groups(claims):
+        raise RequestError(403, "写真を編集する権限がありません。")
+    photo_id = text(data, "id", 80)
+    if not PHOTO_ID.fullmatch(photo_id):
+        raise RequestError(400, "写真IDが不正です。")
+    taken_on = text(data, "takenOn", 10)
+    valid_date(taken_on, "撮影日が不正です。")
+    note = text(data, "note", 1000, required=False)
+    original = read_json(bucket, f"{root}records/{photo_id}.json")
+    metadata = {**original, "takenOn": taken_on, "note": note,
+                "updatedAt": datetime.now(timezone.utc).isoformat()}
+    # Keep pending metadata consistent so retrying /complete cannot undo an edit.
+    write_json(bucket, f"{root}pending/{photo_id}.json", metadata)
+    write_json(bucket, f"{root}records/{photo_id}.json", metadata)
+    write_indexes(bucket, prefix, metadata)
+    if original["takenOn"] != taken_on:
+        S3.delete_object(Bucket=bucket, Key=field_date_key(prefix, original))
+        S3.delete_object(
+            Bucket=bucket, Key=f"{prefix}by-date/{original['takenOn']}/{photo_id}.json")
+    return {"id": photo_id, "takenOn": taken_on, "note": note}
 
 
 def search_photos(bucket, prefix, data, claims):
@@ -147,8 +184,15 @@ def search_photos(bucket, prefix, data, claims):
         raise RequestError(400, "一覧の続きの取得に失敗しました。一覧を更新してください。")
     offset = int(cursor or 0)
 
-    keys = sorted(list_date_keys(bucket, prefix, start, end), reverse=True)
-    if fields:
+    indexed = os.environ.get("PHOTO_SEARCH_INDEX_VERSION") == "2"
+    if indexed and fields:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            batches = pool.map(lambda name: list_date_keys(bucket, prefix, start, end, name), sorted(fields))
+            keys = [key for batch in batches for key in batch]
+        keys.sort(key=lambda key: tuple(key.rsplit("/", 2)[-2:]), reverse=True)
+    else:
+        keys = sorted(list_date_keys(bucket, prefix, start, end), reverse=True)
+    if fields and not indexed:
         with ThreadPoolExecutor(max_workers=8) as pool:
             records = list(pool.map(lambda key: read_json_or_none(bucket, key), keys))
         matched = [record for record in records if record and record.get("field") in fields]
@@ -167,6 +211,7 @@ def search_photos(bucket, prefix, data, claims):
         mine = record.get("uploadedBy") == claims["sub"]
         photo = public_photo(bucket, record)
         photo["canDelete"] = mine or bool({"admin", "family"} & groups)
+        photo["canEdit"] = bool({"admin", "family"} & groups)
         photos.append(photo)
     return {"photos": photos, "cursor": str(end_index) if end_index < total else None, "total": total}
 
@@ -181,6 +226,7 @@ def delete_photo(bucket, prefix, root, field_key, photo_id, claims):
         f"{root}records/{photo_id}.json",
         f"{root}pending/{photo_id}.json",
         f"{prefix}by-date/{record['takenOn']}/{photo_id}.json",
+        field_date_key(prefix, record),
     ]
     for key in keys:
         S3.delete_object(Bucket=bucket, Key=key)
@@ -199,7 +245,7 @@ def backfill_date_index(bucket, prefix):
             if "/records/" not in item["Key"]:
                 continue
             metadata = read_json(bucket, item["Key"])
-            write_json(bucket, f"{prefix}by-date/{metadata['takenOn']}/{metadata['id']}.json", metadata)
+            write_indexes(bucket, prefix, metadata)
             count += 1
         if not listing.get("IsTruncated"):
             return count
@@ -292,6 +338,9 @@ def lambda_handler(event, context):
             delete_photo(bucket, prefix, root, field_key, photo_id, claims)
             return response(200, {"id": photo_id})
 
+        if route == "POST /photos/edit":
+            return response(200, edit_photo(bucket, prefix, root, data, claims))
+
         if route == "POST /photos/uploads":
             taken_on = text(data, "takenOn", 10)
             valid_date(taken_on, "撮影日が不正です。")
@@ -339,7 +388,7 @@ def lambda_handler(event, context):
                 if stream.read() != b"\xff\xd8\xff":
                     raise RequestError(400, "JPEG画像ではありません。")
             write_json(bucket, f"{root}records/{photo_id}.json", metadata)
-            write_json(bucket, f"{prefix}by-date/{metadata['takenOn']}/{photo_id}.json", metadata)
+            write_indexes(bucket, prefix, metadata)
             return response(200, {"id": photo_id})
 
         if route == "GET /photos":

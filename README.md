@@ -25,9 +25,9 @@ removed while its placement is reconsidered; the photo page remains available.
 - Environment: `PHOTO_BUCKET=yamamoto-farm-private-photos`,
   `PHOTO_PREFIX=photos/`.
 - Execution role: `s3:ListBucket` on the private bucket, restricted to
-  `photos/` and `photos/*`; `s3:GetObject` and `s3:PutObject` on
+  `photos/` and `photos/*`; `s3:GetObject`, `s3:PutObject`, and `s3:DeleteObject` on
   `arn:aws:s3:::yamamoto-farm-private-photos/photos/*`. Keep the basic CloudWatch
-  Logs policy. No delete permission or access to the public bucket is required.
+  Logs policy. No access to the public bucket is required.
 - HTTP API Lambda proxy integration: payload format **2.0**. All routes
   below must use JWT authorizer `farm-photos-cognito` and required scope
   **openid**:
@@ -38,6 +38,7 @@ removed while its placement is reconsidered; the photo page remains available.
   | GET | `/photos/search` | Search by date range and optional fields, 24 per page |
   | POST | `/photos/uploads` | Issue a 5-minute size-limited S3 POST |
   | POST | `/photos/complete` | Validate upload and publish its metadata |
+  | POST | `/photos/edit` | Edit note and takenOn; admin/family only |
 
 - Photo search requires `from` and `to` (YYYY-MM-DD). Optional `fields` is a
   JSON-encoded array of field names; omitted or empty means all fields. The
@@ -46,6 +47,33 @@ removed while its placement is reconsidered; the photo page remains available.
   `field` parameters to restore multiple selections. Gallery filters support
   area-wide selection; photo uploads still select exactly one destination.
   Redeploy the Lambda before publishing the multi-field gallery frontend.
+
+- Photo editing accepts `field`, `id`, `takenOn` (YYYY-MM-DD), and `note`
+  (at most 1000 characters). Only verified Cognito `admin`/`family` groups may
+  edit, including for the uploader's own photos. The gallery uses `canEdit`
+  from the API, not a local role check. A date change updates both date indexes
+  and removes the old entries; field, image, ID, and uploader stay unchanged.
+  Existing top-photo selections continue pointing to the same photo.
+- Faster S3 search (no new AWS service):
+  1. Deploy the new Lambda; leave `PHOTO_SEARCH_INDEX_VERSION` unset initially.
+     Upload completion, editing, and deletion maintain
+     `photos/by-field-date/<field-sha256>/<takenOn>/<id>.json`.
+  2. While uploads, edits, and deletes are paused, invoke the Lambda directly
+     with `{"action":"backfill"}` (not through API Gateway). Wait for a successful
+     `{"indexed": N}` response. This also repairs the legacy by-date entries for
+     current records. The operation can be rerun after an interrupted migration.
+  3. Add environment variable `PHOTO_SEARCH_INDEX_VERSION=2`, keeping the existing
+     bucket/prefix variables. Only enable it after backfill succeeds.
+  4. Add JWT-protected `POST /photos/edit` using the existing integration and
+     required `openid` scope, then publish the frontend.
+  Indexed search lists date/field keys, merges them in newest-first order,
+  and reads metadata for only the requested page (at most 24 objects).
+  It does not cache signed URLs or mutable results in Lambda memory.
+  Exact totals still require listing all matching keys; scans over 100,000
+  keys per field (or the global date index) are rejected with an explicit
+  request to narrow the period. This is not a constant-time database search.
+  Tests: `python -B -m unittest discover -s lambda\photos -p "test_*.py"`.
+  Frontend edit tests: `node --test tests\photos-edit.test.cjs`.
 
 - JWT issuer:
   `https://cognito-idp.ap-northeast-1.amazonaws.com/  ap-northeast-1_OFiPcQjkC`;

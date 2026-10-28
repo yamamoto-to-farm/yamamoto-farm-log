@@ -329,7 +329,7 @@ class PhotoApiTests(unittest.TestCase):
         record, (status, body) = self.delete_request()
         self.assertEqual(status, 200)
         deleted = {c.kwargs["Key"] for c in fake_s3.delete_object.call_args_list}
-        self.assertEqual(len(deleted), 4)
+        self.assertEqual(len(deleted), 5)
         self.assertTrue(any(k.endswith(f"/images/{record['id']}.jpg") for k in deleted))
         self.assertIn(f"photos/by-date/2026-10-26/{record['id']}.json", deleted)
 
@@ -348,6 +348,145 @@ class PhotoApiTests(unittest.TestCase):
             {"id": record["id"]} if "/tops/" in Key else record).encode())}
         self.assertEqual(self.call("POST /photos/delete", {"field": "A", "id": record["id"]})[0], 200)
         self.assertTrue(any("/tops/" in c.kwargs["Key"] for c in fake_s3.delete_object.call_args_list))
+
+
+class PhotoEditingAndIndexTests(unittest.TestCase):
+    call = PhotoApiTests.call
+    record = PhotoApiTests.record
+
+    def setUp(self):
+        PhotoApiTests.setUp(self)
+        self.store = {}
+        self.record_data = {**self.record("2026-10-26", "a"), "uploadedAt": "2026-10-26T09:00:00Z"}
+        self.root = "photos/fields/" + api.hashlib.sha256(b"A").hexdigest() + "/"
+        self.record_key = self.root + "records/" + self.record_data["id"] + ".json"
+        self.store[self.record_key] = dict(self.record_data)
+        self.store["photos/by-date/2026-10-26/" + self.record_data["id"] + ".json"] = dict(self.record_data)
+        self.store[api.field_date_key("photos/", self.record_data)] = dict(self.record_data)
+
+    def use_store(self):
+        def get(Bucket, Key, **kwargs):
+            if Key not in self.store:
+                raise FakeClientError("NoSuchKey")
+            return {"Body": io.BytesIO(json.dumps(self.store[Key]).encode())}
+
+        def put(Bucket, Key, Body, **kwargs):
+            self.store[Key] = json.loads(Body)
+
+        def delete(Bucket, Key):
+            self.store.pop(Key, None)
+
+        def listing(Bucket, Prefix, StartAfter="", ContinuationToken="", **kwargs):
+            keys = sorted(k for k in self.store if k.startswith(Prefix) and k > StartAfter)
+            offset = int(ContinuationToken or 0)
+            page = keys[offset:offset + 1000]
+            result = {"Contents": [{"Key": key} for key in page]}
+            if offset + 1000 < len(keys):
+                result.update(IsTruncated=True, NextContinuationToken=str(offset + 1000))
+            return result
+
+        fake_s3.get_object.side_effect = get
+        fake_s3.put_object.side_effect = put
+        fake_s3.delete_object.side_effect = delete
+        fake_s3.list_objects_v2.side_effect = listing
+        fake_s3.generate_presigned_url.return_value = "https://signed.invalid/image"
+
+    def edit(self, claims=None, **changes):
+        return self.call("POST /photos/edit", {
+            "field": "A", "id": self.record_data["id"], "takenOn": "2026-10-28",
+            "note": "new memo", **changes
+        }, claims=claims if claims is not None else {**self.claims, "cognito:groups": "[family]"})
+
+    def test_edit_moves_both_indexes_and_preserves_photo_identity(self):
+        self.use_store()
+        status, _ = self.edit()
+        self.assertEqual(status, 200)
+        updated = self.store[self.record_key]
+        self.assertEqual((updated["takenOn"], updated["note"]), ("2026-10-28", "new memo"))
+        for key in ("id", "field", "imageKey", "uploadedAt", "uploadedBy"):
+            self.assertEqual(updated[key], self.record_data[key])
+        self.assertNotIn(api.field_date_key("photos/", self.record_data), self.store)
+        self.assertEqual(self.store[api.field_date_key("photos/", updated)], updated)
+        self.assertNotIn("photos/by-date/2026-10-26/" + updated["id"] + ".json", self.store)
+        self.assertEqual(self.store["photos/by-date/2026-10-28/" + updated["id"] + ".json"], updated)
+        self.assertEqual(self.store[self.root + "pending/" + updated["id"] + ".json"], updated)
+        self.assertEqual(self.call("GET /photos/by-date", {"date": "2026-10-26"})[1]["photos"], [])
+        self.assertEqual(self.call("GET /photos/by-date", {"date": "2026-10-28"})[1]["photos"][0]["note"], "new memo")
+        # A retry uses the current date and is safe.
+        self.assertEqual(self.edit()[0], 200)
+
+    def test_edit_requires_admin_family_even_for_uploader(self):
+        self.use_store()
+        self.assertEqual(self.edit(claims=self.claims)[0], 403)
+        fake_s3.put_object.assert_not_called()
+        self.assertEqual(self.edit(claims={})[0], 401)
+        self.assertEqual(self.edit(claims={**self.claims, "cognito:groups": "[admin]"})[0], 200)
+
+    def test_note_only_edit_does_not_remove_current_indexes(self):
+        self.use_store()
+        self.assertEqual(self.edit(takenOn="2026-10-26", note="")[0], 200)
+        fake_s3.delete_object.assert_not_called()
+        self.assertEqual(self.store[self.record_key]["note"], "")
+        self.assertIn(api.field_date_key("photos/", self.record_data), self.store)
+
+    def test_edit_rejects_invalid_data_and_missing_photo(self):
+        self.use_store()
+        for changes in [{"takenOn": "2026-02-30"}, {"takenOn": ""},
+                        {"note": "x" * 1001}, {"note": 1}, {"id": "../x"}]:
+            self.assertEqual(self.edit(**changes)[0], 400)
+        fake_s3.put_object.assert_not_called()
+        self.store.clear()
+        self.assertEqual(self.edit()[0], 404)
+
+    def test_edit_s3_failure_is_explicit(self):
+        self.use_store()
+        fake_s3.put_object.side_effect = FakeClientError("AccessDenied")
+        with self.assertLogs(api.LOGGER, level="ERROR"):
+            self.assertEqual(self.edit()[0], 500)
+
+    def test_backfill_adds_field_indexes_to_existing_photos(self):
+        self.store.pop(api.field_date_key("photos/", self.record_data))
+        self.use_store()
+        self.assertEqual(api.lambda_handler({"action": "backfill"}, None), {"indexed": 1})
+        self.assertIn(api.field_date_key("photos/", self.record_data), self.store)
+
+    def test_edit_and_delete_are_immediately_visible_to_indexed_search(self):
+        self.use_store()
+        query = {"from": "2026-10-26", "to": "2026-10-26", "fields": '["A"]'}
+        with patch.dict(os.environ, {"PHOTO_SEARCH_INDEX_VERSION": "2"}):
+            self.assertEqual(self.call("GET /photos/search", query)[1]["total"], 1)
+            self.assertEqual(self.edit()[0], 200)
+            self.assertEqual(self.call("GET /photos/search", query)[1]["total"], 0)
+            moved = {**query, "from": "2026-10-28", "to": "2026-10-28"}
+            self.assertEqual(self.call("GET /photos/search", moved)[1]["photos"][0]["note"], "new memo")
+            self.assertEqual(self.call("POST /photos/delete", {
+                "field": "A", "id": self.record_data["id"]})[0], 200)
+            self.assertEqual(self.call("GET /photos/search", moved)[1]["total"], 0)
+
+    def test_indexed_search_reads_only_one_page_at_3000_photos(self):
+        self.store.clear()
+        for index in range(3000):
+            record = {**self.record_data, "id": f"20261026T090000000000Z_{index:032x}"}
+            self.store[api.field_date_key("photos/", record)] = record
+        other = self.record("2026-10-27", "b", field="B")
+        self.store[api.field_date_key("photos/", other)] = other
+        self.use_store()
+        query = {"from": "2026-10-01", "to": "2026-10-31", "fields": '["A","B"]'}
+        with patch.dict(os.environ, {"PHOTO_SEARCH_INDEX_VERSION": "2"}):
+            status, first = self.call("GET /photos/search", query,
+                                      claims={**self.claims, "cognito:groups": "[family]"})
+            self.assertEqual((status, first["total"], len(first["photos"])), (200, 3001, 24))
+            self.assertEqual(first["photos"][0]["field"], "B")
+            self.assertTrue(all(p["canEdit"] for p in first["photos"]))
+            self.assertEqual(fake_s3.get_object.call_count, 24)
+            fake_s3.get_object.reset_mock()
+            status, second = self.call("GET /photos/search", {**query, "cursor": first["cursor"]})
+            self.assertEqual((status, len(second["photos"])), (200, 24))
+            self.assertEqual(fake_s3.get_object.call_count, 24)
+            self.assertFalse(any(p["canEdit"] for p in second["photos"]))
+            self.assertFalse({p["id"] for p in first["photos"]} & {p["id"] for p in second["photos"]})
+        self.assertTrue(all("/by-field-date/" in c.kwargs["Prefix"]
+                            for c in fake_s3.list_objects_v2.call_args_list))
 
 
 if __name__ == "__main__":

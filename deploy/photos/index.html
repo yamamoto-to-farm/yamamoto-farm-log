@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="/photos/upload.css?v=20261029-2">
-  <link rel="stylesheet" href="./photos.css?v=20261029-6">
+  <link rel="stylesheet" href="./photos.css?v=20261029-7">
 </head>
 <body>
   <div id="header"></div>
@@ -70,13 +70,24 @@
     <p id="caption"></p>
     <div class="viewer-actions">
       <button id="set-top" type="button" class="secondary-btn" hidden>★ トップ写真にする</button>
+      <button id="edit-photo" type="button" class="secondary-btn" hidden>メモ・撮影日を編集</button>
       <a id="open-diary" class="secondary-btn" href="#">作業日誌を見る</a>
       <button id="delete" type="button" class="danger-btn" hidden>削除</button>
     </div>
+    <form id="photo-edit-form" class="photo-edit-form" hidden>
+      <label for="edit-taken-on">撮影日</label>
+      <input id="edit-taken-on" class="form-input" type="date" required>
+      <label for="edit-note">メモ</label>
+      <textarea id="edit-note" class="form-textarea" maxlength="1000"></textarea>
+      <div class="viewer-actions">
+        <button type="submit" class="primary-btn">変更を保存</button>
+        <button id="cancel-edit" type="button" class="secondary-btn">キャンセル</button>
+      </div>
+    </form>
     <p id="viewer-status" role="status" aria-live="polite"></p>
   </dialog>
 
-  <script type="module" src="./photos.js?v=20261029-6"></script>
+  <script type="module" src="./photos.js?v=20261029-7"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
