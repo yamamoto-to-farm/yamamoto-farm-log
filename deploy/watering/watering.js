@@ -41,7 +41,9 @@ export async function initWateringPage() {
   mountPhotoAttach(document.getElementById("field-area-total").parentElement, {
     getFields: () => filterState.fields || [],
     getDate: () => document.getElementById("date")?.value || ""
-  }); = document.getElementById("save-btn");
+  });
+
+  const btnSave = document.getElementById("save-btn");
   if (btnSave) {
     btnSave.onclick = saveWateringLog;
   }
