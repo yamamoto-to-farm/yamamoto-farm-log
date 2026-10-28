@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { convertToJpeg, uploadPhoto } from "./upload.js?v=20261029-1";
 import { clearSession, ensureToken, hasSession, login, logout } from "./auth.js";
 
 const element = id => document.getElementById(id);
@@ -125,30 +126,6 @@ async function loadPhotos(append = false) {
   status(photos.length ? `${photos.length}枚を表示中${cursor ? "（続きがあります）" : ""}` : "この圃場の写真はまだありません。");
 }
 
-async function jpeg(file) {
-  if (!file || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    throw new Error("JPEG・PNG・WebPのいずれかを選択してください。HEICは変換が必要です。");
-  }
-  if (file.size > 20 * 1024 * 1024) throw new Error("元画像は20MB以下にしてください。");
-  const bitmap = await createImageBitmap(file);
-  try {
-    const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("このブラウザーでは画像を変換できません。");
-    context.fillStyle = "#fff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
-    if (!blob || blob.size > 5 * 1024 * 1024) throw new Error("画像を5MB以下に変換できません。小さい画像を選んでください。");
-    return blob;
-  } finally {
-    bitmap.close();
-  }
-}
-
 async function upload(event) {
   event.preventDefault();
   if (busy) return;
@@ -164,17 +141,9 @@ async function upload(event) {
   let saved = false;
   try {
     status("画像を変換しています…");
-    const blob = await jpeg(element("image").files[0]);
+    const blob = await convertToJpeg(element("image").files[0]);
     status("写真をアップロードしています…");
-    const ticket = await api("/photos/uploads", {
-      field, takenOn: element("taken-on").value, note: element("note").value
-    });
-    const form = new FormData();
-    for (const [key, value] of Object.entries(ticket.upload.fields)) form.append(key, value);
-    form.append("file", blob, "photo.jpg");
-    const result = await fetch(ticket.upload.url, { method: "POST", body: form, cache: "no-store" });
-    if (!result.ok) throw new Error(`S3への画像保存に失敗しました（${result.status}）。`);
-    await api("/photos/complete", { field, id: ticket.id });
+    await uploadPhoto({ field, takenOn: element("taken-on").value, note: element("note").value, blob });
     saved = true;
     element("image").value = "";
     element("note").value = "";
@@ -219,7 +188,7 @@ element("image").addEventListener("change", async () => {
   const file = element("image").files[0];
   if (!file) return;
   try {
-    const blob = await jpeg(file);
+    const blob = await convertToJpeg(file);
     if (element("image").files[0] !== file) return;
     previewUrl = URL.createObjectURL(blob);
     element("preview").src = previewUrl;
