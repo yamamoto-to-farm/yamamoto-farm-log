@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 
 import boto3
@@ -16,6 +17,8 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 S3 = boto3.client("s3", config=Config(signature_version="s3v4"))
 MAX_BYTES = 5 * 1024 * 1024
+PAGE_SIZE = 24
+MAX_SEARCH_KEYS = 2000
 PHOTO_ID = re.compile(r"^\d{8}T\d{12}Z_[0-9a-f]{32}$")
 CLIENT_ID = "mg1q2dnn576jln28m5sja6eaf"
 ISSUER = "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_OFiPcQjkC"
@@ -92,6 +95,90 @@ def public_photo(bucket, metadata):
     return metadata
 
 
+def user_groups(claims):
+    # API Gateway検証済みの cognito:groups のみ信頼する。値は "[admin family]" 形式で届く。
+    return set(str(claims.get("cognito:groups", "")).strip("[]").replace(",", " ").split())
+
+
+def list_date_keys(bucket, prefix, start, end):
+    base = f"{prefix}by-date/"
+    options = {"Bucket": bucket, "Prefix": base, "StartAfter": f"{base}{start}/"}
+    keys = []
+    while True:
+        listing = S3.list_objects_v2(**options)
+        for item in listing.get("Contents", []):
+            if item["Key"][len(base):len(base) + 10] > end:
+                return keys
+            keys.append(item["Key"])
+            if len(keys) > MAX_SEARCH_KEYS:
+                raise RequestError(400, "対象の写真が多すぎます。期間を狭めてください。")
+        if not listing.get("IsTruncated"):
+            return keys
+        options["ContinuationToken"] = listing["NextContinuationToken"]
+
+
+def read_json_or_none(bucket, key):
+    try:
+        return read_json(bucket, key)
+    except RequestError:
+        return None
+
+
+def search_photos(bucket, prefix, data, claims):
+    start = text(data, "from", 10)
+    end = text(data, "to", 10)
+    valid_date(start, "開始日が不正です。")
+    valid_date(end, "終了日が不正です。")
+    if start > end:
+        raise RequestError(400, "開始日は終了日以前にしてください。")
+    field = text(data, "field", 100, required=False)
+    cursor = text(data, "cursor", 10, required=False)
+    if cursor and not cursor.isdigit():
+        raise RequestError(400, "一覧の続きの取得に失敗しました。一覧を更新してください。")
+    offset = int(cursor or 0)
+
+    keys = sorted(list_date_keys(bucket, prefix, start, end), reverse=True)
+    if field:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            records = list(pool.map(lambda key: read_json_or_none(bucket, key), keys))
+        matched = [record for record in records if record and record.get("field") == field]
+    else:
+        matched = None
+    total = len(matched) if matched is not None else len(keys)
+    end_index = offset + PAGE_SIZE
+    if matched is not None:
+        page = matched[offset:end_index]
+    else:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            page = [r for r in pool.map(lambda key: read_json_or_none(bucket, key), keys[offset:end_index]) if r]
+    groups = user_groups(claims)
+    photos = []
+    for record in page:
+        mine = record.get("uploadedBy") == claims["sub"]
+        photo = public_photo(bucket, record)
+        photo["canDelete"] = mine or bool({"admin", "family"} & groups)
+        photos.append(photo)
+    return {"photos": photos, "cursor": str(end_index) if end_index < total else None, "total": total}
+
+
+def delete_photo(bucket, prefix, root, field_key, photo_id, claims):
+    record = read_json(bucket, f"{root}records/{photo_id}.json")
+    mine = record.get("uploadedBy") == claims["sub"]
+    if not mine and not {"admin", "family"} & user_groups(claims):
+        raise RequestError(403, "この写真を削除する権限がありません。")
+    keys = [
+        f"{root}images/{photo_id}.jpg",
+        f"{root}records/{photo_id}.json",
+        f"{root}pending/{photo_id}.json",
+        f"{prefix}by-date/{record['takenOn']}/{photo_id}.json",
+    ]
+    for key in keys:
+        S3.delete_object(Bucket=bucket, Key=key)
+    top = read_json_or_none(bucket, f"{prefix}tops/{field_key}.json")
+    if top and top.get("id") == photo_id:
+        S3.delete_object(Bucket=bucket, Key=f"{prefix}tops/{field_key}.json")
+
+
 def backfill_date_index(bucket, prefix):
     # Lambdaコンソールから {"action": "backfill"} で手動実行する(API経由では到達不可)。
     count = 0
@@ -129,7 +216,7 @@ def lambda_handler(event, context):
         if not prefix or prefix.startswith("/") or not prefix.endswith("/"):
             raise RuntimeError("PHOTO_PREFIX must be a nonempty relative prefix ending with /")
         route = event.get("routeKey")
-        if route in ("GET /photos", "GET /photos/by-date", "GET /photos/top"):
+        if route in ("GET /photos", "GET /photos/by-date", "GET /photos/top", "GET /photos/search"):
             data = event.get("queryStringParameters") or {}
         else:
             raw = event.get("body") or "{}"
@@ -160,6 +247,9 @@ def lambda_handler(event, context):
             photos = [public_photo(bucket, read_json(bucket, item["Key"])) for item in listing.get("Contents", [])]
             return response(200, {"photos": photos, "cursor": listing.get("NextContinuationToken")})
 
+        if route == "GET /photos/search":
+            return response(200, search_photos(bucket, prefix, data, claims))
+
         field = text(data, "field", 100)
         field_key = hashlib.sha256(field.encode("utf-8")).hexdigest()
         root = f"{prefix}fields/{field_key}/"
@@ -173,9 +263,7 @@ def lambda_handler(event, context):
             return response(200, {"photo": public_photo(bucket, record)})
 
         if route == "POST /photos/top":
-            # API Gateway検証済みの cognito:groups のみ信頼する。値は "[admin family]" 形式で届く。
-            groups = str(claims.get("cognito:groups", "")).strip("[]").replace(",", " ").split()
-            if not {"admin", "family"} & set(groups):
+            if not {"admin", "family"} & user_groups(claims):
                 raise RequestError(403, "トップ写真を設定する権限がありません。")
             photo_id = text(data, "id", 80)
             if not PHOTO_ID.fullmatch(photo_id):
@@ -185,6 +273,13 @@ def lambda_handler(event, context):
                 "id": photo_id, "field": field, "setBy": claims["sub"],
                 "setAt": datetime.now(timezone.utc).isoformat(),
             })
+            return response(200, {"id": photo_id})
+
+        if route == "POST /photos/delete":
+            photo_id = text(data, "id", 80)
+            if not PHOTO_ID.fullmatch(photo_id):
+                raise RequestError(400, "写真IDが不正です。")
+            delete_photo(bucket, prefix, root, field_key, photo_id, claims)
             return response(200, {"id": photo_id})
 
         if route == "POST /photos/uploads":

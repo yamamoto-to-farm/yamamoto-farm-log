@@ -44,7 +44,7 @@ class PhotoApiTests(unittest.TestCase):
             "routeKey": route,
             "requestContext": {"authorizer": {"jwt": {"claims": self.claims if claims is None else claims}}},
         }
-        if route in ("GET /photos", "GET /photos/by-date", "GET /photos/top"):
+        if route in ("GET /photos", "GET /photos/by-date", "GET /photos/top", "GET /photos/search"):
             event["queryStringParameters"] = data
         else:
             event["body"] = json.dumps(data)
@@ -242,6 +242,78 @@ class PhotoApiTests(unittest.TestCase):
             status, body = self.call("GET /photos", {"field": "A"})
         self.assertEqual(status, 500)
         self.assertNotIn("photos", body)
+
+    def record(self, day, suffix, field="A", user="user-1"):
+        photo_id = f"{day.replace('-', '')}T090000000000Z_{suffix * 32}"
+        return {"id": photo_id, "field": field, "takenOn": day, "note": "", "uploadedBy": user,
+                "imageKey": f"photos/fields/h/images/{photo_id}.jpg"}
+
+    def serve(self, records):
+        by_key = {f"photos/by-date/{r['takenOn']}/{r['id']}.json": r for r in records}
+        fake_s3.list_objects_v2.return_value = {"Contents": [{"Key": key} for key in by_key]}
+        fake_s3.get_object.side_effect = lambda Bucket, Key, **kwargs: {
+            "Body": io.BytesIO(json.dumps(by_key[Key]).encode())}
+        fake_s3.generate_presigned_url.return_value = "https://signed.invalid/image"
+
+    def test_search_returns_newest_first_with_range_and_delete_flag(self):
+        self.serve([self.record("2026-10-01", "a"), self.record("2026-10-20", "b", user="other")])
+        status, body = self.call("GET /photos/search", {"from": "2026-10-01", "to": "2026-10-31"})
+        self.assertEqual(status, 200)
+        self.assertEqual([p["takenOn"] for p in body["photos"]], ["2026-10-20", "2026-10-01"])
+        self.assertEqual([p["canDelete"] for p in body["photos"]], [False, True])
+        self.assertIsNone(body["cursor"])
+        self.assertNotIn("uploadedBy", body["photos"][0])
+        self.assertEqual(fake_s3.list_objects_v2.call_args.kwargs["StartAfter"], "photos/by-date/2026-10-01/")
+
+    def test_search_filters_by_field_and_paginates(self):
+        self.serve([self.record("2026-10-%02d" % d, "a", field="A") for d in range(1, 29)]
+                   + [self.record("2026-10-15", "b", field="B")])
+        status, body = self.call("GET /photos/search", {"from": "2026-10-01", "to": "2026-10-31", "field": "A"})
+        self.assertEqual((status, len(body["photos"]), body["cursor"], body["total"]), (200, 24, "24", 28))
+        status, body = self.call("GET /photos/search", {
+            "from": "2026-10-01", "to": "2026-10-31", "field": "A", "cursor": "24"})
+        self.assertEqual((len(body["photos"]), body["cursor"]), (4, None))
+        self.assertTrue(all(p["field"] == "A" for p in body["photos"]))
+
+    def test_search_stops_after_end_date_and_validates_input(self):
+        self.serve([self.record("2026-10-01", "a"), self.record("2026-11-05", "b")])
+        status, body = self.call("GET /photos/search", {"from": "2026-10-01", "to": "2026-10-31"})
+        self.assertEqual([p["takenOn"] for p in body["photos"]], ["2026-10-01"])
+        for data in [{"from": "2026-10-31", "to": "2026-10-01"}, {"from": "x", "to": "2026-10-01"},
+                     {"from": "2026-10-01", "to": "2026-10-31", "cursor": "abc"}]:
+            self.assertEqual(self.call("GET /photos/search", data)[0], 400)
+
+    def delete_request(self, user="user-1", extra_claims=None):
+        record = self.record("2026-10-26", "a", user="user-1")
+        fake_s3.get_object.side_effect = lambda Bucket, Key, **kwargs: (
+            {"Body": io.BytesIO(json.dumps(record).encode())} if "/records/" in Key
+            else (_ for _ in ()).throw(FakeClientError("NoSuchKey")))
+        claims = {**self.claims, "sub": user, **(extra_claims or {})}
+        return record, self.call("POST /photos/delete", {"field": "A", "id": record["id"]}, claims)
+
+    def test_delete_by_uploader_removes_image_record_and_indexes(self):
+        record, (status, body) = self.delete_request()
+        self.assertEqual(status, 200)
+        deleted = {c.kwargs["Key"] for c in fake_s3.delete_object.call_args_list}
+        self.assertEqual(len(deleted), 4)
+        self.assertTrue(any(k.endswith(f"/images/{record['id']}.jpg") for k in deleted))
+        self.assertIn(f"photos/by-date/2026-10-26/{record['id']}.json", deleted)
+
+    def test_delete_requires_owner_or_admin_family(self):
+        _, (status, _) = self.delete_request(user="other")
+        self.assertEqual(status, 403)
+        fake_s3.delete_object.assert_not_called()
+        _, (status, _) = self.delete_request(user="other", extra_claims={"cognito:groups": "[family]"})
+        self.assertEqual(status, 200)
+
+    def test_delete_rejects_bad_id_and_clears_top_pointer(self):
+        self.assertEqual(self.call("POST /photos/delete", {"field": "A", "id": "../x"})[0], 400)
+        fake_s3.delete_object.assert_not_called()
+        record = self.record("2026-10-26", "a")
+        fake_s3.get_object.side_effect = lambda Bucket, Key, **kwargs: {"Body": io.BytesIO(json.dumps(
+            {"id": record["id"]} if "/tops/" in Key else record).encode())}
+        self.assertEqual(self.call("POST /photos/delete", {"field": "A", "id": record["id"]})[0], 200)
+        self.assertTrue(any("/tops/" in c.kwargs["Key"] for c in fake_s3.delete_object.call_args_list))
 
 
 if __name__ == "__main__":

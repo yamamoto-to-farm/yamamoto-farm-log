@@ -4,44 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>圃場写真 - 山本農園</title>
+  <title>写真一覧 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
-  <link rel="stylesheet" href="./photos.css">
+  <link rel="stylesheet" href="/photos/upload.css?v=20261029-1">
+  <link rel="stylesheet" href="./photos.css?v=20261029-2">
 </head>
 <body>
-  <main id="page-area">
-    <h1 class="page-title">圃場写真（農園内限定）</h1>
-    <p>写真専用のログインが必要です。写真のURLは共有しないでください。</p>
-    <p id="status" role="status" aria-live="polite"></p>
-    <button id="login" class="primary-btn" type="button">写真用ログイン</button>
-    <button id="logout" class="secondary-btn" type="button" hidden>写真用ログアウト</button>
-    <section id="photo-area" hidden>
-      <label for="field">圃場</label>
-      <select id="field" class="form-input"><option value="">圃場を選択してください</option></select>
-      <form id="upload-form" class="card">
-        <h2>写真を追加</h2>
-        <label for="image">画像（1枚ずつ、元画像20MB以下）</label>
-        <input id="image" type="file" accept="image/jpeg,image/png,image/webp" required>
-        <p>長辺1920px以下のJPEGに変換します。HEICはJPEG等に変換して選択してください。</p>
-        <img id="preview" alt="アップロード前の写真" hidden>
-        <label for="taken-on">撮影日</label>
-        <input id="taken-on" class="form-input" type="date" required>
-        <label for="note">メモ</label>
-        <textarea id="note" class="form-textarea" maxlength="1000"></textarea>
-        <button id="upload" class="primary-btn" type="submit">写真を保存</button>
-      </form>
-      <button id="refresh" class="secondary-btn" type="button">一覧を更新</button>
-      <p>撮影日の新しい順に表示します。「続きを読み込む」で取得済みの写真を追加します。閲覧URLの有効期間は5分です。</p>
-      <div id="gallery"></div>
-      <button id="more" class="secondary-btn" type="button" hidden>続きを読み込む</button>
+  <div id="header"></div>
+
+  <main class="page-container" id="page-area" hidden>
+    <h1 class="page-title">写真一覧</h1>
+    <p class="photos-note">農園内限定です。写真のURLは共有しないでください。</p>
+
+    <section class="card photos-filter">
+      <div class="photos-filter-row">
+        <label>圃場
+          <select id="field" class="form-input"><option value="">すべての圃場</option></select>
+        </label>
+        <label>開始日<input id="from" class="form-input" type="date"></label>
+        <label>終了日<input id="to" class="form-input" type="date"></label>
+      </div>
+      <div class="photos-filter-row photos-presets">
+        <button type="button" class="secondary-btn" data-range="month">今月</button>
+        <button type="button" class="secondary-btn" data-range="30">直近30日</button>
+        <button type="button" class="secondary-btn" data-range="90">直近90日</button>
+        <button type="button" class="secondary-btn" data-range="year">今年</button>
+        <button type="button" class="secondary-btn" data-range="all">全期間</button>
+      </div>
+      <div class="photos-filter-row">
+        <button id="search" class="primary-btn" type="button">検索</button>
+        <button id="add" class="secondary-btn" type="button">📷 写真を追加</button>
+      </div>
     </section>
-    <p><a id="field-back" href="/fields/index.html">圃場一覧へ</a> ／ <a href="/index.html">トップへ</a></p>
-    <dialog id="viewer">
-      <button id="close-viewer" type="button" class="secondary-btn">閉じる</button>
-      <img id="full-image" alt="">
-      <p id="caption"></p>
-    </dialog>
+
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="login-area" hidden>
+      <button id="login" class="primary-btn" type="button">写真用ログイン</button>
+    </div>
+    <div id="gallery"></div>
+    <button id="more" class="secondary-btn" type="button" hidden>続きを読み込む</button>
   </main>
-  <script type="module" src="./photos.js?v=20261029-1"></script>
+
+  <dialog id="viewer">
+    <div class="viewer-bar">
+      <button id="prev" type="button" class="secondary-btn" aria-label="前の写真">←</button>
+      <span id="position"></span>
+      <button id="next" type="button" class="secondary-btn" aria-label="次の写真">→</button>
+      <button id="close-viewer" type="button" class="secondary-btn">閉じる</button>
+    </div>
+    <img id="full-image" alt="">
+    <p id="caption"></p>
+    <div class="viewer-actions">
+      <button id="set-top" type="button" class="secondary-btn" hidden>★ トップ写真にする</button>
+      <a id="open-diary" class="secondary-btn" href="#">作業日誌を見る</a>
+      <button id="delete" type="button" class="danger-btn" hidden>削除</button>
+    </div>
+    <p id="viewer-status" role="status" aria-live="polite"></p>
+  </dialog>
+
+  <script type="module" src="./photos.js?v=20261029-2"></script>
+  <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
