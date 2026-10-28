@@ -127,7 +127,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       };
     }
 
-    if (retiring && !confirm("退職済みにするとログインできなくなります。PINは従業員番号として欠番のまま保持します。続けますか？")) return;
+    if (retiring && !confirm("退職済みにするとログインできなくなります。続けますか？")) return;
 
     showSaveModal("保存しています…");
     try {

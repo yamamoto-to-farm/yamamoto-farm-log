@@ -52,7 +52,7 @@ export function renderEditCard({ json, container }) {
       <div class="form-row">
         <label class="form-label" for="auth-session-ttl">セッション保持時間（分）</label>
         <input id="auth-session-ttl" class="form-input" type="number" inputmode="numeric" step="1" min="1" value="${Math.round(current.sessionTtlMs / 60000)}">
-        <p style="margin:6px 0 0; color:#666; font-size:0.92em;">ログイン後に再PINなしで利用できる最大時間です。</p>
+        <p style="margin:6px 0 0; color:#666; font-size:0.92em;">ログイン後に再ログインなしで利用できる最大時間です。</p>
       </div>
 
       <div class="form-row">
@@ -70,7 +70,7 @@ export function renderEditCard({ json, container }) {
       <div class="form-row">
         <label class="form-label" for="auth-stepup">重要操作の再認証間隔（分）</label>
         <input id="auth-stepup" class="form-input" type="number" inputmode="numeric" step="1" min="1" value="${Math.round(current.stepupTtlMs / 60000)}">
-        <p style="margin:6px 0 0; color:#666; font-size:0.92em;">管理操作のみ、前回認証からこの時間を超えると再PINが必要です。</p>
+        <p style="margin:6px 0 0; color:#666; font-size:0.92em;">管理操作のみ、前回認証からこの時間を超えると再ログインが必要です。</p>
       </div>
 
       <div class="form-row">

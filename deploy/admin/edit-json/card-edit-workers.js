@@ -11,33 +11,11 @@ export function renderEditCard({ dataName, json, container }) {
   let selectedIndex = -1;
   let draftIndex = -1;
 
-  function getNextPin(role) {
-    const usedPins = new Set(workerList.map(item => String(item?.pin || "").trim()).filter(Boolean));
-    const pattern = role === "worker" ? /^Y(\d+)$/i : /^(\d+)$/;
-    const prefix = role === "worker" ? "Y" : "";
-    const numbers = workerList
-      .map(item => String(item?.pin || "").trim().match(pattern))
-      .filter(Boolean)
-      .map(match => Number(match[1]));
-    let nextNumber = Math.max(0, ...numbers) + 1;
-    let nextPin = `${prefix}${String(nextNumber).padStart(3, "0")}`;
-    while (usedPins.has(nextPin)) {
-      nextNumber += 1;
-      nextPin = `${prefix}${String(nextNumber).padStart(3, "0")}`;
-    }
-    return nextPin;
-  }
-
-  function isPinValidForRole(pin, role) {
-    if (role === "worker") return /^Y\d{3,}$/i.test(pin);
-    return /^\d{3}$/.test(pin);
-  }
-
   container.insertAdjacentHTML("beforeend", `
     <div class="card">
       <h2>ログイン権限管理</h2>
       <p style="margin:0 0 12px; color:#555;">
-        ログイン用PIN・権限・識別名・表示名を管理します。従業員の在籍状況は在籍状況管理で管理し、退職者のPINは従業員番号として欠番のまま保持します。管理者・家族アカウントの追加や基本情報の編集もここで行います。
+        権限・識別名・表示名を管理します。ログインはCognitoのユーザーID＝識別名で行います。アカウントを追加したら、Cognitoにも同じ識別名のユーザーを作成してください。従業員の在籍状況は在籍状況管理で管理します。
       </p>
 
       <div class="sub-card" style="margin-bottom:14px;">
@@ -57,7 +35,7 @@ export function renderEditCard({ dataName, json, container }) {
             <label class="form-label" for="worker-target">編集対象</label>
             <select id="worker-target" class="form-input"></select>
           </div>
-          <button id="add-worker-btn" class="secondary-btn" type="button">＋ アカウントを追加（PIN自動採番）</button>
+          <button id="add-worker-btn" class="secondary-btn" type="button">＋ アカウントを追加</button>
         </div>
         <div id="worker-count" style="margin-top:8px; color:#555;"></div>
       </div>
@@ -83,10 +61,8 @@ export function renderEditCard({ dataName, json, container }) {
     const nameInput = editorEl.querySelector(".worker-name");
     const displayInput = editorEl.querySelector(".worker-display");
     if (!roleInput || !nameInput || !displayInput) return;
-    const pinInput = editorEl.querySelector(".worker-pin");
     workerList[selectedIndex] = {
       ...workerList[selectedIndex],
-      pin: pinInput?.value.trim() || "",
       name: nameInput.value.trim(),
       display: displayInput.value.trim(),
       role: roleInput.value || workerList[selectedIndex].role || "worker"
@@ -122,10 +98,6 @@ export function renderEditCard({ dataName, json, container }) {
       <div class="sub-card">
         ${role === "worker" ? `<div class="info-line">${retired ? "退職済み（従業員情報は保持）" : "在籍中"}</div>` : ""}
         <div class="form-row">
-          <label class="form-label">PIN</label>
-          <input class="form-input worker-pin" value="${escapeHtml(item.pin ?? "")}" placeholder="${retired ? "欠番として保持" : "ログイン用PIN"}" ${retired ? "disabled" : ""}>
-        </div>
-        <div class="form-row">
           <label class="form-label">識別名</label>
             <input class="form-input worker-name" value="${escapeHtml(item.name ?? "")}">
         </div>
@@ -144,14 +116,6 @@ export function renderEditCard({ dataName, json, container }) {
 
     editorEl.querySelector(".worker-role").addEventListener("change", event => {
       syncEditorToList();
-      const nextRole = event.target.value;
-      const pinInput = editorEl.querySelector(".worker-pin");
-      const currentPin = String(pinInput?.value || "").trim();
-      if (!isPinValidForRole(currentPin, nextRole)) {
-        const nextPin = getNextPin(nextRole);
-        if (pinInput) pinInput.value = nextPin;
-        workerList[selectedIndex].pin = nextPin;
-      }
       roleFilterEl.value = event.target.value;
       renderTargets();
     });
@@ -212,7 +176,6 @@ export function renderEditCard({ dataName, json, container }) {
 
     draftIndex = workerList.length;
     workerList.push({
-      pin: getNextPin("worker"),
       name: "",
       display: "",
       role: "worker"
@@ -231,15 +194,13 @@ export function renderEditCard({ dataName, json, container }) {
     for (const item of workerList) {
       const name = String(item.name || "").trim();
       const display = String(item.display || "").trim();
-      const pin = String(item.pin || "").trim();
       if (!name && !display) continue;
       if (!name || !display) {
         alert("識別名と表示名を入力してください。");
         return;
       }
-      const isRetiredWithoutPin = item.role === "worker" && item.employmentStatus === "retired" && !pin;
-      if (!isRetiredWithoutPin && !isPinValidForRole(pin, item.role || "worker")) {
-        alert(`${display} のPINが権限に合っていません。従業員はY＋3桁以上、家族・管理者は数字3桁で入力してください。`);
+      if (!/^[A-Za-z0-9_.-]+$/.test(name)) {
+        alert(`識別名「${name}」は半角英数字・._- で入力してください（Cognitoのユーザー名になります）。`);
         return;
       }
       if (names.has(name)) {
@@ -247,13 +208,9 @@ export function renderEditCard({ dataName, json, container }) {
         return;
       }
       names.add(name);
-      if (newWorkers.some(existing => existing.pin === pin)) {
-        alert(`PIN「${pin}」が重複しています。`);
-        return;
-      }
+      const { pin: _removedPin, ...rest } = item;
       newWorkers.push({
-        ...item,
-        pin: item.role === "worker" && item.employmentStatus === "retired" ? "" : pin,
+        ...rest,
         name,
         display,
         role: item.role || "worker"
