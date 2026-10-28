@@ -228,9 +228,10 @@ function clearAuthStorage() {
   window.currentRole = "";
 }
 
+// ログイン画面を挟まず、Cognito のログインへ直接移動し、終わったら元のページへ戻す
 function redirectWithReturnUrl(target = location.href) {
-  sessionStorage.setItem("pendingReturnUrl", target);
-  location.href = "/index.html";
+  clearAuthStorage();
+  void cognitoLogin(target);
 }
 
 async function startAuthHeartbeat() {
@@ -649,97 +650,46 @@ export function getFinalField(
   return auto;
 }
 
+// Cognito ログイン済みなら workers.json の同名ユーザーとしてローカルセッションを発行する
+async function establishCognitoSession() {
+  if (!hasSession() || !await ensureToken()) return false;
+  const username = getUsername();
+  const res = await fetch("/data/workers.json?v=" + Date.now());
+  const users = await res.json();
+  const user = users.find(u => u.name === username && !(u.role === "worker" && u.employmentStatus === "retired"));
+  if (!user) {
+    alert("このユーザーはこのシステムの利用者として登録されていません");
+    clearAuthStorage();
+    cognitoLogout(location.origin + "/index.html");
+    return false;
+  }
+  await issueAuthSession(user);
+  return true;
+}
+
 // ===============================
-// PIN 認証 UI を表示し、認証後に callback を実行
+// ログイン画面(Cognito)を表示し、認証後に callback を実行
 // ===============================
 export function showPinGate(containerId, onSuccess) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.style.display = "block";
+  container.textContent = "";
 
-  const input = document.getElementById("pin-input");
-  const button = document.getElementById("pin-submit");
+  const message = document.createElement("div");
+  message.textContent = "ログインしてください";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "pin-submit";
+  button.textContent = "ログイン";
+  button.onclick = () => cognitoLogin(sessionStorage.getItem("pendingReturnUrl") || "/index.html");
+  container.append(message, button);
 
-  if (!input || !button) {
-    console.error("PIN UI が見つかりません");
-    return;
-  }
-
-  async function finishWithUser(user) {
-    await issueAuthSession(user);
-    if (!await verifyLocalAuth()) return false;
+  establishCognitoSession().then(async ok => {
+    if (!ok || !await verifyLocalAuth()) return;
     container.style.display = "none";
     if (onSuccess) onSuccess();
-    return true;
-  }
-
-  // Cognito ログイン済みなら workers.json の同名ユーザーとして自動ログイン
-  async function cognitoAuthenticate() {
-    if (!hasSession() || !await ensureToken()) return false;
-    const username = getUsername();
-    const res = await fetch("/data/workers.json?v=" + Date.now());
-    const users = await res.json();
-    const user = users.find(u => u.name === username && !(u.role === "worker" && u.employmentStatus === "retired"));
-    if (!user) {
-      alert("このユーザーはこのシステムの利用者として登録されていません");
-      clearCognitoSession();
-      return false;
-    }
-    return finishWithUser(user);
-  }
-
-  if (!container.querySelector("[data-cognito-login]")) {
-    const cognitoButton = document.createElement("button");
-    cognitoButton.type = "button";
-    cognitoButton.dataset.cognitoLogin = "1";
-    cognitoButton.className = "pin-submit";
-    cognitoButton.textContent = "ユーザーID・パスワードでログイン";
-    cognitoButton.onclick = () => cognitoLogin("/index.html");
-    container.appendChild(cognitoButton);
-  }
-
-  cognitoAuthenticate().catch(e => console.error("Cognito 自動ログイン失敗:", e));
-
-  async function authenticate() {
-    const pin = input.value.trim();
-    if (!pin) return;
-
-    try {
-      // workers.json を読み込む
-      const resWorkers = await fetch("/data/workers.json?v=" + Date.now());
-      const users = await resWorkers.json();
-
-      // PIN 一致ユーザーを検索
-      const user = users.find(u => u.pin === pin && !(u.role === "worker" && u.employmentStatus === "retired"));
-
-      if (!user) {
-        alert("PIN が違います");
-        return;
-      }
-
-      // 認証成功 → グローバル変数に保存
-      await issueAuthSession(user);
-      if (!await verifyLocalAuth()) return;
-
-      // PIN UI を非表示
-      container.style.display = "none";
-
-      // 認証後の処理
-      if (onSuccess) onSuccess();
-
-    } catch (e) {
-      console.error("認証データ読み込みエラー:", e);
-      alert("認証データの読み込みに失敗しました");
-    }
-  }
-
-  // ボタン押下
-  button.onclick = authenticate;
-
-  // Enter キー対応
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter") authenticate();
-  });
+  }).catch(e => console.error("Cognito ログイン失敗:", e));
 }
 
 // ===============================
@@ -756,8 +706,9 @@ export async function verifyLocalAuth(options = {}) {
   const savedStepupAt = Number(localStorage.getItem(AUTH_STEPUP_AT_KEY) || 0);
   const shouldRedirect = !options?.noRedirect;
 
-  // localStorage に何もない → index に戻す
+  // ローカルセッションなし → Cognito ログイン済みなら引き継ぎ、なければログインへ
   if (!savedHuman || !savedRole) {
+    if (await establishCognitoSession()) return verifyLocalAuth(options);
     if (shouldRedirect) redirectWithReturnUrl();
     return false;
   }
