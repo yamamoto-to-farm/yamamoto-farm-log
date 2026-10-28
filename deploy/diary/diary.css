@@ -1258,9 +1258,22 @@
 .diary-modal-header h2 { margin: 0; font-size: 18px; }
 .diary-modal-header button { margin: 0; padding: 8px 12px; }
 .diary-modal .diary-month-mini { margin: 0; }
+#diaryCalendarStatus { min-height: 1.5em; margin: 8px 0 0; font-size: 13px; }
 .diary-photos-modal { width: min(800px, calc(100vw - 32px)); }
 .diary-photos-modal > a { display: inline-block; margin: 0 0 12px; padding: 8px 12px; text-decoration: none; }
 #diaryMonthMini[hidden] { display: none; }
+@media screen and (min-width: 761px) {
+  .diary-summary > section { display: flex; flex-direction: column; }
+  .diary-summary .diary-date-card { flex: 1; display: flex; align-items: center; }
+  .diary-summary #weatherBox { flex: 1; display: flex; }
+  .diary-summary #weatherBox .weather-card {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+  }
+}
 @media (max-width: 760px) {
   .diary-summary { grid-template-columns: minmax(0, 1fr); gap: 8px; }
 }

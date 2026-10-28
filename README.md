@@ -77,7 +77,11 @@ removed while its placement is reconsidered; the photo page remains available.
 
 - Diary layout: date navigation and weather share a row above 760px and stack
   on smaller screens. Clicking the date opens a calendar dialog; day photos
-  load only when "この日の写真を見る" opens its dialog. Reopening reloads signed
+  load only when "この日の写真を見る" opens its dialog. The button loads only a
+  count via authenticated `GET /photos/by-date?date=YYYY-MM-DD&countOnly=1`
+  (`{"total": N}`), listing index keys without reading photo metadata or images.
+  Redeploy Lambda before publishing the count-enabled diary.
+  Reopening reloads signed
   image URLs. Neither dialog nor the photo trigger is printed; weather and
   diary work content keep their existing print behavior.
   Modal tests: `node --test tests\diary-modals.test.cjs`.

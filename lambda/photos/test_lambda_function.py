@@ -139,6 +139,24 @@ class PhotoApiTests(unittest.TestCase):
         self.assertNotIn("imageKey", body["photos"][0])
         self.assertNotIn("uploadedBy", body["photos"][0])
 
+    def test_by_date_count_only_paginates_without_reading_photos(self):
+        fake_s3.list_objects_v2.side_effect = [
+            {"Contents": [{"Key": "a"}, {"Key": "b"}],
+             "IsTruncated": True, "NextContinuationToken": "next"},
+            {"Contents": [{"Key": "c"}]},
+        ]
+        self.assertEqual(self.call("GET /photos/by-date", {
+            "date": "2026-10-21", "countOnly": "1"}), (200, {"total": 3}))
+        self.assertEqual(fake_s3.list_objects_v2.call_args.kwargs["ContinuationToken"], "next")
+        fake_s3.get_object.assert_not_called()
+        fake_s3.generate_presigned_url.assert_not_called()
+
+    def test_by_date_count_zero_and_auth(self):
+        fake_s3.list_objects_v2.return_value = {}
+        query = {"date": "2026-10-21", "countOnly": "1"}
+        self.assertEqual(self.call("GET /photos/by-date", query), (200, {"total": 0}))
+        self.assertEqual(self.call("GET /photos/by-date", query, claims={})[0], 401)
+
     def test_top_photo_requires_admin_or_family_group(self):
         pid = "20261026T090000123456Z_" + "a" * 32
         fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(self.metadata()).encode())}

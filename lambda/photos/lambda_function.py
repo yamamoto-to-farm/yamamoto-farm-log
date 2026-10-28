@@ -290,6 +290,15 @@ def lambda_handler(event, context):
         if route == "GET /photos/by-date":
             day = text(data, "date", 10)
             valid_date(day, "日付が不正です。")
+            if data.get("countOnly") == "1":
+                options = {"Bucket": bucket, "Prefix": f"{prefix}by-date/{day}/", "MaxKeys": 1000}
+                total = 0
+                while True:
+                    listing = S3.list_objects_v2(**options)
+                    total += len(listing.get("Contents", []))
+                    if not listing.get("IsTruncated"):
+                        return response(200, {"total": total})
+                    options["ContinuationToken"] = listing["NextContinuationToken"]
             options = {"Bucket": bucket, "Prefix": f"{prefix}by-date/{day}/", "MaxKeys": 50}
             cursor = text(data, "cursor", 4096, required=False)
             if cursor:

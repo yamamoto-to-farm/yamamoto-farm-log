@@ -13,7 +13,8 @@ function setup(file, module = false) {
       setAttribute(key, value) { this.attributes[key] = value; },
       addEventListener(key, callback) { this.listeners[key] = callback; },
       showModal() { this.open = true; }, close() { this.open = false; },
-      replaceChildren() { this.textContent = ""; }
+      replaceChildren() { this.textContent = ""; },
+      contains() { return false; }
     });
     return nodes.get(id);
   }
@@ -21,6 +22,9 @@ function setup(file, module = false) {
     document: { getElementById: get }, window: { addEventListener() {} },
     location: { search: "" }, URLSearchParams, console, Date, Map, Set,
     loadDiaryIndexDates: async () => [],
+    config: { api: "https://api.test" }, ensureToken: async () => "test",
+    clearSession() {},
+    fetch: async () => ({ ok: true, json: async () => ({ total: 1 }) }),
     loadDiaryByDate: async () => null
   });
   let source = readFileSync(join(__dirname, "..", "deploy", "diary", file), "utf8")
@@ -46,6 +50,7 @@ test("changing diary date updates photo modal and gallery link without loading p
   const { context, get } = setup("day-photos.js", true);
   await vm.runInContext('renderDayPhotos("2026-10-21")', context);
   assert.equal(get("dayPhotosTitle").textContent, "2026/10/21 の写真");
+  assert.equal(get("openDayPhotos").textContent, "📷 この日の写真を見る　1枚");
   assert.equal(get("dayPhotosLink").href, "/photos/index.html?from=2026-10-21&to=2026-10-21");
   await vm.runInContext('renderDayPhotos("2026-10-22")', context);
   assert.match(get("dayPhotosLink").href, /from=2026-10-22&to=2026-10-22/);
@@ -62,6 +67,21 @@ test("photo close invalidates pending requests and removes signed images", () =>
   assert.equal(body.textContent, "");
 });
 
+test("count displays zero and ignores a late response from an earlier date", async () => {
+  const { context, get } = setup("day-photos.js", true);
+  const waiting = [];
+  context.fetch = () => new Promise(resolve => waiting.push(resolve));
+  const first = vm.runInContext('renderDayPhotos("2026-10-21")', context);
+  await new Promise(resolve => setImmediate(resolve));
+  const second = vm.runInContext('renderDayPhotos("2026-10-22")', context);
+  await new Promise(resolve => setImmediate(resolve));
+  waiting[1]({ ok: true, json: async () => ({ total: 0 }) });
+  await second;
+  waiting[0]({ ok: true, json: async () => ({ total: 20 }) });
+  await first;
+  assert.equal(get("openDayPhotos").textContent, "📷 この日の写真を見る　0枚");
+});
+
 test("older calendar response cannot replace a newer month's calendar", async () => {
   const { context, get } = setup("diary.js");
   const waiting = {};
@@ -69,9 +89,20 @@ test("older calendar response cannot replace a newer month's calendar", async ()
   vm.runInContext("loadSavedDatesForMonth = defer; renderMonthMiniCalendar = date => document.getElementById('diaryMonthMini').textContent = date;", context);
   const first = vm.runInContext('refreshDiaryMonthMini("2026-10-21")', context);
   const second = vm.runInContext('refreshDiaryMonthMini("2026-11-21")', context);
+  assert.equal(get("diaryMonthMini").textContent, "2026-11-21");
+  assert.equal(get("diaryMonthMini").attributes["aria-busy"], "true");
   waiting["2026-11-21"]([]);
   await second;
   waiting["2026-10-21"]([]);
   await first;
   assert.equal(get("diaryMonthMini").textContent, "2026-11-21");
+  assert.equal(get("diaryMonthMini").attributes["aria-busy"], "false");
+});
+
+test("calendar keeps six week rows across months", () => {
+  const { context, get } = setup("diary.js");
+  for (const date of ["2026-02-01", "2026-08-01", "2026-10-21"]) {
+    vm.runInContext(`renderMonthMiniCalendar("${date}", new Set())`, context);
+    assert.equal((get("diaryMonthMini").innerHTML.match(/class="diary-month-mini-cell /g) || []).length, 49);
+  }
 });

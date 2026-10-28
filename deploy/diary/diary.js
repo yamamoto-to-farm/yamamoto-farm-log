@@ -10,7 +10,7 @@ import { initViewPageWithOptions } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
 import { loadDiaryByDate } from "./loadDiary.js";
 import { renderWeatherBox } from "./weather-box.js";
-import { renderDayPhotos, initDayPhotosModal } from "./day-photos.js?v=20261029-2";
+import { renderDayPhotos, initDayPhotosModal } from "./day-photos.js?v=20261029-3";
 import { initCollapse } from "/common/collapse.js?v=20260716-1";
 import { loadJSON } from "/common/json.js";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
@@ -198,6 +198,9 @@ function renderMonthMiniCalendar(selectedDate, savedDatesSet) {
       `<button type="button" class="${classes.join(" ")}" data-date="${ymd}" aria-label="${ymd}へ移動">${d}</button>`
     );
   }
+  for (let i = firstWeekday + lastDate; i < 42; i += 1) {
+    cells.push('<div class="diary-month-mini-cell is-empty"></div>');
+  }
 
   host.innerHTML = `
     <div class="diary-month-mini-head">
@@ -217,14 +220,29 @@ async function refreshDiaryMonthMini(selectedDate) {
   const seq = ++diaryCalendarSeq;
   const host = document.getElementById("diaryMonthMini");
   if (!host) return;
-  host.textContent = "カレンダーを読み込み中…";
+  const notice = document.getElementById("diaryCalendarStatus");
+  const draw = dates => {
+    const direction = host.contains(document.activeElement)
+      ? document.activeElement?.dataset.monthNav
+      : "";
+    renderMonthMiniCalendar(selectedDate, new Set(dates));
+    if (direction === "prev" || direction === "next") {
+      host.querySelector(`[data-month-nav="${direction}"]`)?.focus();
+    }
+  };
+  draw(diaryMonthSavedDatesCache.get(selectedDate.slice(0, 7)) || []);
+  host.setAttribute("aria-busy", "true");
+  if (notice) notice.textContent = "保存済みの日付を確認中…";
   try {
     const dates = await loadSavedDatesForMonth(selectedDate);
     if (seq !== diaryCalendarSeq) return;
-    renderMonthMiniCalendar(selectedDate, new Set(dates));
+    draw(dates);
+    if (notice) notice.textContent = "";
   } catch (error) {
     console.error("[diary] calendar failed", error);
-    if (seq === diaryCalendarSeq) host.textContent = "カレンダーを読み込めません。閉じてから再度開いてください。";
+    if (seq === diaryCalendarSeq && notice) notice.textContent = "保存済みの日付を取得できません。日付の選択はできます。";
+  } finally {
+    if (seq === diaryCalendarSeq) host.setAttribute("aria-busy", "false");
   }
 }
 
