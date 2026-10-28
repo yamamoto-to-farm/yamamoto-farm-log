@@ -75,6 +75,13 @@ removed while its placement is reconsidered; the photo page remains available.
   Tests: `python -B -m unittest discover -s lambda\photos -p "test_*.py"`.
   Frontend edit tests: `node --test tests\photos-edit.test.cjs`.
 
+- Diary layout: date navigation and weather share a row above 760px and stack
+  on smaller screens. Clicking the date opens a calendar dialog; day photos
+  load only when "この日の写真を見る" opens its dialog. Reopening reloads signed
+  image URLs. Neither dialog nor the photo trigger is printed; weather and
+  diary work content keep their existing print behavior.
+  Modal tests: `node --test tests\diary-modals.test.cjs`.
+
 - JWT issuer:
   `https://cognito-idp.ap-northeast-1.amazonaws.com/  ap-northeast-1_OFiPcQjkC`;
     audience: `mg1q2dnn576jln28m5sja6eaf`. Lambda also requires the verified

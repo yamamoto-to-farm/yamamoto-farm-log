@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/common/css/main.css">
 
   <!-- diaryページ専用CSS -->
-  <link rel="stylesheet" href="/diary/diary.css?v=20260811-3">
+  <link rel="stylesheet" href="/diary/diary.css?v=20261029-1">
   <link rel="stylesheet" href="/photos/panel.css?v=20261029-2">
 </head>
 
@@ -43,36 +43,57 @@
     </div>
 
     <!-- 日付 -->
+    <div class="diary-summary">
+    <section class="diary-summary-date">
     <h2 id="diaryDateTitle" class="section-title">日付</h2>
     <div class="card diary-date-card">
       <div id="diaryDateNav" class="form-field">
         <button id="prevDayBtn" type="button" class="secondary-btn day-nav-btn">前日</button>
-        <span id="diaryDateDisplay" class="diary-date-display" role="button" tabindex="0" aria-label="日付（クリックでカレンダー表示）"></span>
-        <input type="text" id="diaryDate" class="form-input" readonly inputmode="none" aria-label="日付（クリックでカレンダー表示）" aria-controls="diaryMonthMini" aria-expanded="false">
+        <button id="diaryDateDisplay" class="diary-date-display" type="button" aria-label="日付（クリックでカレンダー表示）" aria-haspopup="dialog" aria-controls="diaryDateDialog" aria-expanded="false"></button>
+        <input type="hidden" id="diaryDate">
         <button id="nextDayBtn" type="button" class="secondary-btn day-nav-btn">翌日</button>
         <button id="todayBtn" type="button" class="secondary-btn day-nav-btn">今日</button>
         <button id="lastYearBtn" type="button" class="secondary-btn day-nav-btn" aria-label="昨年の同じ日付へ移動">昨年</button>
       </div>
-      <div id="diaryMonthMini" class="diary-month-mini diary-month-inline" aria-live="polite" hidden></div>
     </div>
+    </section>
 
     <!-- 天気カード -->
+    <section class="diary-summary-weather">
     <h2 class="section-title">天気</h2>
     <div id="weatherBox">
       <p>日付を選択すると天気が表示されます。</p>
     </div>
+    </section>
+    </div>
 
     <!-- 作業内容（スクロール領域） -->
-    <section class="photo-panel print-hide">
-      <h2 class="section-title">この日の写真</h2>
-      <div id="dayPhotosBody" class="card"></div>
-    </section>
+    <div class="diary-photo-action print-hide">
+      <button id="openDayPhotos" type="button" class="secondary-btn" aria-haspopup="dialog" aria-controls="dayPhotosDialog">📷 この日の写真を見る</button>
+    </div>
 
     <h2 class="section-title">作業内容</h2>
 
     <div class="diary-save-bar">
       <button id="saveDiaryBtn" class="btn-primary">保存</button>
     </div>
+
+    <dialog id="diaryDateDialog" class="diary-modal print-hide" aria-labelledby="diaryDateDialogTitle">
+      <div class="diary-modal-header">
+        <h2 id="diaryDateDialogTitle">日付を選択</h2>
+        <button id="closeDiaryDateDialog" type="button" class="secondary-btn">閉じる</button>
+      </div>
+      <div id="diaryMonthMini" class="diary-month-mini" aria-live="polite" hidden></div>
+    </dialog>
+
+    <dialog id="dayPhotosDialog" class="diary-modal diary-photos-modal print-hide" aria-labelledby="dayPhotosTitle">
+      <div class="diary-modal-header">
+        <h2 id="dayPhotosTitle">この日の写真</h2>
+        <button id="closeDayPhotos" type="button" class="secondary-btn">閉じる</button>
+      </div>
+      <a id="dayPhotosLink" class="secondary-btn" href="/photos/index.html">写真一覧で開く</a>
+      <div id="dayPhotosBody" class="photo-panel"></div>
+    </dialog>
 
     <div id="workContentWrapper">
       <div id="editWorkArea"></div>
@@ -97,9 +118,8 @@
   <script type="module" src="/diary/viewCard.js?v=20260811-4"></script>
   <script type="module" src="/diary/weather-box.js?v=20260810-1"></script>
   <script type="module" src="/diary/loadDiary.js"></script>
-  <script type="module" src="/diary/diary.js?v=20260812-1"></script>
+  <script type="module" src="/diary/diary.js?v=20261029-1"></script>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
-

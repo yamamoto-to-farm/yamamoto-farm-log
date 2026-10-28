@@ -1236,7 +1236,38 @@
   }
 }
 
+.diary-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.diary-summary > section { min-width: 0; }
+.diary-summary .section-title { margin: 8px 0 6px; }
+.diary-summary .diary-date-card,
+.diary-summary #weatherBox .weather-card { margin: 0; padding: 10px 12px; }
+.diary-summary #diaryDateNav { flex-wrap: wrap; overflow: visible; gap: 6px; }
+.diary-summary #diaryDateNav .diary-date-display { flex: 1 1 120px; min-width: 110px; min-height: 36px; margin: 0; padding: 6px 8px; font-size: 16px; }
+.diary-summary #diaryDateNav .day-nav-btn { min-width: 0; min-height: 34px; padding: 6px 8px; font-size: 13px; }
+.diary-summary #weatherBox .weather-summary-line { font-size: 14px; gap: 4px 8px; }
+.diary-photo-action { margin: 10px 0; }
+.diary-photo-action button { margin: 0; padding: 8px 12px; font-size: 14px; }
+.diary-modal { width: min(440px, calc(100vw - 32px)); max-height: 85vh; overflow-y: auto; box-sizing: border-box; padding: 16px; border: 0; border-radius: 12px; }
+.diary-modal::backdrop { background: rgb(0 0 0 / 55%); }
+.diary-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.diary-modal-header h2 { margin: 0; font-size: 18px; }
+.diary-modal-header button { margin: 0; padding: 8px 12px; }
+.diary-modal .diary-month-mini { margin: 0; }
+.diary-photos-modal { width: min(800px, calc(100vw - 32px)); }
+.diary-photos-modal > a { display: inline-block; margin: 0 0 12px; padding: 8px 12px; text-decoration: none; }
+#diaryMonthMini[hidden] { display: none; }
+@media (max-width: 760px) {
+  .diary-summary { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+}
+
 @media print {
+  .diary-summary { display: block; }
+  .diary-modal, .diary-photo-action { display: none !important; }
   @page {
     size: A4 portrait;
     margin: 10mm;
@@ -1336,4 +1367,3 @@
     background: transparent;
   }
 }
-
