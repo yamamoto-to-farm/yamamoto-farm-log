@@ -171,10 +171,56 @@ can be enlarged; another authorized user can view it; unsigned S3 access is
 denied; logout removes the page's images; existing logs remain unchanged.
 Real AWS deployment and end-to-end authorization must be checked separately.
 
+## シフト案の自動作成（lambda/shift）
+
+毎月26日の朝に、timetree の勤務希望から翌月のシフト案（予算シナリオ付き）を作り、
+非公開バケットへ保存して SNS で知らせる Lambda です。農園OSは**提案の表示まで**を担当し、
+timetree の修正（確定・「希」外し）は人が行います。
+
+- `lambda/shift/lambda_function.py` : ハンドラ（fetch → parse → plan → S3保存 → 通知）
+- `lambda/shift/shift_tool.py` : シフト調整ツール本体のコピー。原本は
+  `g:\マイドライブ\02_労務管理\09_シフト管理\shift-tool\shift-tool\shift_tool.py`。
+  原本を更新したら、このコピーも差し替えてください。
+- テスト: `python -B -m unittest discover -s lambda\shift -p "test_*.py"`（AWS接続なし）
+- ビルド: `./scripts/build_shift_lambda_zip.ps1` → `shift.zip`（Linux用ホイールを同梱。
+  boto3 はランタイム提供のため含めない）
+
+### AWS設定（photosと同じ方針。このリポジトリはAWSを自動変更しません）
+
+- 非公開バケット（例 `yamamoto-farm-private-shift`）: S3 Block Public Access は4つとも有効、
+  ACL無効、公開ポリシーなし。公開サイトの CloudFront には追加しない。キー構成:
+  - `shift/config.json` … スタッフマスタ（入力）。shift-tool の config.json から
+    **`timetree_email` / `timetree_password` を削除したもの**をアップロードする
+    （認証情報は Secrets Manager に移す）。時給を含むため公開バケットには置かない。
+  - `shift/<YYYY-MM>/entries.csv` `plan.txt` `proposal.csv` `plan.json` … 月別の結果
+  - `shift/latest.json` … 最新の plan.json（管理ページが読む）
+  - `shift/ics/*.ics` … 手動再計算（`skip_fetch`）用の置き場（任意）
+- Secrets Manager: シークレット（例 `yamamoto-farm/timetree`）に
+  JSON `{"email": "...", "password": "..."}` を保存。
+- SNS: トピックを作成し、通知先メールを購読（成功・失敗の両方を通知）。
+- Lambda: ランタイム Python 3.13、ハンドラ `lambda_function.lambda_handler`、
+  メモリ 512MB、タイムアウト 300秒。環境変数:
+  - `SHIFT_BUCKET` =（非公開バケット名）
+  - `SHIFT_PREFIX` = `shift/`（既定）
+  - `TIMETREE_SECRET_ARN` =（シークレットのARN）
+  - `SNS_TOPIC_ARN` =（トピックのARN）
+- 実行ロール: 非公開バケットの `shift/*` に対する `s3:GetObject` / `s3:PutObject` と
+  `s3:ListBucket`（prefix条件 `shift/*`）、対象シークレットの `secretsmanager:GetSecretValue`、
+  トピックへの `sns:Publish`、基本の CloudWatch Logs。公開バケットへの権限は不要。
+- EventBridge Scheduler: `cron(0 7 26 * ? *)`・タイムゾーン `Asia/Tokyo`、
+  ターゲットはこの Lambda、ペイロード `{}`。
+- 手動実行: コンソールのテストで `{"month": "2026-11"}`（対象月の指定）、
+  `{"month": "2026-11", "skip_fetch": true}`（`shift/ics/` の .ics で再計算）、
+  `{"peak": true}`（繁忙期・実働9h許容）。
+- timetree-exporter は非公式ツールのため、timetree 側の変更で失敗することがあります。
+  失敗は SNS で通知されるので、手元の shift-tool（CLI）で作成して S3 に置けば復旧できます。
+
 ## Repository structure
 
 - `deploy/` : static front-end files published to S3
 - `src/gdd/` : Python implementation for GDD-based prediction to be deployed to AWS Lambda
+- `lambda/photos/` : private field photos API Lambda
+- `lambda/shift/` : monthly shift plan Lambda (see above)
 - `scripts/` : helper scripts for packaging and deployment
 - `requirements.txt` : Python dependencies for Lambda
 
