@@ -1,175 +1,170 @@
-# Yamamoto Farm Log
+# Yamamoto Farm Log（山本農園ログ）
 
-This project contains the static farm log web application and the experimental GDD forecasting Lambda package.
+農園ログの静的Webアプリと、GDD予測（実験的）のLambdaパッケージを含むプロジェクトです。
 
-## Shared login policy
+## 共有ログインのポリシー
 
-`deploy/data/auth-config.json` controls the shared local session policy.
-An explicit empty `sensitivePathPrefixes: []` disables path-specific
-reauthentication; admin pages then use the same session expiry (8 hours) and
-idle timeout (60 minutes) as other pages. Role and page-access checks remain
-enabled. Missing or malformed path settings retain the `/admin/` default.
-The authentication-settings editor saves an empty path field as `[]`.
+`deploy/data/auth-config.json` が共有ローカルセッションのポリシーを制御します。
+`sensitivePathPrefixes: []` を明示的に空にすると、パス別の再認証は無効になり、
+管理ページも他のページと同じセッション有効期限（8時間）・アイドルタイムアウト
+（60分）を使います。ロールとページアクセスのチェックは引き続き有効です。
+パス設定が欠落・不正な場合は既定の `/admin/` が維持されます。
+認証設定エディタは、空のパス欄を `[]` として保存します。
 
-Deploy the updated shared UI and settings editor before uploading
-`deploy/data/auth-config.json` to S3 as `data/auth-config.json` (the site sync
-excludes `data/`). Invalidate `/data/auth-config.json` in CloudFront and reload
-open pages so their in-memory configuration is refreshed.
-Tests: `node --test tests\auth-policy.test.cjs`.
+`deploy/data/auth-config.json` を S3 の `data/auth-config.json` にアップロードする前に、
+更新した共有UIと設定エディタをデプロイしてください（サイト同期は `data/` を除外します）。
+CloudFront で `/data/auth-config.json` を無効化（invalidate）し、開いているページを
+再読み込みして、メモリ上の設定を更新します。
+テスト: `node --test tests\auth-policy.test.cjs`
 
-## Private field photos
+## 圃場写真（非公開）
 
-The `/photos/index.html` page uses a separate Cognito authorization-code login
-with PKCE (S256). Existing farm-log login is unchanged. Every user provisioned by
-an administrator in the dedicated pool can read/add all farm photos; self-signup
-must remain disabled. Local browser roles are not accepted by the photo API.
-The page is linked from the top menu. The field-detail link is temporarily
-removed while its placement is reconsidered; the photo page remains available.
+`/photos/index.html` は、PKCE（S256）を使う Cognito 認可コードログインを別途使用します。
+既存の農園ログのログインは変更ありません。専用プールに管理者が登録したユーザーは、
+全圃場写真の閲覧・追加ができます。セルフサインアップは無効のまま維持してください。
+ブラウザのローカルロールは写真APIでは受け付けません。
+ページはトップメニューからリンクされています。圃場詳細からのリンクは配置を再検討中のため
+一時的に外していますが、写真ページ自体は利用できます。
 
-### AWS setup and deployment
+### AWSの設定とデプロイ
 
-- Region: `ap-northeast-1`.
-- Private bucket: `yamamoto-farm-private-photos`. Keep all four S3 Block Public
-  Access settings enabled, ACLs disabled, and no public bucket policy. Do not add
-  this bucket to the site's public CloudFront distribution.
-- Lambda: `yamamoto-farm-photos-api`, Python 3.13, handler
-  `lambda_function.lambda_handler`. Deploy the content of
-  `lambda/photos/lambda_function.py` to the console's `lambda_function.py`, or
-  zip that single file at the archive root. Runtime-provided boto3 is used;
-  no additional packages are required.
-- Environment: `PHOTO_BUCKET=yamamoto-farm-private-photos`,
-  `PHOTO_PREFIX=photos/`.
-- Execution role: `s3:ListBucket` on the private bucket, restricted to
-  `photos/` and `photos/*`; `s3:GetObject`, `s3:PutObject`, and `s3:DeleteObject` on
-  `arn:aws:s3:::yamamoto-farm-private-photos/photos/*`. Keep the basic CloudWatch
-  Logs policy. No access to the public bucket is required.
-- HTTP API Lambda proxy integration: payload format **2.0**. All routes
-  below must use JWT authorizer `farm-photos-cognito` and required scope
-  **openid**:
+- リージョン: `ap-northeast-1`
+- 非公開バケット: `yamamoto-farm-private-photos`。S3 Block Public Access は4つとも有効、
+  ACL無効、公開バケットポリシーなしを維持します。このバケットを公開サイトの
+  CloudFront ディストリビューションに追加しないでください。
+- Lambda: `yamamoto-farm-photos-api`、Python 3.13、ハンドラ
+  `lambda_function.lambda_handler`。`lambda/photos/lambda_function.py` の内容を
+  コンソールの `lambda_function.py` にデプロイするか、このファイル1つを
+  アーカイブ直下に入れて zip 化します。ランタイム提供の boto3 を使うため、
+  追加パッケージは不要です。
+- 環境変数: `PHOTO_BUCKET=yamamoto-farm-private-photos`、
+  `PHOTO_PREFIX=photos/`
+- 実行ロール: 非公開バケットへの `s3:ListBucket`（`photos/` と `photos/*` に限定）、
+  `arn:aws:s3:::yamamoto-farm-private-photos/photos/*` への `s3:GetObject`・
+  `s3:PutObject`・`s3:DeleteObject`。基本の CloudWatch Logs ポリシーは維持。
+  公開バケットへの権限は不要です。
+- HTTP API の Lambda プロキシ統合: ペイロード形式 **2.0**。以下の全ルートに
+  JWT オーソライザー `farm-photos-cognito` と必須スコープ **openid** を付けます:
 
-  | Method | Path | Purpose |
+  | メソッド | パス | 用途 |
   | --- | --- | --- |
-  | GET | `/photos` | List a field's completed photos, 20 per page |
-  | GET | `/photos/search` | Search by date range and optional fields, 24 per page |
-  | POST | `/photos/uploads` | Issue a 5-minute size-limited S3 POST |
-  | POST | `/photos/complete` | Validate upload and publish its metadata |
-  | POST | `/photos/edit` | Edit note and takenOn; admin/family only |
+  | GET | `/photos` | 圃場のアップロード完了済み写真を一覧（20件/ページ） |
+  | GET | `/photos/search` | 期間と圃場（任意）で検索（24件/ページ） |
+  | POST | `/photos/uploads` | 5分有効・サイズ制限付きの S3 POST を発行 |
+  | POST | `/photos/complete` | アップロードを検証しメタデータを公開 |
+  | POST | `/photos/edit` | メモと撮影日の編集（admin/family のみ） |
 
-- Photo search requires `from` and `to` (YYYY-MM-DD). Optional `fields` is a
-  JSON-encoded array of field names; omitted or empty means all fields. The
-  legacy single `field` parameter remains supported. Follow the returned
-  `cursor` with the same search conditions. The gallery URL uses repeated
-  `field` parameters to restore multiple selections. Gallery filters support
-  area-wide selection; photo uploads still select exactly one destination.
-  Redeploy the Lambda before publishing the multi-field gallery frontend.
+- 写真検索は `from`・`to`（YYYY-MM-DD）が必須です。任意の `fields` は圃場名の
+  JSONエンコード配列で、省略または空なら全圃場が対象です。従来の単一 `field`
+  パラメータも引き続き使えます。返された `cursor` は同じ検索条件で辿ってください。
+  ギャラリーのURLは複数選択の復元に `field` パラメータの繰り返しを使います。
+  ギャラリーのフィルタはエリア一括選択に対応しますが、写真のアップロード先は
+  1圃場のみ選択します。複数圃場ギャラリーのフロントエンドを公開する前に
+  Lambda を再デプロイしてください。
 
-- Photo editing accepts `field`, `id`, `takenOn` (YYYY-MM-DD), and `note`
-  (at most 1000 characters). Only verified Cognito `admin`/`family` groups may
-  edit, including for the uploader's own photos. The gallery uses `canEdit`
-  from the API, not a local role check. A date change updates both date indexes
-  and removes the old entries; field, image, ID, and uploader stay unchanged.
-  Existing top-photo selections continue pointing to the same photo.
-- Faster S3 search (no new AWS service):
-  1. Deploy the new Lambda; leave `PHOTO_SEARCH_INDEX_VERSION` unset initially.
-     Upload completion, editing, and deletion maintain
-     `photos/by-field-date/<field-sha256>/<takenOn>/<id>.json`.
-  2. While uploads, edits, and deletes are paused, invoke the Lambda directly
-     with `{"action":"backfill"}` (not through API Gateway). Wait for a successful
-     `{"indexed": N}` response. This also repairs the legacy by-date entries for
-     current records. The operation can be rerun after an interrupted migration.
-  3. Add environment variable `PHOTO_SEARCH_INDEX_VERSION=2`, keeping the existing
-     bucket/prefix variables. Only enable it after backfill succeeds.
-  4. Add JWT-protected `POST /photos/edit` using the existing integration and
-     required `openid` scope, then publish the frontend.
-  Indexed search lists date/field keys, merges them in newest-first order,
-  and reads metadata for only the requested page (at most 24 objects).
-  It does not cache signed URLs or mutable results in Lambda memory.
-  Exact totals still require listing all matching keys; scans over 100,000
-  keys per field (or the global date index) are rejected with an explicit
-  request to narrow the period. This is not a constant-time database search.
-  Tests: `python -B -m unittest discover -s lambda\photos -p "test_*.py"`.
-  Frontend edit tests: `node --test tests\photos-edit.test.cjs`.
+- 写真編集は `field`・`id`・`takenOn`（YYYY-MM-DD）・`note`（1000文字まで）を
+  受け付けます。編集できるのは検証済みの Cognito `admin`/`family` グループのみで、
+  自分がアップロードした写真でも同様です。ギャラリーはローカルのロール判定ではなく
+  APIの `canEdit` を使います。日付変更は両方の日付インデックスを更新して旧エントリを
+  削除します。圃場・画像・ID・アップロード者は変わりません。既存のトップ写真の
+  選択は同じ写真を指し続けます。
+- S3検索の高速化（新しいAWSサービスは不要）:
+  1. 新しい Lambda をデプロイし、最初は `PHOTO_SEARCH_INDEX_VERSION` を未設定のままに
+     します。アップロード完了・編集・削除が
+     `photos/by-field-date/<圃場名のSHA-256>/<takenOn>/<id>.json` を維持します。
+  2. アップロード・編集・削除を止めた状態で、Lambda を（API Gateway 経由ではなく）
+     直接 `{"action":"backfill"}` で起動します。`{"indexed": N}` の成功応答を待ちます。
+     これは現行レコードの旧 by-date エントリも修復します。移行が中断しても再実行できます。
+  3. 既存のバケット/プレフィックスの環境変数は維持したまま、環境変数
+     `PHOTO_SEARCH_INDEX_VERSION=2` を追加します。バックフィル成功後にのみ有効化します。
+  4. 既存の統合と必須 `openid` スコープで JWT 保護の `POST /photos/edit` を追加し、
+     その後フロントエンドを公開します。
+  インデックス検索は日付/圃場キーを列挙して新しい順にマージし、要求されたページ分
+  （最大24オブジェクト）のメタデータだけを読みます。署名URLや変化しうる結果を
+  Lambda メモリにキャッシュしません。正確な合計件数は依然として該当キーの全列挙が
+  必要で、圃場ごと（またはグローバル日付インデックス）で10万キーを超える走査は、
+  期間を絞るよう明示的に求めて拒否します。これは定数時間のデータベース検索では
+  ありません。
+  テスト: `python -B -m unittest discover -s lambda\photos -p "test_*.py"`
+  フロントエンド編集テスト: `node --test tests\photos-edit.test.cjs`
 
-- Diary layout: date navigation and weather share a row above 760px and stack
-  on smaller screens. Work cards use compact spacing and expand with their
-  content, using page scrolling instead of a nested work-content scrollbar.
-  Clicking the date opens a calendar dialog; day photos
-  load only when "この日の写真を見る" opens its dialog. The button loads only a
-  count via authenticated `GET /photos/by-date?date=YYYY-MM-DD&countOnly=1`
-  (`{"total": N}`), listing index keys without reading photo metadata or images.
-  Redeploy Lambda before publishing the count-enabled diary.
-  Reopening reloads signed
-  image URLs. Neither dialog nor the photo trigger is printed; weather and
-  diary work content keep their existing print behavior.
-  Modal tests: `node --test tests\diary-modals.test.cjs`.
+- 日誌レイアウト: 760px超では日付ナビと天気が1行に並び、狭い画面では縦に積まれます。
+  作業カードはコンパクトな間隔で内容に応じて広がり、入れ子のスクロールバーではなく
+  ページスクロールを使います。日付クリックでカレンダーダイアログが開きます。
+  その日の写真は「この日の写真を見る」でダイアログを開いたときだけ読み込みます。
+  ボタンは認証付き `GET /photos/by-date?date=YYYY-MM-DD&countOnly=1`（`{"total": N}`）で
+  件数のみを取得し、写真のメタデータや画像は読みません。件数表示対応の日誌を公開する
+  前に Lambda を再デプロイしてください。再度開くと署名付き画像URLを再取得します。
+  ダイアログと写真ボタンは印刷されません。天気と日誌の作業内容は既存の印刷動作を
+  維持します。
+  モーダルのテスト: `node --test tests\diary-modals.test.cjs`
 
-- JWT issuer:
-  `https://cognito-idp.ap-northeast-1.amazonaws.com/  ap-northeast-1_OFiPcQjkC`;
-    audience: `mg1q2dnn576jln28m5sja6eaf`. Lambda also requires the verified
-  claims to identify an access token for this client and issuer.
-- Ensure API Gateway has Lambda invoke permission for **each** route. The
-  console integration normally adds this; if necessary use Lambda's
-  resource-based policy with API Gateway as principal, restricted to this
-  API's execution ARN. Do not enable a public Lambda function URL.
-- API CORS: origin `https://d3sscxnlo0qnhe.cloudfront.net`; headers
-  `authorization`, `content-type`; methods `GET`, `POST`, `OPTIONS`;
-  credentials disabled; max age 300. Let HTTP API handle preflight; do not
-  attach JWT auth to a separate OPTIONS route.
-- S3 CORS: same origin; methods `GET`, `HEAD`, `POST`, `PUT`; allowed headers
-  `*`; exposed header `ETag`; max age 300. CORS does not grant S3 access.
-- Cognito: public SPA client (no secret), self-signup disabled, code grant only,
-  scopes `openid email`; callback
-  `https://d3sscxnlo0qnhe.cloudfront.net/photos/callback.html`, sign-out URL
-  `https://d3sscxnlo0qnhe.cloudfront.net/photos/index.html`.
-- Front-end connection values are in `deploy/photos/config.js`. Upload
-  `deploy/photos/` plus modified `deploy/fields/index.html`,
-  `deploy/data/pages.json`, and `deploy/sw.js` to the **public site bucket**,
-  preserving paths. These contain code, not private photo data. Invalidate
-  their CloudFront paths so the updated service worker is loaded.
-- Deploy the API to `$default` **only after** verifying JWT auth and `openid`
-  scope on every route. This repository does not automatically modify AWS.
+- JWT発行者:
+  `https://cognito-idp.ap-northeast-1.amazonaws.com/  ap-northeast-1_OFiPcQjkC`、
+  オーディエンス: `mg1q2dnn576jln28m5sja6eaf`。Lambda は検証済みクレームが
+  このクライアント・発行者のアクセストークンであることも要求します。
+- API Gateway に**各ルート**の Lambda 呼び出し権限があることを確認してください。
+  コンソールの統合では通常自動で付与されます。必要なら API Gateway をプリンシパルとし、
+  このAPIの実行ARNに限定した Lambda のリソースベースポリシーを使います。
+  公開の Lambda Function URL は有効化しないでください。
+- API の CORS: オリジン `https://d3sscxnlo0qnhe.cloudfront.net`、ヘッダー
+  `authorization`・`content-type`、メソッド `GET`・`POST`・`OPTIONS`、
+  認証情報は無効、max age 300。プリフライトは HTTP API に処理させ、
+  OPTIONS ルートに JWT 認証を付けないでください。
+- S3 の CORS: 同じオリジン、メソッド `GET`・`HEAD`・`POST`・`PUT`、許可ヘッダー `*`、
+  公開ヘッダー `ETag`、max age 300。CORS は S3 へのアクセス権を与えるものではありません。
+- Cognito: パブリックSPAクライアント（シークレットなし）、セルフサインアップ無効、
+  認可コードグラントのみ、スコープ `openid email`。コールバック
+  `https://d3sscxnlo0qnhe.cloudfront.net/photos/callback.html`、サインアウトURL
+  `https://d3sscxnlo0qnhe.cloudfront.net/photos/index.html`。
+- フロントエンドの接続情報は `deploy/photos/config.js` にあります。`deploy/photos/` と、
+  変更した `deploy/fields/index.html`・`deploy/data/pages.json`・`deploy/sw.js` を
+  パスを保ったまま**公開サイトバケット**にアップロードします。これらはコードであり、
+  非公開の写真データは含みません。更新後のサービスワーカーが読み込まれるよう、
+  該当する CloudFront パスを無効化してください。
+- API の `$default` へのデプロイは、全ルートで JWT 認証と `openid` スコープを
+  確認した**あとにのみ**行ってください。このリポジトリは AWS を自動変更しません。
 
-### Storage, privacy, and limits
+### 保存・プライバシー・制限
 
-S3 keys use `photos/fields/<SHA-256 of field name>/` with `images/`, `pending/`,
-and `records/` sub-prefixes. Each photo has a unique ID; there is no shared
-JSON index that concurrent writers can overwrite. `pending/` stores upload
-metadata; only completed `records/` entries are listed. A retry of completion
-is idempotent. Do not delete pending records automatically in this initial
-version: they support safe retries. Failed/abandoned uploads can leave private
-objects; inspect and clean those explicitly rather than expiring all images.
-Field names are currently the association key: renaming a field requires
-migrating its photo records/keys (no automatic rename is implemented).
+S3キーは `photos/fields/<圃場名のSHA-256>/` を使い、その下に `images/`・`pending/`・
+`records/` のサブプレフィックスがあります。写真ごとに一意のIDがあり、同時書き込みで
+壊れる共有JSONインデックスはありません。`pending/` はアップロードのメタデータを保存し、
+一覧に出るのは完了済みの `records/` エントリだけです。完了処理の再試行は冪等です。
+この初期版では pending レコードを自動削除しないでください（安全な再試行を支えるためです）。
+失敗・放置されたアップロードは非公開オブジェクトとして残ることがあります。全画像に
+有効期限を設定するのではなく、明示的に確認して掃除してください。
+現状は圃場名が関連付けのキーです。圃場名を変更する場合は、その写真のレコード・キーの
+移行が必要です（自動リネームは実装されていません）。
 
-The browser converts JPEG/PNG/WebP (source max 20MB) into a JPEG with a maximum
-1920px long edge, removes source metadata by canvas re-encoding, and enforces
-5MB output. HEIC and original-file preservation are not supported. The API
-checks content type, size and JPEG signature; it is **not** a full image decoder
-or malware scanner. This first version uses lazy-loaded display images, not
-separate thumbnail files. Lists sort the fetched records by capture date;
-S3 pagination is by upload ID, not global capture date. Load subsequent pages
-to include all photos.
+ブラウザは JPEG/PNG/WebP（元ファイル最大20MB）を長辺1920px以内のJPEGに変換し、
+canvas再エンコードで元のメタデータを除去し、出力5MBを強制します。HEICと元ファイルの
+保存には対応していません。APIはコンテンツタイプ・サイズ・JPEGシグネチャを確認しますが、
+完全な画像デコーダやマルウェアスキャナでは**ありません**。この初期版は遅延読み込みの
+表示用画像を使い、別個のサムネイルファイルは作りません。一覧は取得済みレコードを
+撮影日で並べ替えます。S3のページングはアップロードID順で、全体の撮影日順ではありません。
+すべての写真を含めるには後続ページを読み込んでください。
 
-Tokens are held in per-tab sessionStorage, never in public JSON. Refresh tokens
-are not retained; an expired session requires login again. The service worker
-does not cache `/photos/` requests or external S3/API requests. S3 image
-responses specify `no-store`. Signed URLs are bearer credentials valid for
-5 minutes: do not log/share them; a URL already issued can work until expiry
-even after logout, and an authorized user can still save/screenshot photos.
-No browser feature can prevent that.
+トークンはタブごとの sessionStorage に保持し、公開JSONには決して入れません。
+リフレッシュトークンは保持しないため、セッションが切れたら再ログインが必要です。
+サービスワーカーは `/photos/` のリクエストや外部のS3/APIリクエストをキャッシュしません。
+S3の画像応答は `no-store` を指定します。署名付きURLは5分有効のベアラー認証情報です。
+ログや共有に残さないでください。発行済みのURLはログアウト後も期限まで有効なことがあり、
+権限のあるユーザーは写真の保存やスクリーンショットができます。
+これをブラウザの機能で防ぐことはできません。
 
-### Validation
+### 検証
 
 ```powershell
 python -m unittest discover -s lambda\photos -p "test_*.py" -v
 ```
 
-Tests use an in-memory S3 mock and do not access AWS. After deployment verify:
-unauthenticated requests to **every** route return 401; Cognito login and
-initial password change work; a JPEG upload appears in the selected field and
-can be enlarged; another authorized user can view it; unsigned S3 access is
-denied; logout removes the page's images; existing logs remain unchanged.
-Real AWS deployment and end-to-end authorization must be checked separately.
+テストはインメモリのS3モックを使い、AWSには接続しません。デプロイ後は次を確認します:
+**全ルート**への未認証リクエストが401を返すこと。Cognitoログインと初回パスワード変更が
+できること。JPEGのアップロードが選択した圃場に表示され拡大できること。権限のある別の
+ユーザーが閲覧できること。署名なしのS3アクセスが拒否されること。ログアウトでページの
+画像が消えること。既存のログが変わらないこと。
+実際のAWSデプロイとエンドツーエンドの認可は別途確認が必要です。
 
 ## シフト案の自動作成（lambda/shift）
 
@@ -215,22 +210,22 @@ timetree の修正（確定・「希」外し）は人が行います。
 - timetree-exporter は非公式ツールのため、timetree 側の変更で失敗することがあります。
   失敗は SNS で通知されるので、手元の shift-tool（CLI）で作成して S3 に置けば復旧できます。
 
-## Repository structure
+## リポジトリ構成
 
-- `deploy/` : static front-end files published to S3
-- `src/gdd/` : Python implementation for GDD-based prediction to be deployed to AWS Lambda
-- `lambda/photos/` : private field photos API Lambda
-- `lambda/shift/` : monthly shift plan Lambda (see above)
-- `scripts/` : helper scripts for packaging and deployment
-- `requirements.txt` : Python dependencies for Lambda
+- `deploy/` : S3に公開する静的フロントエンドファイル
+- `src/gdd/` : AWS Lambda にデプロイする GDD 予測の Python 実装
+- `lambda/photos/` : 圃場写真（非公開）APIの Lambda
+- `lambda/shift/` : 毎月のシフト案生成 Lambda（上記参照）
+- `scripts/` : パッケージングとデプロイの補助スクリプト
+- `requirements.txt` : Lambda 用の Python 依存パッケージ
 
-## Local validation
+## ローカル検証
 
 ```bash
 python -m py_compile src/gdd/__init__.py src/gdd/weather_loader.py src/gdd/gdd_calculator.py src/gdd/model.py src/gdd/app.py
 ```
 
-## Build Lambda zip
+## Lambda zip のビルド（GDD）
 
 PowerShell:
 
@@ -238,17 +233,17 @@ PowerShell:
 ./scripts/build_gdd_lambda_zip.ps1
 ```
 
-Then upload `gdd.zip` to the target Lambda function.
+できた `gdd.zip` を対象の Lambda 関数にアップロードします。
 
-## Lambda handler
+## Lambda ハンドラ（GDD）
 
-Set the handler to:
+ハンドラには次を設定します:
 
 ```text
 app.lambda_handler
 ```
 
-## Example request payload
+## リクエストペイロードの例（GDD）
 
 ```json
 {
