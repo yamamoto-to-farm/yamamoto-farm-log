@@ -114,7 +114,12 @@ const calcPlan = {
     { name: "土井", target_days: 12, hourly: 1310, latest_end: { "日": "15:00", "月": "15:00" } },
     { name: "若月", target_days: 12, hourly: 1260, unavailable_days_of_month: [22, 23] },
   ],
-  requests: { items: [{ date: "2026-11-01", person: "土井", start: "7:30", end: "15:00" }] },
+  requests: { items: [
+    { date: "2026-11-01", person: "土井", start: "7:30", end: "15:00", kind: "time",
+      warnings: "開始時刻なし：実働6.5hになるよう開始を7:30に調整" },
+    { date: "2026-11-03", person: "土井", start: "8:30", end: "15:00", kind: "time", warnings: "" },
+    { date: "2026-11-05", person: "若月", start: "13:00", end: "17:10", kind: "PM", warnings: "" },
+  ] },
   targets: {
     break_minutes: { not_spanning_noon: 10, spanning_noon: 60 },
     allday_default: { start: "06:00", end: "17:10" },
@@ -126,10 +131,11 @@ const calcPlan = {
 test("editWarnings は曜日の終了制約・入れない日・週上限を警告する", async () => {
   const { editWarnings } = await logic();
   const doiSun = { person: "土井", date: "2026-11-01", weekday: "日", key: "2026-11-01:土井" };
-  // 日曜16:00終了 → latest_end 15:00 超過
+  // 日曜16:00終了 → latest_end 15:00 超過 ＋ 希望（〜15:00）超過の2件
   let warns = editWarnings(calcPlan, doiSun, "fixed", "08:00", "16:00");
-  assert.equal(warns.length, 1);
+  assert.equal(warns.length, 2);
   assert.match(warns[0], /日曜 15:00 までの制約/);
+  assert.match(warns[1], /希望（〜15:00）より遅い終了/);
   // 15:00ちょうどはOK
   assert.equal(editWarnings(calcPlan, doiSun, "fixed", "08:00", "15:00").length, 0);
   // 見送りなら警告なし
@@ -251,6 +257,24 @@ test("shiftLabel は AM/PM/時間帯を出し分ける", async () => {
   assert.equal(shiftLabel("13:00", "16:30"), "PM");
   assert.equal(shiftLabel("8:00", "16:30"), "8:00~16:30");
   assert.equal(shiftLabel("", "16:30"), "");
+});
+
+test("editWarnings は希望の原本との食い違いも警告する", async () => {
+  const { editWarnings } = await logic();
+  // 火曜（latest_endなし）の「希 8:30〜15:00」
+  const doiTue = { person: "土井", date: "2026-11-03", weekday: "火", key: "2026-11-03:土井" };
+  let warns = editWarnings(calcPlan, doiTue, "fixed", "08:30", "16:00");
+  assert.equal(warns.length, 1);
+  assert.match(warns[0], /希望（〜15:00）より遅い終了/);
+  warns = editWarnings(calcPlan, doiTue, "fixed", "08:00", "15:00");
+  assert.match(warns[0], /希望（8:30〜）より早い開始/);
+  // 11/1 は開始7:30が自動補完 → 早い開始でも警告しない（日曜のlatest_endのみ）
+  const doiSun = { person: "土井", date: "2026-11-01", weekday: "日", key: "2026-11-01:土井" };
+  assert.equal(editWarnings(calcPlan, doiSun, "fixed", "06:00", "15:00").length, 0);
+  // 希 PM の人を午前から入れようとすると警告
+  const wakaPm = { person: "若月", date: "2026-11-05", weekday: "木", key: "2026-11-05:若月" };
+  warns = editWarnings(calcPlan, wakaPm, "fixed", "10:00", "16:00");
+  assert.match(warns[0], /希望は午後のみ（PM）/);
 });
 
 test("formatYen は桁区切りを付ける", async () => {
