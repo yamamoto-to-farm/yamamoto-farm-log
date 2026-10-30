@@ -101,6 +101,28 @@ class ShiftApiTests(unittest.TestCase):
         status, body = self.call("GET /shift/plan")
         self.assertEqual(status, 404)
 
+    def test_plan_run_list_returns_snapshots(self):
+        fake_s3.list_objects_v2.return_value = {
+            "CommonPrefixes": [{"Prefix": "shift/2026-11/runs/20261026-070102/"},
+                               {"Prefix": "shift/2026-11/runs/20261030-231501/"},
+                               {"Prefix": "shift/2026-11/runs/broken/"}],
+        }
+        status, body = self.call("GET /shift/plan", {"month": "2026-11", "run": "list"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["runs"], ["20261030-231501", "20261026-070102"])
+
+    def test_plan_run_reads_snapshot_key(self):
+        fake_s3.get_object.return_value = s3_body('{"month": "2026-11"}')
+        status, body = self.call("GET /shift/plan", {"month": "2026-11", "run": "20261026-070102"})
+        self.assertEqual(status, 200)
+        fake_s3.get_object.assert_called_once_with(
+            Bucket="private-shift-test", Key="shift/2026-11/runs/20261026-070102/plan.json")
+
+    def test_plan_run_requires_month_and_format(self):
+        self.assertEqual(self.call("GET /shift/plan", {"run": "20261026-070102"})[0], 400)
+        self.assertEqual(self.call("GET /shift/plan", {"month": "2026-11", "run": "../x"})[0], 400)
+        fake_s3.get_object.assert_not_called()
+
     def test_months_lists_month_prefixes_only(self):
         fake_s3.list_objects_v2.return_value = {
             "CommonPrefixes": [{"Prefix": "shift/2026-11/"}, {"Prefix": "shift/2026-12/"},

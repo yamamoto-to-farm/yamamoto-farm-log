@@ -1,7 +1,9 @@
 """シフト案 読み取り・設定編集API（Cognito JWT保護・admin/familyグループ限定）.
 
 HTTP API（payload 2.0）のルート:
-  GET  /shift/plan       … 最新（または ?month=YYYY-MM）の plan.json を返す
+  GET  /shift/plan       … 最新（または ?month=YYYY-MM）の plan.json を返す。
+                           ?month=YYYY-MM&run=list でその月のスナップショット一覧、
+                           &run=<日時> で生成実行時点のスナップショット plan.json を返す
   GET  /shift/months     … 保存済みの月の一覧を返す
   GET  /shift/config     … スタッフマスタ（config.json）を返す
   POST /shift/config     … 検証して config.json を保存（保存前に config-backups/ へ退避）
@@ -34,6 +36,7 @@ CLIENT_ID = "mg1q2dnn576jln28m5sja6eaf"
 ISSUER = "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_OFiPcQjkC"
 ALLOWED_GROUPS = {"admin", "family"}
 MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+RUN_RE = re.compile(r"^\d{8}-\d{6}$")
 TIME_RE = re.compile(r"^\d{1,2}:\d{2}$")
 WEEKDAYS = set("月火水木金土日")
 MAX_CONFIG_BYTES = 32768
@@ -87,6 +90,24 @@ def list_months(bucket, prefix):
         token = listing.get("NextContinuationToken")
         if not token:
             return sorted(months, reverse=True)
+
+
+def list_runs(bucket, prefix, month):
+    """生成実行ごとのスナップショット（<prefix><月>/runs/<日時>/）の日時一覧"""
+    runs, token = [], None
+    base = f"{prefix}{month}/runs/"
+    while True:
+        kw = {"Bucket": bucket, "Prefix": base, "Delimiter": "/"}
+        if token:
+            kw["ContinuationToken"] = token
+        listing = S3.list_objects_v2(**kw)
+        for item in listing.get("CommonPrefixes", []):
+            name = item["Prefix"][len(base):].rstrip("/")
+            if RUN_RE.fullmatch(name):
+                runs.append(name)
+        token = listing.get("NextContinuationToken")
+        if not token:
+            return sorted(runs, reverse=True)
 
 
 def _num(cfg, key, minimum=0):
@@ -318,12 +339,23 @@ def lambda_handler(event, context):
             month = (data.get("month") or "").strip()
             if month and not MONTH_RE.fullmatch(month):
                 raise RequestError(400, "month は YYYY-MM 形式で指定してください。")
-            key = f"{prefix}{month}/plan.json" if month else f"{prefix}latest.json"
+            run = (data.get("run") or "").strip()
+            if run:
+                if not month:
+                    raise RequestError(400, "run には month の指定が必要です。")
+                if run == "list":
+                    return response(200, {"month": month, "runs": list_runs(bucket, prefix, month)})
+                if not RUN_RE.fullmatch(run):
+                    raise RequestError(400, "run は YYYYMMDD-HHMMSS 形式か list を指定してください。")
+                key = f"{prefix}{month}/runs/{run}/plan.json"
+            else:
+                key = f"{prefix}{month}/plan.json" if month else f"{prefix}latest.json"
             try:
                 result = S3.get_object(Bucket=bucket, Key=key)
             except ClientError as error:
                 if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
-                    raise RequestError(404, "シフト案がまだありません。") from error
+                    raise RequestError(404, "スナップショットが見つかりません。" if run
+                                       else "シフト案がまだありません。") from error
                 raise
             with result["Body"] as stream:
                 return raw_json_response(stream.read().decode("utf-8"))

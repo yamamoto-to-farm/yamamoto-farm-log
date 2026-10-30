@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-35";
+} from "./shift-logic.js?v=20261030-36";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -29,6 +29,7 @@ function currentScenario() {
 // S3（shift/<月>/edits.json）に自動保存して端末間で共有。localStorageはオフライン時の控え。
 let edits = { overrides: {}, base: null, autofit: false, checks: {} };
 let pushTimer = null;
+let snapshotRun = "";  // ""=最新（編集可）/ 日時=スナップショット（読み取り専用）
 
 const cacheKey = () => `shift-edits:${plan.month}`;
 
@@ -37,6 +38,7 @@ function syncState(text) {
 }
 
 function markDirty() {
+  if (snapshotRun) return;  // スナップショット表示中は保存しない
   try { localStorage.setItem(cacheKey(), JSON.stringify(edits)); } catch { /* 容量超過などは無視 */ }
   syncState("☁ 保存中…");
   clearTimeout(pushTimer);
@@ -368,6 +370,7 @@ function updateBulkInfo() {
 }
 
 function openBulk(person) {
+  if (snapshotRun) { status("スナップショット表示中は編集できません（「最新」に切り替えてください）。", true); return; }
   bulkPerson = person;
   element("bulk-title").textContent = `${person} の一括編集（${plan.month}）`;
   element("bulk-status").value = "";
@@ -517,6 +520,7 @@ function updateEditHours() {
 }
 
 function openEditor(key) {
+  if (snapshotRun) { status("スナップショット表示中は編集できません（「最新」に切り替えてください）。", true); return; }
   editKey = key;
   const item = displayedItems().find((entry) => entry.key === key);
   if (!item) return;
@@ -559,13 +563,20 @@ function renderIssues() {
     .map((issue) => `<li>${issue}</li>`).join("");
 }
 
-async function loadPlan(month) {
+async function loadPlan(month, run = "") {
   status("読み込み中…");
-  plan = await api("/shift/plan", month ? { month } : undefined);
+  snapshotRun = run;
+  plan = await api("/shift/plan", run ? { month, run } : (month ? { month } : undefined));
   const slider = element("budget-slider");
   slider.max = plan.scenarios.length - 1;
   slider.value = defaultScenarioIndex(plan);
-  await loadEdits();
+  if (run) {
+    // スナップショット＝生成実行時点の原本。編集は当てず読み取り専用で表示する。
+    edits = { overrides: {}, base: null, autofit: false, checks: {} };
+    syncState("📷 読み取り専用（スナップショット）");
+  } else {
+    await loadEdits();
+  }
   workPlan = await fetch(`/data/work-plan/${plan.month}.json?ts=${Date.now()}`, { cache: "no-store" })
     .then((response) => (response.ok ? response.json() : null))
     .catch(() => null);
@@ -575,11 +586,28 @@ async function loadPlan(month) {
   element("base-end").value = toInputTime(base.end);
   element("auto-fit").checked = edits.autofit;
   element("generated-at").textContent =
-    `作成: ${plan.generated_at.replace("T", " ").slice(0, 16)} / 希望 ${plan.requests.entries}件`;
+    `作成: ${plan.generated_at.replace("T", " ").slice(0, 16)} / 希望 ${plan.requests.entries}件` +
+    (run ? "（スナップショット）" : "");
+  if (!run) await loadRuns();
   renderAll();
   renderIssues();
   element("plan-area").hidden = false;
-  status("");
+  status(run ? "生成時点の原本を表示しています（読み取り専用）。" : "");
+}
+
+async function loadRuns() {
+  const select = element("run-select");
+  const latest = '<option value="">最新（編集可）</option>';
+  try {
+    const result = await api("/shift/plan", { month: plan.month, run: "list" });
+    const fmt = (r) =>
+      `${Number(r.slice(4, 6))}/${Number(r.slice(6, 8))} ${r.slice(9, 11)}:${r.slice(11, 13)}`;
+    select.innerHTML = latest + (result.runs || [])
+      .map((r) => `<option value="${r}">原本 ${fmt(r)}</option>`).join("");
+  } catch {
+    select.innerHTML = latest;  // 旧APIのままなどでも「最新」は使える
+  }
+  select.value = snapshotRun;
 }
 
 async function loadMonths() {
@@ -629,8 +657,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("month-select").addEventListener("change", (event) => {
     loadPlan(event.target.value).catch((error) => status(error.message, true));
   });
+  element("run-select").addEventListener("change", (event) => {
+    loadPlan(plan.month, event.target.value).catch((error) => status(error.message, true));
+  });
   element("regen").addEventListener("click", async () => {
     if (!plan) return;
+    if (snapshotRun) { status("スナップショット表示中は再計算できません（「最新」に切り替えてください）。", true); return; }
     if (!confirm(`${plan.month} のシフト案を timetree の最新データで再計算しますか？（約1分）`)) return;
     try {
       element("regen").disabled = true;

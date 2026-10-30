@@ -244,7 +244,7 @@ AWS設定（photos の HTTP API に追加）:
 
   | メソッド | パス | 用途 |
   | --- | --- | --- |
-  | GET | `/shift/plan` | 最新（または `?month=YYYY-MM`）の plan.json |
+  | GET | `/shift/plan` | 最新（または `?month=YYYY-MM`）の plan.json。`&run=list` でスナップショット一覧、`&run=<日時>` で生成実行時点の原本 |
   | GET | `/shift/months` | 保存済みの月の一覧 |
   | GET | `/shift/config` | スタッフマスタの取得 |
   | POST | `/shift/config` | スタッフマスタの保存（検証・バックアップつき） |

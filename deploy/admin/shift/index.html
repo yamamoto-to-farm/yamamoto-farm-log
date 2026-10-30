@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-35">
+  <link rel="stylesheet" href="./shift.css?v=20261030-36">
 </head>
 <body>
   <div id="header"></div>
@@ -25,6 +25,11 @@
       <section class="card shift-toolbar">
         <label>対象月
           <select id="month-select" class="form-input"></select>
+        </label>
+        <label>データ
+          <select id="run-select" class="form-input">
+            <option value="">最新（編集可）</option>
+          </select>
         </label>
         <span id="generated-at" class="shift-muted"></span>
         <span id="sync-state" class="shift-muted"></span>
@@ -150,7 +155,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="./shift.js?v=20261030-35"></script>
+  <script type="module" src="./shift.js?v=20261030-36"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
