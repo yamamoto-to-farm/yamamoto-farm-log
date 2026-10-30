@@ -88,11 +88,12 @@ test("personRows は日数・目標・人件費をまとめる", async () => {
   assert.deepEqual(rows[1], { name: "土井", days: 19, target: 12, cost: 100000, protected: false });
 });
 
-test("personColorMap は人ごとに色を割り当てる", async () => {
-  const { personColorMap, PERSON_COLORS } = await logic();
-  const colors = personColorMap(plan.staff);
-  assert.equal(colors.get("石原"), PERSON_COLORS[0]);
-  assert.equal(colors.get("土井"), PERSON_COLORS[1]);
+test("personColorMap は timetree の色に合わせる", async () => {
+  const { personColorMap, FALLBACK_COLORS } = await logic();
+  const colors = personColorMap([...plan.staff, { name: "松井" }]);
+  assert.equal(colors.get("石原"), "#0d47a1"); // マリンブルー系
+  assert.equal(colors.get("土井"), "#673ab7"); // すみれ色
+  assert.equal(colors.get("松井"), FALLBACK_COLORS[0]); // 未定義はフォールバック
   assert.equal(colors.get("不明"), undefined);
 });
 

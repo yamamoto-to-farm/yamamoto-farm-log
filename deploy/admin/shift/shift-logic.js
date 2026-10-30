@@ -47,12 +47,21 @@ export function buildCalendar(month, items) {
   return weeks;
 }
 
-// 人ごとの色（カレンダー・凡例で使用）
-export const PERSON_COLORS = ["#2e7d32", "#1565c0", "#8e24aa", "#ef6c00", "#00838f", "#6d4c41", "#455a64"];
+// 人ごとの色（timetreeの色に合わせた固定割り当て。それ以外はフォールバック）
+export const PERSON_COLORS = {
+  "若月": "#0288d1", // 水色系
+  "石原": "#0d47a1", // マリンブルー系
+  "土井": "#673ab7", // すみれ色
+  "木村": "#827717", // オリーブ
+};
+export const FALLBACK_COLORS = ["#2e7d32", "#ef6c00", "#00838f", "#6d4c41", "#455a64"];
 
 export function personColorMap(staff) {
   const map = new Map();
-  staff.forEach((member, index) => map.set(member.name, PERSON_COLORS[index % PERSON_COLORS.length]));
+  let fallback = 0;
+  for (const member of staff) {
+    map.set(member.name, PERSON_COLORS[member.name] || FALLBACK_COLORS[fallback++ % FALLBACK_COLORS.length]);
+  }
   return map;
 }
 
