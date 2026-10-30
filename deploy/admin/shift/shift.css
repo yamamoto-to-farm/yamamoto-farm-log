@@ -17,24 +17,24 @@
 #scenario-notes .note { font-size: 0.85rem; margin: 4px 0; }
 #scenario-notes .warn { color: #c62828; }
 
-.shift-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.8rem; margin-bottom: 6px; }
-.legend::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
-.legend.fixed::before { background: #2e7d32; }
-.legend.extra::before { background: #1565c0; }
-.legend.hold::before { background: #bdbdbd; }
+.shift-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.8rem; margin-bottom: 6px; align-items: center; }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.legend.kind { color: #666; }
+.legend .sample-fixed { background: #555; }
+.legend .sample-extra { background: #fff; border: 1.5px solid #555; box-sizing: border-box; }
+.legend .sample-hold { background: #bdbdbd; }
 
 .shift-cal { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .shift-cal th { font-size: 0.75rem; padding: 4px 2px; background: #f0f3f1; border: 1px solid #ddd; }
 .shift-cal th.sat { color: #1565c0; }
 .shift-cal th.sun { color: #c62828; }
-.shift-cal td { border: 1px solid #ddd; vertical-align: top; padding: 2px; height: 72px; }
+.shift-cal td { border: 1px solid #ddd; vertical-align: top; padding: 2px; height: 72px; text-align: left; }
 .shift-cal td.empty { background: #fafafa; }
 .shift-cal .day-no { font-size: 0.75rem; color: #666; }
 .shift-cal .chip { display: block; font-size: 0.72rem; border-radius: 4px; padding: 1px 4px; margin: 1px 0;
-  color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.shift-cal .chip.fixed { background: #2e7d32; }
-.shift-cal .chip.extra { background: #1565c0; }
-.shift-cal .chip.hold { background: #bdbdbd; color: #444; text-decoration: line-through; }
+  color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
+.shift-cal .chip.extra { background: #fff; border: 1.5px solid; font-weight: 600; }
+.shift-cal .chip.hold { background: #e0e0e0; color: #666; text-decoration: line-through; }
 
 .shift-table { border-collapse: collapse; width: 100%; max-width: 560px; }
 .shift-table th, .shift-table td { border: 1px solid #ddd; padding: 4px 10px; font-size: 0.85rem; text-align: right; }
@@ -42,9 +42,11 @@
 .shift-table .total { font-weight: 600; background: #f6f8f7; }
 
 #checklist h3 { font-size: 0.9rem; margin: 12px 0 4px; }
-#checklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem; padding: 2px 0; }
+#checklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem; padding: 2px 0;
+  text-align: left; font-weight: normal; margin: 0; }
 #checklist label.done { color: #999; text-decoration: line-through; }
-#checklist input[type="checkbox"] { flex-shrink: 0; }
+#checklist input[type="checkbox"] { width: auto; padding: 0; margin: 0; flex: 0 0 auto; position: relative; top: 2px; }
+#checklist label span { flex: 1; min-width: 0; }
 
 .shift-issues { font-size: 0.85rem; padding-left: 1.4em; }
 .shift-issues li { margin: 2px 0; }

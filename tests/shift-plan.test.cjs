@@ -88,6 +88,14 @@ test("personRows は日数・目標・人件費をまとめる", async () => {
   assert.deepEqual(rows[1], { name: "土井", days: 19, target: 12, cost: 100000, protected: false });
 });
 
+test("personColorMap は人ごとに色を割り当てる", async () => {
+  const { personColorMap, PERSON_COLORS } = await logic();
+  const colors = personColorMap(plan.staff);
+  assert.equal(colors.get("石原"), PERSON_COLORS[0]);
+  assert.equal(colors.get("土井"), PERSON_COLORS[1]);
+  assert.equal(colors.get("不明"), undefined);
+});
+
 test("formatYen は桁区切りを付ける", async () => {
   const { formatYen } = await logic();
   assert.equal(formatYen(369255), "369,255円");

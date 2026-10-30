@@ -4,8 +4,8 @@ import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   WEEKDAYS, buildCalendar, buildChecklist, defaultScenarioIndex,
-  formatYen, itemKind, personRows, scenarioBudgets,
-} from "./shift-logic.js?v=20261030-1";
+  formatYen, itemKind, personColorMap, personRows, scenarioBudgets,
+} from "./shift-logic.js?v=20261030-2";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -75,6 +75,14 @@ function renderScenario() {
 }
 
 function renderCalendar(scenario) {
+  const colors = personColorMap(plan.staff);
+  element("legend").innerHTML =
+    plan.staff.map((member) =>
+      `<span class="legend person"><i style="background:${colors.get(member.name)}"></i>${member.name}</span>`).join("") +
+    '<span class="legend kind"><i class="sample-fixed"></i>確定（「希」を外す）</span>' +
+    '<span class="legend kind"><i class="sample-extra"></i>確定の目安（「希」のまま）</span>' +
+    '<span class="legend kind"><i class="sample-hold"></i>保留・見送り</span>';
+
   const weeks = buildCalendar(plan.month, scenario.items);
   const head = ["月", "火", "水", "木", "金", "土", "日"]
     .map((w) => `<th class="${w === "土" ? "sat" : w === "日" ? "sun" : ""}">${w}</th>`).join("");
@@ -82,8 +90,12 @@ function renderCalendar(scenario) {
     if (!cell) return '<td class="empty"></td>';
     const chips = cell.items.map((item) => {
       const kind = itemKind(item);
+      const color = colors.get(item.person) || "#757575";
       const hours = item.proposed_hours > 0 ? ` ${item.proposed_hours}h` : "";
-      return `<span class="chip ${kind}" title="${item.raw_title}（${item.action}${item.reason ? "：" + item.reason : ""}）">${item.person}${hours}</span>`;
+      const text = kind === "extra" ? `希 ${item.person}${hours}` : `${item.person}${hours}`;
+      const style = kind === "fixed" ? `background:${color}`
+        : kind === "extra" ? `color:${color};border-color:${color}` : "";
+      return `<span class="chip ${kind}" style="${style}" title="${item.raw_title}（${item.action}${item.reason ? "：" + item.reason : ""}）">${text}</span>`;
     }).join("");
     return `<td><span class="day-no">${cell.day}</span>${chips}</td>`;
   }).join("")}</tr>`).join("");
@@ -109,7 +121,7 @@ function renderChecklist(scenario) {
   try { saved = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch { saved = {}; }
   const section = (title, list) => !list.length ? "" :
     `<h3>${title}</h3>` + list.map((item) =>
-      `<label class="${saved[item.id] ? "done" : ""}"><input type="checkbox" data-id="${item.id}"${saved[item.id] ? " checked" : ""}>${item.label}</label>`
+      `<label class="${saved[item.id] ? "done" : ""}"><input type="checkbox" data-id="${item.id}"${saved[item.id] ? " checked" : ""}><span>${item.label}</span></label>`
     ).join("");
   element("checklist").innerHTML =
     section("① 月末までに確定（決まった曜日）", groups.fixed) +

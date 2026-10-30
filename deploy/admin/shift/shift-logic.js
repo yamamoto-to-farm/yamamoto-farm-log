@@ -47,6 +47,15 @@ export function buildCalendar(month, items) {
   return weeks;
 }
 
+// 人ごとの色（カレンダー・凡例で使用）
+export const PERSON_COLORS = ["#2e7d32", "#1565c0", "#8e24aa", "#ef6c00", "#00838f", "#6d4c41", "#455a64"];
+
+export function personColorMap(staff) {
+  const map = new Map();
+  staff.forEach((member, index) => map.set(member.name, PERSON_COLORS[index % PERSON_COLORS.length]));
+  return map;
+}
+
 // timetree確定操作のチェックリスト（3グループ）
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [] };
@@ -60,8 +69,8 @@ export function buildChecklist(scenario) {
       label = `${head} → 「希」を外して確定` +
         (shortened ? `（終了を ${item.proposed_end} に短縮・実働${item.proposed_hours}h。前日までに本人へ連絡）` : "");
     } else if (kind === "extra") {
-      label = `${head} → 勤務3日前までに確定を連絡し「希」を外す（目安 実働${item.proposed_hours}h` +
-        (shortened ? `・終了 ${item.proposed_end}` : "") + "）";
+      label = `${head} → 今は「希」のまま。勤務3日前までに確定（「希」を外す・目安 実働${item.proposed_hours}h` +
+        (shortened ? `・終了 ${item.proposed_end}` : "") + "）か、見送りを連絡";
     } else {
       label = `${head} → 保留。見送りなら3日前までに連絡` + (item.reason ? `（${item.reason}）` : "");
     }
