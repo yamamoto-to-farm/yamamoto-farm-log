@@ -352,20 +352,30 @@ function refreshPreview(c) {
 }
 
 // ───── 定型文 ─────
+// 給料日＝翌月5日。土日・祝日なら前営業日に繰り上げ。
+// 祝日は5日からの繰り上げで通りうる日だけを見る（1/1〜1/3・5/3〜5/5・11/3）。
+function payday(now) {
+  const date = new Date(now.getFullYear(), now.getMonth() + 1, 5);
+  const closed = (d) => {
+    const md = `${d.getMonth() + 1}/${d.getDate()}`;
+    return d.getDay() === 0 || d.getDay() === 6
+      || ["1/1", "1/2", "1/3", "5/3", "5/4", "5/5", "11/3"].includes(md);
+  };
+  while (closed(date)) date.setDate(date.getDate() - 1);
+  return `${date.getMonth() + 1}/${date.getDate()}(${WEEKDAYS[date.getDay()]})`;
+}
+
 function fillPlaceholders(text) {
   const now = new Date();
   const month = now.getMonth() + 1;
   const nextMonth = (month % 12) + 1;
   const prevMonth = ((month + 10) % 12) + 1;
-  // 翌月5日（曜日付き。例 11/5(木)）
-  const pay = new Date(now.getFullYear(), now.getMonth() + 1, 5);
-  const payday = `${pay.getMonth() + 1}/5(${WEEKDAYS[pay.getDay()]})`;
   return text
     .replaceAll("{年}", String(now.getFullYear()))
     .replaceAll("{月}", String(month))
     .replaceAll("{来月}", String(nextMonth))
     .replaceAll("{先月}", String(prevMonth))
-    .replaceAll("{翌月5日}", payday);
+    .replaceAll("{翌月5日}", payday(now));
 }
 
 function renderTemplates() {
