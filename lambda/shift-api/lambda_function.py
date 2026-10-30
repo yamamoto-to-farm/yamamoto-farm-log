@@ -6,6 +6,8 @@ HTTP API（payload 2.0）のルート:
   GET  /shift/config     … スタッフマスタ（config.json）を返す
   POST /shift/config     … 検証して config.json を保存（保存前に config-backups/ へ退避）
   POST /shift/regenerate … 生成 Lambda を非同期で起動して案を再計算（body: {"month": "YYYY-MM"} 任意）
+  GET  /shift/edits      … 月の編集データ（個別編集・基本時間帯・チェック状態）を返す（?month= 必須）
+  POST /shift/edits      … 月の編集データを保存（body: {"month", "data"}。端末間で共有される）
 
 時給を含むため、photos と同じ Cognito プールの検証済みクレームに加えて、
 cognito:groups に admin または family が必要（worker には返さない）。
@@ -271,6 +273,46 @@ def lambda_handler(event, context):
                         claims.get("username") or claims.get("sub"))
             return response(202, {"started": True, "month": month or None,
                                   "note": "再計算を開始しました。1分ほどで反映されます（結果はメールでも通知されます）。"})
+
+        if route == "GET /shift/edits":
+            month = (data.get("month") or "").strip()
+            if not MONTH_RE.fullmatch(month):
+                raise RequestError(400, "month は YYYY-MM 形式で指定してください。")
+            try:
+                result = S3.get_object(Bucket=bucket, Key=f"{prefix}{month}/edits.json")
+            except ClientError as error:
+                if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
+                    raise RequestError(404, "編集データはまだありません。") from error
+                raise
+            with result["Body"] as stream:
+                return raw_json_response(stream.read().decode("utf-8"))
+
+        if route == "POST /shift/edits":
+            raw = event.get("body") or ""
+            if event.get("isBase64Encoded"):
+                raw = base64.b64decode(raw, validate=True).decode("utf-8")
+            if len(raw) > 65536:
+                raise RequestError(400, "編集データが大きすぎます。")
+            try:
+                req = json.loads(raw)
+            except (ValueError, TypeError) as error:
+                raise RequestError(400, "JSONが不正です。") from error
+            month = (req.get("month") or "").strip() if isinstance(req, dict) else ""
+            if not MONTH_RE.fullmatch(month):
+                raise RequestError(400, "month は YYYY-MM 形式で指定してください。")
+            payload = req.get("data")
+            if not isinstance(payload, dict):
+                raise RequestError(400, "data が不正です。")
+            record = {
+                "month": month,
+                "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "updated_by": claims.get("username") or claims.get("sub"),
+                "data": payload,
+            }
+            S3.put_object(Bucket=bucket, Key=f"{prefix}{month}/edits.json",
+                          Body=json.dumps(record, ensure_ascii=False).encode("utf-8"),
+                          ContentType="application/json; charset=utf-8")
+            return response(200, {"saved": True, "month": month})
 
         if route == "GET /shift/plan":
             month = (data.get("month") or "").strip()

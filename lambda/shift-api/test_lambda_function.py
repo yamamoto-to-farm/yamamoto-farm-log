@@ -214,6 +214,34 @@ class ShiftConfigTests(unittest.TestCase):
         self.assertEqual(result["statusCode"], 500)
         fake_s3.invoke.assert_not_called()
 
+    def test_edits_roundtrip(self):
+        # 保存
+        event = {"routeKey": "POST /shift/edits",
+                 "body": json.dumps({"month": "2026-11", "data": {"overrides": {"2026-11-01:土井": {"status": "skip"}}}}),
+                 "requestContext": {"authorizer": {"jwt": {"claims": self.claims}}}}
+        result = api.lambda_handler(event, None)
+        self.assertEqual(result["statusCode"], 200)
+        kwargs = fake_s3.put_object.call_args.kwargs
+        self.assertEqual(kwargs["Key"], "shift/2026-11/edits.json")
+        saved = json.loads(kwargs["Body"].decode("utf-8"))
+        self.assertEqual(saved["data"]["overrides"]["2026-11-01:土井"]["status"], "skip")
+        self.assertIn("updated_at", saved)
+        # 取得
+        fake_s3.get_object.return_value = s3_body(kwargs["Body"].decode("utf-8"))
+        event = {"routeKey": "GET /shift/edits", "queryStringParameters": {"month": "2026-11"},
+                 "requestContext": {"authorizer": {"jwt": {"claims": self.claims}}}}
+        result = api.lambda_handler(event, None)
+        self.assertEqual(result["statusCode"], 200)
+        fake_s3.get_object.assert_called_with(Bucket="private-shift-test", Key="shift/2026-11/edits.json")
+
+    def test_edits_validation(self):
+        for body in ({"month": "bad", "data": {}}, {"month": "2026-11", "data": "x"}, {"data": {}}):
+            with self.subTest(body=body):
+                event = {"routeKey": "POST /shift/edits", "body": json.dumps(body),
+                         "requestContext": {"authorizer": {"jwt": {"claims": self.claims}}}}
+                self.assertEqual(api.lambda_handler(event, None)["statusCode"], 400)
+        fake_s3.put_object.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

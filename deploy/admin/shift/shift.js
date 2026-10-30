@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-17";
+} from "./shift-logic.js?v=20261030-18";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -17,15 +17,65 @@ function currentScenario() {
   return plan.scenarios[Number(element("budget-slider").value)];
 }
 
-// 月ごとの端末ローカル保存（編集・基本時間帯・チェック状態）
-const storeName = (name) => `shift-${name}:${plan.month}`;
-function loadStore(name, fallback) {
-  try { return JSON.parse(localStorage.getItem(storeName(name))) ?? fallback; } catch { return fallback; }
-}
-function saveStore(name, value) { localStorage.setItem(storeName(name), JSON.stringify(value)); }
+// 月ごとの編集データ（個別編集・基本時間帯・自動調整・チェック状態）。
+// S3（shift/<月>/edits.json）に自動保存して端末間で共有。localStorageはオフライン時の控え。
+let edits = { overrides: {}, base: null, autofit: false, checks: {} };
+let pushTimer = null;
 
-function getOverrides() { return loadStore("edit", {}); }
-function getBase() { return loadStore("base", null) || { ...plan.targets.allday_default }; }
+const cacheKey = () => `shift-edits:${plan.month}`;
+
+function syncState(text) {
+  element("sync-state").textContent = text;
+}
+
+function markDirty() {
+  try { localStorage.setItem(cacheKey(), JSON.stringify(edits)); } catch { /* 容量超過などは無視 */ }
+  syncState("☁ 保存中…");
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(pushEdits, 1500);
+}
+
+async function pushEdits() {
+  try {
+    await apiPost("/shift/edits", { month: plan.month, data: edits });
+    syncState("☁ 保存済み");
+  } catch (error) {
+    console.warn("edits push failed", error);
+    syncState("⚠ サーバー未保存（この端末には保存済み）");
+  }
+}
+
+async function loadEdits() {
+  edits = { overrides: {}, base: null, autofit: false, checks: {} };
+  try {
+    const result = await api("/shift/edits", { month: plan.month });
+    Object.assign(edits, result.data || {});
+    syncState("☁ 保存済み");
+    return;
+  } catch (error) {
+    console.warn("edits load failed", error);
+  }
+  // サーバーに無い場合：この端末の控え → 旧形式（移行）
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey()));
+    if (cached) {
+      Object.assign(edits, cached);
+      syncState("⚠ この端末の保存分（次の編集でサーバーへ保存）");
+      return;
+    }
+  } catch { /* 破損時は無視 */ }
+  const legacy = (name, fallback) => {
+    try { return JSON.parse(localStorage.getItem(`shift-${name}:${plan.month}`)) ?? fallback; } catch { return fallback; }
+  };
+  edits.overrides = legacy("edit", {});
+  edits.base = legacy("base", null);
+  edits.autofit = legacy("autofit", false);
+  edits.checks = legacy("check", {});
+  syncState("");
+}
+
+function getOverrides() { return edits.overrides; }
+function getBase() { return edits.base || { ...plan.targets.allday_default }; }
 function baseChanged() {
   const base = getBase();
   const defaults = plan.targets.allday_default;
@@ -38,7 +88,7 @@ function effective() {
 // 画面に表示している実効アイテム（自動調整オン時は予算内への短縮も適用）
 function displayedItems() {
   let eff = effective();
-  if (loadStore("autofit", false)) {
+  if (edits.autofit) {
     eff = fitRemaining(plan, eff, currentScenario().budget_max, getBase()).items;
   }
   return eff;
@@ -103,7 +153,7 @@ function renderAll() {
   const scenario = currentScenario();
   let eff = effective();
   let fitInfo = null;
-  if (loadStore("autofit", false)) {
+  if (edits.autofit) {
     fitInfo = fitRemaining(plan, eff, scenario.budget_max, getBase());
     eff = fitInfo.items;
   }
@@ -273,7 +323,7 @@ function applyBulk() {
       warns.add(warning);
     }
   }
-  saveStore("edit", overrides);
+  markDirty();
   element("bulk-dialog").close();
   renderAll();
   status(`✎ ${bulkPerson} の ${matches.length}日 にまとめて反映しました。` +
@@ -286,7 +336,7 @@ function clearBulk() {
   for (const key of Object.keys(overrides)) {
     if (key.endsWith(`:${bulkPerson}`)) delete overrides[key];
   }
-  saveStore("edit", overrides);
+  markDirty();
   element("bulk-dialog").close();
   renderAll();
   status(`${bulkPerson} さんの編集を取り消しました。`);
@@ -294,9 +344,7 @@ function clearBulk() {
 
 function renderChecklist(eff) {
   const groups = buildChecklist({ items: eff });
-  const storageKey = `shift-check:${plan.month}`;
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch { saved = {}; }
+  const saved = edits.checks;
   const section = (title, list) => !list.length ? "" :
     `<h3>${title}</h3>` + list.map((item) =>
       `<label class="${saved[item.id] ? "done" : ""}"><input type="checkbox" data-id="${item.id}"${saved[item.id] ? " checked" : ""}><span>${item.label}</span></label>`
@@ -309,7 +357,7 @@ function renderChecklist(eff) {
   element("checklist").querySelectorAll("input[type=checkbox]").forEach((box) => {
     box.addEventListener("change", () => {
       saved[box.dataset.id] = box.checked;
-      localStorage.setItem(storageKey, JSON.stringify(saved));
+      markDirty();
       box.closest("label").classList.toggle("done", box.checked);
     });
   });
@@ -366,7 +414,7 @@ function saveEdit() {
   const hours = workHours(start, end, plan.targets.break_minutes);
   if (hours !== null) override.hours = hours;
   overrides[editKey] = override;
-  saveStore("edit", overrides);
+  markDirty();
   element("edit-dialog").close();
   renderAll();
 }
@@ -374,7 +422,7 @@ function saveEdit() {
 function clearEdit() {
   const overrides = getOverrides();
   delete overrides[editKey];
-  saveStore("edit", overrides);
+  markDirty();
   element("edit-dialog").close();
   renderAll();
 }
@@ -390,10 +438,11 @@ async function loadPlan(month) {
   const slider = element("budget-slider");
   slider.max = plan.scenarios.length - 1;
   slider.value = defaultScenarioIndex(plan);
+  await loadEdits();
   const base = getBase();
   element("base-start").value = toInputTime(base.start);
   element("base-end").value = toInputTime(base.end);
-  element("auto-fit").checked = loadStore("autofit", false);
+  element("auto-fit").checked = edits.autofit;
   element("generated-at").textContent =
     `作成: ${plan.generated_at.replace("T", " ").slice(0, 16)} / 希望 ${plan.requests.entries}件`;
   renderAll();
@@ -473,18 +522,21 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   for (const id of ["base-start", "base-end"]) {
     element(id).addEventListener("change", () => {
-      saveStore("base", { start: element("base-start").value, end: element("base-end").value });
+      edits.base = { start: element("base-start").value, end: element("base-end").value };
+      markDirty();
       renderAll();
     });
   }
   element("auto-fit").addEventListener("change", (event) => {
-    saveStore("autofit", event.target.checked);
+    edits.autofit = event.target.checked;
+    markDirty();
     renderAll();
   });
   element("reset-edits").addEventListener("click", () => {
     if (!confirm("この月の個別編集と基本時間帯の変更をすべてリセットしますか？")) return;
-    localStorage.removeItem(storeName("edit"));
-    localStorage.removeItem(storeName("base"));
+    edits.overrides = {};
+    edits.base = null;
+    markDirty();
     const defaults = plan.targets.allday_default;
     element("base-start").value = toInputTime(defaults.start);
     element("base-end").value = toInputTime(defaults.end);
