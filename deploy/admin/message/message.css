@@ -1,0 +1,68 @@
+/* 業務連絡（LINE下書き）ページ */
+.msg-note { font-size: 0.85rem; color: #666; }
+.msg-muted { font-size: 0.8rem; color: #888; }
+#status.error { color: #c62828; }
+
+.msg-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
+.msg-tab { border: 1px solid #bbb; background: #fff; border-radius: 16px; padding: 6px 14px;
+  font-size: 0.85rem; cursor: pointer; }
+.msg-tab.on { background: #2e7d32; border-color: #2e7d32; color: #fff; font-weight: 600; }
+
+.msg-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.msg-toolbar label { display: flex; gap: 6px; align-items: center; font-size: 0.85rem; margin: 0; }
+.msg-toolbar input[type="date"] { width: auto; padding: 6px 8px; }
+
+.wp-hints { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0;
+  font-size: 0.8rem; }
+.wp-hints .wp-chip { border: 1px solid #81c784; background: #e8f5e9; color: #1b5e20;
+  border-radius: 12px; padding: 2px 10px; cursor: pointer; font-size: 0.8rem; }
+.wp-hints .wp-chip:hover { background: #c8e6c9; }
+
+.msg-common { display: flex; gap: 8px; align-items: flex-end; margin: 8px 0 12px; flex-wrap: wrap; }
+.msg-common label { flex: 1; min-width: 240px; font-size: 0.85rem; margin: 0; }
+.msg-common input { padding: 8px; }
+
+.msg-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+.msg-card { border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; background: #fafafa; }
+.msg-card h3 { margin: 0 0 6px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.msg-card h3 .warn { font-size: 0.75rem; color: #e65100; font-weight: normal; }
+.msg-card h3 .remove { margin-left: auto; border: none; background: none; cursor: pointer;
+  color: #999; font-size: 1rem; }
+.msg-block { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; align-items: center;
+  margin-bottom: 6px; }
+.msg-block input[type="time"] { width: auto; padding: 4px 6px; font-size: 0.85rem; }
+.msg-block .tilde { text-align: center; }
+.msg-block input[list] { padding: 6px 8px; font-size: 0.85rem; width: 100%; }
+.msg-block .block-row2 { grid-column: 1 / -1; display: flex; gap: 6px; }
+.msg-block .block-row2 input { flex: 1; }
+.msg-block .del-block { border: none; background: none; color: #999; cursor: pointer; }
+.msg-card .add-block { font-size: 0.78rem; padding: 2px 10px; margin-bottom: 6px; }
+.msg-card .memo-input { width: 100%; padding: 6px 8px; font-size: 0.85rem; margin-bottom: 6px; }
+.msg-card pre { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 10px;
+  font-size: 0.82rem; white-space: pre-wrap; word-break: break-all; margin: 6px 0;
+  font-family: inherit; text-align: left; }
+.msg-card .copy-btn { width: 100%; }
+.msg-card .copy-btn.copied { background: #1a7f37; border-color: #1a7f37; color: #fff; }
+
+#template-list .tpl { border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px;
+  margin-bottom: 10px; background: #fafafa; }
+#template-list .tpl h3 { margin: 0 0 6px; font-size: 0.95rem; }
+#template-list .tpl pre { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
+  padding: 8px 10px; font-size: 0.82rem; white-space: pre-wrap; word-break: break-all;
+  margin: 0 0 8px; font-family: inherit; text-align: left; }
+
+.msg-edit-wrap { margin-top: 14px; font-size: 0.85rem; }
+.msg-edit-wrap summary { cursor: pointer; color: #555; }
+#template-edit .tpl-edit { border: 1px solid #ddd; border-radius: 8px; padding: 10px;
+  margin: 10px 0; }
+#template-edit .tpl-edit input { width: 100%; padding: 6px 8px; margin-bottom: 6px; }
+#template-edit .tpl-edit textarea { width: 100%; padding: 6px 8px; font-size: 0.85rem;
+  font-family: inherit; }
+#template-edit .tpl-edit .del-tpl { border: none; background: none; color: #c62828;
+  cursor: pointer; font-size: 0.8rem; padding: 0; }
+.msg-edit-actions { display: flex; gap: 8px; }
+
+.msg-masters { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px; }
+.msg-masters label { font-size: 0.85rem; }
+.msg-masters textarea { width: 100%; padding: 8px; font-size: 0.85rem; font-family: inherit; }

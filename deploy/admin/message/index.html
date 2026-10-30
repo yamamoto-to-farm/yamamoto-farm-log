@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>業務連絡（LINE下書き） - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./message.css?v=20261031-1">
+</head>
+<body>
+  <div id="header"></div>
+
+  <div id="page-area" class="page-container" hidden>
+    <h1 class="page-title">業務連絡（LINE下書き）</h1>
+    <p class="msg-note">文面を作ってコピーし、LINEに貼り付けて送る運用です（このページから自動送信はしません）。</p>
+    <p id="status" role="status" aria-live="polite"></p>
+
+    <div class="msg-tabs">
+      <button class="msg-tab on" data-tab="daily" type="button">作業予定の連絡</button>
+      <button class="msg-tab" data-tab="templates" type="button">毎月の定型文</button>
+      <button class="msg-tab" data-tab="masters" type="button">マスタ（畑・作業）</button>
+    </div>
+
+    <section id="tab-daily" class="card">
+      <div class="msg-toolbar">
+        <label>日付 <input id="msg-date" type="date" class="form-input"></label>
+        <button id="load-shift" class="secondary-btn" type="button">🔄 シフトから読み込み</button>
+        <button id="msg-login" class="secondary-btn" type="button" hidden>シフト連携ログイン</button>
+        <button id="add-person" class="secondary-btn" type="button">＋人を追加</button>
+        <span id="shift-state" class="msg-muted"></span>
+      </div>
+      <div id="wp-hints" class="wp-hints" hidden></div>
+      <div class="msg-common">
+        <label class="msg-grow">一言メモ
+          <input id="common-memo" class="form-input" placeholder="例：雨が降りそうなら合羽を持ってきてください（空欄でもOK）">
+        </label>
+        <button id="apply-memo" class="secondary-btn" type="button">全員へ反映</button>
+      </div>
+      <div id="cards" class="msg-cards"></div>
+    </section>
+
+    <section id="tab-templates" class="card" hidden>
+      <p class="msg-muted">{年}・{月}・{来月} は今日の日付から自動で置き換えています。コピーしてLINEへ貼り付けてください。</p>
+      <div id="template-list"></div>
+      <details class="msg-edit-wrap">
+        <summary>✏ 定型文を編集</summary>
+        <div id="template-edit"></div>
+        <div class="msg-edit-actions">
+          <button id="add-template" class="secondary-btn" type="button">＋定型文を追加</button>
+          <button id="save-templates" class="primary-btn" type="button">保存</button>
+        </div>
+      </details>
+    </section>
+
+    <section id="tab-masters" class="card" hidden>
+      <div class="msg-masters">
+        <label>畑（1行に1つ。「名前 | 地図URL」の形式。URLは省略可）
+          <textarea id="fields-text" rows="8" placeholder="北の畑 | https://maps.app.goo.gl/xxxx&#10;南の畑"></textarea>
+        </label>
+        <label>作業内容（1行に1つ）
+          <textarea id="tasks-text" rows="8" placeholder="収穫&#10;草とり&#10;定植"></textarea>
+        </label>
+      </div>
+      <p class="msg-muted">地図URLを登録しておくと、作業連絡の文面に自動で地図リンクが入ります。</p>
+      <button id="save-masters" class="primary-btn" type="button">保存</button>
+    </section>
+  </div>
+
+  <datalist id="dl-fields"></datalist>
+  <datalist id="dl-tasks"></datalist>
+
+  <script type="module" src="./message.js?v=20261031-1"></script>
+</body>
+</html>

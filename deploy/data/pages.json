@@ -386,6 +386,15 @@
     },
     { "id": "shift-config-access", "path": "/admin/shift/config.html", "roles": ["family", "admin"], "accessOnly": true },
     {
+      "id": "line-message",
+      "name": "業務連絡（LINE下書き）",
+      "path": "/admin/message/index.html",
+      "category": "管理/ツール",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/schedule.png",
+      "openLog": false
+    },
+    {
       "id": "login-permissions",
       "name": "ログイン権限管理",
       "path": "/admin/edit-json/index.html?data=workers",
