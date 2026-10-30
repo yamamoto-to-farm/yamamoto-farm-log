@@ -204,6 +204,7 @@ class ShiftConfigTests(unittest.TestCase):
             {**VALID_CONFIG, "staff": [{**VALID_CONFIG["staff"][0], "hourly": 0}]},
             {**VALID_CONFIG, "staff": [{**VALID_CONFIG["staff"][0], "fixed_weekdays": ["曜"]}]},
             {**VALID_CONFIG, "staff": [{**VALID_CONFIG["staff"][0], "latest_end": {"日": "25時"}}]},
+            {**VALID_CONFIG, "staff": [{**VALID_CONFIG["staff"][0], "login": 123}]},
             {**VALID_CONFIG, "labor_budget_yen": {"min": 400000, "max": 380000}},
             {**VALID_CONFIG, "min_work_hours": 7},
             {**VALID_CONFIG, "weekly_max_days": 8},
@@ -212,6 +213,14 @@ class ShiftConfigTests(unittest.TestCase):
             with self.subTest(cfg=cfg):
                 self.assertEqual(self.post(cfg)[0], 400)
         fake_s3.put_object.assert_not_called()
+
+    def test_post_keeps_login_link(self):
+        fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+        cfg = {**VALID_CONFIG, "staff": [{**VALID_CONFIG["staff"][0], "login": " doi "}]}
+        status, _ = self.post(cfg)
+        self.assertEqual(status, 200)
+        saved = json.loads(fake_s3.put_object.call_args_list[-1].kwargs["Body"].decode("utf-8"))
+        self.assertEqual(saved["staff"][0]["login"], "doi")
 
     def test_post_requires_admin_or_family(self):
         status, _ = self.post(VALID_CONFIG, claims={**self.claims, "cognito:groups": "[worker]"})

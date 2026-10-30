@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト設定（スタッフマスタ） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-13">
+  <link rel="stylesheet" href="./shift.css?v=20261031-1">
 </head>
 <body>
   <div id="header"></div>
@@ -24,7 +24,12 @@
       <section class="card">
         <h2 class="shift-h2">スタッフ</h2>
         <div id="staff-list"></div>
-        <button id="add-staff" class="secondary-btn" type="button">＋ スタッフを追加</button>
+        <div class="cfg-actions">
+          <button id="add-staff" class="secondary-btn" type="button">＋ スタッフを追加</button>
+          <button id="sync-employment" class="secondary-btn" type="button">🔄 在籍状況と同期（退職者を外す）</button>
+          <a href="/admin/access.html" class="secondary-btn">在籍状況管理へ</a>
+        </div>
+        <p class="shift-note">「ログイン連携」でログインアカウント（workers.json）と紐づけると在籍状況を表示します。退職の操作は在籍状況管理で行い、ここでは「同期」で退職者をスタッフから外して保存してください。</p>
       </section>
 
       <section class="card">
@@ -84,7 +89,7 @@
     </div>
   </div>
 
-  <script type="module" src="./config-page.js?v=20261030-13"></script>
+  <script type="module" src="./config-page.js?v=20261031-1"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

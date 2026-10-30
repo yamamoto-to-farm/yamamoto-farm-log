@@ -10,9 +10,10 @@
   <div id="header"></div>
   <main id="page-area" class="page-container" style="display:none;">
     <h1 class="page-title">在籍状況管理</h1>
-    <p class="info-line">従業員の在籍状況を管理します。退職者はログイン不可になります。</p>
+    <p class="info-line">従業員の在籍状況を管理します。退職者はログイン不可になります。退職にしたら、シフトの<a href="/admin/shift/config.html">スタッフ・設定</a>でも「在籍状況と同期」を押してスタッフから外してください。</p>
     <div class="back-action-slot">
       <a class="secondary-btn" href="/admin/edit-json/index.html?data=workers">ログイン権限管理</a>
+      <a class="secondary-btn" href="/admin/shift/config.html">シフトのスタッフ・設定（同期）</a>
       <a class="secondary-btn" href="/admin/index.html">管理ページに戻る</a>
     </div>
     <div id="employee-list"></div>

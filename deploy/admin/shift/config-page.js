@@ -6,6 +6,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 const element = (id) => document.getElementById(id);
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
 let cfg = null;
+let workers = [];  // 公開 data/workers.json（ログインアカウント台帳・在籍状況）
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -91,12 +92,48 @@ function collectGlobals(out) {
 }
 
 // ───── スタッフ ─────
+async function loadWorkers() {
+  try {
+    const response = await fetch(`/data/workers.json?v=${Date.now()}`, { cache: "no-store" });
+    workers = response.ok ? await response.json() : [];
+  } catch {
+    workers = [];
+  }
+}
+
+function workerByLogin(loginName) {
+  return workers.find((w) => w.name === loginName);
+}
+
+// login 未設定のとき、一致キーワードや名前が表示名に含まれるアカウントを推測する
+function guessLogin(member) {
+  const keys = [member.name, ...(member.match || [])].filter(Boolean);
+  const hit = workers.find((w) =>
+    keys.some((k) => (w.display || "").includes(k) || (w.name || "") === k));
+  return hit?.name || "";
+}
+
+function employmentBadge(loginName) {
+  if (!loginName) return ['⚪ 未紐づけ', ""];
+  const worker = workerByLogin(loginName);
+  if (!worker) return ["⚠ アカウントが見つかりません", "warn"];
+  return worker.employmentStatus === "retired"
+    ? ["🔴 退職済み（このスタッフを削除してください）", "retired"]
+    : ["🟢 在籍中", "active"];
+}
+
 function staffCard(member) {
   const card = document.createElement("div");
   card.className = "staff-card";
   const weekdayBoxes = WEEKDAYS.map((w) =>
     `<label class="wd"><input type="checkbox" data-field="wd" value="${w}"${(member.fixed_weekdays || []).includes(w) ? " checked" : ""}>${w}</label>`).join("");
   const latest = Object.entries(member.latest_end || {}).map(([w, t]) => `${w}:${t}`).join(", ");
+  const login = member.login || guessLogin(member);
+  const options = ['<option value="">（未選択）</option>']
+    .concat(workers.map((w) =>
+      `<option value="${w.name}"${w.name === login ? " selected" : ""}>${w.display || w.name}（${w.name}）</option>`))
+    .join("");
+  const [badgeLabel, badgeKind] = employmentBadge(login);
   card.innerHTML = `
     <div class="cfg-grid">
       <label>名前<input data-field="name" type="text" value="${member.name || ""}"></label>
@@ -110,7 +147,18 @@ function staffCard(member) {
       <label>終了の上限（例: 日:15:00, 月:15:00）<input data-field="latest" type="text" value="${latest}"></label>
       <label>入れない日（毎月・カンマ区切り）<input data-field="unavailable" type="text" value="${(member.unavailable_days_of_month || []).join(", ")}"></label>
     </div>
+    <div class="cfg-row">
+      <span class="cfg-label">ログイン連携</span>
+      <select data-field="login" class="login-select">${options}</select>
+      <span class="emp-badge ${badgeKind}" data-field="badge">${badgeLabel}</span>
+    </div>
     <button type="button" class="danger-btn cfg-remove">このスタッフを削除</button>`;
+  card.querySelector('[data-field="login"]').addEventListener("change", (event) => {
+    const [label, kind] = employmentBadge(event.target.value);
+    const badge = card.querySelector('[data-field="badge"]');
+    badge.textContent = label;
+    badge.className = `emp-badge ${kind}`;
+  });
   card.querySelector(".cfg-remove").addEventListener("click", () => {
     if (confirm(`「${card.querySelector('[data-field="name"]').value}」を削除しますか？`)) card.remove();
   });
@@ -154,6 +202,7 @@ function collectStaff() {
       protected: field("protected").checked,
       hourly: Number(field("hourly").value),
       latest_end: latest,
+      login: field("login").value || "",
       unavailable_days_of_month: unavailable,
     });
   }
@@ -163,11 +212,35 @@ function collectStaff() {
 // ───── 読み込み・保存 ─────
 async function load() {
   status("読み込み中…");
+  await loadWorkers();
   cfg = await api("/shift/config");
   renderGlobals();
   renderStaff();
   element("config-area").hidden = false;
   status("");
+}
+
+// 在籍状況（workers.json）との同期：退職済みに紐づくスタッフをカードから外す
+function syncEmployment() {
+  const cards = [...element("staff-list").querySelectorAll(".staff-card")];
+  const unlinked = [];
+  const targets = cards.filter((card) => {
+    const loginName = card.querySelector('[data-field="login"]').value;
+    if (!loginName) {
+      unlinked.push(card.querySelector('[data-field="name"]').value);
+      return false;
+    }
+    return workerByLogin(loginName)?.employmentStatus === "retired";
+  });
+  if (!targets.length) {
+    alert("退職済みのスタッフはいません。在籍状況と一致しています。"
+      + (unlinked.length ? `\n※未紐づけ: ${unlinked.join("、")}（ログイン連携を設定すると自動で判定できます）` : ""));
+    return;
+  }
+  const names = targets.map((card) => card.querySelector('[data-field="name"]').value).join("、");
+  if (!confirm(`退職済みの ${names} をスタッフから外しますか？\n（「保存する」を押すまで確定しません）`)) return;
+  for (const card of targets) card.remove();
+  element("save-result").textContent = `🔄 ${names} を外しました。「保存する」で確定してください。`;
 }
 
 async function save() {
@@ -217,6 +290,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("login").addEventListener("click", () => login("/admin/shift/config.html"));
   element("save").addEventListener("click", save);
   element("reload").addEventListener("click", () => load().catch((error) => status(error.message, true)));
+  element("sync-employment").addEventListener("click", syncEmployment);
   element("add-staff").addEventListener("click", () => {
     element("staff-list").appendChild(staffCard({ hourly: cfg?.base_hourly ?? 1250, fixed_weekdays: [] }));
   });

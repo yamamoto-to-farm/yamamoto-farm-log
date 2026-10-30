@@ -206,6 +206,10 @@ def validate_config(cfg):
         days = member.get("unavailable_days_of_month", [])
         if not isinstance(days, list) or not all(isinstance(d, int) and 1 <= d <= 31 for d in days):
             raise RequestError(400, f"{where} の unavailable_days_of_month は 1〜31 の数値にしてください。")
+        login = member.get("login", "")
+        if not isinstance(login, str):
+            raise RequestError(400, f"{where} の login（ログイン連携）が不正です。")
+        member["login"] = login.strip()   # workers.json の識別名（在籍状況の表示用・任意）
     return cfg
 
 

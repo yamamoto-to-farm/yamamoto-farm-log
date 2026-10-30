@@ -44,6 +44,7 @@ export function renderEditCard({ dataName, json, container }) {
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;">
         <a class="secondary-btn" href="/admin/access.html">在籍状況管理</a>
+        <a class="secondary-btn" href="/admin/shift/config.html">シフトのスタッフ・設定</a>
         <button id="save-btn" class="primary-btn" type="button">保存する</button>
       </div>
     </div>
