@@ -196,6 +196,24 @@ class ShiftConfigTests(unittest.TestCase):
         self.assertEqual(status, 403)
         fake_s3.put_object.assert_not_called()
 
+    def test_regenerate_invokes_plan_function(self):
+        with patch.dict(os.environ, {"PLAN_FUNCTION": "yamamoto-farm-shift-plan"}):
+            event = {"routeKey": "POST /shift/regenerate", "body": json.dumps({"month": "2026-11"}),
+                     "requestContext": {"authorizer": {"jwt": {"claims": self.claims}}}}
+            result = api.lambda_handler(event, None)
+        self.assertEqual(result["statusCode"], 202)
+        kwargs = fake_s3.invoke.call_args.kwargs
+        self.assertEqual(kwargs["FunctionName"], "yamamoto-farm-shift-plan")
+        self.assertEqual(kwargs["InvocationType"], "Event")
+        self.assertEqual(json.loads(kwargs["Payload"].decode("utf-8")), {"month": "2026-11"})
+
+    def test_regenerate_without_function_fails(self):
+        event = {"routeKey": "POST /shift/regenerate", "body": "{}",
+                 "requestContext": {"authorizer": {"jwt": {"claims": self.claims}}}}
+        result = api.lambda_handler(event, None)
+        self.assertEqual(result["statusCode"], 500)
+        fake_s3.invoke.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

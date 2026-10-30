@@ -230,11 +230,12 @@ photos と同じ Cognito ログインに加えて **cognito:groups の admin ま
 AWS設定（photos の HTTP API に追加）:
 
 - Lambda: `yamamoto-farm-shift-api`、Python 3.13、ハンドラ `lambda_function.lambda_handler`、
-  メモリ 128MB、タイムアウト 10秒。環境変数 `SHIFT_BUCKET`（非公開バケット名）と
-  `SHIFT_PREFIX`=`shift/`。
+  メモリ 128MB、タイムアウト 10秒。環境変数 `SHIFT_BUCKET`（非公開バケット名）、
+  `SHIFT_PREFIX`=`shift/`、`PLAN_FUNCTION`=`yamamoto-farm-shift-plan`（再計算用）。
 - 実行ロール: 非公開バケットの `shift/*` への `s3:GetObject`、`s3:ListBucket`
-  （prefix条件 `shift/*`）、および `shift/config.json` と `shift/config-backups/*` への
-  `s3:PutObject`（設定の保存に必要）。
+  （prefix条件 `shift/*`）、`shift/config.json` と `shift/config-backups/*` への
+  `s3:PutObject`（設定の保存に必要）、生成 Lambda への `lambda:InvokeFunction`
+  （再計算に必要）。
 - 既存の HTTP API（photos と同じもの）にルートを追加し、**すべてに** JWT オーソライザー
   `farm-photos-cognito`・必須スコープ **openid** を付けます（ペイロード形式 2.0）:
 
@@ -244,6 +245,7 @@ AWS設定（photos の HTTP API に追加）:
   | GET | `/shift/months` | 保存済みの月の一覧 |
   | GET | `/shift/config` | スタッフマスタの取得 |
   | POST | `/shift/config` | スタッフマスタの保存（検証・バックアップつき） |
+  | POST | `/shift/regenerate` | 生成 Lambda を非同期起動して案を再計算 |
 
 - 各ルートに Lambda 呼び出し権限があることを確認します（photos と同様）。
 - Cognito ユーザープールの **グループ** に admin / family が設定されていることを確認します

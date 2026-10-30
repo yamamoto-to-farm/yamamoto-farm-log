@@ -54,6 +54,21 @@ async function api(path, query) {
   if (!token) throw new Error("ログインの期限が切れました。再ログインしてください。");
   const url = `${config.api}${path}${query ? `?${new URLSearchParams(query)}` : ""}`;
   const response = await fetch(url, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } });
+  return handleApiResponse(response);
+}
+
+async function apiPost(path, body) {
+  const token = await ensureToken();
+  if (!token) throw new Error("ログインの期限が切れました。再ログインしてください。");
+  const response = await fetch(`${config.api}${path}`, {
+    method: "POST", cache: "no-store",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return handleApiResponse(response);
+}
+
+async function handleApiResponse(response) {
   if (response.status === 401) {
     clearSession();
     throw new Error("ログインをやり直してください。");
@@ -348,6 +363,24 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   element("month-select").addEventListener("change", (event) => {
     loadPlan(event.target.value).catch((error) => status(error.message, true));
+  });
+  element("regen").addEventListener("click", async () => {
+    if (!plan) return;
+    if (!confirm(`${plan.month} のシフト案を timetree の最新データで再計算しますか？（約1分）`)) return;
+    try {
+      element("regen").disabled = true;
+      await apiPost("/shift/regenerate", { month: plan.month });
+      status(`🔄 ${plan.month} を再計算中…（約30秒後に自動で読み直します）`);
+      setTimeout(() => {
+        loadPlan(plan.month)
+          .then(() => status("再計算した案を読み込みました。"))
+          .catch((error) => status(error.message, true))
+          .finally(() => { element("regen").disabled = false; });
+      }, 30000);
+    } catch (error) {
+      element("regen").disabled = false;
+      status(error.message, true);
+    }
   });
   element("calendar").addEventListener("click", (event) => {
     const chip = event.target.closest(".chip[data-key]");

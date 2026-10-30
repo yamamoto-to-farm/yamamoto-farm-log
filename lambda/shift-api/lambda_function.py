@@ -1,17 +1,19 @@
 """シフト案 読み取り・設定編集API（Cognito JWT保護・admin/familyグループ限定）.
 
 HTTP API（payload 2.0）のルート:
-  GET  /shift/plan   … 最新（または ?month=YYYY-MM）の plan.json を返す
-  GET  /shift/months … 保存済みの月の一覧を返す
-  GET  /shift/config … スタッフマスタ（config.json）を返す
-  POST /shift/config … 検証して config.json を保存（保存前に config-backups/ へ退避）
+  GET  /shift/plan       … 最新（または ?month=YYYY-MM）の plan.json を返す
+  GET  /shift/months     … 保存済みの月の一覧を返す
+  GET  /shift/config     … スタッフマスタ（config.json）を返す
+  POST /shift/config     … 検証して config.json を保存（保存前に config-backups/ へ退避）
+  POST /shift/regenerate … 生成 Lambda を非同期で起動して案を再計算（body: {"month": "YYYY-MM"} 任意）
 
 時給を含むため、photos と同じ Cognito プールの検証済みクレームに加えて、
 cognito:groups に admin または family が必要（worker には返さない）。
 
 環境変数:
-  SHIFT_BUCKET … 非公開バケット名（必須）
-  SHIFT_PREFIX … キーの接頭辞（既定 "shift/"）
+  SHIFT_BUCKET  … 非公開バケット名（必須）
+  SHIFT_PREFIX  … キーの接頭辞（既定 "shift/"）
+  PLAN_FUNCTION … 生成 Lambda の関数名（再計算に必要。例 yamamoto-farm-shift-plan）
 """
 import base64
 import json
@@ -247,6 +249,28 @@ def lambda_handler(event, context):
             LOGGER.info("config.json updated by %s", claims.get("username") or claims.get("sub"))
             return response(200, {"saved": True, "staff": len(cfg["staff"]),
                                   "note": "次回の自動生成（毎月26日）から反映されます。"})
+
+        if route == "POST /shift/regenerate":
+            function_name = os.environ.get("PLAN_FUNCTION")
+            if not function_name:
+                raise RequestError(500, "再計算用の Lambda（PLAN_FUNCTION）が設定されていません。")
+            raw = event.get("body") or "{}"
+            if event.get("isBase64Encoded"):
+                raw = base64.b64decode(raw, validate=True).decode("utf-8")
+            try:
+                req = json.loads(raw) if raw.strip() else {}
+            except (ValueError, TypeError) as error:
+                raise RequestError(400, "JSONが不正です。") from error
+            month = (req.get("month") or "").strip() if isinstance(req, dict) else ""
+            if month and not MONTH_RE.fullmatch(month):
+                raise RequestError(400, "month は YYYY-MM 形式で指定してください。")
+            payload = {"month": month} if month else {}
+            boto3.client("lambda").invoke(FunctionName=function_name, InvocationType="Event",
+                                          Payload=json.dumps(payload).encode("utf-8"))
+            LOGGER.info("regenerate requested (%s) by %s", month or "auto",
+                        claims.get("username") or claims.get("sub"))
+            return response(202, {"started": True, "month": month or None,
+                                  "note": "再計算を開始しました。1分ほどで反映されます（結果はメールでも通知されます）。"})
 
         if route == "GET /shift/plan":
             month = (data.get("month") or "").strip()

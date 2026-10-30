@@ -179,10 +179,29 @@ async function save() {
     if (!confirm("設定を保存しますか？（保存前の設定は自動でバックアップされます）")) return;
     const result = await api("/shift/config", { body: out });
     cfg = out;
-    element("save-result").textContent = `✅ 保存しました（スタッフ${result.staff}人）。${result.note || ""}`;
+    element("save-result").textContent = `✅ 保存しました（スタッフ${result.staff}人）。`;
+    await offerRegenerate();
   } catch (error) {
     element("save-result").textContent = `⚠ ${error.message}`;
   }
+}
+
+// 保存後、最新月のシフト案の再計算を提案する
+async function offerRegenerate() {
+  let month = "";
+  try {
+    const result = await api("/shift/months");
+    month = result.months[0] || "";
+  } catch (error) {
+    console.warn("months load failed", error);
+  }
+  if (!month) return;
+  if (!confirm(`${month} のシフト案を、新しい設定でいま再計算しますか？（約1分）`)) {
+    element("save-result").textContent += " 次回の自動生成（毎月26日）から反映されます。";
+    return;
+  }
+  const result = await api("/shift/regenerate", { body: { month } });
+  element("save-result").textContent += ` 🔄 ${month} の再計算を開始しました。${result.note || ""}`;
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
