@@ -24,6 +24,11 @@
 .legend .sample-extra { background: #fff; border: 1.5px solid #555; box-sizing: border-box; }
 .legend .sample-hold { background: #bdbdbd; }
 
+.shift-cal-toolbar { display: flex; gap: 16px; margin-bottom: 6px; font-size: 0.85rem; }
+.shift-cal-toolbar label { display: inline-flex; align-items: center; gap: 4px; font-weight: normal; margin: 0; }
+.shift-cal-toolbar input[type="radio"] { width: auto; padding: 0; margin: 0; }
+.shift-cal-toolbar input[type="radio"]:disabled + * { color: #aaa; }
+
 .shift-cal { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .shift-cal th { font-size: 0.75rem; padding: 4px 2px; background: #f0f3f1; border: 1px solid #ddd; }
 .shift-cal th.sat { color: #1565c0; }
@@ -35,6 +40,7 @@
   color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
 .shift-cal .chip.extra { background: #fff; border: 1.5px solid; font-weight: 600; }
 .shift-cal .chip.hold { background: #e0e0e0; color: #666; text-decoration: line-through; }
+.shift-cal .chip.raw { font-size: 0.68rem; }
 
 .shift-table { border-collapse: collapse; width: 100%; max-width: 560px; }
 .shift-table th, .shift-table td { border: 1px solid #ddd; padding: 4px 10px; font-size: 0.85rem; text-align: right; }

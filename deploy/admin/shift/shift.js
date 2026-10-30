@@ -5,10 +5,15 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   WEEKDAYS, buildCalendar, buildChecklist, defaultScenarioIndex,
   formatYen, itemKind, personColorMap, personRows, scenarioBudgets,
-} from "./shift-logic.js?v=20261030-3";
+} from "./shift-logic.js?v=20261030-4";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
+let calMode = "plan";
+
+function currentScenario() {
+  return plan.scenarios[Number(element("budget-slider").value)];
+}
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -50,8 +55,7 @@ function renderSummary(scenario) {
 }
 
 function renderScenario() {
-  const index = Number(element("budget-slider").value);
-  const scenario = plan.scenarios[index];
+  const scenario = currentScenario();
   const within = scenario.cost <= scenario.budget_max;
   element("budget-readout").innerHTML =
     `予算上限 ${formatYen(scenario.budget_max)} → 案 <span class="${within ? "ok" : "over"}">${formatYen(scenario.cost)}</span>`;
@@ -76,21 +80,34 @@ function renderScenario() {
 
 function renderCalendar(scenario) {
   const colors = personColorMap(plan.staff);
-  element("legend").innerHTML =
-    plan.staff.map((member) =>
-      `<span class="legend person"><i style="background:${colors.get(member.name)}"></i>${member.name}</span>`).join("") +
-    '<span class="legend kind"><i class="sample-fixed"></i>確定（「希」を外す）</span>' +
-    '<span class="legend kind"><i class="sample-extra"></i>確定の目安（「希」のまま）</span>' +
-    '<span class="legend kind"><i class="sample-hold"></i>保留・見送り</span>';
+  const rawItems = Array.isArray(plan.requests.items) ? plan.requests.items : null;
+  const rawRadio = element("cal-mode-raw");
+  rawRadio.disabled = !rawItems;
+  rawRadio.title = rawItems ? "" : "この月の plan.json には原本データがありません（再生成が必要）";
+  const mode = calMode === "raw" && rawItems ? "raw" : "plan";
 
-  const weeks = buildCalendar(plan.month, scenario.items);
+  const personLegend = plan.staff.map((member) =>
+    `<span class="legend person"><i style="background:${colors.get(member.name)}"></i>${member.name}</span>`).join("");
+  element("legend").innerHTML = mode === "raw"
+    ? personLegend + '<span class="legend kind">timetreeの希望タイトルをそのまま表示（⚠=要確認の注記あり）</span>'
+    : personLegend +
+      '<span class="legend kind"><i class="sample-fixed"></i>確定（「希」を外す）</span>' +
+      '<span class="legend kind"><i class="sample-extra"></i>確定の目安（「希」のまま）</span>' +
+      '<span class="legend kind"><i class="sample-hold"></i>保留・見送り</span>';
+
+  const weeks = buildCalendar(plan.month, mode === "raw" ? rawItems : scenario.items);
   const head = ["月", "火", "水", "木", "金", "土", "日"]
     .map((w) => `<th class="${w === "土" ? "sat" : w === "日" ? "sun" : ""}">${w}</th>`).join("");
   const rows = weeks.map((week) => `<tr>${week.map((cell) => {
     if (!cell) return '<td class="empty"></td>';
     const chips = cell.items.map((item) => {
-      const kind = itemKind(item);
       const color = colors.get(item.person) || "#757575";
+      if (mode === "raw") {
+        const warn = item.warnings ? "⚠" : "";
+        const title = `${item.person}: ${item.raw_title}${item.warnings ? "／" + item.warnings : ""}`;
+        return `<span class="chip raw" style="background:${color}" title="${title}">${warn}${item.raw_title}</span>`;
+      }
+      const kind = itemKind(item);
       const hours = item.proposed_hours > 0 ? ` ${item.proposed_hours}h` : "";
       const text = kind === "extra" ? `希 ${item.person}${hours}` : `${item.person}${hours}`;
       const style = kind === "fixed" ? `background:${color}`
@@ -193,6 +210,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   element("login").addEventListener("click", () => login("/admin/shift/index.html"));
   element("budget-slider").addEventListener("input", renderScenario);
+  document.querySelectorAll('input[name="cal-mode"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      calMode = radio.value;
+      renderCalendar(currentScenario());
+    });
+  });
   element("month-select").addEventListener("change", (event) => {
     loadPlan(event.target.value).catch((error) => status(error.message, true));
   });

@@ -889,6 +889,14 @@ def cmd_plan(args):
                 "no_request_days": [(first + timedelta(days=i)).isoformat()
                                     for i in range((last - first).days + 1)
                                     if not heads.get(first + timedelta(days=i))],
+                # timetreeの希望の原本（時間が計算できないものも含む全件）
+                "items": [{
+                    "date": e["date"], "weekday": e["weekday"], "person": e["person"],
+                    "raw_title": e["raw_title"], "kind": e["kind"],
+                    "start": e.get("start", ""), "end": e.get("end", ""),
+                    "work_hours": e.get("work_hours", ""),
+                    "fixed_weekday": int(e["fixed"]), "warnings": e.get("warnings", ""),
+                } for e in entries],
             },
             "issues": issues,
             "default_budget_max": b["max"],
