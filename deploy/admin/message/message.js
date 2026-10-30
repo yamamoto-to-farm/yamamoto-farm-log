@@ -23,6 +23,8 @@ const WORK_LABELS = {
 // 作業内容の候補（作業ログの種別。自由入力も可）
 const TASK_OPTIONS = ["収穫", "播種", "育苗", "定植", "耕起", "中耕", "畝立て", "除草・草刈り",
   "手作業除草", "防除", "施肥", "潅水", "圃場整備", "出荷調整", "片付け"];
+// お休み連絡の理由の候補（自由入力も可）
+const OFF_REASONS = ["雨天予報のため", "台風接近のため", "圃場の状態が悪いため", "作業の都合により"];
 const DEFAULT_TEMPLATES = [
     { title: "シフト入力のお願い",
       body: "お疲れさまです。\n{来月}月の勤務希望の入力をお願いします。\n"
@@ -183,6 +185,7 @@ function addCard(names, start, end) {
   cards.push({
     names,
     memo: element("common-memo").value.trim(),
+    off: false, offReason: OFF_REASONS[0],
     blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "" }],
   });
 }
@@ -251,6 +254,17 @@ async function loadWorkPlanHints(dateIso) {
 
 function buildText(card) {
   const dateIso = element("msg-date").value;
+  if (card.off) {
+    // 天候などによる作業中止の連絡
+    const lines = ["お疲れさまです。",
+      `${dateLabel(dateIso)}の作業ですが、${(card.offReason || OFF_REASONS[0]).trim()}、お休みとさせて下さい。`, ""];
+    if (card.memo.trim()) {
+      lines.push(card.memo.trim());
+      lines.push("");
+    }
+    lines.push("よろしくお願いします。");
+    return lines.join("\n");
+  }
   const lines = ["お疲れさまです。", `${dateLabel(dateIso)}の作業予定です。`, ""];
   for (const block of card.blocks) {
     lines.push(`■ ${block.start.replace(/^0/, "")}〜${block.end.replace(/^0/, "")}`);
@@ -305,14 +319,25 @@ function renderCards() {
       ? `<select class="merge-select" data-c="${c}"><option value="">＋まとめる…</option>${mergeOptions}</select>`
       : "";
     const hasWish = card.names.some((n) => n.wish);
+    const offToggle = `
+      <label class="off-toggle${card.off ? " on" : ""}">
+        <input type="checkbox" data-c="${c}" data-k="off"${card.off ? " checked" : ""}>
+        ☔ お休み連絡（中止）にする
+      </label>` + (card.off
+        ? `<input class="off-reason" list="dl-reasons" placeholder="理由" data-c="${c}" data-k="offReason"
+                  value="${escapeHtml(card.offReason || "")}">`
+        : "");
+    const body = card.off ? "" : `
+        ${blocks}
+        <button type="button" class="secondary-btn add-block" data-c="${c}">＋時間帯を追加（午前/午後で畑が変わる場合）</button>`;
     return `
-      <div class="msg-card">
+      <div class="msg-card${card.off ? " off" : ""}">
         <h3><span class="chip-list">${chips}</span>${merge}
           <button type="button" class="remove" data-c="${c}" title="このカードを削除">✕</button>
         </h3>
         ${hasWish ? '<p class="msg-muted">⚠ = まだ「希」のまま（未確定）</p>' : ""}
-        ${blocks}
-        <button type="button" class="secondary-btn add-block" data-c="${c}">＋時間帯を追加（午前/午後で畑が変わる場合）</button>
+        ${offToggle}
+        ${body}
         <input class="memo-input" placeholder="このグループへの一言メモ" data-c="${c}" data-k="memo"
                value="${escapeHtml(card.memo)}">
         <pre data-preview="${c}">${escapeHtml(buildText(card))}</pre>
@@ -421,7 +446,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     const input = event.target;
     const c = Number(input.dataset.c);
     if (!Number.isFinite(c) || !cards[c]) return;
-    if (input.dataset.k === "memo") cards[c].memo = input.value;
+    if (input.dataset.k === "off") {
+      cards[c].off = input.checked;
+      renderCards();            // 表示構造が変わるため再描画
+      return;
+    }
+    if (input.dataset.k === "offReason") cards[c].offReason = input.value;
+    else if (input.dataset.k === "memo") cards[c].memo = input.value;
     else if (input.dataset.b !== undefined) {
       cards[c].blocks[Number(input.dataset.b)][input.dataset.k] = input.value;
     }
