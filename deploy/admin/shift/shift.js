@@ -198,6 +198,17 @@ function renderAll() {
       if (message) notes.push(`自動調整：編集した日を優先し、${message} に短縮しています（追加の希望日から先）`);
     }
   }
+  // 保留（希のまま）の確定/見送りで出る人件費の幅を示す
+  const holds = eff.filter((item) => item.status === "hold");
+  if (holds.length) {
+    const merged = { ...getOverrides() };
+    for (const item of holds) merged[item.key] = { ...(merged[item.key] || {}), status: "extra" };
+    const maxTotal = computeCost(applyAdjustments(plan, scenario, merged, getBase()), plan).total;
+    const over = maxTotal > scenario.budget_max;
+    notes.push(`${over ? "⚠ " : ""}保留 ${holds.length}日 の確定/見送りしだいで、人件費は ` +
+      `${formatYen(computed.total)} 〜 ${formatYen(maxTotal)}（全確定時）` +
+      (over ? "。全確定だと予算上限を超えるため、一部は見送りが必要です" : "。全確定でも予算内です"));
+  }
   element("scenario-notes").innerHTML =
     notes.map((n) => `<p class="note${n.startsWith("⚠") ? " warn" : ""}">${n}</p>`).join("");
   element("base-note").textContent = (() => {
