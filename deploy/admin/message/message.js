@@ -213,9 +213,10 @@ async function loadFromShift() {
     const todays = eff.filter((item) => item.date === dateIso
       && item.status !== "hold" && item.status !== "skip" && item.proposed_hours > 0);
     // 時間帯が同じ人はひとつのカード（同じ文面）にまとめる。作業が違う場合は後から分割できる。
+    // 時刻は表記ゆれ（8:00 と 08:00）があるため HH:MM に正規化して比較する。
     const groups = new Map();
     for (const item of todays) {
-      const key = `${item.start || ""}|${item.proposed_end || ""}`;
+      const key = `${toInputTime(item.start || "")}|${toInputTime(item.proposed_end || "")}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(item);
     }
