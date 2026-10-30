@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-21";
+} from "./shift-logic.js?v=20261030-22";
 
 const element = (id) => document.getElementById(id);
 let plan = null;

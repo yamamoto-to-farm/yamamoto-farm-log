@@ -91,8 +91,8 @@ export function workHours(startText, endText, breaks) {
 export const NOON_SNAP_MIN = 90;
 
 // 開始・終了を基本時間帯に収めたうえで、実働hoursを満たす時刻を決める。
-// 正午を中途半端にまたぐ場合は、午前のみ/午後のみに寄せる（第6条④）。
-export function resolveShift(startText, endText, hours, base, breaks, minHours) {
+// snap=true のとき、正午を中途半端にまたぐ場合は午前のみ/午後のみに寄せる（第6条④）。
+export function resolveShift(startText, endText, hours, base, breaks, minHours, snap = true) {
   const fmt = (min) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, "0")}`;
   const baseStart = hmToMin(base.start);
   const baseEnd = hmToMin(base.end);
@@ -111,7 +111,7 @@ export function resolveShift(startText, endText, hours, base, breaks, minHours) 
     return { start: fmt(s), end: fmt(nonSpan), hours: Math.round(h * 100) / 100 };
   }
   const end = Math.min(s + minutes + breaks.spanning_noon, e);
-  if (s < 720 && 720 < end) {
+  if (snap && s < 720 && 720 < end) {
     const candidates = [];
     if (end - 780 <= NOON_SNAP_MIN) {        // 午後が短い → 午前のみに
       const amHours = workHours(fmt(s), "12:00", breaks);
@@ -155,11 +155,22 @@ export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
       hours = override.hours;   // 明示的な編集はクリップしない
       end = override.end || end;
     } else if (!inStart && !inEnd) {
-      // 時間おまかせ（終日）の希望：時刻は仮置きせず、実働だけ月の営業時間内に丸める
-      const windowHours = workHours(baseWin.start, baseWin.end, breaks);
-      hours = windowHours === null ? item.proposed_hours : Math.min(item.proposed_hours, windowHours);
-      start = "";
-      end = "";
+      // 時間おまかせ（終日）の希望：基本時間帯が初期値なら時刻は仮置きしない。
+      // 基本時間帯を明示的に設定した月は、その枠に配置して時刻を表示する（寄せはしない）。
+      const defaults = plan.targets.allday_default;
+      const baseSet = defaults && (hmToMin(baseWin.start) !== hmToMin(defaults.start)
+                                   || hmToMin(baseWin.end) !== hmToMin(defaults.end));
+      if (baseSet) {
+        const resolved = resolveShift(baseWin.start, "", item.proposed_hours, baseWin, breaks, minHours, false);
+        start = resolved.start;
+        end = resolved.end;
+        hours = resolved.hours;
+      } else {
+        const windowHours = workHours(baseWin.start, baseWin.end, breaks);
+        hours = windowHours === null ? item.proposed_hours : Math.min(item.proposed_hours, windowHours);
+        start = "";
+        end = "";
+      }
     } else {
       const resolved = resolveShift(inStart, inEnd, item.proposed_hours, baseWin, breaks, minHours);
       start = resolved.start;

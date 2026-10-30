@@ -168,6 +168,9 @@ test("resolveShift は基本時間帯に収めて正午またぎを整理する"
   // 午前がわずか（11:00開始）→ 午後のみに寄せ、実働は維持
   assert.deepEqual(resolveShift("11:00", "17:10", 4, { start: "06:00", end: "17:10" }, breaks, 3.5),
     { start: "13:00", end: "17:10", hours: 4 });
+  // snap=false なら寄せずにまたぎのまま（終日おまかせの枠配置用）
+  assert.deepEqual(resolveShift("7:30", "", 4.5, { start: "06:00", end: "17:10" }, breaks, 3.5, false),
+    { start: "7:30", end: "13:00", hours: 4.5 });
 });
 
 test("applyAdjustments は基本時間帯と個別編集を反映する", async () => {
@@ -189,7 +192,13 @@ test("applyAdjustments は基本時間帯と個別編集を反映する", async 
   assert.equal(eff[1].proposed_hours, 5.5);   // 5.5hは枠内に収まる（6:00-11:40）
   assert.equal(eff[1].proposed_end, "11:40");
   assert.equal(eff[2].proposed_hours, 5.83);  // 終日（おまかせ）は実働だけ枠内に丸める
-  assert.equal(eff[2].proposed_end, "");
+  assert.equal(eff[2].proposed_end, "12:00"); // 基本時間帯を設定した月は枠に配置して表示
+  assert.equal(eff[2].start, "6:00");
+  // 基本時間帯 08:00-15:30 → 終日はその枠どおり（AM寄せはしない）
+  eff = applyAdjustments(calcPlan, scenario, {}, { start: "08:00", end: "15:30" });
+  assert.equal(eff[2].proposed_hours, 6.5);
+  assert.equal(eff[2].start, "8:00");
+  assert.equal(eff[2].proposed_end, "15:30");
   assert.equal(eff[3].proposed_hours, 0); // 保留は0のまま
   // 個別編集：保留に変更（希のまま判断待ち）
   eff = applyAdjustments(calcPlan, scenario, { "2026-11-01:土井": { status: "hold" } }, null);
