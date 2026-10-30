@@ -102,6 +102,7 @@ async function loadMasters() {
 }
 
 // 共通の圃場マスタ（data/fields.json）を読み、圃場モーダル用のツリーを登録する
+// ※文面に地図リンクは入れない（パートも農園OSの圃場マップで場所を確認できるため）
 async function loadFields() {
   try {
     const response = await fetch(`/data/fields.json?ts=${Date.now()}`, { cache: "no-store" });
@@ -121,12 +122,6 @@ async function loadFields() {
     ...(getFilterData() || {}),
     fields: { parents: [...byArea.keys()], children: Object.fromEntries(byArea) },
   });
-}
-
-// 地図リンク（緯度経度から生成）
-function mapLinkFor(fieldName) {
-  const field = fieldsData.find((f) => f.name === fieldName);
-  return field && field.lat && field.lng ? `https://www.google.com/maps?q=${field.lat},${field.lng}` : "";
 }
 
 async function saveMasters() {
@@ -269,11 +264,7 @@ function buildText(card) {
   const lines = ["お疲れさまです。", `${dateLabel(dateIso)}の作業予定です。`, ""];
   for (const block of card.blocks) {
     lines.push(`■ ${block.start.replace(/^0/, "")}〜${block.end.replace(/^0/, "")}`);
-    if (block.field) {
-      lines.push(`・畑「${block.field}」`);
-      const map = mapLinkFor(block.field);
-      if (map) lines.push(`・地図：${map}`);
-    }
+    if (block.field) lines.push(`・畑「${block.field}」`);
     if (block.task) lines.push(`・作業：${block.task}`);
     lines.push("");
   }
