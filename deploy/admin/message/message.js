@@ -273,12 +273,13 @@ function buildText(card) {
   if (card.kind === "2") {
     const names = card.names.map((n) => n.name);
     const reporter = names.includes(card.reporter) ? card.reporter : names[0];
-    lines.push(`この日の連絡係は ${reporter}さん にお願いします。`);
-    lines.push("全員分まとめて写真つきのLINE報告をお願いします。");
+    lines.push("パートさんのみでの作業です。");
+    lines.push(`連絡係は${reporter}さんにお願いします。`);
+    lines.push("作業の開始・終了時（昼をまたぐ日は休憩の前後も）に、写真つきのLINE報告をお願いします。");
     lines.push("");
   } else if (card.kind === "3") {
-    lines.push("この日は1人での作業です。");
-    lines.push("写真つきのLINE報告をお願いします。");
+    lines.push("1人での作業になります。");
+    lines.push("作業の開始・終了時（昼をまたぐ日は休憩の前後も）に、写真つきのLINE報告をお願いします。気をつけてお願いします。");
     lines.push("");
   }
   if (card.memo.trim()) {
