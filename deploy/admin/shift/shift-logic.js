@@ -346,9 +346,8 @@ export function buildChecklist(scenario) {
     let label;
     let extra = "";
     if (kind === "fixed") {
-      label = `${head} → 「希」を外して確定` +
-        (shortened ? `（終了を ${item.proposed_end} に短縮・実働${item.proposed_hours}h。前日までに本人へ連絡）` : "");
-      if (shortened) extra = "短縮・要連絡";
+      // 時刻は前日のLINE連絡で確定する運用のため、ここでは「希」外しのみを示す
+      label = `${head} → 「希」を外して確定`;
     } else if (kind === "extra") {
       label = `${head} → 今は「希」のまま。勤務3日前までに確定（「希」を外す・目安 実働${item.proposed_hours}h` +
         (shortened ? `・終了 ${item.proposed_end}` : "") + "）か、見送りを連絡";

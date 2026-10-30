@@ -76,7 +76,7 @@ test("buildChecklist は操作グループと文言を作る", async () => {
   assert.equal(groups.hold.length, 1);
   assert.equal(groups.skip.length, 0);
   assert.match(groups.fixed[0].label, /「希」を外して確定/);
-  assert.match(groups.fixed[1].label, /14:00 に短縮/);
+  assert.match(groups.fixed[1].label, /「希」を外して確定/);
   assert.match(groups.extra[0].label, /3日前までに確定/);
   assert.match(groups.hold[0].label, /週5日の上限のため保留/);
   assert.equal(groups.fixed[0].id, "2026-11-01:土井");

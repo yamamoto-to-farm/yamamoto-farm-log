@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-22";
+} from "./shift-logic.js?v=20261030-30";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -469,7 +469,7 @@ function renderChecklist(eff) {
     ).join("") + `</div>`;
 
   const body =
-    section("① 月末までに確定（決まった曜日）", groups.fixed, "timetreeで「希」を外す。短縮した日は前日までに本人へ連絡", false) +
+    section("① 月末までに確定（決まった曜日）", groups.fixed, "timetreeで「希」を外す（具体的な時間は前日のLINEで）", false) +
     section("② 勤務3日前までに確定（追加の希望日）", groups.extra, "確定するなら連絡して「希」を外す。見送りなら連絡", true) +
     section("③ 保留（判断待ち・「希」のまま）", groups.hold, "作業量が決まり次第、期限までに確定か見送りを連絡", true) +
     section("④ 見送り", groups.skip, "期限までに見送りを連絡（timetreeの「希」はそのまま）", true);
