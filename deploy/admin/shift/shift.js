@@ -238,10 +238,15 @@ function renderCalendar(eff) {
   const rows = weeks.map((week) => `<tr>${week.map((cell) => {
     if (!cell) return '<td class="empty"></td>';
     const works = workPlan?.days?.[cell.date] || [];
-    const workTags = works.length
-      ? `<div class="wp-tags" title="${works.map((w) => `${WORK_LABELS[w.type] || w.type}${w.note ? "：" + w.note : ""}`).join("、")}">` +
-        `${works.map((w) => WORK_LABELS[w.type] || w.type).join("・")}</div>`
-      : "";
+    let workTags = "";
+    if (works.length) {
+      const counts = new Map();
+      for (const w of works) counts.set(w.type, (counts.get(w.type) || 0) + 1);
+      const text = [...counts.entries()]
+        .map(([type, count]) => `${WORK_LABELS[type] || type}${count > 1 ? `×${count}` : ""}`).join("・");
+      const title = works.map((w) => `${WORK_LABELS[w.type] || w.type}${w.note ? "：" + w.note : ""}`).join("、");
+      workTags = `<div class="wp-tags" title="${title.replace(/"/g, "&quot;")}">${text}</div>`;
+    }
     const chips = cell.items.map((item) => {
       const color = colors.get(item.person) || "#757575";
       if (mode === "raw") {

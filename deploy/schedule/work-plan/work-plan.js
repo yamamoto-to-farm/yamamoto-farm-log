@@ -82,9 +82,21 @@ function render() {
     rows += "<tr>" + cells.slice(i, i + 7).map((day) => {
       if (!day) return '<td class="empty"></td>';
       const date = `${ym}-${String(day).padStart(2, "0")}`;
-      const pills = (data.days[date] || []).map((entry) =>
-        `<span class="wp-pill ${TYPE_TONE[entry.type] || ""}" title="${TYPE_LABEL[entry.type] || entry.type}${entry.note ? "：" + entry.note : ""}">` +
-        `${TYPE_LABEL[entry.type] || entry.type}${entry.note ? " " + entry.note : ""}</span>`).join("");
+      const entries = data.days[date] || [];
+      // 同じ種別はまとめて表示（×件数）。詳細はツールチップで
+      const groups = new Map();
+      for (const entry of entries) {
+        if (!groups.has(entry.type)) groups.set(entry.type, []);
+        groups.get(entry.type).push(entry);
+      }
+      const pills = [...groups.entries()].map(([type, list]) => {
+        const label = TYPE_LABEL[type] || type;
+        const title = list.map((entry) => `${label}${entry.note ? "：" + entry.note : ""}`).join("、");
+        const text = list.length === 1
+          ? `${label}${list[0].note ? " " + list[0].note : ""}`
+          : `${label} ×${list.length}`;
+        return `<span class="wp-pill ${TYPE_TONE[type] || ""}" title="${title.replace(/"/g, "&quot;")}">${text}</span>`;
+      }).join("");
       return `<td class="${canEdit ? "editable" : ""}" data-date="${date}"><span class="day-no">${day}</span>${pills}</td>`;
     }).join("") + "</tr>";
   }
