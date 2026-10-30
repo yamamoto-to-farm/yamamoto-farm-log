@@ -172,7 +172,7 @@ function rememberSent(card) {
 }
 
 function newBlock(start = "08:00", end = "15:00") {
-  return { start, end, field: "", task: "" };
+  return { start, end, field: "", task: "", shed: false };
 }
 
 // 分割・統合後に、人数と作業形態（②=2人以上/③=1人）の整合を取る
@@ -191,7 +191,7 @@ function addCard(names, start, end) {
     memo: element("common-memo").value.trim(),
     off: false, offReason: OFF_REASONS[0], manualText: null,
     kind: "1", reporter: names[0]?.name || "",   // 作業形態（勤怠運用ルール第6条）と②の連絡係
-    blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "" }],
+    blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "", shed: false }],
   });
 }
 
@@ -274,6 +274,7 @@ function buildText(card) {
   const lines = ["お疲れさまです。", `${dateLabel(dateIso)}の作業予定です。`, ""];
   for (const block of card.blocks) {
     lines.push(`■ ${block.start.replace(/^0/, "")}〜${block.end.replace(/^0/, "")}`);
+    if (block.shed) lines.push("・作業場集合");
     if (block.field) lines.push(`・畑「${block.field}」`);
     if (block.task) lines.push(`・作業：${block.task}`);
     lines.push("");
@@ -313,6 +314,8 @@ function renderCards() {
         <span class="tilde">〜</span>
         <input type="time" data-c="${c}" data-b="${b}" data-k="end" value="${block.end}">
         <div class="block-row2">
+          <label class="shed-check" title="作業場（圃場ではなく作業場に集合）">
+            <input type="checkbox" data-c="${c}" data-b="${b}" data-k="shed"${block.shed ? " checked" : ""}>作業場集合</label>
           <button type="button" class="field-btn${block.field ? " set" : ""}" data-c="${c}" data-b="${b}">
             ${block.field ? `🗺 ${escapeHtml(block.field)}` : "畑を選択"}</button>
           ${block.field ? `<button type="button" class="field-clear" data-c="${c}" data-b="${b}" title="畑をクリア">✕</button>` : ""}
@@ -521,7 +524,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       else if (input.dataset.k === "offReason") input.value = cards[c].offReason || "";
       else if (input.dataset.k === "memo") input.value = cards[c].memo;
       else if (input.dataset.b !== undefined) {
-        input.value = cards[c].blocks[Number(input.dataset.b)][input.dataset.k];
+        const block = cards[c].blocks[Number(input.dataset.b)];
+        if (input.dataset.k === "shed") input.checked = block.shed;
+        else input.value = block[input.dataset.k];
       }
       return;
     }
@@ -542,7 +547,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     else if (input.dataset.k === "offReason") cards[c].offReason = input.value;
     else if (input.dataset.k === "memo") cards[c].memo = input.value;
     else if (input.dataset.b !== undefined) {
-      cards[c].blocks[Number(input.dataset.b)][input.dataset.k] = input.value;
+      const block = cards[c].blocks[Number(input.dataset.b)];
+      if (input.dataset.k === "shed") block.shed = input.checked;
+      else block[input.dataset.k] = input.value;
     }
     const note = document.querySelector(`[data-note="${c}"]`);
     if (note) note.hidden = true;
