@@ -96,10 +96,13 @@ function render() {
 function dayRow(entry = { type: "harvest", note: "" }) {
   const row = document.createElement("div");
   row.className = "wp-row";
+  if (entry.src) row.dataset.src = entry.src;  // 取り込み由来（移動しても再取り込みしない）
+  const last = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5)), 0)).getUTCDate();
   row.innerHTML =
+    `<input type="date" class="wp-row-date" value="${editingDate}" min="${ym}-01" max="${ym}-${String(last).padStart(2, "0")}">` +
     `<select>${WORK_TYPES.map(([key, label]) =>
       `<option value="${key}"${key === entry.type ? " selected" : ""}>${label}</option>`).join("")}</select>` +
-    `<input type="text" maxlength="50" placeholder="メモ（圃場名など）" value="${(entry.note || "").replace(/"/g, "&quot;")}">` +
+    `<input type="text" class="wp-row-note" maxlength="50" placeholder="メモ（圃場名など）" value="${(entry.note || "").replace(/"/g, "&quot;")}">` +
     '<button type="button" class="danger-btn">削除</button>';
   row.querySelector("button").addEventListener("click", () => row.remove());
   return row;
@@ -117,12 +120,22 @@ function openDay(date) {
 }
 
 function applyDay() {
-  const entries = [...element("day-rows").querySelectorAll(".wp-row")].map((row) => ({
-    type: row.querySelector("select").value,
-    note: row.querySelector("input").value.trim(),
-  }));
-  if (entries.length) data.days[editingDate] = entries;
-  else delete data.days[editingDate];
+  const byDate = new Map();
+  for (const row of element("day-rows").querySelectorAll(".wp-row")) {
+    const date = row.querySelector(".wp-row-date").value || editingDate;
+    const entry = {
+      type: row.querySelector("select").value,
+      note: row.querySelector(".wp-row-note").value.trim(),
+    };
+    if (row.dataset.src) entry.src = row.dataset.src;
+    if (!byDate.has(date)) byDate.set(date, []);
+    byDate.get(date).push(entry);
+  }
+  delete data.days[editingDate];
+  for (const [date, entries] of byDate) {
+    if (date === editingDate) data.days[date] = entries;           // この日の一覧は置き換え
+    else data.days[date] = [...(data.days[date] || []), ...entries]; // 移動先には追記
+  }
   element("day-dialog").close();
   setDirty();
   render();
@@ -196,10 +209,13 @@ async function gatherSuggestions() {
     }
   }
 
-  // 既に計画に入っているものと重複する候補は除く
+  // 既に計画に入っているもの（取り込み後に移動・編集したものも src で識別）は除く
   const seen = new Set();
   for (const [date, entries] of Object.entries(data.days)) {
-    for (const entry of entries) seen.add(`${date}|${entry.type}|${entry.note}`);
+    for (const entry of entries) {
+      seen.add(`${date}|${entry.type}|${entry.note}`);
+      if (entry.src) seen.add(entry.src);
+    }
   }
   const unique = [];
   for (const s of suggestions) {
@@ -237,7 +253,9 @@ async function openImport() {
     let added = 0;
     list.querySelectorAll("input:checked").forEach((box) => {
       const s = suggestions[Number(box.dataset.index)];
-      (data.days[s.date] = data.days[s.date] || []).push({ type: s.type, note: s.note });
+      (data.days[s.date] = data.days[s.date] || []).push({
+        type: s.type, note: s.note, src: `${s.date}|${s.type}|${s.note}`,
+      });
       added += 1;
     });
     element("import-dialog").close();
