@@ -237,6 +237,16 @@ export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5)
   return { items: apply(mn, mn), capOthers: mn, capProtected: mn, over: true };
 }
 
+// カレンダーチップ用の時間表示（午前のみ=AM / 午後のみ=PM / それ以外は時刻範囲）
+export function shiftLabel(startText, endText) {
+  const start = hmToMin(startText);
+  const end = hmToMin(endText);
+  if (start === null || end === null) return "";
+  if (end <= 720) return "AM";
+  if (start >= 780) return "PM";
+  return `${startText}~${endText}`;
+}
+
 // timetree確定操作のチェックリスト（3グループ）
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [] };

@@ -4,8 +4,8 @@ import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
-  fitRemaining, formatYen, personColorMap, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-7";
+  fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
+} from "./shift-logic.js?v=20261030-8";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -161,13 +161,13 @@ function renderCalendar(eff) {
       }
       const kind = item.status;
       const mark = item.edited ? "✎" : item.autoCut ? "↓" : "";
-      const hours = item.proposed_hours > 0 ? ` ${item.proposed_hours}h` : "";
-      const text = kind === "extra" ? `${mark}希 ${item.person}${hours}` : `${mark}${item.person}${hours}`;
+      const span = kind !== "hold" ? shiftLabel(item.start, item.proposed_end) : "";
+      const text = `${mark}${kind === "extra" ? "希 " : ""}${item.person}${span ? " " + span : ""}`;
       const style = kind === "fixed" ? `background:${color}`
         : kind === "extra" ? `color:${color};border-color:${color}` : "";
-      const time = item.start && item.proposed_end ? `${item.start}〜${item.proposed_end}／` : "";
+      const time = item.start && item.proposed_end ? `${item.start}〜${item.proposed_end}・` : "";
       return `<span class="chip ${kind} clickable" style="${style}" data-key="${item.key}" ` +
-        `title="${item.raw_title}（${time}${item.action}${item.reason ? "：" + item.reason : ""}）クリックで調整">${text}</span>`;
+        `title="${item.raw_title}（${time}実働${item.proposed_hours}h・${item.action}${item.reason ? "：" + item.reason : ""}）クリックで調整">${text}</span>`;
     }).join("");
     return `<td><span class="day-no">${cell.day}</span>${chips}</td>`;
   }).join("")}</tr>`).join("");

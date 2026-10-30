@@ -215,6 +215,14 @@ test("fitRemaining は編集済みを守って未編集だけ短縮する", asyn
   assert.equal(fitRemaining(calcPlan, eff, 1000).over, true);
 });
 
+test("shiftLabel は AM/PM/時間帯を出し分ける", async () => {
+  const { shiftLabel } = await logic();
+  assert.equal(shiftLabel("7:30", "12:00"), "AM");
+  assert.equal(shiftLabel("13:00", "16:30"), "PM");
+  assert.equal(shiftLabel("8:00", "16:30"), "8:00~16:30");
+  assert.equal(shiftLabel("", "16:30"), "");
+});
+
 test("formatYen は桁区切りを付ける", async () => {
   const { formatYen } = await logic();
   assert.equal(formatYen(369255), "369,255円");
