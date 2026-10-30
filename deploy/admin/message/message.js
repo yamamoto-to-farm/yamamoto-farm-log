@@ -185,7 +185,7 @@ function addCard(names, start, end) {
   cards.push({
     names,
     memo: element("common-memo").value.trim(),
-    off: false, offReason: OFF_REASONS[0],
+    off: false, offReason: OFF_REASONS[0], manualText: null,
     blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "" }],
   });
 }
@@ -341,15 +341,22 @@ function renderCards() {
         ${body}
         <input class="memo-input" placeholder="このグループへの一言メモ" data-c="${c}" data-k="memo"
                value="${escapeHtml(card.memo)}">
-        <pre data-preview="${c}">${escapeHtml(buildText(card))}</pre>
+        <div class="manual-note" data-note="${c}"${card.manualText == null ? " hidden" : ""}>
+          ✏ 文面を手修正中（上の入力からの自動更新は停止）
+          <button type="button" class="reset-text" data-c="${c}">自動文面に戻す</button>
+        </div>
+        <textarea class="preview-edit" data-c="${c}" data-k="preview" rows="10"
+                  spellcheck="false">${escapeHtml(card.manualText ?? buildText(card))}</textarea>
         <button type="button" class="primary-btn copy-btn" data-copy="${c}">📋 コピー（${escapeHtml(card.names.map((n) => n.name).join("・"))} へ）</button>
       </div>`;
   }).join("");
 }
 
 function refreshPreview(c) {
-  const pre = document.querySelector(`[data-preview="${c}"]`);
-  if (pre) pre.textContent = buildText(cards[c]);
+  const card = cards[c];
+  if (card.manualText != null) return;  // 手修正中は自動更新しない
+  const area = document.querySelector(`.preview-edit[data-c="${c}"]`);
+  if (area) area.value = buildText(card);
 }
 
 // ───── 定型文 ─────
@@ -468,6 +475,12 @@ window.addEventListener("DOMContentLoaded", async () => {
       renderCards();            // 表示構造が変わるため再描画
       return;
     }
+    if (input.dataset.k === "preview") {
+      cards[c].manualText = input.value;
+      const note = document.querySelector(`[data-note="${c}"]`);
+      if (note) note.hidden = false;
+      return;
+    }
     if (input.dataset.k === "offReason") cards[c].offReason = input.value;
     else if (input.dataset.k === "memo") cards[c].memo = input.value;
     else if (input.dataset.b !== undefined) {
@@ -486,6 +499,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderCards();
   });
   element("cards").addEventListener("click", async (event) => {
+    const reset = event.target.closest(".reset-text");
+    if (reset) {
+      cards[Number(reset.dataset.c)].manualText = null;
+      renderCards();
+      return;
+    }
     const fieldBtn = event.target.closest(".field-btn");
     if (fieldBtn) {
       const card = cards[Number(fieldBtn.dataset.c)];
@@ -511,7 +530,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (copy) {
       const card = cards[Number(copy.dataset.copy)];
       rememberSent(card);
-      await copyText(buildText(card), copy);
+      await copyText(card.manualText ?? buildText(card), copy);
       return;
     }
     const addBlock = event.target.closest(".add-block");
@@ -534,7 +553,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const card = cards[Number(chipX.dataset.c)];
       const [person] = card.names.splice(Number(chipX.dataset.n), 1);
       if (card.names.length) {
-        cards.push({ names: [person], memo: card.memo, blocks: structuredClone(card.blocks) });
+        cards.push({ ...structuredClone(card), names: [person] });
       } else {
         cards.splice(Number(chipX.dataset.c), 1);
       }

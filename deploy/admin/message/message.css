@@ -59,6 +59,13 @@
 .msg-card.off { background: #fff8f8; border-color: #ef9a9a; }
 .msg-card .off-reason { width: 100%; padding: 6px 8px; font-size: 0.85rem; margin-bottom: 6px; }
 .msg-card .memo-input { width: 100%; padding: 6px 8px; font-size: 0.85rem; margin-bottom: 6px; }
+.msg-card .preview-edit { width: 100%; background: #fff; border: 1px solid #e0e0e0;
+  border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; margin: 6px 0;
+  font-family: inherit; line-height: 1.5; resize: vertical; }
+.msg-card .manual-note { font-size: 0.75rem; color: #e65100; display: flex; gap: 8px;
+  align-items: center; margin-top: 4px; }
+.msg-card .manual-note .reset-text { border: 1px solid #ccc; background: #fff;
+  border-radius: 10px; padding: 1px 8px; font-size: 0.72rem; cursor: pointer; color: #555; }
 .msg-card pre { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 10px;
   font-size: 0.82rem; white-space: pre-wrap; word-break: break-all; margin: 6px 0;
   font-family: inherit; text-align: left; }
