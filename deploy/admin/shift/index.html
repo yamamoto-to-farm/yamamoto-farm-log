@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-4">
+  <link rel="stylesheet" href="./shift.css?v=20261030-5">
 </head>
 <body>
   <div id="header"></div>
@@ -36,6 +36,14 @@
           <div id="budget-readout" class="shift-readout"></div>
         </div>
         <div id="scenario-notes"></div>
+        <div class="shift-base-row">
+          <span class="shift-base-label">この月の基本の時間帯：</span>
+          <label>開始 <input id="base-start" type="time"></label>
+          <label>終了 <input id="base-end" type="time"></label>
+          <span id="base-note" class="shift-muted"></span>
+          <button id="reset-edits" class="secondary-btn" type="button">編集をすべてリセット</button>
+        </div>
+        <p class="shift-note">カレンダー（調整案）の予定をクリックすると、個別に時間・状態を調整できます。編集はこの端末にのみ保存されます。</p>
         <div id="summary-cards" class="shift-cards"></div>
       </section>
 
@@ -71,7 +79,29 @@
     </div>
   </div>
 
-  <script type="module" src="./shift.js?v=20261030-4"></script>
+  <dialog id="edit-dialog" class="shift-edit-dialog">
+    <h3 id="edit-title"></h3>
+    <p id="edit-sub" class="shift-muted"></p>
+    <label>状態
+      <select id="edit-status">
+        <option value="fixed">確定（「希」を外す）</option>
+        <option value="extra">確定の目安（「希」のまま）</option>
+        <option value="hold">保留・見送り</option>
+      </select>
+    </label>
+    <div class="edit-times">
+      <label>開始 <input id="edit-start" type="time"></label>
+      <label>終了 <input id="edit-end" type="time"></label>
+    </div>
+    <p id="edit-hours" class="shift-readout"></p>
+    <div class="edit-actions">
+      <button id="edit-save" class="primary-btn" type="button">反映</button>
+      <button id="edit-clear" class="secondary-btn" type="button">この編集を取り消す</button>
+      <button id="edit-cancel" class="secondary-btn" type="button">閉じる</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="./shift.js?v=20261030-5"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

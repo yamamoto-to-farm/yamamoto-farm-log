@@ -65,11 +65,86 @@ export function personColorMap(staff) {
   return map;
 }
 
+// ───── 時刻・実働・人件費の計算（編集モード用。運用ルール第3条の休憩を再現） ─────
+
+export function hmToMin(text) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((text || "").trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+export function toInputTime(text) {
+  const min = hmToMin(text);
+  if (min === null) return "";
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+}
+
+// 開始〜終了から実働時間（h）。正午またぎは休憩60分、またがないときは10分。
+export function workHours(startText, endText, breaks) {
+  const start = hmToMin(startText);
+  const end = hmToMin(endText);
+  if (start === null || end === null || end <= start) return null;
+  const brk = start < 720 && 720 < end ? breaks.spanning_noon : breaks.not_spanning_noon;
+  return Math.max(0, Math.round(((end - start - brk) / 60) * 100) / 100);
+}
+
+// シナリオに「月の基本時間帯」と「個別編集」を適用した実効アイテム列を作る。
+// overrides: { "date:person": { status: "fixed"|"extra"|"hold", start?, end?, hours? } }
+export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
+  const breaks = plan.targets.break_minutes;
+  const defaults = plan.targets.allday_default;
+  const baseChanged = base && defaults && (base.start !== defaults.start || base.end !== defaults.end);
+  const baseHours = baseChanged ? workHours(base.start, base.end, breaks) : null;
+  const rawByKey = new Map((plan.requests.items || []).map((row) => [`${row.date}:${row.person}`, row]));
+  return scenario.items.map((item) => {
+    const key = `${item.date}:${item.person}`;
+    const override = overrides[key];
+    const raw = rawByKey.get(key);
+    const status = override?.status || itemKind(item);
+    const start = override?.start || raw?.start || (base ? base.start : "");
+    const end = override?.end || item.proposed_end || raw?.end || (base ? base.end : "");
+    let hours;
+    if (status === "hold") {
+      hours = 0;
+    } else if (override && Number.isFinite(override.hours)) {
+      hours = override.hours;
+    } else {
+      hours = item.proposed_hours;
+      if (baseHours !== null && hours > 0) hours = Math.min(hours, baseHours);
+    }
+    const reason = status === "hold" && override ? (item.reason || "手動で見送りに変更") : item.reason;
+    return { ...item, key, status, start, end, reason,
+             proposed_hours: hours, proposed_end: status === "hold" ? "" : end, edited: !!override };
+  });
+}
+
+// 人件費（交通費込み）をブラウザ内で再計算
+export function computeCost(effItems, plan) {
+  const commute = plan.targets.commute;
+  const hourlyOf = new Map(plan.staff.map((s) => [s.name, s.hourly ?? plan.targets.base_hourly]));
+  const per = new Map();
+  for (const item of effItems) {
+    if (item.status === "hold" || item.proposed_hours <= 0) continue;
+    const row = per.get(item.person) || { days: 0, hours: 0 };
+    row.days += 1;
+    row.hours += item.proposed_hours;
+    per.set(item.person, row);
+  }
+  let total = 0;
+  const perPerson = {};
+  for (const [name, row] of per) {
+    const cost = row.hours * (hourlyOf.get(name) ?? plan.targets.base_hourly)
+      + Math.min(row.days * commute.per_day, commute.monthly_cap);
+    perPerson[name] = { days: row.days, hours: Math.round(row.hours * 100) / 100, cost: Math.round(cost) };
+    total += cost;
+  }
+  return { total: Math.round(total), perPerson };
+}
+
 // timetree確定操作のチェックリスト（3グループ）
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [] };
   for (const item of scenario.items) {
-    const kind = itemKind(item);
+    const kind = item.status || itemKind(item);
     const md = `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}`;
     const head = `${md}(${item.weekday}) ${item.person} 「${item.raw_title}」`;
     const shortened = item.proposed_end && item.proposed_hours > 0 && item.proposed_hours < item.request_hours;

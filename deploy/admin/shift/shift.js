@@ -3,16 +3,35 @@ import { renderHeader } from "/common/header.js?v=1.1";
 import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
-  WEEKDAYS, buildCalendar, buildChecklist, defaultScenarioIndex,
-  formatYen, itemKind, personColorMap, personRows, scenarioBudgets,
-} from "./shift-logic.js?v=20261030-4";
+  applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
+  formatYen, personColorMap, toInputTime, workHours,
+} from "./shift-logic.js?v=20261030-5";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
 let calMode = "plan";
+let editKey = null;
 
 function currentScenario() {
   return plan.scenarios[Number(element("budget-slider").value)];
+}
+
+// 月ごとの端末ローカル保存（編集・基本時間帯・チェック状態）
+const storeName = (name) => `shift-${name}:${plan.month}`;
+function loadStore(name, fallback) {
+  try { return JSON.parse(localStorage.getItem(storeName(name))) ?? fallback; } catch { return fallback; }
+}
+function saveStore(name, value) { localStorage.setItem(storeName(name), JSON.stringify(value)); }
+
+function getOverrides() { return loadStore("edit", {}); }
+function getBase() { return loadStore("base", null) || { ...plan.targets.allday_default }; }
+function baseChanged() {
+  const base = getBase();
+  const defaults = plan.targets.allday_default;
+  return base.start !== defaults.start || base.end !== defaults.end;
+}
+function effective() {
+  return applyAdjustments(plan, currentScenario(), getOverrides(), getBase());
 }
 
 function status(message, isError = false) {
@@ -42,23 +61,28 @@ async function api(path, query) {
   return response.json();
 }
 
-function renderSummary(scenario) {
+function renderSummary(eff, computed) {
   const requests = plan.requests;
   const target = plan.targets;
+  const days = eff.filter((item) => item.status !== "hold").length;
   element("summary-cards").innerHTML = [
     [`${target.person_days.min}〜${target.person_days.max}人日`, "目標（中心" + target.person_days.center + "）"],
     [`${requests.person_days}人日 / ${requests.person_hours}h`, "勤務希望の合計"],
     [formatYen(requests.cost_as_requested), "希望どおりの人件費"],
-    [formatYen(scenario.cost), "案の人件費（交通費込み）"],
-    [`${scenario.items.filter((i) => itemKind(i) !== "hold").length}日`, "案の人日"],
+    [formatYen(computed.total), "案の人件費（交通費込み）"],
+    [`${days}日`, "案の人日"],
   ].map(([value, label]) => `<div class="stat"><b>${value}</b><span>${label}</span></div>`).join("");
 }
 
-function renderScenario() {
+function renderAll() {
   const scenario = currentScenario();
-  const within = scenario.cost <= scenario.budget_max;
+  const eff = effective();
+  const computed = computeCost(eff, plan);
+  const edited = eff.some((item) => item.edited) || baseChanged();
+  const within = computed.total <= scenario.budget_max;
   element("budget-readout").innerHTML =
-    `予算上限 ${formatYen(scenario.budget_max)} → 案 <span class="${within ? "ok" : "over"}">${formatYen(scenario.cost)}</span>`;
+    `予算上限 ${formatYen(scenario.budget_max)} → 案 <span class="${within ? "ok" : "over"}">${formatYen(computed.total)}</span>` +
+    (edited ? ` <span class="shift-muted">（自動案 ${formatYen(scenario.cost)}・編集あり）</span>` : "");
 
   const notes = [];
   if (scenario.adjusted_for_budget) {
@@ -71,14 +95,19 @@ function renderScenario() {
   }
   element("scenario-notes").innerHTML =
     notes.map((n) => `<p class="note${n.startsWith("⚠") ? " warn" : ""}">${n}</p>`).join("");
+  element("base-note").textContent = (() => {
+    const base = getBase();
+    const hours = workHours(base.start, base.end, plan.targets.break_minutes);
+    return hours === null ? "" : `（この枠の実働 ${hours}h）`;
+  })();
 
-  renderSummary(scenario);
-  renderCalendar(scenario);
-  renderPersons(scenario);
-  renderChecklist(scenario);
+  renderSummary(eff, computed);
+  renderCalendar(eff);
+  renderPersons(computed);
+  renderChecklist(eff);
 }
 
-function renderCalendar(scenario) {
+function renderCalendar(eff) {
   const colors = personColorMap(plan.staff);
   const rawItems = Array.isArray(plan.requests.items) ? plan.requests.items : null;
   const rawRadio = element("cal-mode-raw");
@@ -93,9 +122,10 @@ function renderCalendar(scenario) {
     : personLegend +
       '<span class="legend kind"><i class="sample-fixed"></i>確定（「希」を外す）</span>' +
       '<span class="legend kind"><i class="sample-extra"></i>確定の目安（「希」のまま）</span>' +
-      '<span class="legend kind"><i class="sample-hold"></i>保留・見送り</span>';
+      '<span class="legend kind"><i class="sample-hold"></i>保留・見送り</span>' +
+      '<span class="legend kind">✎=編集済み・クリックで個別調整</span>';
 
-  const weeks = buildCalendar(plan.month, mode === "raw" ? rawItems : scenario.items);
+  const weeks = buildCalendar(plan.month, mode === "raw" ? rawItems : eff);
   const head = ["月", "火", "水", "木", "金", "土", "日"]
     .map((w) => `<th class="${w === "土" ? "sat" : w === "日" ? "sun" : ""}">${w}</th>`).join("");
   const rows = weeks.map((week) => `<tr>${week.map((cell) => {
@@ -107,32 +137,38 @@ function renderCalendar(scenario) {
         const title = `${item.person}: ${item.raw_title}${item.warnings ? "／" + item.warnings : ""}`;
         return `<span class="chip raw" style="background:${color}" title="${title}">${warn}${item.raw_title}</span>`;
       }
-      const kind = itemKind(item);
+      const kind = item.status;
+      const mark = item.edited ? "✎" : "";
       const hours = item.proposed_hours > 0 ? ` ${item.proposed_hours}h` : "";
-      const text = kind === "extra" ? `希 ${item.person}${hours}` : `${item.person}${hours}`;
+      const text = kind === "extra" ? `${mark}希 ${item.person}${hours}` : `${mark}${item.person}${hours}`;
       const style = kind === "fixed" ? `background:${color}`
         : kind === "extra" ? `color:${color};border-color:${color}` : "";
-      return `<span class="chip ${kind}" style="${style}" title="${item.raw_title}（${item.action}${item.reason ? "：" + item.reason : ""}）">${text}</span>`;
+      const time = item.start && item.proposed_end ? `${item.start}〜${item.proposed_end}／` : "";
+      return `<span class="chip ${kind} clickable" style="${style}" data-key="${item.key}" ` +
+        `title="${item.raw_title}（${time}${item.action}${item.reason ? "：" + item.reason : ""}）クリックで調整">${text}</span>`;
     }).join("");
     return `<td><span class="day-no">${cell.day}</span>${chips}</td>`;
   }).join("")}</tr>`).join("");
   element("calendar").innerHTML = `<table class="shift-cal"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function renderPersons(scenario) {
-  const rows = personRows(plan, scenario);
+function renderPersons(computed) {
+  const rows = plan.staff.map((member) => {
+    const row = computed.perPerson[member.name] || { days: 0, hours: 0, cost: 0 };
+    return { name: member.name, protected: !!member.protected, target: member.target_days ?? null, ...row };
+  });
   const totalDays = rows.reduce((sum, row) => sum + row.days, 0);
   const totalCost = rows.reduce((sum, row) => sum + row.cost, 0);
   element("person-table").innerHTML =
-    "<tr><th>名前</th><th>予定日数</th><th>目安日数</th><th>人件費</th></tr>" +
+    "<tr><th>名前</th><th>予定日数</th><th>目安日数</th><th>人時</th><th>人件費</th></tr>" +
     rows.map((row) =>
       `<tr><td>${row.name}${row.protected ? "（優先）" : ""}</td><td>${row.days}日</td>` +
-      `<td>${row.target ?? "-"}日</td><td>${formatYen(row.cost)}</td></tr>`).join("") +
-    `<tr class="total"><td>合計</td><td>${totalDays}日</td><td></td><td>${formatYen(totalCost)}</td></tr>`;
+      `<td>${row.target ?? "-"}日</td><td>${row.hours}h</td><td>${formatYen(row.cost)}</td></tr>`).join("") +
+    `<tr class="total"><td>合計</td><td>${totalDays}日</td><td></td><td></td><td>${formatYen(totalCost)}</td></tr>`;
 }
 
-function renderChecklist(scenario) {
-  const groups = buildChecklist(scenario);
+function renderChecklist(eff) {
+  const groups = buildChecklist({ items: eff });
   const storageKey = `shift-check:${plan.month}`;
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch { saved = {}; }
@@ -153,6 +189,61 @@ function renderChecklist(scenario) {
   });
 }
 
+// ───── 個別編集ダイアログ ─────
+function updateEditHours() {
+  const status = element("edit-status").value;
+  if (status === "hold") {
+    element("edit-hours").textContent = "見送り（0h・人件費に含めない）";
+    return;
+  }
+  const hours = workHours(element("edit-start").value, element("edit-end").value, plan.targets.break_minutes);
+  if (hours === null) {
+    element("edit-hours").textContent = "実働: 時間未入力（自動計算の値のまま）";
+    return;
+  }
+  let text = `実働 ${hours}h（休憩は自動計算）`;
+  if (hours > plan.targets.max_work_hours) text += ` ⚠上限${plan.targets.max_work_hours}h超（繁忙期の同意が必要）`;
+  else if (hours < plan.targets.min_work_hours) text += ` ⚠下限${plan.targets.min_work_hours}h未満`;
+  element("edit-hours").textContent = text;
+}
+
+function openEditor(key) {
+  editKey = key;
+  const item = effective().find((entry) => entry.key === key);
+  if (!item) return;
+  element("edit-title").textContent =
+    `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}(${item.weekday}) ${item.person}`;
+  element("edit-sub").textContent = `希望の原本: ${item.raw_title}（希望 実働${item.request_hours}h）`;
+  element("edit-status").value = item.status;
+  element("edit-start").value = toInputTime(item.start);
+  element("edit-end").value = toInputTime(item.proposed_end || item.end);
+  updateEditHours();
+  element("edit-dialog").showModal();
+}
+
+function saveEdit() {
+  const overrides = getOverrides();
+  const start = element("edit-start").value;
+  const end = element("edit-end").value;
+  const override = { status: element("edit-status").value };
+  if (start) override.start = start;
+  if (end) override.end = end;
+  const hours = workHours(start, end, plan.targets.break_minutes);
+  if (hours !== null) override.hours = hours;
+  overrides[editKey] = override;
+  saveStore("edit", overrides);
+  element("edit-dialog").close();
+  renderAll();
+}
+
+function clearEdit() {
+  const overrides = getOverrides();
+  delete overrides[editKey];
+  saveStore("edit", overrides);
+  element("edit-dialog").close();
+  renderAll();
+}
+
 function renderIssues() {
   element("issues").innerHTML = (plan.issues.length ? plan.issues : ["問題は見つかりませんでした"])
     .map((issue) => `<li>${issue}</li>`).join("");
@@ -164,9 +255,12 @@ async function loadPlan(month) {
   const slider = element("budget-slider");
   slider.max = plan.scenarios.length - 1;
   slider.value = defaultScenarioIndex(plan);
+  const base = getBase();
+  element("base-start").value = toInputTime(base.start);
+  element("base-end").value = toInputTime(base.end);
   element("generated-at").textContent =
     `作成: ${plan.generated_at.replace("T", " ").slice(0, 16)} / 希望 ${plan.requests.entries}件`;
-  renderScenario();
+  renderAll();
   renderIssues();
   element("plan-area").hidden = false;
   status("");
@@ -209,16 +303,41 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("page-area").hidden = false;
 
   element("login").addEventListener("click", () => login("/admin/shift/index.html"));
-  element("budget-slider").addEventListener("input", renderScenario);
+  element("budget-slider").addEventListener("input", () => renderAll());
   document.querySelectorAll('input[name="cal-mode"]').forEach((radio) => {
     radio.addEventListener("change", () => {
       calMode = radio.value;
-      renderCalendar(currentScenario());
+      renderCalendar(effective());
     });
   });
   element("month-select").addEventListener("change", (event) => {
     loadPlan(event.target.value).catch((error) => status(error.message, true));
   });
+  element("calendar").addEventListener("click", (event) => {
+    const chip = event.target.closest(".chip[data-key]");
+    if (chip) openEditor(chip.dataset.key);
+  });
+  for (const id of ["base-start", "base-end"]) {
+    element(id).addEventListener("change", () => {
+      saveStore("base", { start: element("base-start").value, end: element("base-end").value });
+      renderAll();
+    });
+  }
+  element("reset-edits").addEventListener("click", () => {
+    if (!confirm("この月の個別編集と基本時間帯の変更をすべてリセットしますか？")) return;
+    localStorage.removeItem(storeName("edit"));
+    localStorage.removeItem(storeName("base"));
+    const defaults = plan.targets.allday_default;
+    element("base-start").value = toInputTime(defaults.start);
+    element("base-end").value = toInputTime(defaults.end);
+    renderAll();
+  });
+  element("edit-status").addEventListener("change", updateEditHours);
+  element("edit-start").addEventListener("input", updateEditHours);
+  element("edit-end").addEventListener("input", updateEditHours);
+  element("edit-save").addEventListener("click", saveEdit);
+  element("edit-clear").addEventListener("click", clearEdit);
+  element("edit-cancel").addEventListener("click", () => element("edit-dialog").close());
 
   if (!hasSession()) {
     element("login-area").hidden = false;

@@ -97,6 +97,72 @@ test("personColorMap は timetree の色に合わせる", async () => {
   assert.equal(colors.get("不明"), undefined);
 });
 
+test("workHours は正午またぎで休憩を変える", async () => {
+  const { workHours } = await logic();
+  const breaks = { not_spanning_noon: 10, spanning_noon: 60 };
+  assert.equal(workHours("07:30", "15:00", breaks), 6.5); // またぐ→休憩60分
+  assert.equal(workHours("8:20", "12:00", breaks), 3.5);  // またがない→休憩10分
+  assert.equal(workHours("13:00", "17:10", breaks), 4);
+  assert.equal(workHours("", "15:00", breaks), null);
+  assert.equal(workHours("15:00", "10:00", breaks), null);
+});
+
+const calcPlan = {
+  month: "2026-11",
+  staff: [
+    { name: "土井", target_days: 12, hourly: 1310 },
+    { name: "若月", target_days: 12, hourly: 1260 },
+  ],
+  requests: { items: [{ date: "2026-11-01", person: "土井", start: "7:30", end: "15:00" }] },
+  targets: {
+    break_minutes: { not_spanning_noon: 10, spanning_noon: 60 },
+    allday_default: { start: "06:00", end: "17:10" },
+    commute: { per_day: 160, monthly_cap: 3000 },
+    base_hourly: 1250, min_work_hours: 3.5, max_work_hours: 6.5,
+  },
+};
+
+test("applyAdjustments は基本時間帯と個別編集を反映する", async () => {
+  const { applyAdjustments } = await logic();
+  const scenario = plan.scenarios[1];
+  // 編集なし・基本時間帯が既定 → そのまま
+  let eff = applyAdjustments(calcPlan, scenario, {}, { start: "06:00", end: "17:10" });
+  assert.equal(eff[0].proposed_hours, 6.5);
+  assert.equal(eff[0].status, "fixed");
+  assert.equal(eff[0].start, "7:30"); // 原本から補完
+  assert.equal(eff[0].edited, false);
+  // 基本時間帯を 06:00-12:00 に → 実働5.83hに丸まる
+  eff = applyAdjustments(calcPlan, scenario, {}, { start: "06:00", end: "12:00" });
+  assert.equal(eff[0].proposed_hours, 5.83);
+  assert.equal(eff[3].proposed_hours, 0); // 保留は0のまま
+  // 個別編集：見送りに変更
+  eff = applyAdjustments(calcPlan, scenario, { "2026-11-01:土井": { status: "hold" } }, null);
+  assert.equal(eff[0].status, "hold");
+  assert.equal(eff[0].proposed_hours, 0);
+  assert.equal(eff[0].edited, true);
+  // 個別編集：時間変更（8:00-12:00 → 3.83h）
+  eff = applyAdjustments(calcPlan, scenario,
+    { "2026-11-01:土井": { status: "extra", start: "08:00", end: "12:00", hours: 3.83 } }, null);
+  assert.equal(eff[0].status, "extra");
+  assert.equal(eff[0].proposed_hours, 3.83);
+  assert.equal(eff[0].proposed_end, "12:00");
+});
+
+test("computeCost は時給×実働＋交通費を再計算する", async () => {
+  const { computeCost } = await logic();
+  const eff = [
+    { person: "土井", status: "fixed", proposed_hours: 6.5 },
+    { person: "土井", status: "extra", proposed_hours: 6.5 },
+    { person: "若月", status: "hold", proposed_hours: 0 }, // 見送りは除外
+  ];
+  const result = computeCost(eff, calcPlan);
+  // 13h × 1310円 + 交通費 2日 × 160円 = 17,350円
+  assert.equal(result.perPerson["土井"].cost, 17350);
+  assert.equal(result.perPerson["土井"].days, 2);
+  assert.equal(result.perPerson["若月"], undefined);
+  assert.equal(result.total, 17350);
+});
+
 test("formatYen は桁区切りを付ける", async () => {
   const { formatYen } = await logic();
   assert.equal(formatYen(369255), "369,255円");
