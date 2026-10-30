@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-9";
+} from "./shift-logic.js?v=20261030-10";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -73,7 +73,7 @@ async function api(path, query) {
 function renderSummary(eff, computed) {
   const requests = plan.requests;
   const target = plan.targets;
-  const days = eff.filter((item) => item.status !== "hold").length;
+  const days = eff.filter((item) => item.status !== "hold" && item.status !== "skip").length;
   element("summary-cards").innerHTML = [
     [`${target.person_days.min}〜${target.person_days.max}人日`, "目標（中心" + target.person_days.center + "）"],
     [`${requests.person_days}人日 / ${requests.person_hours}h`, "勤務希望の合計"],
@@ -144,7 +144,8 @@ function renderCalendar(eff) {
     : personLegend +
       '<span class="legend kind"><i class="sample-fixed"></i>確定（「希」を外す）</span>' +
       '<span class="legend kind"><i class="sample-extra"></i>確定の目安（「希」のまま）</span>' +
-      '<span class="legend kind"><i class="sample-hold"></i>保留・見送り</span>' +
+      '<span class="legend kind"><i class="sample-hold"></i>保留（「希」のまま・判断待ち）</span>' +
+      '<span class="legend kind"><i class="sample-skip"></i>見送り</span>' +
       '<span class="legend kind">✎=編集済み・クリックで個別調整</span>';
 
   const weeks = buildCalendar(plan.month, mode === "raw" ? rawItems : eff);
@@ -161,8 +162,9 @@ function renderCalendar(eff) {
       }
       const kind = item.status;
       const mark = item.edited ? "✎" : item.autoCut ? "↓" : "";
-      const span = kind !== "hold" ? shiftLabel(item.start, item.proposed_end) : "";
-      const text = `${mark}${kind === "extra" ? "希 " : ""}${item.person}${span ? " " + span : ""}`;
+      const span = kind !== "hold" && kind !== "skip" ? shiftLabel(item.start, item.proposed_end) : "";
+      const prefix = kind === "extra" || kind === "hold" ? "希 " : "";
+      const text = `${mark}${prefix}${item.person}${span ? " " + span : ""}`;
       const style = kind === "fixed" ? `background:${color}`
         : kind === "extra" ? `color:${color};border-color:${color}` : "";
       const time = item.start && item.proposed_end ? `${item.start}〜${item.proposed_end}・` : "";
@@ -201,7 +203,8 @@ function renderChecklist(eff) {
   element("checklist").innerHTML =
     section("① 月末までに確定（決まった曜日）", groups.fixed) +
     section("② 勤務3日前までに確定（追加の希望日）", groups.extra) +
-    section("③ 保留・見送り（作業量が決まってから判断）", groups.hold) || "<p>項目がありません。</p>";
+    section("③ 保留（「希」のまま・作業量が決まってから判断）", groups.hold) +
+    section("④ 見送り（3日前までに連絡）", groups.skip) || "<p>項目がありません。</p>";
   element("checklist").querySelectorAll("input[type=checkbox]").forEach((box) => {
     box.addEventListener("change", () => {
       saved[box.dataset.id] = box.checked;
@@ -215,7 +218,11 @@ function renderChecklist(eff) {
 function updateEditHours() {
   const status = element("edit-status").value;
   if (status === "hold") {
-    element("edit-hours").textContent = "見送り（0h・人件費に含めない）";
+    element("edit-hours").textContent = "保留（0h・人件費に含めない。「希」のまま判断待ち）";
+    return;
+  }
+  if (status === "skip") {
+    element("edit-hours").textContent = "見送り（0h・人件費に含めない。3日前までに連絡）";
     return;
   }
   const hours = workHours(element("edit-start").value, element("edit-end").value, plan.targets.break_minutes);
@@ -368,7 +375,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       const quick = button.dataset.quick;
       element("edit-start").value = toInputTime(quick === "pm" ? "13:00" : base.start);
       element("edit-end").value = toInputTime(quick === "am" ? "12:00" : base.end);
-      if (element("edit-status").value === "hold") element("edit-status").value = "fixed";
+      const current = element("edit-status").value;
+      if (current === "hold" || current === "skip") element("edit-status").value = "fixed";
       updateEditHours();
     });
   });

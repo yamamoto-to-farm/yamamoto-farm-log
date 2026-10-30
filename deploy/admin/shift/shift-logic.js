@@ -149,7 +149,7 @@ export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
     let start = inStart || baseWin.start;
     let end = inEnd;
     let hours;
-    if (status === "hold") {
+    if (status === "hold" || status === "skip") {
       hours = 0;
     } else if (override && Number.isFinite(override.hours)) {
       hours = override.hours;   // 明示的な編集はクリップしない
@@ -160,9 +160,12 @@ export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
       end = resolved.end;
       hours = resolved.hours;
     }
-    const reason = status === "hold" && override ? (item.reason || "手動で見送りに変更") : item.reason;
+    let reason = item.reason;
+    if (override && status === "skip") reason = "手動で見送りに変更";
+    else if (override && status === "hold") reason = item.reason || "手動で保留に変更";
     return { ...item, key, status, start, end, reason,
-             proposed_hours: hours, proposed_end: status === "hold" ? "" : end, edited: !!override };
+             proposed_hours: hours, proposed_end: (status === "hold" || status === "skip") ? "" : end,
+             edited: !!override };
   });
 }
 
@@ -172,7 +175,7 @@ export function computeCost(effItems, plan) {
   const hourlyOf = new Map(plan.staff.map((s) => [s.name, s.hourly ?? plan.targets.base_hourly]));
   const per = new Map();
   for (const item of effItems) {
-    if (item.status === "hold" || item.proposed_hours <= 0) continue;
+    if (item.status === "hold" || item.status === "skip" || item.proposed_hours <= 0) continue;
     const row = per.get(item.person) || { days: 0, hours: 0 };
     row.days += 1;
     row.hours += item.proposed_hours;
@@ -212,7 +215,7 @@ export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5)
   const baseWin = base || plan.targets.allday_default;
   const protectedNames = new Set(plan.staff.filter((s) => s.protected).map((s) => s.name));
   const apply = (capOthers, capProtected) => effItems.map((item) => {
-    if (item.edited || item.status === "hold" || item.proposed_hours <= 0) return item;
+    if (item.edited || item.status === "hold" || item.status === "skip" || item.proposed_hours <= 0) return item;
     const cap = protectedNames.has(item.person) ? capProtected : capOthers;
     if (item.proposed_hours <= cap) return item;
     const resolved = resolveShift(item.start, item.proposed_end, cap, baseWin, breaks, mn);
@@ -247,9 +250,9 @@ export function shiftLabel(startText, endText) {
   return `${startText}~${endText}`;
 }
 
-// timetree確定操作のチェックリスト（3グループ）
+// timetree確定操作のチェックリスト（4グループ）
 export function buildChecklist(scenario) {
-  const groups = { fixed: [], extra: [], hold: [] };
+  const groups = { fixed: [], extra: [], hold: [], skip: [] };
   for (const item of scenario.items) {
     const kind = item.status || itemKind(item);
     const md = `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}`;
@@ -262,8 +265,11 @@ export function buildChecklist(scenario) {
     } else if (kind === "extra") {
       label = `${head} → 今は「希」のまま。勤務3日前までに確定（「希」を外す・目安 実働${item.proposed_hours}h` +
         (shortened ? `・終了 ${item.proposed_end}` : "") + "）か、見送りを連絡";
+    } else if (kind === "hold") {
+      label = `${head} → 保留（「希」のまま）。作業量が決まり次第、3日前までに確定か見送りを連絡` +
+        (item.reason ? `（${item.reason}）` : "");
     } else {
-      label = `${head} → 保留。見送りなら3日前までに連絡` + (item.reason ? `（${item.reason}）` : "");
+      label = `${head} → 勤務3日前までに見送りを連絡`;
     }
     groups[kind].push({ id: `${item.date}:${item.person}`, date: item.date, label });
   }

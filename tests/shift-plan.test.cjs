@@ -74,6 +74,7 @@ test("buildChecklist は操作グループと文言を作る", async () => {
   assert.equal(groups.fixed.length, 2);
   assert.equal(groups.extra.length, 1);
   assert.equal(groups.hold.length, 1);
+  assert.equal(groups.skip.length, 0);
   assert.match(groups.fixed[0].label, /「希」を外して確定/);
   assert.match(groups.fixed[1].label, /14:00 に短縮/);
   assert.match(groups.extra[0].label, /3日前までに確定/);
@@ -155,11 +156,16 @@ test("applyAdjustments は基本時間帯と個別編集を反映する", async 
   assert.equal(eff[1].proposed_hours, 5.5);   // 5.5hは枠内に収まる（6:00-11:40）
   assert.equal(eff[1].proposed_end, "11:40");
   assert.equal(eff[3].proposed_hours, 0); // 保留は0のまま
-  // 個別編集：見送りに変更
+  // 個別編集：保留に変更（希のまま判断待ち）
   eff = applyAdjustments(calcPlan, scenario, { "2026-11-01:土井": { status: "hold" } }, null);
   assert.equal(eff[0].status, "hold");
   assert.equal(eff[0].proposed_hours, 0);
   assert.equal(eff[0].edited, true);
+  // 個別編集：見送りに変更
+  eff = applyAdjustments(calcPlan, scenario, { "2026-11-01:土井": { status: "skip" } }, null);
+  assert.equal(eff[0].status, "skip");
+  assert.equal(eff[0].proposed_hours, 0);
+  assert.equal(eff[0].reason, "手動で見送りに変更");
   // 個別編集：時間変更（8:00-12:00 → 3.83h）はクリップされない
   eff = applyAdjustments(calcPlan, scenario,
     { "2026-11-01:土井": { status: "extra", start: "08:00", end: "12:00", hours: 3.83 } }, null);

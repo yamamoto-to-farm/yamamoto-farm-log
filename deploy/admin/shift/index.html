@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-9">
+  <link rel="stylesheet" href="./shift.css?v=20261030-10">
 </head>
 <body>
   <div id="header"></div>
@@ -87,7 +87,8 @@
       <select id="edit-status">
         <option value="fixed">確定（「希」を外す）</option>
         <option value="extra">確定の目安（「希」のまま）</option>
-        <option value="hold">保留・見送り</option>
+        <option value="hold">保留（「希」のまま・判断待ち）</option>
+        <option value="skip">見送り（入れない・3日前までに連絡）</option>
       </select>
     </label>
     <div class="edit-times">
@@ -107,7 +108,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="./shift.js?v=20261030-9"></script>
+  <script type="module" src="./shift.js?v=20261030-10"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
