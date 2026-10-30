@@ -325,7 +325,7 @@
       "id": "edit-json",
       "name": "管理データ編集（JSON）",
       "path": "/admin/edit-json/index.html",
-      "category": "管理/ツール",
+      "category": "管理/データ編集",
       "roles": ["admin"],
       "icon": "assets/icons/json.png",
       "openLog": false
@@ -334,7 +334,7 @@
       "id": "edit-csv",
       "name": "記録データ編集（CSV）",
       "path": "/admin/edit-csv/index.html",
-      "category": "管理/ツール",
+      "category": "管理/データ編集",
       "roles": ["admin"],
       "icon": "assets/icons/csv.png",
       "openLog": false
@@ -343,7 +343,7 @@
       "id": "edit-log",
       "name": "記録データ編集（ログ）",
       "path": "/admin/edit-log/index.html",
-      "category": "管理/ツール",
+      "category": "管理/データ編集",
       "roles": ["admin"],
       "icon": "assets/icons/json.png",
       "openLog": false
@@ -352,7 +352,7 @@
       "id": "machine-qr",
       "name": "QRコード生成ツール",
       "path": "/admin/machine-qr.html",
-      "category": "管理/ツール",
+      "category": "管理/その他ツール",
       "roles": ["admin"],
       "icon": "assets/icons/qr.png",
       "openLog": false
@@ -361,7 +361,7 @@
       "id": "summary-manager",
       "name": "サマリー閲覧",
       "path": "/admin/summary-view/index.html",
-      "category": "管理/ツール",
+      "category": "管理/その他ツール",
       "roles": ["family", "admin"],
       "icon": "assets/icons/summary.png",
       "openLog": false
@@ -379,7 +379,7 @@
       "id": "shift-plan",
       "name": "シフト管理（案の確認）",
       "path": "/admin/shift/index.html",
-      "category": "管理/ツール",
+      "category": "管理/労務・シフト",
       "roles": ["family", "admin"],
       "icon": "assets/icons/schedule.png",
       "openLog": false
@@ -389,7 +389,7 @@
       "id": "line-message",
       "name": "業務連絡（LINE下書き）",
       "path": "/admin/message/index.html",
-      "category": "管理/ツール",
+      "category": "管理/労務・シフト",
       "roles": ["family", "admin"],
       "icon": "assets/icons/schedule.png",
       "openLog": false
@@ -398,7 +398,7 @@
       "id": "login-permissions",
       "name": "ログイン権限管理",
       "path": "/admin/edit-json/index.html?data=workers",
-      "category": "管理/ツール",
+      "category": "管理/アカウント",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",
       "openLog": false
@@ -407,7 +407,7 @@
       "id": "access",
       "name": "在籍状況管理",
       "path": "/admin/access.html",
-      "category": "管理/ツール",
+      "category": "管理/アカウント",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",
       "openLog": false
@@ -416,7 +416,7 @@
       "id": "security-log",
       "name": "ログイン履歴",
       "path": "/admin/security-log.html",
-      "category": "管理/ツール",
+      "category": "管理/アカウント",
       "roles": ["admin"],
       "icon": "assets/icons/access.png",
       "openLog": false
@@ -425,7 +425,7 @@
       "id": "roadmap",
       "name": "次の進化ロードマップ",
       "path": "/admin/roadmap.html",
-      "category": "管理/ツール",
+      "category": "管理/その他ツール",
       "roles": ["admin"],
       "icon": "assets/icons/roadmap.png",
       "openLog": false

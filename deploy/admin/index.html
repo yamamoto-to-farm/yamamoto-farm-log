@@ -7,6 +7,17 @@
 
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <style>
+    .admin-group { margin-bottom: 24px; }
+    .admin-group h2 { font-size: 1rem; margin: 0 0 8px; padding-bottom: 4px;
+      border-bottom: 2px solid #c8e6c9; color: #2e7d32; text-align: left; }
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px; }
+    .admin-grid a { display: block; background: #fff; border: 1px solid #ddd; border-radius: 8px;
+      padding: 14px 12px; text-decoration: none; color: #333; font-size: 0.9rem; font-weight: 600;
+      text-align: center; }
+    .admin-grid a:hover { border-color: #2e7d32; background: #f1f8f2; }
+  </style>
 </head>
 
 <body>
@@ -21,6 +32,9 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
+
+    // 表示順（pages.json の category「管理/○○」の○○）
+    const GROUP_ORDER = ["労務・シフト", "データ編集", "アカウント", "その他ツール"];
 
     async function loadPages() {
       const res = await fetch(`/data/pages.json?ts=${Date.now()}`, { cache: "no-store" });
@@ -40,28 +54,32 @@
         return;
       }
 
-      // family/admin → 表示
       renderHeader({ adminPage: true });
       document.getElementById("admin-area").style.display = "block";
 
-      // pages.json 読み込み
+      // 管理/〜 のツールをグループごとに表示（admin 自身は除外）
       const pages = await loadPages();
-
-      // ★ 管理/〜 のツールだけ表示（admin 自身は除外）
       const adminTools = pages.filter(p =>
         !p.accessOnly && p.category?.startsWith("管理/") && p.id !== "admin" &&
         Array.isArray(p.roles) && p.roles.includes(window.currentRole)
       );
 
-      const list = document.getElementById("admin-list");
+      const groups = new Map();
+      for (const p of adminTools) {
+        const group = p.category.split("/")[1] || "その他ツール";
+        if (!groups.has(group)) groups.set(group, []);
+        groups.get(group).push(p);
+      }
+      const order = [...GROUP_ORDER.filter(g => groups.has(g)),
+                     ...[...groups.keys()].filter(g => !GROUP_ORDER.includes(g))];
 
-      // カード生成
-      adminTools.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `<a href="${p.path}">${p.name}</a>`;
-        list.appendChild(div);
-      });
+      document.getElementById("admin-list").innerHTML = order.map(group => `
+        <section class="admin-group">
+          <h2>${group}</h2>
+          <div class="admin-grid">
+            ${groups.get(group).map(p => `<a href="${p.path}">${p.name}</a>`).join("")}
+          </div>
+        </section>`).join("");
     });
   </script>
 
