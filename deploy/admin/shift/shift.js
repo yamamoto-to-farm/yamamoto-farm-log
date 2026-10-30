@@ -198,17 +198,16 @@ function renderAll() {
       if (message) notes.push(`自動調整：編集した日を優先し、${message} に短縮しています（追加の希望日から先）`);
     }
   }
-  // timetree上は「確定」か「希」の2状態。希（目安＋保留）の確定/見送りで出る人件費の幅を示す
+  // timetree上は「確定」か「希」の2状態。希（目安＋保留）の確定/見送りで出る人件費の幅をバーで示す
   const pending = eff.filter((item) => item.status === "extra" || item.status === "hold");
   if (pending.length) {
     const minTotal = computeCost(eff.filter((item) => item.status === "fixed"), plan).total;
     const merged = { ...getOverrides() };
     for (const item of pending) merged[item.key] = { ...(merged[item.key] || {}), status: "extra" };
     const maxTotal = computeCost(applyAdjustments(plan, scenario, merged, getBase()), plan).total;
-    const over = maxTotal > scenario.budget_max;
-    notes.push(`${over ? "⚠ " : ""}「希」のまま ${pending.length}日（目安＋保留）の確定/見送りしだいで、人件費は ` +
-      `${formatYen(minTotal)}（全て見送り）〜 ${formatYen(maxTotal)}（全て確定）。案 ${formatYen(computed.total)} はその中間の想定です` +
-      (over ? "。全て確定すると予算上限を超えるため、一部は見送りが必要です" : "（全て確定しても予算内）"));
+    renderCostRange(minTotal, computed.total, maxTotal, scenario.budget_max, pending.length);
+  } else {
+    element("cost-range").innerHTML = "";
   }
   element("scenario-notes").innerHTML =
     notes.map((n) => `<p class="note${n.startsWith("⚠") ? " warn" : ""}">${n}</p>`).join("");
@@ -222,6 +221,30 @@ function renderAll() {
   renderCalendar(eff);
   renderPersons(computed);
   renderChecklist(eff);
+}
+
+// 人件費の幅（見送り時〜全確定時）をミニバーで表示する
+function renderCostRange(minTotal, planTotal, maxTotal, budgetMax, pendingCount) {
+  const lo = Math.min(minTotal, budgetMax) * 0.98;
+  const hi = Math.max(maxTotal, budgetMax) * 1.02;
+  const pos = (value) => Math.max(0, Math.min(100, ((value - lo) / (hi - lo)) * 100));
+  const over = maxTotal > budgetMax;
+  const bandEnd = over ? pos(budgetMax) : pos(maxTotal);
+  const overBand = over
+    ? `<div class="range-band over" style="left:${pos(budgetMax)}%;width:${pos(maxTotal) - pos(budgetMax)}%"></div>` : "";
+  element("cost-range").innerHTML =
+    `<div class="range-title">人件費の幅（「希」${pendingCount}日の確定/見送りで変動）${over ? "　⚠全て確定すると予算超過" : ""}</div>` +
+    `<div class="range-bar">` +
+      `<div class="range-band" style="left:${pos(minTotal)}%;width:${bandEnd - pos(minTotal)}%"></div>` + overBand +
+      `<div class="range-mark budget" style="left:${pos(budgetMax)}%" title="予算上限 ${formatYen(budgetMax)}"></div>` +
+      `<div class="range-mark plan" style="left:${pos(planTotal)}%" title="案 ${formatYen(planTotal)}"></div>` +
+    `</div>` +
+    `<div class="range-legend">` +
+      `<span>見送り ${formatYen(minTotal)}</span>` +
+      `<span class="plan">● 案 ${formatYen(planTotal)}</span>` +
+      `<span${over ? ' class="over"' : ""}>全確定 ${formatYen(maxTotal)}</span>` +
+      `<span class="budget">｜予算上限 ${formatYen(budgetMax)}</span>` +
+    `</div>`;
 }
 
 function renderCalendar(eff) {

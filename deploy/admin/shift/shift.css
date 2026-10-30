@@ -17,6 +17,21 @@
 #scenario-notes .note { font-size: 0.85rem; margin: 4px 0; }
 #scenario-notes .warn { color: #c62828; }
 
+.shift-cost-range { margin-top: 10px; }
+.shift-cost-range .range-title { font-size: 0.8rem; color: #555; margin-bottom: 4px; }
+.shift-cost-range .range-bar { position: relative; height: 14px; background: #eceff1; border-radius: 7px; }
+.shift-cost-range .range-band { position: absolute; top: 0; height: 100%; background: #a5d6a7; border-radius: 7px; }
+.shift-cost-range .range-band.over { background: #ef9a9a; border-radius: 0 7px 7px 0; }
+.shift-cost-range .range-mark { position: absolute; top: -2px; height: 18px; }
+.shift-cost-range .range-mark.plan { width: 10px; height: 10px; top: 2px; margin-left: -5px;
+  background: #1b5e20; border-radius: 50%; border: 2px solid #fff; box-sizing: content-box; }
+.shift-cost-range .range-mark.budget { width: 2px; background: #c62828; margin-left: -1px; }
+.shift-cost-range .range-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.78rem;
+  color: #666; margin-top: 4px; }
+.shift-cost-range .range-legend .plan { color: #1b5e20; font-weight: 600; }
+.shift-cost-range .range-legend .budget { color: #c62828; }
+.shift-cost-range .range-legend .over { color: #c62828; font-weight: 600; }
+
 .shift-base-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px;
   padding: 8px 10px; background: #f6f8f7; border-radius: 8px; font-size: 0.85rem; }
 .shift-base-label { font-weight: 600; }
