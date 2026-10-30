@@ -35,8 +35,8 @@ const DEFAULT_TEMPLATES = [
         + "「希」が付いていない予定が確定分です。ご確認をお願いします。\n"
         + "※「希」のまま残っている日は、作業の様子を見て3日前までに連絡します。" },
     { title: "出勤簿の確認",
-      body: "お疲れさまです。\n{月}月分の出勤簿をお送りします。\n"
-        + "内容をご確認いただき、間違いがあればご連絡ください。\nよろしくお願いします。" },
+      body: "お疲れさまです。\n{月}月分の出勤簿・給与明細です。ご確認お願いします。\n"
+        + "問題なければ、{翌月5日}に振込ませて頂きます。\nよろしくお願いします。" },
 ];
 
 const element = (id) => document.getElementById(id);
@@ -356,10 +356,16 @@ function fillPlaceholders(text) {
   const now = new Date();
   const month = now.getMonth() + 1;
   const nextMonth = (month % 12) + 1;
+  const prevMonth = ((month + 10) % 12) + 1;
+  // 翌月5日（曜日付き。例 11/5(木)）
+  const pay = new Date(now.getFullYear(), now.getMonth() + 1, 5);
+  const payday = `${pay.getMonth() + 1}/5(${WEEKDAYS[pay.getDay()]})`;
   return text
     .replaceAll("{年}", String(now.getFullYear()))
     .replaceAll("{月}", String(month))
-    .replaceAll("{来月}", String(nextMonth));
+    .replaceAll("{来月}", String(nextMonth))
+    .replaceAll("{先月}", String(prevMonth))
+    .replaceAll("{翌月5日}", payday);
 }
 
 function renderTemplates() {
@@ -376,7 +382,7 @@ function renderTemplateEditor() {
     <div class="tpl-edit">
       <input data-tpl="${i}" data-k="title" value="${escapeHtml(tpl.title)}" placeholder="タイトル">
       <textarea data-tpl="${i}" data-k="body" rows="6"
-                placeholder="本文（{年}{月}{来月} が使えます）">${escapeHtml(tpl.body)}</textarea>
+                placeholder="本文（{年}{月}{先月}{来月}{翌月5日} が使えます）">${escapeHtml(tpl.body)}</textarea>
       <button type="button" class="del-tpl" data-tpl-del="${i}">この定型文を削除</button>
     </div>`).join("");
 }
