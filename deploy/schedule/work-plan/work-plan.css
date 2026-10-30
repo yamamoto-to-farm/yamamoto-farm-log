@@ -32,6 +32,12 @@
 #day-add { font-size: 0.8rem; padding: 4px 10px; margin: 4px 0 12px; }
 .wp-dialog-actions { display: flex; gap: 8px; }
 
+.wp-import-list { max-height: 50vh; overflow-y: auto; margin: 8px 0 12px; }
+.wp-import-row { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem;
+  padding: 2px 0; font-weight: normal; margin: 0; }
+.wp-import-row input { width: auto; padding: 0; margin: 0; flex: 0 0 auto; position: relative; top: 2px; }
+.wp-import-row span { flex: 1; min-width: 0; }
+
 @media (max-width: 700px) {
   .wp-cal td { height: 60px; }
   .wp-pill { font-size: 0.62rem; }

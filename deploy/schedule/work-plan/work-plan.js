@@ -1,5 +1,6 @@
 import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js?v=1.1";
+import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260821-quote-fix";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 
@@ -153,6 +154,101 @@ async function save() {
   }
 }
 
+// ───── 参考データの取り込み（播種計画・定植ログ由来。確定ではなく候補として） ─────
+function addDays(iso, days) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + days));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+async function gatherSuggestions() {
+  const suggestions = [];
+  const year = Number(ym.slice(0, 4));
+
+  // 播種計画（logs/schedule/seed/<年>.csv）→ 播種予定・定植予定
+  for (const y of [year - 1, year, year + 1]) {
+    const rows = normalizeKeys(await loadCSV(`/logs/schedule/seed/${y}.csv`).catch(() => []));
+    for (const row of rows) {
+      const variety = (row.variety || "").trim();
+      const sow = (row.sowDate || row.planSowDate || "").trim();
+      if (sow.startsWith(ym)) {
+        suggestions.push({ date: sow, type: "seed",
+          note: `${variety}${row.trayCount ? ` ${row.trayCount}枚` : ""}`.trim() });
+      }
+      const plant = (row.planPlantDate || "").trim();
+      if (plant.startsWith(ym)) {
+        suggestions.push({ date: plant, type: "planting", note: variety });
+      }
+    }
+  }
+
+  // 定植ログ（logs/planting/all.csv）→ 中耕の目安（定植14日目・28日目。一覧ページと同じ目安）
+  const plantings = normalizeKeys(await loadCSV("/logs/planting/all.csv").catch(() => []));
+  for (const row of plantings) {
+    const plantDate = (row.plantDate || row.date || "").trim();
+    const field = (row.field || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(plantDate) || !field) continue;
+    for (const n of [14, 28]) {
+      const due = addDays(plantDate, n);
+      if (due.startsWith(ym)) {
+        suggestions.push({ date: due, type: "intertill", note: `${field} 定植${n}日目の目安` });
+      }
+    }
+  }
+
+  // 既に計画に入っているものと重複する候補は除く
+  const seen = new Set();
+  for (const [date, entries] of Object.entries(data.days)) {
+    for (const entry of entries) seen.add(`${date}|${entry.type}|${entry.note}`);
+  }
+  const unique = [];
+  for (const s of suggestions) {
+    const key = `${s.date}|${s.type}|${s.note}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(s);
+  }
+  unique.sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
+  return unique;
+}
+
+async function openImport() {
+  status("予定を読み込み中…");
+  let suggestions = [];
+  try {
+    suggestions = await gatherSuggestions();
+  } catch (error) {
+    console.warn("import failed", error);
+  }
+  status("");
+  const list = element("import-list");
+  if (!suggestions.length) {
+    list.innerHTML = "<p class='wp-note'>この月に取り込める予定はありません（または既に計画済みです）。</p>";
+  } else {
+    list.innerHTML = suggestions.map((s, index) =>
+      `<label class="wp-import-row"><input type="checkbox" data-index="${index}" checked>` +
+      `<span>${Number(s.date.slice(5, 7))}/${Number(s.date.slice(8, 10))}` +
+      `(${WEEKDAYS[new Date(s.date + "T00:00:00").getDay()]}) ` +
+      `<b>${TYPE_LABEL[s.type] || s.type}</b>${s.note ? "：" + s.note : ""}</span></label>`).join("");
+  }
+  element("import-ok").disabled = !suggestions.length;
+  element("import-dialog").showModal();
+  element("import-ok").onclick = () => {
+    let added = 0;
+    list.querySelectorAll("input:checked").forEach((box) => {
+      const s = suggestions[Number(box.dataset.index)];
+      (data.days[s.date] = data.days[s.date] || []).push({ type: s.type, note: s.note });
+      added += 1;
+    });
+    element("import-dialog").close();
+    if (added) {
+      setDirty();
+      render();
+      status(`📥 ${added}件を計画に追加しました（「保存する」で確定）`);
+    }
+  };
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   const ok = await verifyLocalAuth();
   if (!ok) return;
@@ -160,6 +256,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   canEdit = ["family", "admin"].includes(window.currentRole);
   element("page-area").hidden = false;
   element("save").hidden = !canEdit;
+  element("import-plans").hidden = !canEdit;
   element("edit-hint").hidden = !canEdit;
   element("memo").disabled = !canEdit;
 
@@ -169,6 +266,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("prev-month").addEventListener("click", () => switchMonth(-1));
   element("next-month").addEventListener("click", () => switchMonth(1));
   element("save").addEventListener("click", save);
+  element("import-plans").addEventListener("click", openImport);
+  element("import-cancel").addEventListener("click", () => element("import-dialog").close());
   element("memo").addEventListener("input", setDirty);
   element("calendar").addEventListener("click", (event) => {
     if (!canEdit) return;
