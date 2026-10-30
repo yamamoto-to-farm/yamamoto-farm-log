@@ -360,7 +360,7 @@ export function buildChecklist(scenario) {
         (item.reason ? `（${item.reason}）` : "");
       extra = item.reason || "";
     } else {
-      label = `${head} → 見送りと連絡（月末の編集時にまとめてでOK）`;
+      label = `${head} → timetreeから予定を削除し、見送りと連絡（月末の編集でまとめてOK）`;
       extra = item.reason || "";
     }
     groups[kind].push({

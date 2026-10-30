@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-33";
+} from "./shift-logic.js?v=20261030-34";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -472,7 +472,7 @@ function renderChecklist(eff) {
     section("① 月末までに確定（決まった曜日）", groups.fixed, "timetreeで「希」を外す（具体的な時間は前日のLINEで）", false) +
     section("② 追加の希望日（確定の目安）", groups.extra, "期限（勤務3日前）までに、確定なら連絡して「希」を外す。見送りなら連絡のみ", true) +
     section("③ 追加の希望日（保留・判断待ち）", groups.hold, "期限（勤務3日前）までに、確定なら連絡して「希」を外す。見送りなら連絡のみ", true) +
-    section("④ 見送り", groups.skip, "見送りと連絡（月末の編集でまとめてOK・timetreeの「希」はそのまま）", false);
+    section("④ 見送り", groups.skip, "月末の編集でtimetreeから予定を削除し、本人へ連絡", false);
   element("checklist").innerHTML = filterBar + (body || "<p>項目がありません。</p>");
 
   element("checklist").querySelectorAll(".check-person").forEach((button) => {
@@ -502,7 +502,7 @@ function updateEditHours() {
     return;
   }
   if (status === "skip") {
-    element("edit-hours").textContent = "見送り（0h・人件費に含めない。本人へ連絡）";
+    element("edit-hours").textContent = "見送り（0h・人件費に含めない。timetreeから削除し本人へ連絡）";
     return;
   }
   const hours = workHours(element("edit-start").value, element("edit-end").value, plan.targets.break_minutes);
