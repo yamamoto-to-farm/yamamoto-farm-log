@@ -175,6 +175,15 @@ function newBlock(start = "08:00", end = "15:00") {
   return { start, end, field: "", task: "" };
 }
 
+// 分割・統合後に、人数と作業形態（②=2人以上/③=1人）の整合を取る
+function normalizeKind(card) {
+  if (card.names.length > 1 && card.kind === "3") card.kind = "2";
+  if (card.names.length === 1 && card.kind === "2") card.kind = "3";
+  if (!card.names.some((n) => n.name === card.reporter)) {
+    card.reporter = card.names[0]?.name || "";
+  }
+}
+
 function addCard(names, start, end) {
   const last = lastSent()[names[0]?.name] || {};
   cards.push({
@@ -545,8 +554,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (!select || select.value === "") return;
     const dest = Number(select.dataset.c);
     const src = Number(select.value);
-    cards[dest].names.push(...cards[src].names);
+    const destCard = cards[dest];
+    destCard.names.push(...cards[src].names);
     cards.splice(src, 1);
+    normalizeKind(destCard);
     renderCards();
   });
   element("cards").addEventListener("click", async (event) => {
@@ -612,7 +623,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       const card = cards[Number(chipX.dataset.c)];
       const [person] = card.names.splice(Number(chipX.dataset.n), 1);
       if (card.names.length) {
-        cards.push({ ...structuredClone(card), names: [person] });
+        normalizeKind(card);
+        const split = { ...structuredClone(card), names: [person] };
+        normalizeKind(split);
+        cards.push(split);
       } else {
         cards.splice(Number(chipX.dataset.c), 1);
       }
