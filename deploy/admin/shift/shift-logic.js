@@ -360,7 +360,7 @@ export function buildChecklist(scenario) {
         (item.reason ? `（${item.reason}）` : "");
       extra = item.reason || "";
     } else {
-      label = `${head} → 勤務3日前までに見送りを連絡`;
+      label = `${head} → 見送りと連絡（月末の編集時にまとめてでOK）`;
       extra = item.reason || "";
     }
     groups[kind].push({
