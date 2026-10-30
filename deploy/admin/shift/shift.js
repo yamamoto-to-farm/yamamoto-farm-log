@@ -219,7 +219,7 @@ function renderAll() {
 
   renderSummary(eff, computed);
   renderCalendar(eff);
-  renderPersons(computed);
+  renderPersons(computed, eff);
   renderChecklist(eff);
 }
 
@@ -309,20 +309,39 @@ function renderCalendar(eff) {
   element("calendar").innerHTML = `<table class="shift-cal"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function renderPersons(computed) {
+function renderPersons(computed, eff) {
+  // 人別・状態別の日数内訳
+  const breakdown = new Map();
+  for (const item of eff) {
+    if (!breakdown.has(item.person)) breakdown.set(item.person, { fixed: 0, extra: 0, hold: 0, skip: 0 });
+    breakdown.get(item.person)[item.status] += 1;
+  }
+  const detail = (b) => {
+    if (!b) return "";
+    const parts = [`確定${b.fixed}`, `希${b.extra}`];
+    if (b.hold) parts.push(`保留${b.hold}`);
+    if (b.skip) parts.push(`見送${b.skip}`);
+    return `<span class="shift-breakdown">${parts.join("・")}</span>`;
+  };
   const rows = plan.staff.map((member) => {
     const row = computed.perPerson[member.name] || { days: 0, hours: 0, cost: 0 };
-    return { name: member.name, protected: !!member.protected, target: member.target_days ?? null, ...row };
+    return { name: member.name, protected: !!member.protected, target: member.target_days ?? null,
+             b: breakdown.get(member.name), ...row };
   });
   const totalDays = rows.reduce((sum, row) => sum + row.days, 0);
   const totalCost = rows.reduce((sum, row) => sum + row.cost, 0);
+  const totalB = { fixed: 0, extra: 0, hold: 0, skip: 0 };
+  for (const b of breakdown.values()) {
+    totalB.fixed += b.fixed; totalB.extra += b.extra; totalB.hold += b.hold; totalB.skip += b.skip;
+  }
   element("person-table").innerHTML =
-    "<tr><th>名前</th><th>予定日数</th><th>目安日数</th><th>人時</th><th>人件費</th><th></th></tr>" +
+    "<tr><th>名前</th><th>予定日数（内訳）</th><th>目安日数</th><th>人時</th><th>人件費</th><th></th></tr>" +
     rows.map((row) =>
-      `<tr><td>${row.name}${row.protected ? "（優先）" : ""}</td><td>${row.days}日</td>` +
+      `<tr><td>${row.name}${row.protected ? "（優先）" : ""}</td>` +
+      `<td>${row.days}日${detail(row.b)}</td>` +
       `<td>${row.target ?? "-"}日</td><td>${row.hours}h</td><td>${formatYen(row.cost)}</td>` +
       `<td><button type="button" class="secondary-btn bulk-btn" data-person="${row.name}">一括編集</button></td></tr>`).join("") +
-    `<tr class="total"><td>合計</td><td>${totalDays}日</td><td></td><td></td><td>${formatYen(totalCost)}</td><td></td></tr>`;
+    `<tr class="total"><td>合計</td><td>${totalDays}日${detail(totalB)}</td><td></td><td></td><td>${formatYen(totalCost)}</td><td></td></tr>`;
   element("person-table").querySelectorAll(".bulk-btn").forEach((button) => {
     button.addEventListener("click", () => openBulk(button.dataset.person));
   });

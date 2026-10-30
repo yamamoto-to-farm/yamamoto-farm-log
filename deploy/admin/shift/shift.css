@@ -89,6 +89,7 @@
 .shift-table th, .shift-table td { border: 1px solid #ddd; padding: 4px 10px; font-size: 0.85rem; text-align: right; }
 .shift-table th:first-child, .shift-table td:first-child { text-align: left; }
 .shift-table .total { font-weight: 600; background: #f6f8f7; }
+.shift-breakdown { display: block; font-size: 0.72rem; color: #888; font-weight: normal; }
 
 .shift-table .bulk-btn { font-size: 0.72rem; padding: 2px 8px; }
 
