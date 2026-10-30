@@ -17,12 +17,12 @@ const MASTERS_KEY = "data/message/masters.json";
 const WEEKDAYS = "日月火水木金土";
 const WORK_LABELS = {
   seed: "播種", nursery: "育苗", tillage: "耕起", weeding: "除草", "field-maintenance": "圃場整備",
-  pesticide: "防除", fertilizer: "施肥", watering: "潅水", "hand-weeding": "手除草",
+  pesticide: "防除", fertilizer: "施肥", watering: "潅水", "hand-weeding": "草とり",
   intertill: "中耕", bedmaking: "畝立て", planting: "定植", harvest: "収穫", other: "その他",
 };
-// 作業内容の候補（作業ログの種別。自由入力も可）
+// 作業内容の候補（作業ログの種別。文面向けに言い回しをやわらかくしている。自由入力も可）
 const TASK_OPTIONS = ["収穫", "播種", "育苗", "定植", "耕起", "中耕", "畝立て", "除草・草刈り",
-  "手作業除草", "防除", "施肥", "潅水", "圃場整備", "出荷調整", "片付け"];
+  "草とり", "防除", "施肥", "潅水", "圃場整備", "出荷調整", "片付け"];
 // お休み連絡の理由の候補（自由入力も可）
 const OFF_REASONS = ["雨天予報のため", "台風接近のため", "圃場の状態が悪いため", "作業の都合により"];
 const DEFAULT_TEMPLATES = [
