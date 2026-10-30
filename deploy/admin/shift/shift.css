@@ -37,6 +37,7 @@
 .shift-edit-dialog .edit-quick { display: flex; gap: 8px; margin-top: 8px; }
 .shift-edit-dialog .edit-quick button { font-size: 0.8rem; padding: 4px 12px; }
 .shift-edit-dialog #edit-hours { font-size: 0.85rem; margin: 10px 0; }
+.shift-edit-dialog .edit-warn { font-size: 0.82rem; color: #c62828; margin: 6px 0; }
 .shift-edit-dialog .edit-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 
 .shift-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.8rem; margin-bottom: 6px; align-items: center; }

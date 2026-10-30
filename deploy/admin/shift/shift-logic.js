@@ -250,6 +250,42 @@ export function shiftLabel(startText, endText) {
   return `${startText}~${endText}`;
 }
 
+// 編集内容の制約チェック（ブロックせず警告を返す）
+export function editWarnings(plan, item, status, startText, endText, effItems = []) {
+  const warnings = [];
+  if (status === "hold" || status === "skip") return warnings;
+  const member = plan.staff.find((s) => s.name === item.person) || {};
+  const end = hmToMin(endText);
+  const limit = (member.latest_end || {})[item.weekday];
+  if (limit && end !== null && end > hmToMin(limit)) {
+    warnings.push(`${item.person}さんは${item.weekday}曜 ${limit} までの制約があります`);
+  }
+  const day = Number(item.date.slice(8, 10));
+  if ((member.unavailable_days_of_month || []).includes(day)) {
+    warnings.push(`毎月${day}日は「入れない日」として登録されています`);
+  }
+  const weeklyMax = plan.targets.weekly_max_days;
+  if (weeklyMax && effItems.length) {
+    const [y, m, d] = item.date.split("-").map(Number);
+    const target = Date.UTC(y, m - 1, d);
+    const dow = (new Date(target).getUTCDay() + 6) % 7; // 月曜=0
+    const weekStart = target - dow * 86400000;
+    const weekEnd = weekStart + 6 * 86400000;
+    const inWeek = (iso) => {
+      const [iy, im, id] = iso.split("-").map(Number);
+      const t = Date.UTC(iy, im - 1, id);
+      return weekStart <= t && t <= weekEnd;
+    };
+    const count = 1 + effItems.filter((entry) =>
+      entry.person === item.person && entry.key !== item.key &&
+      entry.status !== "hold" && entry.status !== "skip" && inWeek(entry.date)).length;
+    if (count > weeklyMax) {
+      warnings.push(`この週の勤務が${count}日になります（週${weeklyMax}日以内）`);
+    }
+  }
+  return warnings;
+}
+
 // timetree確定操作のチェックリスト（4グループ）
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [], skip: [] };

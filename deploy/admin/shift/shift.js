@@ -4,13 +4,14 @@ import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
-  fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-10";
+  editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
+} from "./shift-logic.js?v=20261030-11";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
 let calMode = "plan";
 let editKey = null;
+let editItem = null;
 
 function currentScenario() {
   return plan.scenarios[Number(element("budget-slider").value)];
@@ -217,6 +218,10 @@ function renderChecklist(eff) {
 // ───── 個別編集ダイアログ ─────
 function updateEditHours() {
   const status = element("edit-status").value;
+  const constraintWarns = editItem
+    ? editWarnings(plan, editItem, status, element("edit-start").value, element("edit-end").value, displayedItems())
+    : [];
+  element("edit-warn").innerHTML = constraintWarns.map((w) => `<span>⚠ ${w}</span>`).join("<br>");
   if (status === "hold") {
     element("edit-hours").textContent = "保留（0h・人件費に含めない。「希」のまま判断待ち）";
     return;
@@ -240,6 +245,7 @@ function openEditor(key) {
   editKey = key;
   const item = displayedItems().find((entry) => entry.key === key);
   if (!item) return;
+  editItem = item;
   element("edit-title").textContent =
     `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}(${item.weekday}) ${item.person}`;
   element("edit-sub").textContent = `希望の原本: ${item.raw_title}（希望 実働${item.request_hours}h）`;

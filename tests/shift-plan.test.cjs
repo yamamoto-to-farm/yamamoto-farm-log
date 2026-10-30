@@ -111,17 +111,41 @@ test("workHours は正午またぎで休憩を変える", async () => {
 const calcPlan = {
   month: "2026-11",
   staff: [
-    { name: "土井", target_days: 12, hourly: 1310 },
-    { name: "若月", target_days: 12, hourly: 1260 },
+    { name: "土井", target_days: 12, hourly: 1310, latest_end: { "日": "15:00", "月": "15:00" } },
+    { name: "若月", target_days: 12, hourly: 1260, unavailable_days_of_month: [22, 23] },
   ],
   requests: { items: [{ date: "2026-11-01", person: "土井", start: "7:30", end: "15:00" }] },
   targets: {
     break_minutes: { not_spanning_noon: 10, spanning_noon: 60 },
     allday_default: { start: "06:00", end: "17:10" },
     commute: { per_day: 160, monthly_cap: 3000 },
-    base_hourly: 1250, min_work_hours: 3.5, max_work_hours: 6.5,
+    base_hourly: 1250, min_work_hours: 3.5, max_work_hours: 6.5, weekly_max_days: 5,
   },
 };
+
+test("editWarnings は曜日の終了制約・入れない日・週上限を警告する", async () => {
+  const { editWarnings } = await logic();
+  const doiSun = { person: "土井", date: "2026-11-01", weekday: "日", key: "2026-11-01:土井" };
+  // 日曜16:00終了 → latest_end 15:00 超過
+  let warns = editWarnings(calcPlan, doiSun, "fixed", "08:00", "16:00");
+  assert.equal(warns.length, 1);
+  assert.match(warns[0], /日曜 15:00 までの制約/);
+  // 15:00ちょうどはOK
+  assert.equal(editWarnings(calcPlan, doiSun, "fixed", "08:00", "15:00").length, 0);
+  // 見送りなら警告なし
+  assert.equal(editWarnings(calcPlan, doiSun, "skip", "08:00", "16:00").length, 0);
+  // 入れない日
+  const waka22 = { person: "若月", date: "2026-11-22", weekday: "日", key: "2026-11-22:若月" };
+  warns = editWarnings(calcPlan, waka22, "fixed", "08:00", "12:00");
+  assert.match(warns[0], /毎月22日は「入れない日」/);
+  // 週上限：同じ週（11/2-11/8）に既に5日勤務 → 6日目で警告
+  const week = [2, 3, 4, 5, 6].map((d) => ({
+    person: "若月", date: `2026-11-0${d}`, status: "fixed", key: `2026-11-0${d}:若月`,
+  }));
+  const waka7 = { person: "若月", date: "2026-11-07", weekday: "土", key: "2026-11-07:若月" };
+  warns = editWarnings(calcPlan, waka7, "fixed", "08:00", "12:00", week);
+  assert.match(warns[0], /この週の勤務が6日になります/);
+});
 
 test("resolveShift は基本時間帯に収めて正午またぎを整理する", async () => {
   const { resolveShift } = await logic();

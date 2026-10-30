@@ -879,10 +879,14 @@ def cmd_plan(args):
                 "base_hourly": cfg["base_hourly"],
                 "allday_default": cfg["allday_default"],
                 "break_minutes": cfg["break_minutes"],
+                "weekly_max_days": cfg["weekly_max_days"],
             },
             "staff": [{"name": s["name"], "fixed_weekdays": s.get("fixed_weekdays", []),
                        "target_days": s.get("target_days"), "protected": bool(s.get("protected")),
-                       "hourly": s.get("hourly", cfg["base_hourly"])} for s in cfg["staff"]],
+                       "hourly": s.get("hourly", cfg["base_hourly"]),
+                       "latest_end": s.get("latest_end", {}),
+                       "unavailable_days_of_month": s.get("unavailable_days_of_month", [])}
+                      for s in cfg["staff"]],
             "requests": {
                 "entries": len(entries),
                 "unknown_time": len(unknown),
