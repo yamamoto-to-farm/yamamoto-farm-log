@@ -253,10 +253,16 @@ test("fitRemaining は編集済みを守って未編集だけ短縮する", asyn
 
 test("shiftLabel は AM/PM/時間帯を出し分ける", async () => {
   const { shiftLabel } = await logic();
+  const base = { start: "08:00", end: "16:30" };
   assert.equal(shiftLabel("7:30", "12:00"), "AM");
   assert.equal(shiftLabel("13:00", "16:30"), "PM");
   assert.equal(shiftLabel("8:00", "16:30"), "8:00~16:30");
   assert.equal(shiftLabel("", "16:30"), "");
+  // 基本枠どおりなら AM/PM、時刻を調整したら実時刻を表示
+  assert.equal(shiftLabel("8:00", "12:00", base), "AM");
+  assert.equal(shiftLabel("13:00", "16:30", base), "PM");
+  assert.equal(shiftLabel("13:00", "16:00", base), "13:00~16:00"); // PMの終了を編集
+  assert.equal(shiftLabel("9:00", "12:00", base), "9:00~12:00");   // AMの開始を編集
 });
 
 test("editWarnings は希望の原本との食い違いも警告する", async () => {

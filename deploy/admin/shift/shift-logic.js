@@ -240,13 +240,16 @@ export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5)
   return { items: apply(mn, mn), capOthers: mn, capProtected: mn, over: true };
 }
 
-// カレンダーチップ用の時間表示（午前のみ=AM / 午後のみ=PM / それ以外は時刻範囲）
-export function shiftLabel(startText, endText) {
+// カレンダーチップ用の時間表示。標準の午前のみ/午後のみ（基本枠どおり）は AM/PM、
+// それ以外（時刻を調整した場合を含む）は実際の時刻範囲を表示する。
+export function shiftLabel(startText, endText, base = null) {
   const start = hmToMin(startText);
   const end = hmToMin(endText);
   if (start === null || end === null) return "";
-  if (end <= 720) return "AM";
-  if (start >= 780) return "PM";
+  const baseStart = base ? hmToMin(base.start) : null;
+  const baseEnd = base ? hmToMin(base.end) : null;
+  if (end === 720 && (baseStart === null || start === baseStart)) return "AM";
+  if (start === 780 && (baseEnd === null || end === baseEnd)) return "PM";
   return `${startText}~${endText}`;
 }
 
