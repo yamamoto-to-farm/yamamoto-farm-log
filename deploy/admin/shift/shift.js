@@ -424,23 +424,68 @@ function clearBulk() {
   status(`${bulkPerson} さんの編集を取り消しました。`);
 }
 
+let checklistPerson = "";
+
 function renderChecklist(eff) {
   const groups = buildChecklist({ items: eff });
   const saved = edits.checks;
-  const section = (title, list) => !list.length ? "" :
-    `<h3>${title}</h3>` + list.map((item) =>
-      `<label class="${saved[item.id] ? "done" : ""}"><input type="checkbox" data-id="${item.id}"${saved[item.id] ? " checked" : ""}><span>${item.label}</span></label>`
-    ).join("");
-  element("checklist").innerHTML =
-    section("① 月末までに確定（決まった曜日）", groups.fixed) +
-    section("② 勤務3日前までに確定（追加の希望日）", groups.extra) +
-    section("③ 保留（「希」のまま・作業量が決まってから判断）", groups.hold) +
-    section("④ 見送り（3日前までに連絡）", groups.skip) || "<p>項目がありません。</p>";
+  const names = plan.staff.map((member) => member.name);
+  const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const deadlineOf = (date) => {
+    const [y, m, d] = date.split("-").map(Number);
+    const deadline = new Date(Date.UTC(y, m - 1, d - 3));
+    return `${deadline.getUTCFullYear()}-${String(deadline.getUTCMonth() + 1).padStart(2, "0")}-${String(deadline.getUTCDate()).padStart(2, "0")}`;
+  };
+  const deadlineBadge = (date) => {
+    const deadline = deadlineOf(date);
+    const urgent = deadline <= todayIso;
+    return `<span class="check-deadline${urgent ? " urgent" : ""}">期限 ${Number(deadline.slice(5, 7))}/${Number(deadline.slice(8, 10))}</span>`;
+  };
+
+  const section = (title, list, hint, withDeadline) => {
+    const filtered = list.filter((item) => !checklistPerson || item.person === checklistPerson);
+    if (!filtered.length) return "";
+    const done = filtered.filter((item) => saved[item.id]).length;
+    const rows = [...filtered]
+      .sort((a, b) => (saved[a.id] ? 1 : 0) - (saved[b.id] ? 1 : 0) || a.date.localeCompare(b.date))
+      .map((item) => {
+        const amount = item.time || (item.hours > 0 ? `${item.hours}h` : "");
+        return `<label class="${saved[item.id] ? "done" : ""}" title="${item.label.replace(/"/g, "&quot;")}">` +
+          `<input type="checkbox" data-id="${item.id}"${saved[item.id] ? " checked" : ""}>` +
+          `<span><b>${item.md}(${item.weekday})</b> ${item.person}` +
+          `${amount ? ` <span class="check-time">${amount}</span>` : ""}` +
+          `${item.extra ? ` <span class="check-extra">${item.extra}</span>` : ""}` +
+          `${withDeadline && !saved[item.id] ? " " + deadlineBadge(item.date) : ""}</span></label>`;
+      }).join("");
+    return `<details open><summary>${title} <span class="check-progress${done === filtered.length ? " all" : ""}">${done}/${filtered.length}</span>` +
+      `<span class="check-hint">${hint}</span></summary>${rows}</details>`;
+  };
+
+  const filterBar = `<div class="check-filter">` +
+    ["", ...names].map((name) =>
+      `<button type="button" class="check-person${checklistPerson === name ? " on" : ""}" data-person="${name}">${name || "全員"}</button>`
+    ).join("") + `</div>`;
+
+  const body =
+    section("① 月末までに確定（決まった曜日）", groups.fixed, "timetreeで「希」を外す。短縮した日は前日までに本人へ連絡", false) +
+    section("② 勤務3日前までに確定（追加の希望日）", groups.extra, "確定するなら連絡して「希」を外す。見送りなら連絡", true) +
+    section("③ 保留（判断待ち・「希」のまま）", groups.hold, "作業量が決まり次第、期限までに確定か見送りを連絡", true) +
+    section("④ 見送り", groups.skip, "期限までに見送りを連絡（timetreeの「希」はそのまま）", true);
+  element("checklist").innerHTML = filterBar + (body || "<p>項目がありません。</p>");
+
+  element("checklist").querySelectorAll(".check-person").forEach((button) => {
+    button.addEventListener("click", () => {
+      checklistPerson = button.dataset.person;
+      renderChecklist(displayedItems());
+    });
+  });
   element("checklist").querySelectorAll("input[type=checkbox]").forEach((box) => {
     box.addEventListener("change", () => {
       saved[box.dataset.id] = box.checked;
       markDirty();
-      box.closest("label").classList.toggle("done", box.checked);
+      renderChecklist(displayedItems());
     });
   });
 }

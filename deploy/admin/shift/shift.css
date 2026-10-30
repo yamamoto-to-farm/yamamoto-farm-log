@@ -98,7 +98,21 @@
 .bulk-targets input { width: auto; padding: 0; margin: 0; }
 
 #checklist h3 { font-size: 0.9rem; margin: 12px 0 4px; }
-#checklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem; padding: 2px 0;
+#checklist .check-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+#checklist .check-person { font-size: 0.78rem; padding: 3px 12px; border: 1px solid #ccc;
+  border-radius: 14px; background: #fff; cursor: pointer; }
+#checklist .check-person.on { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+#checklist details { margin: 8px 0; }
+#checklist summary { font-size: 0.9rem; font-weight: 600; cursor: pointer; padding: 4px 0; }
+#checklist .check-progress { font-weight: 700; color: #ef6c00; margin-left: 6px; }
+#checklist .check-progress.all { color: #1a7f37; }
+#checklist .check-hint { font-size: 0.72rem; color: #999; font-weight: normal; margin-left: 10px; }
+#checklist .check-time { color: #1565c0; font-weight: 600; }
+#checklist .check-extra { font-size: 0.75rem; color: #e65100; }
+#checklist .check-deadline { font-size: 0.72rem; color: #666; background: #f0f3f1;
+  border-radius: 3px; padding: 0 4px; }
+#checklist .check-deadline.urgent { color: #fff; background: #c62828; }
+#checklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem; padding: 2px 0 2px 14px;
   text-align: left; font-weight: normal; margin: 0; }
 #checklist label.done { color: #999; text-decoration: line-through; }
 #checklist input[type="checkbox"] { width: auto; padding: 0; margin: 0; flex: 0 0 auto; position: relative; top: 2px; }

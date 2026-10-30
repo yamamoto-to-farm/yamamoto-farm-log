@@ -333,7 +333,8 @@ export function editWarnings(plan, item, status, startText, endText, effItems = 
   return warnings;
 }
 
-// timetree確定操作のチェックリスト（4グループ）
+// timetree確定操作のチェックリスト（4グループ）。label は全文（ツールチップ用）、
+// md/person/time などは一覧のコンパクト表示用。
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [], skip: [] };
   for (const item of scenario.items) {
@@ -341,20 +342,30 @@ export function buildChecklist(scenario) {
     const md = `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}`;
     const head = `${md}(${item.weekday}) ${item.person} 「${item.raw_title}」`;
     const shortened = item.proposed_end && item.proposed_hours > 0 && item.proposed_hours < item.request_hours;
+    const time = item.start && item.proposed_end ? `${item.start}~${item.proposed_end}` : "";
     let label;
+    let extra = "";
     if (kind === "fixed") {
       label = `${head} → 「希」を外して確定` +
         (shortened ? `（終了を ${item.proposed_end} に短縮・実働${item.proposed_hours}h。前日までに本人へ連絡）` : "");
+      if (shortened) extra = "短縮・要連絡";
     } else if (kind === "extra") {
       label = `${head} → 今は「希」のまま。勤務3日前までに確定（「希」を外す・目安 実働${item.proposed_hours}h` +
         (shortened ? `・終了 ${item.proposed_end}` : "") + "）か、見送りを連絡";
+      if (shortened) extra = "短縮あり";
     } else if (kind === "hold") {
       label = `${head} → 保留（「希」のまま）。作業量が決まり次第、3日前までに確定か見送りを連絡` +
         (item.reason ? `（${item.reason}）` : "");
+      extra = item.reason || "";
     } else {
       label = `${head} → 勤務3日前までに見送りを連絡`;
+      extra = item.reason || "";
     }
-    groups[kind].push({ id: `${item.date}:${item.person}`, date: item.date, label });
+    groups[kind].push({
+      id: `${item.date}:${item.person}`, date: item.date, label,
+      md, weekday: item.weekday, person: item.person, raw_title: item.raw_title,
+      time, hours: item.proposed_hours, extra,
+    });
   }
   for (const list of Object.values(groups)) list.sort((a, b) => a.date.localeCompare(b.date));
   return groups;
