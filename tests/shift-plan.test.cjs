@@ -116,7 +116,7 @@ const calcPlan = {
   ],
   requests: { items: [
     { date: "2026-11-01", person: "土井", start: "7:30", end: "15:00", kind: "time",
-      warnings: "開始時刻なし：実働6.5hになるよう開始を7:30に調整" },
+      auto: "start", warnings: "" },
     { date: "2026-11-03", person: "土井", start: "8:30", end: "15:00", kind: "time", warnings: "" },
     { date: "2026-11-05", person: "若月", start: "13:00", end: "17:10", kind: "PM", warnings: "" },
   ] },
@@ -138,6 +138,11 @@ test("editWarnings は曜日の終了制約・入れない日・週上限を警�
   assert.match(warns[1], /希望（〜15:00）より遅い終了/);
   // 15:00ちょうどはOK
   assert.equal(editWarnings(calcPlan, doiSun, "fixed", "08:00", "15:00").length, 0);
+  // 開始7:30はツール補完（auto:"start"）なので、それより早い開始でも希望との食い違い警告は出ない
+  assert.equal(editWarnings(calcPlan, doiSun, "fixed", "07:00", "15:00").length, 0);
+  // 本人が開始を指定した日（11/3 8:30〜）はより早い開始で警告
+  const doiTue = { person: "土井", date: "2026-11-03", weekday: "火", key: "2026-11-03:土井" };
+  assert.match(editWarnings(calcPlan, doiTue, "fixed", "08:00", "15:00")[0], /希望（8:30〜）より早い開始/);
   // 見送りなら警告なし
   assert.equal(editWarnings(calcPlan, doiSun, "skip", "08:00", "16:00").length, 0);
   // 入れない日

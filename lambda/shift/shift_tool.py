@@ -242,6 +242,7 @@ def cmd_parse(args):
                 if not staff:
                     warn.append("人を特定できません（ラベル/名前を確認）")
                 k, start_m, end_m = kind[0], None, None
+                auto_side = ""  # ツールが補完した側（"start"/"end"）。本人の希望ではない印
                 if k == "time":
                     start_m, end_m = kind[1], kind[2]
                 elif k == "time_end":
@@ -251,9 +252,7 @@ def cmd_parse(args):
                     cap_min = int(round(cap * 60))
                     if end_m - start_m - break_for(start_m, end_m, cfg) > cap_min:
                         start_m, end_m = fit_to_cap(end_m, "start", cap_min, cfg)
-                        warn.append(f"開始時刻なし：実働{cap:g}hになるよう開始を{fmt_hm(start_m)}に調整")
-                    else:
-                        warn.append("開始時刻なし：終日の開始（デフォルト）から")
+                    auto_side = "start"
                 elif k == "time_start":
                     k = "time"
                     start_m, end_m = kind[1], hm(cfg["allday_default"]["end"])
@@ -261,9 +260,7 @@ def cmd_parse(args):
                     cap_min = int(round(cap * 60))
                     if end_m - start_m - break_for(start_m, end_m, cfg) > cap_min:
                         start_m, end_m = fit_to_cap(start_m, "end", cap_min, cfg)
-                        warn.append(f"終了時刻なし：実働{cap:g}hになるよう終了を{fmt_hm(end_m)}に調整")
-                    else:
-                        warn.append("終了時刻なし：終日の終了（デフォルト）まで")
+                    auto_side = "end"
                 elif k == "AM":
                     start_m, end_m = hm(cfg["am_default"]["start"]), hm(cfg["am_default"]["end"])
                 elif k == "PM":
@@ -317,13 +314,14 @@ def cmd_parse(args):
                     "break_min": brk, "work_hours": work,
                     "flexible": int(flexible),
                     "fixed_weekday": int(bool(staff) and WD[d.weekday()] in staff.get("fixed_weekdays", [])),
+                    "auto": auto_side,
                     "warnings": " / ".join(warn), "source": f.name,
                 })
 
     rows.sort(key=lambda r: (r["date"], r["person"]))
     out = Path(args.output or f"entries_{args.month}.csv")
     cols = ["date", "weekday", "person", "raw_title", "kind", "start", "end", "break_min",
-            "work_hours", "flexible", "fixed_weekday", "warnings", "source"]
+            "work_hours", "flexible", "fixed_weekday", "auto", "warnings", "source"]
     with open(out, "w", newline="", encoding="utf-8-sig") as fh:
         w = csv.DictWriter(fh, fieldnames=cols)
         w.writeheader()
@@ -919,7 +917,8 @@ def cmd_plan(args):
                     "raw_title": e["raw_title"], "kind": e["kind"],
                     "start": e.get("start", ""), "end": e.get("end", ""),
                     "work_hours": e.get("work_hours", ""),
-                    "fixed_weekday": int(e["fixed"]), "warnings": e.get("warnings", ""),
+                    "fixed_weekday": int(e["fixed"]), "auto": e.get("auto", ""),
+                    "warnings": e.get("warnings", ""),
                 } for e in entries],
             },
             "issues": issues,

@@ -291,18 +291,21 @@ export function editWarnings(plan, item, status, startText, endText, effItems = 
   if ((member.unavailable_days_of_month || []).includes(day)) {
     warnings.push(`毎月${day}日は「入れない日」として登録されています`);
   }
-  // 本人の希望（timetreeの原本）との照合。ツールが自動補完した側は希望ではないので対象外。
+  // 本人の希望（timetreeの原本）との照合。ツールが自動補完した側（auto）は希望ではないので対象外。
   const raw = (plan.requests.items || []).find((row) => row.date === item.date && row.person === item.person);
   if (raw) {
     const start = hmToMin(startText);
-    const rawWarnings = raw.warnings || "";
+    const rawWarnings = raw.warnings || "";   // 旧plan.json互換（文言で判定していた頃）
+    const rawAuto = raw.auto || "";
     if (raw.kind === "time") {
       const rawEnd = hmToMin(raw.end);
-      if (rawEnd !== null && end !== null && end > rawEnd && !rawWarnings.includes("終了時刻なし")) {
+      if (rawEnd !== null && end !== null && end > rawEnd &&
+          rawAuto !== "end" && !rawWarnings.includes("終了時刻なし")) {
         warnings.push(`希望（〜${raw.end}）より遅い終了です（本人に確認）`);
       }
       const rawStart = hmToMin(raw.start);
-      if (rawStart !== null && start !== null && start < rawStart && !rawWarnings.includes("開始時刻なし")) {
+      if (rawStart !== null && start !== null && start < rawStart &&
+          rawAuto !== "start" && !rawWarnings.includes("開始時刻なし")) {
         warnings.push(`希望（${raw.start}〜）より早い開始です（本人に確認）`);
       }
     } else if (raw.kind === "AM" && end !== null && end > 720) {
