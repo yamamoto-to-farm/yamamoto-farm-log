@@ -449,7 +449,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   element("apply-memo").addEventListener("click", () => {
     const memo = element("common-memo").value.trim();
-    for (const card of cards) card.memo = memo;
+    if (cards.some((card) => card.manualText != null)
+        && !confirm("手修正中の文面があります。手修正を破棄してメモを反映しますか？")) return;
+    for (const card of cards) {
+      card.memo = memo;
+      card.manualText = null;
+    }
     renderCards();
   });
 
@@ -466,19 +471,36 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // カードの編集（入力は状態へ反映し、プレビューだけ書き換える）
+  // 手修正中（manualText あり）に入力欄を触った場合は、確認のうえ手修正を破棄して自動文面に戻す。
+  const dropManual = (c) => {
+    if (cards[c].manualText == null) return true;
+    if (!confirm("この文面は手修正されています。手修正を破棄して、入力からの自動文面に戻しますか？")) return false;
+    cards[c].manualText = null;
+    return true;
+  };
   element("cards").addEventListener("input", (event) => {
     const input = event.target;
     const c = Number(input.dataset.c);
     if (!Number.isFinite(c) || !cards[c]) return;
-    if (input.dataset.k === "off") {
-      cards[c].off = input.checked;
-      renderCards();            // 表示構造が変わるため再描画
-      return;
-    }
     if (input.dataset.k === "preview") {
       cards[c].manualText = input.value;
       const note = document.querySelector(`[data-note="${c}"]`);
       if (note) note.hidden = false;
+      return;
+    }
+    if (!dropManual(c)) {
+      // 手修正を保持：入力欄を元の値へ戻す
+      if (input.dataset.k === "off") input.checked = cards[c].off;
+      else if (input.dataset.k === "offReason") input.value = cards[c].offReason || "";
+      else if (input.dataset.k === "memo") input.value = cards[c].memo;
+      else if (input.dataset.b !== undefined) {
+        input.value = cards[c].blocks[Number(input.dataset.b)][input.dataset.k];
+      }
+      return;
+    }
+    if (input.dataset.k === "off") {
+      cards[c].off = input.checked;
+      renderCards();            // 表示構造が変わるため再描画
       return;
     }
     if (input.dataset.k === "offReason") cards[c].offReason = input.value;
@@ -486,6 +508,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     else if (input.dataset.b !== undefined) {
       cards[c].blocks[Number(input.dataset.b)][input.dataset.k] = input.value;
     }
+    const note = document.querySelector(`[data-note="${c}"]`);
+    if (note) note.hidden = true;
     refreshPreview(c);
   });
   // 「＋まとめる…」：選んだカードの宛先をこのカードへ統合（文面はこのカードのものを使う）
@@ -507,7 +531,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const fieldBtn = event.target.closest(".field-btn");
     if (fieldBtn) {
-      const card = cards[Number(fieldBtn.dataset.c)];
+      const c = Number(fieldBtn.dataset.c);
+      if (!dropManual(c)) return;
+      const card = cards[c];
       const block = card.blocks[Number(fieldBtn.dataset.b)];
       openFieldModal({
         mode: "select",
@@ -522,7 +548,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const fieldClear = event.target.closest(".field-clear");
     if (fieldClear) {
-      cards[Number(fieldClear.dataset.c)].blocks[Number(fieldClear.dataset.b)].field = "";
+      const c = Number(fieldClear.dataset.c);
+      if (!dropManual(c)) return;
+      cards[c].blocks[Number(fieldClear.dataset.b)].field = "";
       renderCards();
       return;
     }
@@ -535,7 +563,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const addBlock = event.target.closest(".add-block");
     if (addBlock) {
-      const card = cards[Number(addBlock.dataset.c)];
+      const c = Number(addBlock.dataset.c);
+      if (!dropManual(c)) return;
+      const card = cards[c];
       const prev = card.blocks[card.blocks.length - 1];
       card.blocks.push(newBlock("13:00", prev.end));
       renderCards();
@@ -543,7 +573,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const delBlock = event.target.closest(".del-block");
     if (delBlock) {
-      cards[Number(delBlock.dataset.c)].blocks.splice(Number(delBlock.dataset.b), 1);
+      const c = Number(delBlock.dataset.c);
+      if (!dropManual(c)) return;
+      cards[c].blocks.splice(Number(delBlock.dataset.b), 1);
       renderCards();
       return;
     }
