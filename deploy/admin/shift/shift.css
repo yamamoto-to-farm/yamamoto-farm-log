@@ -88,3 +88,19 @@
   .shift-cal td { height: 56px; }
   .shift-cal .chip { font-size: 0.6rem; }
 }
+
+/* ───── 設定ページ（config.html） ───── */
+.cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 8px 0; }
+.cfg-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #555; font-weight: normal; margin: 0; }
+.cfg-grid input { padding: 6px 8px; font-size: 0.95rem; }
+.cfg-grid .cfg-check { flex-direction: row; align-items: center; gap: 6px; align-self: end; padding-bottom: 8px; }
+.cfg-grid .cfg-check input { width: auto; padding: 0; margin: 0; }
+.cfg-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; font-size: 0.85rem; }
+.cfg-label { color: #555; font-size: 0.8rem; }
+.cfg-row .wd { display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin: 0; }
+.cfg-row .wd input { width: auto; padding: 0; margin: 0; }
+.staff-card { border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; background: #fcfdfc; }
+.staff-card .cfg-remove { font-size: 0.75rem; padding: 4px 10px; margin-top: 4px; }
+.cfg-actions { display: flex; gap: 10px; margin: 16px 0 8px; }
+#save-result { font-size: 0.9rem; }
+.shift-config-link { font-size: 0.85rem; padding: 6px 12px; text-decoration: none; margin-left: auto; }

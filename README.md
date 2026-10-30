@@ -220,6 +220,10 @@ photos と同じ Cognito ログインに加えて **cognito:groups の admin ま
 - フロントエンド: `deploy/admin/shift/`（`/photos/auth.js` の PKCE ログインを再利用。
   Cognito 側の設定変更は不要）
 - API Lambda: `lambda/shift-api/lambda_function.py`（1ファイル。boto3 はランタイム提供）
+- スタッフマスタ編集: `/admin/shift/config.html`（シフト管理ページの「⚙ スタッフ・設定」から）。
+  保存は検証つきの `POST /shift/config` で行い、保存前の設定を
+  `shift/config-backups/` に自動退避します。認証情報キーが混入しても保存時に除去します。
+  反映は次回の自動生成（毎月26日）から。今月分に反映するには生成 Lambda を手動実行します。
 - テスト: `python -B -m unittest discover -s lambda\shift-api -p "test_*.py"` と
   `node --test tests\shift-plan.test.cjs`
 
@@ -228,15 +232,18 @@ AWS設定（photos の HTTP API に追加）:
 - Lambda: `yamamoto-farm-shift-api`、Python 3.13、ハンドラ `lambda_function.lambda_handler`、
   メモリ 128MB、タイムアウト 10秒。環境変数 `SHIFT_BUCKET`（非公開バケット名）と
   `SHIFT_PREFIX`=`shift/`。
-- 実行ロール: 非公開バケットの `shift/*` への `s3:GetObject` と、`s3:ListBucket`
-  （prefix条件 `shift/*`）。書き込み権限は不要。
-- 既存の HTTP API（photos と同じもの）にルートを追加し、**両方とも** JWT オーソライザー
+- 実行ロール: 非公開バケットの `shift/*` への `s3:GetObject`、`s3:ListBucket`
+  （prefix条件 `shift/*`）、および `shift/config.json` と `shift/config-backups/*` への
+  `s3:PutObject`（設定の保存に必要）。
+- 既存の HTTP API（photos と同じもの）にルートを追加し、**すべてに** JWT オーソライザー
   `farm-photos-cognito`・必須スコープ **openid** を付けます（ペイロード形式 2.0）:
 
   | メソッド | パス | 用途 |
   | --- | --- | --- |
   | GET | `/shift/plan` | 最新（または `?month=YYYY-MM`）の plan.json |
   | GET | `/shift/months` | 保存済みの月の一覧 |
+  | GET | `/shift/config` | スタッフマスタの取得 |
+  | POST | `/shift/config` | スタッフマスタの保存（検証・バックアップつき） |
 
 - 各ルートに Lambda 呼び出し権限があることを確認します（photos と同様）。
 - Cognito ユーザープールの **グループ** に admin / family が設定されていることを確認します

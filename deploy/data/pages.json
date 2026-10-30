@@ -375,6 +375,7 @@
       "icon": "assets/icons/schedule.png",
       "openLog": false
     },
+    { "id": "shift-config-access", "path": "/admin/shift/config.html", "roles": ["family", "admin"], "accessOnly": true },
     {
       "id": "login-permissions",
       "name": "ログイン権限管理",
