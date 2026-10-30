@@ -38,7 +38,7 @@ const DEFAULT_MASTERS = {
 const element = (id) => document.getElementById(id);
 let masters = structuredClone(DEFAULT_MASTERS);
 let tplDraft = [];           // 定型文の編集用ドラフト
-let persons = [];            // [{name, wish, memo, blocks:[{start,end,field,task}]}]
+let cards = [];              // 宛先グループ [{names:[{name,wish}], memo, blocks:[{start,end,field,task}]}]
 let workPlan = null;
 let canEdit = false;
 
@@ -150,7 +150,9 @@ function lastSent() {
 
 function rememberSent(card) {
   const data = lastSent();
-  data[card.name] = { field: card.blocks[0]?.field || "", task: card.blocks[0]?.task || "" };
+  for (const n of card.names) {
+    data[n.name] = { field: card.blocks[0]?.field || "", task: card.blocks[0]?.task || "" };
+  }
   try { localStorage.setItem("message-last", JSON.stringify(data)); } catch { /* 無視 */ }
 }
 
@@ -158,10 +160,11 @@ function newBlock(start = "08:00", end = "15:00") {
   return { start, end, field: "", task: "" };
 }
 
-function addPerson(name, start, end, wish = false) {
-  const last = lastSent()[name] || {};
-  persons.push({
-    name, wish, memo: element("common-memo").value.trim(),
+function addCard(names, start, end) {
+  const last = lastSent()[names[0]?.name] || {};
+  cards.push({
+    names,
+    memo: element("common-memo").value.trim(),
     blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "" }],
   });
 }
@@ -188,13 +191,20 @@ async function loadFromShift() {
     if (edits.autofit) eff = fitRemaining(plan, eff, scenario.budget_max, edits.base || null).items;
     const todays = eff.filter((item) => item.date === dateIso
       && item.status !== "hold" && item.status !== "skip" && item.proposed_hours > 0);
-    persons = [];
+    // 時間帯が同じ人はひとつのカード（同じ文面）にまとめる。作業が違う場合は後から分割できる。
+    const groups = new Map();
     for (const item of todays) {
-      addPerson(item.person, toInputTime(item.start || ""), toInputTime(item.proposed_end || ""),
-                item.status === "extra");
+      const key = `${item.start || ""}|${item.proposed_end || ""}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    }
+    cards = [];
+    for (const items of groups.values()) {
+      addCard(items.map((item) => ({ name: item.person, wish: item.status === "extra" })),
+              toInputTime(items[0].start || ""), toInputTime(items[0].proposed_end || ""));
     }
     element("shift-state").textContent = todays.length
-      ? `シフトから ${todays.length}人 を読み込みました`
+      ? `シフトから ${todays.length}人（${cards.length}グループ）を読み込みました`
       : "この日の勤務予定はありません（＋人を追加 で手動作成できます）";
   } catch (error) {
     element("shift-state").textContent = "";
@@ -244,45 +254,57 @@ function buildText(card) {
 
 function renderCards() {
   const container = element("cards");
-  if (!persons.length) {
+  if (!cards.length) {
     container.innerHTML = '<p class="msg-muted">「🔄 シフトから読み込み」か「＋人を追加」で作成します。</p>';
     return;
   }
-  container.innerHTML = persons.map((card, p) => {
+  container.innerHTML = cards.map((card, c) => {
     const blocks = card.blocks.map((block, b) => `
       <div class="msg-block">
-        <input type="time" data-p="${p}" data-b="${b}" data-k="start" value="${block.start}">
+        <input type="time" data-c="${c}" data-b="${b}" data-k="start" value="${block.start}">
         <span class="tilde">〜</span>
-        <input type="time" data-p="${p}" data-b="${b}" data-k="end" value="${block.end}">
+        <input type="time" data-c="${c}" data-b="${b}" data-k="end" value="${block.end}">
         <div class="block-row2">
-          <input list="dl-fields" placeholder="畑" data-p="${p}" data-b="${b}" data-k="field"
+          <input list="dl-fields" placeholder="畑" data-c="${c}" data-b="${b}" data-k="field"
                  value="${escapeHtml(block.field)}">
-          <input list="dl-tasks" placeholder="作業内容" data-p="${p}" data-b="${b}" data-k="task"
+          <input list="dl-tasks" placeholder="作業内容" data-c="${c}" data-b="${b}" data-k="task"
                  value="${escapeHtml(block.task)}">
           ${card.blocks.length > 1
-            ? `<button type="button" class="del-block" data-p="${p}" data-b="${b}" title="この時間帯を削除">✕</button>`
+            ? `<button type="button" class="del-block" data-c="${c}" data-b="${b}" title="この時間帯を削除">✕</button>`
             : ""}
         </div>
       </div>`).join("");
+    const chips = card.names.map((n, i) =>
+      `<span class="name-chip">${escapeHtml(n.name)}${n.wish ? " ⚠" : ""}` +
+      `<button type="button" class="chip-x" data-c="${c}" data-n="${i}"` +
+      ` title="${card.names.length > 1 ? "別の文面に分ける" : "この人を外す"}">✕</button></span>`).join("");
+    const mergeOptions = cards
+      .map((other, i) => (i === c ? "" :
+        `<option value="${i}">${escapeHtml(other.names.map((n) => n.name).join("・"))}</option>`))
+      .join("");
+    const merge = cards.length > 1
+      ? `<select class="merge-select" data-c="${c}"><option value="">＋まとめる…</option>${mergeOptions}</select>`
+      : "";
+    const hasWish = card.names.some((n) => n.wish);
     return `
       <div class="msg-card">
-        <h3>${escapeHtml(card.name)}
-          ${card.wish ? '<span class="warn">⚠ まだ「希」のまま（未確定）</span>' : ""}
-          <button type="button" class="remove" data-p="${p}" title="この人を外す">✕</button>
+        <h3><span class="chip-list">${chips}</span>${merge}
+          <button type="button" class="remove" data-c="${c}" title="このカードを削除">✕</button>
         </h3>
+        ${hasWish ? '<p class="msg-muted">⚠ = まだ「希」のまま（未確定）</p>' : ""}
         ${blocks}
-        <button type="button" class="secondary-btn add-block" data-p="${p}">＋時間帯を追加（午前/午後で畑が変わる場合）</button>
-        <input class="memo-input" placeholder="この人への一言メモ" data-p="${p}" data-k="memo"
+        <button type="button" class="secondary-btn add-block" data-c="${c}">＋時間帯を追加（午前/午後で畑が変わる場合）</button>
+        <input class="memo-input" placeholder="このグループへの一言メモ" data-c="${c}" data-k="memo"
                value="${escapeHtml(card.memo)}">
-        <pre data-preview="${p}">${escapeHtml(buildText(card))}</pre>
-        <button type="button" class="primary-btn copy-btn" data-copy="${p}">📋 この文面をコピー</button>
+        <pre data-preview="${c}">${escapeHtml(buildText(card))}</pre>
+        <button type="button" class="primary-btn copy-btn" data-copy="${c}">📋 コピー（${escapeHtml(card.names.map((n) => n.name).join("・"))} へ）</button>
       </div>`;
   }).join("");
 }
 
-function refreshPreview(p) {
-  const pre = document.querySelector(`[data-preview="${p}"]`);
-  if (pre) pre.textContent = buildText(persons[p]);
+function refreshPreview(c) {
+  const pre = document.querySelector(`[data-preview="${c}"]`);
+  if (pre) pre.textContent = buildText(cards[c]);
 }
 
 // ───── 定型文 ─────
@@ -353,12 +375,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("add-person").addEventListener("click", () => {
     const name = prompt("名前を入力してください");
     if (!name || !name.trim()) return;
-    addPerson(name.trim());
+    addCard([{ name: name.trim(), wish: false }]);
     renderCards();
   });
   element("apply-memo").addEventListener("click", () => {
     const memo = element("common-memo").value.trim();
-    for (const card of persons) card.memo = memo;
+    for (const card of cards) card.memo = memo;
     renderCards();
   });
 
@@ -366,7 +388,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("wp-hints").addEventListener("click", (event) => {
     const chip = event.target.closest(".wp-chip");
     if (!chip) return;
-    for (const card of persons) {
+    for (const card of cards) {
       for (const block of card.blocks) {
         if (!block.task) block.task = chip.dataset.task;
       }
@@ -377,25 +399,35 @@ window.addEventListener("DOMContentLoaded", async () => {
   // カードの編集（入力は状態へ反映し、プレビューだけ書き換える）
   element("cards").addEventListener("input", (event) => {
     const input = event.target;
-    const p = Number(input.dataset.p);
-    if (!Number.isFinite(p) || !persons[p]) return;
-    if (input.dataset.k === "memo") persons[p].memo = input.value;
+    const c = Number(input.dataset.c);
+    if (!Number.isFinite(c) || !cards[c]) return;
+    if (input.dataset.k === "memo") cards[c].memo = input.value;
     else if (input.dataset.b !== undefined) {
-      persons[p].blocks[Number(input.dataset.b)][input.dataset.k] = input.value;
+      cards[c].blocks[Number(input.dataset.b)][input.dataset.k] = input.value;
     }
-    refreshPreview(p);
+    refreshPreview(c);
+  });
+  // 「＋まとめる…」：選んだカードの宛先をこのカードへ統合（文面はこのカードのものを使う）
+  element("cards").addEventListener("change", (event) => {
+    const select = event.target.closest(".merge-select");
+    if (!select || select.value === "") return;
+    const dest = Number(select.dataset.c);
+    const src = Number(select.value);
+    cards[dest].names.push(...cards[src].names);
+    cards.splice(src, 1);
+    renderCards();
   });
   element("cards").addEventListener("click", async (event) => {
     const copy = event.target.closest("[data-copy]");
     if (copy) {
-      const card = persons[Number(copy.dataset.copy)];
+      const card = cards[Number(copy.dataset.copy)];
       rememberSent(card);
       await copyText(buildText(card), copy);
       return;
     }
     const addBlock = event.target.closest(".add-block");
     if (addBlock) {
-      const card = persons[Number(addBlock.dataset.p)];
+      const card = cards[Number(addBlock.dataset.c)];
       const prev = card.blocks[card.blocks.length - 1];
       card.blocks.push(newBlock("13:00", prev.end));
       renderCards();
@@ -403,13 +435,26 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const delBlock = event.target.closest(".del-block");
     if (delBlock) {
-      persons[Number(delBlock.dataset.p)].blocks.splice(Number(delBlock.dataset.b), 1);
+      cards[Number(delBlock.dataset.c)].blocks.splice(Number(delBlock.dataset.b), 1);
+      renderCards();
+      return;
+    }
+    const chipX = event.target.closest(".chip-x");
+    if (chipX) {
+      // 複数人のカード → その人だけ同じ内容の別カードへ分割。ひとりなら外す。
+      const card = cards[Number(chipX.dataset.c)];
+      const [person] = card.names.splice(Number(chipX.dataset.n), 1);
+      if (card.names.length) {
+        cards.push({ names: [person], memo: card.memo, blocks: structuredClone(card.blocks) });
+      } else {
+        cards.splice(Number(chipX.dataset.c), 1);
+      }
       renderCards();
       return;
     }
     const remove = event.target.closest(".remove");
     if (remove) {
-      persons.splice(Number(remove.dataset.p), 1);
+      cards.splice(Number(remove.dataset.c), 1);
       renderCards();
     }
   });
