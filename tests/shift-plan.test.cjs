@@ -82,6 +82,19 @@ test("buildChecklist は操作グループと文言を作る", async () => {
   assert.equal(groups.fixed[0].id, "2026-11-01:土井");
 });
 
+test("buildChecklist は確定済み（timetree編集済み）を対象外にする", async () => {
+  const { buildChecklist, itemKind } = await logic();
+  const done = { date: "2026-11-05", weekday: "木", person: "若月", raw_title: "8:00~15:00",
+    action: "確定済み（timetree編集済み）", fixed_weekday: 0, confirmed: 1,
+    request_hours: 6, proposed_hours: 6, proposed_end: "15:00", start: "8:00", reason: "" };
+  assert.equal(itemKind(done), "fixed");
+  const groups = buildChecklist({ items: [done] });
+  assert.equal(groups.fixed.length + groups.extra.length + groups.hold.length + groups.skip.length, 0);
+  // 編集で見送りにした場合は④に出る（timetreeから削除が必要になるため）
+  const skipped = buildChecklist({ items: [{ ...done, status: "skip" }] });
+  assert.equal(skipped.skip.length, 1);
+});
+
 test("personRows は日数・目標・人件費をまとめる", async () => {
   const { personRows } = await logic();
   const rows = personRows(plan, plan.scenarios[1]);

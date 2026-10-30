@@ -14,7 +14,9 @@ export function defaultScenarioIndex(plan) {
 }
 
 // 案の項目の種類: fixed=確定（決まった曜日）/ extra=確定の目安（追加）/ hold=保留・見送り
+// confirmed（timetree編集済み）は確定として扱う
 export function itemKind(item) {
+  if (item.confirmed) return "fixed";
   if (!item.action.startsWith("確定")) return "hold";
   return item.fixed_weekday ? "fixed" : "extra";
 }
@@ -154,6 +156,11 @@ export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
     } else if (override && Number.isFinite(override.hours)) {
       hours = override.hours;   // 明示的な編集はクリップしない
       end = override.end || end;
+    } else if (item.confirmed) {
+      // timetreeで確定済み：実際の時刻をそのまま表示（基本時間帯に寄せない）
+      hours = item.proposed_hours;
+      start = inStart;
+      end = inEnd;
     } else if (!inStart && !inEnd) {
       // 時間おまかせ（終日）の希望：基本時間帯が初期値なら時刻は仮置きしない。
       // 基本時間帯を明示的に設定した月は、その枠に配置して時刻を表示する（寄せはしない）。
@@ -236,7 +243,7 @@ export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5)
   const tierOf = (item) =>
     (item.fixed_weekday ? "fixed_" : "extra_") + (protectedNames.has(item.person) ? "protected" : "others");
   const apply = (caps) => effItems.map((item) => {
-    if (item.edited || item.status === "hold" || item.status === "skip" || item.proposed_hours <= 0) return item;
+    if (item.edited || item.confirmed || item.status === "hold" || item.status === "skip" || item.proposed_hours <= 0) return item;
     const cap = caps[tierOf(item)];
     if (item.proposed_hours <= cap) return item;
     if (!item.start && !item.proposed_end) {
@@ -341,7 +348,9 @@ export function editWarnings(plan, item, status, startText, endText, effItems = 
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [], skip: [] };
   for (const item of scenario.items) {
+    if (item.confirmed && !item.status) continue;  // timetree編集済み：やることがない
     const kind = item.status || itemKind(item);
+    if (item.confirmed && kind === "fixed") continue;  // 確定済みのまま → 対象外
     const md = `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}`;
     const head = `${md}(${item.weekday}) ${item.person} 「${item.raw_title}」`;
     const shortened = item.proposed_end && item.proposed_hours > 0 && item.proposed_hours < item.request_hours;

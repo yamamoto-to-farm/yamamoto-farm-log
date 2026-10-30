@@ -121,33 +121,36 @@ def norm_title(s):
 
 
 def classify(title):
-    """→ ('time', start_min, end_min) | ('time_end', end_min) | ('time_start', start_min)
-         | ('AM',) | ('PM',) | ('ALLDAY',) | ('BLANK',) | ('UNKNOWN',) | None(希望ではない)"""
+    """→ (kind, confirmed) | None(勤務予定として解釈できない)
+       kind: ('time', start_min, end_min) | ('time_end', end_min) | ('time_start', start_min)
+             | ('AM',) | ('PM',) | ('ALLDAY',) | ('BLANK',) | ('UNKNOWN',)
+       confirmed: 「希」なしで時間が読めた予定＝月末の編集で確定済み"""
     t = norm_title(title)
-    if not t.startswith("希"):
-        return None
-    r = t[1:].lstrip("望").strip(" :・")
+    wish = t.startswith("希")
+    r = t[1:].lstrip("望").strip(" :・") if wish else t.strip(" :・")
     m = TIME_RE.search(r)
     if m:
         s = int(m.group(1)) * 60 + int(m.group(2) or 0)
         e = int(m.group(3)) * 60 + int(m.group(4) or 0)
-        return ("time", s, e)
+        return ("time", s, e), not wish
     m = TIME_END_ONLY_RE.search(r)   # 「~15:00」（開始なし）
     if m:
-        return ("time_end", int(m.group(1)) * 60 + int(m.group(2) or 0))
+        return ("time_end", int(m.group(1)) * 60 + int(m.group(2) or 0)), not wish
     m = TIME_START_ONLY_RE.search(r)  # 「8:30~」（終了なし）
     if m:
-        return ("time_start", int(m.group(1)) * 60 + int(m.group(2) or 0))
+        return ("time_start", int(m.group(1)) * 60 + int(m.group(2) or 0)), not wish
     ru = r.upper()
     if "終日" in r or "全日" in r:
-        return ("ALLDAY",)
+        return ("ALLDAY",), not wish
     if "AM" in ru or "午前" in r:
-        return ("AM",)
+        return ("AM",), not wish
     if "PM" in ru or "午後" in r:
-        return ("PM",)
+        return ("PM",), not wish
+    if not wish:
+        return None          # 「希」なしで時間も読めない → 勤務予定ではない
     if r == "":
-        return ("BLANK",)
-    return ("UNKNOWN",)
+        return ("BLANK",), False
+    return ("UNKNOWN",), False
 
 
 def break_for(start, end, cfg):
@@ -201,8 +204,8 @@ def cmd_parse(args):
             label_bits = [f.stem]
             label_bits += [v for _, v in ev.get("CATEGORIES", [])]
             label_bits += [v for k, vs in ev.items() if k.startswith("X-") for _, v in vs]
-            kind = classify(summary)
-            if kind is not None and "RRULE" in ev:
+            res = classify(summary)
+            if res is not None and "RRULE" in ev:
                 notes.append(f"繰り返し予定は展開していません: {summary}（{f.name}）")
             if "DTSTART" not in ev:
                 continue
@@ -228,10 +231,11 @@ def cmd_parse(args):
                         e_min = e.hour * 60 + e.minute
                 days.append((start.date(), s_min, e_min))
 
-            if kind is None:
+            if res is None:
                 if any(first <= d < nxt for d, _, _ in days):
                     skipped_other += 1
                 continue
+            kind, confirmed = res
             staff = match_staff(cfg, " ".join(label_bits), summary)
 
             for d, ds, de in days:
@@ -314,6 +318,7 @@ def cmd_parse(args):
                     "break_min": brk, "work_hours": work,
                     "flexible": int(flexible),
                     "fixed_weekday": int(bool(staff) and WD[d.weekday()] in staff.get("fixed_weekdays", [])),
+                    "confirmed": int(confirmed),
                     "auto": auto_side,
                     "warnings": " / ".join(warn), "source": f.name,
                 })
@@ -321,12 +326,12 @@ def cmd_parse(args):
     rows.sort(key=lambda r: (r["date"], r["person"]))
     out = Path(args.output or f"entries_{args.month}.csv")
     cols = ["date", "weekday", "person", "raw_title", "kind", "start", "end", "break_min",
-            "work_hours", "flexible", "fixed_weekday", "auto", "warnings", "source"]
+            "work_hours", "flexible", "fixed_weekday", "confirmed", "auto", "warnings", "source"]
     with open(out, "w", newline="", encoding="utf-8-sig") as fh:
         w = csv.DictWriter(fh, fieldnames=cols)
         w.writeheader()
         w.writerows(rows)
-    print(f"{args.month}: 勤務希望 {len(rows)} 件 → {out}（「希」で始まらない予定 {skipped_other} 件は対象外）")
+    print(f"{args.month}: 勤務希望 {len(rows)} 件 → {out}（勤務予定と読めない予定 {skipped_other} 件は対象外）")
     for n in notes:
         print("  注意:", n)
     bad = [r for r in rows if r["warnings"]]
@@ -346,6 +351,7 @@ def read_entries(path):
             wh = r.get("work_hours", "")
             r["min"] = int(round(float(wh) * 60)) if wh not in ("", None) else None
             r["fixed"] = r.get("fixed_weekday") in ("1", 1, "True", "true")
+            r["confirmed"] = r.get("confirmed") in ("1", 1, "True", "true")
             out.append(r)
     return out
 
@@ -392,8 +398,11 @@ def pay(entries_by_person, cfg, hours_of):
 def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
     """確定の目安（デフォルトモード）の計算本体。表示はせず結果データを返す。
     budget_max: 人件費の予算上限（円）。超える場合は第6条の順番で調整する。"""
-    fixed_e = [e for e in valid if e["fixed"]]
-    extra_e = [e for e in valid if not e["fixed"]]
+    done_e = [e for e in valid if e.get("confirmed")]   # timetreeで確定済み（「希」なし）：調整対象外
+    rest = [e for e in valid if not e.get("confirmed")]
+    fixed_e = [e for e in rest if e["fixed"]]
+    extra_e = [e for e in rest if not e["fixed"]]
+    done_min = sum(e["min"] for e in done_e)
     fixed_min = sum(e["min"] for e in fixed_e)
     extra_min = sum(e["min"] for e in extra_e)
     lu_f = lp_f = mx
@@ -403,9 +412,9 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
         fixed_solve_failed = sol is None
         lu_f, lp_f = sol if sol else (mn, mn)
     fixed_after = total_min(fixed_e, lu_f, lp_f, protected)
-    hour_budget = max(0, target_min - fixed_after)
+    hour_budget = max(0, target_min - fixed_after - done_min)
 
-    hc = Counter(e["date"] for e in fixed_e)
+    hc = Counter(e["date"] for e in fixed_e + done_e)
     got = Counter()
     left = list(extra_e)
     confirm = []
@@ -413,7 +422,7 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
     # 週上限・連勤上限のチェック用（決まった曜日＋確定済みで数える）
     wk_cnt = Counter()
     day_set = defaultdict(set)
-    for e in fixed_e:
+    for e in fixed_e + done_e:
         wk_cnt[(e["person"], e["d"] - timedelta(days=e["d"].weekday()))] += 1
         day_set[e["person"]].add(e["d"])
 
@@ -470,6 +479,8 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
         for e in fixed_e:
             base_cap = lp_f if e["person"] in protected else lu_f
             nb2[e["person"]].append(min(e["min"], base_cap, caps[tier_of(e, True)]))
+        for e in done_e:
+            nb2[e["person"]].append(e["min"])   # 確定済みは短縮しない
         for e, give in confirm:
             nb2[e["person"]].append(min(give, caps[tier_of(e, False)]))
         total = 0
@@ -531,6 +542,8 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
 
     # 人別の割り当て（確定の目安ベース）と人件費
     assigned = defaultdict(list)
+    for e in done_e:
+        assigned[e["person"]].append((e, e["min"]))
     for e in fixed_e:
         base_cap = lp_f if e["person"] in protected else lu_f
         assigned[e["person"]].append((e, min(e["min"], base_cap, caps[tier_of(e, True)])))
@@ -545,6 +558,7 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
 
     return {
         "budget_max": budget_max,
+        "done_e": done_e, "done_min": done_min,
         "fixed_e": fixed_e, "extra_e": extra_e,
         "fixed_min": fixed_min, "extra_min": extra_min,
         "lu_f": lu_f, "lp_f": lp_f, "fixed_solve_failed": fixed_solve_failed,
@@ -560,6 +574,13 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
 def proposal_rows(r, cfg, protected):
     """build_confirm_plan の結果から proposal 行（CSV/JSON共通）を作る"""
     rows = []
+    for e in r.get("done_e", []):
+        rows.append({
+            "date": e["date"], "weekday": e["weekday"], "person": e["person"], "raw_title": e["raw_title"],
+            "request_hours": round(e["min"] / 60, 2), "proposed_hours": round(e["min"] / 60, 2),
+            "proposed_end": e["end"],
+            "action": "確定済み（timetree編集済み）",
+            "fixed_weekday": int(e["fixed"]), "confirmed": 1, "reason": ""})
     for e in r["fixed_e"]:
         prot = e["person"] in protected
         base_cap = r["lp_f"] if prot else r["lu_f"]
@@ -569,19 +590,19 @@ def proposal_rows(r, cfg, protected):
             "request_hours": round(e["min"] / 60, 2), "proposed_hours": round(newm / 60, 2),
             "proposed_end": proposed_end(e, newm, cfg) if newm < e["min"] else e["end"],
             "action": "確定・短縮（決まった曜日）" if newm < e["min"] else "確定（決まった曜日）",
-            "fixed_weekday": 1, "reason": ""})
+            "fixed_weekday": 1, "confirmed": 0, "reason": ""})
     for e, give in r["confirm"]:
         rows.append({
             "date": e["date"], "weekday": e["weekday"], "person": e["person"], "raw_title": e["raw_title"],
             "request_hours": round(e["min"] / 60, 2), "proposed_hours": round(give / 60, 2),
             "proposed_end": proposed_end(e, give, cfg) if give < e["min"] else e["end"],
-            "action": "確定の目安（追加）", "fixed_weekday": 0, "reason": ""})
+            "action": "確定の目安（追加）", "fixed_weekday": 0, "confirmed": 0, "reason": ""})
     for e in r["left"]:
         rows.append({
             "date": e["date"], "weekday": e["weekday"], "person": e["person"], "raw_title": e["raw_title"],
             "request_hours": round(e["min"] / 60, 2), "proposed_hours": 0, "proposed_end": "",
             "action": "保留・見送り候補（予算）" if id(e) in r["bd_ids"] else "保留・見送り候補（追加）",
-            "fixed_weekday": 0, "reason": r["hold_reason"].get(id(e), "")})
+            "fixed_weekday": 0, "confirmed": 0, "reason": r["hold_reason"].get(id(e), "")})
     return rows
 
 
@@ -809,6 +830,9 @@ def cmd_plan(args):
             if r["still_over"]:
                 P("    ※下限まで短くし、追加の希望日をすべて保留にしても収まりません。決まった曜日の削減を、本人と相談してください（要同意）。")
             P("")
+        if r.get("done_e"):
+            P(f"  【確定済み】timetree編集済みの予定 {len(r['done_e'])}日（{fmt_dur(r['done_min'])}・調整の対象外）")
+            P("")
         P("  【追加の希望日：確定の目安】（人が少ない日・確定が少ない人を優先）")
         for e, give in sorted(confirm, key=lambda x: (x[0]["date"], x[0]["person"])):
             note = "" if give == e["min"] else f"（{fmt_dur(give)}に短縮）"
@@ -824,7 +848,7 @@ def cmd_plan(args):
         if not left:
             P("    （なし）")
         P("")
-        proj = Counter(e["person"] for e in r["fixed_e"])
+        proj = Counter(e["person"] for e in r["fixed_e"] + r.get("done_e", []))
         for e, _ in confirm:
             proj[e["person"]] += 1
         P("  人別の予定日数（決まった曜日＋確定の目安）: " + " / ".join(
@@ -841,7 +865,7 @@ def cmd_plan(args):
     base = Path(args.entries).with_name(f"plan_{month}")
     Path(str(base) + ".txt").write_text(text + "\n", encoding="utf-8")
     pcols = ["date", "weekday", "person", "raw_title", "request_hours", "proposed_hours",
-             "proposed_end", "action", "fixed_weekday", "reason"]
+             "proposed_end", "action", "fixed_weekday", "confirmed", "reason"]
     with open(str(base).replace("plan_", "proposal_") + ".csv", "w", newline="", encoding="utf-8-sig") as fh:
         w = csv.DictWriter(fh, fieldnames=pcols)
         w.writeheader()
@@ -859,7 +883,7 @@ def cmd_plan(args):
         scenarios = []
         for bm in budgets:
             rr = r if bm == b["max"] else build_confirm_plan(valid, cfg, protected, mn, mx, target_min, bm)
-            proj2 = Counter(e["person"] for e in rr["fixed_e"])
+            proj2 = Counter(e["person"] for e in rr["fixed_e"] + rr.get("done_e", []))
             for e, _ in rr["confirm"]:
                 proj2[e["person"]] += 1
             scenarios.append({
@@ -917,7 +941,8 @@ def cmd_plan(args):
                     "raw_title": e["raw_title"], "kind": e["kind"],
                     "start": e.get("start", ""), "end": e.get("end", ""),
                     "work_hours": e.get("work_hours", ""),
-                    "fixed_weekday": int(e["fixed"]), "auto": e.get("auto", ""),
+                    "fixed_weekday": int(e["fixed"]), "confirmed": int(bool(e.get("confirmed"))),
+                    "auto": e.get("auto", ""),
                     "warnings": e.get("warnings", ""),
                 } for e in entries],
             },
