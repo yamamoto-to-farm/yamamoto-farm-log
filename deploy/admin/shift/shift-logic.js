@@ -87,29 +87,78 @@ export function workHours(startText, endText, breaks) {
   return Math.max(0, Math.round(((end - start - brk) / 60) * 100) / 100);
 }
 
+// 正午またぎの「中途半端さ」の許容幅（分）。またぐ側の勤務がこれ以下なら午前/午後のみに寄せる
+export const NOON_SNAP_MIN = 90;
+
+// 開始・終了を基本時間帯に収めたうえで、実働hoursを満たす時刻を決める。
+// 正午を中途半端にまたぐ場合は、午前のみ/午後のみに寄せる（第6条④）。
+export function resolveShift(startText, endText, hours, base, breaks, minHours) {
+  const fmt = (min) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, "0")}`;
+  const baseStart = hmToMin(base.start);
+  const baseEnd = hmToMin(base.end);
+  let s = hmToMin(startText);
+  s = s === null ? baseStart : Math.max(s, baseStart);
+  let e = hmToMin(endText);
+  e = e === null ? baseEnd : Math.min(e, baseEnd);
+  if (s === null || e === null || e <= s) return { start: base.start, end: base.start, hours: 0 };
+  const nb = breaks.not_spanning_noon;
+  const windowHours = workHours(fmt(s), fmt(e), breaks);
+  const h = Math.min(hours, windowHours ?? 0);
+  if (h <= 0) return { start: fmt(s), end: fmt(e), hours: 0 };
+  const minutes = Math.round(h * 60);
+  const nonSpan = s + minutes + nb;
+  if ((nonSpan <= 720 || s >= 780) && nonSpan <= e) {
+    return { start: fmt(s), end: fmt(nonSpan), hours: Math.round(h * 100) / 100 };
+  }
+  const end = Math.min(s + minutes + breaks.spanning_noon, e);
+  if (s < 720 && 720 < end) {
+    const candidates = [];
+    if (end - 780 <= NOON_SNAP_MIN) {        // 午後が短い → 午前のみに
+      const amHours = workHours(fmt(s), "12:00", breaks);
+      if (amHours !== null && amHours >= minHours) candidates.push({ s, e: 720, h: Math.min(h, amHours) });
+    }
+    if (720 - s <= NOON_SNAP_MIN && e > 780) { // 午前が短い → 午後のみに
+      const pmHours = workHours("13:00", fmt(e), breaks);
+      if (pmHours !== null && pmHours >= minHours) {
+        candidates.push({ s: 780, e: Math.min(780 + minutes + nb, e), h: Math.min(h, pmHours) });
+      }
+    }
+    candidates.sort((a, b) => b.h - a.h);
+    if (candidates.length) {
+      const c = candidates[0];
+      return { start: fmt(c.s), end: fmt(c.e), hours: Math.round(c.h * 100) / 100 };
+    }
+  }
+  return { start: fmt(s), end: fmt(end), hours: Math.round(h * 100) / 100 };
+}
+
 // シナリオに「月の基本時間帯」と「個別編集」を適用した実効アイテム列を作る。
 // overrides: { "date:person": { status: "fixed"|"extra"|"hold", start?, end?, hours? } }
 export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
   const breaks = plan.targets.break_minutes;
-  const defaults = plan.targets.allday_default;
-  const baseChanged = base && defaults && (base.start !== defaults.start || base.end !== defaults.end);
-  const baseHours = baseChanged ? workHours(base.start, base.end, breaks) : null;
+  const baseWin = base || plan.targets.allday_default;
+  const minHours = plan.targets.min_work_hours;
   const rawByKey = new Map((plan.requests.items || []).map((row) => [`${row.date}:${row.person}`, row]));
   return scenario.items.map((item) => {
     const key = `${item.date}:${item.person}`;
     const override = overrides[key];
     const raw = rawByKey.get(key);
     const status = override?.status || itemKind(item);
-    const start = override?.start || raw?.start || (base ? base.start : "");
-    const end = override?.end || item.proposed_end || raw?.end || (base ? base.end : "");
+    const inStart = override?.start || raw?.start || "";
+    const inEnd = override?.end || item.proposed_end || raw?.end || "";
+    let start = inStart || baseWin.start;
+    let end = inEnd;
     let hours;
     if (status === "hold") {
       hours = 0;
     } else if (override && Number.isFinite(override.hours)) {
-      hours = override.hours;
+      hours = override.hours;   // 明示的な編集はクリップしない
+      end = override.end || end;
     } else {
-      hours = item.proposed_hours;
-      if (baseHours !== null && hours > 0) hours = Math.min(hours, baseHours);
+      const resolved = resolveShift(inStart, inEnd, item.proposed_hours, baseWin, breaks, minHours);
+      start = resolved.start;
+      end = resolved.end;
+      hours = resolved.hours;
     }
     const reason = status === "hold" && override ? (item.reason || "手動で見送りに変更") : item.reason;
     return { ...item, key, status, start, end, reason,
@@ -156,17 +205,19 @@ export function endTimeFor(startText, hours, breaks) {
 
 // 編集済み（edited）の日はロックし、未編集の勤務日の実働に上限を掛けて予算内に収める。
 // 優先する人（protected）は後回し。第6条①のブラウザ内再現。
-export function fitRemaining(plan, effItems, budgetMax, step = 0.5) {
+export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5) {
   const mx = plan.targets.max_work_hours;
   const mn = plan.targets.min_work_hours;
   const breaks = plan.targets.break_minutes;
+  const baseWin = base || plan.targets.allday_default;
   const protectedNames = new Set(plan.staff.filter((s) => s.protected).map((s) => s.name));
   const apply = (capOthers, capProtected) => effItems.map((item) => {
     if (item.edited || item.status === "hold" || item.proposed_hours <= 0) return item;
     const cap = protectedNames.has(item.person) ? capProtected : capOthers;
     if (item.proposed_hours <= cap) return item;
-    return { ...item, proposed_hours: cap,
-             proposed_end: endTimeFor(item.start, cap, breaks) || item.proposed_end, autoCut: true };
+    const resolved = resolveShift(item.start, item.proposed_end, cap, baseWin, breaks, mn);
+    return { ...item, start: resolved.start, proposed_hours: resolved.hours,
+             proposed_end: resolved.end, autoCut: true };
   });
   const steps = [];
   for (let cap = mx; cap >= mn - 1e-9; cap -= step) steps.push(Math.round(cap * 100) / 100);

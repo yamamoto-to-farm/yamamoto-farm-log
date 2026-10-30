@@ -122,25 +122,45 @@ const calcPlan = {
   },
 };
 
+test("resolveShift は基本時間帯に収めて正午またぎを整理する", async () => {
+  const { resolveShift } = await logic();
+  const breaks = { not_spanning_noon: 10, spanning_noon: 60 };
+  // 開始が基本時間帯より早い希望（〜15:00）→ 8:00開始に繰り下げて実働再計算
+  assert.deepEqual(resolveShift("7:30", "15:00", 6.5, { start: "08:00", end: "16:30" }, breaks, 3.5),
+    { start: "8:00", end: "15:00", hours: 6 });
+  // 終了が基本時間帯を超える希望（希PM 13:00-17:10）→ 16:30終わりに
+  assert.deepEqual(resolveShift("13:00", "17:10", 4, { start: "08:00", end: "16:30" }, breaks, 3.5),
+    { start: "13:00", end: "16:30", hours: 3.33 });
+  // 午後がわずかにまたぐ（7:30開始4.5h→13:00終了）→ 午前のみに寄せる
+  assert.deepEqual(resolveShift("7:30", "", 4.5, { start: "06:00", end: "17:10" }, breaks, 3.5),
+    { start: "7:30", end: "12:00", hours: 4.33 });
+  // 午前がわずか（11:00開始）→ 午後のみに寄せ、実働は維持
+  assert.deepEqual(resolveShift("11:00", "17:10", 4, { start: "06:00", end: "17:10" }, breaks, 3.5),
+    { start: "13:00", end: "17:10", hours: 4 });
+});
+
 test("applyAdjustments は基本時間帯と個別編集を反映する", async () => {
   const { applyAdjustments } = await logic();
   const scenario = plan.scenarios[1];
-  // 編集なし・基本時間帯が既定 → そのまま
+  // 編集なし・基本時間帯が既定 → 7:30-15:00 のまま（またぎは午後2hなので維持）
   let eff = applyAdjustments(calcPlan, scenario, {}, { start: "06:00", end: "17:10" });
   assert.equal(eff[0].proposed_hours, 6.5);
   assert.equal(eff[0].status, "fixed");
   assert.equal(eff[0].start, "7:30"); // 原本から補完
   assert.equal(eff[0].edited, false);
-  // 基本時間帯を 06:00-12:00 に → 実働5.83hに丸まる
+  // 基本時間帯を 06:00-12:00 に → 7:30-12:00 に収まり実働4.33h
   eff = applyAdjustments(calcPlan, scenario, {}, { start: "06:00", end: "12:00" });
-  assert.equal(eff[0].proposed_hours, 5.83);
+  assert.equal(eff[0].proposed_hours, 4.33);
+  assert.equal(eff[0].proposed_end, "12:00");
+  assert.equal(eff[1].proposed_hours, 5.5);   // 5.5hは枠内に収まる（6:00-11:40）
+  assert.equal(eff[1].proposed_end, "11:40");
   assert.equal(eff[3].proposed_hours, 0); // 保留は0のまま
   // 個別編集：見送りに変更
   eff = applyAdjustments(calcPlan, scenario, { "2026-11-01:土井": { status: "hold" } }, null);
   assert.equal(eff[0].status, "hold");
   assert.equal(eff[0].proposed_hours, 0);
   assert.equal(eff[0].edited, true);
-  // 個別編集：時間変更（8:00-12:00 → 3.83h）
+  // 個別編集：時間変更（8:00-12:00 → 3.83h）はクリップされない
   eff = applyAdjustments(calcPlan, scenario,
     { "2026-11-01:土井": { status: "extra", start: "08:00", end: "12:00", hours: 3.83 } }, null);
   assert.equal(eff[0].status, "extra");
@@ -179,15 +199,16 @@ test("fitRemaining は編集済みを守って未編集だけ短縮する", asyn
     { person: "若月", status: "extra", proposed_hours: 6.5, edited: false, start: "7:30" },
     { person: "若月", status: "hold", proposed_hours: 0, edited: false, start: "" },
   ];
-  // 全部6.5hだと 25,700円。24,000円に収めるには未編集を5.5hへ。
+  // 全部6.5hだと 25,700円。24,000円に収めるには未編集を6h上限に
+  // （6h案は14:30終了＝午後90分またぎ→午前のみ7:30-12:00の4.33hに寄る）
   const result = fitRemaining(calcPlan, eff, 24000);
   assert.equal(result.over, false);
-  assert.equal(result.capOthers, 5.5);
+  assert.equal(result.capOthers, 6);
   assert.equal(result.items[0].proposed_hours, 6.5);  // 編集済みはそのまま
   assert.equal(result.items[0].autoCut, undefined);
-  assert.equal(result.items[1].proposed_hours, 5.5);  // 未編集は短縮
+  assert.equal(result.items[1].proposed_hours, 4.33); // 未編集は短縮＋午前のみに
   assert.equal(result.items[1].autoCut, true);
-  assert.equal(result.items[1].proposed_end, "14:00"); // 7:30+5.5h+休憩60分
+  assert.equal(result.items[1].proposed_end, "12:00");
   assert.equal(result.items[3].proposed_hours, 0);     // 保留はそのまま
   assert.ok(computeCost(result.items, calcPlan).total <= 24000);
   // 下限まで短くしても収まらない場合は over

@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   fitRemaining, formatYen, personColorMap, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-6";
+} from "./shift-logic.js?v=20261030-7";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -37,7 +37,9 @@ function effective() {
 // 画面に表示している実効アイテム（自動調整オン時は予算内への短縮も適用）
 function displayedItems() {
   let eff = effective();
-  if (loadStore("autofit", false)) eff = fitRemaining(plan, eff, currentScenario().budget_max).items;
+  if (loadStore("autofit", false)) {
+    eff = fitRemaining(plan, eff, currentScenario().budget_max, getBase()).items;
+  }
   return eff;
 }
 
@@ -86,7 +88,7 @@ function renderAll() {
   let eff = effective();
   let fitInfo = null;
   if (loadStore("autofit", false)) {
-    fitInfo = fitRemaining(plan, eff, scenario.budget_max);
+    fitInfo = fitRemaining(plan, eff, scenario.budget_max, getBase());
     eff = fitInfo.items;
   }
   const computed = computeCost(eff, plan);
