@@ -163,6 +163,37 @@ test("computeCost は時給×実働＋交通費を再計算する", async () => 
   assert.equal(result.total, 17350);
 });
 
+test("endTimeFor は実働から終了時刻を逆算する", async () => {
+  const { endTimeFor } = await logic();
+  const breaks = { not_spanning_noon: 10, spanning_noon: 60 };
+  assert.equal(endTimeFor("7:30", 6.5, breaks), "15:00"); // 正午またぎ休憩60分
+  assert.equal(endTimeFor("13:00", 4, breaks), "17:10");  // またがない休憩10分
+  assert.equal(endTimeFor("", 6.5, breaks), "");
+});
+
+test("fitRemaining は編集済みを守って未編集だけ短縮する", async () => {
+  const { fitRemaining, computeCost } = await logic();
+  const eff = [
+    { person: "土井", status: "fixed", proposed_hours: 6.5, edited: true, start: "7:30" },
+    { person: "土井", status: "fixed", proposed_hours: 6.5, edited: false, start: "7:30" },
+    { person: "若月", status: "extra", proposed_hours: 6.5, edited: false, start: "7:30" },
+    { person: "若月", status: "hold", proposed_hours: 0, edited: false, start: "" },
+  ];
+  // 全部6.5hだと 25,700円。24,000円に収めるには未編集を5.5hへ。
+  const result = fitRemaining(calcPlan, eff, 24000);
+  assert.equal(result.over, false);
+  assert.equal(result.capOthers, 5.5);
+  assert.equal(result.items[0].proposed_hours, 6.5);  // 編集済みはそのまま
+  assert.equal(result.items[0].autoCut, undefined);
+  assert.equal(result.items[1].proposed_hours, 5.5);  // 未編集は短縮
+  assert.equal(result.items[1].autoCut, true);
+  assert.equal(result.items[1].proposed_end, "14:00"); // 7:30+5.5h+休憩60分
+  assert.equal(result.items[3].proposed_hours, 0);     // 保留はそのまま
+  assert.ok(computeCost(result.items, calcPlan).total <= 24000);
+  // 下限まで短くしても収まらない場合は over
+  assert.equal(fitRemaining(calcPlan, eff, 1000).over, true);
+});
+
 test("formatYen は桁区切りを付ける", async () => {
   const { formatYen } = await logic();
   assert.equal(formatYen(369255), "369,255円");

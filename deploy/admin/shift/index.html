@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-5">
+  <link rel="stylesheet" href="./shift.css?v=20261030-6">
 </head>
 <body>
   <div id="header"></div>
@@ -41,6 +41,7 @@
           <label>開始 <input id="base-start" type="time"></label>
           <label>終了 <input id="base-end" type="time"></label>
           <span id="base-note" class="shift-muted"></span>
+          <label class="shift-autofit"><input id="auto-fit" type="checkbox">編集した日以外を予算内に自動調整</label>
           <button id="reset-edits" class="secondary-btn" type="button">編集をすべてリセット</button>
         </div>
         <p class="shift-note">カレンダー（調整案）の予定をクリックすると、個別に時間・状態を調整できます。編集はこの端末にのみ保存されます。</p>
@@ -101,7 +102,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="./shift.js?v=20261030-5"></script>
+  <script type="module" src="./shift.js?v=20261030-6"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

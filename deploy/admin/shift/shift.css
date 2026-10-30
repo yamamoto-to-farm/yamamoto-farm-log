@@ -22,6 +22,8 @@
 .shift-base-label { font-weight: 600; }
 .shift-base-row label { display: inline-flex; align-items: center; gap: 4px; font-weight: normal; margin: 0; }
 .shift-base-row input[type="time"] { width: auto; padding: 4px 6px; font-size: 0.9rem; }
+.shift-base-row input[type="checkbox"] { width: auto; padding: 0; margin: 0 4px 0 0; }
+.shift-autofit { white-space: nowrap; }
 .shift-base-row #reset-edits { margin-left: auto; font-size: 0.8rem; padding: 4px 10px; }
 
 .shift-edit-dialog { border: 1px solid #ccc; border-radius: 10px; padding: 16px 20px; max-width: 420px; }

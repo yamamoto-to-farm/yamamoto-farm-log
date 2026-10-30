@@ -140,6 +140,52 @@ export function computeCost(effItems, plan) {
   return { total: Math.round(total), perPerson };
 }
 
+// 開始時刻と実働から終了時刻を逆算（休憩の正午またぎ整合をとる）
+export function endTimeFor(startText, hours, breaks) {
+  const start = hmToMin(startText);
+  if (start === null || !(hours > 0)) return "";
+  for (const brk of [breaks.spanning_noon, breaks.not_spanning_noon]) {
+    const end = start + Math.round(hours * 60) + brk;
+    const spans = start < 720 && 720 < end;
+    if ((spans ? breaks.spanning_noon : breaks.not_spanning_noon) === brk) {
+      return `${Math.floor(end / 60)}:${String(end % 60).padStart(2, "0")}`;
+    }
+  }
+  return "";
+}
+
+// 編集済み（edited）の日はロックし、未編集の勤務日の実働に上限を掛けて予算内に収める。
+// 優先する人（protected）は後回し。第6条①のブラウザ内再現。
+export function fitRemaining(plan, effItems, budgetMax, step = 0.5) {
+  const mx = plan.targets.max_work_hours;
+  const mn = plan.targets.min_work_hours;
+  const breaks = plan.targets.break_minutes;
+  const protectedNames = new Set(plan.staff.filter((s) => s.protected).map((s) => s.name));
+  const apply = (capOthers, capProtected) => effItems.map((item) => {
+    if (item.edited || item.status === "hold" || item.proposed_hours <= 0) return item;
+    const cap = protectedNames.has(item.person) ? capProtected : capOthers;
+    if (item.proposed_hours <= cap) return item;
+    return { ...item, proposed_hours: cap,
+             proposed_end: endTimeFor(item.start, cap, breaks) || item.proposed_end, autoCut: true };
+  });
+  const steps = [];
+  for (let cap = mx; cap >= mn - 1e-9; cap -= step) steps.push(Math.round(cap * 100) / 100);
+  if (steps[steps.length - 1] !== mn) steps.push(mn);
+  for (const cap of steps) {
+    const items = apply(cap, mx);
+    if (computeCost(items, plan).total <= budgetMax) {
+      return { items, capOthers: cap, capProtected: mx, over: false };
+    }
+  }
+  for (const cap of steps) {
+    const items = apply(mn, cap);
+    if (computeCost(items, plan).total <= budgetMax) {
+      return { items, capOthers: mn, capProtected: cap, over: false };
+    }
+  }
+  return { items: apply(mn, mn), capOthers: mn, capProtected: mn, over: true };
+}
+
 // timetree確定操作のチェックリスト（3グループ）
 export function buildChecklist(scenario) {
   const groups = { fixed: [], extra: [], hold: [] };

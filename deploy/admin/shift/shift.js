@@ -4,8 +4,8 @@ import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
-  formatYen, personColorMap, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-5";
+  fitRemaining, formatYen, personColorMap, toInputTime, workHours,
+} from "./shift-logic.js?v=20261030-6";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -32,6 +32,13 @@ function baseChanged() {
 }
 function effective() {
   return applyAdjustments(plan, currentScenario(), getOverrides(), getBase());
+}
+
+// 画面に表示している実効アイテム（自動調整オン時は予算内への短縮も適用）
+function displayedItems() {
+  let eff = effective();
+  if (loadStore("autofit", false)) eff = fitRemaining(plan, eff, currentScenario().budget_max).items;
+  return eff;
 }
 
 function status(message, isError = false) {
@@ -76,7 +83,12 @@ function renderSummary(eff, computed) {
 
 function renderAll() {
   const scenario = currentScenario();
-  const eff = effective();
+  let eff = effective();
+  let fitInfo = null;
+  if (loadStore("autofit", false)) {
+    fitInfo = fitRemaining(plan, eff, scenario.budget_max);
+    eff = fitInfo.items;
+  }
   const computed = computeCost(eff, plan);
   const edited = eff.some((item) => item.edited) || baseChanged();
   const within = computed.total <= scenario.budget_max;
@@ -92,6 +104,14 @@ function renderAll() {
   }
   if (scenario.needs_fixed_weekday_consult) {
     notes.push("⚠ 下限まで短くしても予算に収まりません。決まった曜日の削減を本人と相談してください（要同意）。");
+  }
+  if (fitInfo) {
+    const mx = plan.targets.max_work_hours;
+    if (fitInfo.over) {
+      notes.push("⚠ 自動調整：未編集の日を下限まで短くしても予算に収まりません。編集した日を見直すか、見送りを増やしてください。");
+    } else if (fitInfo.capOthers < mx || fitInfo.capProtected < mx) {
+      notes.push(`自動調整：編集した日を優先し、未編集の日を 優先する人以外 ${fitInfo.capOthers}h以内 / 優先する人 ${fitInfo.capProtected}h以内 に短縮しています`);
+    }
   }
   element("scenario-notes").innerHTML =
     notes.map((n) => `<p class="note${n.startsWith("⚠") ? " warn" : ""}">${n}</p>`).join("");
@@ -138,7 +158,7 @@ function renderCalendar(eff) {
         return `<span class="chip raw" style="background:${color}" title="${title}">${warn}${item.raw_title}</span>`;
       }
       const kind = item.status;
-      const mark = item.edited ? "✎" : "";
+      const mark = item.edited ? "✎" : item.autoCut ? "↓" : "";
       const hours = item.proposed_hours > 0 ? ` ${item.proposed_hours}h` : "";
       const text = kind === "extra" ? `${mark}希 ${item.person}${hours}` : `${mark}${item.person}${hours}`;
       const style = kind === "fixed" ? `background:${color}`
@@ -209,7 +229,7 @@ function updateEditHours() {
 
 function openEditor(key) {
   editKey = key;
-  const item = effective().find((entry) => entry.key === key);
+  const item = displayedItems().find((entry) => entry.key === key);
   if (!item) return;
   element("edit-title").textContent =
     `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}(${item.weekday}) ${item.person}`;
@@ -258,6 +278,7 @@ async function loadPlan(month) {
   const base = getBase();
   element("base-start").value = toInputTime(base.start);
   element("base-end").value = toInputTime(base.end);
+  element("auto-fit").checked = loadStore("autofit", false);
   element("generated-at").textContent =
     `作成: ${plan.generated_at.replace("T", " ").slice(0, 16)} / 希望 ${plan.requests.entries}件`;
   renderAll();
@@ -307,7 +328,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="cal-mode"]').forEach((radio) => {
     radio.addEventListener("change", () => {
       calMode = radio.value;
-      renderCalendar(effective());
+      renderCalendar(displayedItems());
     });
   });
   element("month-select").addEventListener("change", (event) => {
@@ -323,6 +344,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       renderAll();
     });
   }
+  element("auto-fit").addEventListener("change", (event) => {
+    saveStore("autofit", event.target.checked);
+    renderAll();
+  });
   element("reset-edits").addEventListener("click", () => {
     if (!confirm("この月の個別編集と基本時間帯の変更をすべてリセットしますか？")) return;
     localStorage.removeItem(storeName("edit"));
