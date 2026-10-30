@@ -458,15 +458,22 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
         left_budget -= give
 
     # 予算（金額）超過の調整：第6条の順番（① 1日の時間を短く → ② 追加の希望日を保留）
-    def plan_cost(bu, bp):
-        """時間上限 bu（優先する人以外）/ bp（優先する人）を当てはめたときの人件費（交通費込み）"""
+    # ①の短縮は「追加の希望日（優先以外→優先）→ 決まった曜日（優先以外→優先）」の順で、
+    # 決まった曜日の時間（基本の時間帯）をできるだけ守る。
+    TIERS = ["extra_others", "extra_protected", "fixed_others", "fixed_protected"]
+
+    def tier_of(e, fixed):
+        prot = e["person"] in protected
+        return ("fixed_" if fixed else "extra_") + ("protected" if prot else "others")
+
+    def plan_cost(caps):
+        """階層別の時間上限 caps（分）を当てはめたときの人件費（交通費込み）"""
         nb2 = defaultdict(list)
         for e in fixed_e:
-            cap = min(lp_f, bp) if e["person"] in protected else min(lu_f, bu)
-            nb2[e["person"]].append(min(e["min"], cap))
+            base_cap = lp_f if e["person"] in protected else lu_f
+            nb2[e["person"]].append(min(e["min"], base_cap, caps[tier_of(e, True)]))
         for e, give in confirm:
-            cap = bp if e["person"] in protected else bu
-            nb2[e["person"]].append(min(give, cap))
+            nb2[e["person"]].append(min(give, caps[tier_of(e, False)]))
         total = 0
         for pn, mins in nb2.items():
             hourly = next((s.get("hourly", cfg["base_hourly"]) for s in cfg["staff"] if s["name"] == pn),
@@ -475,30 +482,31 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
         return total
 
     def fit_budget(step=30):
-        """予算上限に収まる最大の時間上限を探す（まず優先する人以外、次に全員）"""
+        """予算上限に収まる最小限の短縮を、階層順（追加→決まった曜日）に探す"""
         steps = list(range(mx, mn - 1, -step))
         if steps[-1] != mn:
             steps.append(mn)
-        for bu_ in steps:
-            if plan_cost(bu_, mx) <= budget_max:
-                return bu_, mx
-        for bp_ in steps:
-            if plan_cost(mn, bp_) <= budget_max:
-                return mn, bp_
+        caps = {name: mx for name in TIERS}
+        for name in TIERS:
+            for cap in steps:
+                caps[name] = cap
+                if plan_cost(caps) <= budget_max:
+                    return caps
+            caps[name] = mn
         return None
 
-    bu = bp = mx
+    caps = {name: mx for name in TIERS}
     budget_dropped = []
-    budget_over = plan_cost(mx, mx) > budget_max
+    budget_over = plan_cost(caps) > budget_max
     if budget_over:
         while True:
             sol_b = fit_budget()
             if sol_b:
-                bu, bp = sol_b
+                caps = sol_b
                 break
             cands = [c for c in confirm if c[0]["person"] not in protected] or confirm
             if not cands:
-                bu = bp = mn
+                caps = {name: mn for name in TIERS}
                 break
             gotc = Counter(e["person"] for e, _ in confirm)
             pe = max(cands, key=lambda c: (gotc[c[0]["person"]], hc[c[0]["date"]], c[0]["date"]))
@@ -508,8 +516,8 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
             hc[pe[0]["date"]] -= 1
             wk_cnt[(pe[0]["person"], pe[0]["d"] - timedelta(days=pe[0]["d"].weekday()))] -= 1
             day_set[pe[0]["person"]].discard(pe[0]["d"])
-        confirm = [(e, min(give, bp if e["person"] in protected else bu)) for e, give in confirm]
-    still_over = plan_cost(bu, bp) > budget_max
+        confirm = [(e, min(give, caps[tier_of(e, False)])) for e, give in confirm]
+    still_over = plan_cost(caps) > budget_max
 
     bd_ids = {id(e) for e in budget_dropped}
     hold_reason = {}
@@ -526,8 +534,8 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
     # 人別の割り当て（確定の目安ベース）と人件費
     assigned = defaultdict(list)
     for e in fixed_e:
-        cap = min(lp_f, bp) if e["person"] in protected else min(lu_f, bu)
-        assigned[e["person"]].append((e, min(e["min"], cap)))
+        base_cap = lp_f if e["person"] in protected else lu_f
+        assigned[e["person"]].append((e, min(e["min"], base_cap, caps[tier_of(e, True)])))
     for e, give in confirm:
         assigned[e["person"]].append((e, give))
     per_cost, total_pay = {}, 0.0
@@ -544,7 +552,7 @@ def build_confirm_plan(valid, cfg, protected, mn, mx, target_min, budget_max):
         "lu_f": lu_f, "lp_f": lp_f, "fixed_solve_failed": fixed_solve_failed,
         "fixed_after": fixed_after, "hour_budget": hour_budget,
         "confirm": confirm, "left": left,
-        "bu": bu, "bp": bp,
+        "caps": caps,
         "budget_over": budget_over, "budget_dropped": budget_dropped, "bd_ids": bd_ids,
         "still_over": still_over, "hold_reason": hold_reason,
         "assigned": assigned, "per_cost": per_cost, "cost": int(round(total_pay)),
@@ -555,8 +563,9 @@ def proposal_rows(r, cfg, protected):
     """build_confirm_plan の結果から proposal 行（CSV/JSON共通）を作る"""
     rows = []
     for e in r["fixed_e"]:
-        cap = min(r["lp_f"], r["bp"]) if e["person"] in protected else min(r["lu_f"], r["bu"])
-        newm = min(e["min"], cap)
+        prot = e["person"] in protected
+        base_cap = r["lp_f"] if prot else r["lu_f"]
+        newm = min(e["min"], base_cap, r["caps"]["fixed_protected" if prot else "fixed_others"])
         rows.append({
             "date": e["date"], "weekday": e["weekday"], "person": e["person"], "raw_title": e["raw_title"],
             "request_hours": round(e["min"] / 60, 2), "proposed_hours": round(newm / 60, 2),
@@ -790,10 +799,13 @@ def cmd_plan(args):
         P("")
         if r["budget_over"]:
             P(f"  ※案の人件費が予算上限 {b['max']:,}円 を超えるため、第6条の順番で調整しました:")
-            if r["bu"] < mx and r["bp"] == mx:
-                P(f"    ① 優先する人（{'・'.join(sorted(protected))}）以外は、1日の実働を {fmt_dur(r['bu'])} 以内に短縮します。")
-            elif r["bp"] < mx:
-                P(f"    ① 優先する人（{'・'.join(sorted(protected))}）も含め、1日の実働を {fmt_dur(r['bp'])} 以内に短縮します。他の人は下限の {fmt_dur(mn)}。")
+            tier_labels = [("extra_others", "追加の希望日（優先する人以外）"),
+                           ("extra_protected", "追加の希望日（優先する人）"),
+                           ("fixed_others", "決まった曜日（優先する人以外）"),
+                           ("fixed_protected", "決まった曜日（優先する人）")]
+            cut = [f"{label}を {fmt_dur(r['caps'][key])} 以内" for key, label in tier_labels if r["caps"][key] < mx]
+            if cut:
+                P("    ① " + "、".join(cut) + " に短縮します（追加の希望日から先に短縮し、決まった曜日の時間を守ります）。")
             if r["budget_dropped"]:
                 P(f"    ② 追加の希望日 {len(r['budget_dropped'])}日 を保留・見送りにします。")
             if r["still_over"]:
@@ -856,8 +868,12 @@ def cmd_plan(args):
                 "budget_max": bm,
                 "cost": rr["cost"],
                 "within_budget": not rr["still_over"],
-                "caps_hours": {"others": round(min(rr["lu_f"], rr["bu"]) / 60, 2),
-                               "protected": round(min(rr["lp_f"], rr["bp"]) / 60, 2)},
+                "caps_hours": {
+                    "extra_others": round(rr["caps"]["extra_others"] / 60, 2),
+                    "extra_protected": round(rr["caps"]["extra_protected"] / 60, 2),
+                    "fixed_others": round(min(rr["lu_f"], rr["caps"]["fixed_others"]) / 60, 2),
+                    "fixed_protected": round(min(rr["lp_f"], rr["caps"]["fixed_protected"]) / 60, 2),
+                },
                 "adjusted_for_budget": rr["budget_over"],
                 "held_for_budget_days": len(rr["budget_dropped"]),
                 "needs_fixed_weekday_consult": rr["still_over"],

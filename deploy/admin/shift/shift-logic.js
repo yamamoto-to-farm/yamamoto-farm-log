@@ -207,16 +207,20 @@ export function endTimeFor(startText, hours, breaks) {
 }
 
 // 編集済み（edited）の日はロックし、未編集の勤務日の実働に上限を掛けて予算内に収める。
-// 優先する人（protected）は後回し。第6条①のブラウザ内再現。
+// 短縮の順序は「追加の希望日（優先以外→優先）→ 決まった曜日（優先以外→優先）」で、
+// 決まった曜日の時間（基本の時間帯）をできるだけ守る。第6条①のブラウザ内再現。
 export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5) {
   const mx = plan.targets.max_work_hours;
   const mn = plan.targets.min_work_hours;
   const breaks = plan.targets.break_minutes;
   const baseWin = base || plan.targets.allday_default;
   const protectedNames = new Set(plan.staff.filter((s) => s.protected).map((s) => s.name));
-  const apply = (capOthers, capProtected) => effItems.map((item) => {
+  const TIERS = ["extra_others", "extra_protected", "fixed_others", "fixed_protected"];
+  const tierOf = (item) =>
+    (item.fixed_weekday ? "fixed_" : "extra_") + (protectedNames.has(item.person) ? "protected" : "others");
+  const apply = (caps) => effItems.map((item) => {
     if (item.edited || item.status === "hold" || item.status === "skip" || item.proposed_hours <= 0) return item;
-    const cap = protectedNames.has(item.person) ? capProtected : capOthers;
+    const cap = caps[tierOf(item)];
     if (item.proposed_hours <= cap) return item;
     const resolved = resolveShift(item.start, item.proposed_end, cap, baseWin, breaks, mn);
     return { ...item, start: resolved.start, proposed_hours: resolved.hours,
@@ -225,19 +229,19 @@ export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5)
   const steps = [];
   for (let cap = mx; cap >= mn - 1e-9; cap -= step) steps.push(Math.round(cap * 100) / 100);
   if (steps[steps.length - 1] !== mn) steps.push(mn);
-  for (const cap of steps) {
-    const items = apply(cap, mx);
-    if (computeCost(items, plan).total <= budgetMax) {
-      return { items, capOthers: cap, capProtected: mx, over: false };
+  const caps = Object.fromEntries(TIERS.map((name) => [name, mx]));
+  for (const name of TIERS) {
+    for (const cap of steps) {
+      caps[name] = cap;
+      const items = apply(caps);
+      if (computeCost(items, plan).total <= budgetMax) {
+        return { items, caps, over: false };
+      }
     }
+    caps[name] = mn;
   }
-  for (const cap of steps) {
-    const items = apply(mn, cap);
-    if (computeCost(items, plan).total <= budgetMax) {
-      return { items, capOthers: mn, capProtected: cap, over: false };
-    }
-  }
-  return { items: apply(mn, mn), capOthers: mn, capProtected: mn, over: true };
+  const items = apply(caps);
+  return { items, caps, over: computeCost(items, plan).total > budgetMax };
 }
 
 // カレンダーチップ用の時間表示。標準の午前のみ/午後のみ（基本枠どおり）は AM/PM、

@@ -227,28 +227,31 @@ test("endTimeFor は実働から終了時刻を逆算する", async () => {
   assert.equal(endTimeFor("", 6.5, breaks), "");
 });
 
-test("fitRemaining は編集済みを守って未編集だけ短縮する", async () => {
+test("fitRemaining は追加の希望日から先に短縮し決まった曜日を守る", async () => {
   const { fitRemaining, computeCost } = await logic();
   const eff = [
-    { person: "土井", status: "fixed", proposed_hours: 6.5, edited: true, start: "7:30" },
-    { person: "土井", status: "fixed", proposed_hours: 6.5, edited: false, start: "7:30" },
-    { person: "若月", status: "extra", proposed_hours: 6.5, edited: false, start: "7:30" },
-    { person: "若月", status: "hold", proposed_hours: 0, edited: false, start: "" },
+    { person: "土井", status: "fixed", proposed_hours: 6.5, edited: true, start: "7:30", fixed_weekday: 1 },
+    { person: "土井", status: "fixed", proposed_hours: 6.5, edited: false, start: "7:30", fixed_weekday: 1 },
+    { person: "若月", status: "extra", proposed_hours: 6.5, edited: false, start: "7:30", fixed_weekday: 0 },
+    { person: "若月", status: "hold", proposed_hours: 0, edited: false, start: "", fixed_weekday: 0 },
   ];
-  // 全部6.5hだと 25,700円。24,000円に収めるには未編集を6h上限に
-  // （6h案は14:30終了＝午後90分またぎ→午前のみ7:30-12:00の4.33hに寄る）
+  // 全部6.5hだと 25,700円。24,000円に収めるには追加の希望日（若月）の短縮だけで足りる
   const result = fitRemaining(calcPlan, eff, 24000);
   assert.equal(result.over, false);
-  assert.equal(result.capOthers, 6);
-  assert.equal(result.items[0].proposed_hours, 6.5);  // 編集済みはそのまま
-  assert.equal(result.items[0].autoCut, undefined);
-  assert.equal(result.items[1].proposed_hours, 4.33); // 未編集は短縮＋午前のみに
-  assert.equal(result.items[1].autoCut, true);
-  assert.equal(result.items[1].proposed_end, "12:00");
-  assert.equal(result.items[3].proposed_hours, 0);     // 保留はそのまま
+  assert.equal(result.caps.extra_others, 6);        // 追加だけ短縮（6h案→午前のみ4.33hに整理）
+  assert.equal(result.caps.fixed_others, 6.5);      // 決まった曜日は守られる
+  assert.equal(result.items[0].proposed_hours, 6.5); // 編集済みはそのまま
+  assert.equal(result.items[1].proposed_hours, 6.5); // 決まった曜日（未編集）もそのまま
+  assert.equal(result.items[1].autoCut, undefined);
+  assert.equal(result.items[2].proposed_hours, 4.33); // 追加は短縮＋午前のみに
+  assert.equal(result.items[2].autoCut, true);
+  assert.equal(result.items[2].proposed_end, "12:00");
+  assert.equal(result.items[3].proposed_hours, 0);    // 保留はそのまま
   assert.ok(computeCost(result.items, calcPlan).total <= 24000);
-  // 下限まで短くしても収まらない場合は over
-  assert.equal(fitRemaining(calcPlan, eff, 1000).over, true);
+  // 下限まで短くしても収まらない場合は over（決まった曜日まで短縮される）
+  const over = fitRemaining(calcPlan, eff, 1000);
+  assert.equal(over.over, true);
+  assert.equal(over.caps.fixed_others, 3.5);
 });
 
 test("shiftLabel は AM/PM/時間帯を出し分ける", async () => {

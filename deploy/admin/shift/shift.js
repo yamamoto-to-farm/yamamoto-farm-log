@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-18";
+} from "./shift-logic.js?v=20261030-20";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -166,20 +166,28 @@ function renderAll() {
     (edited ? ` <span class="shift-muted">（自動案 ${formatYen(scenario.cost)}・編集あり）</span>` : "");
 
   const notes = [];
+  const tierLabels = [["extra_others", "追加（優先以外）"], ["extra_protected", "追加（優先）"],
+                      ["fixed_others", "決まった曜日（優先以外）"], ["fixed_protected", "決まった曜日（優先）"]];
+  const capNote = (caps) => tierLabels
+    .filter(([key]) => caps[key] !== undefined && caps[key] < plan.targets.max_work_hours)
+    .map(([key, label]) => `${label} ${caps[key]}h以内`).join(" / ");
   if (scenario.adjusted_for_budget) {
-    const caps = scenario.caps_hours;
-    notes.push(`予算に収めるため時間を調整：優先する人以外 ${caps.others}h以内 / 優先する人 ${caps.protected}h以内（第6条①）`);
+    const caps = scenario.caps_hours || {};
+    const message = "others" in caps
+      ? `優先する人以外 ${caps.others}h以内 / 優先する人 ${caps.protected}h以内`
+      : capNote(caps);
+    if (message) notes.push(`予算に収めるため時間を調整：${message}（追加の希望日から先に短縮・第6条①）`);
     if (scenario.held_for_budget_days > 0) notes.push(`予算のため追加の希望日 ${scenario.held_for_budget_days}日 を保留（第6条②）`);
   }
   if (scenario.needs_fixed_weekday_consult) {
     notes.push("⚠ 下限まで短くしても予算に収まりません。決まった曜日の削減を本人と相談してください（要同意）。");
   }
   if (fitInfo) {
-    const mx = plan.targets.max_work_hours;
     if (fitInfo.over) {
       notes.push("⚠ 自動調整：未編集の日を下限まで短くしても予算に収まりません。編集した日を見直すか、見送りを増やしてください。");
-    } else if (fitInfo.capOthers < mx || fitInfo.capProtected < mx) {
-      notes.push(`自動調整：編集した日を優先し、未編集の日を 優先する人以外 ${fitInfo.capOthers}h以内 / 優先する人 ${fitInfo.capProtected}h以内 に短縮しています`);
+    } else {
+      const message = capNote(fitInfo.caps);
+      if (message) notes.push(`自動調整：編集した日を優先し、${message} に短縮しています（追加の希望日から先）`);
     }
   }
   element("scenario-notes").innerHTML =
