@@ -367,6 +367,15 @@
       "openLog": false
     },
     {
+      "id": "work-plan",
+      "name": "月間作業計画",
+      "path": "/schedule/work-plan/index.html",
+      "category": "計画",
+      "roles": ["worker", "family", "admin"],
+      "icon": "assets/icons/schedule.png",
+      "openLog": false
+    },
+    {
       "id": "shift-plan",
       "name": "シフト管理（案の確認）",
       "path": "/admin/shift/index.html",

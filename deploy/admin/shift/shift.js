@@ -12,6 +12,14 @@ let plan = null;
 let calMode = "plan";
 let editKey = null;
 let editItem = null;
+let workPlan = null;
+
+// 作業計画（data/work-plan/<月>.json）の種別ラベル
+const WORK_LABELS = {
+  seed: "播種", nursery: "育苗", tillage: "耕起", weeding: "除草", "field-maintenance": "圃場整備",
+  pesticide: "防除", fertilizer: "施肥", watering: "潅水", "hand-weeding": "手除草",
+  intertill: "中耕", bedmaking: "畝立て", planting: "定植", harvest: "収穫", other: "他",
+};
 
 function currentScenario() {
   return plan.scenarios[Number(element("budget-slider").value)];
@@ -229,6 +237,11 @@ function renderCalendar(eff) {
     .map((w) => `<th class="${w === "土" ? "sat" : w === "日" ? "sun" : ""}">${w}</th>`).join("");
   const rows = weeks.map((week) => `<tr>${week.map((cell) => {
     if (!cell) return '<td class="empty"></td>';
+    const works = workPlan?.days?.[cell.date] || [];
+    const workTags = works.length
+      ? `<div class="wp-tags" title="${works.map((w) => `${WORK_LABELS[w.type] || w.type}${w.note ? "：" + w.note : ""}`).join("、")}">` +
+        `${works.map((w) => WORK_LABELS[w.type] || w.type).join("・")}</div>`
+      : "";
     const chips = cell.items.map((item) => {
       const color = colors.get(item.person) || "#757575";
       if (mode === "raw") {
@@ -251,7 +264,7 @@ function renderCalendar(eff) {
       return `<span class="chip ${kind} clickable${warnings.length ? " warned" : ""}" style="${style}" data-key="${item.key}" ` +
         `title="${item.raw_title}（${time}実働${item.proposed_hours}h・${item.action}${item.reason ? "：" + item.reason : ""}${warnText}）クリックで調整">${text}</span>`;
     }).join("");
-    return `<td><span class="day-no">${cell.day}</span>${chips}</td>`;
+    return `<td><span class="day-no">${cell.day}</span>${workTags}${chips}</td>`;
   }).join("")}</tr>`).join("");
   element("calendar").innerHTML = `<table class="shift-cal"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
 }
@@ -449,6 +462,10 @@ async function loadPlan(month) {
   slider.max = plan.scenarios.length - 1;
   slider.value = defaultScenarioIndex(plan);
   await loadEdits();
+  workPlan = await fetch(`/data/work-plan/${plan.month}.json?ts=${Date.now()}`, { cache: "no-store" })
+    .then((response) => (response.ok ? response.json() : null))
+    .catch(() => null);
+  element("work-plan-link").href = `/schedule/work-plan/index.html?ym=${plan.month}`;
   const base = getBase();
   element("base-start").value = toInputTime(base.start);
   element("base-end").value = toInputTime(base.end);

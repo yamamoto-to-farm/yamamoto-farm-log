@@ -1,0 +1,38 @@
+.wp-note { color: #666; font-size: 0.85rem; }
+.wp-h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.wp-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wp-month { font-weight: 700; font-size: 1.1rem; min-width: 7em; text-align: center; }
+.wp-save { margin-left: auto; }
+#status { font-size: 0.85rem; color: #1a7f37; }
+#status.error { color: #c62828; }
+
+.wp-cal { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.wp-cal th { font-size: 0.75rem; padding: 4px 2px; background: #f0f3f1; border: 1px solid #ddd; }
+.wp-cal th.sat { color: #1565c0; }
+.wp-cal th.sun { color: #c62828; }
+.wp-cal td { border: 1px solid #ddd; vertical-align: top; padding: 2px; height: 80px; text-align: left; }
+.wp-cal td.empty { background: #fafafa; }
+.wp-cal td.editable { cursor: pointer; }
+.wp-cal td.editable:hover { background: #f2f8f4; }
+.wp-cal .day-no { font-size: 0.75rem; color: #666; }
+.wp-pill { display: block; font-size: 0.72rem; border-radius: 4px; padding: 1px 4px; margin: 1px 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #eceff1; color: #37474f; }
+.wp-pill.tone-start { background: #e3f2e6; color: #1b5e20; }
+.wp-pill.tone-harvest { background: #fff3e0; color: #e65100; }
+.wp-pill.tone-field { background: #efebe9; color: #4e342e; }
+.wp-pill.tone-care { background: #e3f2fd; color: #0d47a1; }
+
+.wp-dialog { border: 1px solid #ccc; border-radius: 10px; padding: 16px 20px; max-width: 460px; width: 92%; }
+.wp-dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
+.wp-dialog h3 { margin: 0 0 10px; font-size: 1.05rem; }
+.wp-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.wp-row select { width: 9em; flex-shrink: 0; padding: 6px; }
+.wp-row input { flex: 1; padding: 6px 8px; }
+.wp-row button { flex-shrink: 0; font-size: 0.75rem; padding: 4px 8px; }
+#day-add { font-size: 0.8rem; padding: 4px 10px; margin: 4px 0 12px; }
+.wp-dialog-actions { display: flex; gap: 8px; }
+
+@media (max-width: 700px) {
+  .wp-cal td { height: 60px; }
+  .wp-pill { font-size: 0.62rem; }
+}

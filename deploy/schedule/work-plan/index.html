@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>月間作業計画 - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./work-plan.css?v=20261030-1">
+</head>
+<body>
+  <div id="header"></div>
+
+  <div id="page-area" class="page-container" hidden>
+    <h1 class="page-title">月間作業計画</h1>
+    <p class="wp-note">その月にやる予定の作業です。シフト管理のカレンダーにも表示されます。</p>
+
+    <section class="card wp-toolbar">
+      <button id="prev-month" class="secondary-btn" type="button">◀ 前月</button>
+      <span id="month-title" class="wp-month"></span>
+      <button id="next-month" class="secondary-btn" type="button">翌月 ▶</button>
+      <span id="status" role="status" aria-live="polite"></span>
+      <button id="save" class="primary-btn wp-save" type="button" hidden>保存する</button>
+    </section>
+
+    <section class="card" id="memo-card">
+      <h2 class="wp-h2">この月のメモ</h2>
+      <textarea id="memo" class="form-textarea" rows="2" placeholder="例：第2週が定植ピーク。収穫は週3回。"></textarea>
+    </section>
+
+    <section class="card">
+      <h2 class="wp-h2">カレンダー</h2>
+      <p class="wp-note" id="edit-hint" hidden>日付をクリックすると作業を追加・編集できます。変更後は「保存する」を押してください。</p>
+      <div id="calendar"></div>
+    </section>
+
+    <div class="back-action-slot">
+      <button class="secondary-btn unified-back-btn" type="button" onclick="history.back()">戻る</button>
+    </div>
+  </div>
+
+  <dialog id="day-dialog" class="wp-dialog">
+    <h3 id="day-title"></h3>
+    <div id="day-rows"></div>
+    <button id="day-add" class="secondary-btn" type="button">＋ 作業を追加</button>
+    <div class="wp-dialog-actions">
+      <button id="day-ok" class="primary-btn" type="button">反映</button>
+      <button id="day-cancel" class="secondary-btn" type="button">キャンセル</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="./work-plan.js?v=20261030-1"></script>
+  <script src="/common/sw-register.js?v=20260713-1"></script>
+</body>
+</html>
