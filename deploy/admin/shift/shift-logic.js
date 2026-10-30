@@ -352,11 +352,11 @@ export function buildChecklist(scenario) {
       // 時刻は前日のLINE連絡で確定する運用のため、ここでは「希」外しのみを示す
       label = `${head} → 「希」を外して確定`;
     } else if (kind === "extra") {
-      label = `${head} → 今は「希」のまま。勤務3日前までに確定（「希」を外す・目安 実働${item.proposed_hours}h` +
+      label = `${head} → 期限までに確定（「希」を外す・目安 実働${item.proposed_hours}h` +
         (shortened ? `・終了 ${item.proposed_end}` : "") + "）か、見送りを連絡";
       if (shortened) extra = "短縮あり";
     } else if (kind === "hold") {
-      label = `${head} → 保留（「希」のまま）。作業量が決まり次第、3日前までに確定か見送りを連絡` +
+      label = `${head} → 判断待ち。期限までに確定（「希」を外す）か、見送りを連絡` +
         (item.reason ? `（${item.reason}）` : "");
       extra = item.reason || "";
     } else {
