@@ -53,7 +53,8 @@ async function loadEdits() {
     syncState("☁ 保存済み");
     return;
   } catch (error) {
-    console.warn("edits load failed", error);
+    // 404 = まだ一度も保存していないだけ（正常）。それ以外のみ警告を残す。
+    if (!String(error.message).includes("（404）")) console.warn("edits load failed", error);
   }
   // サーバーに無い場合：この端末の控え → 旧形式（移行）
   try {
