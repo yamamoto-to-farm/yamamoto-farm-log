@@ -34,6 +34,8 @@
 .shift-edit-dialog .edit-times { display: flex; gap: 12px; }
 .shift-edit-dialog .edit-times label { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 4px; }
 .shift-edit-dialog .edit-times input[type="time"] { width: auto; padding: 6px 8px; }
+.shift-edit-dialog .edit-quick { display: flex; gap: 8px; margin-top: 8px; }
+.shift-edit-dialog .edit-quick button { font-size: 0.8rem; padding: 4px 12px; }
 .shift-edit-dialog #edit-hours { font-size: 0.85rem; margin: 10px 0; }
 .shift-edit-dialog .edit-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 

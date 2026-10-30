@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-6">
+  <link rel="stylesheet" href="./shift.css?v=20261030-9">
 </head>
 <body>
   <div id="header"></div>
@@ -94,6 +94,11 @@
       <label>開始 <input id="edit-start" type="time"></label>
       <label>終了 <input id="edit-end" type="time"></label>
     </div>
+    <div class="edit-quick">
+      <button type="button" class="secondary-btn" data-quick="am">AM</button>
+      <button type="button" class="secondary-btn" data-quick="pm">PM</button>
+      <button type="button" class="secondary-btn" data-quick="all">終日（基本枠）</button>
+    </div>
     <p id="edit-hours" class="shift-readout"></p>
     <div class="edit-actions">
       <button id="edit-save" class="primary-btn" type="button">反映</button>
@@ -102,7 +107,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="./shift.js?v=20261030-8"></script>
+  <script type="module" src="./shift.js?v=20261030-9"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

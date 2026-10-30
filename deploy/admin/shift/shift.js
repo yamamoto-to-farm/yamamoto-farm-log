@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-8";
+} from "./shift-logic.js?v=20261030-9";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -362,6 +362,16 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("edit-status").addEventListener("change", updateEditHours);
   element("edit-start").addEventListener("input", updateEditHours);
   element("edit-end").addEventListener("input", updateEditHours);
+  document.querySelectorAll("#edit-dialog [data-quick]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const base = getBase();
+      const quick = button.dataset.quick;
+      element("edit-start").value = toInputTime(quick === "pm" ? "13:00" : base.start);
+      element("edit-end").value = toInputTime(quick === "am" ? "12:00" : base.end);
+      if (element("edit-status").value === "hold") element("edit-status").value = "fixed";
+      updateEditHours();
+    });
+  });
   element("edit-save").addEventListener("click", saveEdit);
   element("edit-clear").addEventListener("click", clearEdit);
   element("edit-cancel").addEventListener("click", () => element("edit-dialog").close());
