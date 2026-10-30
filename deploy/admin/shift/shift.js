@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-20";
+} from "./shift-logic.js?v=20261030-21";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -241,8 +241,9 @@ function renderCalendar(eff) {
         : editWarnings(plan, item, kind, item.start, item.proposed_end, eff);
       const mark = `${warnings.length ? "⚠" : ""}${item.edited ? "✎" : item.autoCut ? "↓" : ""}`;
       const span = kind !== "hold" && kind !== "skip" ? shiftLabel(item.start, item.proposed_end, base) : "";
+      const amount = span || (kind !== "hold" && kind !== "skip" && item.proposed_hours > 0 ? `${item.proposed_hours}h` : "");
       const prefix = kind === "extra" || kind === "hold" ? "希 " : "";
-      const text = `${mark}${prefix}${item.person}${span ? " " + span : ""}`;
+      const text = `${mark}${prefix}${item.person}${amount ? " " + amount : ""}`;
       const style = kind === "fixed" ? `background:${color}`
         : kind === "extra" ? `color:${color};border-color:${color}` : "";
       const time = item.start && item.proposed_end ? `${item.start}〜${item.proposed_end}・` : "";

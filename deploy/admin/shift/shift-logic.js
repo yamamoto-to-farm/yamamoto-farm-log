@@ -154,6 +154,12 @@ export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
     } else if (override && Number.isFinite(override.hours)) {
       hours = override.hours;   // 明示的な編集はクリップしない
       end = override.end || end;
+    } else if (!inStart && !inEnd) {
+      // 時間おまかせ（終日）の希望：時刻は仮置きせず、実働だけ月の営業時間内に丸める
+      const windowHours = workHours(baseWin.start, baseWin.end, breaks);
+      hours = windowHours === null ? item.proposed_hours : Math.min(item.proposed_hours, windowHours);
+      start = "";
+      end = "";
     } else {
       const resolved = resolveShift(inStart, inEnd, item.proposed_hours, baseWin, breaks, minHours);
       start = resolved.start;
@@ -222,6 +228,9 @@ export function fitRemaining(plan, effItems, budgetMax, base = null, step = 0.5)
     if (item.edited || item.status === "hold" || item.status === "skip" || item.proposed_hours <= 0) return item;
     const cap = caps[tierOf(item)];
     if (item.proposed_hours <= cap) return item;
+    if (!item.start && !item.proposed_end) {
+      return { ...item, proposed_hours: cap, autoCut: true };  // 終日（時間おまかせ）は実働だけ短縮
+    }
     const resolved = resolveShift(item.start, item.proposed_end, cap, baseWin, breaks, mn);
     return { ...item, start: resolved.start, proposed_hours: resolved.hours,
              proposed_end: resolved.end, autoCut: true };

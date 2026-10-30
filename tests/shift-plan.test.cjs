@@ -179,12 +179,17 @@ test("applyAdjustments は基本時間帯と個別編集を反映する", async 
   assert.equal(eff[0].status, "fixed");
   assert.equal(eff[0].start, "7:30"); // 原本から補完
   assert.equal(eff[0].edited, false);
+  assert.equal(eff[2].proposed_hours, 6.5); // 終日（おまかせ）は時刻を仮置きしない
+  assert.equal(eff[2].start, "");
+  assert.equal(eff[2].proposed_end, "");
   // 基本時間帯を 06:00-12:00 に → 7:30-12:00 に収まり実働4.33h
   eff = applyAdjustments(calcPlan, scenario, {}, { start: "06:00", end: "12:00" });
   assert.equal(eff[0].proposed_hours, 4.33);
   assert.equal(eff[0].proposed_end, "12:00");
   assert.equal(eff[1].proposed_hours, 5.5);   // 5.5hは枠内に収まる（6:00-11:40）
   assert.equal(eff[1].proposed_end, "11:40");
+  assert.equal(eff[2].proposed_hours, 5.83);  // 終日（おまかせ）は実働だけ枠内に丸める
+  assert.equal(eff[2].proposed_end, "");
   assert.equal(eff[3].proposed_hours, 0); // 保留は0のまま
   // 個別編集：保留に変更（希のまま判断待ち）
   eff = applyAdjustments(calcPlan, scenario, { "2026-11-01:土井": { status: "hold" } }, null);
