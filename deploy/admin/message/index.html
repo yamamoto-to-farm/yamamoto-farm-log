@@ -6,7 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <title>業務連絡（LINE下書き） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261031-2">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
+  <link rel="stylesheet" href="./message.css?v=20261031-3">
 </head>
 <body>
   <div id="header"></div>
@@ -19,7 +20,6 @@
     <div class="msg-tabs">
       <button class="msg-tab on" data-tab="daily" type="button">作業予定の連絡</button>
       <button class="msg-tab" data-tab="templates" type="button">毎月の定型文</button>
-      <button class="msg-tab" data-tab="masters" type="button">マスタ（畑・作業）</button>
     </div>
 
     <section id="tab-daily" class="card">
@@ -52,24 +52,10 @@
         </div>
       </details>
     </section>
-
-    <section id="tab-masters" class="card" hidden>
-      <div class="msg-masters">
-        <label>畑（1行に1つ。「名前 | 地図URL」の形式。URLは省略可）
-          <textarea id="fields-text" rows="8" placeholder="北の畑 | https://maps.app.goo.gl/xxxx&#10;南の畑"></textarea>
-        </label>
-        <label>作業内容（1行に1つ）
-          <textarea id="tasks-text" rows="8" placeholder="収穫&#10;草とり&#10;定植"></textarea>
-        </label>
-      </div>
-      <p class="msg-muted">地図URLを登録しておくと、作業連絡の文面に自動で地図リンクが入ります。</p>
-      <button id="save-masters" class="primary-btn" type="button">保存</button>
-    </section>
   </div>
 
-  <datalist id="dl-fields"></datalist>
   <datalist id="dl-tasks"></datalist>
 
-  <script type="module" src="./message.js?v=20261031-2"></script>
+  <script type="module" src="./message.js?v=20261031-3"></script>
 </body>
 </html>

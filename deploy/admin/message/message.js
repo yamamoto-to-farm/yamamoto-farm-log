@@ -1,10 +1,13 @@
 // 業務連絡（LINE下書き）ページ
 // シフト（人ごとの確定時刻）と作業計画から「明日の作業予定」の文面を作り、コピーしてLINEへ貼る。
 // 毎月の定型文（シフト入力のお願い等）もここで選んでコピーできる。自動送信はしない。
+// 畑は他のログページと共通の圃場モーダル（data/fields.json）、作業内容は作業ログの種別＋手入力。
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { config } from "/photos/config.js";
 import { ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
+import { openFieldModal } from "/common/filter/filter-field.js?v=1";
+import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 import {
   applyAdjustments, defaultScenarioIndex, fitRemaining, toInputTime,
 } from "/admin/shift/shift-logic.js?v=20261030-36";
@@ -17,10 +20,10 @@ const WORK_LABELS = {
   pesticide: "防除", fertilizer: "施肥", watering: "潅水", "hand-weeding": "手除草",
   intertill: "中耕", bedmaking: "畝立て", planting: "定植", harvest: "収穫", other: "その他",
 };
-const DEFAULT_MASTERS = {
-  fields: [],
-  tasks: ["収穫", "草とり", "定植", "播種", "出荷調整", "片付け"],
-  templates: [
+// 作業内容の候補（作業ログの種別。自由入力も可）
+const TASK_OPTIONS = ["収穫", "播種", "育苗", "定植", "耕起", "中耕", "畝立て", "除草・草刈り",
+  "手作業除草", "防除", "施肥", "潅水", "圃場整備", "出荷調整", "片付け"];
+const DEFAULT_TEMPLATES = [
     { title: "シフト入力のお願い",
       body: "お疲れさまです。\n{来月}月の勤務希望の入力をお願いします。\n"
         + "いつものカレンダー（TimeTree）に、タイトル「希」付きで入力してください"
@@ -32,11 +35,11 @@ const DEFAULT_MASTERS = {
     { title: "出勤簿の確認",
       body: "お疲れさまです。\n{月}月分の出勤簿をお送りします。\n"
         + "内容をご確認いただき、間違いがあればご連絡ください。\nよろしくお願いします。" },
-  ],
-};
+];
 
 const element = (id) => document.getElementById(id);
-let masters = structuredClone(DEFAULT_MASTERS);
+let masters = { templates: structuredClone(DEFAULT_TEMPLATES) };
+let fieldsData = [];         // data/fields.json（共通の圃場マスタ。地図リンクは緯度経度から生成）
 let tplDraft = [];           // 定型文の編集用ドラフト
 let cards = [];              // 宛先グループ [{names:[{name,wish}], memo, blocks:[{start,end,field,task}]}]
 let workPlan = null;
@@ -89,21 +92,44 @@ async function loadMasters() {
     const response = await fetch(`/${MASTERS_KEY}?ts=${Date.now()}`, { cache: "no-store" });
     if (response.ok) {
       const loaded = await response.json();
-      masters = {
-        fields: Array.isArray(loaded.fields) ? loaded.fields : [],
-        tasks: Array.isArray(loaded.tasks) ? loaded.tasks : DEFAULT_MASTERS.tasks,
-        templates: Array.isArray(loaded.templates) && loaded.templates.length
-          ? loaded.templates : structuredClone(DEFAULT_MASTERS.templates),
-      };
+      if (Array.isArray(loaded.templates) && loaded.templates.length) {
+        masters.templates = loaded.templates;
+      }
     }
   } catch { /* 未作成なら既定値のまま */ }
-  renderDatalists();
-  renderMastersForm();
+}
+
+// 共通の圃場マスタ（data/fields.json）を読み、圃場モーダル用のツリーを登録する
+async function loadFields() {
+  try {
+    const response = await fetch(`/data/fields.json?ts=${Date.now()}`, { cache: "no-store" });
+    fieldsData = response.ok ? await response.json() : [];
+  } catch {
+    fieldsData = [];
+  }
+  const byArea = new Map();
+  for (const f of fieldsData) {
+    const area = String(f?.area || "").trim();
+    const name = String(f?.name || "").trim();
+    if (!area || !name) continue;
+    if (!byArea.has(area)) byArea.set(area, []);
+    if (!byArea.get(area).includes(name)) byArea.get(area).push(name);
+  }
+  setFilterData({
+    ...(getFilterData() || {}),
+    fields: { parents: [...byArea.keys()], children: Object.fromEntries(byArea) },
+  });
+}
+
+// 地図リンク（緯度経度から生成）
+function mapLinkFor(fieldName) {
+  const field = fieldsData.find((f) => f.name === fieldName);
+  return field && field.lat && field.lng ? `https://www.google.com/maps?q=${field.lat},${field.lng}` : "";
 }
 
 async function saveMasters() {
   status("保存中…");
-  const body = JSON.stringify({ ...masters, updated_at: new Date().toISOString() }, null, 1);
+  const body = JSON.stringify({ templates: masters.templates, updated_at: new Date().toISOString() }, null, 1);
   const presign = await fetch(PRESIGN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -117,16 +143,8 @@ async function saveMasters() {
 }
 
 function renderDatalists() {
-  element("dl-fields").innerHTML = masters.fields
-    .map((f) => `<option value="${escapeHtml(f.name)}"></option>`).join("");
-  element("dl-tasks").innerHTML = masters.tasks
+  element("dl-tasks").innerHTML = TASK_OPTIONS
     .map((t) => `<option value="${escapeHtml(t)}"></option>`).join("");
-}
-
-function renderMastersForm() {
-  element("fields-text").value = masters.fields
-    .map((f) => (f.map ? `${f.name} | ${f.map}` : f.name)).join("\n");
-  element("tasks-text").value = masters.tasks.join("\n");
 }
 
 // ───── 作業連絡 ─────
@@ -238,7 +256,7 @@ function buildText(card) {
     lines.push(`■ ${block.start.replace(/^0/, "")}〜${block.end.replace(/^0/, "")}`);
     if (block.field) {
       lines.push(`・畑「${block.field}」`);
-      const map = masters.fields.find((f) => f.name === block.field)?.map;
+      const map = mapLinkFor(block.field);
       if (map) lines.push(`・地図：${map}`);
     }
     if (block.task) lines.push(`・作業：${block.task}`);
@@ -265,8 +283,9 @@ function renderCards() {
         <span class="tilde">〜</span>
         <input type="time" data-c="${c}" data-b="${b}" data-k="end" value="${block.end}">
         <div class="block-row2">
-          <input list="dl-fields" placeholder="畑" data-c="${c}" data-b="${b}" data-k="field"
-                 value="${escapeHtml(block.field)}">
+          <button type="button" class="field-btn${block.field ? " set" : ""}" data-c="${c}" data-b="${b}">
+            ${block.field ? `🗺 ${escapeHtml(block.field)}` : "畑を選択"}</button>
+          ${block.field ? `<button type="button" class="field-clear" data-c="${c}" data-b="${b}" title="畑をクリア">✕</button>` : ""}
           <input list="dl-tasks" placeholder="作業内容" data-c="${c}" data-b="${b}" data-k="task"
                  value="${escapeHtml(block.task)}">
           ${card.blocks.length > 1
@@ -351,7 +370,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("page-area").hidden = false;
   element("msg-date").value = todayIso(1);  // 既定は明日
 
-  await loadMasters();
+  await Promise.all([loadMasters(), loadFields()]);
+  renderDatalists();
   tplDraft = structuredClone(masters.templates);
   renderTemplates();
   renderTemplateEditor();
@@ -363,7 +383,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll(".msg-tab").forEach((button) => {
     button.addEventListener("click", () => {
       document.querySelectorAll(".msg-tab").forEach((b) => b.classList.toggle("on", b === button));
-      for (const name of ["daily", "templates", "masters"]) {
+      for (const name of ["daily", "templates"]) {
         element(`tab-${name}`).hidden = name !== button.dataset.tab;
       }
     });
@@ -418,6 +438,27 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderCards();
   });
   element("cards").addEventListener("click", async (event) => {
+    const fieldBtn = event.target.closest(".field-btn");
+    if (fieldBtn) {
+      const card = cards[Number(fieldBtn.dataset.c)];
+      const block = card.blocks[Number(fieldBtn.dataset.b)];
+      openFieldModal({
+        mode: "select",
+        selectWithConfirm: true,
+        selectedField: block.field,
+        onSelect: (name) => {
+          block.field = String(name || "").trim();
+          renderCards();
+        },
+      });
+      return;
+    }
+    const fieldClear = event.target.closest(".field-clear");
+    if (fieldClear) {
+      cards[Number(fieldClear.dataset.c)].blocks[Number(fieldClear.dataset.b)].field = "";
+      renderCards();
+      return;
+    }
     const copy = event.target.closest("[data-copy]");
     if (copy) {
       const card = cards[Number(copy.dataset.copy)];
@@ -485,25 +526,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     try {
       await saveMasters();
       renderTemplates();
-    } catch (error) {
-      status(error.message, true);
-    }
-  });
-
-  // マスタ保存
-  element("save-masters").addEventListener("click", async () => {
-    masters.fields = element("fields-text").value.split("\n")
-      .map((line) => line.trim()).filter(Boolean)
-      .map((line) => {
-        const [name, map] = line.split("|").map((part) => part.trim());
-        return map ? { name, map } : { name };
-      });
-    masters.tasks = element("tasks-text").value.split("\n")
-      .map((line) => line.trim()).filter(Boolean);
-    try {
-      await saveMasters();
-      renderDatalists();
-      renderCards();
     } catch (error) {
       status(error.message, true);
     }
