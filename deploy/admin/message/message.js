@@ -46,6 +46,7 @@ let tplDraft = [];           // 定型文の編集用ドラフト
 let cards = [];              // 宛先グループ [{names:[{name,wish}], memo, blocks:[{start,end,field,task}]}]
 let workPlan = null;
 let canEdit = false;
+let lastGeneratedAt = "";    // 表示中シフトデータの生成時刻（TimeTree取得時点）
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -58,6 +59,22 @@ async function api(path, query) {
   if (!token) throw new Error("ログインの期限が切れました。再ログインしてください。");
   const url = `${config.api}${path}${query ? `?${new URLSearchParams(query)}` : ""}`;
   const response = await fetch(url, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) {
+    let message = `エラー（${response.status}）`;
+    try { message = `${(await response.json()).message}（${response.status}）`; } catch { /* 本文なし */ }
+    throw new Error(message);
+  }
+  return response.json();
+}
+
+async function apiPost(path, body) {
+  const token = await ensureToken();
+  if (!token) throw new Error("ログインの期限が切れました。再ログインしてください。");
+  const response = await fetch(`${config.api}${path}`, {
+    method: "POST", cache: "no-store",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   if (!response.ok) {
     let message = `エラー（${response.status}）`;
     try { message = `${(await response.json()).message}（${response.status}）`; } catch { /* 本文なし */ }
@@ -207,6 +224,7 @@ async function loadFromShift() {
   const month = dateIso.slice(0, 7);
   try {
     const plan = await api("/shift/plan", { month });
+    lastGeneratedAt = plan.generated_at || "";
     let edits = { overrides: {}, base: null, autofit: false };
     try {
       const result = await api("/shift/edits", { month });
@@ -230,15 +248,48 @@ async function loadFromShift() {
       addCard(items.map((item) => ({ name: item.person, wish: item.status === "extra" })),
               toInputTime(items[0].start || ""), toInputTime(items[0].proposed_end || ""));
     }
-    element("shift-state").textContent = todays.length
+    // TimeTreeが1次ソース：いつ時点のシフトデータかを常に示す（古ければ ☁ で再取得）
+    const asOf = lastGeneratedAt ? `（シフトデータ: ${lastGeneratedAt.replace("T", " ").slice(5, 16)}時点）` : "";
+    element("shift-state").textContent = (todays.length
       ? `シフトから ${todays.length}人（${cards.length}グループ）を読み込みました`
-      : "この日の勤務予定はありません（＋人を追加 で手動作成できます）";
+      : "この日の勤務予定はありません（＋人を追加 で手動作成できます）") + asOf;
   } catch (error) {
     element("shift-state").textContent = "";
     status(error.message, true);
   }
   await loadWorkPlanHints(dateIso);
   renderCards();
+}
+
+// TimeTreeの最新データでシフトを再計算してから読み込む（TimeTreeが1次ソース。
+// 急な欠勤などの修正はTimeTreeにしか入らないため、送信前にここで同期できる）
+async function refreshFromTimetree() {
+  const dateIso = element("msg-date").value;
+  if (!dateIso) return;
+  if (!hasSession()) { element("msg-login").hidden = false; return; }
+  const month = dateIso.slice(0, 7);
+  if (!confirm(`TimeTreeの最新データで ${month} のシフトを再計算してから読み込みますか？（約1分）`)) return;
+  const button = element("refresh-shift");
+  button.disabled = true;
+  const before = lastGeneratedAt;
+  try {
+    await apiPost("/shift/regenerate", { month });
+    element("shift-state").textContent = "☁ TimeTreeから再取得中…（約1分）";
+    const deadline = Date.now() + 120000;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      try {
+        const plan = await api("/shift/plan", { month });
+        if ((plan.generated_at || "") !== before) break;
+      } catch { /* 生成中の読み込み失敗は無視 */ }
+      element("shift-state").textContent += "・";
+    }
+    await loadFromShift();
+  } catch (error) {
+    status(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function loadWorkPlanHints(dateIso) {
@@ -471,6 +522,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("msg-login").addEventListener("click", () => login("/admin/message/index.html"));
   element("msg-date").addEventListener("change", () => loadFromShift());
   element("load-shift").addEventListener("click", () => loadFromShift());
+  element("refresh-shift").addEventListener("click", () => refreshFromTimetree());
   element("add-person").addEventListener("click", () => {
     const name = prompt("名前を入力してください");
     if (!name || !name.trim()) return;

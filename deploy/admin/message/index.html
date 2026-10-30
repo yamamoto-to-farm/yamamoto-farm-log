@@ -7,7 +7,7 @@
   <title>業務連絡（LINE下書き） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261031-17">
+  <link rel="stylesheet" href="./message.css?v=20261031-18">
 </head>
 <body>
   <div id="header"></div>
@@ -26,6 +26,8 @@
       <div class="msg-toolbar">
         <label>日付 <input id="msg-date" type="date" class="form-input"></label>
         <button id="load-shift" class="secondary-btn" type="button">🔄 シフトから読み込み</button>
+        <button id="refresh-shift" class="secondary-btn" type="button"
+                title="TimeTreeの最新データでシフトを再計算してから読み込みます（約1分）">☁ TimeTreeから再取得</button>
         <button id="msg-login" class="secondary-btn" type="button" hidden>シフト連携ログイン</button>
         <button id="add-person" class="secondary-btn" type="button">＋人を追加</button>
         <span id="shift-state" class="msg-muted"></span>
@@ -62,6 +64,6 @@
     <option value="作業の都合により"></option>
   </datalist>
 
-  <script type="module" src="./message.js?v=20261031-17"></script>
+  <script type="module" src="./message.js?v=20261031-18"></script>
 </body>
 </html>
