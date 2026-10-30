@@ -68,6 +68,7 @@
 .shift-cal .chip.raw { font-size: 0.68rem; }
 .shift-cal .chip.clickable { cursor: pointer; }
 .shift-cal .chip.clickable:hover { filter: brightness(1.12); outline: 1px solid rgba(0, 0, 0, 0.25); }
+.shift-cal .chip.warned { box-shadow: 0 0 0 2px #e53935; }
 
 .shift-table { border-collapse: collapse; width: 100%; max-width: 560px; }
 .shift-table th, .shift-table td { border: 1px solid #ddd; padding: 4px 10px; font-size: 0.85rem; text-align: right; }

@@ -162,7 +162,7 @@ function renderCalendar(eff) {
       '<span class="legend kind"><i class="sample-extra"></i>確定の目安（「希」のまま）</span>' +
       '<span class="legend kind"><i class="sample-hold"></i>保留（「希」のまま・判断待ち）</span>' +
       '<span class="legend kind"><i class="sample-skip"></i>見送り</span>' +
-      '<span class="legend kind">✎=編集済み・クリックで個別調整</span>';
+      '<span class="legend kind">✎=編集済み・⚠=制約/希望と食い違い・クリックで個別調整</span>';
 
   const weeks = buildCalendar(plan.month, mode === "raw" ? rawItems : eff);
   const head = ["月", "火", "水", "木", "金", "土", "日"]
@@ -177,15 +177,18 @@ function renderCalendar(eff) {
         return `<span class="chip raw" style="background:${color}" title="${title}">${warn}${item.raw_title}</span>`;
       }
       const kind = item.status;
-      const mark = item.edited ? "✎" : item.autoCut ? "↓" : "";
+      const warnings = kind === "hold" || kind === "skip" ? []
+        : editWarnings(plan, item, kind, item.start, item.proposed_end, eff);
+      const mark = `${warnings.length ? "⚠" : ""}${item.edited ? "✎" : item.autoCut ? "↓" : ""}`;
       const span = kind !== "hold" && kind !== "skip" ? shiftLabel(item.start, item.proposed_end) : "";
       const prefix = kind === "extra" || kind === "hold" ? "希 " : "";
       const text = `${mark}${prefix}${item.person}${span ? " " + span : ""}`;
       const style = kind === "fixed" ? `background:${color}`
         : kind === "extra" ? `color:${color};border-color:${color}` : "";
       const time = item.start && item.proposed_end ? `${item.start}〜${item.proposed_end}・` : "";
-      return `<span class="chip ${kind} clickable" style="${style}" data-key="${item.key}" ` +
-        `title="${item.raw_title}（${time}実働${item.proposed_hours}h・${item.action}${item.reason ? "：" + item.reason : ""}）クリックで調整">${text}</span>`;
+      const warnText = warnings.length ? `／⚠${warnings.join("、")}` : "";
+      return `<span class="chip ${kind} clickable${warnings.length ? " warned" : ""}" style="${style}" data-key="${item.key}" ` +
+        `title="${item.raw_title}（${time}実働${item.proposed_hours}h・${item.action}${item.reason ? "：" + item.reason : ""}${warnText}）クリックで調整">${text}</span>`;
     }).join("");
     return `<td><span class="day-no">${cell.day}</span>${chips}</td>`;
   }).join("")}</tr>`).join("");
