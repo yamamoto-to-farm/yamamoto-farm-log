@@ -188,6 +188,9 @@ timetree の修正（確定・「希」外し）は人が行います。
     **`timetree_email` / `timetree_password` を削除したもの**をアップロードする
     （認証情報は Secrets Manager に移す）。時給を含むため公開バケットには置かない。
   - `shift/<YYYY-MM>/entries.csv` `plan.txt` `proposal.csv` `plan.json` … 月別の結果
+  - `shift/<YYYY-MM>/runs/<日時>/` … 実行ごとのスナップショット（取得した `.ics` 原本＋
+    `entries.csv`・`plan.json`）。timetree は希望と確定が同じカレンダーのため、
+    月末編集後に再計算しても 26日時点の希望の原本がここに残る
   - `shift/latest.json` … 最新の plan.json（管理ページが読む）
   - `shift/ics/*.ics` … 手動再計算（`skip_fetch`）用の置き場（任意）
 - Secrets Manager: シークレット（例 `yamamoto-farm/timetree`）に

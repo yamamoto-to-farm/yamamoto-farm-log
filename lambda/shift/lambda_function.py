@@ -7,7 +7,10 @@
   3. timetree-exporter で .ics を /tmp に取得
   4. shift_tool の parse + plan を実行（対象は翌月。event で上書き可）
   5. entries.csv / plan.txt / proposal.csv / plan.json を S3 に保存し、
-     <prefix>latest.json を最新の plan.json で更新
+     <prefix>latest.json を最新の plan.json で更新。あわせて実行ごとの
+     スナップショット（timetree原本の .ics と entries.csv / plan.json）を
+     <prefix><月>/runs/<日時>/ に残す（月末編集後の再計算で希望の原本が
+     失われないようにするバックアップ）。
   失敗時は SNS に通知してから例外を再送出する（成功時も概要を通知）。
 
 環境変数:
@@ -139,9 +142,19 @@ def run(event):
         f"{prefix}{month}/plan.json": work / f"plan_{month}.json",
         f"{prefix}latest.json": work / f"plan_{month}.json",
     }
+    # 実行ごとのスナップショット（上書きしないバックアップ）。
+    # timetree は希望と確定が同じカレンダーのため、月末編集後の再計算で
+    # 26日時点の希望の原本が消えないよう、取得した .ics ごと残す。
+    stamp = datetime.now(JST).strftime("%Y%m%d-%H%M%S")
+    snap = f"{prefix}{month}/runs/{stamp}/"
+    for p in sorted(ics_dir.glob("*.ics")):
+        outputs[f"{snap}ics/{p.name}"] = p
+    outputs[f"{snap}entries.csv"] = entries_csv
+    outputs[f"{snap}plan.json"] = work / f"plan_{month}.json"
     for key, path in outputs.items():
         ctype = ("application/json" if key.endswith(".json")
-                 else "text/csv" if key.endswith(".csv") else "text/plain")
+                 else "text/csv" if key.endswith(".csv")
+                 else "text/calendar" if key.endswith(".ics") else "text/plain")
         s3.put_object(Bucket=bucket, Key=key, Body=path.read_bytes(),
                       ContentType=f"{ctype}; charset=utf-8")
 

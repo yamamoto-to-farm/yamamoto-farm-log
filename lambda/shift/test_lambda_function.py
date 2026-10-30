@@ -114,10 +114,16 @@ class LambdaTest(unittest.TestCase):
     def test_run_uploads_plan_and_notifies(self):
         with patch.object(lambda_function, "fetch_ics", self._fake_fetch):
             result = lambda_function.lambda_handler({"month": "2026-11"}, None)
-        expected_keys = {"shift/2026-11/entries.csv", "shift/2026-11/plan.txt",
-                         "shift/2026-11/proposal.csv", "shift/2026-11/plan.json",
-                         "shift/latest.json"}
-        self.assertEqual(set(self.s3.put), expected_keys)
+        required = {"shift/2026-11/entries.csv", "shift/2026-11/plan.txt",
+                    "shift/2026-11/proposal.csv", "shift/2026-11/plan.json",
+                    "shift/latest.json"}
+        self.assertTrue(required <= set(self.s3.put))
+        # 実行ごとのスナップショット（.ics 原本＋entries/plan）が runs/ に残る
+        snap_keys = [k for k in self.s3.put if k.startswith("shift/2026-11/runs/")]
+        self.assertTrue(any(k.endswith("ics/" + ICS_NAME) for k in snap_keys))
+        self.assertTrue(any(k.endswith("/entries.csv") for k in snap_keys))
+        self.assertTrue(any(k.endswith("/plan.json") for k in snap_keys))
+        self.assertEqual(set(self.s3.put) - required, set(snap_keys))
         plan = json.loads(self.s3.put["shift/latest.json"].decode("utf-8"))
         self.assertEqual(plan["month"], "2026-11")
         self.assertTrue(plan["scenarios"])
