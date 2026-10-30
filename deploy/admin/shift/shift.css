@@ -1,0 +1,55 @@
+.shift-note { color: #666; font-size: 0.85rem; }
+.shift-muted { color: #888; font-size: 0.8rem; }
+.shift-h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.shift-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+.shift-slider-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.shift-slider-row input[type="range"] { flex: 1; min-width: 180px; }
+.shift-readout { font-weight: 600; white-space: nowrap; }
+.shift-readout .ok { color: #1a7f37; }
+.shift-readout .over { color: #c62828; }
+
+.shift-cards { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.shift-cards .stat { background: #f6f8f7; border-radius: 8px; padding: 8px 12px; min-width: 130px; }
+.shift-cards .stat b { display: block; font-size: 1.05rem; }
+.shift-cards .stat span { font-size: 0.75rem; color: #666; }
+
+#scenario-notes .note { font-size: 0.85rem; margin: 4px 0; }
+#scenario-notes .warn { color: #c62828; }
+
+.shift-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.8rem; margin-bottom: 6px; }
+.legend::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+.legend.fixed::before { background: #2e7d32; }
+.legend.extra::before { background: #1565c0; }
+.legend.hold::before { background: #bdbdbd; }
+
+.shift-cal { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.shift-cal th { font-size: 0.75rem; padding: 4px 2px; background: #f0f3f1; border: 1px solid #ddd; }
+.shift-cal th.sat { color: #1565c0; }
+.shift-cal th.sun { color: #c62828; }
+.shift-cal td { border: 1px solid #ddd; vertical-align: top; padding: 2px; height: 72px; }
+.shift-cal td.empty { background: #fafafa; }
+.shift-cal .day-no { font-size: 0.75rem; color: #666; }
+.shift-cal .chip { display: block; font-size: 0.72rem; border-radius: 4px; padding: 1px 4px; margin: 1px 0;
+  color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shift-cal .chip.fixed { background: #2e7d32; }
+.shift-cal .chip.extra { background: #1565c0; }
+.shift-cal .chip.hold { background: #bdbdbd; color: #444; text-decoration: line-through; }
+
+.shift-table { border-collapse: collapse; width: 100%; max-width: 560px; }
+.shift-table th, .shift-table td { border: 1px solid #ddd; padding: 4px 10px; font-size: 0.85rem; text-align: right; }
+.shift-table th:first-child, .shift-table td:first-child { text-align: left; }
+.shift-table .total { font-weight: 600; background: #f6f8f7; }
+
+#checklist h3 { font-size: 0.9rem; margin: 12px 0 4px; }
+#checklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem; padding: 2px 0; }
+#checklist label.done { color: #999; text-decoration: line-through; }
+#checklist input[type="checkbox"] { flex-shrink: 0; }
+
+.shift-issues { font-size: 0.85rem; padding-left: 1.4em; }
+.shift-issues li { margin: 2px 0; }
+
+@media (max-width: 700px) {
+  .shift-cal td { height: 56px; }
+  .shift-cal .chip { font-size: 0.6rem; }
+}

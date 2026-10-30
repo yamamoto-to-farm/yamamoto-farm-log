@@ -210,12 +210,48 @@ timetree の修正（確定・「希」外し）は人が行います。
 - timetree-exporter は非公式ツールのため、timetree 側の変更で失敗することがあります。
   失敗は SNS で通知されるので、手元の shift-tool（CLI）で作成して S3 に置けば復旧できます。
 
+### 管理ページ（/admin/shift/）とシフト案API
+
+`/admin/shift/index.html` は、保存済みの plan.json をカレンダー表示し、予算スライダーで
+シナリオを切り替え、timetree 確定操作のチェックリストを表示します。時給を含むため、
+photos と同じ Cognito ログインに加えて **cognito:groups の admin または family** が必要です
+（worker には返しません）。チェック状態はブラウザの localStorage にのみ保存されます。
+
+- フロントエンド: `deploy/admin/shift/`（`/photos/auth.js` の PKCE ログインを再利用。
+  Cognito 側の設定変更は不要）
+- API Lambda: `lambda/shift-api/lambda_function.py`（1ファイル。boto3 はランタイム提供）
+- テスト: `python -B -m unittest discover -s lambda\shift-api -p "test_*.py"` と
+  `node --test tests\shift-plan.test.cjs`
+
+AWS設定（photos の HTTP API に追加）:
+
+- Lambda: `yamamoto-farm-shift-api`、Python 3.13、ハンドラ `lambda_function.lambda_handler`、
+  メモリ 128MB、タイムアウト 10秒。環境変数 `SHIFT_BUCKET`（非公開バケット名）と
+  `SHIFT_PREFIX`=`shift/`。
+- 実行ロール: 非公開バケットの `shift/*` への `s3:GetObject` と、`s3:ListBucket`
+  （prefix条件 `shift/*`）。書き込み権限は不要。
+- 既存の HTTP API（photos と同じもの）にルートを追加し、**両方とも** JWT オーソライザー
+  `farm-photos-cognito`・必須スコープ **openid** を付けます（ペイロード形式 2.0）:
+
+  | メソッド | パス | 用途 |
+  | --- | --- | --- |
+  | GET | `/shift/plan` | 最新（または `?month=YYYY-MM`）の plan.json |
+  | GET | `/shift/months` | 保存済みの月の一覧 |
+
+- 各ルートに Lambda 呼び出し権限があることを確認します（photos と同様）。
+- Cognito ユーザープールの **グループ** に admin / family が設定されていることを確認します
+  （photos の編集権限と同じ仕組み。worker ユーザーは 403 になります）。
+- フロントエンドの公開: `deploy/admin/shift/` と `deploy/data/pages.json` を公開サイト
+  バケットへアップロードし、CloudFront で `/admin/shift/*` と `/data/pages.json` を
+  無効化します。
+
 ## リポジトリ構成
 
 - `deploy/` : S3に公開する静的フロントエンドファイル
 - `src/gdd/` : AWS Lambda にデプロイする GDD 予測の Python 実装
 - `lambda/photos/` : 圃場写真（非公開）APIの Lambda
 - `lambda/shift/` : 毎月のシフト案生成 Lambda（上記参照）
+- `lambda/shift-api/` : シフト案 読み取りAPIの Lambda（admin/family 限定）
 - `scripts/` : パッケージングとデプロイの補助スクリプト
 - `requirements.txt` : Lambda 用の Python 依存パッケージ
 

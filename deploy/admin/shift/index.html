@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>シフト管理 - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./shift.css?v=20261030-1">
+</head>
+<body>
+  <div id="header"></div>
+
+  <div id="page-area" class="page-container" hidden>
+    <h1 class="page-title">シフト管理（案の確認）</h1>
+    <p class="shift-note">時給を含む労務情報です。画面の共有・撮影に注意してください。timetree の修正（確定・「希」外し）は手動で行います。</p>
+
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="login-area" hidden>
+      <button id="login" class="primary-btn" type="button">シフト管理ログイン</button>
+      <p class="shift-note">写真ページと同じアカウントでログインします（admin / family のみ閲覧可）。</p>
+    </div>
+
+    <div id="plan-area" hidden>
+      <section class="card shift-toolbar">
+        <label>対象月
+          <select id="month-select" class="form-input"></select>
+        </label>
+        <span id="generated-at" class="shift-muted"></span>
+      </section>
+
+      <section class="card">
+        <h2 class="shift-h2">予算と案</h2>
+        <div class="shift-slider-row">
+          <input id="budget-slider" type="range" min="0" max="0" step="1" value="0">
+          <div id="budget-readout" class="shift-readout"></div>
+        </div>
+        <div id="scenario-notes"></div>
+        <div id="summary-cards" class="shift-cards"></div>
+      </section>
+
+      <section class="card">
+        <h2 class="shift-h2">カレンダー（案）</h2>
+        <div class="shift-legend">
+          <span class="legend fixed">確定（決まった曜日）</span>
+          <span class="legend extra">確定の目安（追加）</span>
+          <span class="legend hold">保留・見送り</span>
+        </div>
+        <div id="calendar"></div>
+      </section>
+
+      <section class="card">
+        <h2 class="shift-h2">人別の予定</h2>
+        <table class="shift-table" id="person-table"></table>
+      </section>
+
+      <section class="card">
+        <h2 class="shift-h2">timetree 確定操作チェックリスト</h2>
+        <p class="shift-note">チェック状態はこの端末にのみ保存されます。予算を変えると案が変わるので、確定前に予算を決めてから操作してください。</p>
+        <div id="checklist"></div>
+      </section>
+
+      <section class="card">
+        <h2 class="shift-h2">ルールのチェック（要確認）</h2>
+        <ul id="issues" class="shift-issues"></ul>
+      </section>
+    </div>
+
+    <div class="back-action-slot">
+      <button id="back-btn" class="secondary-btn unified-back-btn" type="button" onclick="history.back()">戻る</button>
+    </div>
+  </div>
+
+  <script type="module" src="./shift.js?v=20261030-1"></script>
+  <script src="/common/sw-register.js?v=20260713-1"></script>
+</body>
+</html>

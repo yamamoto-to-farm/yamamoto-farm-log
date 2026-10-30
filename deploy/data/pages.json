@@ -367,6 +367,15 @@
       "openLog": false
     },
     {
+      "id": "shift-plan",
+      "name": "シフト管理（案の確認）",
+      "path": "/admin/shift/index.html",
+      "category": "管理/ツール",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/schedule.png",
+      "openLog": false
+    },
+    {
       "id": "login-permissions",
       "name": "ログイン権限管理",
       "path": "/admin/edit-json/index.html?data=workers",
