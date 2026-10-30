@@ -37,6 +37,10 @@
 .msg-card h3 .warn { font-size: 0.75rem; color: #e65100; font-weight: normal; }
 .msg-card h3 .remove { margin-left: auto; border: none; background: none; cursor: pointer;
   color: #999; font-size: 1rem; }
+.msg-card .kind-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.msg-card .kind-select, .msg-card .reporter-select { width: auto; padding: 4px 6px;
+  font-size: 0.82rem; border-radius: 6px; }
+.msg-card .reporter-select { border-color: #ef6c00; color: #e65100; font-weight: 600; }
 .msg-block { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; align-items: center;
   margin-bottom: 6px; }
 .msg-block input[type="time"] { width: auto; padding: 4px 6px; font-size: 0.85rem; }

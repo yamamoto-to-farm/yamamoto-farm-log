@@ -181,6 +181,7 @@ function addCard(names, start, end) {
     names,
     memo: element("common-memo").value.trim(),
     off: false, offReason: OFF_REASONS[0], manualText: null,
+    kind: "1", reporter: names[0]?.name || "",   // 作業形態（勤怠運用ルール第6条）と②の連絡係
     blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "" }],
   });
 }
@@ -268,6 +269,18 @@ function buildText(card) {
     if (block.task) lines.push(`・作業：${block.task}`);
     lines.push("");
   }
+  // 作業形態②③（勤怠運用ルール第6条）：連絡係・LINE報告のお願い
+  if (card.kind === "2") {
+    const names = card.names.map((n) => n.name);
+    const reporter = names.includes(card.reporter) ? card.reporter : names[0];
+    lines.push(`この日の連絡係は ${reporter}さん にお願いします。`);
+    lines.push("作業の開始・終了時（昼をまたぐ日は休憩の前後も）に、全員分まとめて写真つきのLINE報告をお願いします。");
+    lines.push("");
+  } else if (card.kind === "3") {
+    lines.push("この日は1人での作業です。");
+    lines.push("作業の開始・終了時（昼をまたぐ日は休憩の前後も）に、写真つきのLINE報告をお願いします。");
+    lines.push("");
+  }
   if (card.memo.trim()) {
     lines.push(card.memo.trim());
     lines.push("");
@@ -320,6 +333,18 @@ function renderCards() {
                   value="${escapeHtml(card.offReason || "")}">`
         : "");
     const body = card.off ? "" : `
+        <div class="kind-row">
+          <select class="kind-select" data-c="${c}" data-k="kind">
+            <option value="1"${card.kind === "1" ? " selected" : ""}>①家族と一緒（LINE報告なし）</option>
+            <option value="2"${card.kind === "2" ? " selected" : ""}>②パートのみ（連絡係を指定）</option>
+            <option value="3"${card.kind === "3" ? " selected" : ""}>③1人作業（本人が報告）</option>
+          </select>
+          ${card.kind === "2" ? `
+          <select class="reporter-select" data-c="${c}" data-k="reporter" title="連絡係">
+            ${card.names.map((n) =>
+              `<option value="${escapeHtml(n.name)}"${n.name === card.reporter ? " selected" : ""}>連絡係：${escapeHtml(n.name)}</option>`).join("")}
+          </select>` : ""}
+        </div>
         ${blocks}
         <button type="button" class="secondary-btn add-block" data-c="${c}">＋時間帯を追加（午前/午後で畑が変わる場合）</button>`;
     return `
@@ -494,7 +519,16 @@ window.addEventListener("DOMContentLoaded", async () => {
       renderCards();            // 表示構造が変わるため再描画
       return;
     }
-    if (input.dataset.k === "offReason") cards[c].offReason = input.value;
+    if (input.dataset.k === "kind") {
+      cards[c].kind = input.value;
+      if (!cards[c].names.some((n) => n.name === cards[c].reporter)) {
+        cards[c].reporter = cards[c].names[0]?.name || "";
+      }
+      renderCards();            // 連絡係セレクタの表示/非表示が変わるため再描画
+      return;
+    }
+    if (input.dataset.k === "reporter") cards[c].reporter = input.value;
+    else if (input.dataset.k === "offReason") cards[c].offReason = input.value;
     else if (input.dataset.k === "memo") cards[c].memo = input.value;
     else if (input.dataset.b !== undefined) {
       cards[c].blocks[Number(input.dataset.b)][input.dataset.k] = input.value;
