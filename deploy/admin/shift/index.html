@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>シフト管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./shift.css?v=20261030-13">
+  <link rel="stylesheet" href="./shift.css?v=20261030-14">
 </head>
 <body>
   <div id="header"></div>
@@ -111,7 +111,43 @@
     </div>
   </dialog>
 
-  <script type="module" src="./shift.js?v=20261030-13"></script>
+  <dialog id="bulk-dialog" class="shift-edit-dialog">
+    <h3 id="bulk-title"></h3>
+    <p class="shift-muted">この人の表示中の案に、まとめて適用します（各日の個別編集として保存されます）。</p>
+    <span class="cfg-label">対象（現在の状態）</span>
+    <div class="bulk-targets">
+      <label><input type="checkbox" value="fixed" checked>確定</label>
+      <label><input type="checkbox" value="extra" checked>確定の目安</label>
+      <label><input type="checkbox" value="hold">保留</label>
+      <label><input type="checkbox" value="skip">見送り</label>
+    </div>
+    <label>状態を変更
+      <select id="bulk-status">
+        <option value="">変更しない</option>
+        <option value="fixed">確定（「希」を外す）</option>
+        <option value="extra">確定の目安（「希」のまま）</option>
+        <option value="hold">保留（「希」のまま・判断待ち）</option>
+        <option value="skip">見送り（入れない・3日前までに連絡）</option>
+      </select>
+    </label>
+    <div class="edit-times">
+      <label>開始 <input id="bulk-start" type="time"></label>
+      <label>終了 <input id="bulk-end" type="time"></label>
+    </div>
+    <div class="edit-quick">
+      <button type="button" class="secondary-btn" data-bulk-quick="am">AM</button>
+      <button type="button" class="secondary-btn" data-bulk-quick="pm">PM</button>
+      <button type="button" class="secondary-btn" data-bulk-quick="all">終日（基本枠）</button>
+    </div>
+    <p id="bulk-info" class="shift-readout"></p>
+    <div class="edit-actions">
+      <button id="bulk-apply" class="primary-btn" type="button">まとめて反映</button>
+      <button id="bulk-clear" class="secondary-btn" type="button">この人の編集を全て取り消す</button>
+      <button id="bulk-cancel" class="secondary-btn" type="button">閉じる</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="./shift.js?v=20261030-14"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

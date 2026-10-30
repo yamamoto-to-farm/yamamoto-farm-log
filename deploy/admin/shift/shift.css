@@ -74,6 +74,12 @@
 .shift-table th:first-child, .shift-table td:first-child { text-align: left; }
 .shift-table .total { font-weight: 600; background: #f6f8f7; }
 
+.shift-table .bulk-btn { font-size: 0.72rem; padding: 2px 8px; }
+
+.bulk-targets { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; margin: 4px 0 8px; }
+.bulk-targets label { display: inline-flex; align-items: center; gap: 4px; font-weight: normal; margin: 0; }
+.bulk-targets input { width: auto; padding: 0; margin: 0; }
+
 #checklist h3 { font-size: 0.9rem; margin: 12px 0 4px; }
 #checklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem; padding: 2px 0;
   text-align: left; font-weight: normal; margin: 0; }

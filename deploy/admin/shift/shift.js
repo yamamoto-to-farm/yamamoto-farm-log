@@ -5,7 +5,7 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import {
   applyAdjustments, buildCalendar, buildChecklist, computeCost, defaultScenarioIndex,
   editWarnings, fitRemaining, formatYen, personColorMap, shiftLabel, toInputTime, workHours,
-} from "./shift-logic.js?v=20261030-11";
+} from "./shift-logic.js?v=20261030-14";
 
 const element = (id) => document.getElementById(id);
 let plan = null;
@@ -200,11 +200,92 @@ function renderPersons(computed) {
   const totalDays = rows.reduce((sum, row) => sum + row.days, 0);
   const totalCost = rows.reduce((sum, row) => sum + row.cost, 0);
   element("person-table").innerHTML =
-    "<tr><th>名前</th><th>予定日数</th><th>目安日数</th><th>人時</th><th>人件費</th></tr>" +
+    "<tr><th>名前</th><th>予定日数</th><th>目安日数</th><th>人時</th><th>人件費</th><th></th></tr>" +
     rows.map((row) =>
       `<tr><td>${row.name}${row.protected ? "（優先）" : ""}</td><td>${row.days}日</td>` +
-      `<td>${row.target ?? "-"}日</td><td>${row.hours}h</td><td>${formatYen(row.cost)}</td></tr>`).join("") +
-    `<tr class="total"><td>合計</td><td>${totalDays}日</td><td></td><td></td><td>${formatYen(totalCost)}</td></tr>`;
+      `<td>${row.target ?? "-"}日</td><td>${row.hours}h</td><td>${formatYen(row.cost)}</td>` +
+      `<td><button type="button" class="secondary-btn bulk-btn" data-person="${row.name}">一括編集</button></td></tr>`).join("") +
+    `<tr class="total"><td>合計</td><td>${totalDays}日</td><td></td><td></td><td>${formatYen(totalCost)}</td><td></td></tr>`;
+  element("person-table").querySelectorAll(".bulk-btn").forEach((button) => {
+    button.addEventListener("click", () => openBulk(button.dataset.person));
+  });
+}
+
+// ───── 人ごとの一括編集 ─────
+let bulkPerson = null;
+
+function bulkTargets() {
+  return [...document.querySelectorAll("#bulk-dialog .bulk-targets input:checked")].map((box) => box.value);
+}
+
+function bulkMatches() {
+  const targets = bulkTargets();
+  return displayedItems().filter((item) => item.person === bulkPerson && targets.includes(item.status));
+}
+
+function updateBulkInfo() {
+  const matches = bulkMatches();
+  const hours = workHours(element("bulk-start").value, element("bulk-end").value, plan.targets.break_minutes);
+  let text = `対象: ${matches.length}日`;
+  if (hours !== null) text += ` ／ 実働 ${hours}h（休憩は自動計算）`;
+  element("bulk-info").textContent = text;
+}
+
+function openBulk(person) {
+  bulkPerson = person;
+  element("bulk-title").textContent = `${person} の一括編集（${plan.month}）`;
+  element("bulk-status").value = "";
+  element("bulk-start").value = "";
+  element("bulk-end").value = "";
+  updateBulkInfo();
+  element("bulk-dialog").showModal();
+}
+
+function applyBulk() {
+  const status = element("bulk-status").value;
+  const start = element("bulk-start").value;
+  const end = element("bulk-end").value;
+  if (!status && !start && !end) {
+    element("bulk-info").textContent = "変更する内容（状態または時刻）を選んでください。";
+    return;
+  }
+  const matches = bulkMatches();
+  if (!matches.length) {
+    element("bulk-info").textContent = "対象の日がありません。";
+    return;
+  }
+  const hours = workHours(start, end, plan.targets.break_minutes);
+  const overrides = getOverrides();
+  const warns = new Set();
+  for (const item of matches) {
+    const override = { ...(overrides[item.key] || {}) };
+    override.status = status || item.status;
+    if (start) override.start = start;
+    if (end) override.end = end;
+    if (hours !== null) override.hours = hours;
+    overrides[item.key] = override;
+    for (const warning of editWarnings(plan, item, override.status,
+                                       start || item.start, end || item.proposed_end, displayedItems())) {
+      warns.add(warning);
+    }
+  }
+  saveStore("edit", overrides);
+  element("bulk-dialog").close();
+  renderAll();
+  status(`✎ ${bulkPerson} の ${matches.length}日 にまとめて反映しました。` +
+    (warns.size ? ` ⚠ ${[...warns].join("／")}` : ""), warns.size > 0);
+}
+
+function clearBulk() {
+  if (!confirm(`${bulkPerson} さんの個別編集をすべて取り消しますか？`)) return;
+  const overrides = getOverrides();
+  for (const key of Object.keys(overrides)) {
+    if (key.endsWith(`:${bulkPerson}`)) delete overrides[key];
+  }
+  saveStore("edit", overrides);
+  element("bulk-dialog").close();
+  renderAll();
+  status(`${bulkPerson} さんの編集を取り消しました。`);
 }
 
 function renderChecklist(eff) {
@@ -422,6 +503,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("edit-save").addEventListener("click", saveEdit);
   element("edit-clear").addEventListener("click", clearEdit);
   element("edit-cancel").addEventListener("click", () => element("edit-dialog").close());
+  element("bulk-apply").addEventListener("click", applyBulk);
+  element("bulk-clear").addEventListener("click", clearBulk);
+  element("bulk-cancel").addEventListener("click", () => element("bulk-dialog").close());
+  document.querySelectorAll("#bulk-dialog .bulk-targets input").forEach((box) =>
+    box.addEventListener("change", updateBulkInfo));
+  element("bulk-start").addEventListener("input", updateBulkInfo);
+  element("bulk-end").addEventListener("input", updateBulkInfo);
+  document.querySelectorAll("#bulk-dialog [data-bulk-quick]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const base = getBase();
+      const quick = button.dataset.bulkQuick;
+      element("bulk-start").value = toInputTime(quick === "pm" ? "13:00" : base.start);
+      element("bulk-end").value = toInputTime(quick === "am" ? "12:00" : base.end);
+      updateBulkInfo();
+    });
+  });
 
   if (!hasSession()) {
     element("login-area").hidden = false;
