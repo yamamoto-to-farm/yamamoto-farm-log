@@ -1,0 +1,37 @@
+/* 労務費ダッシュボード */
+.labor-note { font-size: 0.85rem; color: #666; }
+.labor-h2 { font-size: 1rem; margin: 0 0 10px; text-align: left; color: #2e7d32; }
+#status.error { color: #c62828; }
+
+.labor-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.labor-summary .stat { background: #f7faf7; border: 1px solid #e0e8e0; border-radius: 8px;
+  padding: 10px 12px; text-align: center; }
+.labor-summary .stat b { display: block; font-size: 1.25rem; color: #1b5e20; }
+.labor-summary .stat span { font-size: 0.75rem; color: #777; }
+.labor-summary .stat.over b { color: #c62828; }
+
+.labor-chart { display: flex; gap: 14px; align-items: flex-end; overflow-x: auto;
+  padding: 10px 4px 0; min-height: 230px; }
+.labor-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0 0 64px; }
+.labor-col .amount { font-size: 0.72rem; color: #555; white-space: nowrap; }
+.labor-col .amount.over { color: #c62828; font-weight: 700; }
+.labor-col .bar-wrap { position: relative; width: 44px; height: 170px; display: flex;
+  flex-direction: column-reverse; }
+.labor-col .seg { width: 100%; }
+.labor-col .budget-mark { position: absolute; left: -6px; right: -6px; border-top: 2px dashed #c62828; }
+.labor-col .label { font-size: 0.78rem; color: #333; font-weight: 600; white-space: nowrap; }
+.labor-col a { text-decoration: none; }
+
+.labor-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 0.8rem; }
+.labor-legend .key { display: inline-flex; align-items: center; gap: 5px; color: #444; }
+.labor-legend .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+.labor-scroll { overflow-x: auto; }
+.labor-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.labor-table th, .labor-table td { border-bottom: 1px solid #e8e8e8; padding: 6px 10px;
+  text-align: right; white-space: nowrap; }
+.labor-table th:first-child, .labor-table td:first-child { text-align: left; }
+.labor-table thead th { background: #f4f7f4; color: #555; font-weight: 600; }
+.labor-table .over { color: #c62828; font-weight: 700; }
+.labor-table .ok { color: #1a7f37; }
+.labor-table .muted { color: #999; }
