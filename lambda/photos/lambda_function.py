@@ -17,6 +17,8 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 S3 = boto3.client("s3", config=Config(signature_version="s3v4"))
 MAX_BYTES = 5 * 1024 * 1024
+THUMB_MAX_BYTES = 1024 * 1024
+URL_TTL = 900  # 署名付きURLの有効期間（秒）。ページ内キャッシュにも同じ値を使う
 PAGE_SIZE = 24
 MAX_SEARCH_KEYS = 2000
 PHOTO_ID = re.compile(r"^\d{8}T\d{12}Z_[0-9a-f]{32}$")
@@ -78,20 +80,28 @@ def valid_date(value, message):
         raise RequestError(400, message) from error
 
 
+def _signed_image_url(bucket, key):
+    return S3.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": bucket, "Key": key,
+            "ResponseContentType": "image/jpeg",
+            "ResponseContentDisposition": "inline",
+            # 一覧の再描画・ビューアで同じURLを再利用したときに再ダウンロードしない
+            "ResponseCacheControl": f"private, max-age={URL_TTL}",
+        },
+        ExpiresIn=URL_TTL,
+    )
+
+
 def public_photo(bucket, metadata):
     metadata = dict(metadata)
     metadata.pop("uploadedBy", None)
     image_key = metadata.pop("imageKey")
-    metadata["url"] = S3.generate_presigned_url(
-        "get_object",
-        Params={
-            "Bucket": bucket, "Key": image_key,
-            "ResponseContentType": "image/jpeg",
-            "ResponseContentDisposition": "inline",
-            "ResponseCacheControl": "no-store",
-        },
-        ExpiresIn=300,
-    )
+    thumb_key = metadata.pop("thumbKey", None)
+    metadata["url"] = _signed_image_url(bucket, image_key)
+    if thumb_key:
+        metadata["thumbUrl"] = _signed_image_url(bucket, thumb_key)  # 一覧用の軽量サムネイル
     return metadata
 
 
@@ -228,6 +238,8 @@ def delete_photo(bucket, prefix, root, field_key, photo_id, claims):
         f"{prefix}by-date/{record['takenOn']}/{photo_id}.json",
         field_date_key(prefix, record),
     ]
+    if record.get("thumbKey"):
+        keys.append(record["thumbKey"])
     for key in keys:
         S3.delete_object(Bucket=bucket, Key=key)
     top = read_json_or_none(bucket, f"{prefix}tops/{field_key}.json")
@@ -357,24 +369,31 @@ def lambda_handler(event, context):
             log_id = text(data, "logId", 100, required=False)
             photo_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_") + uuid.uuid4().hex
             image_key = f"{root}images/{photo_id}.jpg"
+            thumb_key = f"{root}thumbs/{photo_id}.jpg"
             metadata = {
                 "id": photo_id, "field": field, "takenOn": taken_on, "note": note,
                 "uploadedAt": datetime.now(timezone.utc).isoformat(),
-                "uploadedBy": claims["sub"], "imageKey": image_key,
+                "uploadedBy": claims["sub"], "imageKey": image_key, "thumbKey": thumb_key,
             }
             if log_id:
                 metadata["logId"] = log_id
             write_json(bucket, f"{root}pending/{photo_id}.json", metadata)
-            upload = S3.generate_presigned_post(
-                Bucket=bucket, Key=image_key,
-                Fields={"Content-Type": "image/jpeg", "Cache-Control": "no-store"},
-                Conditions=[
-                    {"Content-Type": "image/jpeg"}, {"Cache-Control": "no-store"},
-                    ["content-length-range", 1, MAX_BYTES],
-                ],
-                ExpiresIn=300,
-            )
-            return response(200, {"id": photo_id, "upload": upload})
+
+            def presigned_post(key, max_bytes):
+                return S3.generate_presigned_post(
+                    Bucket=bucket, Key=key,
+                    Fields={"Content-Type": "image/jpeg", "Cache-Control": "no-store"},
+                    Conditions=[
+                        {"Content-Type": "image/jpeg"}, {"Cache-Control": "no-store"},
+                        ["content-length-range", 1, max_bytes],
+                    ],
+                    ExpiresIn=300,
+                )
+            return response(200, {
+                "id": photo_id,
+                "upload": presigned_post(image_key, MAX_BYTES),
+                "thumbUpload": presigned_post(thumb_key, THUMB_MAX_BYTES),  # 一覧用サムネイル（任意）
+            })
 
         if route == "POST /photos/complete":
             photo_id = text(data, "id", 80)
@@ -396,6 +415,15 @@ def lambda_handler(event, context):
             with image["Body"] as stream:
                 if stream.read() != b"\xff\xd8\xff":
                     raise RequestError(400, "JPEG画像ではありません。")
+            # サムネイルは任意：正しくアップロードされていなければ本画像へフォールバック
+            thumb_key = metadata.get("thumbKey")
+            if thumb_key:
+                try:
+                    thumb = S3.head_object(Bucket=bucket, Key=thumb_key)
+                    if thumb["ContentType"] != "image/jpeg" or not 0 < thumb["ContentLength"] <= THUMB_MAX_BYTES:
+                        raise RequestError(400, "thumb invalid")
+                except (ClientError, RequestError):
+                    metadata = {k: v for k, v in metadata.items() if k != "thumbKey"}
             write_json(bucket, f"{root}records/{photo_id}.json", metadata)
             write_indexes(bucket, prefix, metadata)
             return response(200, {"id": photo_id})

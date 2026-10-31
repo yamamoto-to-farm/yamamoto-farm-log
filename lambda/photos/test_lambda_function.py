@@ -68,15 +68,24 @@ class PhotoApiTests(unittest.TestCase):
         })
         self.assertEqual(status, 200)
         self.assertRegex(body["id"], api.PHOTO_ID)
-        args = fake_s3.generate_presigned_post.call_args.kwargs
-        self.assertEqual(args["Bucket"], "private-photo-test")
-        self.assertNotIn("..", args["Key"])
-        self.assertTrue(args["Key"].startswith("photos/fields/"))
-        self.assertEqual(args["ExpiresIn"], 300)
-        self.assertIn(["content-length-range", 1, api.MAX_BYTES], args["Conditions"])
-        self.assertEqual(args["Fields"]["Content-Type"], "image/jpeg")
+        self.assertIn("upload", body)
+        self.assertIn("thumbUpload", body)
+        calls = fake_s3.generate_presigned_post.call_args_list
+        self.assertEqual(len(calls), 2)
+        main, thumb = calls[0].kwargs, calls[1].kwargs
+        for args in (main, thumb):
+            self.assertEqual(args["Bucket"], "private-photo-test")
+            self.assertNotIn("..", args["Key"])
+            self.assertTrue(args["Key"].startswith("photos/fields/"))
+            self.assertEqual(args["ExpiresIn"], 300)
+            self.assertEqual(args["Fields"]["Content-Type"], "image/jpeg")
+        self.assertIn("/images/", main["Key"])
+        self.assertIn(["content-length-range", 1, api.MAX_BYTES], main["Conditions"])
+        self.assertIn("/thumbs/", thumb["Key"])
+        self.assertIn(["content-length-range", 1, api.THUMB_MAX_BYTES], thumb["Conditions"])
         metadata = json.loads(fake_s3.put_object.call_args.kwargs["Body"])
         self.assertEqual(metadata["uploadedBy"], "user-1")
+        self.assertIn("/thumbs/", metadata["thumbKey"])
 
     def test_invalid_upload_metadata_rejected(self):
         for data in [
@@ -111,8 +120,49 @@ class PhotoApiTests(unittest.TestCase):
         self.assertNotIn("imageKey", body["photos"][0])
         self.assertNotIn("uploadedBy", body["photos"][0])
         args = fake_s3.generate_presigned_url.call_args.kwargs
-        self.assertEqual(args["ExpiresIn"], 300)
-        self.assertEqual(args["Params"]["ResponseCacheControl"], "no-store")
+        self.assertEqual(args["ExpiresIn"], api.URL_TTL)
+        self.assertEqual(args["Params"]["ResponseCacheControl"], f"private, max-age={api.URL_TTL}")
+
+    def test_listing_returns_thumb_url_when_available(self):
+        metadata = {**self.metadata(), "thumbKey": "photos/fields/hash/thumbs/photo.jpg"}
+        fake_s3.list_objects_v2.return_value = {"Contents": [{"Key": "record.json"}]}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(metadata).encode())}
+        fake_s3.generate_presigned_url.side_effect = ["https://signed.invalid/full", "https://signed.invalid/thumb"]
+        status, body = self.call("GET /photos", {"field": "A"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["photos"][0]["url"], "https://signed.invalid/full")
+        self.assertEqual(body["photos"][0]["thumbUrl"], "https://signed.invalid/thumb")
+        self.assertNotIn("thumbKey", body["photos"][0])
+
+    def test_complete_drops_missing_thumb(self):
+        metadata = {**self.metadata(), "thumbKey": "photos/fields/hash/thumbs/photo.jpg"}
+        fake_s3.get_object.side_effect = [
+            {"Body": io.BytesIO(json.dumps(metadata).encode())},
+            {"Body": io.BytesIO(b"\xff\xd8\xff")},
+        ]
+        fake_s3.head_object.side_effect = [
+            {"ContentType": "image/jpeg", "ContentLength": 100},
+            FakeClientError("404"),
+        ]
+        status, _ = self.call("POST /photos/complete", {"field": "A", "id": metadata["id"]})
+        self.assertEqual(status, 200)
+        record = json.loads(fake_s3.put_object.call_args_list[0].kwargs["Body"])
+        self.assertNotIn("thumbKey", record)
+
+    def test_complete_keeps_valid_thumb(self):
+        metadata = {**self.metadata(), "thumbKey": "photos/fields/hash/thumbs/photo.jpg"}
+        fake_s3.get_object.side_effect = [
+            {"Body": io.BytesIO(json.dumps(metadata).encode())},
+            {"Body": io.BytesIO(b"\xff\xd8\xff")},
+        ]
+        fake_s3.head_object.side_effect = [
+            {"ContentType": "image/jpeg", "ContentLength": 100},
+            {"ContentType": "image/jpeg", "ContentLength": 100},
+        ]
+        status, _ = self.call("POST /photos/complete", {"field": "A", "id": metadata["id"]})
+        self.assertEqual(status, 200)
+        record = json.loads(fake_s3.put_object.call_args_list[0].kwargs["Body"])
+        self.assertEqual(record["thumbKey"], "photos/fields/hash/thumbs/photo.jpg")
 
     def test_complete_verifies_owner_image_type_size_and_signature(self):
         metadata = self.metadata()

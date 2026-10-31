@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { config } from "./config.js";
 import { clearSession, ensureToken, hasSession, login } from "./auth.js";
-import { openPhotoUploadModal } from "./upload.js?v=20261029-2";
+import { openPhotoUploadModal } from "./upload.js?v=20261031-1";
 import { setTopPhoto } from "./top.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -21,6 +21,7 @@ let current = -1;
 let generation = 0;
 let selectedFields = [];
 let editingBusy = false;
+const tops = new Map();  // 圃場名 → トップ写真ID（null=未設定）
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -92,12 +93,12 @@ function render() {
     button.type = "button";
     button.setAttribute("aria-label", `${photo.field} ${photo.takenOn}の写真を拡大`);
     const image = document.createElement("img");
-    image.src = photo.url;
+    image.src = photo.thumbUrl || photo.url;  // 一覧はサムネイル（旧写真は本画像）
     image.alt = photo.note || `${photo.field}の写真`;
     image.loading = "lazy";
     image.referrerPolicy = "no-referrer";
     image.addEventListener("error", () => {
-      status("画像を読み込めません。「検索」を押して更新してください（URLの有効期間は5分です）。", true);
+      status("画像を読み込めません。「検索」を押して更新してください（URLの有効期間は15分です）。", true);
     });
     button.append(image);
     button.addEventListener("click", () => openViewer(index));
@@ -117,7 +118,31 @@ function render() {
     card.append(button, meta);
     gallery.append(card);
   });
+  applyTopBadges();
   element("more").hidden = !cursor;
+}
+
+// ★トップ写真バッジ：表示中の圃場ぶんだけトップ設定を取得して反映する
+function applyTopBadges() {
+  document.querySelectorAll("#gallery .photo-card").forEach((card, index) => {
+    const photo = photos[index];
+    card.classList.toggle("is-top", !!photo && tops.get(photo.field) === photo.id);
+  });
+}
+
+async function updateTopBadges() {
+  const missing = [...new Set(photos.map(photo => photo.field))].filter(field => !tops.has(field));
+  if (missing.length) {
+    await Promise.all(missing.map(async field => {
+      try {
+        const result = await api("/photos/top", { query: { field } });
+        tops.set(field, result.photo?.id || null);
+      } catch {
+        tops.set(field, null);
+      }
+    }));
+  }
+  applyTopBadges();
 }
 
 async function load(append = false) {
@@ -143,6 +168,7 @@ async function load(append = false) {
   cursor = result.cursor || null;
   total = result.total ?? photos.length;
   render();
+  updateTopBadges().catch(() => { /* バッジは任意表示 */ });
   status(photos.length ? `${total}枚中 ${photos.length}枚を表示中` : "条件に合う写真はありません。");
 }
 
@@ -170,6 +196,8 @@ function openViewer(index) {
   element("prev").disabled = index === 0;
   element("next").disabled = index === photos.length - 1 && !cursor;
   element("set-top").hidden = !canManageTop();
+  element("set-top").disabled = tops.get(photo.field) === photo.id;
+  element("set-top").textContent = tops.get(photo.field) === photo.id ? "★ トップ写真です" : "★ トップ写真にする";
   element("delete").hidden = !photo.canDelete;
   element("edit-photo").hidden = !photo.canEdit;
   element("photo-edit-form").hidden = true;
@@ -217,6 +245,10 @@ async function makeTop() {
   const photo = photos[current];
   try {
     await setTopPhoto(photo.field, photo.id);
+    tops.set(photo.field, photo.id);
+    applyTopBadges();
+    element("set-top").disabled = true;
+    element("set-top").textContent = "★ トップ写真です";
     viewerStatus(`「${photo.field}」のトップ写真に設定しました。`);
   } catch (error) {
     viewerStatus(error.message, true);

@@ -54,14 +54,49 @@ export async function convertToJpeg(file) {
   }
 }
 
+// 一覧表示用サムネイル（長辺360px・JPEG）。失敗したら null（本画像のみで続行）。
+async function makeThumbnail(blob) {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    try {
+      const scale = Math.min(1, 360 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) return null;
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const thumb = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.8));
+      return thumb && thumb.size <= 1024 * 1024 ? thumb : null;
+    } finally {
+      bitmap.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
+async function postToS3(upload, blob) {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(upload.fields)) form.append(key, value);
+  form.append("file", blob, "photo.jpg");
+  return fetch(upload.url, { method: "POST", body: form, cache: "no-store" });
+}
+
 // 変換済みJPEGをアップロードして確定する。戻り値は写真ID。
 export async function uploadPhoto({ field, takenOn, note = "", blob, logId = "" }) {
   const ticket = await api("/photos/uploads", { field, takenOn, note, ...(logId ? { logId } : {}) });
-  const form = new FormData();
-  for (const [key, value] of Object.entries(ticket.upload.fields)) form.append(key, value);
-  form.append("file", blob, "photo.jpg");
-  const result = await fetch(ticket.upload.url, { method: "POST", body: form, cache: "no-store" });
+  const result = await postToS3(ticket.upload, blob);
   if (!result.ok) throw new Error(`S3への画像保存に失敗しました（${result.status}）。`);
+  if (ticket.thumbUpload) {
+    // サムネイルは任意（失敗しても本画像のみで保存を続ける）
+    const thumb = await makeThumbnail(blob);
+    if (thumb) {
+      try { await postToS3(ticket.thumbUpload, thumb); } catch { /* 本画像のみで続行 */ }
+    }
+  }
   await api("/photos/complete", { field, id: ticket.id });
   return ticket.id;
 }
@@ -83,7 +118,7 @@ function buildDialog() {
           <strong data-picked>未選択</strong>
         </div>
         <label>撮影日<input class="form-input" name="takenOn" type="date" required></label>
-        <label>写真（1枚ずつ）<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>
+        <label>写真（複数選択可）<input name="image" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
         <label>メモ<textarea class="form-textarea" name="note" maxlength="1000"></textarea></label>
       </div>
       <div class="photo-upload-actions">
@@ -176,25 +211,37 @@ export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromA
     if (busy) return;
     const field = select.value;
     const takenOn = form.elements.takenOn.value;
-    const file = form.elements.image.files[0];
-    if (!field || !takenOn || !file) {
+    const files = [...form.elements.image.files];
+    if (!field || !takenOn || !files.length) {
       say("圃場・撮影日・写真を指定してください。", true);
       return;
     }
     busy = true;
     saveButton.disabled = true;
+    let saved = 0;
+    const errors = [];
     try {
-      say("画像を変換しています…");
-      const blob = await convertToJpeg(file);
-      say("アップロードしています…");
-      await uploadPhoto({ field, takenOn, note: form.elements.note.value, blob });
-      form.elements.image.value = "";
-      form.elements.note.value = "";
-      say(`「${field}」に保存しました。続けて追加できます。`);
-      onUploaded?.({ field, takenOn });
-    } catch (error) {
-      console.error("[photos] upload failed", error);
-      say(error.message, true);
+      for (let index = 0; index < files.length; index++) {
+        const step = files.length > 1 ? `（${index + 1}/${files.length}枚目）` : "";
+        try {
+          say(`画像を変換しています…${step}`);
+          const blob = await convertToJpeg(files[index]);
+          say(`アップロードしています…${step}`);
+          await uploadPhoto({ field, takenOn, note: form.elements.note.value, blob });
+          saved += 1;
+          onUploaded?.({ field, takenOn });
+        } catch (error) {
+          console.error("[photos] upload failed", files[index]?.name, error);
+          errors.push(`${files[index]?.name || index + 1}: ${error.message}`);
+        }
+      }
+      if (!errors.length) {
+        form.elements.image.value = "";
+        form.elements.note.value = "";
+        say(`「${field}」に${saved}枚保存しました。続けて追加できます。`);
+      } else {
+        say(`${saved}枚保存・${errors.length}枚失敗しました。${errors[0]}`, true);
+      }
     } finally {
       busy = false;
       saveButton.disabled = false;
