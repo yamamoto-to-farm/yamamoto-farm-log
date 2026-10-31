@@ -12,7 +12,7 @@ import { getTotalFieldSize } from "/common/field-utils.js?v=1";
 import { getSelectedWorkers } from "/common/ui.js?v=1";
 import { saveMultiFieldLog } from "/common/general-log/base.js?v=1";
 import { showSaveModal, closeSaveModal, completeSaveModal, confirmSaveBeforeSubmit } from "/common/save-modal.js?v=1";
-import { mountPhotoAttach } from "/photos/upload.js?v=20261031-1";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261101-5";
 
 export async function initWateringPage() {
   debugLog("initWateringPage start");

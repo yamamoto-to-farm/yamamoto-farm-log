@@ -19,7 +19,7 @@ import { todayLocalYmd } from "../common/date-utils.js";
 // ★ サマリー自動更新
 import { enqueueSummaryUpdate } from "../common/summary.js";
 import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=7";
-import { mountPhotoAttach } from "/photos/upload.js?v=20261031-1";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261101-5";
 
 const DEBUG = localStorage.getItem("debugHarvest") === "1";
 const HARVEST_PLAN_WINDOW_DAYS = 50;

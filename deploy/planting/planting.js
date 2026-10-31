@@ -23,7 +23,7 @@ import { enqueueSummaryUpdate } from "../common/summary.js";
 import { openVarietyModal } from "/common/filter/filter-variety.js?v=1";
 import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 import { setupFieldModalPicker } from "/common/field-modal-picker.js?v=7";
-import { mountPhotoAttach } from "/photos/upload.js?v=20261031-1";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261101-5";
 import { buildSeedRemainingMap } from "/common/seed-remaining.js?v=1";
 
 

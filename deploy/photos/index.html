@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="/photos/upload.css?v=20261029-2">
-  <link rel="stylesheet" href="./photos.css?v=20261101-4">
+  <link rel="stylesheet" href="./photos.css?v=20261101-5">
 </head>
 <body>
   <div id="header"></div>
@@ -36,6 +36,14 @@
         <button type="button" class="secondary-btn" data-range="90">直近90日</button>
         <button type="button" class="secondary-btn" data-range="year">今年</button>
         <button type="button" class="secondary-btn" data-range="all">全期間</button>
+      </div>
+      <div class="photos-filter-row photos-presets photos-categories" role="group" aria-label="カテゴリの絞り込み">
+        <button type="button" class="secondary-btn on" data-category="">すべて</button>
+        <button type="button" class="secondary-btn" data-category="field">圃場</button>
+        <button type="button" class="secondary-btn" data-category="growth">栽培記録</button>
+        <button type="button" class="secondary-btn" data-category="work">作業</button>
+        <button type="button" class="secondary-btn" data-category="issue">被害・異常</button>
+        <button type="button" class="secondary-btn" data-category="none">未分類</button>
       </div>
       <div class="photos-filter-row photos-filter-actions">
         <button id="search" class="primary-btn" type="button">検索</button>
@@ -79,6 +87,16 @@
     <form id="photo-edit-form" class="photo-edit-form" hidden>
       <label for="edit-taken-on">撮影日</label>
       <input id="edit-taken-on" class="form-input" type="date" required>
+      <label for="edit-category">カテゴリ</label>
+      <select id="edit-category" class="form-input">
+        <option value="">（未分類）</option>
+        <option value="field">圃場</option>
+        <option value="growth">栽培記録</option>
+        <option value="work">作業</option>
+        <option value="issue">被害・異常</option>
+      </select>
+      <label for="edit-planting" data-edit-planting hidden>定植と紐づけ</label>
+      <select id="edit-planting" class="form-input" data-edit-planting hidden></select>
       <label for="edit-note">メモ</label>
       <textarea id="edit-note" class="form-textarea" maxlength="1000"></textarea>
       <div class="viewer-actions">
@@ -89,7 +107,7 @@
     <p id="viewer-status" role="status" aria-live="polite"></p>
   </dialog>
 
-  <script type="module" src="./photos.js?v=20261101-4"></script>
+  <script type="module" src="./photos.js?v=20261101-5"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

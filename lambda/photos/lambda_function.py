@@ -22,6 +22,7 @@ URL_TTL = 900  # 署名付きURLの有効期間（秒）。ページ内キャッ
 PAGE_SIZE = 24
 MAX_SEARCH_KEYS = 2000
 PHOTO_ID = re.compile(r"^\d{8}T\d{12}Z_[0-9a-f]{32}$")
+CATEGORIES = {"field", "growth", "work", "issue"}  # 圃場/栽培記録/作業/被害・異常
 CLIENT_ID = "mg1q2dnn576jln28m5sja6eaf"
 ISSUER = "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_OFiPcQjkC"
 
@@ -148,6 +149,32 @@ def write_indexes(bucket, prefix, metadata):
     write_json(bucket, f"{prefix}by-date/{metadata['takenOn']}/{metadata['id']}.json", metadata)
 
 
+def photo_labels(data):
+    """カテゴリと定植紐づけ（いずれも任意）を検証して返す"""
+    category = text(data, "category", 20, required=False)
+    if category and category not in CATEGORIES:
+        raise RequestError(400, "カテゴリが不正です。")
+    planting_ref = text(data, "plantingRef", 200, required=False)
+    variety = text(data, "variety", 100, required=False)
+    plant_date = text(data, "plantDate", 10, required=False)
+    if plant_date:
+        valid_date(plant_date, "定植日が不正です。")
+    if not planting_ref:
+        variety = plant_date = ""
+    return category, planting_ref, variety, plant_date
+
+
+def apply_labels(metadata, category, planting_ref, variety, plant_date):
+    """メタデータへカテゴリ・定植紐づけを反映する（空なら削除）"""
+    for key, value in (("category", category), ("plantingRef", planting_ref),
+                       ("variety", variety), ("plantDate", plant_date)):
+        if value:
+            metadata[key] = value
+        else:
+            metadata.pop(key, None)
+    return metadata
+
+
 def edit_photo(bucket, prefix, root, data, claims):
     if not {"admin", "family"} & user_groups(claims):
         raise RequestError(403, "写真を編集する権限がありません。")
@@ -157,9 +184,10 @@ def edit_photo(bucket, prefix, root, data, claims):
     taken_on = text(data, "takenOn", 10)
     valid_date(taken_on, "撮影日が不正です。")
     note = text(data, "note", 1000, required=False)
+    labels = photo_labels(data)
     original = read_json(bucket, f"{root}records/{photo_id}.json")
-    metadata = {**original, "takenOn": taken_on, "note": note,
-                "updatedAt": datetime.now(timezone.utc).isoformat()}
+    metadata = apply_labels({**original, "takenOn": taken_on, "note": note,
+                             "updatedAt": datetime.now(timezone.utc).isoformat()}, *labels)
     # Keep pending metadata consistent so retrying /complete cannot undo an edit.
     write_json(bucket, f"{root}pending/{photo_id}.json", metadata)
     write_json(bucket, f"{root}records/{photo_id}.json", metadata)
@@ -193,6 +221,10 @@ def search_photos(bucket, prefix, data, claims):
     if cursor and not cursor.isdigit():
         raise RequestError(400, "一覧の続きの取得に失敗しました。一覧を更新してください。")
     offset = int(cursor or 0)
+    # カテゴリ絞り込み（"none"=未分類）。レコードを読まないと判定できないため全件読みにする
+    category = text(data, "category", 20, required=False)
+    if category and category != "none" and category not in CATEGORIES:
+        raise RequestError(400, "カテゴリが不正です。")
 
     indexed = os.environ.get("PHOTO_SEARCH_INDEX_VERSION") == "2"
     if indexed and fields:
@@ -202,10 +234,20 @@ def search_photos(bucket, prefix, data, claims):
         keys.sort(key=lambda key: tuple(key.rsplit("/", 2)[-2:]), reverse=True)
     else:
         keys = sorted(list_date_keys(bucket, prefix, start, end), reverse=True)
-    if fields and not indexed:
+
+    def category_ok(record):
+        if not category:
+            return True
+        if category == "none":
+            return not record.get("category")
+        return record.get("category") == category
+
+    if (fields and not indexed) or category:
         with ThreadPoolExecutor(max_workers=8) as pool:
             records = list(pool.map(lambda key: read_json_or_none(bucket, key), keys))
-        matched = [record for record in records if record and record.get("field") in fields]
+        matched = [record for record in records
+                   if record and (not fields or indexed or record.get("field") in fields)
+                   and category_ok(record)]
     else:
         matched = None
     total = len(matched) if matched is not None else len(keys)
@@ -403,14 +445,15 @@ def lambda_handler(event, context):
             valid_date(taken_on, "撮影日が不正です。")
             note = text(data, "note", 1000, required=False)
             log_id = text(data, "logId", 100, required=False)
+            labels = photo_labels(data)
             photo_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_") + uuid.uuid4().hex
             image_key = f"{root}images/{photo_id}.jpg"
             thumb_key = f"{root}thumbs/{photo_id}.jpg"
-            metadata = {
+            metadata = apply_labels({
                 "id": photo_id, "field": field, "takenOn": taken_on, "note": note,
                 "uploadedAt": datetime.now(timezone.utc).isoformat(),
                 "uploadedBy": claims["sub"], "imageKey": image_key, "thumbKey": thumb_key,
-            }
+            }, *labels)
             if log_id:
                 metadata["logId"] = log_id
             write_json(bucket, f"{root}pending/{photo_id}.json", metadata)

@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { clearSession, ensureToken, hasSession, login } from "./auth.js";
+import { CATEGORIES, plantingCandidates, candidateLabel } from "./categories.js?v=20261101-5";
 
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -86,8 +87,13 @@ export async function postToS3(upload, blob) {
 }
 
 // 変換済みJPEGをアップロードして確定する。戻り値は写真ID。
-export async function uploadPhoto({ field, takenOn, note = "", blob, logId = "" }) {
-  const ticket = await api("/photos/uploads", { field, takenOn, note, ...(logId ? { logId } : {}) });
+export async function uploadPhoto({ field, takenOn, note = "", blob, logId = "", category = "", planting = null }) {
+  const ticket = await api("/photos/uploads", {
+    field, takenOn, note,
+    ...(logId ? { logId } : {}),
+    ...(category ? { category } : {}),
+    ...(planting?.ref ? { plantingRef: planting.ref, variety: planting.variety || "", plantDate: planting.plantDate || "" } : {}),
+  });
   const result = await postToS3(ticket.upload, blob);
   if (!result.ok) throw new Error(`S3への画像保存に失敗しました（${result.status}）。`);
   if (ticket.thumbUpload) {
@@ -118,6 +124,11 @@ function buildDialog() {
           <strong data-picked>未選択</strong>
         </div>
         <label>撮影日<input class="form-input" name="takenOn" type="date" required></label>
+        <label>カテゴリ<select class="form-input" name="category">
+          <option value="">（未分類）</option>
+          ${CATEGORIES.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}
+        </select></label>
+        <label data-planting hidden>定植と紐づけ<select class="form-input" name="planting"></select></label>
         <label>写真（複数選択可）<input name="image" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
         <label>メモ<textarea class="form-textarea" name="note" maxlength="1000"></textarea></label>
       </div>
@@ -135,7 +146,7 @@ function buildDialog() {
  * getFields: 選択可能な圃場名の配列を返す関数 / getDate: 撮影日(YYYY-MM-DD)の初期値を返す関数
  * onUploaded: 1枚保存するたびに呼ばれる
  */
-export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromAll = false, initialField = "" }) {
+export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromAll = false, initialField = "", defaultCategory = "" }) {
   dialog ||= buildDialog();
   const form = dialog.querySelector("form");
   const message = dialog.querySelector(".photo-upload-message");
@@ -148,9 +159,28 @@ export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromA
     message.style.color = isError ? "#b3261e" : "";
   };
 
+  // 栽培記録のとき、圃場×撮影日から定植の候補を出す（選択は任意）
+  let candidates = [];
+  const refreshPlanting = async () => {
+    const wrap = dialog.querySelector("[data-planting]");
+    const plantingSelect = form.elements.planting;
+    if (form.elements.category.value !== "growth") {
+      wrap.hidden = true;
+      plantingSelect.replaceChildren();
+      return;
+    }
+    wrap.hidden = false;
+    candidates = await plantingCandidates(select.value, form.elements.takenOn.value);
+    plantingSelect.replaceChildren(
+      new Option(candidates.length ? "（紐づけない）" : "（この圃場・日付の定植記録なし）", ""),
+      ...candidates.map(c => new Option(candidateLabel(c, form.elements.takenOn.value), c.ref)));
+    if (candidates.length) plantingSelect.value = candidates[0].ref;  // 直近の定植を初期値に
+  };
+
   const setPicked = name => {
     select.replaceChildren(...(name ? [new Option(name, name)] : []));
     picker.querySelector("[data-picked]").textContent = name || "未選択";
+    refreshPlanting();
   };
 
   const fields = pickFromAll ? ["*"] : [...new Set((getFields() || []).filter(Boolean))];
@@ -164,6 +194,11 @@ export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromA
   form.elements.takenOn.value = getDate() || "";
   form.elements.image.value = "";
   form.elements.note.value = "";
+  form.elements.category.value = defaultCategory;
+  form.elements.category.onchange = refreshPlanting;
+  form.elements.takenOn.onchange = refreshPlanting;
+  select.onchange = refreshPlanting;
+  refreshPlanting();
   say("");
 
   // 共通の圃場モーダルは<dialog>の背面に出るため、選択中だけ閉じて再表示する
@@ -218,6 +253,10 @@ export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromA
     }
     busy = true;
     saveButton.disabled = true;
+    const category = form.elements.category.value;
+    const planting = category === "growth"
+      ? candidates.find(c => c.ref === form.elements.planting.value) || null
+      : null;
     let saved = 0;
     const errors = [];
     try {
@@ -227,7 +266,7 @@ export function openPhotoUploadModal({ getFields, getDate, onUploaded, pickFromA
           say(`画像を変換しています…${step}`);
           const blob = await convertToJpeg(files[index]);
           say(`アップロードしています…${step}`);
-          await uploadPhoto({ field, takenOn, note: form.elements.note.value, blob });
+          await uploadPhoto({ field, takenOn, note: form.elements.note.value, blob, category, planting });
           saved += 1;
           onUploaded?.({ field, takenOn });
         } catch (error) {
@@ -275,6 +314,7 @@ export function mountPhotoAttach(container, { getFields, getDate }) {
   let count = 0;
   button.addEventListener("click", () => openPhotoUploadModal({
     getFields, getDate,
+    defaultCategory: "work",   // 作業ログからの添付は既定を【作業】にする
     onUploaded: () => {
       count += 1;
       counter.textContent = `${count}枚保存済み`;

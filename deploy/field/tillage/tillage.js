@@ -6,7 +6,7 @@ function debugLog(...args) {
 }
 
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
-import { mountPhotoAttach } from "/photos/upload.js?v=20261031-1";
+import { mountPhotoAttach } from "/photos/upload.js?v=20261101-5";
 import { setFilterData, getFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 import { getTotalFieldSize } from "/common/field-utils.js?v=1";

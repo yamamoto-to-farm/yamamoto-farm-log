@@ -2,7 +2,8 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { config } from "./config.js";
 import { clearSession, ensureToken, hasSession, login } from "./auth.js";
-import { openPhotoUploadModal, makeThumbnail, postToS3 } from "./upload.js?v=20261101-1";
+import { openPhotoUploadModal, makeThumbnail, postToS3 } from "./upload.js?v=20261101-5";
+import { CATEGORY_LABEL, plantingCandidates, candidateLabel, plantingText } from "./categories.js?v=20261101-5";
 import { setTopPhoto } from "./top.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -20,7 +21,9 @@ let total = 0;
 let current = -1;
 let generation = 0;
 let selectedFields = [];
+let selectedCategory = "";
 let editingBusy = false;
+let editCandidates = [];
 const tops = new Map();  // 圃場名 → トップ写真ID（null=未設定）
 
 function status(message, isError = false) {
@@ -121,6 +124,19 @@ function render() {
     const date = document.createElement("span");
     date.textContent = photo.takenOn.replaceAll("-", "/");
     meta.append(title, date);
+    if (photo.category) {
+      const badge = document.createElement("span");
+      badge.className = `photo-cat cat-${photo.category}`;
+      badge.textContent = CATEGORY_LABEL[photo.category] || photo.category;
+      meta.append(badge);
+    }
+    const planting = plantingText(photo);
+    if (planting) {
+      const line = document.createElement("div");
+      line.className = "photo-card-planting";
+      line.textContent = planting;
+      meta.append(line);
+    }
     if (photo.note) {
       const note = document.createElement("div");
       note.className = "photo-card-note";
@@ -163,7 +179,8 @@ const CACHE_KEY = "photos-last-result";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function searchKey() {
-  return JSON.stringify({ fields: [...selectedFields].sort(), from: element("from").value, to: element("to").value });
+  return JSON.stringify({ fields: [...selectedFields].sort(), from: element("from").value, to: element("to").value,
+                          category: selectedCategory });
 }
 
 function writeCache() {
@@ -197,6 +214,7 @@ async function load(append = false) {
   status("写真を読み込み中…");
   const query = { from, to };
   if (selectedFields.length) query.fields = JSON.stringify(selectedFields);
+  if (selectedCategory) query.category = selectedCategory;
   if (append && cursor) query.cursor = cursor;
   const result = await api("/photos/search", { query });
   if (requestGeneration !== generation) return;
@@ -238,7 +256,11 @@ function openViewer(index) {
     full.src = photo.url;
   }
   full.alt = photo.note || `${photo.field}の写真`;
-  element("caption").textContent = [`${photo.field}　${photo.takenOn.replaceAll("-", "/")}`, photo.note].filter(Boolean).join("\n");
+  const labels = [photo.category ? `【${CATEGORY_LABEL[photo.category] || photo.category}】` : "", plantingText(photo)]
+    .filter(Boolean).join(" ");
+  element("caption").textContent = [
+    `${photo.field}　${photo.takenOn.replaceAll("-", "/")}`, labels, photo.note,
+  ].filter(Boolean).join("\n");
   element("position").textContent = `${index + 1} / ${photos.length}${cursor ? "+" : ""}`;
   element("prev").disabled = index === 0;
   element("next").disabled = index === photos.length - 1 && !cursor;
@@ -346,11 +368,39 @@ async function makeTop() {
   }
 }
 
+function editPlantingVisible(show) {
+  for (const node of document.querySelectorAll("[data-edit-planting]")) node.hidden = !show;
+}
+
+// 編集フォームの定植候補を圃場×撮影日から作り直す（現在の紐づけは候補に無くても残す）
+async function refreshEditPlanting(photo) {
+  const select = element("edit-planting");
+  const takenOn = element("edit-taken-on").value;
+  if (element("edit-category").value !== "growth") {
+    editPlantingVisible(false);
+    select.replaceChildren();
+    return;
+  }
+  editPlantingVisible(true);
+  editCandidates = await plantingCandidates(photo.field, takenOn);
+  if (photo.plantingRef && !editCandidates.some(c => c.ref === photo.plantingRef)) {
+    editCandidates = [{ ref: photo.plantingRef, variety: photo.variety || "", plantDate: photo.plantDate || "" },
+                      ...editCandidates];
+  }
+  select.replaceChildren(
+    new Option(editCandidates.length ? "（紐づけない）" : "（この圃場・日付の定植記録なし）", ""),
+    ...editCandidates.map(c => new Option(
+      c.plantDate ? candidateLabel(c, takenOn) : (c.variety || c.ref), c.ref)));
+  select.value = photo.plantingRef || (editCandidates[0]?.ref ?? "");
+}
+
 function startEditing() {
   const photo = photos[current];
   if (!photo?.canEdit) return;
   element("edit-taken-on").value = photo.takenOn;
   element("edit-note").value = photo.note || "";
+  element("edit-category").value = photo.category || "";
+  refreshEditPlanting(photo);
   element("photo-edit-form").hidden = false;
   viewerStatus("");
   element("edit-note").focus();
@@ -368,9 +418,15 @@ async function saveEditing(event) {
   let saved = false;
   try {
     viewerStatus("変更を保存しています…");
+    const category = element("edit-category").value;
+    const planting = category === "growth"
+      ? editCandidates.find(c => c.ref === element("edit-planting").value) || null
+      : null;
     await api("/photos/edit", { body: {
       field: photo.field, id: photo.id,
-      takenOn: element("edit-taken-on").value, note: element("edit-note").value
+      takenOn: element("edit-taken-on").value, note: element("edit-note").value,
+      category,
+      plantingRef: planting?.ref || "", variety: planting?.variety || "", plantDate: planting?.plantDate || "",
     } });
     saved = true;
     element("photo-edit-form").hidden = true;
@@ -442,6 +498,17 @@ function bind() {
   element("viewer").addEventListener("close", () => element("full-image").removeAttribute("src"));
   element("set-top").addEventListener("click", makeTop);
   element("edit-photo").addEventListener("click", startEditing);
+  element("edit-category").addEventListener("change", () => refreshEditPlanting(photos[current]));
+  element("edit-taken-on").addEventListener("change", () => refreshEditPlanting(photos[current]));
+  for (const button of document.querySelectorAll("[data-category]")) {
+    button.addEventListener("click", () => {
+      selectedCategory = button.dataset.category;
+      for (const other of document.querySelectorAll("[data-category]")) {
+        other.classList.toggle("on", other === button);
+      }
+      search();
+    });
+  }
   element("photo-edit-form").addEventListener("submit", saveEditing);
   element("cancel-edit").addEventListener("click", () => {
     element("photo-edit-form").hidden = true;

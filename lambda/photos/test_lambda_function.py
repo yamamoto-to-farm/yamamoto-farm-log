@@ -199,6 +199,67 @@ class PhotoApiTests(unittest.TestCase):
         fake_s3.head_object.side_effect = FakeClientError("404")
         self.assertEqual(self.call("POST /photos/thumb", {"field": "A", "id": pid, "done": 1}, claims)[0], 409)
 
+    def test_upload_stores_category_and_planting(self):
+        fake_s3.generate_presigned_post.return_value = {"url": "https://s3.invalid", "fields": {}}
+        status, _ = self.call("POST /photos/uploads", {
+            "field": "A", "takenOn": "2026-10-26", "category": "growth",
+            "plantingRef": "20260926-A-NKC-167", "variety": "NKC-167", "plantDate": "2026-09-26",
+        })
+        self.assertEqual(status, 200)
+        metadata = json.loads(fake_s3.put_object.call_args.kwargs["Body"])
+        self.assertEqual(metadata["category"], "growth")
+        self.assertEqual(metadata["plantingRef"], "20260926-A-NKC-167")
+        self.assertEqual(metadata["variety"], "NKC-167")
+        self.assertEqual(metadata["plantDate"], "2026-09-26")
+
+    def test_upload_rejects_bad_category_and_drops_orphan_planting(self):
+        self.assertEqual(self.call("POST /photos/uploads", {
+            "field": "A", "takenOn": "2026-10-26", "category": "selfie"})[0], 400)
+        fake_s3.generate_presigned_post.return_value = {"url": "https://s3.invalid", "fields": {}}
+        status, _ = self.call("POST /photos/uploads", {
+            "field": "A", "takenOn": "2026-10-26", "variety": "NKC-167"})  # ref なしの品種は捨てる
+        self.assertEqual(status, 200)
+        metadata = json.loads(fake_s3.put_object.call_args.kwargs["Body"])
+        self.assertNotIn("variety", metadata)
+        self.assertNotIn("category", metadata)
+
+    def test_edit_updates_and_clears_labels(self):
+        claims = {**self.claims, "cognito:groups": "[admin]"}
+        original = {**self.metadata(), "category": "growth",
+                    "plantingRef": "ref", "variety": "NKC-167", "plantDate": "2026-09-26"}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(original).encode())}
+        status, _ = self.call("POST /photos/edit", {
+            "field": "A", "id": original["id"], "takenOn": "2026-10-26", "note": "x",
+            "category": "issue"}, claims)
+        self.assertEqual(status, 200)
+        record = json.loads(fake_s3.put_object.call_args_list[1].kwargs["Body"])
+        self.assertEqual(record["category"], "issue")
+        self.assertNotIn("plantingRef", record)   # 空指定で解除
+        self.assertNotIn("variety", record)
+
+    def test_search_filters_by_category(self):
+        records = [
+            {**self.metadata(), "id": "20261026T090000123456Z_" + "a" * 32, "category": "growth"},
+            {**self.metadata(), "id": "20261026T090000123456Z_" + "b" * 32},
+        ]
+        fake_s3.list_objects_v2.return_value = {"Contents": [
+            {"Key": "photos/by-date/2026-10-26/a.json"}, {"Key": "photos/by-date/2026-10-26/b.json"}]}
+        fake_s3.generate_presigned_url.return_value = "https://signed.invalid/image"
+        bodies = [json.dumps(r).encode() for r in records]
+        fake_s3.get_object.side_effect = lambda **kw: {"Body": io.BytesIO(bodies[0] if kw["Key"].endswith("a.json") else bodies[1])}
+        status, body = self.call("GET /photos/search", {
+            "from": "2026-10-01", "to": "2026-10-31", "category": "growth"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["total"], 1)
+        self.assertEqual(body["photos"][0]["category"], "growth")
+        status, body = self.call("GET /photos/search", {
+            "from": "2026-10-01", "to": "2026-10-31", "category": "none"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["total"], 1)
+        self.assertNotIn("category", body["photos"][0])
+        self.assertEqual(self.call("GET /photos/search", {
+            "from": "2026-10-01", "to": "2026-10-31", "category": "selfie"})[0], 400)
+
     def test_complete_verifies_owner_image_type_size_and_signature(self):
         metadata = self.metadata()
         fake_s3.get_object.side_effect = [
