@@ -95,7 +95,12 @@ function render() {
     const image = document.createElement("img");
     image.src = photo.thumbUrl || photo.url;  // 一覧はサムネイル（旧写真は本画像）
     image.alt = photo.note || `${photo.field}の写真`;
-    image.loading = "lazy";
+    image.decoding = "async";
+    if (index < 6) {
+      image.fetchPriority = "high";           // 最初に見える分を優先して取得
+    } else {
+      image.loading = "lazy";
+    }
     image.referrerPolicy = "no-referrer";
     image.addEventListener("error", () => {
       status("画像を読み込めません。「検索」を押して更新してください（URLの有効期間は15分です）。", true);
@@ -145,6 +150,30 @@ async function updateTopBadges() {
   applyTopBadges();
 }
 
+// 前回の検索結果（署名URLは15分有効なので10分以内なら即表示に使える）
+const CACHE_KEY = "photos-last-result";
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+function searchKey() {
+  return JSON.stringify({ fields: [...selectedFields].sort(), from: element("from").value, to: element("to").value });
+}
+
+function writeCache() {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+      key: searchKey(), at: Date.now(), photos, cursor, total,
+    }));
+  } catch { /* 容量超過などは無視 */ }
+}
+
+function readCache() {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY));
+    if (cached && cached.key === searchKey() && Date.now() - cached.at < CACHE_TTL_MS) return cached;
+  } catch { /* 破損時は無視 */ }
+  return null;
+}
+
 async function load(append = false) {
   const from = element("from").value;
   const to = element("to").value;
@@ -167,6 +196,7 @@ async function load(append = false) {
   photos = append ? [...photos, ...result.photos] : result.photos;
   cursor = result.cursor || null;
   total = result.total ?? photos.length;
+  writeCache();
   render();
   updateTopBadges().catch(() => { /* バッジは任意表示 */ });
   status(photos.length ? `${total}枚中 ${photos.length}枚を表示中` : "条件に合う写真はありません。");
@@ -189,8 +219,17 @@ function report(error) {
 function openViewer(index) {
   current = index;
   const photo = photos[index];
-  element("full-image").src = photo.url;
-  element("full-image").alt = photo.note || `${photo.field}の写真`;
+  const full = element("full-image");
+  if (photo.thumbUrl) {
+    // サムネイルを即表示し、フル画像が届いたら差し替える（体感高速化）
+    full.src = photo.thumbUrl;
+    const loader = new Image();
+    loader.onload = () => { if (current === index && element("viewer").open) full.src = photo.url; };
+    loader.src = photo.url;
+  } else {
+    full.src = photo.url;
+  }
+  full.alt = photo.note || `${photo.field}の写真`;
   element("caption").textContent = [`${photo.field}　${photo.takenOn.replaceAll("-", "/")}`, photo.note].filter(Boolean).join("\n");
   element("position").textContent = `${index + 1} / ${photos.length}${cursor ? "+" : ""}`;
   element("prev").disabled = index === 0;
@@ -437,6 +476,16 @@ async function init() {
     return;
   }
   element("backfill-thumbs").hidden = !canManageTop();
+  // 10分以内の同じ条件の結果があれば即表示し、裏で最新に更新する
+  const cached = readCache();
+  if (cached) {
+    photos = cached.photos;
+    cursor = cached.cursor;
+    total = cached.total;
+    render();
+    updateTopBadges().catch(() => { /* バッジは任意表示 */ });
+    status("前回の結果を表示中（最新に更新しています…）");
+  }
   await load();
 }
 
