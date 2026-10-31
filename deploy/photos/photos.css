@@ -21,6 +21,7 @@
 #status.error, #viewer-status.error { color: #b91c1c; }
 #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .photo-card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; position: relative; }
+.photos-presets .secondary-btn.on { background: #2e7d32; border-color: #2e7d32; color: #fff; font-weight: 600; }
 .photo-card.is-top::after { content: "★ トップ"; position: absolute; top: 6px; left: 6px;
   background: rgba(255, 193, 7, 0.95); color: #5d4000; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 10px; pointer-events: none; }

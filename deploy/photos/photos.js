@@ -60,6 +60,12 @@ async function api(path, { query, body } = {}) {
   return response.json();
 }
 
+function markRange(kind) {
+  for (const button of document.querySelectorAll("[data-range]")) {
+    button.classList.toggle("on", button.dataset.range === kind);
+  }
+}
+
 function setRange(kind) {
   const today = new Date();
   let from = new Date(today);
@@ -69,6 +75,7 @@ function setRange(kind) {
   else from.setDate(from.getDate() - Number(kind));
   element("from").value = ymd(from);
   element("to").value = ymd(today);
+  markRange(kind);
 }
 
 function syncUrl() {
@@ -412,6 +419,10 @@ function bind() {
       search();
     });
   }
+  // 日付を手動で変えたらプリセットのハイライトを外す
+  for (const id of ["from", "to"]) {
+    element(id).addEventListener("input", () => markRange(null));
+  }
   element("more").addEventListener("click", async () => {
     element("more").disabled = true;
     try { await load(true); } catch (error) { report(error); }
@@ -471,6 +482,7 @@ async function init() {
   setRange("30");
   if (params.get("from")) element("from").value = params.get("from");
   if (params.get("to")) element("to").value = params.get("to");
+  if (params.get("from") || params.get("to")) markRange(null);
   if (!hasSession()) {
     status("写真を見るには写真用ログインが必要です。");
     element("login-area").hidden = false;
