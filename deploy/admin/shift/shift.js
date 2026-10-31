@@ -574,12 +574,17 @@ async function loadPlan(month, run = "") {
     // スナップショット＝生成実行時点の原本。編集は当てず読み取り専用で表示する。
     edits = { overrides: {}, base: null, autofit: false, checks: {} };
     syncState("📷 読み取り専用（スナップショット）");
+    workPlan = await fetch(`/data/work-plan/${plan.month}.json?ts=${Date.now()}`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
   } else {
-    await loadEdits();
+    // 編集データ・作業計画・スナップショット一覧は互いに独立なので並列で読む（体感短縮）
+    const workPlanPromise = fetch(`/data/work-plan/${plan.month}.json?ts=${Date.now()}`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
+    const [, loadedWorkPlan] = await Promise.all([loadEdits(), workPlanPromise, loadRuns()]);
+    workPlan = loadedWorkPlan;
   }
-  workPlan = await fetch(`/data/work-plan/${plan.month}.json?ts=${Date.now()}`, { cache: "no-store" })
-    .then((response) => (response.ok ? response.json() : null))
-    .catch(() => null);
   element("work-plan-link").href = `/schedule/work-plan/index.html?ym=${plan.month}`;
   const base = getBase();
   element("base-start").value = toInputTime(base.start);
@@ -588,7 +593,6 @@ async function loadPlan(month, run = "") {
   element("generated-at").textContent =
     `作成: ${plan.generated_at.replace("T", " ").slice(0, 16)} / 希望 ${plan.requests.entries}件` +
     (run ? "（スナップショット）" : "");
-  if (!run) await loadRuns();
   renderAll();
   renderIssues();
   element("plan-area").hidden = false;
@@ -623,8 +627,11 @@ async function loadMonths() {
 
 async function start() {
   try {
-    await loadPlan();
-    await loadMonths();
+    await Promise.all([loadPlan(), loadMonths()]);
+    const select = element("month-select");
+    if (plan && [...select.options].some((option) => option.value === plan.month)) {
+      select.value = plan.month;
+    }
   } catch (error) {
     if (!hasSession()) {
       element("login-area").hidden = false;
