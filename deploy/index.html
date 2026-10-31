@@ -1333,7 +1333,8 @@
         dlog("check page:", page.name, "roles:", page.roles);
 
         if (!page.roles.includes(role) || page.accessOnly) return;
-        if (page.category.startsWith("管理/") && page.id !== "summary-manager") return;
+        // 管理/〜 のツールも「管理」カテゴリのモーダル内にサブ分類ごとに表示する
+        // （権限は roles で絞り込み済み。worker には出ない）
 
         if (isDiaryPage(page)) return;
         const rawTop = page.category.split("/")[0];
