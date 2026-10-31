@@ -55,7 +55,7 @@ export async function convertToJpeg(file) {
 }
 
 // 一覧表示用サムネイル（長辺360px・JPEG）。失敗したら null（本画像のみで続行）。
-async function makeThumbnail(blob) {
+export async function makeThumbnail(blob) {
   try {
     const bitmap = await createImageBitmap(blob);
     try {
@@ -78,7 +78,7 @@ async function makeThumbnail(blob) {
   }
 }
 
-async function postToS3(upload, blob) {
+export async function postToS3(upload, blob) {
   const form = new FormData();
   for (const [key, value] of Object.entries(upload.fields)) form.append(key, value);
   form.append("file", blob, "photo.jpg");

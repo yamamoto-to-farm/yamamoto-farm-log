@@ -164,6 +164,41 @@ class PhotoApiTests(unittest.TestCase):
         record = json.loads(fake_s3.put_object.call_args_list[0].kwargs["Body"])
         self.assertEqual(record["thumbKey"], "photos/fields/hash/thumbs/photo.jpg")
 
+    def test_thumb_backfill_requires_group_and_issues_ticket(self):
+        pid = "20261026T090000123456Z_" + "a" * 32
+        self.assertEqual(self.call("POST /photos/thumb", {"field": "A", "id": pid})[0], 403)
+        fake_s3.generate_presigned_post.assert_not_called()
+        claims = {**self.claims, "cognito:groups": "[admin]"}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(self.metadata()).encode())}
+        fake_s3.generate_presigned_post.return_value = {"url": "https://s3.invalid", "fields": {}}
+        status, body = self.call("POST /photos/thumb", {"field": "A", "id": pid}, claims)
+        self.assertEqual(status, 200)
+        args = fake_s3.generate_presigned_post.call_args.kwargs
+        self.assertIn("/thumbs/", args["Key"])
+        self.assertIn(["content-length-range", 1, api.THUMB_MAX_BYTES], args["Conditions"])
+        self.assertIn("upload", body)
+
+    def test_thumb_backfill_done_updates_record_and_indexes(self):
+        pid = "20261026T090000123456Z_" + "a" * 32
+        claims = {**self.claims, "cognito:groups": "[family]"}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(self.metadata()).encode())}
+        fake_s3.head_object.return_value = {"ContentType": "image/jpeg", "ContentLength": 100}
+        status, body = self.call("POST /photos/thumb", {"field": "A", "id": pid, "done": 1}, claims)
+        self.assertEqual(status, 200)
+        self.assertTrue(body["thumb"])
+        keys = [c.kwargs["Key"] for c in fake_s3.put_object.call_args_list]
+        self.assertTrue(any("/records/" in key for key in keys))
+        self.assertTrue(any("by-date/" in key for key in keys))
+        record = json.loads(fake_s3.put_object.call_args_list[1].kwargs["Body"])
+        self.assertIn("/thumbs/", record["thumbKey"])
+
+    def test_thumb_backfill_done_requires_uploaded_thumb(self):
+        pid = "20261026T090000123456Z_" + "a" * 32
+        claims = {**self.claims, "cognito:groups": "[admin]"}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(self.metadata()).encode())}
+        fake_s3.head_object.side_effect = FakeClientError("404")
+        self.assertEqual(self.call("POST /photos/thumb", {"field": "A", "id": pid, "done": 1}, claims)[0], 409)
+
     def test_complete_verifies_owner_image_type_size_and_signature(self):
         metadata = self.metadata()
         fake_s3.get_object.side_effect = [

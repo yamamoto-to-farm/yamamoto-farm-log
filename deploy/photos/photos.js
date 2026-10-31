@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { config } from "./config.js";
 import { clearSession, ensureToken, hasSession, login } from "./auth.js";
-import { openPhotoUploadModal } from "./upload.js?v=20261031-1";
+import { openPhotoUploadModal, makeThumbnail, postToS3 } from "./upload.js?v=20261101-1";
 import { setTopPhoto } from "./top.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -241,6 +241,50 @@ async function removeCurrent() {
   }
 }
 
+// 既存写真のサムネイル一括生成：検索結果のうちサムネが無いものを順に
+// 「フル画像を取得 → ブラウザで縮小 → サムネ保存（POST /photos/thumb）」する。
+let backfilling = false;
+async function backfillThumbs() {
+  if (backfilling) return;
+  const targets = () => photos.filter(photo => !photo.thumbUrl);
+  if (!targets().length && !cursor) {
+    status("表示中の写真はすべてサムネイル済みです。期間を「全期間」にして再検索すると他も確認できます。");
+    return;
+  }
+  if (!confirm("表示中の検索結果（続きも含む）のサムネイルを生成します。枚数が多いと時間がかかります。よろしいですか？")) return;
+  backfilling = true;
+  const button = element("backfill-thumbs");
+  button.disabled = true;
+  let done = 0;
+  let failed = 0;
+  try {
+    while (cursor) await load(true);  // 検索結果の続きも読み込んで対象にする
+    const list = targets();
+    for (const photo of list) {
+      status(`サムネイルを生成中… ${done + failed + 1}/${list.length}`);
+      try {
+        const image = await fetch(photo.url, { cache: "no-store" });
+        if (!image.ok) throw new Error(`画像取得に失敗（${image.status}）`);
+        const thumb = await makeThumbnail(await image.blob());
+        if (!thumb) throw new Error("縮小に失敗");
+        const ticket = await api("/photos/thumb", { body: { field: photo.field, id: photo.id } });
+        const put = await postToS3(ticket.upload, thumb);
+        if (!put.ok) throw new Error(`保存に失敗（${put.status}）`);
+        await api("/photos/thumb", { body: { field: photo.field, id: photo.id, done: 1 } });
+        done += 1;
+      } catch (error) {
+        console.error("[photos] thumb backfill failed", photo.id, error);
+        failed += 1;
+      }
+    }
+    status(`サムネイル生成が完了しました（成功 ${done}枚・失敗 ${failed}枚）。`,
+           failed > 0);
+  } finally {
+    backfilling = false;
+    button.disabled = false;
+  }
+}
+
 async function makeTop() {
   const photo = photos[current];
   try {
@@ -340,6 +384,7 @@ function bind() {
     onUploaded: () => search()
   }));
   element("login").addEventListener("click", () => login(location.pathname + location.search).catch(report));
+  element("backfill-thumbs").addEventListener("click", () => backfillThumbs().catch(report));
   element("prev").addEventListener("click", () => step(-1));
   element("next").addEventListener("click", () => step(1));
   element("close-viewer").addEventListener("click", () => element("viewer").close());
@@ -391,6 +436,7 @@ async function init() {
     element("login-area").hidden = false;
     return;
   }
+  element("backfill-thumbs").hidden = !canManageTop();
   await load();
 }
 

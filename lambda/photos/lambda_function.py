@@ -359,6 +359,42 @@ def lambda_handler(event, context):
             delete_photo(bucket, prefix, root, field_key, photo_id, claims)
             return response(200, {"id": photo_id})
 
+        if route == "POST /photos/thumb":
+            # 既存写真へのサムネイル後付け（一覧ページの一括生成ボタンが使う）。
+            # done なしで保存チケットを発行し、done ありで検証してレコードに反映する。
+            if not {"admin", "family"} & user_groups(claims):
+                raise RequestError(403, "サムネイルを生成する権限がありません。")
+            photo_id = text(data, "id", 80)
+            if not PHOTO_ID.fullmatch(photo_id):
+                raise RequestError(400, "写真IDが不正です。")
+            record = read_json(bucket, f"{root}records/{photo_id}.json")
+            thumb_key = f"{root}thumbs/{photo_id}.jpg"
+            if not data.get("done"):
+                upload = S3.generate_presigned_post(
+                    Bucket=bucket, Key=thumb_key,
+                    Fields={"Content-Type": "image/jpeg", "Cache-Control": "no-store"},
+                    Conditions=[
+                        {"Content-Type": "image/jpeg"}, {"Cache-Control": "no-store"},
+                        ["content-length-range", 1, THUMB_MAX_BYTES],
+                    ],
+                    ExpiresIn=300,
+                )
+                return response(200, {"id": photo_id, "upload": upload})
+            try:
+                head = S3.head_object(Bucket=bucket, Key=thumb_key)
+            except ClientError as error:
+                if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
+                    raise RequestError(409, "サムネイルのアップロードが完了していません。") from error
+                raise
+            if head["ContentType"] != "image/jpeg" or not 0 < head["ContentLength"] <= THUMB_MAX_BYTES:
+                raise RequestError(400, "サムネイルはJPEG画像（1MB以下）のみ保存できます。")
+            metadata = {**record, "thumbKey": thumb_key,
+                        "updatedAt": datetime.now(timezone.utc).isoformat()}
+            write_json(bucket, f"{root}pending/{photo_id}.json", metadata)
+            write_json(bucket, f"{root}records/{photo_id}.json", metadata)
+            write_indexes(bucket, prefix, metadata)
+            return response(200, {"id": photo_id, "thumb": True})
+
         if route == "POST /photos/edit":
             return response(200, edit_photo(bucket, prefix, root, data, claims))
 
