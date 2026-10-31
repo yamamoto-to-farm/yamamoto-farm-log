@@ -137,13 +137,14 @@ function applyTopBadges() {
 
 async function updateTopBadges() {
   const missing = [...new Set(photos.map(photo => photo.field))].filter(field => !tops.has(field));
-  if (missing.length) {
-    await Promise.all(missing.map(async field => {
+  // 同時リクエストを絞って取得する（一斉に投げるとコールドスタート時に503が出やすい）
+  for (let index = 0; index < missing.length; index += 4) {
+    await Promise.all(missing.slice(index, index + 4).map(async field => {
       try {
         const result = await api("/photos/top", { query: { field } });
         tops.set(field, result.photo?.id || null);
       } catch {
-        tops.set(field, null);
+        // 取得失敗はバッジなしで続行（次回の検索で再取得する）
       }
     }));
   }
