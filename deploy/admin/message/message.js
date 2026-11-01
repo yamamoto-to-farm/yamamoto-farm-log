@@ -10,7 +10,7 @@ import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1";
 import {
   applyAdjustments, defaultScenarioIndex, fitRemaining, toInputTime,
-} from "/admin/shift/shift-logic.js?v=20261030-36";
+} from "/admin/shift/shift-logic.js?v=20261101-6";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";

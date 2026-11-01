@@ -7,7 +7,7 @@ import { config } from "/photos/config.js";
 import { ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   applyAdjustments, computeCost, defaultScenarioIndex, fitRemaining, formatYen, personColorMap,
-} from "/admin/shift/shift-logic.js?v=20261030-36";
+} from "/admin/shift/shift-logic.js?v=20261101-6";
 
 const element = (id) => document.getElementById(id);
 let rows = [];  // [{month, cost:{total, perPerson}, budgetMax, generatedAt, staff}]

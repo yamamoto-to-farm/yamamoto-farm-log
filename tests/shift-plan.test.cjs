@@ -236,6 +236,24 @@ test("applyAdjustments は基本時間帯と個別編集を反映する", async 
   assert.equal(eff[0].proposed_end, "12:00");
 });
 
+test("applyAdjustments は確定済みにtimetreeを優先し古い編集を無視する", async () => {
+  const { applyAdjustments } = await logic();
+  // 計画段階で 8:00-15:00 と編集 → その後timetreeで 8:00~12:00 に確定したケース
+  const miniPlan = {
+    targets: calcPlan.targets,
+    requests: { items: [{ date: "2026-11-02", person: "土井", start: "8:00", end: "12:00", kind: "time", confirmed: 1 }] },
+  };
+  const scenario = { items: [{ date: "2026-11-02", weekday: "月", person: "土井", raw_title: "8:00~12:00",
+    action: "確定済み（timetree編集済み）", fixed_weekday: 0, confirmed: 1,
+    request_hours: 3.83, proposed_hours: 3.83, proposed_end: "12:00", start: "8:00", reason: "" }] };
+  const stale = { "2026-11-02:土井": { status: "fixed", start: "08:00", end: "15:00", hours: 6.5 } };
+  const eff = applyAdjustments(miniPlan, scenario, stale, null);
+  assert.equal(eff[0].proposed_end, "12:00");   // timetreeの時刻が勝つ
+  assert.equal(eff[0].proposed_hours, 3.83);
+  assert.equal(eff[0].status, "fixed");
+  assert.equal(eff[0].edited, false);
+});
+
 test("computeCost は時給×実働＋交通費を再計算する", async () => {
   const { computeCost } = await logic();
   const eff = [

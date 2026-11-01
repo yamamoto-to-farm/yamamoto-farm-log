@@ -143,7 +143,9 @@ export function applyAdjustments(plan, scenario, overrides = {}, base = null) {
   const rawByKey = new Map((plan.requests.items || []).map((row) => [`${row.date}:${row.person}`, row]));
   return scenario.items.map((item) => {
     const key = `${item.date}:${item.person}`;
-    const override = overrides[key];
+    // 確定済み（timetreeで「希」なし）はtimetreeが正：計画段階の個別編集は当てない。
+    // 急な欠勤・時間変更はtimetreeを直して再取得する運用のため、古い編集が残っても無視する。
+    const override = item.confirmed ? undefined : overrides[key];
     const raw = rawByKey.get(key);
     const status = override?.status || itemKind(item);
     const inStart = override?.start || raw?.start || "";
