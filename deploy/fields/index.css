@@ -383,23 +383,24 @@
 }
 
 /* 基本データ（作付けカードと同じ部品で表示）
-   写真の左カラム＋右は基本情報・筆・契約を同じ大きさのタイルで詰めるグリッド */
-.field-detail-top {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+   写真・基本情報・筆・契約を同じ大きさのタイルで詰めるグリッド */
+.field-detail-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  align-content: start;
+}
+
+/* 写真タイル内：ブロックをタイル幅いっぱいに、ボタンは横並び（狭ければ折り返し） */
+.field-photo-section .field-photo-block {
+  width: 100%;
+}
+
+.field-photo-section .field-photo-actions {
+  flex-direction: row;
   flex-wrap: wrap;
 }
 
-.field-detail-top .field-photo-slot {
-  flex: 0 0 auto;
-}
-
-.field-detail-grid {
-  flex: 1;
-  min-width: 260px;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  align-content: start;
+.field-photo-section .field-photo-actions .secondary-btn {
+  flex: 1 1 auto;
 }
 
 .field-detail-empty-line {

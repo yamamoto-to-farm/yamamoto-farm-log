@@ -48,13 +48,14 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
       <div class="card year-summary-card field-detail-card" style="margin-top:12px;">
 
-        <div class="field-detail-top">
-          <div class="field-photo-slot"></div>
-          <div class="year-summary-grid field-detail-grid">
-            ${basicSection}
-            ${parcelSections}
-            ${contractSections}
-          </div>
+        <div class="year-summary-grid field-detail-grid">
+          <section class="year-summary-section field-photo-section">
+            <h2 class="section-title year-summary-title">写真</h2>
+            <div class="field-photo-slot"></div>
+          </section>
+          ${basicSection}
+          ${parcelSections}
+          ${contractSections}
         </div>
 
         <!-- ★ 編集ボタン or 初期作成ボタン -->
