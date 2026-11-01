@@ -398,12 +398,12 @@
   .year-summary-section--harvest,
   .year-summary-section--seedling,
   .year-summary-section--cultivation {
-    height: 215px;
+    min-height: 215px;   /* 固定高だと行が増えたときにスクロールが出るため最小高に */
   }
 
   .year-summary-section--analysis,
   .year-summary-section--target {
-    height: 120px;
+    min-height: 120px;
   }
 
   .year-summary-section--plant { grid-area: plant; }
