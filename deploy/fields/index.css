@@ -382,6 +382,28 @@
   color: #666;
 }
 
+/* 基本データ（作付けカードと同じ部品で表示） */
+.field-detail-grid {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.field-detail-empty-line {
+  color: #888;
+  font-size: 14px;
+}
+
+.field-detail-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.field-detail-actions button {
+  margin: 0;
+}
+
 @media (min-width: 1280px) {
   .year-summary-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
