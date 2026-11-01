@@ -9,7 +9,7 @@
   <!-- ★ 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=20260715-3">
   <link rel="stylesheet" href="./index.css?v=20261027-1">
-  <link rel="stylesheet" href="/photos/panel.css?v=20261029-2">
+  <link rel="stylesheet" href="/photos/panel.css?v=20261101-8">
 </head>
 
 <body>
@@ -20,12 +20,6 @@
 
     <!-- ★ 分析カード or 圃場一覧 -->
     <div id="analysis-container">読み込み中…</div>
-
-    <section id="field-photos" class="card photo-panel" hidden>
-      <h2 class="section-title">圃場の写真</h2>
-      <div id="field-photos-body"></div>
-      <p><a id="field-photos-link" href="/photos/index.html">写真の追加・一覧ページへ</a></p>
-    </section>
 
     <!-- 地図に戻る -->
     <div class="back-action-slot">
@@ -42,7 +36,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
-    import { initAnalysisPage } from "./analysis.js?v=20260928-1";   // 圃場別分析
+    import { initAnalysisPage } from "./analysis.js?v=20261101-8";   // 圃場別分析
     import { renderFieldList } from "./index.js?v=20261026-3";        // 圃場一覧
     import { printInline } from "/common/utils.js?v=20260921-1";
     import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
@@ -80,12 +74,11 @@
             defaultLabel: "元のページへ戻る"
           });
         }
-        initAnalysisPage(field);
-        document.getElementById("field-photos-link").href = `/photos/index.html?field=${encodeURIComponent(field)}`;
-        document.getElementById("field-photos").hidden = false;
-        import("/photos/panel.js?v=20261029-2")
-          .then(panel => panel.mountPhotoPanel(document.getElementById("field-photos-body"), { field }))
-          .catch(error => console.error("[photos]", error));
+        initAnalysisPage(field).then(() => {
+          // 分析カード描画後に、基本データ・作付けカードへ写真を組み込む
+          return import("./field-photos.js?v=20261101-8")
+            .then(mod => mod.initFieldPhotos(field));
+        }).catch(error => console.error("[photos]", error));
 
       } else {
         document.getElementById("field-name").textContent =

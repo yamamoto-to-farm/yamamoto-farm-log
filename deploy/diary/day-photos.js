@@ -38,7 +38,7 @@ async function loadDayPhotos() {
   body.textContent = "写真を読み込み中…";
   body.dataset.photoRequest = "";
   try {
-    const panel = await import("/photos/panel.js?v=20261029-2");
+    const panel = await import("/photos/panel.js?v=20261101-8");
     if (date !== selectedDate || !document.getElementById("dayPhotosDialog").open) return;
     await panel.mountPhotoPanel(body, { date });
   } catch (error) {

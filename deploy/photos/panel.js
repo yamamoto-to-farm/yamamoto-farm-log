@@ -4,6 +4,7 @@ import { fetchTopPhoto, setTopPhoto } from "./top.js";
 
 const MAX_PAGES = 10;
 let dialog;
+let gridDialog;
 
 function viewer() {
   if (dialog) return dialog;
@@ -16,7 +17,7 @@ function viewer() {
   return dialog;
 }
 
-async function fetchPhotos(query) {
+export async function fetchPhotos(query) {
   const token = await ensureToken();
   if (!token) return null;
   const photos = [];
@@ -42,13 +43,46 @@ async function fetchPhotos(query) {
   return photos.sort((a, b) => b.takenOn.localeCompare(a.takenOn) || b.uploadedAt.localeCompare(a.uploadedAt));
 }
 
-function show(photo) {
+export function showPhoto(photo) {
   const modal = viewer();
   const image = modal.querySelector("img");
   image.src = photo.url;
   image.alt = photo.note || `${photo.field}の写真`;
   modal.querySelector("p").textContent = `${photo.field}　${photo.takenOn}\n${photo.note || ""}`;
   modal.showModal();
+}
+
+const show = showPhoto;
+
+// サムネイル一覧のモーダル（圃場詳細の「圃場写真」「生育写真」などから使う）
+export function openPhotoGridModal({ title, photos, emptyText = "写真はありません。", footer = "" }) {
+  if (!gridDialog) {
+    gridDialog = document.createElement("dialog");
+    gridDialog.className = "photo-grid-modal";
+    gridDialog.innerHTML = `
+      <div class="photo-grid-modal-bar">
+        <h3></h3>
+        <button type="button" class="secondary-btn" data-close>閉じる</button>
+      </div>
+      <div class="photo-grid-modal-body"></div>
+      <p class="photo-grid-modal-footer"></p>`;
+    gridDialog.querySelector("[data-close]").addEventListener("click", () => gridDialog.close());
+    gridDialog.addEventListener("click", event => {
+      if (event.target === gridDialog) gridDialog.close();
+    });
+    document.body.append(gridDialog);
+  }
+  gridDialog.querySelector("h3").textContent = title || "写真";
+  const body = gridDialog.querySelector(".photo-grid-modal-body");
+  if (!photos.length) {
+    body.innerHTML = `<p class="photo-panel-message">${emptyText}</p>`;
+  } else {
+    render(body, photos, false);
+  }
+  const footerEl = gridDialog.querySelector(".photo-grid-modal-footer");
+  footerEl.innerHTML = footer;
+  footerEl.hidden = !footer;
+  gridDialog.showModal();
 }
 
 function canSetTop() {
@@ -64,9 +98,10 @@ function render(container, photos, showField, topId, onSetTop) {
     button.type = "button";
     button.setAttribute("aria-label", "写真を拡大");
     const image = document.createElement("img");
-    image.src = photo.url;
+    image.src = photo.thumbUrl || photo.url;  // 一覧はサムネイル（旧写真は本画像）
     image.alt = photo.note || `${photo.field}の写真`;
     image.loading = "lazy";
+    image.decoding = "async";
     image.referrerPolicy = "no-referrer";
     button.append(image);
     button.addEventListener("click", () => show(photo));

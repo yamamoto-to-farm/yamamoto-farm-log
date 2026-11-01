@@ -335,6 +335,11 @@ async function renderSummaryCard(s, harvestBase, fieldName, rawFieldName) {
         <div class="info-line">株間 × 条間：${spacingText}</div>
         <div class="info-line">作付け面積：${areaTan.toFixed(2)} 反（${areaM2.toFixed(1)} ㎡）</div>
         ${discardPlantingHTML}
+        <div class="info-line">
+          <button type="button" class="secondary-btn planting-photos-btn" hidden
+            data-planting-ref="${String(s.plantingRef || "").replace(/"/g, "&quot;")}"
+            data-variety="${String(s.planting.variety || "").replace(/"/g, "&quot;")}">🌱 生育写真を見る</button>
+        </div>
           </div>
         </section>
 
