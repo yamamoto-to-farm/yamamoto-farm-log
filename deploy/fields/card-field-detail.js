@@ -42,21 +42,22 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
     line("特徴", data.memo),
   ]);
 
-  // 筆情報：圃場一覧の所在表示と同じく「先頭の所在＋他N筆」
+  // 筆情報：圃場一覧と同様に先頭の所在を表示（件数はタイトル横のチップで）
   const parcelSummarySection = parcels.length
     ? section("筆情報", [
-        `<div class="info-line">所在：${escapeHtml(valueOrPlaceholder(parcels[0]?.address))}${
-          parcels.length > 1 ? `<span class="field-address-chip">他${parcels.length - 1}筆</span>` : ""
-        }</div>`,
+        line("所在", parcels[0]?.address),
       ], { modal: "parcels", chip: `<span class="field-address-chip">全${parcels.length}筆 ▸</span>` })
     : section("筆情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
 
-  // 契約情報：先頭の契約期間＋他N件（増えてもサマリーのまま）
+  // 契約情報：先頭の契約期間＋賃料（件数はタイトル横のチップで）。全項目未入力なら明示
+  const c0 = contracts[0];
+  const contractHasContent = contracts.length &&
+    [c0?.start, c0?.end, c0?.rent, c0?.notes].some(v => String(v ?? "").trim());
   const contractSummarySection = contracts.length
     ? section("契約情報", [
-        `<div class="info-line">契約期間：${escapeHtml(valueOrPlaceholder(contracts[0]?.start))} 〜 ${escapeHtml(valueOrPlaceholder(contracts[0]?.end))}${
-          contracts.length > 1 ? `<span class="field-address-chip">他${contracts.length - 1}件</span>` : ""
-        }</div>`,
+        contractHasContent
+          ? inline([["契約期間", `${valueOrPlaceholder(c0?.start)} 〜 ${valueOrPlaceholder(c0?.end)}`], ["賃料", c0?.rent]])
+          : '<div class="info-line field-detail-empty-line">内容未入力（クリックで詳細）</div>',
       ], { modal: "contracts", chip: `<span class="field-address-chip">全${contracts.length}件 ▸</span>` })
     : section("契約情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
 

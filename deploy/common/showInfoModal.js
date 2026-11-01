@@ -28,7 +28,10 @@ export function showInfoModal(title, contentHtml) {
   bg.appendChild(modal);
   document.body.appendChild(bg);
 
-  // 閉じる処理
+  // 閉じる処理（背景クリックでも閉じる）
   document.getElementById("info-modal-close").onclick = () => bg.remove();
   document.getElementById("info-modal-ok").onclick = () => bg.remove();
+  bg.addEventListener("click", (event) => {
+    if (event.target === bg) bg.remove();
+  });
 }

@@ -382,6 +382,10 @@
   color: #666;
 }
 
+.field-detail-card {
+  max-width: 760px;
+}
+
 /* 基本データ（作付けカードと同じ部品で表示）
    左＝写真枠（常設）／右＝基本情報・筆情報・契約情報の縦積み */
 .field-detail-top {
