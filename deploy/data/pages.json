@@ -386,6 +386,15 @@
     },
     { "id": "shift-config-access", "path": "/admin/shift/config.html", "roles": ["family", "admin"], "accessOnly": true },
     {
+      "id": "labor-manual",
+      "name": "労務・シフト運用マニュアル",
+      "path": "/admin/manual/index.html",
+      "category": "管理/労務・シフト",
+      "roles": ["family", "admin"],
+      "icon": "assets/icons/summary.png",
+      "openLog": false
+    },
+    {
       "id": "labor-dashboard",
       "name": "労務費ダッシュボード",
       "path": "/admin/labor/index.html",

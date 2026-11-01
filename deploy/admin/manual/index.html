@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>労務・シフト運用マニュアル - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <style>
+    .manual { max-width: 860px; margin: 0 auto; text-align: left; }
+    .manual h2 { font-size: 1.05rem; color: #2e7d32; border-bottom: 2px solid #c8e6c9;
+      padding-bottom: 4px; margin: 26px 0 10px; }
+    .manual h3 { font-size: 0.95rem; margin: 16px 0 6px; }
+    .manual table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 8px 0; }
+    .manual th, .manual td { border: 1px solid #e0e0e0; padding: 6px 10px; text-align: left;
+      vertical-align: top; }
+    .manual thead th { background: #f4f7f4; }
+    .manual .flow { background: #f7faf7; border: 1px solid #dbe7db; border-radius: 8px;
+      padding: 12px 16px; font-size: 0.9rem; line-height: 1.9; }
+    .manual .note { font-size: 0.82rem; color: #666; }
+    .manual .warn { background: #fff8e1; border-left: 4px solid #f9a825; padding: 8px 12px;
+      font-size: 0.85rem; margin: 8px 0; }
+    .manual ul { padding-left: 1.4em; font-size: 0.9rem; }
+    .manual a { color: #1565c0; }
+    .manual .tools td:first-child { white-space: nowrap; font-weight: 600; }
+    @media print {
+      #header, .back-action-slot { display: none; }
+      .manual { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="header"></div>
+
+  <div id="page-area" class="page-container" hidden>
+    <div class="manual">
+      <h1 class="page-title">労務・シフト運用マニュアル</h1>
+      <p class="note">毎月のシフト・労務のルーティーンと使うツールのまとめ。正式なルールは
+        「パート勤務・シフト運用ルール」「パート勤務・勤怠運用ルール」（Gドライブ 02_労務管理）が優先です。
+        このページは印刷ボタンからPDF保存できます。</p>
+
+      <h2>使うツール</h2>
+      <table class="tools">
+        <tbody>
+          <tr><td><a href="/admin/shift/index.html">シフト管理</a></td>
+            <td>案の確認・予算調整・個別/一括編集・チェックリスト・☁TimeTree再取得・スナップショット（原本）表示</td></tr>
+          <tr><td><a href="/admin/shift/config.html">スタッフ・設定</a></td>
+            <td>時給・決まった曜日・目安日数・在籍状況との同期（退職者を外す）</td></tr>
+          <tr><td><a href="/admin/message/index.html">業務連絡</a></td>
+            <td>明日の作業連絡・お休み連絡・毎月の定型文（LINE下書き→コピーして送信）</td></tr>
+          <tr><td><a href="/admin/labor/index.html">労務費ダッシュボード</a></td>
+            <td>月別の人件費推移・予算対比・人別内訳</td></tr>
+          <tr><td><a href="/schedule/work-plan/index.html">月間作業計画</a></td>
+            <td>作業予定の管理（シフト・業務連絡に候補として表示される）</td></tr>
+          <tr><td>TimeTree</td>
+            <td><b>勤務予定の1次ソース。</b>希望（希）・確定・削除はすべてここで編集する</td></tr>
+          <tr><td>KING OF TIME</td><td>出退勤の打刻・修正申請の承認（勤怠の実績）</td></tr>
+        </tbody>
+      </table>
+
+      <h2>📅 月間ルーティーン</h2>
+
+      <h3>〜25日ごろ：希望収集</h3>
+      <ul>
+        <li><a href="/admin/message/index.html">業務連絡</a>→「毎月の定型文」→<b>シフト入力のお願い</b>をコピーしてLINEで送る</li>
+        <li>パートはTimeTreeに「希　終日」「希　〜15:00」などで入力</li>
+      </ul>
+
+      <h3>26日 朝7時：案の自動生成（全自動）</h3>
+      <ul>
+        <li>翌月のシフト案が自動で作られ、メール通知が届く</li>
+        <li>26日時点のTimeTree原本はスナップショットとして自動保存（シフト管理の「データ」で後から見られる）</li>
+      </ul>
+
+      <h3>26日〜月末：調整と確定</h3>
+      <ul>
+        <li><a href="/admin/shift/index.html">シフト管理</a>で案を確認。予算スライダー・個別/一括編集で調整（編集は自動保存・端末間共有）</li>
+        <li>人件費の幅（希を全見送り〜全確定）と予算上限をミニバーで確認</li>
+        <li>チェックリスト<b>①決まった曜日</b>：TimeTreeで「希」を外す（時間は前日のLINEで連絡する運用）</li>
+        <li>チェックリスト<b>④見送り</b>：TimeTreeから予定を削除し、本人へ連絡（月末の編集でまとめてOK）</li>
+        <li>TimeTreeを編集したら「☁ TimeTreeから再取得」で同期</li>
+        <li>確定したら定型文「<b>シフト確定のお知らせ</b>」をLINEで送る</li>
+      </ul>
+
+      <h3>月中（毎日夕方）：明日の連絡</h3>
+      <div class="flow">
+        1. 天候・人員・作業内容を確認 → 変更があれば<b>TimeTreeを修正</b><br>
+        2. <a href="/admin/message/index.html">業務連絡</a>（日付＝明日）を開く<br>
+        　・TimeTreeを修正した → <b>☁ TimeTreeから再取得</b>（約1分）<br>
+        　・修正なし → <b>🔄 シフトから読み込み</b>（数秒）<br>
+        3. 畑・作業を選ぶ（📋作業計画チップも使える）。パートのみの日は<b>形態②＋連絡係</b>を指定<br>
+        4. カードごとにコピー → LINEへ貼り付け（雨天中止は「☔ お休み連絡」に切り替え）
+      </div>
+      <p class="note">「シフトデータ: ◯◯時点」の表示がTimeTreeの編集より古いときは ☁ を押す。</p>
+
+      <h3>勤務日の3日前まで：追加希望日（希）の判断</h3>
+      <ul>
+        <li>チェックリスト<b>②（確定の目安）③（保留）</b>の期限バッジを見ながら、
+          確定（連絡して「希」を外す）か見送り（連絡して削除）を決める</li>
+      </ul>
+
+      <h3>月末〜翌月5日：締めと支払い</h3>
+      <ul>
+        <li>TimeTreeを最終確定 → ☁再取得（労務費ダッシュボードがほぼ実績になる）</li>
+        <li>KING OF TIME の修正申請を承認（申請期限は翌日中。修正時刻の判断は勤怠運用ルール第7条）</li>
+        <li>出勤簿・給与明細を作成し、定型文「<b>出勤簿の確認</b>」で送付（3日以内の確認依頼・振込日は自動計算）</li>
+        <li>翌月5日（土日祝なら前営業日）に振込</li>
+        <li><a href="/admin/labor/index.html">労務費ダッシュボード</a>で月次ふり返り</li>
+      </ul>
+
+      <h2>👥 スタッフの追加・退職</h2>
+      <table>
+        <thead><tr><th>場面</th><th>手順</th></tr></thead>
+        <tbody>
+          <tr><td>採用</td><td>①<a href="/admin/edit-json/index.html?data=workers">ログイン権限管理</a>でアカウント追加（Cognitoにも同じ識別名で作成）
+            ②<a href="/admin/shift/config.html">スタッフ・設定</a>に追加（時給・曜日・ログイン連携）</td></tr>
+          <tr><td>退職</td><td>①<a href="/admin/access.html">在籍状況管理</a>で退職済みに（ログイン停止）
+            ②<a href="/admin/shift/config.html">スタッフ・設定</a>で「🔄 在籍状況と同期」→ 保存</td></tr>
+        </tbody>
+      </table>
+
+      <h2>⚠ 運用の原則・つまずきやすい点</h2>
+      <ul>
+        <li><b>TimeTreeが正：</b>確定後の時間変更・欠勤はTimeTreeのタイトルを直す（予定の開始/終了時刻ではなく<b>タイトルの時刻</b>を読む）</li>
+        <li>確定（希なし）の予定には、計画段階の個別編集は適用されない（TimeTreeが優先）</li>
+        <li>具体的な作業内容・時間の連絡は<b>前日のLINE</b>が正。カレンダーの時刻は予定</li>
+        <li>実働は3.5〜6.5h（繁忙期9h）。6.5hは上限であって確保義務ではない</li>
+        <li>ページが一瞬エラー（503）になったら30秒待って再読み込み（Lambdaの起動直後）</li>
+        <li>設定変更（スタッフ・時給）は<b>次回の生成から</b>反映。今月分に効かせるには保存後の再計算を実行</li>
+      </ul>
+
+      <p class="note">このマニュアルの更新はリポジトリ（deploy/admin/manual/index.html）を編集してください。最終更新: 2026-11-01</p>
+    </div>
+
+    <div class="back-action-slot">
+      <a href="/admin/index.html" class="secondary-btn unified-back-btn">管理ページへ戻る</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { verifyLocalAuth } from "/common/ui.js";
+    import { renderHeader } from "/common/header.js?v=1.1";
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (!(await verifyLocalAuth())) return;
+      if (!["admin", "family"].includes(window.currentRole)) {
+        alert("このページは admin / family のみアクセスできます");
+        location.href = "/index.html";
+        return;
+      }
+      renderHeader({ adminPage: true });
+      document.getElementById("page-area").hidden = false;
+    });
+  </script>
+  <script src="/common/sw-register.js?v=20260713-1"></script>
+</body>
+</html>
