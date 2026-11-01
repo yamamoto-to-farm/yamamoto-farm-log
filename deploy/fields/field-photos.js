@@ -6,11 +6,11 @@ import { fetchTopPhoto } from "/photos/top.js";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 
 export async function initFieldPhotos(field) {
-  const card = document.querySelector(".field-detail-card");
+  const slot = document.querySelector(".field-photo-slot") || document.querySelector(".field-detail-card");
   const listUrl = `/photos/index.html?field=${encodeURIComponent(field)}`;
 
   if (!hasSession()) {
-    if (card) {
+    if (slot) {
       const note = document.createElement("div");
       note.className = "field-photo-block";
       note.innerHTML = '<p class="photo-panel-message">写真を見るには写真用ログインが必要です。</p>';
@@ -20,7 +20,7 @@ export async function initFieldPhotos(field) {
       button.textContent = "写真用ログイン";
       button.addEventListener("click", () => login(location.pathname + location.search));
       note.append(button);
-      card.prepend(note);
+      slot.prepend(note);
     }
     return;
   }
@@ -37,9 +37,9 @@ export async function initFieldPhotos(field) {
     return;
   }
 
-  // 基本データ内：トップ写真＋圃場写真ボタン（未分類も含めて取りこぼしを防ぐ）
+  // 基本データ内・写真スロット：トップ写真＋ボタン縦積み（未分類も含めて取りこぼしを防ぐ）
   const fieldPhotos = photos.filter(photo => photo.category === "field" || !photo.category);
-  if (card) {
+  if (slot) {
     const block = document.createElement("div");
     block.className = "field-photo-block";
     if (top) {
@@ -72,7 +72,7 @@ export async function initFieldPhotos(field) {
     listLink.textContent = "📷 写真一覧・追加";
     actions.append(openButton, listLink);
     block.append(actions);
-    card.prepend(block);
+    slot.prepend(block);
   }
 
   // 作付けカード：定植IDに紐づく栽培記録の写真

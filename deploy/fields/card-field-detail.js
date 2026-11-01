@@ -36,8 +36,8 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
   const contractSections = contracts.length
     ? contracts.map((c, idx) => section(`契約${idx + 1}`, [
-        inline([["契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`], ["賃料", c?.rent]]),
-        line("備考", c?.notes),
+        inline([["契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`],
+                ["賃料", c?.rent], ["備考", c?.notes]]),
       ])).join("")
     : section("契約情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
 
@@ -48,9 +48,16 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
       <div class="card year-summary-card field-detail-card" style="margin-top:12px;">
 
-        <div class="year-summary-grid field-detail-grid">
+        <div class="field-detail-top">
+          <div class="field-photo-slot"></div>
           ${basicSection}
+        </div>
+
+        <div class="year-summary-grid field-detail-grid">
           ${parcelSections}
+        </div>
+
+        <div class="field-detail-contracts">
           ${contractSections}
         </div>
 

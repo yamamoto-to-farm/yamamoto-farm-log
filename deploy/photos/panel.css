@@ -21,19 +21,19 @@
 .photo-grid-modal-bar button { margin: 0; }
 .photo-grid-modal-footer { font-size: 12px; color: #666; margin: 10px 0 0; }
 
-/* 圃場詳細・基本データ内の写真ブロック（コンパクト表示） */
-.field-photo-block { display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-  margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e8ece8; }
-.field-top-photo { width: 150px; max-width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+/* 圃場詳細・基本データ内の写真ブロック（写真＋ボタン縦積み。右に基本情報が並ぶ） */
+.field-photo-block { display: flex; flex-direction: column; gap: 8px; align-items: stretch;
+  width: 170px; max-width: 100%; }
+.field-top-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
   border-radius: 8px; cursor: pointer; background: #eee; display: block; }
-.field-top-photo-wrap { position: relative; flex: 0 0 auto; }
+.field-top-photo-wrap { position: relative; }
 .field-top-photo-wrap::after { content: "★ トップ"; position: absolute; top: 4px; left: 4px;
   background: rgba(255, 193, 7, 0.95); color: #5d4000; font-size: 10px; font-weight: 700;
   padding: 1px 6px; border-radius: 10px; pointer-events: none; }
-.field-photo-actions { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px;
-  align-items: center; }
-.field-photo-actions .secondary-btn { margin: 0; font-size: 13px; padding: 6px 12px; }
-.field-photo-actions a.secondary-btn { text-decoration: none; display: inline-block; }
+.field-photo-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.field-photo-actions .secondary-btn { margin: 0; font-size: 12px; padding: 5px 8px;
+  text-align: center; }
+.field-photo-actions a.secondary-btn { text-decoration: none; display: block; }
 .planting-photos-btn { margin: 4px 0 0; font-size: 13px; padding: 4px 10px; }
 
 @media print { .photo-panel { display: none !important; } }
