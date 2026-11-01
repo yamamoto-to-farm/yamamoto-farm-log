@@ -17,6 +17,10 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
   `;
   const line = (label, value) =>
     `<div class="info-line">${escapeHtml(label)}：${escapeHtml(valueOrPlaceholder(value))}</div>`;
+  // 複数の項目を1行にまとめる（狭い画面では自動で折り返す）
+  const inline = (pairs) => `<div class="info-line">${pairs
+    .map(([label, value]) => `<span class="kv-inline">${escapeHtml(label)}：${escapeHtml(valueOrPlaceholder(value))}</span>`)
+    .join("")}</div>`;
 
   const basicSection = section("基本情報", [
     line("実耕作面積", `${valueOrPlaceholder(data.size)} a`),
@@ -25,18 +29,14 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
   const parcelSections = parcels.length
     ? parcels.map((p, idx) => section(`筆${idx + 1}`, [
-        line("所在", p?.address),
-        line("登記面積", p?.officialArea ? `${p.officialArea} ㎡` : ""),
-        line("地権者", p?.owner),
-        line("利用権", p?.rightType),
-        line("支払金額", p?.rent),
+        inline([["所在", p?.address], ["登記面積", p?.officialArea ? `${p.officialArea} ㎡` : ""]]),
+        inline([["地権者", p?.owner], ["利用権", p?.rightType], ["支払金額", p?.rent]]),
       ])).join("")
     : section("筆情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
 
   const contractSections = contracts.length
     ? contracts.map((c, idx) => section(`契約${idx + 1}`, [
-        line("契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`),
-        line("賃料", c?.rent),
+        inline([["契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`], ["賃料", c?.rent]]),
         line("備考", c?.notes),
       ])).join("")
     : section("契約情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
