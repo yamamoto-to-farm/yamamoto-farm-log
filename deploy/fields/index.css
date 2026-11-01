@@ -383,13 +383,28 @@
 }
 
 /* 基本データ（作付けカードと同じ部品で表示）
-   写真・基本情報・筆・契約を同じ大きさのタイルで詰めるグリッド */
-.field-detail-grid {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  align-content: start;
+   左＝写真枠（常設）／右＝基本情報・筆情報・契約情報の縦積み */
+.field-detail-top {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: wrap;
 }
 
-/* 写真タイル内：ブロックをタイル幅いっぱいに、ボタンは横並び（狭ければ折り返し） */
+.field-photo-section {
+  flex: 0 0 220px;
+  max-width: 100%;
+}
+
+.field-detail-stack {
+  flex: 1 1 260px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 写真枠内：ブロックは枠幅いっぱい、ボタンは横並び（狭ければ折り返し） */
 .field-photo-section .field-photo-block {
   width: 100%;
 }
@@ -401,6 +416,40 @@
 
 .field-photo-section .field-photo-actions .secondary-btn {
   flex: 1 1 auto;
+}
+
+/* トップ写真なしのプレースホルダ（写真と同じ4:3の枠） */
+.field-top-photo-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #ccd4dc;
+  border-radius: 8px;
+  background: #f7f9fb;
+  color: #99a3ad;
+  font-size: 13px;
+}
+
+/* 筆・契約サマリー：クリックでモーダル */
+.field-detail-clickable {
+  cursor: pointer;
+}
+
+.field-detail-clickable:hover,
+.field-detail-clickable:focus-visible {
+  background: #f4f8fc;
+  border-color: #c9d8e6;
+}
+
+.field-detail-modal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.field-detail-modal-item {
+  margin: 0;
 }
 
 .field-detail-empty-line {

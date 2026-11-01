@@ -1,7 +1,7 @@
 // analysis.js（CloudFront 統一版 + デバッグ切替）
 import { loadJSON } from "/common/json.js";
 import { renderSummaryCards } from "./card-summary.js?v=20261101-8";
-import { renderFieldDetailCard } from "./card-field-detail.js?v=20261101-15";
+import { renderFieldDetailCard, bindFieldDetailCard } from "./card-field-detail.js?v=20261101-16";
 
 // ★ デバッグフラグ（true でログ出る）
 const DEBUG = false;
@@ -53,6 +53,9 @@ export async function initAnalysisPage() {
       detail["TEMPLATE_FIELD"]     // テンプレート
     )
   );
+
+  // ★ 筆・契約サマリーのモーダル配線
+  bindFieldDetailCard(detail[rawFieldName], rawFieldName);
 
   /* ===============================
      ★ サマリーカード

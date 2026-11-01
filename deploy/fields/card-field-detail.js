@@ -1,44 +1,63 @@
 // card-field-detail.js
 // 基本データカード。作付け（年サマリー）カードと同じ見た目の部品で組む。
+// レイアウト：左＝写真枠（常設）／右＝基本情報・筆情報・契約情報の縦積み。
+// 筆・契約はサマリー1行表示＋クリックでモーダルに全件表示。
+import { showInfoModal } from "/common/showInfoModal.js";
+
+const valueOrPlaceholder = (value) => {
+  const text = String(value ?? "").trim();
+  return text || "未入力";
+};
+
+const line = (label, value) =>
+  `<div class="info-line">${escapeHtml(label)}：${escapeHtml(valueOrPlaceholder(value))}</div>`;
+
+// 複数の項目を1行にまとめる（狭い画面では自動で折り返す）
+const inline = (pairs) => `<div class="info-line">${pairs
+  .map(([label, value]) => `<span class="kv-inline">${escapeHtml(label)}：${escapeHtml(valueOrPlaceholder(value))}</span>`)
+  .join("")}</div>`;
+
+const getParcels = (data) => Array.isArray(data?.parcels) ? data.parcels : [];
+const getContracts = (data) => Array.isArray(data?.contracts) ? data.contracts : [];
+
 export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
   const data = f ? f : { ...TEMPLATE_FIELD, __empty: true, field: fieldName };
   const isEmpty = data.__empty;
-  const parcels = Array.isArray(data.parcels) ? data.parcels : [];
-  const contracts = Array.isArray(data.contracts) ? data.contracts : [];
+  const parcels = getParcels(data);
+  const contracts = getContracts(data);
 
-  const section = (title, lines) => `
-    <section class="year-summary-section">
-      <h2 class="section-title year-summary-title">${escapeHtml(title)}</h2>
+  const section = (title, lines, { modal = "", chip = "" } = {}) => `
+    <section class="year-summary-section${modal ? " field-detail-clickable" : ""}"
+             ${modal ? `data-detail-modal="${modal}" role="button" tabindex="0" title="クリックで全件を表示"` : ""}>
+      <h2 class="section-title year-summary-title">${escapeHtml(title)}${chip}</h2>
       <div class="info-block year-summary-block">
         ${lines.join("")}
       </div>
     </section>
   `;
-  const line = (label, value) =>
-    `<div class="info-line">${escapeHtml(label)}：${escapeHtml(valueOrPlaceholder(value))}</div>`;
-  // 複数の項目を1行にまとめる（狭い画面では自動で折り返す）
-  const inline = (pairs) => `<div class="info-line">${pairs
-    .map(([label, value]) => `<span class="kv-inline">${escapeHtml(label)}：${escapeHtml(valueOrPlaceholder(value))}</span>`)
-    .join("")}</div>`;
 
   const basicSection = section("基本情報", [
     line("実耕作面積", `${valueOrPlaceholder(data.size)} a`),
     line("特徴", data.memo),
   ]);
 
-  const parcelSections = parcels.length
-    ? parcels.map((p, idx) => section(`筆${idx + 1}`, [
-        inline([["所在", p?.address], ["登記面積", p?.officialArea ? `${p.officialArea} ㎡` : ""]]),
-        inline([["地権者", p?.owner], ["利用権", p?.rightType], ["支払金額", p?.rent]]),
-      ])).join("")
+  // 筆情報：圃場一覧の所在表示と同じく「先頭の所在＋他N筆」
+  const parcelSummarySection = parcels.length
+    ? section("筆情報", [
+        `<div class="info-line">所在：${escapeHtml(valueOrPlaceholder(parcels[0]?.address))}${
+          parcels.length > 1 ? `<span class="field-address-chip">他${parcels.length - 1}筆</span>` : ""
+        }</div>`,
+      ], { modal: "parcels", chip: `<span class="field-address-chip">全${parcels.length}筆 ▸</span>` })
     : section("筆情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
 
-  const contractSections = contracts.length
-    ? contracts.map((c, idx) => section(`契約${idx + 1}`, [
-        inline([["契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`],
-                ["賃料", c?.rent], ["備考", c?.notes]]),
-      ])).join("")
+  // 契約情報：先頭の契約期間＋他N件（増えてもサマリーのまま）
+  const contractSummarySection = contracts.length
+    ? section("契約情報", [
+        `<div class="info-line">契約期間：${escapeHtml(valueOrPlaceholder(contracts[0]?.start))} 〜 ${escapeHtml(valueOrPlaceholder(contracts[0]?.end))}${
+          contracts.length > 1 ? `<span class="field-address-chip">他${contracts.length - 1}件</span>` : ""
+        }</div>`,
+      ], { modal: "contracts", chip: `<span class="field-address-chip">全${contracts.length}件 ▸</span>` })
     : section("契約情報", ['<div class="info-line field-detail-empty-line">登録されていません</div>']);
 
   return `
@@ -48,14 +67,18 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
 
       <div class="card year-summary-card field-detail-card" style="margin-top:12px;">
 
-        <div class="year-summary-grid field-detail-grid">
+        <div class="field-detail-top">
           <section class="year-summary-section field-photo-section">
             <h2 class="section-title year-summary-title">写真</h2>
-            <div class="field-photo-slot"></div>
+            <div class="field-photo-slot">
+              <div class="field-top-photo-placeholder">トップ写真なし</div>
+            </div>
           </section>
-          ${basicSection}
-          ${parcelSections}
-          ${contractSections}
+          <div class="field-detail-stack">
+            ${basicSection}
+            ${parcelSummarySection}
+            ${contractSummarySection}
+          </div>
         </div>
 
         <!-- ★ 編集ボタン or 初期作成ボタン -->
@@ -83,9 +106,47 @@ export function renderFieldDetailCard(f, fieldName, TEMPLATE_FIELD) {
   `;
 }
 
-function valueOrPlaceholder(value) {
-  const text = String(value ?? "").trim();
-  return text || "未入力";
+// 筆・契約サマリーのクリックでモーダルに全件表示（カード挿入後に呼ぶ）
+export function bindFieldDetailCard(f, fieldName) {
+  const data = f || {};
+  const parcels = getParcels(data);
+  const contracts = getContracts(data);
+
+  const modalItem = (title, lines) => `
+    <section class="year-summary-section field-detail-modal-item">
+      <h3 class="section-title year-summary-title">${escapeHtml(title)}</h3>
+      <div class="info-block year-summary-block">${lines.join("")}</div>
+    </section>
+  `;
+
+  const builders = {
+    parcels: () => showInfoModal(
+      `${fieldName}：筆情報（全${parcels.length}筆）`,
+      `<div class="field-detail-modal-list">${parcels.map((p, idx) => modalItem(`筆${idx + 1}`, [
+        inline([["所在", p?.address], ["登記面積", p?.officialArea ? `${p.officialArea} ㎡` : ""]]),
+        inline([["地権者", p?.owner], ["利用権", p?.rightType], ["支払金額", p?.rent]]),
+      ])).join("")}</div>`
+    ),
+    contracts: () => showInfoModal(
+      `${fieldName}：契約情報（全${contracts.length}件）`,
+      `<div class="field-detail-modal-list">${contracts.map((c, idx) => modalItem(`契約${idx + 1}`, [
+        inline([["契約期間", `${valueOrPlaceholder(c?.start)} 〜 ${valueOrPlaceholder(c?.end)}`],
+                ["賃料", c?.rent], ["備考", c?.notes]]),
+      ])).join("")}</div>`
+    ),
+  };
+
+  for (const el of document.querySelectorAll(".field-detail-card [data-detail-modal]")) {
+    const open = builders[el.dataset.detailModal];
+    if (!open) continue;
+    el.addEventListener("click", open);
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  }
 }
 
 function escapeHtml(value) {

@@ -7,20 +7,21 @@ import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 
 export async function initFieldPhotos(field) {
   const slot = document.querySelector(".field-photo-slot") || document.querySelector(".field-detail-card");
+  const placeholder = slot?.querySelector(".field-top-photo-placeholder");
   const listUrl = `/photos/index.html?field=${encodeURIComponent(field)}`;
 
   if (!hasSession()) {
+    // プレースホルダ（トップ写真なし）は残し、下にログインボタンだけ出す
     if (slot) {
-      const note = document.createElement("div");
-      note.className = "field-photo-block";
-      note.innerHTML = '<p class="photo-panel-message">写真を見るには写真用ログインが必要です。</p>';
+      const actions = document.createElement("div");
+      actions.className = "field-photo-actions";
       const button = document.createElement("button");
       button.type = "button";
       button.className = "secondary-btn";
-      button.textContent = "写真用ログイン";
+      button.textContent = "🔑 写真用ログイン";
       button.addEventListener("click", () => login(location.pathname + location.search));
-      note.append(button);
-      slot.prepend(note);
+      actions.append(button);
+      slot.append(actions);
     }
     return;
   }
@@ -37,12 +38,13 @@ export async function initFieldPhotos(field) {
     return;
   }
 
-  // 基本データ内・写真スロット：トップ写真＋ボタン縦積み（未分類も含めて取りこぼしを防ぐ）
+  // 基本データ内・写真枠：トップ写真があればプレースホルダと差し替え、なければ枠を残す
   const fieldPhotos = photos.filter(photo => photo.category === "field" || !photo.category);
   if (slot) {
     const block = document.createElement("div");
     block.className = "field-photo-block";
     if (top) {
+      placeholder?.remove();
       const wrap = document.createElement("span");
       wrap.className = "field-top-photo-wrap";
       const image = document.createElement("img");
@@ -72,7 +74,7 @@ export async function initFieldPhotos(field) {
     listLink.textContent = "📷 写真一覧・追加";
     actions.append(openButton, listLink);
     block.append(actions);
-    slot.prepend(block);
+    slot.append(block);
   }
 
   // 作付けカード：定植IDに紐づく栽培記録の写真
