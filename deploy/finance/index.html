@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>JA経費分析 - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./finance.css?v=20261103-1">
+</head>
+<body>
+  <div id="header"></div>
+  <main id="page-area" class="page-container" hidden>
+    <h1 class="page-title">JA経費分析</h1>
+    <p class="finance-note">管理用の購入経費です。使用量・在庫・税務上の仕訳とは異なります。財務情報の共有にご注意ください。</p>
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="login-area" hidden>
+      <button id="login" type="button" class="primary-btn">ログインする</button>
+      <p>写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
+    </div>
+    <div id="data-area" hidden>
+      <section class="card">
+        <h2>データ取り込み</h2>
+        <div class="finance-toolbar">
+          <label>JA請求明細PDF（20MBまで）<input id="pdf" type="file" accept=".pdf,application/pdf"></label>
+          <button id="upload" type="button" class="primary-btn">アップロード・取り込み</button>
+          <button id="refresh" type="button" class="secondary-btn">最新データに更新</button>
+        </div>
+        <p id="updated-at" class="finance-note"></p>
+      </section>
+      <section class="card">
+        <h2>経費の推移</h2>
+        <div class="finance-toolbar">
+          <label>集計基準<select id="basis"><option value="trade">取引日の月</option><option value="settlement">決済月</option></select></label>
+          <label>開始月<input id="from" type="month"></label>
+          <label>終了月<input id="to" type="month"></label>
+          <label>大分類<select id="category"><option value="">すべて</option></select></label>
+          <label>品名・規格・部署<input id="query" type="search" placeholder="例：ザクサ 5L"></label>
+        </div>
+        <p id="filter-error" role="alert"></p>
+        <div id="summary" class="finance-summary"></div>
+        <p class="finance-note">月別集計と明細に上記の条件を適用します。請求予定は期間にかかわらず最新発行分です。</p>
+        <div id="legend" class="finance-legend"></div>
+        <div id="chart" class="finance-chart" aria-hidden="true"></div>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="月別経費集計">
+          <table><caption>月別・大分類別の購入金額（税込）</caption><thead id="monthly-head"></thead><tbody id="monthly-body"></tbody></table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>今後の引落予定（未確定）</h2>
+        <p id="forecast-source" class="finance-note"></p>
+        <div id="forecasts" class="finance-summary"></div>
+      </section>
+      <section class="card">
+        <h2>明細・要確認・機械整備費</h2>
+        <div class="finance-toolbar">
+          <label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
+          <label><input id="machine-only" type="checkbox">農機課のみ（整備・部品費）</label>
+        </div>
+        <p class="finance-note">分類は各明細の「分類修正」から変更できます。10万円以上の税理士確認は分類後も残ります。</p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="請求明細一覧">
+          <table><thead><tr><th>取引日 / 請求書</th><th>品名・規格</th><th>数量 / 単価</th><th>金額</th><th>分類</th><th>確認・編集</th></tr></thead><tbody id="items"></tbody></table>
+        </div>
+        <div class="finance-toolbar">
+          <button id="previous" type="button" class="secondary-btn">前へ</button>
+          <span id="page-number"></span>
+          <button id="next" type="button" class="secondary-btn">次へ</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>請求書・再取り込み</h2>
+        <div id="invoices" class="finance-records"></div>
+      </section>
+      <section class="card">
+        <h2>取り込み履歴</h2>
+        <div id="imports" class="finance-records"></div>
+      </section>
+    </div>
+    <dialog id="edit-dialog">
+      <form id="edit-form">
+        <h2>分類修正</h2>
+        <p id="edit-item"></p>
+        <label>大分類<select id="edit-category" required></select></label>
+        <label>小分類<input id="edit-subcategory" maxlength="80" list="subcategories"></label>
+        <datalist id="subcategories"><option value="殺虫剤"><option value="殺菌剤"><option value="除草剤"><option value="その他"><option value="葉面散布"><option value="消耗品"><option value="整備付帯"><option value="要確認"></datalist>
+        <label><input id="remember" type="checkbox">同じ部署のキーワード一致商品にも適用（辞書へ追加）</label>
+        <label>辞書キーワード<input id="keyword" maxlength="100" disabled></label>
+        <p class="finance-note">辞書を追加すると過去の自動分類にも反映されます。手動で確定した分類は優先されます。</p>
+        <p id="edit-status" role="alert"></p>
+        <div class="finance-toolbar"><button id="save-edit" class="primary-btn" type="submit">保存</button><button id="cancel-edit" class="secondary-btn" type="button">キャンセル</button></div>
+      </form>
+    </dialog>
+    <dialog id="report-dialog">
+      <h2>取り込み結果</h2>
+      <pre id="report-content"></pre>
+      <button id="close-report" type="button" class="secondary-btn">閉じる</button>
+    </dialog>
+  </main>
+  <script type="module" src="./finance.js?v=20261103-1"></script>
+</body>
+</html>

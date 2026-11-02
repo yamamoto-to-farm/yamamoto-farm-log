@@ -1,3 +1,5 @@
 s3-backup/
 shift.zip
 shift-api.zip
+ja-statement-analysis.zip
+lambda/ja-statement-analysis/__pycache__/

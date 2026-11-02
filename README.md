@@ -271,6 +271,71 @@ AWS設定（photos の HTTP API に追加）:
 
 ## ローカル検証
 
+### JA請求明細
+
+- ソース: `lambda/ja-statement-analysis/`（PDF解析・分類・取込API）。
+- 経費専用非公開バケット: `yamamoto-farm-private-finance-01`（東京、SSE-S3、
+  パブリックアクセス全ブロック、バージョニング有効）。
+- Lambda: `yamamoto-farm-finance-api`、Python 3.13、x86_64、
+  `lambda_function.lambda_handler`、512MB、タイムアウト60秒。
+- 実行ロール: `yamamoto-farm-finance-import-role`。`AWSLambdaBasicExecutionRole` と
+  経費用S3ポリシー `FinanceBucketAccess` を使用。
+- `s3:ListBucket` は経費バケット全体に許可する。未作成の分類辞書を `GetObject` で確認する際も
+  この権限が必要（prefix条件だけに制限すると404ではなく403になる）。
+  `GetObject` / `PutObject` は `uploads/*`、`invoices/*`、`imports/*` と
+  `classification-rules.json` に限定し、削除権限は付けない。
+- 環境変数: `FINANCE_BUCKET=yamamoto-farm-private-finance-01`。
+- 全APIで既存Cognitoの検証済み `admin` / `family` を許可。HTTP APIの全ルートには
+  既存JWTオーソライザー `farm-photos-cognito` と必須スコープ `openid` を設定する。
+- S3イベント通知は `uploads/` prefix・`.pdf` suffixのオブジェクト作成のみを対象にする。
+  S3からLambdaへの呼び出し権限も必要。JSON保存による再帰起動は避ける。
+- API: `POST /finance/uploads`、`GET /finance/invoices`、
+  `GET /finance/invoices/{invoice_no}`、`GET /finance/imports`、
+  `GET /finance/imports/{import_id}`、`GET /finance/forecasts`、
+  `POST /finance/classifications`、`POST /finance/reimport`。
+- 手動分類は `invoice_no + line_seq` で再取込時も保持する。請求予定の表示は最新発行分を使う。
+  サンプルPDFは個人情報を含むため、リポジトリやZIPには含めない。
+- バケットのCORSには公開サイトのOriginだけを許可し、アップロード用に `POST` を許可する。
+
+テストはAWSに接続しない。ローカルAPIテストには、ルートの `requirements.txt` に指定された
+`boto3==1.34.144` も必要（Lambdaではランタイム付属のSDKを使う）。
+
+```powershell
+python -m pip install -r .\lambda\ja-statement-analysis\requirements.txt
+python -m pip install boto3==1.34.144
+python -B -m unittest discover -s .\lambda\ja-statement-analysis -p "test_*.py"
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_ja_statement_lambda_zip.ps1
+```
+
+ビルドは一時領域で新規ZIPを作成してから出力を置き換えるため、既存ZIPへ追記しない。
+ZIP内の重複・CRC・必須モジュールを検証する。出力は `ja-statement-analysis.zip`。
+
+#### 経費分析ページ
+
+`/finance/index.html` は写真・シフトと同じCognitoセッションと既存callbackを使う。
+ログイン後は経費ページへ戻るため、Cognitoのcallback URL追加は不要。
+APIによるadmin/family判定がデータ保護を担い、ローカルロールは画面ナビゲーションにだけ使う。
+経費データは非公開APIから `cache: "no-store"` で取得し、localStorage等には保存しない。
+
+- 月別・大分類別の積み上げ棒グラフと金額表。取引日の月 / 決済月を切替。
+- 期間・大分類・品名/規格/部署で絞り込み。明細は30件ずつ表示。
+- 最新発行分の引落予定（過去月の請求書を後から取り込んでも最新発行分を表示）。
+- 要確認/未分類と農機課明細のフィルター。手動分類、任意の辞書追加・過去分再分類。
+- PDFアップロード後は結果を最大約60秒待ち、未完了なら「最新データに更新」で再確認する。
+  検証失敗は保留と表示し、取り込み履歴から警告・未解析行を確認できる。
+- 保存済みPDFの再取り込み。
+
+```powershell
+node --test tests\finance.test.cjs tests\auth-policy.test.cjs
+```
+
+公開時は **`deploy\finance\` 内の4ファイル**を公開サイトS3の `finance/` に配置し、
+`deploy\data\pages.json` を `data/pages.json` に別途反映する（サイト同期ではdata/が除外される）。
+CloudFrontで `/finance/*` と `/data/pages.json` を無効化する。
+リポジトリ直下の `finance/` にある原本PDFは公開しない。
+Lambdaの変更・再デプロイは不要。公開後にadmin/familyで請求書表示・分類保存・PDFアップロードを
+実APIで確認すること。ローカルブラウザ検証では認証とAPIを模擬しており、実アカウントでの確認とは別。
+
 ```bash
 python -m py_compile src/gdd/__init__.py src/gdd/weather_loader.py src/gdd/gdd_calculator.py src/gdd/model.py src/gdd/app.py
 ```
