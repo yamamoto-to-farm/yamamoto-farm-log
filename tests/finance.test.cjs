@@ -39,6 +39,100 @@ test("filters cover date, category, NFKC search, review and machinery", async ()
   assert.equal(filterItems(items, { basis: "trade", machineOnly: true, reviewOnly: true }).length, 1);
 });
 
+test("unclassified groups use exact product and department, exclude manual and honor input filters", async () => {
+  const { unclassifiedGroups, filterItems } = await logic();
+  const base = { item_name: "商品", department: "第4事業所", category: "未分類",
+    trade_date: "2026-08-01", spec: "1L", amount: 100 };
+  const data = [
+    base, { ...base, spec: "5L", amount: -10 },
+    { ...base, classified_by: "manual", amount: 9000 },
+    { ...base, department: "農機課", amount: 200 },
+    { ...base, item_name: "商品A", amount: 300 },
+    { ...base, category: "農薬費", amount: 8000 },
+    { ...base, trade_date: "2026-09-01", amount: 400 },
+  ];
+  const groups = unclassifiedGroups(filterItems(data, {basis: "trade", to: "2026-08"}));
+  assert.deepEqual(groups.map(group => [group.item_name, group.department, group.total, group.items.length]),
+    [["商品A", "第4事業所", 300, 1], ["商品", "農機課", 200, 1], ["商品", "第4事業所", 90, 2]]);
+  assert.equal(data.length, 7);
+});
+
+test("detail sorting is numeric, stable for ties and does not mutate source", async () => {
+  const { sortItems } = await logic();
+  const base = { trade_date: "2026-08-01", invoice_no: "sample" };
+  const data = [{...base, amount: 90, line_seq: 2}, {...base, amount: 1000, line_seq: 3},
+    {...base, amount: -176, line_seq: 1}, {...base, amount: 90, line_seq: 4, trade_date: "2026-09-01"}];
+  assert.deepEqual(sortItems(data, "amount-desc").map(item => item.line_seq), [3, 4, 2, 1]);
+  assert.deepEqual(sortItems(data, "amount-asc").map(item => item.line_seq), [1, 4, 2, 3]);
+  assert.equal(sortItems(data, "date-desc")[0].line_seq, 4);
+  assert.equal(data[0].line_seq, 2);
+});
+
+test("month selection applies both month bounds, amount order, clears detail toggles and guards busy", () => {
+  const { context, element } = setup();
+  element("details-section").scrollIntoView = () => { context.scrolled = true; };
+  element("review-only").checked = element("machine-only").checked = true;
+  vm.runInContext('render = () => {}; page = 3; selectMonth("2026-08")', context);
+  assert.equal(element("from").value, "2026-08");
+  assert.equal(element("to").value, "2026-08");
+  assert.equal(element("detail-sort").value, "amount-desc");
+  assert.equal(element("review-only").checked, false);
+  assert.equal(element("machine-only").checked, false);
+  assert.equal(vm.runInContext("page", context), 0);
+  assert.equal(context.scrolled, true);
+  vm.runInContext('busy = true; selectMonth("2026-09")', context);
+  assert.equal(element("from").value, "2026-08");
+});
+
+test("batch classification reports partial saves and retries only unfinished lines", async () => {
+  const { context, element, requests } = setup();
+  element("edit-category").value = "農薬費";
+  element("edit-subcategory").value = "殺虫剤";
+  const originalFetch = context.fetch;
+  let call = 0;
+  context.fetch = async (...args) => {
+    call++;
+    if (call === 2) throw new Error("offline");
+    return originalFetch(...args);
+  };
+  vm.runInContext(`
+    editGroup = {saved: 0, items: [
+      {invoice_no: "04026970", line_seq: 1},
+      {invoice_no: "03995145", line_seq: 2}
+    ]};
+    updateButtons = () => {};
+    loadData = async () => {};
+  `, context);
+  await vm.runInContext("saveGroup()", context);
+  assert.match(element("edit-status").textContent, /1件保存済み、残り1件.*offline/);
+  assert.equal(vm.runInContext("editGroup.items.length", context), 1);
+  assert.equal(element("save-edit").disabled, false);
+  assert.equal(element("edit-category").disabled, false);
+  await vm.runInContext("saveGroup()", context);
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests.map(request => JSON.parse(request.options.body).invoice_no), ["04026970", "03995145"]);
+  assert.equal(JSON.parse(requests[1].options.body).remember, false);
+  assert.match(element("status").textContent, /2件の分類を保存/);
+  assert.equal(element("edit-dialog").open, false);
+});
+
+test("batch rejects unclassified destination and distinguishes refresh failure after saving", async () => {
+  const { context, element, requests } = setup();
+  vm.runInContext(`
+    editGroup = {saved: 0, items: [{invoice_no: "04026970", line_seq: 1}]};
+    updateButtons = () => {};
+    loadData = async () => { throw new Error("refresh offline"); };
+  `, context);
+  element("edit-category").value = "未分類";
+  await vm.runInContext("saveGroup()", context);
+  assert.equal(requests.length, 0);
+  assert.match(element("edit-status").textContent, /分類を選択/);
+  element("edit-category").value = "農薬費";
+  await vm.runInContext("saveGroup()", context);
+  assert.match(element("status").textContent, /1件の分類を保存.*表示の更新に失敗.*refresh offline/);
+  assert.equal(vm.runInContext("busy || savingEdit", context), false);
+});
+
 test("chart scale uses readable ticks and covers stacked amounts after filtering", async () => {
   const { chartScale } = await logic();
   assert.deepEqual(chartScale([{ categories: { "農薬費": 1843871 } }]), {
@@ -68,6 +162,7 @@ test("chart renders aligned grid positions, scaled bars and empty state", async 
       tag, text, className, children: [], style: {},
       append(...children) { this.children.push(...children); },
       setAttribute() {},
+      addEventListener() {},
     });
     categories = ["農薬費"];
     formatYen = value => String(value) + "円";
@@ -136,8 +231,9 @@ test("API sends bearer token with no-store and posts only explicit data", async 
   assert.deepEqual(JSON.parse(requests[0].options.body), { invoice_no: "04026970", line_seq: 1 });
 });
 
-test("forecast range and missing credit numbers are displayed without invented values", () => {
+test("forecast range and missing credit numbers are displayed without invented values", async () => {
   const { context, element } = setup();
+  context.sortItems = (await logic()).sortItems;
   for (const id of ["forecasts", "items"]) {
     const target = element(id);
     target.children = [];

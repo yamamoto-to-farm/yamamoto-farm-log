@@ -46,6 +46,29 @@ export function latestForecast(invoices) {
     || b.closing_date.localeCompare(a.closing_date))[0] || null;
 }
 
+export function unclassifiedGroups(items) {
+  const groups = new Map();
+  for (const item of items) {
+    if (item.category !== "未分類" || item.classified_by === "manual") continue;
+    const key = JSON.stringify([item.item_name, item.department]);
+    if (!groups.has(key)) groups.set(key, {
+      item_name: item.item_name, department: item.department, total: 0, items: [],
+    });
+    const group = groups.get(key);
+    group.total += item.amount;
+    group.items.push(item);
+  }
+  return [...groups.values()].sort((a, b) => b.total - a.total
+    || a.item_name.localeCompare(b.item_name) || a.department.localeCompare(b.department));
+}
+
+export function sortItems(items, order) {
+  return [...items].sort((a, b) =>
+    (order === "amount-desc" ? b.amount - a.amount : order === "amount-asc" ? a.amount - b.amount : 0)
+    || b.trade_date.localeCompare(a.trade_date)
+    || a.invoice_no.localeCompare(b.invoice_no) || a.line_seq - b.line_seq);
+}
+
 export function chartScale(rows) {
   const maximum = Math.max(1, ...rows.map(row =>
     Object.values(row.categories).reduce((sum, amount) => sum + Math.max(0, amount), 0)));

@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>JA経費分析 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./finance.css?v=20261103-3">
+  <link rel="stylesheet" href="./finance.css?v=20261103-4">
 </head>
 <body>
   <div id="header"></div>
@@ -34,6 +34,7 @@
           <label>集計基準<select id="basis"><option value="trade">取引日の月</option><option value="settlement">決済月</option></select></label>
           <label>開始月<input id="from" type="month"></label>
           <label>終了月<input id="to" type="month"></label>
+          <button id="clear-period" type="button" class="secondary-btn">期間を解除</button>
           <label>大分類<select id="category"><option value="">すべて</option></select></label>
           <label>品名・規格・部署<input id="query" type="search" placeholder="例：ザクサ 5L"></label>
         </div>
@@ -41,9 +42,18 @@
         <div id="summary" class="finance-summary"></div>
         <p class="finance-note">月別集計と明細に上記の条件を適用します。請求予定は期間にかかわらず最新発行分です。</p>
         <div id="legend" class="finance-legend"></div>
-        <div id="chart" class="finance-chart" aria-hidden="true"></div>
+        <p class="finance-note">月の棒を押すと、その月の明細を金額の大きい順に表示します。</p>
+        <div id="chart" class="finance-chart" role="group" aria-label="月別経費グラフ"></div>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="月別経費集計">
           <table><caption>月別・大分類別の購入金額（税込）</caption><thead id="monthly-head"></thead><tbody id="monthly-body"></tbody></table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>未分類をまとめて整理</h2>
+        <p class="finance-note">上の期間・分類・検索条件内で、同じ品名＋部署の未分類を合計金額順に表示します。規格違いも含みます。手動確定済みは対象外です。</p>
+        <p id="group-summary" class="finance-note"></p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="未分類の商品別一覧">
+          <table><thead><tr><th>品名・部署</th><th>明細数</th><th>合計金額</th><th>分類</th></tr></thead><tbody id="unclassified-groups"></tbody></table>
         </div>
       </section>
       <section class="card">
@@ -51,11 +61,12 @@
         <p id="forecast-source" class="finance-note"></p>
         <div id="forecasts" class="finance-summary"></div>
       </section>
-      <section class="card">
+      <section id="details-section" class="card">
         <h2>明細・要確認・機械整備費</h2>
         <div class="finance-toolbar">
           <label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label><input id="machine-only" type="checkbox">農機課のみ（整備・部品費）</label>
+          <label>並び順<select id="detail-sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option><option value="amount-asc">金額が小さい順</option></select></label>
         </div>
         <p class="finance-note">分類は各明細の「分類修正」から変更できます。10万円以上の税理士確認は分類後も残ります。</p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="請求明細一覧">
@@ -78,14 +89,16 @@
     </div>
     <dialog id="edit-dialog">
       <form id="edit-form">
-        <h2>分類修正</h2>
+        <h2 id="edit-title">分類修正</h2>
         <p id="edit-item"></p>
         <label>大分類<select id="edit-category" required></select></label>
         <label>小分類<input id="edit-subcategory" maxlength="80" list="subcategories"></label>
         <datalist id="subcategories"><option value="殺虫剤"><option value="殺菌剤"><option value="除草剤"><option value="その他"><option value="葉面散布"><option value="消耗品"><option value="整備付帯"><option value="要確認"></datalist>
+        <div id="dictionary-fields">
         <label><input id="remember" type="checkbox">同じ部署のキーワード一致商品にも適用（辞書へ追加）</label>
         <label>辞書キーワード<input id="keyword" maxlength="100" disabled></label>
         <p class="finance-note">辞書を追加すると過去の自動分類にも反映されます。手動で確定した分類は優先されます。</p>
+        </div>
         <p id="edit-status" role="alert"></p>
         <div class="finance-toolbar"><button id="save-edit" class="primary-btn" type="submit">保存</button><button id="cancel-edit" class="secondary-btn" type="button">キャンセル</button></div>
       </form>
@@ -96,6 +109,6 @@
       <button id="close-report" type="button" class="secondary-btn">閉じる</button>
     </dialog>
   </main>
-  <script type="module" src="./finance.js?v=20261103-3"></script>
+  <script type="module" src="./finance.js?v=20261103-4"></script>
 </body>
 </html>

@@ -3,8 +3,9 @@ import { renderHeader } from "/common/header.js?v=1.1";
 import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
-  categories, chartScale, filterItems, flattenItems, formatYen, latestForecast, monthlyTotals, uploadOutcome,
-} from "./finance-logic.js?v=20261103-3";
+  categories, chartScale, filterItems, flattenItems, formatYen, latestForecast, monthlyTotals,
+  sortItems, unclassifiedGroups, uploadOutcome,
+} from "./finance-logic.js?v=20261103-4";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -14,6 +15,7 @@ let items = [];
 let page = 0;
 let busy = false;
 let editItem = null;
+let editGroup = null;
 let savingEdit = false;
 
 function node(tag, text, className) {
@@ -165,6 +167,17 @@ function render() {
     return tr;
   }));
   renderItems();
+  renderGroups(filtered);
+}
+
+function selectMonth(month) {
+  if (busy || savingEdit) return;
+  el("from").value = el("to").value = month;
+  el("detail-sort").value = "amount-desc";
+  el("review-only").checked = el("machine-only").checked = false;
+  page = 0;
+  render();
+  el("details-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderChart(rows) {
@@ -190,7 +203,11 @@ function renderChart(rows) {
   }
   const columns = node("div", undefined, "finance-columns");
   for (const row of rows) {
-    const column = node("div", undefined, "finance-column");
+    const column = node("button", undefined, "finance-column");
+    column.type = "button";
+    column.disabled = busy;
+    column.setAttribute("aria-label", `${row.month} ${formatYen(row.total)}：この月の明細を金額順で表示`);
+    column.addEventListener("click", () => selectMonth(row.month));
     const stack = node("div", undefined, "finance-stack");
     for (const [index, category] of categories.entries()) {
       const amount = row.categories[category] || 0;
@@ -217,8 +234,7 @@ function updatePagination() {
 
 function renderItems() {
   updatePagination();
-  const list = filteredItems(true).sort((a, b) => b.trade_date.localeCompare(a.trade_date)
-    || a.invoice_no.localeCompare(b.invoice_no) || a.line_seq - b.line_seq);
+  const list = sortItems(filteredItems(true), el("detail-sort").value);
   const body = el("items");
   body.replaceChildren();
   for (const item of list.slice(page * pageSize, (page + 1) * pageSize)) {
@@ -245,6 +261,33 @@ function renderItems() {
     const cell = node("td", "対象の明細がありません。");
     cell.colSpan = 6;
     const row = node("tr");
+    row.append(cell);
+    body.append(row);
+  }
+}
+
+function renderGroups(filtered) {
+  const groups = unclassifiedGroups(filtered);
+  const body = el("unclassified-groups");
+  body.replaceChildren();
+  el("group-summary").textContent = `現在の期間・分類・検索条件内：${groups.length}商品グループ / ${groups.reduce((sum, group) => sum + group.items.length, 0)}明細`;
+  for (const group of groups) {
+    const row = node("tr");
+    const product = node("td", group.item_name);
+    product.append(node("small", group.department));
+    const button = node("button", "まとめて分類", "secondary-btn");
+    button.type = "button";
+    button.disabled = busy;
+    button.addEventListener("click", () => openGroup(group));
+    const action = node("td");
+    action.append(button);
+    row.append(product, node("td", `${group.items.length}件`), node("td", formatYen(group.total)), action);
+    body.append(row);
+  }
+  if (!groups.length) {
+    const row = node("tr");
+    const cell = node("td", "対象の未分類明細はありません。");
+    cell.colSpan = 4;
     row.append(cell);
     body.append(row);
   }
@@ -315,6 +358,9 @@ function showReport(report) {
 }
 
 function openEdit(item) {
+  editGroup = null;
+  el("dictionary-fields").hidden = false;
+  el("edit-title").textContent = "分類修正";
   editItem = item;
   el("edit-item").textContent = `${item.trade_date} / ${item.item_name} ${item.spec} / ${formatYen(item.amount)}`;
   el("edit-category").value = item.category;
@@ -326,8 +372,71 @@ function openEdit(item) {
   el("edit-dialog").showModal();
 }
 
+function openGroup(group) {
+  editItem = null;
+  editGroup = { ...group, items: [...group.items], saved: 0 };
+  el("dictionary-fields").hidden = true;
+  el("edit-title").textContent = "未分類をまとめて修正";
+  el("edit-item").textContent = [
+    `${group.item_name} / ${group.department}`,
+    `${group.items.length}件 / 合計 ${formatYen(group.total)}`,
+    "表示条件内の同じ品名・部署が対象です（規格違いを含む）。手動確定済みは変更しません。",
+    ...group.items.map(item => `${item.trade_date} / 請求書 ${item.invoice_no} 行${item.line_seq} / ${item.spec || "規格なし"} / ${formatYen(item.amount)}`),
+  ].join("\n");
+  el("edit-category").value = "未分類";
+  el("edit-subcategory").value = "";
+  el("edit-status").textContent = "";
+  el("edit-dialog").showModal();
+}
+
+async function saveGroup() {
+  if (savingEdit || busy) return;
+  const category = el("edit-category").value;
+  const subcategory = el("edit-subcategory").value.trim();
+  if (category === "未分類") {
+    el("edit-status").textContent = "変更先の分類を選択してください。";
+    return;
+  }
+  savingEdit = busy = true;
+  updateButtons();
+  el("save-edit").disabled = el("cancel-edit").disabled = true;
+  el("edit-category").disabled = el("edit-subcategory").disabled = true;
+  let message;
+  let failed = false;
+  try {
+    while (editGroup.items.length) {
+      const item = editGroup.items[0];
+      el("edit-status").textContent = `${editGroup.saved}件保存済み、残り${editGroup.items.length}件を保存中…`;
+      await api("/classifications", {
+        invoice_no: item.invoice_no, line_seq: item.line_seq, category, subcategory, remember: false,
+      });
+      editGroup.items.shift();
+      editGroup.saved++;
+    }
+    message = `${editGroup.saved}件の分類を保存しました。`;
+    el("edit-dialog").close();
+  } catch (error) {
+    failed = true;
+    message = `${editGroup.saved}件保存済み、残り${editGroup.items.length}件は未完了です。再度「保存」で残りのみ再試行します。 ${error.message}`;
+    el("edit-status").textContent = message;
+  }
+  try {
+    await loadData();
+  } catch (error) {
+    failed = true;
+    message += ` 表示の更新に失敗しました。「最新データに更新」で確認してください。 ${error.message}`;
+  } finally {
+    savingEdit = busy = false;
+    updateButtons();
+    el("save-edit").disabled = el("cancel-edit").disabled = false;
+    el("edit-category").disabled = el("edit-subcategory").disabled = false;
+    status(message, failed);
+  }
+}
+
 async function saveEdit(event) {
   event.preventDefault();
+  if (editGroup) return saveGroup();
   if (savingEdit || !editItem) return;
   const remember = el("remember").checked;
   if (remember && !el("keyword").value.trim()) {
@@ -414,7 +523,12 @@ async function initialize() {
     status("最新データを取得しました。");
   }));
   el("upload").addEventListener("click", () => run(uploadPdf));
-  for (const id of ["basis", "from", "to", "category", "query", "review-only", "machine-only"]) {
+  el("clear-period").addEventListener("click", () => {
+    el("from").value = el("to").value = "";
+    page = 0;
+    render();
+  });
+  for (const id of ["basis", "from", "to", "category", "query", "review-only", "machine-only", "detail-sort"]) {
     el(id).addEventListener("input", () => { page = 0; render(); });
   }
   el("previous").addEventListener("click", () => { page--; renderItems(); });
