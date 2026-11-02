@@ -57,6 +57,35 @@ class StatementParserTests(unittest.TestCase):
         self.assertEqual(len(statement.unparsed_lines), 1)
         self.assertEqual(statement.validation_status, "failed")
 
+    def test_amount_only_credit_preserves_missing_quantity_and_unit_price(self):
+        page = self.page_one.replace("3,845円", "3,669円")
+        page += "\n2026/04/27 1234567890 運賃    -176 内 第４事業所 予約"
+        statement = parse_statement_text([page, self.page_two])
+        self.assertEqual(statement.validation_status, "ok")
+        credit = statement.items[-1]
+        self.assertEqual(credit.item_name_raw, "運賃")
+        self.assertEqual(credit.amount, -176)
+        self.assertIsNone(credit.quantity)
+        self.assertIsNone(credit.unit_price)
+        self.assertEqual(credit.line_seq, 3)
+
+    def test_signed_detail_numbers_and_raw_spec(self):
+        page = self.page_one.replace("3,845円", "845円").replace(
+            "2.00 750.00 1,500", "-2.00 750.00 -1,500"
+        )
+        statement = parse_statement_text([page, self.page_two])
+        self.assertEqual(statement.validation_status, "ok")
+        self.assertEqual(statement.items[0].quantity, Decimal("-2.00"))
+        self.assertEqual(statement.items[0].spec_raw, "ﾍﾞ ｱﾘﾝｸﾞ 6000")
+
+    def test_forecast_onwards_keeps_range_without_inventing_a_single_month(self):
+        page = self.page_two.replace("２月決済予定", "２月以降決済予定")
+        statement = parse_statement_text([self.page_one, page])
+        self.assertEqual(statement.validation_status, "ok")
+        self.assertEqual(statement.forecasts[-1].settlement_month, "2027-02")
+        self.assertTrue(statement.forecasts[-1].onwards)
+        self.assertFalse(statement.forecasts[0].onwards)
+
     def test_warns_when_previous_invoice_total_does_not_match(self):
         statement = parse_statement_text(
             [self.page_one, self.page_two], previous_invoice_total=100

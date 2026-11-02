@@ -120,8 +120,8 @@ def _item_json(item):
         "spec_raw": item.spec_raw,
         "item_name": item.item_name,
         "spec": item.spec,
-        "quantity": str(item.quantity),
-        "unit_price": str(item.unit_price),
+        "quantity": str(item.quantity) if item.quantity is not None else None,
+        "unit_price": str(item.unit_price) if item.unit_price is not None else None,
         "amount": item.amount,
         "tax_flag": item.tax_flag,
         "department": item.department,
@@ -143,8 +143,8 @@ def _item_model(value):
         spec_raw=value["spec_raw"],
         item_name=value["item_name"],
         spec=value["spec"],
-        quantity=Decimal(value["quantity"]),
-        unit_price=Decimal(value["unit_price"]),
+        quantity=Decimal(value["quantity"]) if value["quantity"] is not None else None,
+        unit_price=Decimal(value["unit_price"]) if value["unit_price"] is not None else None,
         amount=value["amount"],
         tax_flag=value["tax_flag"],
         department=value["department"],
@@ -169,7 +169,7 @@ def _statement_json(statement, items=None):
         "tax_amount": statement.tax_amount,
         "forecast_total": statement.forecast_total,
         "forecasts": [
-            {"settlement_month": item.settlement_month, "amount": item.amount}
+            {"settlement_month": item.settlement_month, "amount": item.amount, "onwards": item.onwards}
             for item in statement.forecasts
         ],
         "items": [_item_json(item) for item in (items if items is not None else statement.items)],

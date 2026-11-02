@@ -11,17 +11,20 @@ from pathlib import Path
 
 
 _DETAIL_PREFIX = re.compile(r"^(?P<trade_date>\d{4}/\d{2}/\d{2})\s+(?P<trade_no>\d{10})\s+(?P<body>.*)$")
-_DETAIL_ROW = re.compile(
+_DETAIL_VALUES = (
     r"^(?P<description>.*?)\s+"
-    r"(?P<quantity>\d+(?:\.\d+)?)\s+"
-    r"(?P<unit_price>[\d,]+(?:\.\d+)?)\s+"
-    r"(?P<amount>[\d,]+)\s+"
-    r"(?P<tax_flag>内\*?|\*)\s+"
+    r"(?:(?P<quantity>-?\d+(?:\.\d+)?)\s+"
+    r"(?P<unit_price>-?[\d,]+(?:\.\d+)?)\s+)?"
+    r"(?P<amount>-?[\d,]+)\s+"
+    r"(?P<tax_flag>内\*?|\*)"
+)
+_DETAIL_ROW = re.compile(
+    _DETAIL_VALUES + r"\s+"
     r"(?P<department>農機課|第\d+事業所)"
     r"(?:\s+(?P<note>.*))?$"
 )
 _FORECAST_ROW = re.compile(
-    r"[（(]\s*(?P<month>\d{1,2})月決済予定\s*[）)]\s*(?P<amount>[\d,]+)\s*$"
+    r"[（(]\s*(?P<month>\d{1,2})月(?P<onwards>以降)?決済予定\s*[）)]\s*(?P<amount>[\d,]+)\s*$"
 )
 _MONEY = re.compile(r"([\d,]+)")
 
@@ -35,8 +38,8 @@ class LineItem:
     spec_raw: str
     item_name: str
     spec: str
-    quantity: Decimal
-    unit_price: Decimal
+    quantity: Decimal | None
+    unit_price: Decimal | None
     amount: int
     tax_flag: str
     department: str
@@ -52,6 +55,7 @@ class LineItem:
 class Forecast:
     settlement_month: str
     amount: int
+    onwards: bool = False
 
 
 @dataclass
@@ -131,7 +135,7 @@ def _parse_item(line: str, raw_line: str, line_seq: int) -> LineItem | None:
     if not raw_prefix:
         return None
     raw_description_match = re.match(
-        r"^(.*?)\s+\d+(?:\.\d+)?\s+[\d,]+(?:\.\d+)?\s+[\d,]+\s+(?:内\*?|\*)",
+        _DETAIL_VALUES,
         raw_prefix.group("body"),
     )
     raw_description = (
@@ -160,8 +164,8 @@ def _parse_item(line: str, raw_line: str, line_seq: int) -> LineItem | None:
         spec_raw=spec_raw,
         item_name=item_name,
         spec=spec,
-        quantity=Decimal(match.group("quantity")),
-        unit_price=Decimal(match.group("unit_price").replace(",", "")),
+        quantity=Decimal(match.group("quantity")) if match.group("quantity") is not None else None,
+        unit_price=Decimal(match.group("unit_price").replace(",", "")) if match.group("unit_price") is not None else None,
         amount=int(match.group("amount").replace(",", "")),
         tax_flag=match.group("tax_flag"),
         department=match.group("department"),
@@ -237,6 +241,7 @@ def parse_statement_text(pages: list[str], previous_invoice_total: int | None = 
                 Forecast(
                     settlement_month=f"{year:04d}-{month:02d}",
                     amount=int(forecast_row.group("amount").replace(",", "")),
+                    onwards=bool(forecast_row.group("onwards")),
                 )
             )
 

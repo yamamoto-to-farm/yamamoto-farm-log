@@ -3,6 +3,7 @@ import json
 import os
 import unittest
 from datetime import date
+from dataclasses import replace
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -11,7 +12,7 @@ from botocore.exceptions import ClientError
 with patch("boto3.client"):
     import lambda_function
 
-from statement_parser import LineItem, ParsedStatement
+from statement_parser import Forecast, LineItem, ParsedStatement
 
 
 class FakeS3:
@@ -159,6 +160,27 @@ class FinanceApiTests(unittest.TestCase):
         self.assertEqual(saved["items"][0]["classified_by"], "manual")
         self.assertEqual(saved["items"][0]["subcategory"], "殺虫剤")
         self.assertEqual(json.loads(self.s3.objects["classification-rules.json"])[0]["keyword"], "スイカル")
+
+    def test_credit_missing_numbers_survive_serialization_and_classification(self):
+        parsed = statement()
+        parsed.items = [replace(parsed.items[0], quantity=None, unit_price=None, amount=-176)]
+        parsed.forecasts = [Forecast("2027-02", 117691, onwards=True)]
+        stored = lambda_function._statement_json(parsed)
+        self.assertIsNone(stored["items"][0]["quantity"])
+        self.assertIsNone(stored["items"][0]["unit_price"])
+        self.assertEqual(lambda_function._item_model(stored["items"][0]), parsed.items[0])
+        self.assertTrue(stored["forecasts"][0]["onwards"])
+        self.save("invoices/04026970.json", stored)
+        result = self.call("POST /finance/classifications", {
+            "invoice_no": "04026970", "line_seq": 1,
+            "category": "未分類", "subcategory": "",
+        })
+        self.assertEqual(result["statusCode"], 200)
+        saved = json.loads(self.s3.objects["invoices/04026970.json"])
+        self.assertEqual(saved["items"][0]["amount"], -176)
+        self.assertIsNone(saved["items"][0]["quantity"])
+        self.assertIsNone(saved["items"][0]["unit_price"])
+        self.assertTrue(saved["forecasts"][0]["onwards"])
 
     def test_previous_month_reconciliation_ignores_older_months(self):
         self.save("invoices/older.json", {

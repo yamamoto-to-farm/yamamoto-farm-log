@@ -3,8 +3,8 @@ import { renderHeader } from "/common/header.js?v=1.1";
 import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
-  categories, filterItems, flattenItems, formatYen, latestForecast, monthlyTotals, uploadOutcome,
-} from "./finance-logic.js?v=20261103-1";
+  categories, chartScale, filterItems, flattenItems, formatYen, latestForecast, monthlyTotals, uploadOutcome,
+} from "./finance-logic.js?v=20261103-3";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -153,23 +153,7 @@ function render() {
     label.append(node("span", "", `finance-key category-${index}`), document.createTextNode(category));
     legend.append(label);
   }
-  const chart = el("chart");
-  chart.replaceChildren();
-  const maximum = Math.max(1, ...rows.map(row => row.total));
-  for (const row of rows) {
-    const column = node("div", undefined, "finance-column");
-    const stack = node("div", undefined, "finance-stack");
-    for (const [index, category] of categories.entries()) {
-      const amount = row.categories[category] || 0;
-      const segment = node("div", "", `finance-segment category-${index}`);
-      segment.style.height = `${Math.max(0, amount) / maximum * 200}px`;
-      segment.title = `${category}：${formatYen(amount)}`;
-      stack.append(segment);
-    }
-    column.append(node("span", formatYen(row.total)), stack, node("span", row.month));
-    chart.append(column);
-  }
-  if (!rows.length) chart.append(node("p", "対象の明細がありません。"));
+  renderChart(rows);
   const head = node("tr");
   for (const label of ["月", ...categories, "合計"]) head.append(node("th", label));
   el("monthly-head").replaceChildren(head);
@@ -181,6 +165,45 @@ function render() {
     return tr;
   }));
   renderItems();
+}
+
+function renderChart(rows) {
+  const chart = el("chart");
+  chart.replaceChildren();
+  if (!rows.length) {
+    chart.append(node("p", "対象の明細がありません。"));
+    return;
+  }
+  const { maximum, ticks } = chartScale(rows);
+  const axis = node("div", undefined, "finance-axis");
+  const plot = node("div", undefined, "finance-plot");
+  const grid = node("div", undefined, "finance-grid");
+  grid.setAttribute("aria-hidden", "true");
+  for (const tick of ticks) {
+    const position = `${(1 - tick / maximum) * 100}%`;
+    const label = node("span", tick >= 10000 ? `${tick / 10000}万円` : formatYen(tick));
+    label.style.top = position;
+    axis.append(label);
+    const line = node("div", undefined, "finance-gridline");
+    line.style.top = position;
+    grid.append(line);
+  }
+  const columns = node("div", undefined, "finance-columns");
+  for (const row of rows) {
+    const column = node("div", undefined, "finance-column");
+    const stack = node("div", undefined, "finance-stack");
+    for (const [index, category] of categories.entries()) {
+      const amount = row.categories[category] || 0;
+      const segment = node("div", "", `finance-segment category-${index}`);
+      segment.style.height = `${Math.max(0, amount) / maximum * 100}%`;
+      segment.title = `${category}：${formatYen(amount)}`;
+      stack.append(segment);
+    }
+    column.append(node("span", formatYen(row.total)), stack, node("span", row.month));
+    columns.append(column);
+  }
+  plot.append(grid, columns);
+  chart.append(axis, plot);
 }
 
 function updatePagination() {
@@ -204,8 +227,8 @@ function renderItems() {
     dateCell.append(node("small", `請求書 ${item.invoice_no}\n決済 ${item.settlement_date}`));
     const product = node("td", item.item_name);
     product.append(node("small", `${item.spec}\n${item.department}${item.note ? ` / ${item.note}` : ""}`));
-    const quantity = node("td", item.quantity);
-    quantity.append(node("small", `単価 ${item.unit_price}円`));
+    const quantity = node("td", item.quantity ?? "—");
+    quantity.append(node("small", item.unit_price == null ? "単価 —" : `単価 ${item.unit_price}円`));
     const category = node("td", item.category);
     category.append(node("small", `${item.subcategory || "—"}\n${item.classified_by === "manual" ? "手動確定" : item.classified_by === "rule(dept)" ? "部署推定" : "自動分類"}`));
     const edit = node("td");
@@ -236,7 +259,7 @@ function renderForecasts() {
   }
   el("forecast-source").textContent = `${latest.issue_date}発行 / 請求書 ${latest.invoice_no} に基づく未確定の予定`;
   for (const forecast of latest.forecasts) {
-    el("forecasts").append(statistic(`${forecast.settlement_month} 決済予定`, formatYen(forecast.amount)));
+    el("forecasts").append(statistic(`${forecast.settlement_month}${forecast.onwards ? "以降" : ""} 決済予定`, formatYen(forecast.amount)));
   }
   if (!latest.forecasts.length) el("forecasts").append(node("p", "この請求書に請求予定の記載はありません。"));
   if (latest.forecast_total !== null) el("forecasts").append(statistic("予定合計", formatYen(latest.forecast_total)));

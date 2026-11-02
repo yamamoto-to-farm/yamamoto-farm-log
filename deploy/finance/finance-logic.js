@@ -46,6 +46,16 @@ export function latestForecast(invoices) {
     || b.closing_date.localeCompare(a.closing_date))[0] || null;
 }
 
+export function chartScale(rows) {
+  const maximum = Math.max(1, ...rows.map(row =>
+    Object.values(row.categories).reduce((sum, amount) => sum + Math.max(0, amount), 0)));
+  const rawStep = maximum / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const step = Math.max(1, [1, 2, 5, 10].find(value => value * magnitude >= rawStep) * magnitude);
+  const upper = Math.ceil(maximum / step) * step;
+  return { maximum: upper, ticks: Array.from({ length: Math.round(upper / step) + 1 }, (_, index) => index * step) };
+}
+
 export function uploadOutcome(report) {
   if (report.validation_status === "failed") {
     return { failed: true, message: "検証に失敗したため、請求書への反映を保留しました。" };

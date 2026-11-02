@@ -39,6 +39,50 @@ test("filters cover date, category, NFKC search, review and machinery", async ()
   assert.equal(filterItems(items, { basis: "trade", machineOnly: true, reviewOnly: true }).length, 1);
 });
 
+test("chart scale uses readable ticks and covers stacked amounts after filtering", async () => {
+  const { chartScale } = await logic();
+  assert.deepEqual(chartScale([{ categories: { "農薬費": 1843871 } }]), {
+    maximum: 2000000, ticks: [0, 500000, 1000000, 1500000, 2000000],
+  });
+  assert.deepEqual(chartScale([{ categories: { "農薬費": 53000 } }]), {
+    maximum: 60000, ticks: [0, 20000, 40000, 60000],
+  });
+  for (const rows of [[], [{ categories: {} }], [{ categories: { a: 1 } }],
+    [{ categories: { a: -176 } }], [{ categories: { a: 100000, b: -176 } }]]) {
+    const scale = chartScale(rows);
+    assert.ok(scale.maximum >= 1);
+    assert.equal(scale.ticks[0], 0);
+    assert.equal(scale.ticks.at(-1), scale.maximum);
+    assert.ok(scale.ticks.length <= 6);
+  }
+});
+
+test("chart renders aligned grid positions, scaled bars and empty state", async () => {
+  const { context, element } = setup();
+  context.chartScale = (await logic()).chartScale;
+  const target = element("chart");
+  target.append = (...children) => { target.children.push(...children); };
+  target.replaceChildren = () => { target.children = []; };
+  vm.runInContext(`
+    node = (tag, text, className) => ({
+      tag, text, className, children: [], style: {},
+      append(...children) { this.children.push(...children); },
+      setAttribute() {},
+    });
+    categories = ["農薬費"];
+    formatYen = value => String(value) + "円";
+    renderChart([{month: "2026-08", total: 1843871, categories: {"農薬費": 1843871}}]);
+  `, context);
+  const [axis, plot] = target.children;
+  assert.equal(axis.children[1].text, "50万円");
+  assert.equal(axis.children[1].style.top, "75%");
+  assert.equal(plot.children[0].children[1].style.top, "75%");
+  assert.equal(plot.children[1].children[0].children[1].children[0].style.height, "92.19355%");
+  vm.runInContext("renderChart([])", context);
+  assert.equal(target.children.length, 1);
+  assert.equal(target.children[0].text, "対象の明細がありません。");
+});
+
 test("forecasts follow issuance, not import order, and do not mutate records", async () => {
   const { latestForecast } = await logic();
   const older = { ...invoices[0], issue_date: "2026-09-02" };
@@ -90,6 +134,42 @@ test("API sends bearer token with no-store and posts only explicit data", async 
   assert.equal(requests[0].options.cache, "no-store");
   assert.equal(requests[0].options.headers.Authorization, "Bearer mock-token");
   assert.deepEqual(JSON.parse(requests[0].options.body), { invoice_no: "04026970", line_seq: 1 });
+});
+
+test("forecast range and missing credit numbers are displayed without invented values", () => {
+  const { context, element } = setup();
+  for (const id of ["forecasts", "items"]) {
+    const target = element(id);
+    target.children = [];
+    target.replaceChildren = () => { target.children = []; };
+    target.append = (...children) => target.children.push(...children);
+  }
+  vm.runInContext(`
+    node = (tag, text) => ({
+      tag, text, children: [],
+      append(...children) { this.children.push(...children); },
+      addEventListener() {},
+    });
+    statistic = (label, value) => ({label, value});
+    formatYen = value => String(value);
+    latestForecast = records => records[0];
+    invoices = [{
+      issue_date: "2026-09-02", invoice_no: "sample", forecast_total: 117691,
+      forecasts: [{settlement_month: "2027-02", amount: 117691, onwards: true}],
+    }];
+    renderForecasts();
+    filteredItems = () => [{
+      trade_date: "2026-04-27", invoice_no: "sample", settlement_date: "2026-09-30",
+      quantity: null, unit_price: null, amount: -176, item_name: "運賃",
+      spec: "", department: "第4事業所", category: "未分類",
+    }];
+    renderItems();
+  `, context);
+  assert.equal(element("forecasts").children[0].label, "2027-02以降 決済予定");
+  const cells = element("items").children[0].children;
+  assert.equal(cells[2].text, "—");
+  assert.equal(cells[2].children[0].text, "単価 —");
+  assert.equal(cells[3].text, "-176");
 });
 
 test("expired login and forbidden access hide financial data", async () => {
