@@ -11,6 +11,7 @@ import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1"
 import {
   applyAdjustments, defaultScenarioIndex, fitRemaining, toInputTime,
 } from "/admin/shift/shift-logic.js?v=20261101-6";
+import { createMessagePlan, persistMessagePlan } from "./message-plan.js?v=20261103-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -47,6 +48,7 @@ let cards = [];              // 宛先グループ [{names:[{name,wish}], memo, 
 let workPlan = null;
 let canEdit = false;
 let lastGeneratedAt = "";    // 表示中シフトデータの生成時刻（TimeTree取得時点）
+let savingPlan = false;
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -95,14 +97,52 @@ async function copyText(text, button) {
     const area = document.createElement("textarea");
     area.value = text;
     document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
+    try {
+      area.select();
+      if (!document.execCommand("copy")) throw new Error("文面をコピーできませんでした。再試行してください。");
+    } finally {
+      area.remove();
+    }
   }
   const original = button.textContent;
   button.textContent = "✓ コピーしました";
   button.classList.add("copied");
   setTimeout(() => { button.textContent = original; button.classList.remove("copied"); }, 1600);
+}
+
+async function copyAndSavePlan(card, button) {
+  if (savingPlan) return;
+  const date = element("msg-date").value;
+  let copied = false;
+  const notice = button.parentElement.querySelector("[data-plan-status]");
+  try {
+    if (!hasSession()) throw new Error("予定保存にはCognitoログインが必要です。ログイン後にコピーしてください。");
+    const message = card.manualText ?? buildText(card);
+    const plan = createMessagePlan(card, message);
+    savingPlan = true;
+    button.disabled = true;
+    element("tab-daily").inert = true;
+    await copyText(message, button);
+    copied = true;
+    notice.textContent = "コピー済み・予定を保存中…";
+    status(`${date} の予定を保存中…`);
+    await persistMessagePlan(date, plan, api, apiPost);
+    rememberSent({ names: plan.names.map(name => ({ name })), blocks: plan.blocks });
+    notice.textContent = "予定保存済み（LINE送信はしていません）";
+    status(`${date}：${plan.names.join("・")} の予定を保存しました。`);
+  } catch (error) {
+    console.error("[message] copy/save plan failed", error);
+    const message = copied
+      ? `コピー済みですが、予定は保存できませんでした。${error.message} 再度コピーすると保存を再試行します。`
+      : error.message;
+    notice.textContent = message;
+    status(`${date}：${message}`, true);
+    if (!hasSession()) element("msg-login").hidden = false;
+  } finally {
+    savingPlan = false;
+    button.disabled = false;
+    element("tab-daily").inert = false;
+  }
 }
 
 // ───── マスタ ─────
@@ -423,12 +463,13 @@ function renderCards() {
         <input class="memo-input" placeholder="このグループへの一言メモ" data-c="${c}" data-k="memo"
                value="${escapeHtml(card.memo)}">
         <div class="manual-note" data-note="${c}"${card.manualText == null ? " hidden" : ""}>
-          ✏ 文面を手修正中（上の入力からの自動更新は停止）
+          ✏ 文面を手修正中（保存する予定は上の入力欄が基準です）
           <button type="button" class="reset-text" data-c="${c}">自動文面に戻す</button>
         </div>
         <textarea class="preview-edit" data-c="${c}" data-k="preview" rows="10"
                   spellcheck="false">${escapeHtml(card.manualText ?? buildText(card))}</textarea>
         <button type="button" class="primary-btn copy-btn" data-copy="${c}">📋 コピー（${escapeHtml(card.names.map((n) => n.name).join("・"))} へ）</button>
+        <p class="msg-muted" data-plan-status="${c}" role="status" aria-live="polite"></p>
       </div>`;
   }).join("");
 }
@@ -564,6 +605,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     const input = event.target;
     const c = Number(input.dataset.c);
     if (!Number.isFinite(c) || !cards[c]) return;
+    const savedNotice = document.querySelector(`[data-plan-status="${c}"]`);
+    if (savedNotice) savedNotice.textContent = "";
     if (input.dataset.k === "preview") {
       cards[c].manualText = input.value;
       const note = document.querySelector(`[data-note="${c}"]`);
@@ -654,8 +697,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const copy = event.target.closest("[data-copy]");
     if (copy) {
       const card = cards[Number(copy.dataset.copy)];
-      rememberSent(card);
-      await copyText(card.manualText ?? buildText(card), copy);
+      await copyAndSavePlan(card, copy);
       return;
     }
     const addBlock = event.target.closest(".add-block");
@@ -703,7 +745,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("template-list").addEventListener("click", async (event) => {
     const button = event.target.closest("[data-tpl-copy]");
     if (!button) return;
-    await copyText(fillPlaceholders(masters.templates[Number(button.dataset.tplCopy)].body), button);
+    try {
+      await copyText(fillPlaceholders(masters.templates[Number(button.dataset.tplCopy)].body), button);
+    } catch (error) {
+      console.error("[message] template copy failed", error);
+      status(error.message, true);
+    }
   });
   element("template-edit").addEventListener("input", (event) => {
     const input = event.target;

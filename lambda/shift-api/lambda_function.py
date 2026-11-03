@@ -10,6 +10,8 @@ HTTP API（payload 2.0）のルート:
   POST /shift/regenerate … 生成 Lambda を非同期で起動して案を再計算（body: {"month": "YYYY-MM"} 任意）
   GET  /shift/edits      … 月の編集データ（個別編集・基本時間帯・チェック状態）を返す（?month= 必須）
   POST /shift/edits      … 月の編集データを保存（body: {"month", "data"}。端末間で共有される）
+  GET  /shift/work-plans … 日別の連絡用予定と更新リビジョンを取得（?date=YYYY-MM-DD）
+  POST /shift/work-plans … コピーしたグループの予定を担当者単位で更新（競合時409）
 
 時給を含むため、photos と同じ Cognito プールの検証済みクレームに加えて、
 cognito:groups に admin または family が必要（worker には返さない）。
@@ -213,6 +215,134 @@ def validate_config(cfg):
     return cfg
 
 
+def plan_date(value):
+    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        raise RequestError(400, "date は YYYY-MM-DD 形式で指定してください。")
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError as error:
+        raise RequestError(400, "date が不正です。") from error
+    return value
+
+
+def plan_text(value, label, maximum=200, allow_empty=True):
+    if not isinstance(value, str) or len(value) > maximum or (not allow_empty and not value.strip()):
+        raise RequestError(400, f"{label} が不正です。")
+    return value.strip()
+
+
+def validate_work_plan(plan):
+    if not isinstance(plan, dict):
+        raise RequestError(400, "plan が不正です。")
+    names = plan.get("names")
+    if not isinstance(names, list) or not 1 <= len(names) <= 20:
+        raise RequestError(400, "担当者を1〜20人指定してください。")
+    names = [plan_text(name, "担当者", 80, False) for name in names]
+    if len(set(names)) != len(names):
+        raise RequestError(400, "担当者が重複しています。")
+    off = plan.get("off")
+    manual = plan.get("manual_text")
+    if not isinstance(off, bool) or not isinstance(manual, bool):
+        raise RequestError(400, "予定の状態が不正です。")
+    kind = plan.get("kind")
+    if kind not in ("1", "2", "3"):
+        raise RequestError(400, "作業形態が不正です。")
+    reporter = plan_text(plan.get("reporter", ""), "連絡係", 80)
+    if kind == "2" and not off and reporter not in names:
+        raise RequestError(400, "連絡係は担当者から選択してください。")
+    blocks = plan.get("blocks")
+    if not isinstance(blocks, list) or len(blocks) > 30 or (not off and not blocks) or (off and blocks):
+        raise RequestError(400, "作業時間帯を指定してください。")
+    validated = []
+    for block in blocks:
+        if not isinstance(block, dict):
+            raise RequestError(400, "作業時間帯が不正です。")
+        start, end = block.get("start"), block.get("end")
+        for value in (start, end):
+            if not isinstance(value, str) or not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", value):
+                raise RequestError(400, "時間は HH:MM 形式で指定してください。")
+        if start >= end:
+            raise RequestError(400, "終了時刻は開始時刻より後にしてください。")
+        if not isinstance(block.get("shed"), bool):
+            raise RequestError(400, "集合場所が不正です。")
+        validated.append({
+            "start": start, "end": end,
+            "field": plan_text(block.get("field"), "圃場"),
+            "task": plan_text(block.get("task"), "作業内容", 200, False),
+            "shed": block["shed"],
+        })
+    message = plan.get("message")
+    plan_text(message, "コピー文面", 10000, False)
+    return {
+        "names": names, "off": off, "kind": kind, "reporter": reporter,
+        "blocks": validated,
+        "off_reason": plan_text(plan.get("off_reason", ""), "中止理由", 500),
+        "memo": plan_text(plan.get("memo", ""), "メモ", 2000),
+        "message": message,
+        "manual_text": manual,
+    }
+
+
+def read_work_plans(bucket, key, date):
+    try:
+        result = S3.get_object(Bucket=bucket, Key=key)
+    except ClientError as error:
+        if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
+            return {"date": date, "people": {}}, None
+        raise
+    with result["Body"] as stream:
+        record = json.loads(stream.read().decode("utf-8"))
+    if not isinstance(record, dict) or record.get("date") != date or not isinstance(record.get("people"), dict):
+        raise RuntimeError("Stored work plans are invalid")
+    return record, result["ETag"]
+
+
+def work_plans_route(event, bucket, prefix, claims):
+    if event["routeKey"] == "GET /shift/work-plans":
+        date = plan_date((event.get("queryStringParameters") or {}).get("date"))
+        record, revision = read_work_plans(bucket, f"{prefix}work-plans/{date}.json", date)
+        return response(200, {"date": date, "revision": revision, "data": record})
+    raw = event.get("body") or ""
+    try:
+        if event.get("isBase64Encoded"):
+            raw = base64.b64decode(raw, validate=True).decode("utf-8")
+        if len(raw.encode("utf-8")) > 65536:
+            raise RequestError(400, "予定データが大きすぎます。")
+        req = json.loads(raw)
+    except (ValueError, UnicodeError) as error:
+        raise RequestError(400, "JSONが不正です。") from error
+    if not isinstance(req, dict):
+        raise RequestError(400, "JSONオブジェクトを指定してください。")
+    date = plan_date(req.get("date"))
+    if "revision" not in req or (req["revision"] is not None and
+                                (not isinstance(req["revision"], str) or not re.fullmatch(r'"[a-fA-F0-9]{32}"', req["revision"]))):
+        raise RequestError(400, "revision が不正です。")
+    plan = validate_work_plan(req.get("plan"))
+    key = f"{prefix}work-plans/{date}.json"
+    record, revision = read_work_plans(bucket, key, date)
+    if req["revision"] != revision:
+        raise RequestError(409, "別の端末で予定が更新されました。内容を確認して再度コピーしてください。")
+    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    author = claims.get("username") or claims["sub"]
+    for name in plan["names"]:
+        record["people"][name] = {
+            **plan, "worker": name, "updated_at": stamp, "updated_by": author,
+        }
+    record["updated_at"] = stamp
+    condition = {"IfMatch": revision} if revision else {"IfNoneMatch": "*"}
+    try:
+        S3.put_object(
+            Bucket=bucket, Key=key,
+            Body=json.dumps(record, ensure_ascii=False).encode("utf-8"),
+            ContentType="application/json; charset=utf-8", **condition,
+        )
+    except ClientError as error:
+        if error.response["Error"]["Code"] in ("PreconditionFailed", "ConditionalRequestConflict", "409", "412"):
+            raise RequestError(409, "保存中に予定が更新されました。内容を確認して再度コピーしてください。") from error
+        raise
+    return response(200, {"saved": True, "date": date, "names": plan["names"], "updated_at": stamp})
+
+
 def lambda_handler(event, context):
     try:
         # API Gateway検証済みクレームのみ信頼する。
@@ -234,6 +364,9 @@ def lambda_handler(event, context):
             raise RuntimeError("SHIFT_PREFIX must be a nonempty relative prefix ending with /")
         route = event.get("routeKey")
         data = event.get("queryStringParameters") or {}
+
+        if route in ("GET /shift/work-plans", "POST /shift/work-plans"):
+            return work_plans_route(event, bucket, prefix, claims)
 
         if route == "GET /shift/months":
             return response(200, {"months": list_months(bucket, prefix)})

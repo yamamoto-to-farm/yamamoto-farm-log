@@ -222,7 +222,7 @@ photos と同じ Cognito ログインに加えて **cognito:groups の admin ま
 
 - フロントエンド: `deploy/admin/shift/`（`/photos/auth.js` の PKCE ログインを再利用。
   Cognito 側の設定変更は不要）
-- API Lambda: `lambda/shift-api/lambda_function.py`（1ファイル。boto3 はランタイム提供）
+- API Lambda: `lambda/shift-api/lambda_function.py`（予定保存の条件付きS3更新用にboto3を同梱）
 - スタッフマスタ編集: `/admin/shift/config.html`（シフト管理ページの「⚙ スタッフ・設定」から）。
   保存は検証つきの `POST /shift/config` で行い、保存前の設定を
   `shift/config-backups/` に自動退避します。認証情報キーが混入しても保存時に除去します。
@@ -251,6 +251,8 @@ AWS設定（photos の HTTP API に追加）:
   | POST | `/shift/regenerate` | 生成 Lambda を非同期起動して案を再計算 |
   | GET | `/shift/edits` | 月の編集データの取得（`?month=` 必須） |
   | POST | `/shift/edits` | 月の編集データの保存（端末間で共有） |
+  | GET | `/shift/work-plans` | 日別の連絡用予定とリビジョンの取得（`?date=YYYY-MM-DD`） |
+  | POST | `/shift/work-plans` | コピーしたグループの予定を担当者単位で保存（競合時409） |
 
 - 各ルートに Lambda 呼び出し権限があることを確認します（photos と同様）。
 - Cognito ユーザープールの **グループ** に admin / family が設定されていることを確認します
@@ -258,6 +260,33 @@ AWS設定（photos の HTTP API に追加）:
 - フロントエンドの公開: `deploy/admin/shift/` と `deploy/data/pages.json` を公開サイト
   バケットへアップロードし、CloudFront で `/admin/shift/*` と `/data/pages.json` を
   無効化します。
+
+### 業務連絡の予定保存
+
+- `/admin/message/` の作業予定をコピーすると、文面のコピー成功後に既存Cognito認証の
+  シフトAPIで非公開S3へ保存する。定型文のコピーは対象外。LINE送信・日誌との照合・実績作成は行わない。
+- 保存先は `SHIFT_BUCKET` の `<SHIFT_PREFIX>work-plans/YYYY-MM-DD.json`。
+  `people` に担当者名をキーとして、時間帯（開始・終了・圃場・作業・作業場集合）、宛先グループ、
+  作業形態・連絡係・メモ・中止状態・実際のコピー文面・手修正フラグ・更新者・更新時刻を保持する。
+  文面は保存するが解析しない。予定の構造化データは入力欄を基準とする。
+- 同日・同名の担当者は最新の予定で置換する（時間帯の追加は同じカード内で行う）。
+  コピーしたグループ外の担当者は保持する。カードの削除・人の取り外しだけでは保存済み予定を消さない。
+  中止連絡をコピーすると、対象者の予定を中止状態・作業時間帯なしに更新する。履歴保存は今回の対象外。
+- GETの `revision`（S3 ETag、未作成時null）をPOSTに渡し、`IfMatch` / `IfNoneMatch` で競合を防ぐ。
+  競合や保存失敗は通知し、コピーできた場合も「予定保存済み」とは表示しない。再コピーで保存を再試行できる。
+- 公開前に `lambda/shift-api/lambda_function.py` を **yamamoto-farm-shift-api** に反映し、
+  上表のGET/POSTルートを既存のシフトAPI統合に追加する。両方にJWTオーソライザーと必須スコープ
+  `openid` を設定し、Lambda呼出権限も追加する。
+  実行ロールには非公開バケットの `shift/work-plans/*` への `s3:PutObject` を追加する
+  （カスタム `SHIFT_PREFIX` の場合は読み替える。既存のGetObject/ListBucket権限も必要）。
+  条件付きPutObjectに対応するboto3を `lambda/shift-api/requirements.txt` で固定し同梱する。
+  `powershell -ExecutionPolicy Bypass -File scripts\build_shift_api_zip.ps1` で
+  `shift-api.zip` を構築する（pip・Pythonが必要）。SDKの条件付き更新対応・ZIP整合性を検証する。
+  このZIPは **yamamoto-farm-shift-api** 用であり、生成用の `shift.zip` とは別物。
+- フロントは `deploy/admin/message/index.html`・`message.js`・`message-plan.js` を公開し、
+  `/admin/message/*` をCloudFront無効化する。APIを先に反映する。メニュー定義の変更は不要。
+- 検証: `node --test tests\message-plan.test.cjs` と
+  `python -B -m unittest discover -s lambda\shift-api -p "test_*.py"`。
 
 ## リポジトリ構成
 

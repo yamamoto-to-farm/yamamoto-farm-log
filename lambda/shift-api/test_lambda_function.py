@@ -274,5 +274,128 @@ class ShiftConfigTests(unittest.TestCase):
         fake_s3.put_object.assert_not_called()
 
 
+class WorkPlanTests(unittest.TestCase):
+    def setUp(self):
+        ShiftApiTests.setUp(self)
+        self.plan = {
+            "names": ["担当A", "担当B"], "off": False, "off_reason": "",
+            "kind": "2", "reporter": "担当A", "memo": "テスト",
+            "manual_text": True, "message": "編集した文面",
+            "blocks": [{"start": "08:00", "end": "12:00", "field": "テスト圃場",
+                        "task": "播種", "shed": False}],
+        }
+        self.revision = '"' + "a" * 32 + '"'
+        fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+
+    def request(self, route="POST /shift/work-plans", body=None, claims=None, raw_body=None):
+        event = {
+            "routeKey": route, "queryStringParameters": {"date": "2026-11-02"},
+            "body": raw_body if raw_body is not None else json.dumps(body if body is not None else {
+                "date": "2026-11-02", "revision": None, "plan": self.plan,
+            }, ensure_ascii=False),
+            "requestContext": {"authorizer": {"jwt": {"claims": claims or self.claims}}},
+        }
+        result = api.lambda_handler(event, None)
+        return result["statusCode"], json.loads(result["body"])
+
+    def existing(self, people=None, date="2026-11-02"):
+        fake_s3.get_object.side_effect = None
+        fake_s3.get_object.return_value = {
+            **s3_body(json.dumps({"date": date, "people": people or {}})),
+            "ETag": self.revision,
+        }
+
+    def test_missing_day_returns_empty_without_writing(self):
+        status, body = self.request("GET /shift/work-plans")
+        self.assertEqual(status, 200)
+        self.assertIsNone(body["revision"])
+        self.assertEqual(body["data"]["people"], {})
+        fake_s3.put_object.assert_not_called()
+
+    def test_new_plan_saves_group_per_person_with_conditional_creation(self):
+        self.plan["message"] = "\n編集した文面\n"
+        status, body = self.request()
+        self.assertEqual(status, 200)
+        self.assertTrue(body["saved"])
+        kwargs = fake_s3.put_object.call_args.kwargs
+        self.assertEqual(kwargs["Key"], "shift/work-plans/2026-11-02.json")
+        self.assertEqual(kwargs["IfNoneMatch"], "*")
+        saved = json.loads(kwargs["Body"])
+        self.assertEqual(set(saved["people"]), {"担当A", "担当B"})
+        self.assertEqual(saved["people"]["担当A"]["message"], "\n編集した文面\n")
+        self.assertTrue(saved["people"]["担当B"]["manual_text"])
+        self.assertEqual(saved["people"]["担当B"]["blocks"], self.plan["blocks"])
+
+    def test_recopy_replaces_named_people_only_and_read_returns_revision(self):
+        self.existing({"担当A": {"old": True}, "別担当": {"keep": True}})
+        status, body = self.request("GET /shift/work-plans")
+        self.assertEqual(body["revision"], self.revision)
+        self.existing({"担当A": {"old": True}, "別担当": {"keep": True}})
+        status, _ = self.request(body={"date": "2026-11-02", "revision": self.revision, "plan": self.plan})
+        self.assertEqual(status, 200)
+        kwargs = fake_s3.put_object.call_args.kwargs
+        self.assertEqual(kwargs["IfMatch"], self.revision)
+        people = json.loads(kwargs["Body"])["people"]
+        self.assertEqual(len(people), 3)
+        self.assertNotIn("old", people["担当A"])
+        self.assertEqual(people["別担当"], {"keep": True})
+
+    def test_old_revision_and_creation_race_return_conflict(self):
+        self.existing()
+        self.assertEqual(self.request()[0], 409)
+        fake_s3.put_object.assert_not_called()
+        fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+        for code in ("PreconditionFailed", "ConditionalRequestConflict"):
+            fake_s3.put_object.side_effect = FakeClientError(code)
+            self.assertEqual(self.request()[0], 409)
+
+    def test_cancellation_replaces_work_without_retaining_active_blocks(self):
+        self.plan.update(off=True, blocks=[], off_reason="雨天")
+        self.assertEqual(self.request()[0], 200)
+        saved = json.loads(fake_s3.put_object.call_args.kwargs["Body"])
+        self.assertTrue(saved["people"]["担当A"]["off"])
+        self.assertEqual(saved["people"]["担当A"]["blocks"], [])
+
+    def test_invalid_input_never_writes(self):
+        import copy
+        variants = [
+            {"date": "2026-02-30", "revision": None, "plan": self.plan},
+            {"date": "../x", "revision": None, "plan": self.plan},
+            {"date": "2026-11-02", "plan": self.plan},
+        ]
+        for change in ({"names": []}, {"names": ["担当A", "担当A"]},
+                       {"blocks": []}, {"off": "false"}, {"kind": "4"},
+                       {"reporter": "不明"}, {"message": ""}, {"memo": "x" * 2001}, {"off": True}):
+            variants.append({"date": "2026-11-02", "revision": None, "plan": {**self.plan, **change}})
+        for change in ({"start": "25:00"}, {"end": "08:00"}, {"task": ""}, {"shed": "false"}):
+            plan = copy.deepcopy(self.plan)
+            plan["blocks"][0].update(change)
+            variants.append({"date": "2026-11-02", "revision": None, "plan": plan})
+        for body in variants:
+            with self.subTest(body=body):
+                self.assertEqual(self.request(body=body)[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_bad_json_and_oversize_fail_explicitly(self):
+        for raw in ("{", "[]", "x" * 65537):
+            self.assertEqual(self.request(raw_body=raw)[0], 400)
+
+    def test_access_denied_and_corrupt_storage_are_not_empty_success(self):
+        fake_s3.get_object.side_effect = FakeClientError("AccessDenied")
+        with self.assertLogs(api.LOGGER, level="ERROR"):
+            self.assertEqual(self.request("GET /shift/work-plans")[0], 500)
+        self.existing(date="2026-11-03")
+        with self.assertLogs(api.LOGGER, level="ERROR"):
+            self.assertEqual(self.request()[0], 500)
+        fake_s3.put_object.assert_not_called()
+
+    def test_new_routes_require_privileged_cognito_session(self):
+        for route in ("GET /shift/work-plans", "POST /shift/work-plans"):
+            self.assertEqual(self.request(route, claims={**self.claims, "token_use": "id"})[0], 401)
+            self.assertEqual(self.request(route, claims={**self.claims, "cognito:groups": "[worker]"})[0], 403)
+        fake_s3.get_object.assert_not_called()
+        fake_s3.put_object.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
