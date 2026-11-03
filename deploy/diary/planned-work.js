@@ -8,6 +8,20 @@ const TASK_FOLDERS = {
   草とり: "hand-weeding", 手作業除草: "hand-weeding", 防除: "pesticide",
   施肥: "fertilizer", 潅水: "watering", 灌水: "watering", 圃場整備: "field-maintenance",
 };
+const LOG_PAGES = {
+  seed: ["/seed/index.html", "播種ログ"],
+  planting: ["/planting/index.html", "定植ログ"],
+  harvest: ["/harvest/index.html", "収穫ログ"],
+  tillage: ["/field/tillage/index.html", "土づくり・耕起ログ"],
+  intertill: ["/intertill/index.html", "中耕ログ"],
+  bedmaking: ["/bedmaking/index.html", "畝立てログ"],
+  weeding: ["/field/weeding/index.html", "除草・草刈りログ"],
+  "hand-weeding": ["/hand-weeding/index.html", "除草ログ（手作業）"],
+  pesticide: ["/pesticide/index.html", "防除ログ"],
+  fertilizer: ["/fertilizer/index.html", "施肥ログ"],
+  watering: ["/watering/index.html", "潅水ログ"],
+  "field-maintenance": ["/field/maintenance/index.html", "圃場整備ログ"],
+};
 const text = value => String(value ?? "").normalize("NFKC").trim();
 const split = value => (Array.isArray(value) ? value : [value])
   .flatMap(item => text(item).split(/[\/／、,\n]/)).map(text).filter(Boolean);
@@ -17,7 +31,7 @@ let sequence = 0;
 
 export function relatedPlanLogs(worker, block, logs) {
   const task = text(block.task);
-  const folder = TASK_FOLDERS[task];
+  const folder = Object.hasOwn(TASK_FOLDERS, task) ? TASK_FOLDERS[task] : undefined;
   return logs.filter(log => {
     const data = log.data || {};
     const workers = Object.entries(data).filter(([key]) => /^worker(?:s|\d+)?$/.test(key))
@@ -37,9 +51,12 @@ export function plannedWorkHtml(people, logs) {
     const blocks = plan.off ? "<p>中止の連絡" + (plan.off_reason ? `：${escape(plan.off_reason)}` : "") + "</p>"
       : plan.blocks.map(block => {
         const matches = logs === null ? null : relatedPlanLogs(worker, block, logs);
+        const task = text(block.task);
+        const page = Object.hasOwn(TASK_FOLDERS, task) ? LOG_PAGES[TASK_FOLDERS[task]] : undefined;
         const result = matches === null ? "作業ログを取得できないため、比較できません。"
           : matches.length ? `関連する作業ログ：${matches.map(log => escape(log.displayName)).join("・")}（${matches.length}件）`
-            : "該当する作業ログは見つかりません。";
+            : "該当する作業ログは見つかりません。"
+              + (page ? ` <a href="${escape(page[0])}">${escape(page[1])}へ</a>` : "");
         return `<div class="planned-work-block"><p>${escape(block.start)}〜${escape(block.end)}　${escape(block.task)}${block.field ? `｜${escape(block.field)}` : ""}${block.shed ? "（作業場集合）" : ""}</p><p class="planned-work-related">${result}</p></div>`;
       }).join("");
     return `<article class="planned-work-person"><h3>${escape(worker)} <small>登録元：${escape(source)}</small></h3>${blocks}${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}${plan.manual_text ? "<p class=\"planned-work-related\">連絡文面に手修正あり。予定は入力欄の内容です。</p>" : ""}</article>`;

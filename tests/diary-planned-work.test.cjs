@@ -56,6 +56,34 @@ test("plans present neutral references per person, cancellation and safe escaped
   assert.doesNotMatch(cancelled, /<script>|<img>|<svg>|関連する/);
 });
 
+test("missing logs link to the corresponding existing input page for each known task", () => {
+  const { plannedWorkHtml: render } = load();
+  const destinations = [
+    ["播種", "seed", "播種ログ"], ["定植", "planting", "定植ログ"],
+    ["収穫", "harvest", "収穫ログ"], ["耕起", "field/tillage", "土づくり・耕起ログ"],
+    ["土づくり・耕起", "field/tillage", "土づくり・耕起ログ"],
+    ["中耕", "intertill", "中耕ログ"], ["畝立て", "bedmaking", "畝立てログ"],
+    ...["除草・草刈り", "除草", "草刈り"].map(task => [task, "field/weeding", "除草・草刈りログ"]),
+    ...["草とり", "手作業除草"].map(task => [task, "hand-weeding", "除草ログ（手作業）"]),
+    ["防除", "pesticide", "防除ログ"], ["施肥", "fertilizer", "施肥ログ"],
+    ...["潅水", "灌水"].map(task => [task, "watering", "潅水ログ"]),
+    ["圃場整備", "field/maintenance", "圃場整備ログ"],
+  ];
+  for (const [task, folder, label] of destinations) {
+    const html = render({ 担当A: { ...plan, blocks: [{ ...block, task }] } }, []);
+    assert.ok(html.includes(`<a href="/${folder}/index.html">${label}へ</a>`), task);
+    assert.ok(readFileSync(join(__dirname, "..", "deploy", ...folder.split("/"), "index.html"), "utf8"));
+  }
+  assert.match(render({ 担当A: { ...plan, blocks: [{ ...block, task: " 草とり " }] } }, []),
+    /href="\/hand-weeding\/index.html"/);
+  for (const task of ["育苗", "道具整備", "<img>", "__proto__", "constructor"]) {
+    assert.doesNotMatch(render({ 担当A: { ...plan, blocks: [{ ...block, task }] } }, []), /<a |<img>/);
+  }
+  assert.doesNotMatch(render({ 担当A: plan }, [log()]), /<a /);
+  assert.doesNotMatch(render({ 担当A: plan }, null), /<a /);
+  assert.doesNotMatch(render({ 担当A: { ...plan, off: true } }, []), /<a /);
+});
+
 test("private API uses token, no-store and validates response; errors never mean no plans", async () => {
   let request;
   const context = load({
