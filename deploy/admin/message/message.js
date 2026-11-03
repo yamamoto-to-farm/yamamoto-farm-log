@@ -196,11 +196,6 @@ async function saveMasters() {
   status("保存しました。");
 }
 
-function renderDatalists() {
-  element("dl-tasks").innerHTML = TASK_OPTIONS
-    .map((t) => `<option value="${escapeHtml(t)}"></option>`).join("");
-}
-
 // ───── 作業連絡 ─────
 function todayIso(offsetDays = 0) {
   const now = new Date();
@@ -250,6 +245,12 @@ function addCard(names, start, end) {
     kind: "1", reporter: names[0]?.name || "",   // 作業形態（勤怠運用ルール第6条）と②の連絡係
     blocks: [{ start: start || "08:00", end: end || "15:00", field: last.field || "", task: last.task || "", shed: false }],
   });
+}
+
+function syncWorkPlanLink() {
+  const date = element("msg-date").value;
+  const month = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.slice(0, 7) : "";
+  element("work-plan-link").href = `/schedule/work-plan/index.html${month ? `?ym=${month}` : ""}`;
 }
 
 async function loadFromShift() {
@@ -410,12 +411,16 @@ function renderCards() {
           <button type="button" class="field-btn${block.field ? " set" : ""}" data-c="${c}" data-b="${b}">
             ${block.field ? `🗺 ${escapeHtml(block.field)}` : "畑を選択"}</button>
           ${block.field ? `<button type="button" class="field-clear" data-c="${c}" data-b="${b}" title="畑をクリア">✕</button>` : ""}
-          <input list="dl-tasks" placeholder="作業内容" data-c="${c}" data-b="${b}" data-k="task"
-                 value="${escapeHtml(block.task)}">
+          <select aria-label="作業内容" class="task-select" data-c="${c}" data-b="${b}" data-k="taskChoice">
+            <option value="">作業を選択</option>
+            ${TASK_OPTIONS.map(task => `<option value="${escapeHtml(task)}"${!block.customTask && block.task === task ? " selected" : ""}>${escapeHtml(task)}</option>`).join("")}
+            <option value="__custom__"${block.customTask || (block.task && !TASK_OPTIONS.includes(block.task)) ? " selected" : ""}>その他（自由入力）</option>
+          </select>
           ${card.blocks.length > 1
             ? `<button type="button" class="del-block" data-c="${c}" data-b="${b}" title="この時間帯を削除">✕</button>`
             : ""}
         </div>
+        ${block.customTask || (block.task && !TASK_OPTIONS.includes(block.task)) ? `<input class="task-custom" aria-label="作業内容（自由入力）" placeholder="作業内容を入力" data-c="${c}" data-b="${b}" data-k="task" value="${escapeHtml(block.task)}">` : ""}
       </div>`).join("");
     const chips = card.names.map((n, i) =>
       `<span class="name-chip">${escapeHtml(n.name)}${n.wish ? " ⚠" : ""}` +
@@ -540,9 +545,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   canEdit = true;
   element("page-area").hidden = false;
   element("msg-date").value = todayIso(1);  // 既定は明日
+  syncWorkPlanLink();
 
   await Promise.all([loadMasters(), loadFields()]);
-  renderDatalists();
   tplDraft = structuredClone(masters.templates);
   renderTemplates();
   renderTemplateEditor();
@@ -561,7 +566,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   element("msg-login").addEventListener("click", () => login("/admin/message/index.html"));
-  element("msg-date").addEventListener("change", () => loadFromShift());
+  element("msg-date").addEventListener("change", () => {
+    syncWorkPlanLink();
+    return loadFromShift();
+  });
   element("load-shift").addEventListener("click", () => loadFromShift());
   element("refresh-shift").addEventListener("click", () => refreshFromTimetree());
   element("add-person").addEventListener("click", () => {
@@ -621,6 +629,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       else if (input.dataset.b !== undefined) {
         const block = cards[c].blocks[Number(input.dataset.b)];
         if (input.dataset.k === "shed") input.checked = block.shed;
+        else if (input.dataset.k === "taskChoice") input.value = block.customTask || (block.task && !TASK_OPTIONS.includes(block.task)) ? "__custom__" : block.task;
         else input.value = block[input.dataset.k];
       }
       return;
@@ -636,6 +645,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         cards[c].reporter = cards[c].names[0]?.name || "";
       }
       renderCards();            // 連絡係セレクタの表示/非表示が変わるため再描画
+      return;
+    }
+    if (input.dataset.k === "taskChoice") {
+      const block = cards[c].blocks[Number(input.dataset.b)];
+      const custom = input.value === "__custom__";
+      block.task = custom ? (TASK_OPTIONS.includes(block.task) ? "" : block.task) : input.value;
+      block.customTask = custom;
+      renderCards();
       return;
     }
     if (input.dataset.k === "reporter") cards[c].reporter = input.value;

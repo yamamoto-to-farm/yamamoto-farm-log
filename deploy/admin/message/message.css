@@ -45,7 +45,9 @@
   margin-bottom: 6px; }
 .msg-block input[type="time"] { width: auto; padding: 4px 6px; font-size: 0.85rem; }
 .msg-block .tilde { text-align: center; }
-.msg-block input[list] { padding: 6px 8px; font-size: 0.85rem; width: 100%; }
+.msg-block .task-select, .msg-block .task-custom { padding: 6px 8px; font-size: 0.85rem; width: 100%; min-width: 0; }
+.msg-block .task-select { flex: 1; }
+.msg-block .task-custom { grid-column: 1 / -1; }
 .msg-block .block-row2 { grid-column: 1 / -1; display: flex; gap: 6px; }
 .msg-block .block-row2 input { flex: 1; }
 .msg-block .shed-check { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem;

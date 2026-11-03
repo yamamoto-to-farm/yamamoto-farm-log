@@ -159,6 +159,7 @@ test("clipboard fallback checks success and always removes the temporary field",
       },
       setTimeout() {},
     });
+
     const button = { textContent: "コピー", classList: { add() {}, remove() {} } };
     if (success) {
       await context.copyText("文面", button);
@@ -169,4 +170,41 @@ test("clipboard fallback checks success and always removes the temporary field",
     }
     assert.equal(removed, true);
   }
+});
+
+test("task selector retains all choices for a populated task and preserves custom input", () => {
+  const container = { innerHTML: "" };
+  const context = load("message.js", {
+    window: { addEventListener() {} },
+    document: { getElementById: () => container },
+  });
+  context.testCard = card();
+  vm.runInContext("cards = [testCard]; buildText = () => '文面'; renderCards();", context);
+  assert.match(container.innerHTML, /<select[^>]+data-k="taskChoice"/);
+  assert.match(container.innerHTML, /value="播種" selected/);
+  assert.match(container.innerHTML, /value="収穫"/);
+  assert.match(container.innerHTML, /value="草とり"/);
+  assert.doesNotMatch(container.innerHTML, /list="dl-tasks"/);
+  context.testCard.blocks[0].task = "独自の作業";
+  context.renderCards();
+  assert.match(container.innerHTML, /value="__custom__" selected/);
+  assert.match(container.innerHTML, /data-k="task" value="独自の作業"/);
+});
+
+test("work plan link follows the selected month and opens without losing the message draft", () => {
+  const date = { value: "2026-11-02" };
+  const link = {};
+  const context = load("message.js", {
+    window: { addEventListener() {} },
+    document: { getElementById: id => id === "msg-date" ? date : link },
+  });
+  context.syncWorkPlanLink();
+  assert.equal(link.href, "/schedule/work-plan/index.html?ym=2026-11");
+  date.value = "2027-01-03";
+  context.syncWorkPlanLink();
+  assert.equal(link.href, "/schedule/work-plan/index.html?ym=2027-01");
+  date.value = "";
+  context.syncWorkPlanLink();
+  assert.equal(link.href, "/schedule/work-plan/index.html");
+  assert.match(read("index.html"), /id="work-plan-link"[\s\S]*?target="_blank" rel="noopener"/);
 });

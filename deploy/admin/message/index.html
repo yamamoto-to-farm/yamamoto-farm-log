@@ -7,7 +7,7 @@
   <title>業務連絡（LINE下書き） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261031-19">
+  <link rel="stylesheet" href="./message.css?v=20261103-task-1">
 </head>
 <body>
   <div id="header"></div>
@@ -30,6 +30,8 @@
                 title="TimeTreeの最新データでシフトを再計算してから読み込みます（約1分）">☁ TimeTreeから再取得</button>
         <button id="msg-login" class="secondary-btn" type="button" hidden>シフト連携ログイン</button>
         <button id="add-person" class="secondary-btn" type="button">＋人を追加</button>
+        <a id="work-plan-link" class="secondary-btn" href="/schedule/work-plan/index.html"
+           target="_blank" rel="noopener">月の作業計画を開く（別タブ）</a>
         <span id="shift-state" class="msg-muted"></span>
       </div>
       <div id="wp-hints" class="wp-hints" hidden></div>
@@ -62,7 +64,6 @@
     </div>
   </div>
 
-  <datalist id="dl-tasks"></datalist>
   <datalist id="dl-reasons">
     <option value="雨天予報のため"></option>
     <option value="台風接近のため"></option>
@@ -70,6 +71,6 @@
     <option value="作業の都合により"></option>
   </datalist>
 
-  <script type="module" src="./message.js?v=20261103-plan-1"></script>
+  <script type="module" src="./message.js?v=20261103-task-2"></script>
 </body>
 </html>
