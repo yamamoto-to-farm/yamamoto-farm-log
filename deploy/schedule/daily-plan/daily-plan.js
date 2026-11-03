@@ -3,7 +3,8 @@ import { renderHeader } from "/common/header.js?v=1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-work-1";
-import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-unified-1";
+import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
+import { availableWorkTimes, participationForWork, mergeTimeRanges, validTimeRange } from "/common/work-plan-time.js?v=20261104-time-1";
 import { hasSession, login, ensureToken } from "/photos/auth.js?v=20261029-2";
 import { config } from "/photos/config.js";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -15,7 +16,7 @@ const escape = value => String(value ?? "").replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 const newBlock = () => ({ task: "", start: "", end: "", fields: [], field: "", shed: false });
 
-export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", off = false, reason = "", source = "direct") {
+export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", off = false, reason = "", source = "direct", attendance = null) {
   const all = [...family, ...parts];
   if (!all.length || all.some(name => !name.trim()) || new Set(all).size !== all.length || all.length > 20) {
     throw new Error("作業者を重複なく1〜20人選択してください。");
@@ -23,6 +24,9 @@ export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", of
   const kind = family.length || !parts.length ? "1" : parts.length > 1 ? "2" : "3";
   if (!off && kind === "2" && !parts.includes(reporter)) throw new Error("連絡係をパートから選択してください。");
   if ((!off && !blocks.length) || blocks.length > 30) throw new Error("作業内容を1〜30件指定してください。");
+  const timed = parts.length && attendance && blocks.every(block => block.participation
+    && Object.keys(block.participation).length === parts.length && parts.every(name => block.participation[name]?.length));
+  if (parts.length && attendance && !off && !timed) throw new Error("各パートの作業参加時間を確認してください。");
   const validated = blocks.map(block => {
     if (!block.task.trim()) throw new Error("作業内容を入力してください。");
     if ((block.start || block.end) && (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(block.start)
@@ -32,6 +36,7 @@ export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", of
     return {
       task: block.task.trim(), start: block.start, end: block.end,
       fields: [...block.fields], field: "", shed: Boolean(block.shed),
+      ...(timed ? { participation: structuredClone(block.participation) } : {}),
       ...(parts.length && family.length ? { companions: (block.companions || family).filter(name => family.includes(name)) } : {}),
     };
   });
@@ -39,6 +44,7 @@ export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", of
     source, names: parts.length ? [...parts] : [...family], recipients: [...parts],
     kind, reporter: kind === "2" ? reporter : "", off, off_reason: reason.trim(),
     blocks: validated, memo: memo.trim(), manual_text: false, message: "",
+    ...(timed ? { attendance: Object.fromEntries(parts.map(name => [name, attendance[name]])) } : {}),
   };
 }
 
@@ -58,6 +64,25 @@ let shiftSequence = 0;
 let busy = false;
 let shiftGroups = [];
 let inputScope = "family";
+let noonBreak = null;
+let savedAttendance = {};
+const attendanceForSelection = () => Object.fromEntries(selectedParts.map(name => {
+  const ranges = shiftReady ? shiftGroups.filter(group => group.names.includes(name)).map(({ start, end }) => ({ start, end }))
+    : savedAttendance[name] || [];
+  return [name, mergeTimeRanges(ranges)];
+}));
+function blockAvailability(index) {
+  return availableWorkTimes(selectedParts, attendanceForSelection(), record.data.plans, editingId,
+    blocks.filter((_, other) => other !== index), noonBreak);
+}
+function initializeWorkTime() {
+  if (!selectedParts.length || !shiftReady || !record) return;
+  for (let index = 0; index < blocks.length; index++) {
+    if (blocks[index].start || blocks[index].end) continue;
+    const availability = blockAvailability(index);
+    if (availability.candidates.length === 1) Object.assign(blocks[index], availability.candidates[0]);
+  }
+}
 const snapshot = () => JSON.stringify([selectedFamily, selectedParts, blocks, editingId,
   el("plan-memo").value, el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, el("plan-kind").value]);
 const canDiscard = () => snapshot() === cleanSnapshot || confirm("入力中の予定を破棄しますか？");
@@ -68,7 +93,9 @@ const inferKind = () => selectedFamily.length ? selectedParts.length ? "mixed" :
 export function workerAssignments(name, plans) {
   return Object.entries(plans).flatMap(([id, plan]) => plan.off ? [] : plan.blocks
     .filter(block => plan.names.includes(name) || (block.companions || []).includes(name))
-    .map(block => ({ id, task: block.task, start: block.start, end: block.end })));
+    .flatMap(block => block.participation?.[name]
+      ? block.participation[name].map(range => ({ id, task: block.task, ...range }))
+      : [{ id, task: block.task, start: block.start, end: block.end }]));
 }
 function renderUnplannedParts() {
   const missing = record && shiftEligible !== null ? selectableParts()
@@ -137,14 +164,46 @@ function renderWorkers() {
   renderUnplannedParts();
 }
 function renderBlocks() {
-  el("plan-blocks").innerHTML = blocks.map((block, index) => `<fieldset class="plan-block">
+  el("plan-blocks").innerHTML = blocks.map((block, index) => {
+    let times = "";
+    let bounds = "";
+    if (selectedParts.length) {
+      try {
+        if (!shiftReady) {
+          const saved = blocks[index].participation;
+          const description = saved ? selectedParts.map(name => `${name}：${(saved[name] || []).map(range =>
+            `${range.start}〜${range.end}`).join("・")}`).join("／") : "";
+          throw new Error(`${description ? `保存済み参加時間 ${description}。` : ""}シフトを読み込むと勤務時間・他の予定から時間候補を表示します。`);
+        }
+        const availability = blockAvailability(index);
+        const first = availability.candidates[0], last = availability.candidates.at(-1);
+        bounds = first ? ` min="${first.start}" max="${last.end}"` : "";
+        times = `<div class="work-time-candidates"><p>作業時間の候補（勤務・昼休憩・別予定を考慮）</p>${availability.candidates.map((range, target) =>
+          `<button type="button" class="secondary-btn" data-time-block="${index}" data-time-choice="${target}">${range.start}〜${range.end}</button>`).join("")
+          || "<p>選択した全員が参加できる時間候補がありません。</p>"}
+          ${availability.unknown.length ? `<p class="plan-note">${escape(availability.unknown.join("・"))}の時間未指定の予定は差し引いていません。</p>` : ""}
+          <p class="plan-note">作業時間は候補内で短く調整できます。出退勤が違う人は各人の勤務時間内だけ参加します。</p>`;
+        if (validTimeRange(block)) {
+          try {
+            const participation = participationForWork(block, selectedParts, availability);
+            times += Object.entries(participation).map(([name, ranges]) =>
+              `<p>${escape(name)}：${ranges.map(range => `${range.start}〜${range.end}`).join("・")}</p>`).join("");
+          } catch (error) { times += `<p class="plan-note warning">${escape(error.message)}</p>`; }
+        }
+        times += "</div>";
+      } catch (error) {
+        times = `<p class="plan-note warning">${escape(error.message)}</p>`;
+      }
+    }
+    return `<fieldset class="plan-block">
     <legend>作業 ${index + 1}</legend>
     <button type="button" class="secondary-btn" data-task="${index}">作業内容を選択</button>
     <p>${escape(block.task || "未選択")}</p>
     <label>作業内容（自由入力・修正）<input class="form-input" data-block="${index}" data-key="task" value="${escape(block.task)}" maxlength="200"></label>
-    <details${block.start || block.fields.length || block.shed ? " open" : ""}><summary>時間・圃場（任意）</summary>
-      <label>開始 <input type="time" class="form-input" data-block="${index}" data-key="start" value="${escape(block.start)}"></label>
-      <label>終了 <input type="time" class="form-input" data-block="${index}" data-key="end" value="${escape(block.end)}"></label>
+    <details${selectedParts.length || block.start || block.fields.length || block.shed ? " open" : ""}><summary>時間・圃場${selectedParts.length ? "（パートの時間は勤務内）" : "（任意）"}</summary>
+      ${times}
+      <label>開始 <input type="time" class="form-input" data-block="${index}" data-key="start" value="${escape(block.start)}"${bounds}></label>
+      <label>終了 <input type="time" class="form-input" data-block="${index}" data-key="end" value="${escape(block.end)}"${bounds}></label>
       <label><input type="checkbox" data-block="${index}" data-key="shed"${block.shed ? " checked" : ""}>作業場集合</label>
       <button type="button" class="secondary-btn" data-field="${index}">圃場を追加（複数可）</button>
       <div>${block.fields.map((field, target) => `<button type="button" class="secondary-btn" data-remove-field="${index}" data-field-index="${target}">${escape(field)} ×</button>`).join("")}</div>
@@ -153,7 +212,8 @@ function renderBlocks() {
       && (block.companions.length !== selectedFamily.length || selectedFamily.some(name => !block.companions.includes(name)))
       ? `<details><summary>既存の作業別参加者設定</summary><p>${escape(block.companions.join("・") || "なし")}</p><button type="button" class="secondary-btn" data-companions="${index}">この作業の家族を選択</button></details>` : ""}
     ${blocks.length > 1 ? `<button type="button" class="secondary-btn" data-remove-block="${index}">この作業を削除</button>` : ""}
-  </fieldset>`).join("");
+  </fieldset>`;
+  }).join("");
 }
 function clearForm() {
   el("plan-form").reset();
@@ -162,6 +222,7 @@ function clearForm() {
   blocks = [newBlock()];
   editingId = null;
   source = "direct";
+  savedAttendance = {};
   el("plan-kind").value = "";
   renderScope();
   renderWorkers();
@@ -200,7 +261,7 @@ async function loadDay(preferredId = null) {
   const current = ++sequence;
   ++shiftSequence;
   const date = el("plan-date").value;
-  if (date !== loadedDate) { shiftEligible = null; shiftGroups = []; shiftReady = false; }
+  if (date !== loadedDate) { shiftEligible = null; shiftGroups = []; shiftReady = false; noonBreak = null; }
   record = null;
   loadedDate = date;
   clearForm();
@@ -266,6 +327,7 @@ function editPlan(id) {
   clearForm();
   editingId = id;
   source = plan.source;
+  savedAttendance = structuredClone(plan.attendance || {});
   const partNames = new Set(workerMaster.filter(worker => worker.role === "worker").map(worker => worker.display));
   const all = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
   selectedFamily = all.filter(name => !partNames.has(name));
@@ -321,8 +383,16 @@ async function loadShift() {
       if (!groups.get(key).names.includes(name)) groups.get(key).names.push(name);
     }
     shiftGroups = [...groups.values()];
+    const configuredBreak = plan.targets?.break_minutes?.spanning_noon ?? settings.break_minutes?.spanning_noon;
+    if (!Number.isInteger(configuredBreak) || configuredBreak < 0 || configuredBreak > 180) {
+      throw new Error("昼休憩の設定を確認できません。シフト設定を確認してください。");
+    }
+    noonBreak = configuredBreak;
+    if (shiftGroups.some(group => !validTimeRange(group))) throw new Error("シフトの開始・終了時刻が不正です。");
     shiftEligible = new Set(shiftGroups.flatMap(group => group.names));
     shiftReady = true;
+    initializeWorkTime();
+    renderBlocks();
     renderWorkers();
     if (selectedParts.some(name => !shiftEligible.has(name))) {
       notice("選択中にこの日のシフトにいないパート従業員がいます。作業者を選び直してください。", true);
@@ -393,7 +463,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         selectedFamily = names.filter(name => family.some(worker => worker.display === name));
         selectedParts = names.filter(name => parts.some(worker => worker.display === name));
         blocks.forEach(block => { if (block.companions) block.companions = block.companions.filter(name => selectedFamily.includes(name)); });
-        renderWorkers(); renderBlocks();
+        renderWorkers(); initializeWorkTime(); renderBlocks();
       },
     });
   };
@@ -413,13 +483,26 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (mode === "family" || !mode || (mode === "single" && selectedParts.length > 1)) selectedParts = [];
     renderWorkers(); renderBlocks();
   };
-  el("add-block").onclick = () => { blocks.push(newBlock()); renderBlocks(); };
+  el("add-block").onclick = () => { blocks.push(newBlock()); initializeWorkTime(); renderBlocks(); };
   el("plan-blocks").oninput = event => {
     const index = Number(event.target.dataset.block);
     if (!blocks[index] || !event.target.dataset.key) return;
     blocks[index][event.target.dataset.key] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
   };
+  el("plan-blocks").onchange = event => {
+    if (["start", "end"].includes(event.target.dataset.key)) renderBlocks();
+  };
   el("plan-blocks").onclick = event => {
+    const time = event.target.closest("[data-time-block]");
+    if (time) {
+      const index = Number(time.dataset.timeBlock);
+      try {
+        const range = blockAvailability(index).candidates[Number(time.dataset.timeChoice)];
+        if (!range) throw new Error("時間候補が変更されました。作業者・予定を確認してください。");
+        Object.assign(blocks[index], range); initializeWorkTime(); renderBlocks();
+      } catch (error) { console.error("[daily-plan] time selection failed", error); notice(error.message, true); }
+      return;
+    }
     const task = event.target.closest("[data-task]");
     if (task) openPlanTaskModal({ selected: blocks[Number(task.dataset.task)].task, onSelect: value => {
       blocks[Number(task.dataset.task)].task = value === "__custom__" ? "" : value;
@@ -463,8 +546,20 @@ window.addEventListener("DOMContentLoaded", async () => {
     event.preventDefault();
     try {
       validateParticipants();
+      if (selectedParts.length && !el("plan-off").checked) {
+        if (record.time_support !== true) throw new Error("勤務時間保存に対応したAPIへ更新が必要です。");
+        const current = sequence, date = loadedDate;
+        if (!shiftReady) {
+          el("page-area").inert = true;
+          try { await loadShift(); } finally { el("page-area").inert = false; }
+        }
+        if (current !== sequence || date !== loadedDate) throw new Error("日付が変更されました。入力を確認してください。");
+        if (!shiftReady) throw new Error("パートの勤務時間を確認できません。シフトを読み込み直してください。");
+        blocks.forEach((block, index) => { block.participation = participationForWork(block, selectedParts, blockAvailability(index)); });
+      }
       const plan = createUnifiedPlan(selectedFamily, selectedParts, blocks, el("plan-memo").value,
-        el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, source);
+        el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, source,
+        selectedParts.length && (shiftReady || Object.keys(savedAttendance).length) ? attendanceForSelection() : null);
       await saveRequest({ plan, ...(editingId ? { id: editingId } : {}) });
     } catch (error) { console.error("[daily-plan] invalid input", error); notice(error.message, true); }
   };

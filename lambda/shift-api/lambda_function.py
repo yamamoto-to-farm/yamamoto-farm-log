@@ -234,6 +234,28 @@ def plan_text(value, label, maximum=200, allow_empty=True):
     return value.strip()
 
 
+def validate_time_ranges(value, label):
+    if not isinstance(value, list) or not 1 <= len(value) <= 30:
+        raise RequestError(400, f"{label} の時間帯が不正です。")
+    result = []
+    for item in value:
+        if (not isinstance(item, dict) or set(item) != {"start", "end"}
+                or any(not isinstance(item[key], str) or not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", item[key])
+                       for key in ("start", "end"))
+                or item["start"] >= item["end"]):
+            raise RequestError(400, f"{label} の開始・終了が不正です。")
+        if result and result[-1]["end"] > item["start"]:
+            raise RequestError(400, f"{label} の時間帯が重複・逆順です。")
+        result.append(dict(item))
+    return result
+
+
+def validate_time_map(value, workers, label):
+    if not isinstance(value, dict) or set(value) != set(workers):
+        raise RequestError(400, f"{label} は連絡先全員の時間を指定してください。")
+    return {name: validate_time_ranges(ranges, label) for name, ranges in value.items()}
+
+
 def validate_work_plan(plan):
     if not isinstance(plan, dict):
         raise RequestError(400, "plan が不正です。")
@@ -296,6 +318,14 @@ def validate_work_plan(plan):
             item["fields"] = fields
         if "companions" in block:
             item["companions"] = companions
+        if "participation" in block:
+            participation = block["participation"]
+            if not isinstance(participation, dict) or not set(participation) <= (set(names) | set(companions)):
+                raise RequestError(400, "作業参加者が不正です。")
+            item["participation"] = {name: validate_time_ranges(ranges, "作業参加時間") for name, ranges in participation.items()}
+            if not start or any(range["start"] < start or range["end"] > end
+                                for ranges in item["participation"].values() for range in ranges):
+                raise RequestError(400, "参加時間は作業時間内に指定してください。")
         validated.append(item)
     workers = set(names) | {name for block in validated for name in block.get("companions", [])}
     recipients = validate_recipients(plan.get("recipients", [] if direct else names), workers, allow_empty=True)
@@ -303,7 +333,7 @@ def validate_work_plan(plan):
         raise RequestError(400, "連絡係は連絡先から選択してください。")
     message = plan.get("message", "")
     plan_text(message, "コピー文面", 10000)
-    return {
+    result = {
         "source": source, "names": names, "recipients": recipients,
         "off": off, "kind": kind, "reporter": reporter,
         "blocks": validated,
@@ -312,6 +342,24 @@ def validate_work_plan(plan):
         "message": message,
         "manual_text": manual,
     }
+    if "attendance" in plan:
+        attendance = validate_time_map(plan["attendance"], recipients, "出退勤時間")
+        if not recipients:
+            raise RequestError(400, "出退勤時間はパートの連絡先を指定してください。")
+        occupied = {name: [] for name in recipients}
+        for block in validated:
+            participation = validate_time_map(block.get("participation"), recipients, "作業参加時間")
+            for name, ranges in participation.items():
+                for slot in ranges:
+                    if not any(shift["start"] <= slot["start"] and shift["end"] >= slot["end"] for shift in attendance[name]):
+                        raise RequestError(400, "参加時間は本人の勤務時間内に指定してください。")
+                    if not off and any(slot["start"] < old["end"] and old["start"] < slot["end"] for old in occupied[name]):
+                        raise RequestError(400, "同じ予定内の作業参加時間が重複しています。")
+                    occupied[name].append(slot)
+        result["attendance"] = attendance
+    elif any("participation" in block for block in validated):
+        raise RequestError(400, "参加時間には出退勤時間も指定してください。")
+    return result
 
 
 def validate_recipients(value, workers, allow_empty=False):
@@ -421,6 +469,8 @@ def project_work_plans(plans):
             blocks = plan["blocks"] if name in plan["names"] else [
                 block for block in plan["blocks"] if name in block.get("companions", [])
             ]
+            blocks = [dict(block, **slot) for block in blocks for slot in
+                      block.get("participation", {}).get(name, [{"start": block["start"], "end": block["end"]}])]
             entry = {
                 **plan, "id": identifier, "worker": name, "blocks": blocks,
                 "source_label": "連絡予定" if plan["source"] == "message" else "直接入力",
@@ -522,7 +572,7 @@ def work_plans_route(event, bucket, prefix, claims):
     if event["routeKey"] == "GET /shift/work-plans":
         date = plan_date((event.get("queryStringParameters") or {}).get("date"))
         record, revision = read_work_plans(bucket, f"{prefix}work-plans/{date}.json", date)
-        return response(200, {"date": date, "revision": revision, "data": record})
+        return response(200, {"date": date, "revision": revision, "time_support": True, "data": record})
     raw = event.get("body") or ""
     try:
         if event.get("isBase64Encoded"):
@@ -620,6 +670,14 @@ def work_plans_route(event, bucket, prefix, claims):
                         old["names"] = remaining
                         workers = set(remaining) | {name for block in old["blocks"] for name in block.get("companions", [])}
                         old["recipients"] = [name for name in old["recipients"] if name in workers]
+                        if "attendance" in old:
+                            old["attendance"] = {name: old["attendance"][name] for name in old["recipients"]}
+                            for block in old["blocks"]:
+                                block["participation"] = {name: block["participation"][name] for name in old["recipients"]}
+                            if not old["recipients"]:
+                                del old["attendance"]
+                                for block in old["blocks"]:
+                                    del block["participation"]
                         if old["kind"] == "2" and old["reporter"] not in remaining:
                             old["reporter"] = remaining[0]
                         old.update(updated_at=stamp, updated_by=author)
@@ -628,6 +686,20 @@ def work_plans_route(event, bucket, prefix, claims):
             else:
                 identifier = "direct-" + uuid.uuid4().hex
         names = plan["names"]
+        if "attendance" in plan and not plan["off"]:
+            for other_id, other in plans.items():
+                if other_id == identifier or other["off"]:
+                    continue
+                for name in plan["recipients"]:
+                    for block in other["blocks"]:
+                        if name not in other["names"] and name not in block.get("companions", []):
+                            continue
+                        if not block["start"]:
+                            continue
+                        old_slots = block.get("participation", {}).get(name, [block])
+                        if any(new["start"] < old["end"] and old["start"] < new["end"]
+                               for new_block in plan["blocks"] for new in new_block["participation"][name] for old in old_slots):
+                            raise RequestError(400, f"{name} の参加時間が別の予定と重複しています。")
         plans[identifier] = {
             **plan, "id": identifier, "updated_at": stamp, "updated_by": author,
         }

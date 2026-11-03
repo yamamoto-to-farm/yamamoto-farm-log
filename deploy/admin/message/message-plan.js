@@ -1,3 +1,5 @@
+import { mergeTimeRanges } from "/common/work-plan-time.js?v=20261104-time-1";
+
 export function planRecipients(plan) {
   return plan.recipients || (plan.source === "message" ? plan.names : []);
 }
@@ -9,6 +11,7 @@ export function communicationIssues(plan) {
   if (!recipients.length) issues.push("連絡するパートを予定編集で選択してください。");
   if (recipients.some(name => !participants.has(name))) issues.push("連絡先が作業者に含まれていません。");
   if (!plan.off) {
+    if (recipients.some(name => !plan.attendance?.[name]?.length)) issues.push("出退勤時間を予定編集でシフトから確認・保存してください。");
     if (!plan.blocks.length || plan.blocks.some(block => !block.start || !block.end)) issues.push("連絡には開始・終了時刻が必要です。");
     if (plan.blocks.some(block => !block.shed && !(block.fields?.length || block.field))) issues.push("圃場または作業場集合を指定してください。");
     if (plan.kind === "2" && !recipients.includes(plan.reporter)) issues.push("パートのみの作業は連絡係を指定してください。");
@@ -63,28 +66,47 @@ export function messageGroups(plans) {
   }
   const groups = new Map();
   for (const [name, ids] of idsByPerson) {
-    const key = JSON.stringify(ids);
-    if (!groups.has(key)) groups.set(key, { ids, recipients: [] });
+    const active = ids.filter(id => !plans[id].off);
+    const attendance = mergeTimeRanges(active.flatMap(id => plans[id].attendance?.[name] || []));
+    const attendanceKeys = active.map(id => JSON.stringify(mergeTimeRanges(plans[id].attendance?.[name] || [])));
+    const issues = new Set(attendanceKeys).size > 1 ? ["予定間で出退勤時間が異なります。シフトを再読込し、各予定を編集・保存してください。"] : [];
+    const personal = ids.map(id => {
+      const plan = plans[id];
+      const blocks = plan.blocks.flatMap(block => {
+        const ranges = block.participation?.[name];
+        return ranges ? ranges.map(range => ({ ...block, ...range })) : [block];
+      });
+      return { id, plan, displayPlan: { ...plan, blocks } };
+    });
+    const key = JSON.stringify([ids, attendance, personal.map(entry => entry.displayPlan.blocks.map(block =>
+      [block.task, block.start, block.end]))]);
+    if (!groups.has(key)) groups.set(key, { ids, recipients: [], attendance, personal, issues });
     groups.get(key).recipients.push(name);
   }
   return [...groups.values()].map(group => {
     group.recipients.sort();
-    const entries = group.ids.map(id => ({ id, plan: plans[id] })).sort((a, b) =>
-      (a.plan.blocks[0]?.start || "99:99").localeCompare(b.plan.blocks[0]?.start || "99:99") || a.id.localeCompare(b.id));
+    const entries = group.personal.sort((a, b) =>
+      (a.displayPlan.blocks[0]?.start || "99:99").localeCompare(b.displayPlan.blocks[0]?.start || "99:99") || a.id.localeCompare(b.id));
     const id = group.ids.length === 1 && group.recipients.length === planRecipients(entries[0].plan).length
       ? group.ids[0] : JSON.stringify([group.ids, group.recipients]);
     return { ...group, entries, id };
   });
 }
 export function buildGroupMessage(group, date) {
-  if (group.entries.length === 1) return buildPlanMessage(group.entries[0].plan, date);
+  const attendance = group.attendance.length ? [
+    `出勤：${group.attendance[0].start}　退勤：${group.attendance.at(-1).end}`,
+    ...(group.attendance.length > 1 ? [`勤務時間帯：${group.attendance.map(range => `${range.start}〜${range.end}`).join("／")}`] : []), "",
+  ] : [];
+  if (group.entries.length === 1 && !attendance.length) return buildPlanMessage(group.entries[0].displayPlan, date);
   return ["お疲れさまです。", `${date}の作業予定です。`, "",
-    ...group.entries.map(({ plan }) => buildPlanMessage(plan, date, false)), "よろしくお願いします。"].join("\n");
+    ...attendance, ...group.entries.map(({ displayPlan }) => buildPlanMessage(displayPlan, date, false)), "よろしくお願いします。"].join("\n");
 }
 export function checkMessageGroup(group, plans) {
   const current = messageGroups(plans).find(item => item.id === group.id);
   if (!current || current.entries.some(({ id, plan }) =>
-    group.entries.find(item => item.id === id)?.plan.updated_at !== plan.updated_at)) {
+    group.entries.find(item => item.id === id)?.plan.updated_at !== plan.updated_at)
+    || JSON.stringify(current.attendance) !== JSON.stringify(group.attendance)
+    || JSON.stringify(current.entries.map(item => item.displayPlan.blocks)) !== JSON.stringify(group.entries.map(item => item.displayPlan.blocks))) {
     throw new Error("予定が変更・削除されています。再読み込みして連絡内容を確認してください。");
   }
 }

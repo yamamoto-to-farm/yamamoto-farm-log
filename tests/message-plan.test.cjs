@@ -8,10 +8,12 @@ const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
     window: { addEventListener() {} }, URLSearchParams, ...deps });
+  vm.runInContext(strip(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8")), context);
   vm.runInContext(strip(read(file)), context);
   return context;
 }
 const plan = { source: "direct", names: ["パートA"], recipients: ["パートA"], kind: "1",
+  attendance: { パートA: [{ start: "08:00", end: "16:00" }] },
   reporter: "", off: false, updated_at: "revision-1", memo: "",
   blocks: [{ task: "草とり", fields: ["圃場A"], start: "08:00", end: "12:00", companions: ["家族A"] }] };
 test("messages come from saved plans without including family names or implying delivery", () => {

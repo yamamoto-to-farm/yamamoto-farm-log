@@ -7,6 +7,7 @@ const source = readFileSync(join(__dirname, "..", "deploy", "diary", "planned-wo
   .replace(/^import.*\r?\n/gm, "").replace(/^export /gm, "");
 function load(deps = {}) {
   const context = vm.createContext({ console: { error() {} }, URLSearchParams, ...deps });
+  vm.runInContext(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8").replace(/^export /gm, ""), context);
   vm.runInContext(source, context);
   return context;
 }
@@ -145,6 +146,31 @@ test("shared reader rejects malformed communication snapshots and participant me
     mutate(bad);
     context.fetch = async () => ({ ok: true, json: async () => bad });
     await assert.rejects(context.fetchWorkPlanRecord("2026-11-04"), /形式が不正/);
+  }
+});
+test("shared reader validates captured duty and participation while accepting per-person projections", async () => {
+  const timed = { ...plan, names: ["担当A", "担当B"], recipients: ["担当A", "担当B"],
+    attendance: { 担当A: [{ start: "08:00", end: "15:30" }], 担当B: [{ start: "09:00", end: "16:00" }] },
+    blocks: [{ ...block, start: "13:00", end: "16:00", participation: {
+      担当A: [{ start: "13:00", end: "15:30" }], 担当B: [{ start: "13:00", end: "16:00" }],
+    } }] };
+  const result = { date: "2026-11-04", data: { date: "2026-11-04",
+    people: { 担当A: { ...timed, blocks: [{ ...timed.blocks[0], end: "15:30" }] } }, plans: { p: timed } } };
+  const context = load({ config: { api: "https://example.test" }, ensureToken: async () => "test",
+    fetch: async () => ({ ok: true, json: async () => result }) });
+  assert.equal((await context.fetchWorkPlanRecord(result.date)).data.people.担当A.blocks[0].end, "15:30");
+  for (const mutate of [
+    value => { value.attendance = {}; },
+    value => { value.attendance.担当A[0].end = "25:00"; },
+    value => { delete value.attendance.担当B; },
+    value => { delete value.blocks[0].participation.担当B; },
+    value => { value.blocks[0].participation.担当A[0].end = "16:00"; },
+    value => { delete value.attendance; },
+  ]) {
+    const bad = structuredClone(result);
+    mutate(bad.data.plans.p);
+    context.fetch = async () => ({ ok: true, json: async () => bad });
+    await assert.rejects(context.fetchWorkPlanRecord(result.date), /形式が不正/);
   }
 });
 

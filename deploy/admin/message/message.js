@@ -2,8 +2,8 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
-import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-unified-1";
-import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-work-1";
+import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
+import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-time-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -60,13 +60,14 @@ function renderCards() {
   const groups = messageGroups(record.data.plans);
   element("cards").innerHTML = groups.length ? groups.map(group => {
     const { id, entries } = group;
-    const issues = [...new Set(entries.flatMap(({ plan }) => communicationIssues(plan)))];
+    const issues = [...new Set([...group.issues, ...entries.flatMap(({ plan }) => communicationIssues(plan))])];
     const text = drafts.get(id) ?? buildGroupMessage(group, loadedDate);
     const communication = groupCommunicationState(group, record.data.communications);
     return `<article class="msg-card">
       <h3>${escapeHtml(group.recipients.join("・"))} へ</h3>
       <p class="msg-muted">${communication ? `${communication.status === "sent" ? "送信済み" : "連絡用にコピー済み"}${communication.changed ? "・連絡後に変更あり" : ""}` : "この宛先・予定の組合せでは連絡前"}</p>
-      ${entries.map(({ id: planId, plan }) => `<p>${plan.off ? "中止の連絡：" : ""}${plan.blocks.map(block => escapeHtml(block.task)).join("・")}
+      ${entries.map(({ id: planId, plan, displayPlan }) => `<p>${plan.off ? "中止の連絡：" : ""}${displayPlan.blocks.map(block =>
+        `${escapeHtml(block.start)}〜${escapeHtml(block.end)} ${escapeHtml(block.task)}`).join("・")}
         <a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集</a></p>`).join("")}
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
       <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
@@ -111,7 +112,7 @@ export async function copySavedPlan(id, button) {
   element("tab-daily").inert = true;
   try {
     if (!group) throw new Error("連絡対象の予定がありません。再読み込みしてください。");
-    const issues = group.entries.flatMap(({ plan }) => communicationIssues(plan));
+    const issues = [...group.issues, ...group.entries.flatMap(({ plan }) => communicationIssues(plan))];
     if (issues.length) throw new Error(issues.join(" "));
     const latest = await fetchWorkPlanRecord(date);
     checkMessageGroup(group, latest.data.plans);

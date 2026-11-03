@@ -1,5 +1,6 @@
 import { config } from "/photos/config.js";
 import { ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
+import { validTimeMap } from "/common/work-plan-time.js?v=20261104-time-1";
 
 const TASK_FOLDERS = {
   播種: "seed", 育苗: "nursery", 定植: "planting", 収穫: "harvest",
@@ -79,12 +80,22 @@ export async function fetchWorkPlanRecord(date) {
   if (!response.ok) throw new Error(`予定を取得できません（${response.status}）。`);
   const result = await response.json();
   const validPlan = plan => plan && typeof plan.off === "boolean" && Array.isArray(plan.blocks)
+    && (plan.attendance === undefined || validTimeMap(plan.attendance))
     && plan.blocks.every(block => block && typeof block.task === "string"
+      && (block.participation === undefined || validTimeMap(block.participation))
       && (block.fields === undefined || (Array.isArray(block.fields) && block.fields.every(field => typeof field === "string")))
       && (block.companions === undefined || (Array.isArray(block.companions) && block.companions.every(name => typeof name === "string"))));
   const validNamedPlan = plan => validPlan(plan) && Array.isArray(plan.names)
     && plan.names.every(name => typeof name === "string")
-    && (plan.recipients === undefined || (Array.isArray(plan.recipients) && plan.recipients.every(name => typeof name === "string")));
+    && (plan.recipients === undefined || (Array.isArray(plan.recipients) && plan.recipients.every(name => typeof name === "string")))
+    && (plan.attendance === undefined ? plan.blocks.every(block => block.participation === undefined)
+      : Array.isArray(plan.recipients) && plan.recipients.length === Object.keys(plan.attendance).length
+        && plan.recipients.every(name => Object.hasOwn(plan.attendance, name))
+        && plan.blocks.every(block => validTimeMap(block.participation)
+          && Object.keys(block.participation).length === plan.recipients.length
+          && plan.recipients.every(name => block.participation[name]?.every(range =>
+            block.start <= range.start && range.end <= block.end && plan.attendance[name].some(shift =>
+              shift.start <= range.start && range.end <= shift.end)))));
   const validCommunication = item => item && ["copied", "sent"].includes(item.status)
     && typeof item.at === "string" && typeof item.plan_revision === "string";
   if (result?.date !== date || result.data?.date !== date || !result.data.people

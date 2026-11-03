@@ -8,6 +8,7 @@ const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
     window: { addEventListener() {} }, URLSearchParams, ...deps });
+  vm.runInContext(strip(read("common/work-plan-time.js")), context);
   vm.runInContext(strip(read(file)), context);
   return context;
 }
@@ -32,6 +33,23 @@ test("unified plans cover family-only, part-only, mixed groups and multiple opti
   assert.throws(() => create([], [], [block], ""), /作業者/);
   assert.throws(() => create([], ["パートA", "パートB"], [block], ""), /連絡係/);
   assert.throws(() => create(["家族A"], [], [{ ...block, start: "08:00" }], ""), /時刻/);
+});
+test("single free interval initializes once, worker changes never overwrite entered times, and editing retains captured duty", () => {
+  const { context, nodes } = screen();
+  vm.runInContext(`
+    record={time_support:true,data:{plans:{}}}; shiftReady=true; noonBreak=60;
+    selectedParts=["パートA"]; shiftGroups=[{names:["パートA"],start:"13:00",end:"16:00"}];
+    blocks=[{task:"収穫",start:"",end:"",fields:["圃場"],shed:false}];
+    initializeWorkTime();renderBlocks();`, context);
+  assert.equal(vm.runInContext("blocks[0].start", context), "13:00");
+  assert.match(nodes["plan-blocks"].innerHTML, /data-time-choice="0"/);
+  assert.match(nodes["plan-blocks"].innerHTML, /パートA：13:00〜16:00/);
+  vm.runInContext('blocks[0].start="14:00";shiftGroups[0].end="15:30";initializeWorkTime();renderBlocks();', context);
+  assert.equal(vm.runInContext("blocks[0].start", context), "14:00");
+  assert.equal(vm.runInContext("blocks[0].end", context), "16:00");
+  assert.match(nodes["plan-blocks"].innerHTML, /勤務時間外/);
+  vm.runInContext('blocks[0].start="";blocks[0].end="";shiftGroups[0].start="08:00";initializeWorkTime();', context);
+  assert.equal(vm.runInContext("blocks[0].start", context), "");
 });
 test("cancellation preserves tasks, supports old message edits and separate sources", () => {
   const { createUnifiedPlan: create } = load("schedule/daily-plan/daily-plan.js");
@@ -122,8 +140,8 @@ test("shift import produces grouped input candidates without modifying saved pla
     config: { api: "https://example.test" }, ensureToken: async () => "test",
     fetch: async url => ({ ok: true, json: async () => url.includes("/shift/edits")
       ? { overrides: {} } : url.includes("/shift/config")
-        ? { staff: [{ name: "候補甲", login: "part-a" }, { name: "候補乙", login: "part-b" }] }
-        : { scenarios: [{}], generated_at: "timestamp" } }),
+        ? { break_minutes: { spanning_noon: 45 }, staff: [{ name: "候補甲", login: "part-a" }, { name: "候補乙", login: "part-b" }] }
+        : { scenarios: [{}], targets: { break_minutes: { spanning_noon: 60 } }, generated_at: "timestamp" } }),
     defaultScenarioIndex: () => 0, toInputTime: value => value,
     applyAdjustments: () => [
       { date: "2026-11-04", person: "候補甲", status: "base", proposed_hours: 6, start: "08:00", proposed_end: "15:00" },
@@ -139,6 +157,7 @@ test("shift import produces grouped input candidates without modifying saved pla
   await context.loadShift();
   assert.deepEqual(Array.from(vm.runInContext("shiftGroups[0].names", context)), ["候補甲 太郎", "候補乙 次郎"]);
   assert.match(nodes["shift-state"].textContent, /2人/);
+  assert.equal(vm.runInContext("noonBreak", context), 60);
   assert.deepEqual(Array.from(vm.runInContext("selectableParts()", context), worker => worker.display), ["候補甲 太郎", "候補乙 次郎"]);
   assert.equal(vm.runInContext("record.data.plans.keep.names[0]", context), "家族A");
 });

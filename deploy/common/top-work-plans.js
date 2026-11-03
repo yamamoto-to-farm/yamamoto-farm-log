@@ -1,4 +1,4 @@
-import { fetchPlannedWork } from "/diary/planned-work.js?v=20261104-unified-1";
+import { fetchPlannedWork } from "/diary/planned-work.js?v=20261104-time-1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd } from "/common/date-utils.js?v=1";
 

@@ -277,6 +277,86 @@ class ShiftConfigTests(unittest.TestCase):
 
 
 class WorkPlanTests(unittest.TestCase):
+    def timed_plan(self):
+        plan = copy.deepcopy(self.plan)
+        plan["attendance"] = {
+            "担当A": [{"start": "08:00", "end": "15:30"}],
+            "担当B": [{"start": "09:00", "end": "16:00"}],
+        }
+        plan["blocks"][0].update(start="13:00", end="16:00", participation={
+            "担当A": [{"start": "13:00", "end": "15:30"}],
+            "担当B": [{"start": "13:00", "end": "16:00"}],
+        })
+        return plan
+
+    def test_individual_times_round_trip_projection_and_copy_snapshot(self):
+        plan = self.timed_plan()
+        status, result = self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})
+        self.assertEqual(status, 200, result)
+        saved = self.saved()
+        self.assertEqual(saved["people"]["担当A"]["blocks"][0]["end"], "15:30")
+        self.assertEqual(saved["people"]["担当B"]["blocks"][0]["end"], "16:00")
+        identifier = result["id"]
+        self.stored(saved)
+        status, read = self.request(route="GET /shift/work-plans")
+        self.assertEqual(status, 200, read)
+        self.assertEqual(read["data"]["plans"][identifier]["attendance"], plan["attendance"])
+        status, result = self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "operation": "communicate",
+            "copies": [{"id": identifier, "plan_revision": saved["plans"][identifier]["updated_at"]}],
+            "recipients": ["担当A"], "message": "出勤08:00・収穫13:00〜15:30・退勤15:30",
+        })
+        self.assertEqual(status, 200, result)
+        snapshot = self.saved()["communications"][0]["plan"]
+        self.assertEqual(snapshot["blocks"][0]["end"], "16:00")
+        self.assertEqual(snapshot["blocks"][0]["participation"]["担当A"][0]["end"], "15:30")
+        self.stored(self.saved())
+        status, result = self.request(route="GET /shift/work-plans")
+        self.assertEqual(status, 200, result)
+
+    def test_invalid_individual_times_reject_atomically(self):
+        mutations = [
+            lambda plan: plan["attendance"].pop("担当A"),
+            lambda plan: plan["attendance"].update({"他人": [{"start": "08:00", "end": "16:00"}]}),
+            lambda plan: plan["blocks"][0]["participation"].pop("担当B"),
+            lambda plan: plan["blocks"][0]["participation"]["担当A"][0].update(end="16:00"),
+            lambda plan: plan["blocks"][0]["participation"]["担当B"][0].update(start="12:00"),
+            lambda plan: plan["attendance"]["担当A"][0].update(end="25:00"),
+            lambda plan: plan["attendance"]["担当A"][0].update(end="07:00"),
+            lambda plan: plan["attendance"]["担当A"].append({"start": "14:00", "end": "16:00"}),
+            lambda plan: plan.pop("attendance"),
+            lambda plan: plan["blocks"].append(copy.deepcopy(plan["blocks"][0])),
+        ]
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                plan = self.timed_plan()
+                mutate(plan)
+                fake_s3.put_object.reset_mock()
+                status, result = self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})
+                self.assertEqual(status, 400, result)
+                fake_s3.put_object.assert_not_called()
+
+    def test_individual_time_conflicts_ignore_self_and_cancelled_work(self):
+        plan = self.timed_plan()
+        plan["source"] = "direct"
+        plan["recipients"] = list(plan["names"])
+        status, result = self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})
+        self.assertEqual(status, 200, result)
+        identifier = result["id"]
+        status, result = self.save_next(plan, id=identifier)
+        self.assertEqual(status, 200, result)
+        self.stored(self.saved())
+        fake_s3.put_object.reset_mock()
+        status, result = self.request(body={"date": "2026-11-02", "revision": self.revision, "plan": plan})
+        self.assertEqual(status, 400, result)
+        fake_s3.put_object.assert_not_called()
+        cancelled = copy.deepcopy(plan)
+        cancelled["off"] = True
+        status, result = self.request(body={"date": "2026-11-02", "revision": self.revision, "plan": cancelled, "id": identifier})
+        self.assertEqual(status, 200, result)
+        status, result = self.save_next(plan)
+        self.assertEqual(status, 200, result)
+
     def setUp(self):
         ShiftApiTests.setUp(self)
         self.plan = {
@@ -870,7 +950,8 @@ class CommunicationTests(unittest.TestCase):
         self.stored(saved)
         status, result = self.request("GET /shift/work-plans")
         self.assertEqual(status, 200)
-        self.assertEqual(set(result), {"date", "revision", "data"})
+        self.assertEqual(set(result), {"date", "revision", "time_support", "data"})
+        self.assertTrue(result["time_support"])
         self.assertEqual(set(result["data"]), {"date", "plans", "people", "updated_at", "communications"})
         self.assertEqual(result["data"], saved)
         self.assertEqual(result["data"]["people"]["担当A"]["entries"][0]["last_communication"], last)
