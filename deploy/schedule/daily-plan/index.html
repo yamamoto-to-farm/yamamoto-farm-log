@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>作業予定の追加・編集 - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/filter.css?v=1">
+  <link rel="stylesheet" href="./daily-plan.css?v=20261104-1">
+</head>
+<body>
+  <div id="header"></div>
+  <main id="page-area" class="page-container" hidden>
+    <h1 class="page-title">作業予定の追加・編集</h1>
+    <p>家族・自分だけの予定を、連絡文なしで保存します。時間・圃場は必要なときだけ指定してください。</p>
+    <label>日付 <input id="plan-date" type="date" class="form-input"></label>
+    <p id="status" role="status" aria-live="polite"></p>
+    <button id="reload" type="button" class="secondary-btn">再読み込み</button>
+    <button id="plan-login" type="button" class="secondary-btn" hidden>ログイン</button>
+    <section class="card">
+      <h2 class="section-title">予定を追加・編集</h2>
+      <form id="plan-form">
+        <fieldset id="plan-inputs" disabled>
+          <legend id="editing-label">新しい予定</legend>
+          <fieldset><legend>担当者（必須・複数選択可）</legend><div id="plan-workers"></div></fieldset>
+          <label>作業内容（必須）
+            <select id="plan-task" class="form-input" required>
+              <option value="">作業を選択</option>
+              <option>耕起</option><option>中耕</option><option>畝立て</option>
+              <option>除草剤散布</option><option>草刈り</option><option>草とり</option>
+              <option>収穫</option><option>播種</option><option>育苗</option><option>定植</option>
+              <option>防除</option><option>施肥</option><option>潅水</option><option>圃場整備</option>
+              <option>出荷調整</option><option>片付け</option><option value="__custom__">その他（自由入力）</option>
+            </select>
+          </label>
+          <label id="custom-task-label" hidden>作業内容（自由入力）
+            <input id="custom-task" class="form-input" maxlength="200">
+          </label>
+          <details>
+            <summary>時間・圃場・メモ（任意）</summary>
+            <div class="optional-inputs">
+              <label>開始 <input id="plan-start" type="time" class="form-input"></label>
+              <label>終了 <input id="plan-end" type="time" class="form-input"></label>
+              <p>時刻を指定する場合は開始・終了を両方入力してください。</p>
+              <button id="add-field" type="button" class="secondary-btn">圃場を追加（複数可）</button>
+              <div id="plan-fields"></div>
+              <p>圃場を指定しなければ、その日の担当者と作業内容で作業ログを照合します。</p>
+              <label>メモ <textarea id="plan-memo" class="form-textarea" maxlength="2000"></textarea></label>
+            </div>
+          </details>
+          <div class="plan-actions">
+            <button type="submit" class="primary-btn">予定を保存</button>
+            <button id="cancel-edit" type="button" class="secondary-btn">入力をクリア</button>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+    <section class="card">
+      <h2 class="section-title">この日の保存済み予定</h2>
+      <div id="saved-plans"></div>
+    </section>
+    <div class="plan-actions">
+      <a id="message-link" class="secondary-btn" href="/admin/message/index.html">共同作業・パートの予定を連絡する</a>
+      <a class="secondary-btn" href="/index.html">トップへ戻る</a>
+    </div>
+  </main>
+  <script type="module" src="./daily-plan.js?v=20261104-1"></script>
+</body>
+</html>

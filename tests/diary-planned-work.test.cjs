@@ -56,6 +56,22 @@ test("plans present neutral references per person, cancellation and safe escaped
   assert.doesNotMatch(cancelled, /<script>|<img>|<svg>|関連する/);
 });
 
+test("family plans match optional multiple fields and distinguish herbicide from mowing", () => {
+  const { relatedPlanLogs: match, plannedWorkHtml: render } = load();
+  const herbicide = { task: "除草剤散布", fields: [], start: "", end: "" };
+  const spraying = log({ workType: "除草剤散布", field: "圃場B" }, "weeding");
+  const mowing = log({ workType: "草刈り", field: "圃場B" }, "weeding");
+  assert.equal(match("担当A", herbicide, [spraying, mowing]).length, 1);
+  assert.equal(match("担当A", { ...herbicide, fields: ["圃場A", "圃場B"] }, [spraying]).length, 1);
+  assert.equal(match("担当A", { ...herbicide, fields: ["圃場C"] }, [spraying]).length, 0);
+  const direct = { ...plan, source: "direct", source_label: "直接入力", blocks: [herbicide] };
+  const html = render({ 担当A: { ...direct, entries: [plan, direct] } }, [spraying]);
+  assert.match(html, /草とり/);
+  assert.match(html, /登録元：直接入力/);
+  assert.match(html, /除草剤散布/);
+  assert.doesNotMatch(html, /<p>〜|undefined/);
+});
+
 test("missing logs link to the corresponding existing input page for each known task", () => {
   const { plannedWorkHtml: render } = load();
   const destinations = [

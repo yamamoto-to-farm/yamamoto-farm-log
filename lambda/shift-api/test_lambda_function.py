@@ -3,6 +3,8 @@
 実行: python -B -m unittest discover -s lambda\\shift-api -p "test_*.py"
 """
 import importlib.util
+import base64
+import copy
 import io
 import json
 import os
@@ -287,12 +289,13 @@ class WorkPlanTests(unittest.TestCase):
         self.revision = '"' + "a" * 32 + '"'
         fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
 
-    def request(self, route="POST /shift/work-plans", body=None, claims=None, raw_body=None):
+    def request(self, route="POST /shift/work-plans", body=None, claims=None, raw_body=None, encoded=False):
         event = {
             "routeKey": route, "queryStringParameters": {"date": "2026-11-02"},
             "body": raw_body if raw_body is not None else json.dumps(body if body is not None else {
                 "date": "2026-11-02", "revision": None, "plan": self.plan,
             }, ensure_ascii=False),
+            "isBase64Encoded": encoded,
             "requestContext": {"authorizer": {"jwt": {"claims": claims or self.claims}}},
         }
         result = api.lambda_handler(event, None)
@@ -304,6 +307,25 @@ class WorkPlanTests(unittest.TestCase):
             **s3_body(json.dumps({"date": date, "people": people or {}})),
             "ETag": self.revision,
         }
+
+    def stored(self, record):
+        raw = json.dumps(record)
+        fake_s3.get_object.side_effect = lambda **kwargs: {**s3_body(raw), "ETag": self.revision}
+
+    def saved(self):
+        return json.loads(fake_s3.put_object.call_args.kwargs["Body"])
+
+    def save_next(self, plan, **kwargs):
+        self.stored(self.saved())
+        return self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "plan": plan, **kwargs,
+        })
+
+    def direct(self, names=None):
+        return {"source": "direct", "names": names or ["担当A"], "blocks": [{"task": "耕耘"}]}
+
+    def legacy_people(self, plan):
+        return {name: {**copy.deepcopy(plan), "worker": name} for name in plan["names"]}
 
     def test_missing_day_returns_empty_without_writing(self):
         status, body = self.request("GET /shift/work-plans")
@@ -327,18 +349,22 @@ class WorkPlanTests(unittest.TestCase):
         self.assertEqual(saved["people"]["担当B"]["blocks"], self.plan["blocks"])
 
     def test_recopy_replaces_named_people_only_and_read_returns_revision(self):
-        self.existing({"担当A": {"old": True}, "別担当": {"keep": True}})
+        other = {**self.plan, "names": ["別担当"], "kind": "1", "reporter": "", "message": "残す"}
+        legacy = {**self.legacy_people(self.plan), **self.legacy_people(other)}
+        self.existing(legacy)
         status, body = self.request("GET /shift/work-plans")
+        self.assertEqual(status, 200)
         self.assertEqual(body["revision"], self.revision)
-        self.existing({"担当A": {"old": True}, "別担当": {"keep": True}})
+        self.existing(legacy)
+        self.plan["message"] = "新しい文面"
         status, _ = self.request(body={"date": "2026-11-02", "revision": self.revision, "plan": self.plan})
         self.assertEqual(status, 200)
         kwargs = fake_s3.put_object.call_args.kwargs
         self.assertEqual(kwargs["IfMatch"], self.revision)
         people = json.loads(kwargs["Body"])["people"]
         self.assertEqual(len(people), 3)
-        self.assertNotIn("old", people["担当A"])
-        self.assertEqual(people["別担当"], {"keep": True})
+        self.assertEqual(people["担当A"]["message"], "新しい文面")
+        self.assertEqual(people["別担当"]["message"], "残す")
 
     def test_old_revision_and_creation_race_return_conflict(self):
         self.existing()
@@ -394,6 +420,292 @@ class WorkPlanTests(unittest.TestCase):
             self.assertEqual(self.request(route, claims={**self.claims, "token_use": "id"})[0], 401)
             self.assertEqual(self.request(route, claims={**self.claims, "cognito:groups": "[worker]"})[0], 403)
         fake_s3.get_object.assert_not_called()
+        fake_s3.put_object.assert_not_called()
+
+    def test_group_migration_is_deterministic_without_duplicate_entries_or_writes(self):
+        self.existing(self.legacy_people(self.plan))
+        status, body = self.request("GET /shift/work-plans")
+        self.assertEqual(status, 200)
+        identifier = api.message_plan_id(self.plan["names"])
+        self.assertEqual(list(body["data"]["plans"]), [identifier])
+        self.assertEqual(len(body["data"]["people"]["担当A"]["entries"]), 1)
+        self.assertEqual(len(body["data"]["people"]["担当B"]["blocks"]), 1)
+        fake_s3.put_object.assert_not_called()
+        self.existing(dict(reversed(list(self.legacy_people(self.plan).items()))))
+        self.assertEqual(self.request("GET /shift/work-plans")[1]["data"], body["data"])
+        self.existing(self.legacy_people(self.plan))
+        self.assertEqual(self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "plan": self.direct(),
+        })[0], 200)
+        self.assertEqual(len(self.saved()["plans"]), 2)
+
+    def test_partial_legacy_group_does_not_resurrect_overwritten_recipients(self):
+        replacement = {**self.plan, "names": ["担当A"], "kind": "1", "reporter": "", "message": "新"}
+        legacy = self.legacy_people(self.plan)
+        legacy["担当A"] = self.legacy_people(replacement)["担当A"]
+        self.existing(legacy)
+        status, body = self.request("GET /shift/work-plans")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["data"]["people"]["担当A"]["entries"]), 1)
+        self.assertEqual(body["data"]["people"]["担当B"]["names"], ["担当B"])
+        self.assertEqual(body["data"]["people"]["担当B"]["reporter"], "担当B")
+
+    def test_sources_do_not_overwrite_and_multiple_direct_entries_survive(self):
+        status, first = self.request(body={"date": "2026-11-02", "revision": None, "plan": self.direct()})
+        self.assertEqual(status, 200)
+        status, second = self.save_next(self.direct())
+        self.assertEqual(status, 200)
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(self.save_next(self.plan)[0], 200)
+        self.assertEqual(len(self.saved()["plans"]), 3)
+        self.assertEqual(len(self.saved()["people"]["担当A"]["entries"]), 3)
+        self.assertEqual(self.save_next({**self.plan, "message": "再コピー"})[0], 200)
+        self.assertEqual(len(self.saved()["plans"]), 3)
+        self.assertEqual(self.save_next(self.direct(["担当B"]))[0], 200)
+        self.assertEqual(len(self.saved()["plans"]), 4)
+
+    def test_direct_defaults_and_message_field_arrays(self):
+        self.assertEqual(self.request(body={
+            "date": "2026-11-02", "revision": None, "plan": self.direct(),
+        })[0], 200)
+        direct = next(iter(self.saved()["plans"].values()))
+        for key, expected in (("source", "direct"), ("message", ""), ("manual_text", False),
+                              ("kind", "1"), ("reporter", ""), ("off", False)):
+            self.assertEqual(direct[key], expected)
+        self.assertEqual(direct["blocks"][0]["start"], "")
+        self.assertEqual(direct["blocks"][0]["end"], "")
+        self.plan["blocks"][0].pop("field")
+        self.plan["blocks"][0]["fields"] = ["第一圃場", "第二圃場"]
+        self.assertEqual(self.save_next(self.plan)[0], 200)
+        entry = self.saved()["people"]["担当B"]["entries"][0]
+        self.assertEqual(entry["blocks"][0]["fields"], ["第一圃場", "第二圃場"])
+        self.assertEqual(entry["blocks"][0]["field"], "")
+        direct["blocks"][0]["fields"] = ["第一圃場"]
+        self.assertEqual(self.save_next(direct, id=direct["id"])[0], 200)
+        self.stored(self.saved())
+        self.assertEqual(self.request("GET /shift/work-plans")[0], 200)
+
+    def test_companions_receive_only_their_blocks(self):
+        self.plan.update(kind="1", reporter="")
+        first = {**self.plan["blocks"][0], "companions": ["同伴A", "同伴B"]}
+        second = {**first, "start": "13:00", "end": "16:00", "companions": ["同伴B"]}
+        self.plan["blocks"] = [first, second]
+        self.assertEqual(self.request()[0], 200)
+        people = self.saved()["people"]
+        self.assertEqual(people["担当A"]["blocks"], [first, second])
+        self.assertEqual(people["同伴A"]["blocks"], [first])
+        self.assertEqual(people["同伴B"]["blocks"], [first, second])
+        entry = people["同伴A"]["entries"][0]
+        self.assertEqual(entry["names"], ["担当A", "担当B"])
+        self.assertEqual(entry["source"], "message")
+        self.assertTrue(entry["source_label"])
+        self.assertEqual(entry["worker"], "同伴A")
+
+    def test_recopy_removes_stale_companions_only_from_own_plan(self):
+        self.plan.update(kind="1", reporter="", names=["担当A"])
+        self.plan["blocks"][0]["companions"] = ["同伴"]
+        self.assertEqual(self.request()[0], 200)
+        other = copy.deepcopy(self.plan)
+        other.update(names=["別担当"], message="別の連絡")
+        self.assertEqual(self.save_next(other)[0], 200)
+        self.assertEqual(self.save_next(self.direct(["同伴"]))[0], 200)
+        self.plan["blocks"][0].pop("companions")
+        self.assertEqual(self.save_next(self.plan)[0], 200)
+        people = self.saved()["people"]
+        self.assertEqual(len(people["同伴"]["entries"]), 2)
+        self.assertEqual({entry["source"] for entry in people["同伴"]["entries"]}, {"message", "direct"})
+        self.assertEqual([entry["names"] for entry in people["同伴"]["entries"]
+                          if entry["source"] == "message"], [["別担当"]])
+
+    def test_recopy_trims_overlapping_recipients_but_keeps_other_recipients(self):
+        self.assertEqual(self.request()[0], 200)
+        old_id = next(iter(self.saved()["plans"]))
+        replacement = {**self.plan, "names": ["担当A"], "kind": "1", "reporter": "", "message": "更新"}
+        self.assertEqual(self.save_next(replacement)[0], 200)
+        plans = self.saved()["plans"]
+        self.assertEqual(len(plans), 2)
+        self.assertEqual(plans[old_id]["names"], ["担当B"])
+        self.assertEqual(plans[old_id]["reporter"], "担当B")
+        self.assertEqual(len(self.saved()["people"]["担当A"]["entries"]), 1)
+        self.assertEqual(self.save_next(self.plan)[0], 200)
+        self.assertEqual(len(self.saved()["plans"]), 1)
+
+    def test_off_message_does_not_cancel_direct_or_companion_work(self):
+        self.assertEqual(self.request()[0], 200)
+        companion = copy.deepcopy(self.plan)
+        companion.update(names=["別担当"], kind="1", reporter="")
+        companion["blocks"][0]["companions"] = ["担当A"]
+        self.assertEqual(self.save_next(companion)[0], 200)
+        self.assertEqual(self.save_next(self.direct(["担当B"]))[0], 200)
+        off = {**self.plan, "off": True, "blocks": [], "off_reason": "雨"}
+        self.assertEqual(self.save_next(off)[0], 200)
+        people = self.saved()["people"]
+        for name in ("担当A", "担当B"):
+            self.assertFalse(people[name]["off"])
+            self.assertEqual(len(people[name]["blocks"]), 1)
+            self.assertEqual(len(people[name]["entries"]), 2)
+            self.assertEqual(sum(entry["off"] for entry in people[name]["entries"]), 1)
+
+    def test_edit_by_id_does_not_recopy_other_plans(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        self.assertEqual(self.save_next(self.direct())[0], 200)
+        self.assertEqual(self.save_next({**self.plan, "message": "編集"}, id=identifier)[0], 200)
+        self.assertEqual(len(self.saved()["plans"]), 2)
+        self.assertEqual(self.saved()["plans"][identifier]["message"], "編集")
+
+    def test_ids_are_stable_for_sorted_message_recipients(self):
+        status, first = self.request()
+        self.assertEqual(status, 200)
+        self.assertEqual(set(first), {"saved", "date", "id", "names", "updated_at"})
+        self.assertEqual(self.save_next({**self.plan, "names": list(reversed(self.plan["names"]))})[1]["id"],
+                         first["id"])
+        self.assertEqual(len(self.saved()["plans"]), 1)
+
+    def test_missing_ids_and_source_changes_are_rejected(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        self.stored(self.saved())
+        fake_s3.put_object.reset_mock()
+        for operation in ("upsert", "delete"):
+            self.assertEqual(self.request(body={
+                "date": "2026-11-02", "revision": self.revision, "plan": self.plan,
+                "id": "missing", "operation": operation,
+            })[0], 404)
+        self.assertEqual(self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "plan": self.direct(), "id": identifier,
+        })[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_direct_delete_is_conditional_and_preserves_message(self):
+        self.assertEqual(self.request()[0], 200)
+        message_id = next(iter(self.saved()["plans"]))
+        status, body = self.save_next(self.direct())
+        self.assertEqual(status, 200)
+        identifier = body["id"]
+        self.stored(self.saved())
+        status, body = self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "id": identifier, "operation": "delete",
+        })
+        self.assertEqual(status, 200)
+        self.assertTrue(body["saved"])
+        self.assertEqual(body["id"], identifier)
+        self.assertEqual(body["names"], ["担当A"])
+        self.assertEqual(list(self.saved()["plans"]), [message_id])
+        self.assertEqual(fake_s3.put_object.call_args.kwargs["IfMatch"], self.revision)
+        fake_s3.delete_object.assert_not_called()
+        self.stored(self.saved())
+        fake_s3.put_object.reset_mock()
+        self.assertEqual(self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "id": message_id, "operation": "delete",
+        })[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_direct_delete_last_plan_and_conflicts(self):
+        status, body = self.request(body={"date": "2026-11-02", "revision": None, "plan": self.direct()})
+        self.assertEqual(status, 200)
+        self.stored(self.saved())
+        deletion = {"date": "2026-11-02", "revision": None, "id": body["id"], "operation": "delete"}
+        fake_s3.put_object.reset_mock()
+        self.assertEqual(self.request(body=deletion)[0], 409)
+        fake_s3.put_object.assert_not_called()
+        deletion["revision"] = self.revision
+        for code in ("PreconditionFailed", "ConditionalRequestConflict", "409", "412"):
+            fake_s3.put_object.side_effect = FakeClientError(code)
+            self.assertEqual(self.request(body=deletion)[0], 409)
+        fake_s3.put_object.side_effect = None
+        self.assertEqual(self.request(body=deletion)[0], 200)
+        self.assertEqual(self.saved()["plans"], {})
+        self.assertEqual(self.saved()["people"], {})
+        self.stored(self.saved())
+        self.assertEqual(self.request("GET /shift/work-plans")[0], 200)
+        fake_s3.delete_object.assert_not_called()
+
+    def test_invalid_direct_times_fields_companions_and_states(self):
+        variants = []
+        for change in ({"start": "08:00"}, {"end": "12:00"}, {"start": None, "end": None},
+                       {"start": "12:00", "end": "08:00"}, {"fields": "圃場"},
+                       {"fields": [""]}, {"fields": [1]}, {"fields": ["圃場"] * 31},
+                       {"companions": ["同伴"]}, {"task": ""}, {"shed": "false"}):
+            plan = self.direct()
+            plan["blocks"][0].update(change)
+            variants.append(plan)
+        for change in ({"off": True}, {"manual_text": True}, {"kind": "2"}, {"reporter": "担当A"},
+                       {"message": "文面"}, {"names": ["担当A"] * 2}, {"names": ["人"] * 21}):
+            variants.append({**self.direct(), **change})
+        for plan in variants:
+            with self.subTest(plan=plan):
+                self.assertEqual(self.request(body={
+                    "date": "2026-11-02", "revision": None, "plan": plan,
+                })[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_invalid_message_fields_and_companions(self):
+        variants = []
+        for change in ({"companions": ["担当A"]}, {"companions": ["同伴", "同伴"]},
+                       {"companions": ["同伴"] * 21}, {"companions": "同伴"},
+                       {"companions": [1]}, {"fields": None}, {"fields": [None]}):
+            plan = copy.deepcopy(self.plan)
+            plan.update(kind="1", reporter="")
+            plan["blocks"][0].update(change)
+            variants.append(plan)
+        for kind in ("2", "3"):
+            plan = copy.deepcopy(self.plan)
+            plan["kind"] = kind
+            plan["blocks"][0]["companions"] = []
+            variants.append(plan)
+        plan = copy.deepcopy(self.plan)
+        plan["blocks"][0].pop("field")
+        variants.append(plan)
+        for plan in variants:
+            with self.subTest(plan=plan):
+                self.assertEqual(self.request(body={
+                    "date": "2026-11-02", "revision": None, "plan": plan,
+                })[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_invalid_operations_and_ids(self):
+        for change in ({"operation": "other"}, {"operation": "delete"}, {"id": None},
+                       {"id": ""}, {"id": "../id"}, {"id": "a" * 129}, {"id": 12}):
+            with self.subTest(change=change):
+                self.assertEqual(self.request(body={
+                    "date": "2026-11-02", "revision": None, "plan": self.plan, **change,
+                })[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_malformed_stored_records_fail_instead_of_becoming_empty(self):
+        malformed = [
+            [], {"date": "2026-11-02", "people": []},
+            {"date": "2026-11-02", "people": {"担当A": {"old": True}}},
+            {"date": "2026-11-02", "people": {}, "plans": []},
+            {"date": "2026-11-02", "people": {}, "plans": {"x": {}}},
+            {"date": "2026-11-02", "people": {}, "updated_at": 1},
+        ]
+        self.assertEqual(self.request()[0], 200)
+        canonical = self.saved()
+        mismatched = copy.deepcopy(canonical)
+        mismatched["people"] = {}
+        malformed.append(mismatched)
+        mismatched = copy.deepcopy(canonical)
+        next(iter(mismatched["plans"].values()))["id"] = "other"
+        malformed.append(mismatched)
+        legacy = self.legacy_people(self.plan)
+        legacy["担当B"]["message"] = "異なる文面"
+        malformed.append({"date": "2026-11-02", "people": legacy})
+        fake_s3.put_object.reset_mock()
+        for record in malformed:
+            with self.subTest(record=record), self.assertLogs(api.LOGGER, level="ERROR"):
+                self.stored(record)
+                self.assertEqual(self.request("GET /shift/work-plans")[0], 500)
+        fake_s3.put_object.assert_not_called()
+
+    def test_base64_requests_and_bad_encoding(self):
+        raw = json.dumps({"date": "2026-11-02", "revision": None, "plan": self.plan}).encode()
+        self.assertEqual(self.request(raw_body=base64.b64encode(raw).decode(), encoded=True)[0], 200)
+        fake_s3.put_object.reset_mock()
+        for raw in ("not-base64", base64.b64encode(b"\xff").decode(),
+                    base64.b64encode(b"x" * 65537).decode()):
+            self.assertEqual(self.request(raw_body=raw, encoded=True)[0], 400)
         fake_s3.put_object.assert_not_called()
 
 

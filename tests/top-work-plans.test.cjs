@@ -19,7 +19,7 @@ function screen(role = "admin", deps = {}) {
     setAttribute(key, value) { this.attributes[key] = value; },
     addEventListener(type, handler) { this[type] = handler; },
   }));
-  for (const id of ["ops-schedule-card", "top-plan-body", "top-plan-date", "top-plan-create", "top-plan-hints-body"]) nodes[id] = node();
+  for (const id of ["ops-schedule-card", "top-plan-body", "top-plan-date", "top-plan-create", "top-plan-direct", "top-plan-hints-body"]) nodes[id] = node();
   nodes["ops-schedule-card"].querySelectorAll = () => buttons;
   const context = vm.createContext({
     console: { error() {}, warn() {} }, URLSearchParams, location: { search: "" },
@@ -40,11 +40,13 @@ test("top switches local today and tomorrow, keeps hints collapsed and passes da
   assert.equal(calls[0], "2026-12-31");
   assert.match(nodes["top-plan-body"].innerHTML, /担当A|草とり/);
   assert.equal(nodes["top-plan-create"].href, "/admin/message/index.html?date=2026-12-31");
+  assert.equal(nodes["top-plan-direct"].href, "/schedule/daily-plan/index.html?date=2026-12-31");
   assert.match(nodes["ops-schedule-card"].innerHTML, /<details class="ops-card__section" id="top-plan-hints">/);
   assert.doesNotMatch(nodes["ops-schedule-card"].innerHTML, /日誌|天候/);
   await buttons[1].click();
   assert.equal(calls[1], "2027-01-01");
   assert.equal(nodes["top-plan-create"].href, "/admin/message/index.html?date=2027-01-01");
+  assert.equal(nodes["top-plan-direct"].href, "/schedule/daily-plan/index.html?date=2027-01-01");
   assert.equal(buttons[1].attributes["aria-pressed"], "true");
   assert.equal(buttons[0].attributes["aria-pressed"], "false");
 });

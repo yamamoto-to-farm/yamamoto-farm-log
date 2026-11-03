@@ -1,4 +1,4 @@
-import { fetchPlannedWork } from "/diary/planned-work.js?v=20261103-2";
+import { fetchPlannedWork } from "/diary/planned-work.js?v=20261104-family-1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd } from "/common/date-utils.js?v=1";
 
@@ -7,11 +7,14 @@ const escape = value => String(value ?? "").replace(/[&<>"']/g,
 
 export function topPlansHtml(people) {
   if (!Object.keys(people).length) return "<p>この日の予定は保存されていません。</p>";
-  return Object.entries(people).map(([worker, plan]) =>
-    `<article class="top-plan-person"><h3>${escape(worker)}</h3>${
+  return Object.entries(people).map(([worker, saved]) =>
+    `<article class="top-plan-person"><h3>${escape(worker)}</h3>${(saved.entries || [saved]).map(plan =>
       plan.off ? `<p>中止の連絡${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>`
-        : plan.blocks.map(block => `<p>${escape(block.start)}〜${escape(block.end)}<br>${escape(block.task)}${block.field ? `｜${escape(block.field)}` : ""}</p>`).join("")
-    }</article>`).join("");
+        : plan.blocks.map(block => {
+          const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
+          return `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}<br>` : ""}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}</p>`;
+        }).join("")
+    ).join("")}</article>`).join("");
 }
 
 export function initTopWorkPlans(baseDate = new Date()) {
@@ -27,8 +30,9 @@ export function initTopWorkPlans(baseDate = new Date()) {
     </div>
     <p id="top-plan-date"></p>
     <div id="top-plan-body" aria-live="polite"></div>
-    <a id="top-plan-create" class="primary-btn" href="/admin/message/index.html">作業予定を作る・連絡する</a>
-    <p class="top-plan-note">業務連絡から保存された予定を表示しています。</p>
+    <a id="top-plan-direct" class="primary-btn" href="/schedule/daily-plan/index.html">予定を追加・編集</a>
+    <a id="top-plan-create" class="secondary-btn" href="/admin/message/index.html">作業予定を連絡する</a>
+    <p class="top-plan-note">業務連絡と直接入力から保存された予定を表示しています。</p>
   ` : ""}
     <details class="ops-card__section" id="top-plan-hints">
       <summary>予定を組むための確認事項</summary>
@@ -54,6 +58,7 @@ export function initTopWorkPlans(baseDate = new Date()) {
     const requestedDate = formatLocalYmd(date);
     document.getElementById("top-plan-date").textContent = `${date.getMonth() + 1}/${date.getDate()}（${"日月火水木金土"[date.getDay()]}）`;
     link.href = `/admin/message/index.html?date=${requestedDate}`;
+    document.getElementById("top-plan-direct").href = `/schedule/daily-plan/index.html?date=${requestedDate}`;
     buttons.forEach(button => button.setAttribute("aria-pressed", String(Number(button.dataset.planDay) === offset)));
     body.replaceChildren();
     if (!hasSession()) {

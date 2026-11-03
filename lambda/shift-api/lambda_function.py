@@ -11,7 +11,7 @@ HTTP API（payload 2.0）のルート:
   GET  /shift/edits      … 月の編集データ（個別編集・基本時間帯・チェック状態）を返す（?month= 必須）
   POST /shift/edits      … 月の編集データを保存（body: {"month", "data"}。端末間で共有される）
   GET  /shift/work-plans … 日別の連絡用予定と更新リビジョンを取得（?date=YYYY-MM-DD）
-  POST /shift/work-plans … コピーしたグループの予定を担当者単位で更新（競合時409）
+  POST /shift/work-plans … 連絡予定・直接入力の予定を保存／直接入力を削除（競合時409）
 
 時給を含むため、photos と同じ Cognito プールの検証済みクレームに加えて、
 cognito:groups に admin または family が必要（worker には返さない）。
@@ -22,10 +22,12 @@ cognito:groups に admin または family が必要（worker には返さない�
   PLAN_FUNCTION … 生成 Lambda の関数名（再計算に必要。例 yamamoto-farm-shift-plan）
 """
 import base64
+import hashlib
 import json
 import logging
 import os
 import re
+import uuid
 from datetime import datetime, timezone
 
 import boto3
@@ -234,20 +236,26 @@ def plan_text(value, label, maximum=200, allow_empty=True):
 def validate_work_plan(plan):
     if not isinstance(plan, dict):
         raise RequestError(400, "plan が不正です。")
+    source = plan.get("source", "message")
+    if source not in ("message", "direct"):
+        raise RequestError(400, "source が不正です。")
+    direct = source == "direct"
     names = plan.get("names")
     if not isinstance(names, list) or not 1 <= len(names) <= 20:
         raise RequestError(400, "担当者を1〜20人指定してください。")
     names = [plan_text(name, "担当者", 80, False) for name in names]
     if len(set(names)) != len(names):
         raise RequestError(400, "担当者が重複しています。")
-    off = plan.get("off")
-    manual = plan.get("manual_text")
+    off = plan.get("off", False if direct else None)
+    manual = plan.get("manual_text", False if direct else None)
     if not isinstance(off, bool) or not isinstance(manual, bool):
         raise RequestError(400, "予定の状態が不正です。")
-    kind = plan.get("kind")
+    kind = plan.get("kind", "1" if direct else None)
     if kind not in ("1", "2", "3"):
         raise RequestError(400, "作業形態が不正です。")
     reporter = plan_text(plan.get("reporter", ""), "連絡係", 80)
+    if direct and (off or manual or kind != "1" or reporter or plan.get("message", "") != ""):
+        raise RequestError(400, "直接入力の予定の状態が不正です。")
     if kind == "2" and not off and reporter not in names:
         raise RequestError(400, "連絡係は担当者から選択してください。")
     blocks = plan.get("blocks")
@@ -257,24 +265,45 @@ def validate_work_plan(plan):
     for block in blocks:
         if not isinstance(block, dict):
             raise RequestError(400, "作業時間帯が不正です。")
-        start, end = block.get("start"), block.get("end")
-        for value in (start, end):
-            if not isinstance(value, str) or not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", value):
-                raise RequestError(400, "時間は HH:MM 形式で指定してください。")
-        if start >= end:
-            raise RequestError(400, "終了時刻は開始時刻より後にしてください。")
-        if not isinstance(block.get("shed"), bool):
+        start, end = block.get("start", "" if direct else None), block.get("end", "" if direct else None)
+        if not (direct and start == end == ""):
+            for value in (start, end):
+                if not isinstance(value, str) or not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", value):
+                    raise RequestError(400, "時間は HH:MM 形式で指定してください。")
+            if start >= end:
+                raise RequestError(400, "終了時刻は開始時刻より後にしてください。")
+        shed = block.get("shed", False if direct else None)
+        if not isinstance(shed, bool):
             raise RequestError(400, "集合場所が不正です。")
-        validated.append({
+        fields = block.get("fields")
+        if "fields" in block:
+            if not isinstance(fields, list) or len(fields) > 30:
+                raise RequestError(400, "圃場が不正です。")
+            fields = [plan_text(field, "圃場", 200, False) for field in fields]
+        field = plan_text(block.get("field", "" if direct or fields is not None else None), "圃場")
+        companions = block.get("companions", [])
+        if "companions" in block and (direct or kind != "1"):
+            raise RequestError(400, "同伴者は連絡予定の作業形態1のみ指定できます。")
+        if not isinstance(companions, list) or len(companions) > 20:
+            raise RequestError(400, "同伴者が不正です。")
+        companions = [plan_text(name, "同伴者", 80, False) for name in companions]
+        if len(set(companions)) != len(companions) or set(companions) & set(names):
+            raise RequestError(400, "同伴者が重複しています。")
+        item = {
             "start": start, "end": end,
-            "field": plan_text(block.get("field"), "圃場"),
+            "field": field,
             "task": plan_text(block.get("task"), "作業内容", 200, False),
-            "shed": block["shed"],
-        })
-    message = plan.get("message")
-    plan_text(message, "コピー文面", 10000, False)
+            "shed": shed,
+        }
+        if fields is not None:
+            item["fields"] = fields
+        if "companions" in block:
+            item["companions"] = companions
+        validated.append(item)
+    message = plan.get("message", "" if direct else None)
+    plan_text(message, "コピー文面", 10000, direct)
     return {
-        "names": names, "off": off, "kind": kind, "reporter": reporter,
+        "source": source, "names": names, "off": off, "kind": kind, "reporter": reporter,
         "blocks": validated,
         "off_reason": plan_text(plan.get("off_reason", ""), "中止理由", 500),
         "memo": plan_text(plan.get("memo", ""), "メモ", 2000),
@@ -283,18 +312,109 @@ def validate_work_plan(plan):
     }
 
 
+def message_plan_id(names):
+    encoded = json.dumps(sorted(names), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return "message-" + hashlib.sha256(encoded).hexdigest()
+
+
+def work_plan_id(value):
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", value):
+        raise RequestError(400, "id が不正です。")
+    return value
+
+
+def project_work_plans(plans):
+    people = {}
+    for identifier, plan in plans.items():
+        workers = list(plan["names"])
+        for block in plan["blocks"]:
+            for name in block.get("companions", []):
+                if name not in workers:
+                    workers.append(name)
+        for name in workers:
+            blocks = plan["blocks"] if name in plan["names"] else [
+                block for block in plan["blocks"] if name in block.get("companions", [])
+            ]
+            entry = {
+                **plan, "id": identifier, "worker": name, "blocks": blocks,
+                "source_label": "連絡予定" if plan["source"] == "message" else "直接入力",
+            }
+            if name not in people:
+                people[name] = {**entry, "entries": []}
+            people[name]["entries"].append(entry)
+    for person in people.values():
+        person["off"] = all(entry["off"] for entry in person["entries"])
+        person["blocks"] = [block for entry in person["entries"] for block in entry["blocks"]]
+    return people
+
+
+def normalize_work_plans(record, date):
+    if (not isinstance(record, dict) or record.get("date") != date
+            or not isinstance(record.get("people"), dict)):
+        raise RuntimeError("Stored work plans are invalid")
+    plans = {}
+    try:
+        if "updated_at" in record:
+            plan_text(record["updated_at"], "updated_at", 80, False)
+        if "plans" in record:
+            if not isinstance(record["plans"], dict):
+                raise RequestError(400, "plans が不正です。")
+            for identifier, stored in record["plans"].items():
+                work_plan_id(identifier)
+                plan = validate_work_plan(stored)
+                if stored.get("id") != identifier:
+                    raise RequestError(400, "保存済みidが不正です。")
+                plans[identifier] = {**plan, "id": identifier}
+                for key in ("updated_at", "updated_by"):
+                    if key in stored:
+                        plans[identifier][key] = plan_text(stored[key], key, 200, False)
+            if record["people"] != project_work_plans(plans):
+                raise RequestError(400, "保存済み担当者データが不正です。")
+        else:
+            groups = {}
+            for name, stored in record["people"].items():
+                plan_text(name, "担当者", 80, False)
+                plan = validate_work_plan(stored)
+                if plan["source"] != "message" or name not in plan["names"] or stored.get("worker") != name:
+                    raise RequestError(400, "保存済み担当者が不正です。")
+                group = tuple(sorted(plan["names"]))
+                if group not in groups:
+                    groups[group] = {"plan": plan, "names": [], "metadata": {}}
+                if groups[group]["plan"] != plan:
+                    raise RequestError(400, "保存済みグループが不正です。")
+                groups[group]["names"].append(name)
+                for key in ("updated_at", "updated_by"):
+                    if key in stored:
+                        value = plan_text(stored[key], key, 200, False)
+                        groups[group]["metadata"][key] = max(value, groups[group]["metadata"].get(key, ""))
+            for group in groups.values():
+                plan = {**group["plan"], **group["metadata"]}
+                # Legacy per-person overwrites may leave only part of a recipient group.
+                plan["names"] = [name for name in plan["names"] if name in group["names"]]
+                if plan["kind"] == "2" and plan["reporter"] not in plan["names"]:
+                    plan["reporter"] = plan["names"][0]
+                identifier = message_plan_id(plan["names"])
+                if identifier in plans:
+                    raise RequestError(400, "保存済みグループが重複しています。")
+                plans[identifier] = {**plan, "id": identifier}
+    except RequestError as error:
+        raise RuntimeError("Stored work plans are invalid") from error
+    return {
+        "date": date, "plans": plans, "people": project_work_plans(plans),
+        "updated_at": record.get("updated_at"),
+    }
+
+
 def read_work_plans(bucket, key, date):
     try:
         result = S3.get_object(Bucket=bucket, Key=key)
     except ClientError as error:
         if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
-            return {"date": date, "people": {}}, None
+            return {"date": date, "plans": {}, "people": {}, "updated_at": None}, None
         raise
     with result["Body"] as stream:
         record = json.loads(stream.read().decode("utf-8"))
-    if not isinstance(record, dict) or record.get("date") != date or not isinstance(record.get("people"), dict):
-        raise RuntimeError("Stored work plans are invalid")
-    return record, result["ETag"]
+    return normalize_work_plans(record, date), result["ETag"]
 
 
 def work_plans_route(event, bucket, prefix, claims):
@@ -317,17 +437,52 @@ def work_plans_route(event, bucket, prefix, claims):
     if "revision" not in req or (req["revision"] is not None and
                                 (not isinstance(req["revision"], str) or not re.fullmatch(r'"[a-fA-F0-9]{32}"', req["revision"]))):
         raise RequestError(400, "revision が不正です。")
-    plan = validate_work_plan(req.get("plan"))
+    operation = req.get("operation", "upsert")
+    if operation not in ("upsert", "delete"):
+        raise RequestError(400, "operation が不正です。")
+    identifier = work_plan_id(req["id"]) if "id" in req else None
+    if operation == "delete" and identifier is None:
+        raise RequestError(400, "削除するidを指定してください。")
+    plan = validate_work_plan(req.get("plan")) if operation == "upsert" else None
     key = f"{prefix}work-plans/{date}.json"
     record, revision = read_work_plans(bucket, key, date)
     if req["revision"] != revision:
         raise RequestError(409, "別の端末で予定が更新されました。内容を確認して再度コピーしてください。")
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     author = claims.get("username") or claims["sub"]
-    for name in plan["names"]:
-        record["people"][name] = {
-            **plan, "worker": name, "updated_at": stamp, "updated_by": author,
+    plans = record["plans"]
+    if identifier is not None and identifier not in plans:
+        raise RequestError(404, "指定された予定がありません。")
+    if operation == "delete":
+        if plans[identifier]["source"] != "direct":
+            raise RequestError(400, "直接入力の予定のみ削除できます。")
+        names = plans.pop(identifier)["names"]
+    else:
+        if identifier is not None and plans[identifier]["source"] != plan["source"]:
+            raise RequestError(400, "予定のsourceは変更できません。")
+        if identifier is None:
+            if plan["source"] == "message":
+                identifier = message_plan_id(plan["names"])
+                for old_id, old in list(plans.items()):
+                    if old["source"] != "message" or old_id == identifier:
+                        continue
+                    remaining = [name for name in old["names"] if name not in plan["names"]]
+                    if not remaining:
+                        del plans[old_id]
+                    elif remaining != old["names"]:
+                        old["names"] = remaining
+                        if old["kind"] == "2" and old["reporter"] not in remaining:
+                            old["reporter"] = remaining[0]
+                        old.update(updated_at=stamp, updated_by=author)
+                if identifier in plans and plans[identifier]["source"] != "message":
+                    raise RequestError(400, "予定のsourceは変更できません。")
+            else:
+                identifier = "direct-" + uuid.uuid4().hex
+        names = plan["names"]
+        plans[identifier] = {
+            **plan, "id": identifier, "updated_at": stamp, "updated_by": author,
         }
+    record["people"] = project_work_plans(plans)
     record["updated_at"] = stamp
     condition = {"IfMatch": revision} if revision else {"IfNoneMatch": "*"}
     try:
@@ -340,7 +495,7 @@ def work_plans_route(event, bucket, prefix, claims):
         if error.response["Error"]["Code"] in ("PreconditionFailed", "ConditionalRequestConflict", "409", "412"):
             raise RequestError(409, "保存中に予定が更新されました。内容を確認して再度コピーしてください。") from error
         raise
-    return response(200, {"saved": True, "date": date, "names": plan["names"], "updated_at": stamp})
+    return response(200, {"saved": True, "date": date, "id": identifier, "names": names, "updated_at": stamp})
 
 
 def lambda_handler(event, context):

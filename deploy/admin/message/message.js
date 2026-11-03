@@ -11,7 +11,8 @@ import { getFilterData, setFilterData } from "/common/filter/filter-core.js?v=1"
 import {
   applyAdjustments, defaultScenarioIndex, fitRemaining, toInputTime,
 } from "/admin/shift/shift-logic.js?v=20261101-6";
-import { createMessagePlan, persistMessagePlan } from "./message-plan.js?v=20261103-1";
+import { createMessagePlan, persistMessagePlan } from "./message-plan.js?v=20261104-family-1";
+import { loadFamilyWorkers } from "/common/work-plan-form.js?v=20261104-1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
@@ -24,7 +25,7 @@ const WORK_LABELS = {
 };
 // 作業内容の候補（作業ログの種別。文面向けに言い回しをやわらかくしている。自由入力も可）
 const TASK_OPTIONS = ["収穫", "播種", "育苗", "定植", "耕起", "中耕", "畝立て", "除草・草刈り",
-  "草とり", "防除", "施肥", "潅水", "圃場整備", "出荷調整", "片付け"];
+  "草とり", "除草剤散布", "防除", "施肥", "潅水", "圃場整備", "出荷調整", "片付け"];
 // お休み連絡の理由の候補（自由入力も可）
 const OFF_REASONS = ["雨天予報のため", "台風接近のため", "圃場の状態が悪いため", "作業の都合により"];
 const DEFAULT_TEMPLATES = [
@@ -50,6 +51,7 @@ let workPlan = null;
 let canEdit = false;
 let lastGeneratedAt = "";    // 表示中シフトデータの生成時刻（TimeTree取得時点）
 let savingPlan = false;
+let familyWorkers = [];
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -243,6 +245,9 @@ function normalizeKind(card) {
   if (!card.names.some((n) => n.name === card.reporter)) {
     card.reporter = card.names[0]?.name || "";
   }
+  for (const block of card.blocks) {
+    block.companions = (block.companions || []).filter(name => !card.names.some(person => person.name === name));
+  }
 }
 
 function addCard(names, start, end) {
@@ -260,6 +265,8 @@ function syncWorkPlanLink() {
   const date = element("msg-date").value;
   const month = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.slice(0, 7) : "";
   element("work-plan-link").href = `/schedule/work-plan/index.html${month ? `?ym=${month}` : ""}`;
+  const directLink = element("direct-plan-link");
+  if (directLink) directLink.href = `/schedule/daily-plan/index.html${date ? `?date=${date}` : ""}`;
 }
 
 async function loadFromShift() {
@@ -430,6 +437,10 @@ function renderCards() {
             : ""}
         </div>
         ${block.customTask || (block.task && !TASK_OPTIONS.includes(block.task)) ? `<input class="task-custom" aria-label="作業内容（自由入力）" placeholder="作業内容を入力" data-c="${c}" data-b="${b}" data-k="task" value="${escapeHtml(block.task)}">` : ""}
+        ${card.kind === "1" ? `<fieldset class="companions"><legend>一緒に作業する人（この時間帯・文面には載せません）</legend>
+          ${familyWorkers.filter(name => !card.names.some(person => person.name === name)).map(name =>
+            `<label><input type="checkbox" data-c="${c}" data-b="${b}" data-k="companion" value="${escapeHtml(name)}"${(block.companions || []).includes(name) ? " checked" : ""}>${escapeHtml(name)}</label>`).join("")}
+        </fieldset>` : ""}
       </div>`).join("");
     const chips = card.names.map((n, i) =>
       `<span class="name-chip">${escapeHtml(n.name)}${n.wish ? " ⚠" : ""}` +
@@ -557,6 +568,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   syncWorkPlanLink();
 
   await Promise.all([loadMasters(), loadFields()]);
+  try {
+    familyWorkers = await loadFamilyWorkers();
+  } catch (error) {
+    console.error("[message] family workers load failed", error);
+    status(`${error.message} 共同作業者を選択するにはページを再読み込みしてください。`, true);
+  }
   tplDraft = structuredClone(masters.templates);
   renderTemplates();
   renderTemplateEditor();
@@ -624,6 +641,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (!Number.isFinite(c) || !cards[c]) return;
     const savedNotice = document.querySelector(`[data-plan-status="${c}"]`);
     if (savedNotice) savedNotice.textContent = "";
+    if (input.dataset.k === "companion") {
+      const block = cards[c].blocks[Number(input.dataset.b)];
+      block.companions = [...new Set(input.checked
+        ? [...(block.companions || []), input.value]
+        : (block.companions || []).filter(name => name !== input.value))];
+      return;
+    }
     if (input.dataset.k === "preview") {
       cards[c].manualText = input.value;
       const note = document.querySelector(`[data-note="${c}"]`);
@@ -733,6 +757,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const card = cards[c];
       const prev = card.blocks[card.blocks.length - 1];
       card.blocks.push(newBlock("13:00", prev.end));
+      card.blocks[card.blocks.length - 1].companions = [...(prev.companions || [])];
       renderCards();
       return;
     }

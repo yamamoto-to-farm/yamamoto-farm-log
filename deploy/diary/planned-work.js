@@ -4,7 +4,7 @@ import { ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 const TASK_FOLDERS = {
   播種: "seed", 育苗: "nursery", 定植: "planting", 収穫: "harvest",
   耕起: "tillage", "土づくり・耕起": "tillage", 中耕: "intertill", 畝立て: "bedmaking",
-  "除草・草刈り": "weeding", 除草: "weeding", 草刈り: "weeding",
+  "除草・草刈り": "weeding", 除草: "weeding", 草刈り: "weeding", 除草剤散布: "weeding",
   草とり: "hand-weeding", 手作業除草: "hand-weeding", 防除: "pesticide",
   施肥: "fertilizer", 潅水: "watering", 灌水: "watering", 圃場整備: "field-maintenance",
 };
@@ -37,7 +37,9 @@ export function relatedPlanLogs(worker, block, logs) {
     const workers = Object.entries(data).filter(([key]) => /^worker(?:s|\d+)?$/.test(key))
       .flatMap(([, value]) => split(value));
     if (!workers.includes(text(worker))) return false;
-    if (text(block.field) && !split(data.field).includes(text(block.field))) return false;
+    const fields = Array.isArray(block.fields) ? block.fields.map(text).filter(Boolean) : split(block.field);
+    if (fields.length && !split(data.field).some(field => fields.includes(field))) return false;
+    if (["草刈り", "除草剤散布"].includes(task) && text(data.workType) !== task) return false;
     return folder ? log.folder === folder
       : [log.displayName, data.workType].some(value => text(value) === task);
   });
@@ -46,7 +48,9 @@ export function relatedPlanLogs(worker, block, logs) {
 export function plannedWorkHtml(people, logs) {
   const entries = Object.entries(people);
   if (!entries.length) return "<p>この日の予定は保存されていません。</p>";
-  return entries.map(([worker, plan]) => {
+  return entries.map(([worker, saved]) => {
+    const plans = saved.entries || [saved];
+    return `<article class="planned-work-person"><h3>${escape(worker)}</h3>${plans.map(plan => {
     const source = plan.source_label || (plan.source && plan.source !== "message" ? plan.source : "業務連絡");
     const blocks = plan.off ? "<p>中止の連絡" + (plan.off_reason ? `：${escape(plan.off_reason)}` : "") + "</p>"
       : plan.blocks.map(block => {
@@ -57,13 +61,16 @@ export function plannedWorkHtml(people, logs) {
           : matches.length ? `関連する作業ログ：${matches.map(log => escape(log.displayName)).join("・")}（${matches.length}件）`
             : "該当する作業ログは見つかりません。"
               + (page ? ` <a href="${escape(page[0])}">${escape(page[1])}へ</a>` : "");
-        return `<div class="planned-work-block"><p>${escape(block.start)}〜${escape(block.end)}　${escape(block.task)}${block.field ? `｜${escape(block.field)}` : ""}${block.shed ? "（作業場集合）" : ""}</p><p class="planned-work-related">${result}</p></div>`;
+        const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
+        const time = block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : "";
+        return `<div class="planned-work-block"><p>${time}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}${block.shed ? "（作業場集合）" : ""}</p><p class="planned-work-related">${result}</p></div>`;
       }).join("");
-    return `<article class="planned-work-person"><h3>${escape(worker)} <small>登録元：${escape(source)}</small></h3>${blocks}${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}${plan.manual_text ? "<p class=\"planned-work-related\">連絡文面に手修正あり。予定は入力欄の内容です。</p>" : ""}</article>`;
+    return `<div><small>登録元：${escape(source)}</small>${blocks}${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}${plan.manual_text ? "<p class=\"planned-work-related\">連絡文面に手修正あり。予定は入力欄の内容です。</p>" : ""}</div>`;
+    }).join("")}</article>`;
   }).join("");
 }
 
-export async function fetchPlannedWork(date) {
+export async function fetchWorkPlanRecord(date) {
   const token = await ensureToken();
   if (!token) throw new Error("予定を見るにはログインが必要です。");
   const response = await fetch(`${config.api}/shift/work-plans?${new URLSearchParams({ date })}`, {
@@ -71,13 +78,40 @@ export async function fetchPlannedWork(date) {
   });
   if (!response.ok) throw new Error(`予定を取得できません（${response.status}）。`);
   const result = await response.json();
+  const validPlan = plan => plan && typeof plan.off === "boolean" && Array.isArray(plan.blocks)
+    && plan.blocks.every(block => block && typeof block.task === "string"
+      && (block.fields === undefined || (Array.isArray(block.fields) && block.fields.every(field => typeof field === "string"))));
   if (result?.date !== date || result.data?.date !== date || !result.data.people
       || typeof result.data.people !== "object" || Array.isArray(result.data.people)
-      || Object.values(result.data.people).some(plan => !plan || typeof plan.off !== "boolean"
-        || !Array.isArray(plan.blocks) || plan.blocks.some(block => !block || typeof block.task !== "string"))) {
+      || Object.values(result.data.people).some(plan => !validPlan(plan)
+        || (plan.entries !== undefined && (!Array.isArray(plan.entries) || !plan.entries.every(validPlan))))
+      || (result.data.plans !== undefined && (!result.data.plans || Array.isArray(result.data.plans)
+        || typeof result.data.plans !== "object" || Object.values(result.data.plans).some(plan =>
+          !validPlan(plan) || !Array.isArray(plan.names) || !plan.names.every(name => typeof name === "string"))))) {
     throw new Error("予定データの形式が不正です。");
   }
-  return result.data.people;
+  return result;
+}
+
+export async function fetchPlannedWork(date) {
+  return (await fetchWorkPlanRecord(date)).data.people;
+}
+
+export async function writeWorkPlan(request) {
+  const token = await ensureToken();
+  if (!token) throw new Error("予定の保存にはログインが必要です。");
+  const response = await fetch(`${config.api}/shift/work-plans`, {
+    method: "POST", cache: "no-store",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    if (response.status === 409) throw new Error("別の端末で予定が更新されました。再読み込みして内容を確認してください。");
+    throw new Error(`予定を保存できません（${response.status}）。`);
+  }
+  const result = await response.json();
+  if (result.saved !== true || result.date !== request.date) throw new Error("予定の保存完了を確認できませんでした。");
+  return result;
 }
 
 export async function renderPlannedWork(date, logsPromise) {

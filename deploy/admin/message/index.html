@@ -7,7 +7,7 @@
   <title>業務連絡（LINE下書き） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261103-task-1">
+  <link rel="stylesheet" href="./message.css?v=20261104-family-1">
 </head>
 <body>
   <div id="header"></div>
@@ -15,6 +15,7 @@
   <div id="page-area" class="page-container" hidden>
     <h1 class="page-title">業務連絡（LINE下書き）</h1>
     <p class="msg-note">文面を作ってコピーし、LINEに貼り付けて送る運用です（このページから自動送信はしません）。</p>
+    <p><a id="direct-plan-link" href="/schedule/daily-plan/index.html">家族・自分だけの予定を追加・編集</a></p>
     <p id="status" role="status" aria-live="polite"></p>
 
     <div class="msg-tabs">
@@ -41,7 +42,7 @@
         </label>
         <button id="apply-memo" class="secondary-btn" type="button">全員へ反映</button>
       </div>
-      <p class="msg-muted">コピー時に予定を保存します。同じ日・同じ担当者の予定は置き換わります（文面を手修正しても、予定は入力欄が基準です）。</p>
+      <p class="msg-muted">コピー時にこの連絡の予定を保存します。宛先の連絡予定は更新し、家族・自分の別の予定は保持します（文面を手修正しても、予定は入力欄が基準です）。</p>
       <div id="cards" class="msg-cards"></div>
     </section>
 
@@ -71,6 +72,6 @@
     <option value="作業の都合により"></option>
   </datalist>
 
-  <script type="module" src="./message.js?v=20261104-plan-1"></script>
+  <script type="module" src="./message.js?v=20261104-family-1"></script>
 </body>
 </html>

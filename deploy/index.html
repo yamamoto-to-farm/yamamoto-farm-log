@@ -317,7 +317,7 @@
     .top-plan-person:first-child { padding-top: 0; }
     .top-plan-person h3 { margin: 0 0 4px; font-size: 14px; }
     .top-plan-person p { margin: 4px 0; line-height: 1.6; }
-    #top-plan-create { display: block; text-align: center; }
+    #top-plan-create, #top-plan-direct { display: block; text-align: center; margin-top: 8px; }
     .top-plan-note { font-size: 12px; color: #687b92; margin: 8px 0; }
     #top-plan-hints > summary { font-size: 13px; font-weight: 700; cursor: pointer; color: #41576d; }
     #top-plan-hints-body { margin-top: 8px; }
@@ -614,7 +614,7 @@
     import { renderHeader } from "./common/header.js?v=1";
     import { loadJSON } from "./common/json.js?v=1";
     import { loadCSV } from "./common/csv.js?v=20261104-1";
-    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-1";
+    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-family-1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
     import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-status-2";
 

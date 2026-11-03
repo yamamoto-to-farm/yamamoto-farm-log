@@ -51,6 +51,28 @@ test("cancellation has no active work blocks and invalid work cannot be copied a
   assert.throws(() => context.createMessagePlan(duplicate, "文面"), /重複なく/);
 });
 
+test("companions are saved per block without appearing in the message or its recipients", () => {
+  const helper = load("message-plan.js");
+  const original = card();
+  original.kind = "1";
+  original.blocks[0].companions = ["家族A"];
+  original.blocks.push({ ...original.blocks[0], start: "13:00", end: "15:00", companions: ["家族B"] });
+  const context = load("message.js", {
+    window: { addEventListener() {} },
+    document: { getElementById: () => ({ value: "2026-11-04" }) },
+  });
+  const message = context.buildText(original);
+  assert.doesNotMatch(message, /家族A|家族B/);
+  const result = helper.createMessagePlan(original, message);
+  assert.deepEqual(Array.from(result.names), ["担当A", "担当B"]);
+  assert.deepEqual(Array.from(result.blocks[0].companions), ["家族A"]);
+  assert.deepEqual(Array.from(result.blocks[1].companions), ["家族B"]);
+  original.blocks[0].companions.push("追加");
+  assert.equal(result.blocks[0].companions.length, 1);
+  original.kind = "2";
+  assert.equal(helper.createMessagePlan(original, message).blocks[0].companions.length, 0);
+});
+
 test("persistence reads current revision and only updates the copied group", async () => {
   const context = load("message-plan.js");
   const plan = context.createMessagePlan(card(), "文面");
@@ -59,12 +81,12 @@ test("persistence reads current revision and only updates the copied group", asy
     async (path, query) => {
       assert.equal(path, "/shift/work-plans");
       assert.equal(query.date, "2026-11-02");
-      return { date: query.date, revision: '"revision"' };
+      return { date: query.date, revision: '"revision"', data: { plans: {} } };
     },
     async (path, body) => {
       received = body;
       assert.equal(path, "/shift/work-plans");
-      return { saved: true, date: body.date };
+      return { saved: true, date: body.date, id: "message-test" };
     });
   assert.equal(received.revision, '"revision"');
   assert.equal(received.plan, plan);
@@ -76,12 +98,13 @@ test("persistence does not overwrite on failed reads and rejects uncertain write
   for (const get of [
     async () => { throw new Error("offline"); },
     async () => ({ date: "2026-11-02" }),
+    async () => ({ date: "2026-11-02", revision: null, data: { people: {} } }),
   ]) {
     await assert.rejects(context.persistMessagePlan("2026-11-02", {}, get, async () => { posts++; }));
   }
   assert.equal(posts, 0);
   await assert.rejects(context.persistMessagePlan("2026-11-02", {},
-    async () => ({ date: "2026-11-02", revision: null }),
+    async () => ({ date: "2026-11-02", revision: null, data: { plans: {} } }),
     async () => ({ saved: false })), /保存完了/);
 });
 
@@ -194,12 +217,14 @@ test("task selector retains all choices for a populated task and preserves custo
 test("work plan link follows the selected month and opens without losing the message draft", () => {
   const date = { value: "2026-11-02" };
   const link = {};
+  const directLink = {};
   const context = load("message.js", {
     window: { addEventListener() {} },
-    document: { getElementById: id => id === "msg-date" ? date : link },
+    document: { getElementById: id => id === "msg-date" ? date : id === "work-plan-link" ? link : directLink },
   });
   context.syncWorkPlanLink();
   assert.equal(link.href, "/schedule/work-plan/index.html?ym=2026-11");
+  assert.equal(directLink.href, "/schedule/daily-plan/index.html?date=2026-11-02");
   date.value = "2027-01-03";
   context.syncWorkPlanLink();
   assert.equal(link.href, "/schedule/work-plan/index.html?ym=2027-01");
