@@ -140,7 +140,7 @@ test("top treats auto-displayed records as complete enough and collapses the dat
   context.status.statuses.push({ ymd: "2026-11-01", state: "empty" }, { ymd: "2026-10-31", state: "error" });
   vm.runInContext("renderDiaryCard(status)", context);
   assert.equal(card.className, "ops-card ops-card--alert");
-  assert.match(card.innerHTML, /意味しません/);
+  assert.doesNotMatch(card.innerHTML, /意味しません/);
   assert.match(card.innerHTML, /data-diary-retry/);
   assert.doesNotMatch(card.innerHTML, /取得できなかった日は状態を判定していません/);
 });

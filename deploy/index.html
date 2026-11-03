@@ -1050,7 +1050,6 @@
         <div class="ops-card__value">今日：${diaryStateLabels[todayStatus.state]}</div>
         <p>過去7日：${counts.join(" ／ ")}</p>
         <details class="diary-card__preview"><summary>対象日を表示</summary>${groups}</details>
-        ${status.statuses.some(item => item.state === "empty") ? '<p>「記録なし」は作業なしを意味しません。</p>' : ""}
         ${status.latestEntry ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の保存済み日誌</span>${latestDateLink}${workDetails}${diaryMemo}</div>` : ""}
         ${hasErrors ? '<button type="button" class="secondary-btn" data-diary-retry>再試行</button>' : ""}
         <div class="diary-card__actions">

@@ -490,8 +490,7 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
     return;
   }
   if (renderSeq !== diaryRenderSeq) return;
-  notice.textContent = diaryStateLabels[data.state]
-    + (data.state === "empty" ? "。「作業なし」を意味するものではありません。" : "");
+  notice.textContent = diaryStateLabels[data.state];
 
   if (mode === "edit") {
     await initEditPage({ date, ...data });
