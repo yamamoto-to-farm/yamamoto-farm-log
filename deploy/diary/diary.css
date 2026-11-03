@@ -781,7 +781,7 @@
   user-select: none;
 }
 
-#workListTitle {
+.diary-log-title {
   margin-top: 14px;
   margin-bottom: 8px;
   color: #0f172a;
@@ -1406,7 +1406,15 @@
     background: transparent;
   }
 }
-#plannedWorkPanel > summary { font-size: 1rem; margin: 0; }
+#plannedWorkPanel { margin: 0; box-shadow: none; }
+.diary-log-card {
+  border: 1px solid #d8dee7;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  padding: 14px 16px;
+}
+.planned-work-person:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
 .planned-work-person { border-top: 1px solid #e2e8f0; margin-top: 12px; padding-top: 10px; overflow-wrap: anywhere; }
 .planned-work-person h3 { font-size: 1rem; margin: 0 0 8px; }
 .planned-work-person small { font-size: 0.8rem; font-weight: normal; color: #64748b; }

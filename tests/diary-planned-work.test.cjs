@@ -16,6 +16,13 @@ const log = (data = {}, folder = "hand-weeding") => ({
 });
 const plan = { off: false, blocks: [block], manual_text: false };
 
+test("planned work uses the same external heading and card styles as work logs", () => {
+  const html = readFileSync(join(__dirname, "..", "deploy", "diary", "index.html"), "utf8");
+  assert.match(html, /<details id="plannedWorkPanel" class="print-hide" hidden>\s*<summary class="section-title collapse-title diary-log-title">作業予定<\/summary>\s*<div id="plannedWorkBody" class="card diary-log-card"/);
+  assert.match(html, /id="workListTitle" class="[^"]*diary-log-title/);
+  assert.match(html, /id="workList" class="[^"]*diary-log-card/);
+});
+
 test("related logs require exact worker tokens, mapped task and specified field, not time", () => {
   const { relatedPlanLogs: match } = load();
   assert.equal(match("担当A", block, [log({ start: "09:00" })]).length, 1);

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/common/css/main.css">
 
   <!-- diaryページ専用CSS -->
-  <link rel="stylesheet" href="/diary/diary.css?v=20261103-plan-1">
+  <link rel="stylesheet" href="/diary/diary.css?v=20261103-plan-2">
   <link rel="stylesheet" href="/photos/panel.css?v=20261029-2">
 </head>
 
@@ -40,14 +40,14 @@
       <div id="diarySearchMoreArea" class="diary-search-more-area" style="display:none;"></div>
     </div>
 
-    <details id="plannedWorkPanel" class="card print-hide" hidden>
-      <summary>この日の予定作業</summary>
-      <div id="plannedWorkBody" aria-live="polite"></div>
+    <details id="plannedWorkPanel" class="print-hide" hidden>
+      <summary class="section-title collapse-title diary-log-title">作業予定</summary>
+      <div id="plannedWorkBody" class="card diary-log-card" aria-live="polite"></div>
     </details>
 
     <!-- 作業ログ一覧（折りたたみ対応） -->
-    <h2 id="workListTitle" class="section-title collapse-title print-hide">作業ログ一覧</h2>
-    <div id="workList" class="collapse-content card print-keep-collapsed print-hide">
+    <h2 id="workListTitle" class="section-title collapse-title diary-log-title print-hide">作業ログ一覧</h2>
+    <div id="workList" class="collapse-content card diary-log-card print-keep-collapsed print-hide">
       <p>日付を選択すると作業一覧が表示されます。</p>
     </div>
 
