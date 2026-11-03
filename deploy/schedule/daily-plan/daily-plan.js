@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js?v=1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261104-modal-1";
-import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-kind-1";
+import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-work-1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-unified-1";
 import { hasSession, login, ensureToken } from "/photos/auth.js?v=20261029-2";
 import { config } from "/photos/config.js";
@@ -51,11 +51,13 @@ let workerMaster = [];
 let selectedFamily = [];
 let selectedParts = [];
 let shiftEligible = null;
+let shiftReady = false;
 let cleanSnapshot = "";
 let sequence = 0;
 let shiftSequence = 0;
 let busy = false;
 let shiftGroups = [];
+let inputScope = "family";
 const snapshot = () => JSON.stringify([selectedFamily, selectedParts, blocks, editingId,
   el("plan-memo").value, el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, el("plan-kind").value]);
 const canDiscard = () => snapshot() === cleanSnapshot || confirm("入力中の予定を破棄しますか？");
@@ -68,27 +70,22 @@ export function workerAssignments(name, plans) {
     .filter(block => plan.names.includes(name) || (block.companions || []).includes(name))
     .map(block => ({ id, task: block.task, start: block.start, end: block.end })));
 }
-function renderTeamRoster() {
+function renderUnplannedParts() {
+  const missing = record && shiftEligible !== null ? selectableParts()
+    .filter(worker => !workerAssignments(worker.display, record.data.plans).length).map(worker => worker.display) : [];
+  el("unplanned-parts").textContent = !shiftReady ? "シフト読込後、出勤パートの作業予定の登録有無を確認します。"
+    : !shiftEligible.size ? "この日の出勤パートはありません。"
+    : missing.length ? `${missing.join("・")}は作業予定がありません（中止を除く）。`
+      : "出勤パートの作業予定は登録済みです（時間の充足は判定しません）。";
+}
+function renderScope() {
+  el("plan-scope").value = inputScope;
   const mode = el("plan-kind").value;
-  const families = workerMaster.filter(worker => ["admin", "family"].includes(worker.role));
-  const parts = shiftEligible === null ? [] : selectableParts();
-  const groupHtml = (title, workers, family) => `<h4>${title}</h4>${workers.length ? workers.map(worker => {
-    const name = worker.display;
-    const selected = (family ? selectedFamily : selectedParts).includes(name);
-    const allowed = family ? ["family", "mixed"].includes(mode) : ["mixed", "parts", "single"].includes(mode);
-    const assignments = record ? workerAssignments(name, record.data.plans) : [];
-    const shifts = family ? "" : shiftGroups.filter(group => group.names.includes(name))
-      .map(group => group.start && group.end ? `${group.start}〜${group.end}` : "時間未指定").join("・");
-    return `<article class="team-worker"><button type="button" class="secondary-btn" data-team-worker="${escape(name)}"
-      data-team-family="${family}" aria-pressed="${selected}"${allowed && record ? "" : " disabled"}>${escape(name)}${selected ? " ✓" : ""}</button>
-      ${shifts ? `<small>出勤：${escape(shifts)}</small>` : ""}
-      ${assignments.length ? assignments.map(item => `<p><a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(item.id)}" data-team-edit="${escape(item.id)}">${item.start && item.end
-        ? `${escape(item.start)}〜${escape(item.end)}` : "時間未指定の予定あり"}　${escape(item.task)}</a></p>`).join("")
-        : "<p class=\"plan-note\">予定未登録（中止を除く）</p>"}</article>`;
-  }).join("") : '<p class="plan-note">該当者はいません。</p>'}`;
-  el("team-roster").innerHTML = groupHtml("家族従業員", families, true)
-    + (shiftEligible === null ? '<p class="plan-note">シフトを読み込むと、その日のパート従業員と登録済み予定を表示します。</p>'
-      : groupHtml("この日の出勤者（パート従業員）", parts, false));
+  const options = inputScope === "family" ? [["family", "①家族のみ"], ["mixed", "②家族＋パート"]]
+    : [["mixed", "②家族＋パート"], ["parts", "③パート複数"], ["single", "④パート１人"]];
+  el("plan-kind").innerHTML = '<option value="">作業形態を選択</option>' + options.map(([value, label]) =>
+    `<option value="${value}">${label}</option>`).join("");
+  el("plan-kind").value = options.some(([value]) => value === mode) ? mode : inputScope === "family" ? "family" : "";
 }
 export function resolveShiftWorker(person, staff, workers) {
   const normalize = value => String(value || "").normalize("NFKC").replace(/\s/g, "");
@@ -122,25 +119,22 @@ function notice(message, error = false) {
 }
 function renderWorkers() {
   const mode = el("plan-kind").value;
-  el("family-group").hidden = !["family", "mixed"].includes(mode);
-  el("parts-group").hidden = !["mixed", "parts", "single"].includes(mode);
-  el("parts-shift-note").textContent = shiftEligible === null ? "シフト未読込：在籍中のパート従業員から選択できます。"
-    : "シフト読込済み：この日のシフトにいるパート従業員だけ選択できます。";
-  el("plan-workers").textContent = selectedFamily.join(" / ") || "未選択";
-  el("plan-parts").textContent = selectedParts.join(" / ") || "未選択";
+  el("plan-workers").textContent = [...selectedFamily, ...selectedParts].join(" / ") || "未選択";
   el("participant-kind").textContent = {
     family: "家族従業員を選択してください。",
     mixed: "家族従業員とパート従業員を選択してください（LINE報告なし）。",
     parts: "パート従業員を2人以上選択し、連絡係を指定してください。",
     single: "パート従業員を1人選択してください（本人が報告）。",
   }[mode] || "作業形態を選択してください。";
+  if (mode === "parts" && selectedParts.length === 1) el("participant-kind").textContent = "③パート複数ですが、1人しか選択されていません。2人以上選択してください。";
+  el("participant-kind").classList.toggle("warning", mode === "parts" && selectedParts.length === 1);
   el("reporter-group").hidden = mode !== "parts";
   const reporter = el("plan-reporter").value;
   el("plan-reporter").innerHTML = '<option value="">連絡係を選択</option>' + selectedParts.map(name =>
     `<option value="${escape(name)}">${escape(name)}</option>`).join("");
   el("plan-reporter").value = selectedParts.includes(reporter) ? reporter : selectedParts[0] || "";
   el("plan-reporter").disabled = mode !== "parts" || selectedParts.length < 2;
-  renderTeamRoster();
+  renderUnplannedParts();
 }
 function renderBlocks() {
   el("plan-blocks").innerHTML = blocks.map((block, index) => `<fieldset class="plan-block">
@@ -155,7 +149,9 @@ function renderBlocks() {
       <button type="button" class="secondary-btn" data-field="${index}">圃場を追加（複数可）</button>
       <div>${block.fields.map((field, target) => `<button type="button" class="secondary-btn" data-remove-field="${index}" data-field-index="${target}">${escape(field)} ×</button>`).join("")}</div>
     </details>
-    ${selectedFamily.length && selectedParts.length ? `<p>この作業に参加する家族：${escape((block.companions || selectedFamily).join("・") || "なし")}</p><button type="button" class="secondary-btn" data-companions="${index}">この作業の家族を選択</button>` : ""}
+    ${selectedFamily.length && selectedParts.length && block.companions
+      && (block.companions.length !== selectedFamily.length || selectedFamily.some(name => !block.companions.includes(name)))
+      ? `<details><summary>既存の作業別参加者設定</summary><p>${escape(block.companions.join("・") || "なし")}</p><button type="button" class="secondary-btn" data-companions="${index}">この作業の家族を選択</button></details>` : ""}
     ${blocks.length > 1 ? `<button type="button" class="secondary-btn" data-remove-block="${index}">この作業を削除</button>` : ""}
   </fieldset>`).join("");
 }
@@ -167,6 +163,7 @@ function clearForm() {
   editingId = null;
   source = "direct";
   el("plan-kind").value = "";
+  renderScope();
   renderWorkers();
   renderBlocks();
   el("editing-label").textContent = "新しい予定";
@@ -177,7 +174,7 @@ function hasSentCommunication(id, plan) {
     || record.data.communications.some(item => item.plan_id === id && item.status === "sent");
 }
 function renderSaved() {
-  renderTeamRoster();
+  renderUnplannedParts();
   const plans = Object.entries(record.data.plans);
   el("saved-plans").innerHTML = plans.length ? plans.map(([id, plan]) => {
     const participants = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
@@ -203,7 +200,7 @@ async function loadDay(preferredId = null) {
   const current = ++sequence;
   ++shiftSequence;
   const date = el("plan-date").value;
-  if (date !== loadedDate) { shiftEligible = null; shiftGroups = []; }
+  if (date !== loadedDate) { shiftEligible = null; shiftGroups = []; shiftReady = false; }
   record = null;
   loadedDate = date;
   clearForm();
@@ -212,7 +209,6 @@ async function loadDay(preferredId = null) {
   el("saved-plans").inert = true;
   el("continue-team").disabled = true;
   el("communication-history").replaceChildren();
-  el("shift-candidates").replaceChildren();
   el("shift-state").textContent = "";
   el("message-link").href = `/admin/message/index.html?date=${date}`;
   el("work-plan-link").href = `/schedule/work-plan/index.html?ym=${date.slice(0, 7)}`;
@@ -258,7 +254,7 @@ async function saveRequest(request) {
     console.error("[daily-plan] save failed", error);
     record = null;
     el("continue-team").disabled = true;
-    renderTeamRoster();
+    renderUnplannedParts();
     el("plan-inputs").disabled = true;
     el("saved-plans").inert = true;
     notice(`${error.message} 保存状態を確認するため「再読み込み」を押してください。`, true);
@@ -274,6 +270,8 @@ function editPlan(id) {
   const all = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
   selectedFamily = all.filter(name => !partNames.has(name));
   selectedParts = all.filter(name => partNames.has(name));
+  inputScope = selectedParts.length ? "parts" : "family";
+  renderScope();
   el("plan-kind").value = inferKind();
   blocks = plan.blocks.map(block => ({ ...structuredClone(block), fields: block.fields ? [...block.fields] : block.field ? [block.field] : [] }));
   renderWorkers();
@@ -302,8 +300,8 @@ async function loadShift() {
   if (!record) { notice("先にこの日の予定を再読み込みしてください。", true); return; }
   const current = ++shiftSequence;
   const date = el("plan-date").value;
-  el("shift-candidates").replaceChildren();
   shiftEligible = new Set();
+  shiftReady = false;
   shiftGroups = [];
   renderWorkers();
   el("shift-state").textContent = "シフトを読み込み中…";
@@ -324,13 +322,12 @@ async function loadShift() {
     }
     shiftGroups = [...groups.values()];
     shiftEligible = new Set(shiftGroups.flatMap(group => group.names));
+    shiftReady = true;
     renderWorkers();
     if (selectedParts.some(name => !shiftEligible.has(name))) {
       notice("選択中にこの日のシフトにいないパート従業員がいます。作業者を選び直してください。", true);
     } else notice("");
-    el("shift-candidates").innerHTML = shiftGroups.map((group, index) =>
-      `<button type="button" class="secondary-btn" data-shift-group="${index}">${escape(group.names.join("・"))} ${escape(group.start)}〜${escape(group.end)} を予定入力へ</button>`).join("");
-    el("shift-state").textContent = `${shiftGroups.length}グループ。パート従業員はこの日のシフトにいる人だけ選択できます。選択後に作業を指定して保存してください（保存済み予定は自動変更しません）。${plan.generated_at ? ` データ：${plan.generated_at}` : ""}`;
+    el("shift-state").textContent = `${shiftEligible.size}人の出勤予定を読み込みました。作業形態を選び、作業者を選択してください。${plan.generated_at ? ` データ：${plan.generated_at}` : ""}`;
   } catch (error) {
     if (current !== shiftSequence) return;
     console.error("[daily-plan] shift load failed", error);
@@ -368,24 +365,45 @@ window.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(location.search);
   const requested = params.get("date"), parsed = parseDateInputLocal(requested);
   el("plan-date").value = requested && parsed && formatLocalYmd(parsed) === requested ? requested : formatLocalYmd(new Date());
-  el("select-family").onclick = () => openWorkerSelectModal({
-    workers: workerMaster.filter(worker => ["admin", "family"].includes(worker.role)), selected: selectedFamily,
-    title: "作業者の選択（家族従業員）", onApply: names => {
-      selectedFamily = names;
-      blocks.forEach(block => { if (block.companions) block.companions = block.companions.filter(name => names.includes(name)); });
-      renderWorkers(); renderBlocks();
-    },
-  });
-  el("select-parts").onclick = () => openWorkerSelectModal({
-    workers: selectableParts(),
-    selected: selectedParts.filter(name => selectableParts().some(worker => worker.display === name)),
-    title: "作業者の選択（パート従業員）",
-    single: el("plan-kind").value === "single",
-    onApply: names => {
-      if (el("plan-kind").value === "single" && names.length > 1) { notice("④パート１人は1人だけ選択してください。", true); return; }
-      selectedParts = names; renderWorkers(); renderBlocks();
-    },
-  });
+  el("select-workers").onclick = async () => {
+    const mode = el("plan-kind").value;
+    const selectedDate = loadedDate, current = sequence;
+    if (!mode) { notice("作業形態を選択してください。", true); return; }
+    if (mode !== "family" && shiftEligible === null) await loadShift();
+    if (current !== sequence || selectedDate !== loadedDate || mode !== el("plan-kind").value) return;
+    if (!record || (mode !== "family" && (!shiftEligible || !shiftEligible.size))) {
+      notice("この日のシフトにいるパート従業員を確認できません。シフトを読み込み直してください。", true); return;
+    }
+    const family = ["family", "mixed"].includes(mode)
+      ? workerMaster.filter(worker => ["admin", "family"].includes(worker.role)) : [];
+    const parts = mode === "family" ? [] : selectableParts();
+    const workers = [...family, ...parts];
+    const descriptions = Object.fromEntries(workers.map(worker => {
+      const isPart = worker.role === "worker";
+      const assignments = workerAssignments(worker.display, record.data.plans);
+      const detail = assignments.map(item => `${item.start && item.end ? `${item.start}〜${item.end}` : "時間未指定"} ${item.task}`).join("／");
+      const hours = shiftGroups.filter(group => group.names.includes(worker.display))
+        .map(group => group.start && group.end ? `${group.start}〜${group.end}` : "時間未指定").join("・");
+      return [worker.display, (mode === "mixed" ? isPart ? "パート従業員　" : "家族従業員　" : "")
+        + (isPart ? `出勤：${hours}\n${detail || "作業予定未登録"}` : "")];
+    }));
+    openWorkerSelectModal({ workers, descriptions, title: "作業者の選択", single: mode === "single",
+      selected: [...selectedFamily, ...selectedParts].filter(name => workers.some(worker => worker.display === name)),
+      onApply: names => {
+        selectedFamily = names.filter(name => family.some(worker => worker.display === name));
+        selectedParts = names.filter(name => parts.some(worker => worker.display === name));
+        blocks.forEach(block => { if (block.companions) block.companions = block.companions.filter(name => selectedFamily.includes(name)); });
+        renderWorkers(); renderBlocks();
+      },
+    });
+  };
+  el("plan-scope").onchange = () => {
+    inputScope = el("plan-scope").value;
+    selectedFamily = []; selectedParts = [];
+    blocks.forEach(block => { delete block.companions; });
+    el("plan-kind").value = "";
+    renderScope(); renderWorkers(); renderBlocks();
+  };
   el("plan-kind").onchange = () => {
     const mode = el("plan-kind").value;
     if (!["family", "mixed"].includes(mode)) {
@@ -431,22 +449,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     clearForm();
     el("plan-form").scrollIntoView({ block: "start" });
     el("plan-kind").focus();
-    notice("作業形態と次のチームを選択してください。予定がある人も別の時間・作業に選択できます。");
-  };
-  el("team-roster").onclick = event => {
-    const edit = event.target.closest("[data-team-edit]");
-    if (edit) { event.preventDefault(); if (record) editPlan(edit.dataset.teamEdit); return; }
-    const button = event.target.closest("[data-team-worker]");
-    if (!button || button.disabled || !record) return;
-    const name = button.dataset.teamWorker;
-    if (button.dataset.teamFamily === "true") {
-      selectedFamily = selectedFamily.includes(name) ? selectedFamily.filter(item => item !== name) : [...selectedFamily, name];
-      blocks.forEach(block => { if (block.companions) block.companions = block.companions.filter(item => selectedFamily.includes(item)); });
-    } else {
-      selectedParts = selectedParts.includes(name) ? selectedParts.filter(item => item !== name)
-        : el("plan-kind").value === "single" ? [name] : [...selectedParts, name];
-    }
-    renderWorkers(); renderBlocks();
+    notice("次の作業予定を入力してください。同じ人を別の作業にも選択できます。");
   };
   el("reload").onclick = () => { if (canDiscard()) return loadDay(); };
   el("plan-login").onclick = () => login(`/schedule/daily-plan/index.html?date=${el("plan-date").value}`);
@@ -456,16 +459,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   };
   el("load-shift").onclick = loadShift;
   el("refresh-shift").onclick = refreshShift;
-  el("shift-candidates").onclick = event => {
-    const button = event.target.closest("[data-shift-group]");
-    if (!button || !canDiscard() || !record) return;
-    const group = shiftGroups[Number(button.dataset.shiftGroup)];
-    clearForm();
-    selectedParts = [...group.names];
-    el("plan-kind").value = inferKind();
-    blocks[0].start = group.start; blocks[0].end = group.end;
-    renderWorkers(); renderBlocks();
-  };
   el("plan-form").onsubmit = async event => {
     event.preventDefault();
     try {

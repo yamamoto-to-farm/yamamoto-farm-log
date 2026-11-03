@@ -46,7 +46,7 @@ function screen(deps = {}) {
   const ids = ["plan-date", "plan-inputs", "saved-plans", "message-link", "status", "plan-login", "plan-workers",
     "plan-parts", "participant-kind", "plan-form", "plan-blocks", "editing-label", "plan-memo", "page-area",
     "plan-reporter", "plan-off", "plan-off-reason", "communication-history", "shift-candidates", "shift-state", "work-plan-link",
-    "plan-kind", "family-group", "parts-group", "parts-shift-note", "reporter-group", "team-roster", "continue-team"];
+    "plan-kind", "plan-scope", "reporter-group", "unplanned-parts", "continue-team"];
   for (const id of ids) nodes[id] = { value: "", checked: false, children: [], innerHTML: "",
     classList: { toggle() {} }, replaceChildren() { this.children = []; }, reset() {}, scrollIntoView() {} };
   nodes["plan-date"].value = "2026-11-04";
@@ -64,8 +64,7 @@ test("legacy multi-block plans are editable without losing scoped participants",
     blocks: [{ ...block, companions: ["家族A"] }, { ...block, companions: ["家族B"] }] };
   vm.runInContext(`workerMaster=[{display:"パートA",role:"worker"},{display:"家族A",role:"family"},{display:"家族B",role:"family"}];
     record={data:{plans:{test:oldPlan}}}; editPlan("test");`, context);
-  assert.equal(nodes["plan-workers"].textContent, "家族A / 家族B");
-  assert.equal(nodes["plan-parts"].textContent, "パートA");
+  assert.equal(nodes["plan-workers"].textContent, "家族A / 家族B / パートA");
   assert.equal(vm.runInContext("blocks.length", context), 2);
   assert.equal(vm.runInContext('blocks[1].companions[0]', context), "家族B");
 });
@@ -138,8 +137,8 @@ test("shift import produces grouped input candidates without modifying saved pla
   vm.runInContext(`workerMaster=[{display:"候補甲 太郎",name:"part-a",role:"worker"},
     {display:"候補乙 次郎",name:"part-b",role:"worker"},{display:"候補外 三郎",name:"part-c",role:"worker"}];`, context);
   await context.loadShift();
-  assert.match(nodes["shift-candidates"].innerHTML, /候補甲 太郎・候補乙 次郎/);
-  assert.doesNotMatch(nodes["shift-candidates"].innerHTML, /保留/);
+  assert.deepEqual(Array.from(vm.runInContext("shiftGroups[0].names", context)), ["候補甲 太郎", "候補乙 次郎"]);
+  assert.match(nodes["shift-state"].textContent, /2人/);
   assert.deepEqual(Array.from(vm.runInContext("selectableParts()", context), worker => worker.display), ["候補甲 太郎", "候補乙 次郎"]);
   assert.equal(vm.runInContext("record.data.plans.keep.names[0]", context), "家族A");
 });
@@ -194,7 +193,7 @@ test("work modes require matching participants and shift limits survive input cl
   nodes["plan-kind"].value = "";
   assert.throws(() => context.validateParticipants(), /作業形態を選択/);
 });
-test("team roster shows morning splits and afternoon reunion without forbidding reuse", () => {
+test("registration checks only shift parts and ignores times and family omissions", () => {
   const { context, nodes } = screen();
   context.testPlans = {
     morningA: { names: ["パートA", "パートB"], off: false,
@@ -208,16 +207,38 @@ test("team roster shows morning splits and afternoon reunion without forbidding 
   };
   vm.runInContext(`record={data:{plans:testPlans}};
     workerMaster=[{display:"家族A",role:"family"},...["A","B","C","D"].map(id=>({display:"パート"+id,role:"worker"}))];
-    shiftEligible=new Set(["パートA","パートB","パートC","パートD"]);
+    shiftEligible=new Set(["パートA","パートB","パートC","パートD"]);shiftReady=true;
     shiftGroups=[{names:["パートA","パートB","パートC","パートD"],start:"08:00",end:"16:00"}];`, context);
   nodes["plan-kind"].value = "mixed";
-  context.renderTeamRoster();
-  assert.match(nodes["team-roster"].innerHTML, /08:00〜12:00　草とり/);
-  assert.match(nodes["team-roster"].innerHTML, /13:00〜16:00　収穫/);
-  assert.match(nodes["team-roster"].innerHTML, /時間未指定の予定あり　&lt;整備&gt;/);
-  assert.match(nodes["team-roster"].innerHTML, /予定未登録/);
-  assert.doesNotMatch(nodes["team-roster"].innerHTML, / disabled/);
+  context.renderUnplannedParts();
+  assert.match(nodes["unplanned-parts"].textContent, /パートDは作業予定がありません/);
+  assert.doesNotMatch(nodes["unplanned-parts"].textContent, /家族|パートA|パートB|パートC/);
   const assignments = context.workerAssignments("家族A", context.testPlans);
   assert.deepEqual(Array.from(assignments, item => item.task), ["潅水", "収穫", "<整備>"]);
   assert.equal(context.workerAssignments("パートD", context.testPlans).length, 0);
+  vm.runInContext('testPlans.cancelled.off=false;testPlans.cancelled.blocks[0].start="";testPlans.cancelled.blocks[0].end="";', context);
+  context.renderUnplannedParts();
+  assert.match(nodes["unplanned-parts"].textContent, /登録済み/);
+});
+test("scope filters work modes and normal mixed plans do not repeat family selection per task", () => {
+  const { context, nodes } = screen();
+  vm.runInContext('inputScope="parts";renderScope();', context);
+  assert.doesNotMatch(nodes["plan-kind"].innerHTML, /①家族のみ/);
+  assert.match(nodes["plan-kind"].innerHTML, /②家族＋パート/);
+  vm.runInContext('inputScope="family";renderScope();selectedFamily=["家族A"];selectedParts=["パートA"];', context);
+  assert.match(nodes["plan-kind"].innerHTML, /①家族のみ/);
+  assert.match(nodes["plan-kind"].innerHTML, /②家族＋パート/);
+  assert.doesNotMatch(nodes["plan-kind"].innerHTML, /③パート複数|④パート１人/);
+  nodes["plan-kind"].value = "mixed";
+  context.renderScope();
+  assert.equal(nodes["plan-kind"].value, "mixed");
+  vm.runInContext('shiftEligible=new Set(["パートA"]);validateParticipants();', context);
+  const mixed = vm.runInContext('blocks[0].task="草とり";createUnifiedPlan(selectedFamily,selectedParts,blocks,"")', context);
+  assert.equal(mixed.kind, "1");
+  assert.deepEqual(Array.from(mixed.recipients), ["パートA"]);
+  context.renderBlocks();
+  assert.doesNotMatch(nodes["plan-blocks"].innerHTML, /data-companions/);
+  vm.runInContext('blocks=[{task:"草とり",fields:[],start:"",end:"",companions:[]}];renderBlocks();', context);
+  assert.match(nodes["plan-blocks"].innerHTML, /既存の作業別参加者設定/);
+  assert.doesNotMatch(read("schedule/daily-plan/index.html"), /team-roster|select-family|select-parts/);
 });

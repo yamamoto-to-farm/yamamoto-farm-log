@@ -875,6 +875,55 @@ class CommunicationTests(unittest.TestCase):
         self.assertEqual(result["data"], saved)
         self.assertEqual(result["data"]["people"]["担当A"]["entries"][0]["last_communication"], last)
 
+    def test_combined_copy_records_all_snapshots_in_one_conditional_write(self):
+        self.assertEqual(self.request()[0], 200)
+        self.assertEqual(self.save_next({**self.direct(), "names": ["担当A"], "recipients": ["担当A"]})[0], 200)
+        before = copy.deepcopy(self.saved())
+        targets = [{"id": identifier, "plan_revision": plan["updated_at"]}
+                   for identifier, plan in before["plans"].items()]
+        self.stored(before)
+        fake_s3.put_object.reset_mock()
+        status, result = self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "operation": "communicate",
+            "copies": targets, "message": "午前と午後の統合文面", "recipients": ["担当A"],
+        })
+        self.assertEqual(status, 200)
+        fake_s3.put_object.assert_called_once()
+        saved = self.saved()
+        self.assertEqual(len(saved["communications"]), 2)
+        self.assertEqual({item["plan_id"] for item in saved["communications"]}, set(before["plans"]))
+        for item in saved["communications"]:
+            self.assertEqual(item["message"], "午前と午後の統合文面")
+            self.assertEqual(item["recipients"], ["担当A"])
+            self.assertEqual(item["plan"], api.plan_snapshot(before["plans"][item["plan_id"]]))
+        self.stored(saved)
+        self.assertEqual(self.request("GET /shift/work-plans")[0], 200)
+
+    def test_combined_copy_validation_is_atomic(self):
+        self.assertEqual(self.request()[0], 200)
+        self.assertEqual(self.save_next({**self.direct(), "names": ["担当C"], "recipients": ["担当C"]})[0], 200)
+        before = copy.deepcopy(self.saved())
+        targets = [{"id": identifier, "plan_revision": plan["updated_at"]}
+                   for identifier, plan in before["plans"].items()]
+        variants = [
+            ({}, 400), ({"copies": []}, 400), ({"copies": None}, 400),
+            ({"copies": [targets[0], targets[0]]}, 400),
+            ({"copies": [targets[0], {**targets[1], "plan_revision": "stale"}]}, 409),
+            ({"copies": [targets[0], {**targets[1], "id": "missing"}]}, 404),
+            ({"copies": targets}, 400),
+            ({"copies": [targets[0]], "status": "sent"}, 400),
+        ]
+        for changes, expected in variants:
+            with self.subTest(changes=changes):
+                self.stored(before)
+                fake_s3.put_object.reset_mock()
+                status, _ = self.request(body={
+                    "date": "2026-11-02", "revision": self.revision, "operation": "communicate",
+                    "message": "統合文面", "recipients": ["担当A"], **changes,
+                })
+                self.assertEqual(status, expected)
+                fake_s3.put_object.assert_not_called()
+
     def test_edit_copy_and_repeated_copy_append_immutable_snapshots(self):
         self.assertEqual(self.request()[0], 200)
         identifier = next(iter(self.saved()["plans"]))

@@ -2,7 +2,7 @@
 
 import { openModal, closeModal, bindModalCloseEvents } from "./filter-core.js?v=1";
 
-export function openWorkerSelectModal({ workers, selected, onApply, title = "作業者の選択", single = false }) {
+export function openWorkerSelectModal({ workers, selected, onApply, title = "作業者の選択", single = false, descriptions = {} }) {
   const selectedSet = new Set(selected || []);
 
   const html = `
@@ -19,7 +19,8 @@ export function openWorkerSelectModal({ workers, selected, onApply, title = "作
               .map(w => {
                 const name = escapeHtml(w.display);
                 const selectedClass = selectedSet.has(w.display) ? " selected" : "";
-                return `<div class="select-item${selectedClass}" data-worker="${name}">${name}</div>`;
+                const item = `<div class="select-item${selectedClass}" data-worker="${name}">${name}</div>`;
+                return descriptions[w.display] ? `<div>${item}<p class="worker-selection-note">${escapeHtml(descriptions[w.display])}</p></div>` : item;
               })
               .join("")}
           </div>

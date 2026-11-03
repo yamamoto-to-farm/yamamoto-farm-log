@@ -36,19 +36,20 @@ test("communication requires recipients, paired time and field or meeting point"
   assert.equal(issues({ ...plan, source: "message", recipients: undefined }).length, 0);
 });
 test("copy controls record a snapshot only, never rewrite the plan or claim sent", async () => {
-  const { recordPlanCopy } = load("message-plan.js");
+  const { recordGroupCopy, messageGroups } = load("message-plan.js");
+  const group = messageGroups({ test: plan })[0];
   let request;
-  await recordPlanCopy("2026-11-04", "test", plan, "連絡文", async () =>
+  await recordGroupCopy("2026-11-04", group, "連絡文", async () =>
     ({ revision: '"etag"', data: { plans: { test: plan } } }), async req => {
     request = req;
     return { saved: true, date: req.date };
   });
   assert.equal(request.operation, "communicate");
-  assert.equal(request.plan_revision, "revision-1");
+  assert.equal(request.copies[0].plan_revision, "revision-1");
   assert.equal(request.message, "連絡文");
   assert.equal(request.plan, undefined);
   assert.equal(request.status, undefined);
-  await assert.rejects(recordPlanCopy("2026-11-04", "test", plan, "連絡文",
+  await assert.rejects(recordGroupCopy("2026-11-04", group, "連絡文",
     async () => ({ revision: '"etag"', data: { plans: { test: { ...plan, updated_at: "revision-2" } } } }), async () => assert.fail("write stale")), /変更/);
 });
 function copyScreen({ failCopy = false, failRecord = false } = {}) {
@@ -128,4 +129,50 @@ test("message UI has saved-plan loading only and preserves monthly template edit
   assert.match(html, /コピーでは予定を変更せず/);
   const source = read("message.js");
   assert.doesNotMatch(source, /persistMessagePlan|createMessagePlan|loadFromShift/);
+});
+test("daily messages group identical assignment sets, splitting morning work and merging afternoon content", async () => {
+  const helper = load("message-plan.js");
+  const plans = {
+    a: { ...plan, recipients: ["A"], names: ["A"], blocks: [{ ...plan.blocks[0], task: "草とり", start: "08:00", end: "12:00" }] },
+    bc: { ...plan, recipients: ["B", "C"], names: ["B", "C"], blocks: [{ ...plan.blocks[0], task: "潅水", start: "08:00", end: "12:00" }] },
+    all: { ...plan, recipients: ["A", "B", "C"], names: ["A", "B", "C"], blocks: [{ ...plan.blocks[0], task: "収穫", start: "13:00", end: "16:00" }] },
+  };
+  const groups = helper.messageGroups(plans);
+  assert.equal(groups.length, 2);
+  const first = groups.find(group => group.recipients.includes("A"));
+  const second = groups.find(group => group.recipients.includes("B"));
+  assert.deepEqual(Array.from(first.recipients), ["A"]);
+  assert.deepEqual(Array.from(second.recipients), ["B", "C"]);
+  const text = helper.buildGroupMessage(first, "2026-11-04");
+  assert.match(text, /草とり/); assert.match(text, /収穫/); assert.doesNotMatch(text, /潅水/);
+  assert.equal(text.match(/お疲れさまです/g).length, 1);
+  assert.equal(text.match(/よろしくお願いします/g).length, 1);
+  assert.match(helper.buildGroupMessage(second, "2026-11-04"), /潅水/);
+  let request;
+  await helper.recordGroupCopy("2026-11-04", first, text,
+    async () => ({ revision: '"etag"', data: { plans } }), async req => { request = req; return { saved: true, date: req.date }; });
+  assert.deepEqual(Array.from(request.copies, item => item.id), ["a", "all"]);
+  assert.deepEqual(Array.from(request.recipients), ["A"]);
+  assert.throws(() => helper.checkMessageGroup(first, { ...plans, extra: plans.a }), /変更・削除/);
+  assert.equal(helper.messageGroups({ all: plans.all }).length, 1);
+  const cancelled = helper.messageGroups({ a: { ...plans.a, off: true, off_reason: "雨天" }, all: plans.all })[0];
+  const cancelledText = helper.buildGroupMessage(cancelled, "2026-11-04");
+  assert.match(cancelledText, /中止：08:00〜12:00 草とり/);
+  assert.match(cancelledText, /収穫/);
+  assert.doesNotMatch(cancelledText, /お休み/);
+});
+test("combined communication status belongs to its exact recipients and all included plans", () => {
+  const helper = load("message-plan.js");
+  const group = helper.messageGroups({
+    a: { ...plan, names: ["A"], recipients: ["A"] },
+    all: { ...plan, names: ["A", "B"], recipients: ["A", "B"] },
+  }).find(group => group.recipients.includes("A"));
+  const items = group.entries.map(({ id, plan }) => ({
+    plan_id: id, plan_revision: plan.updated_at, recipients: ["A"], at: "same", status: "copied",
+  }));
+  assert.equal(helper.groupCommunicationState(group, items).changed, false);
+  assert.equal(helper.groupCommunicationState(group, items.slice(1)), null);
+  assert.equal(helper.groupCommunicationState(group, items.map(item => ({ ...item, recipients: ["B"] }))), null);
+  group.entries[0].plan = { ...plan, updated_at: "new" };
+  assert.equal(helper.groupCommunicationState(group, items).changed, true);
 });

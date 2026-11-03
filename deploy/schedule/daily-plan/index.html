@@ -6,7 +6,7 @@
   <title>作業予定の追加・編集 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./daily-plan.css?v=20261104-team-1">
+  <link rel="stylesheet" href="./daily-plan.css?v=20261104-work-1">
 </head>
 <body>
   <div id="header"></div>
@@ -19,17 +19,20 @@
     <button id="reload" type="button" class="secondary-btn">再読み込み</button>
     <button id="plan-login" type="button" class="secondary-btn" hidden>ログイン</button>
     <div class="plan-actions">
-      <button id="load-shift" type="button" class="secondary-btn">シフトから作業者・時間を読み込む</button>
+      <button id="load-shift" type="button" class="secondary-btn">この日のシフトを読み込む</button>
       <button id="refresh-shift" type="button" class="secondary-btn">TimeTreeから再取得</button>
       <a id="work-plan-link" class="secondary-btn" href="/schedule/work-plan/index.html" target="_blank" rel="noopener">月の作業計画を開く</a>
     </div>
     <p id="shift-state" class="plan-note"></p>
-    <div id="shift-candidates"></div>
     <section class="card">
       <h2 class="section-title">予定を追加・編集</h2>
       <form id="plan-form">
         <fieldset id="plan-inputs" disabled>
           <legend id="editing-label">新しい予定</legend>
+          <label>予定入力の対象<select id="plan-scope" class="form-input">
+            <option value="family">家族従業員の予定</option>
+            <option value="parts">パート従業員の予定</option>
+          </select></label>
           <label>作業形態<select id="plan-kind" class="form-input">
             <option value="">作業形態を選択</option>
             <option value="family">①家族のみ</option>
@@ -37,21 +40,9 @@
             <option value="parts">③パート複数</option>
             <option value="single">④パート１人</option>
           </select></label>
-          <details open class="team-roster-panel">
-            <summary>出勤者・登録済み予定からチームを選択</summary>
-            <p class="plan-note">作業形態を選び、名前を押してチームを組みます。予定がある人も別の時間・作業に選択できます。時間未指定の予定から、未割当時間や重複は判断しません。</p>
-            <div id="team-roster"></div>
-          </details>
-          <fieldset id="family-group" hidden><legend>家族従業員（複数選択可）</legend>
-            <button id="select-family" type="button" class="secondary-btn">作業者を選択</button>
-            <div id="plan-workers" class="info-block">未選択</div>
-          </fieldset>
-          <fieldset id="parts-group" hidden><legend>パート従業員</legend>
-            <button id="select-parts" type="button" class="secondary-btn">パート従業員を選択</button>
-            <div id="plan-parts" class="info-block">未選択</div>
-            <p id="parts-shift-note" class="plan-note"></p>
-          </fieldset>
-          <p id="participant-kind" class="plan-note">作業者を選択してください。</p>
+          <button id="select-workers" type="button" class="secondary-btn">作業者を選択</button>
+          <fieldset><legend>作業者</legend><div id="plan-workers" class="info-block">未選択</div></fieldset>
+          <p id="participant-kind" class="plan-note" role="status">作業者を選択してください。</p>
           <label id="reporter-group" hidden>連絡係（パートのみ・複数人の場合）<select id="plan-reporter" class="form-input"></select></label>
           <div id="plan-blocks"></div>
           <button id="add-block" type="button" class="secondary-btn">＋作業・時間帯を追加</button>
@@ -70,14 +61,15 @@
     </section>
     <section class="card">
       <h2 class="section-title">この日の保存済み予定</h2>
+      <p id="unplanned-parts" class="plan-note" role="status"></p>
       <div id="saved-plans"></div>
-      <button id="continue-team" type="button" class="primary-btn" disabled>続けて別チームの予定を作成</button>
+      <button id="continue-team" type="button" class="primary-btn" disabled>続けて作業予定を追加</button>
     </section>
     <div class="plan-actions">
       <a id="message-link" class="secondary-btn" href="/admin/message/index.html">業務連絡ページへ</a>
       <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </main>
-  <script type="module" src="./daily-plan.js?v=20261104-team-1"></script>
+  <script type="module" src="./daily-plan.js?v=20261104-work-2"></script>
 </body>
 </html>

@@ -542,7 +542,15 @@ def work_plans_route(event, bucket, prefix, claims):
     if operation not in ("upsert", "delete", "communicate"):
         raise RequestError(400, "operation が不正です。")
     identifier = work_plan_id(req["id"]) if "id" in req else None
-    if operation != "upsert" and identifier is None:
+    copies = req.get("copies") if operation == "communicate" else None
+    if operation == "communicate" and "copies" in req:
+        if (identifier is not None or not isinstance(copies, list) or not 1 <= len(copies) <= 100
+                or any(not isinstance(item, dict) or set(item) != {"id", "plan_revision"} for item in copies)):
+            raise RequestError(400, "copies に予定idと更新版を指定してください。")
+        copy_ids = [work_plan_id(item["id"]) for item in copies]
+        if len(set(copy_ids)) != len(copy_ids):
+            raise RequestError(400, "copies の予定idが重複しています。")
+    if operation != "upsert" and identifier is None and copies is None:
         raise RequestError(400, "予定のidを指定してください。")
     if operation == "communicate" and ("status" in req or "communication" in req):
         raise RequestError(400, "クライアントは連絡の送信状態を指定できません。")
@@ -563,21 +571,28 @@ def work_plans_route(event, bucket, prefix, claims):
     communications = record["communications"]
     communication = None
     if operation == "communicate":
-        current = plans[identifier]
-        if req.get("plan_revision") != current.get("updated_at") or not req.get("plan_revision"):
-            raise RequestError(409, "予定が更新されました。最新の予定を確認して再度コピーしてください。")
-        validate_timestamp(req["plan_revision"])
+        targets = copies if copies is not None else [{"id": identifier, "plan_revision": req.get("plan_revision")}]
         message = req.get("message")
         plan_text(message, "コピー文面", 10000, False)
-        workers = set(current["names"]) | {name for block in current["blocks"] for name in block.get("companions", [])}
-        recipients = validate_recipients(req.get("recipients"), workers)
-        communication = {
-            "id": str(uuid.uuid4()), "plan_id": identifier, "status": "copied",
-            "at": stamp, "author": author, "plan": plan_snapshot(current),
-            "plan_revision": req["plan_revision"], "message": message, "recipients": recipients,
-        }
-        communications.append(communication)
-        names = current["names"]
+        pending = []
+        names = []
+        for target in targets:
+            current = plans.get(target["id"])
+            if current is None:
+                raise RequestError(404, "指定された予定がありません。")
+            if target["plan_revision"] != current.get("updated_at") or not target["plan_revision"]:
+                raise RequestError(409, "予定が更新されました。最新の予定を確認して再度コピーしてください。")
+            validate_timestamp(target["plan_revision"])
+            workers = set(current["names"]) | {name for block in current["blocks"] for name in block.get("companions", [])}
+            recipients = validate_recipients(req.get("recipients"), workers)
+            pending.append({
+                "id": str(uuid.uuid4()), "plan_id": target["id"], "status": "copied",
+                "at": stamp, "author": author, "plan": plan_snapshot(current),
+                "plan_revision": target["plan_revision"], "message": message, "recipients": recipients,
+            })
+            names.extend(name for name in current["names"] if name not in names)
+        communications.extend(pending)
+        communication = pending[0]
     elif operation == "delete":
         history = [item for item in communications if item["plan_id"] == identifier]
         if any(item["status"] == "sent" for item in history):
