@@ -21,6 +21,10 @@ test("planned work uses the same external heading and card styles as work logs",
   assert.match(html, /<details id="plannedWorkPanel" class="print-hide" hidden>\s*<summary class="section-title collapse-title diary-log-title">作業予定<\/summary>\s*<div id="plannedWorkBody" class="card diary-log-card"/);
   assert.match(html, /id="workListTitle" class="[^"]*diary-log-title/);
   assert.match(html, /id="workList" class="[^"]*diary-log-card/);
+  const css = readFileSync(join(__dirname, "..", "deploy", "diary", "diary.css"), "utf8");
+  assert.match(css, /#plannedWorkPanel > summary::before \{ content: "▶ "; \}/);
+  assert.match(css, /#plannedWorkPanel\[open\] > summary::before \{ content: "▼ "; \}/);
+  assert.match(css, /summary::-webkit-details-marker \{ display: none; \}/);
 });
 
 test("related logs require exact worker tokens, mapped task and specified field, not time", () => {

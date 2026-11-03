@@ -1407,6 +1407,10 @@
   }
 }
 #plannedWorkPanel { margin: 0; box-shadow: none; }
+#plannedWorkPanel > summary { list-style: none; }
+#plannedWorkPanel > summary::-webkit-details-marker { display: none; }
+#plannedWorkPanel > summary::before { content: "▶ "; }
+#plannedWorkPanel[open] > summary::before { content: "▼ "; }
 .diary-log-card {
   border: 1px solid #d8dee7;
   border-radius: 14px;
