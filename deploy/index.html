@@ -302,7 +302,9 @@
     }
     .top-plan-switch button[aria-pressed="true"] { background: #e8f0ff; border-color: #4f7ad9; color: #2256a5; }
     #top-plan-date { margin: 8px 0; font-size: 14px; font-weight: 700; }
-    #top-plan-body { max-height: 240px; overflow: auto; overflow-wrap: anywhere; margin-bottom: 12px; font-size: 14px; }
+    #top-plan-body { overflow-wrap: anywhere; margin-bottom: 12px; font-size: 14px; }
+    #top-plan-body > .top-plan-more { margin: 8px 0; padding: 0; box-shadow: none; background: transparent; }
+    #top-plan-body > .top-plan-more > summary { font-size: 13px; font-weight: normal; cursor: pointer; color: #41576d; }
     .top-plan-person { padding: 8px 0; border-bottom: 1px solid #e6edf5; }
     .top-plan-person:first-child { padding-top: 0; }
     .top-plan-person h3 { margin: 0 0 4px; font-size: 14px; }
@@ -604,7 +606,7 @@
     import { renderHeader } from "./common/header.js?v=1";
     import { loadJSON } from "./common/json.js?v=1";
     import { loadCSV } from "./common/csv.js?v=20261104-1";
-    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-task-1";
+    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-fold-1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
     import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-status-2";
 

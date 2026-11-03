@@ -130,6 +130,26 @@ test("grouped top cards keep separate plan IDs, scoped workers, cancellation and
   assert.match(html, /<h3>潅水｜圃場B・圃場C<\/h3>\s*<p>時間未指定<\/p>/);
   assert.match(context.topPlansHtml({ ignored: saved }, {}), /予定は保存されていません/);
 });
+test("top folds only the third and later plans, counting plans rather than task blocks", () => {
+  const { context } = screen();
+  const saved = { ...plan, names: ["担当A"], blocks: [plan.blocks[0], { ...plan.blocks[0], task: "潅水" }] };
+  for (const count of [0, 1, 2, 3, 5]) {
+    const plans = Object.fromEntries(Array.from({ length: count }, (_, index) => [`plan-${index}`, saved]));
+    const html = context.topPlansHtml({}, plans);
+    if (count <= 2) assert.doesNotMatch(html, /top-plan-more|残り/);
+    else {
+      assert.match(html, new RegExp(`<details class="top-plan-more"><summary>残り${count - 2}件を表示<\\/summary>`));
+      assert.equal((html.split('<details class="top-plan-more">')[0].match(/<article/g) || []).length, 2);
+      assert.doesNotMatch(html, /<details[^>]* open/);
+    }
+    assert.equal((html.match(/<article/g) || []).length, count);
+  }
+  const legacy = context.topPlansHtml({ 担当A: { ...saved, entries: [saved, saved, saved] } });
+  assert.match(legacy, /残り1件を表示/);
+  const page = read("index.html");
+  assert.match(page, /#top-plan-body > \.top-plan-more > summary \{ font-size: 13px/);
+  assert.doesNotMatch(page.match(/#top-plan-body \{[^}]+\}/)[0], /max-height|overflow: auto/);
+});
 
 test("message honors valid requested dates and otherwise keeps tomorrow default", () => {
   const source = strip(read("admin/message/message.js"));

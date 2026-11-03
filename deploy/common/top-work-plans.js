@@ -18,17 +18,13 @@ function topPlanBlocksHtml(plan, fallbackWorkers = []) {
 }
 
 export function topPlansHtml(people, plans) {
-  if (plans !== undefined) {
-    if (!Object.keys(plans).length) return "<p>この日の予定は保存されていません。</p>";
-    return Object.values(plans).map(plan => {
-      return `<article class="top-plan-person">${topPlanBlocksHtml(plan)}</article>`;
-    }).join("");
-  }
-  if (!Object.keys(people).length) return "<p>この日の予定は保存されていません。</p>";
-  return Object.entries(people).map(([worker, saved]) =>
-    `<article class="top-plan-person">${(saved.entries || [saved]).map(plan =>
-      topPlanBlocksHtml(plan, [worker])
-    ).join("")}</article>`).join("");
+  const cards = plans !== undefined
+    ? Object.values(plans).map(plan => `<article class="top-plan-person">${topPlanBlocksHtml(plan)}</article>`)
+    : Object.entries(people).flatMap(([worker, saved]) => (saved.entries || [saved]).map(plan =>
+      `<article class="top-plan-person">${topPlanBlocksHtml(plan, [worker])}</article>`));
+  if (!cards.length) return "<p>この日の予定は保存されていません。</p>";
+  return cards.slice(0, 2).join("") + (cards.length > 2
+    ? `<details class="top-plan-more"><summary>残り${cards.length - 2}件を表示</summary>${cards.slice(2).join("")}</details>` : "");
 }
 
 export function initTopWorkPlans(baseDate = new Date()) {
