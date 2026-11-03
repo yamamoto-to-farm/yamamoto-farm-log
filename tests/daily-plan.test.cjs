@@ -137,6 +137,21 @@ test("copied and sent status is displayed with sent deletion disabled and histor
       recipients:["家族A"],plan:testPlan,message:"控え"}]; renderSaved();`, context);
   assert.match(nodes["saved-plans"].innerHTML, /data-delete="test" disabled/);
 });
+test("family-only cards omit communication prompts while part and legacy message plans retain them", () => {
+  const { context, nodes } = screen();
+  context.testPlan = { source: "direct", names: ["家族A"], recipients: [], blocks: [block], off: false };
+  vm.runInContext("record={data:{plans:{test:testPlan},communications:[]}};renderSaved();", context);
+  assert.doesNotMatch(nodes["saved-plans"].innerHTML, /連絡前|連絡文を開く/);
+  assert.match(nodes["saved-plans"].innerHTML, /data-edit="test"|data-off="test"|data-delete="test"/);
+  vm.runInContext('delete testPlan.recipients;renderSaved();', context);
+  assert.doesNotMatch(nodes["saved-plans"].innerHTML, /連絡前|連絡文を開く/);
+  vm.runInContext('testPlan.names=["パートA"];testPlan.recipients=["パートA"];renderSaved();', context);
+  assert.match(nodes["saved-plans"].innerHTML, /連絡前/);
+  assert.match(nodes["saved-plans"].innerHTML, /連絡文を開く/);
+  vm.runInContext('testPlan.source="message";delete testPlan.recipients;renderSaved();', context);
+  assert.match(nodes["saved-plans"].innerHTML, /連絡前/);
+  assert.match(nodes["saved-plans"].innerHTML, /連絡文を開く/);
+});
 test("worker and task modals retain common UI and task group ordering", () => {
   let html;
   const context = load("common/work-plan-form.js", {

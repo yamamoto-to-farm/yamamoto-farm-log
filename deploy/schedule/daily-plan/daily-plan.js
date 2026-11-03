@@ -250,15 +250,16 @@ function renderSaved() {
   el("saved-plans").innerHTML = plans.length ? plans.map(([id, plan]) => {
     const participants = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
     const sent = hasSentCommunication(id, plan);
+    const hasRecipients = (plan.recipients || (plan.source === "message" ? plan.names : [])).length > 0;
     return `<article class="saved-plan"><h3>${escape(participants.join("・"))}</h3>
-      <p class="plan-note">${plan.last_communication ? `${sent ? "送信済み" : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>
+      ${hasRecipients || plan.last_communication ? `<p class="plan-note">${plan.last_communication ? `${sent ? "送信済み" : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>` : ""}
       ${plan.off ? `<p>中止${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>` : ""}
       ${plan.blocks.map(block => `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : ""}${escape(block.task)}${block.fields?.length || block.field ? `｜${escape((block.fields || [block.field]).join("・"))}` : ""}</p>`).join("")}
       ${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}
       <div class="plan-actions"><button type="button" class="secondary-btn" data-edit="${escape(id)}">編集</button>
         <button type="button" class="secondary-btn" data-off="${escape(id)}">${plan.off ? "中止を解除" : "中止にする"}</button>
         <button type="button" class="secondary-btn" data-delete="${escape(id)}"${sent ? " disabled" : ""}>削除</button>
-        <a class="secondary-btn" href="/admin/message/index.html?date=${loadedDate}">連絡文を開く</a></div>
+        ${hasRecipients ? `<a class="secondary-btn" href="/admin/message/index.html?date=${loadedDate}">連絡文を開く</a>` : ""}</div>
     </article>`;
   }).join("") : "<p>この日の予定は保存されていません。</p>";
   el("communication-history").innerHTML = record.data.communications.length ? [...record.data.communications].reverse().map(item =>
