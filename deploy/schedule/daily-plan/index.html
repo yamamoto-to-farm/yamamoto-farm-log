@@ -6,7 +6,7 @@
   <title>作業予定の追加・編集 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./daily-plan.css?v=20261104-kind-1">
+  <link rel="stylesheet" href="./daily-plan.css?v=20261104-team-1">
 </head>
 <body>
   <div id="header"></div>
@@ -37,6 +37,11 @@
             <option value="parts">③パート複数</option>
             <option value="single">④パート１人</option>
           </select></label>
+          <details open class="team-roster-panel">
+            <summary>出勤者・登録済み予定からチームを選択</summary>
+            <p class="plan-note">作業形態を選び、名前を押してチームを組みます。予定がある人も別の時間・作業に選択できます。時間未指定の予定から、未割当時間や重複は判断しません。</p>
+            <div id="team-roster"></div>
+          </details>
           <fieldset id="family-group" hidden><legend>家族従業員（複数選択可）</legend>
             <button id="select-family" type="button" class="secondary-btn">作業者を選択</button>
             <div id="plan-workers" class="info-block">未選択</div>
@@ -66,12 +71,13 @@
     <section class="card">
       <h2 class="section-title">この日の保存済み予定</h2>
       <div id="saved-plans"></div>
+      <button id="continue-team" type="button" class="primary-btn" disabled>続けて別チームの予定を作成</button>
     </section>
     <div class="plan-actions">
       <a id="message-link" class="secondary-btn" href="/admin/message/index.html">業務連絡ページへ</a>
       <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </main>
-  <script type="module" src="./daily-plan.js?v=20261104-kind-1"></script>
+  <script type="module" src="./daily-plan.js?v=20261104-team-1"></script>
 </body>
 </html>

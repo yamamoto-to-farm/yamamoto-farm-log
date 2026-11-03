@@ -46,7 +46,7 @@ function screen(deps = {}) {
   const ids = ["plan-date", "plan-inputs", "saved-plans", "message-link", "status", "plan-login", "plan-workers",
     "plan-parts", "participant-kind", "plan-form", "plan-blocks", "editing-label", "plan-memo", "page-area",
     "plan-reporter", "plan-off", "plan-off-reason", "communication-history", "shift-candidates", "shift-state", "work-plan-link",
-    "plan-kind", "family-group", "parts-group", "parts-shift-note", "reporter-group"];
+    "plan-kind", "family-group", "parts-group", "parts-shift-note", "reporter-group", "team-roster", "continue-team"];
   for (const id of ids) nodes[id] = { value: "", checked: false, children: [], innerHTML: "",
     classList: { toggle() {} }, replaceChildren() { this.children = []; }, reset() {}, scrollIntoView() {} };
   nodes["plan-date"].value = "2026-11-04";
@@ -134,7 +134,7 @@ test("shift import produces grouped input candidates without modifying saved pla
       { date: "2026-11-04", person: "勤務なし", status: "base", proposed_hours: 0 },
     ],
   });
-  vm.runInContext('record={data:{plans:{keep:{names:["家族A"]}}}};', context);
+  vm.runInContext('record={data:{plans:{keep:{names:["家族A"],off:false,blocks:[]}}}};', context);
   vm.runInContext(`workerMaster=[{display:"候補甲 太郎",name:"part-a",role:"worker"},
     {display:"候補乙 次郎",name:"part-b",role:"worker"},{display:"候補外 三郎",name:"part-c",role:"worker"}];`, context);
   await context.loadShift();
@@ -180,14 +180,44 @@ test("work modes require matching participants and shift limits survive input cl
   context.clearForm();
   assert.deepEqual(Array.from(vm.runInContext("selectableParts()", context), worker => worker.display), ["パートB"]);
   vm.runInContext('loadedDate="2026-11-04";', context);
+  vm.runInContext('shiftGroups=[{names:["パートB"],start:"08:00",end:"16:00"}];', context);
   await context.loadDay();
   assert.equal(vm.runInContext('shiftEligible.has("パートB")', context), true);
+  assert.equal(vm.runInContext("shiftGroups.length", context), 1);
   nodes["plan-date"].value = "2026-11-05";
   await context.loadDay();
   assert.equal(vm.runInContext("shiftEligible", context), null);
+  assert.equal(vm.runInContext("shiftGroups.length", context), 0);
   nodes["plan-kind"].value = "single";
   vm.runInContext('selectedParts=["パートA","パートB"];selectedFamily=[];', context);
   assert.throws(() => context.validateParticipants(), /作業形態/);
   nodes["plan-kind"].value = "";
   assert.throws(() => context.validateParticipants(), /作業形態を選択/);
+});
+test("team roster shows morning splits and afternoon reunion without forbidding reuse", () => {
+  const { context, nodes } = screen();
+  context.testPlans = {
+    morningA: { names: ["パートA", "パートB"], off: false,
+      blocks: [{ ...block, task: "草とり", start: "08:00", end: "12:00" }] },
+    morningB: { names: ["パートC"], off: false,
+      blocks: [{ ...block, task: "潅水", start: "08:00", end: "12:00", companions: ["家族A"] }] },
+    afternoon: { names: ["パートA", "パートB", "パートC"], off: false,
+      blocks: [{ ...block, task: "収穫", start: "13:00", end: "16:00", companions: ["家族A"] }] },
+    optional: { names: ["家族A"], off: false, blocks: [{ ...block, task: "<整備>" }] },
+    cancelled: { names: ["パートD"], off: true, blocks: [block] },
+  };
+  vm.runInContext(`record={data:{plans:testPlans}};
+    workerMaster=[{display:"家族A",role:"family"},...["A","B","C","D"].map(id=>({display:"パート"+id,role:"worker"}))];
+    shiftEligible=new Set(["パートA","パートB","パートC","パートD"]);
+    shiftGroups=[{names:["パートA","パートB","パートC","パートD"],start:"08:00",end:"16:00"}];`, context);
+  nodes["plan-kind"].value = "mixed";
+  context.renderTeamRoster();
+  assert.match(nodes["team-roster"].innerHTML, /08:00〜12:00　草とり/);
+  assert.match(nodes["team-roster"].innerHTML, /13:00〜16:00　収穫/);
+  assert.match(nodes["team-roster"].innerHTML, /時間未指定の予定あり　&lt;整備&gt;/);
+  assert.match(nodes["team-roster"].innerHTML, /予定未登録/);
+  assert.doesNotMatch(nodes["team-roster"].innerHTML, / disabled/);
+  const assignments = context.workerAssignments("家族A", context.testPlans);
+  assert.deepEqual(Array.from(assignments, item => item.task), ["潅水", "収穫", "<整備>"]);
+  assert.equal(context.workerAssignments("パートD", context.testPlans).length, 0);
 });

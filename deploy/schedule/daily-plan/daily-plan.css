@@ -22,3 +22,8 @@
 .saved-plan h3 { font-size: 16px; margin: 0 0 8px; }
 .saved-plan p { margin: 6px 0; }
 #status.error { color: #b91c1c; }
+.team-roster-panel { margin: 12px 0; }
+.team-worker { border-bottom: 1px solid #e2e8f0; padding: 10px 0; overflow-wrap: anywhere; }
+.team-worker small { display: block; margin-top: 6px; color: #64748b; }
+.team-worker p { margin: 6px 0; }
+.team-worker button[aria-pressed="true"] { background: #e8f0ff; color: #2256a5; border-color: #2256a5; }
