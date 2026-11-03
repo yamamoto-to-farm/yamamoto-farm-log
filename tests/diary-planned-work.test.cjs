@@ -184,20 +184,60 @@ function screen() {
   });
   return { context, body, panel };
 }
+test("diary uses original plan blocks rather than duplicating personal lunch projections", async () => {
+  const { context, body } = screen();
+  const work = { task: "草とり", start: "08:00", end: "15:30", fields: ["圃場A"], companions: ["家族A"],
+    participation: { 担当A: [{ start: "08:00", end: "12:00" }, { start: "13:00", end: "15:30" }] } };
+  const saved = { source: "direct", names: ["担当A"], recipients: ["担当A"], blocks: [work], off: false };
+  context.fetchWorkPlanRecord = async () => ({ data: {
+    people: { 担当A: { ...saved, blocks: [{ ...work, end: "12:00" }, { ...work, start: "13:00" }] },
+      家族A: saved }, plans: { test: saved },
+  } });
+  await context.renderPlannedWork("2026-11-04", Promise.resolve([]));
+  assert.equal((body.innerHTML.match(/<article/g) || []).length, 1);
+  assert.equal((body.innerHTML.match(/class="planned-work-block"/g) || []).length, 1);
+  assert.match(body.innerHTML, /<h3>担当A・家族A<\/h3>/);
+  assert.match(body.innerHTML, /08:00〜15:30　草とり/);
+  assert.equal((body.innerHTML.match(/href="\/hand-weeding\/index.html"/g) || []).length, 1);
+  assert.match(body.innerHTML, /<details class="planned-work-related"><summary>各人の参加時間/);
+  assert.match(body.innerHTML, /08:00〜12:00・13:00〜15:30/);
+});
+test("grouped plans retain scoped companions, exact worker matching, partial missing logs, and distinct IDs", () => {
+  const { plannedWorkHtml: render } = load();
+  const saved = { source: "direct", names: ["担当A"], off: false,
+    blocks: [{ ...block, companions: ["家族A"] }, { ...block, task: "潅水", companions: ["家族B"] }] };
+  const joint = log({ worker: "担当A／家族A" });
+  const html = render({}, [joint], { one: saved });
+  assert.match(html, /<h3>担当A・家族A・家族B/);
+  assert.match(html, /作業者：担当A・家族A/);
+  assert.match(html, /（1件）/);
+  assert.doesNotMatch(html, /（2件）|家族Aの該当ログ/);
+  const partial = render({}, [log({ worker: "担当A" })], { one: saved });
+  assert.match(partial, /家族Aの該当ログは見つかりません/);
+  assert.doesNotMatch(partial, /href="\/hand-weeding/);
+  const unrelated = render({}, [log({ worker: "家族B" })], { one: saved });
+  assert.match(unrelated, /href="\/hand-weeding/);
+  assert.equal((render({}, [], { one: saved, two: saved }).match(/<article/g) || []).length, 2);
+  assert.match(render({}, null, { one: saved }), /比較できません/);
+  assert.doesNotMatch(render({}, null, { one: saved }), /<a /);
+  const cancelled = render({}, [], { one: { ...saved, names: ["<img>"], off: true, off_reason: "<svg>", memo: "<script>" } });
+  assert.match(cancelled, /中止の連絡/);
+  assert.doesNotMatch(cancelled, /<img>|<svg>|<script>|関連する/);
+});
 test("plan errors are retryable independently and late responses cannot replace another date", async () => {
   const { context, body, panel } = screen();
-  context.fetchPlannedWork = async () => { throw new Error("offline"); };
+  context.fetchWorkPlanRecord = async () => { throw new Error("offline"); };
   await context.renderPlannedWork("2026-11-04", Promise.resolve([]));
   assert.equal(body.textContent, "offline");
   assert.equal(body.children[0].textContent, "再試行");
-  context.fetchPlannedWork = async () => ({ 担当A: plan });
+  context.fetchWorkPlanRecord = async () => ({ data: { people: { 担当A: plan } } });
   await body.children[0].onclick();
   assert.match(body.innerHTML, /担当A/);
   let finish;
-  context.fetchPlannedWork = date => date === "2026-11-03" ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({});
+  context.fetchWorkPlanRecord = date => date === "2026-11-03" ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ data: { people: {} } });
   const old = context.renderPlannedWork("2026-11-03", Promise.resolve([]));
   await context.renderPlannedWork("2026-11-04", Promise.resolve([]));
-  finish({ 担当A: plan });
+  finish({ data: { people: { 担当A: plan } } });
   await old;
   assert.match(body.innerHTML, /予定は保存されていません/);
   assert.equal(panel.open, true);
@@ -205,7 +245,7 @@ test("plan errors are retryable independently and late responses cannot replace 
 test("workers cannot load private plans and missing login offers explicit login", async () => {
   const { context, body, panel } = screen();
   context.window.currentRole = "worker";
-  context.fetchPlannedWork = async () => { throw new Error("must not request"); };
+  context.fetchWorkPlanRecord = async () => { throw new Error("must not request"); };
   await context.renderPlannedWork("2026-11-04", Promise.resolve([]));
   assert.equal(panel.hidden, true);
   context.window.currentRole = "family";

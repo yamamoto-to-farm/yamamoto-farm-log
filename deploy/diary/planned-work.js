@@ -46,7 +46,45 @@ export function relatedPlanLogs(worker, block, logs) {
   });
 }
 
-export function plannedWorkHtml(people, logs) {
+function plannedBlockHtml(block, workers, logs) {
+  const matchesByWorker = logs === null ? null : workers.map(worker => ({
+    worker, matches: relatedPlanLogs(worker, block, logs),
+  }));
+  const matches = matchesByWorker === null ? null : [...new Set(matchesByWorker.flatMap(item => item.matches))];
+  const missing = matchesByWorker?.filter(item => !item.matches.length).map(item => item.worker) || [];
+  const task = text(block.task);
+  const page = Object.hasOwn(TASK_FOLDERS, task) ? LOG_PAGES[TASK_FOLDERS[task]] : undefined;
+  const result = matches === null ? "作業ログを取得できないため、比較できません。"
+    : matches.length ? `関連する作業ログ：${matches.map(log => escape(log.displayName)).join("・")}（${matches.length}件）`
+      + (missing.length ? `／${escape(missing.join("・"))}の該当ログは見つかりません。` : "")
+      : "該当する作業ログは見つかりません。"
+        + (page ? ` <a href="${escape(page[0])}">${escape(page[1])}へ</a>` : "");
+  const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
+  const time = block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : "";
+  return `<div class="planned-work-block"><p>${time}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}${block.shed ? "（作業場集合）" : ""}</p><p class="planned-work-related">${result}</p></div>`;
+}
+
+export function plannedWorkHtml(people, logs, plans) {
+  if (plans !== undefined) {
+    if (!Object.keys(plans).length) return "<p>この日の予定は保存されていません。</p>";
+    return Object.values(plans).map(plan => {
+      const workers = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
+      const source = plan.source_label || (plan.source === "direct" ? "直接入力" : "業務連絡");
+      return `<article class="planned-work-person"><h3>${escape(workers.join("・"))}</h3><small>登録元：${escape(source)}</small>
+        ${plan.off ? `<p>中止の連絡${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>`
+          : plan.blocks.map(block => {
+            const participants = [...new Set([...plan.names, ...(block.companions || [])])];
+            const scoped = participants.length !== workers.length
+              ? `<p class="planned-work-related">作業者：${escape(participants.join("・"))}</p>` : "";
+            const times = block.participation ? `<details class="planned-work-related"><summary>各人の参加時間（昼休憩を除く）</summary>${Object.entries(block.participation)
+              .map(([name, ranges]) => `<p>${escape(name)} ${ranges.map(range => `${escape(range.start)}〜${escape(range.end)}`).join("・")}</p>`).join("")}</details>` : "";
+            return scoped + plannedBlockHtml(block, participants, logs) + times;
+          }).join("")}
+        ${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}
+        ${plan.manual_text ? '<p class="planned-work-related">連絡文面に手修正あり。予定は入力欄の内容です。</p>' : ""}
+      </article>`;
+    }).join("");
+  }
   const entries = Object.entries(people);
   if (!entries.length) return "<p>この日の予定は保存されていません。</p>";
   return entries.map(([worker, saved]) => {
@@ -55,16 +93,7 @@ export function plannedWorkHtml(people, logs) {
     const source = plan.source_label || (plan.source && plan.source !== "message" ? plan.source : "業務連絡");
     const blocks = plan.off ? "<p>中止の連絡" + (plan.off_reason ? `：${escape(plan.off_reason)}` : "") + "</p>"
       : plan.blocks.map(block => {
-        const matches = logs === null ? null : relatedPlanLogs(worker, block, logs);
-        const task = text(block.task);
-        const page = Object.hasOwn(TASK_FOLDERS, task) ? LOG_PAGES[TASK_FOLDERS[task]] : undefined;
-        const result = matches === null ? "作業ログを取得できないため、比較できません。"
-          : matches.length ? `関連する作業ログ：${matches.map(log => escape(log.displayName)).join("・")}（${matches.length}件）`
-            : "該当する作業ログは見つかりません。"
-              + (page ? ` <a href="${escape(page[0])}">${escape(page[1])}へ</a>` : "");
-        const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
-        const time = block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : "";
-        return `<div class="planned-work-block"><p>${time}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}${block.shed ? "（作業場集合）" : ""}</p><p class="planned-work-related">${result}</p></div>`;
+        return plannedBlockHtml(block, [worker], logs);
       }).join("");
     return `<div><small>登録元：${escape(source)}</small>${blocks}${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}${plan.manual_text ? "<p class=\"planned-work-related\">連絡文面に手修正あり。予定は入力欄の内容です。</p>" : ""}</div>`;
     }).join("")}</article>`;
@@ -160,9 +189,9 @@ export async function renderPlannedWork(date, logsPromise) {
   }
   body.textContent = "予定を読み込み中…";
   try {
-    const [people, logs] = await Promise.all([fetchPlannedWork(date), logsPromise]);
+    const [record, logs] = await Promise.all([fetchWorkPlanRecord(date), logsPromise]);
     if (current !== sequence) return;
-    body.innerHTML = plannedWorkHtml(people, logs);
+    body.innerHTML = plannedWorkHtml(record.data.people, logs, record.data.plans);
   } catch (error) {
     if (current !== sequence) return;
     console.error("[diary] planned work load failed", date, error);
