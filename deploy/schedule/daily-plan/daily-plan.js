@@ -1,7 +1,8 @@
 import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js?v=1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
-import { loadFamilyWorkers } from "/common/work-plan-form.js?v=20261104-1";
+import { loadPlanWorkers, openPlanTaskModal, PLAN_TASK_GROUPS } from "/common/work-plan-form.js?v=20261104-modal-1";
+import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-modal-1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-family-1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -11,7 +12,7 @@ const el = id => document.getElementById(id);
 const escape = value => String(value ?? "").replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 
-export function createDirectPlan(names, task, fields, start, end, memo) {
+export function createDirectPlan(names, task, fields, start, end, memo, parts = []) {
   names = names.map(name => String(name).trim());
   task = task.trim();
   if (!names.length || names.some(name => !name) || new Set(names).size !== names.length || !task) {
@@ -21,8 +22,10 @@ export function createDirectPlan(names, task, fields, start, end, memo) {
     || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(end) || start >= end)) {
     throw new Error("時刻は開始・終了を両方入力し、終了を開始より後にしてください。");
   }
+  const participants = [...new Set([...names, ...parts.map(name => String(name).trim())])];
+  if (participants.some(name => !name) || participants.length > 20) throw new Error("作業者は1〜20人で指定してください。");
   return {
-    source: "direct", names, kind: "1", off: false, manual_text: false, message: "",
+    source: "direct", names: participants, kind: "1", off: false, manual_text: false, message: "",
     reporter: "", off_reason: "", memo: memo.trim(),
     blocks: [{ task, fields: [...new Set(fields)], field: "", start, end, shed: false }],
   };
@@ -35,24 +38,41 @@ let editingId = null;
 let cleanSnapshot = "";
 let sequence = 0;
 let busy = false;
+let workerMaster = [];
+let selectedFamily = [];
+let selectedParts = [];
 const notice = (message, error = false) => {
   el("status").textContent = message;
   el("status").classList.toggle("error", error);
   el("plan-login").hidden = hasSession();
 };
-const inputNames = () => Array.from(el("plan-workers").querySelectorAll("input:checked"), input => input.value);
-const snapshot = () => JSON.stringify([inputNames(), el("plan-task").value, el("custom-task").value,
+const snapshot = () => JSON.stringify([selectedFamily, selectedParts, el("plan-task").value, el("custom-task").value,
   el("plan-start").value, el("plan-end").value, el("plan-memo").value, fields, editingId]);
 const canDiscard = () => snapshot() === cleanSnapshot || confirm("入力中の予定を破棄しますか？");
 function renderFields() {
   el("plan-fields").innerHTML = fields.map((field, index) =>
     `<button type="button" class="secondary-btn" data-remove-field="${index}">${escape(field)} ×</button>`).join("");
 }
+function renderWorkers() {
+  el("plan-workers").textContent = selectedFamily.join(" / ") || "未選択";
+  el("plan-parts").textContent = selectedParts.join(" / ") || "未選択";
+}
+function renderTask() {
+  const custom = el("plan-task").value === "__custom__";
+  el("custom-task-label").hidden = !custom;
+  el("selected-task").textContent = custom ? "その他（自由入力）" : el("plan-task").value || "未選択";
+}
 function clearForm() {
   el("plan-form").reset();
+  el("plan-task").value = "";
+  el("custom-task").value = "";
   fields = [];
   editingId = null;
+  selectedFamily = [];
+  selectedParts = [];
   renderFields();
+  renderWorkers();
+  renderTask();
   el("editing-label").textContent = "新しい予定";
   el("custom-task-label").hidden = true;
   cleanSnapshot = snapshot();
@@ -83,7 +103,7 @@ async function loadDay() {
   notice("予定を読み込み中…");
   try {
     const [result, workers, response] = await Promise.all([
-      fetchWorkPlanRecord(date), loadFamilyWorkers(), fetch("/data/fields.json", { cache: "no-store" }),
+      fetchWorkPlanRecord(date), loadPlanWorkers(), fetch("/data/fields.json", { cache: "no-store" }),
     ]);
     if (current !== sequence) return;
     if (!Object.hasOwn(result, "revision") || (result.revision !== null && typeof result.revision !== "string")
@@ -99,8 +119,7 @@ async function loadDay() {
       if (row.area && row.name) (children[row.area] ||= []).push(row.name);
     }
     setFilterData({ ...(getFilterData() || {}), fields: { parents: Object.keys(children), children } });
-    el("plan-workers").innerHTML = workers.map(name =>
-      `<label><input type="checkbox" value="${escape(name)}">${escape(name)}</label>`).join("");
+    workerMaster = workers;
     record = result;
     loadedDate = date;
     clearForm();
@@ -147,22 +166,14 @@ function editPlan(id) {
   clearForm();
   editingId = id;
   const block = plan.blocks[0];
-  for (const name of plan.names) {
-    let checkbox = Array.from(el("plan-workers").querySelectorAll("input")).find(input => input.value === name);
-    if (!checkbox) {
-      const label = document.createElement("label");
-      checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.value = name;
-      label.append(checkbox, document.createTextNode(name));
-      el("plan-workers").append(label);
-    }
-    checkbox.checked = true;
-  }
-  const known = Array.from(el("plan-task").options).some(option => option.value === block.task);
+  const partNames = new Set(workerMaster.filter(worker => worker.role === "worker").map(worker => worker.display));
+  selectedFamily = plan.names.filter(name => !partNames.has(name));
+  selectedParts = plan.names.filter(name => partNames.has(name));
+  renderWorkers();
+  const known = PLAN_TASK_GROUPS.some(([, tasks]) => tasks.includes(block.task));
   el("plan-task").value = known ? block.task : "__custom__";
   el("custom-task").value = known ? "" : block.task;
-  el("custom-task-label").hidden = known;
+  renderTask();
   el("plan-start").value = block.start || "";
   el("plan-end").value = block.end || "";
   el("plan-memo").value = plan.memo || "";
@@ -183,7 +194,24 @@ window.addEventListener("DOMContentLoaded", async () => {
   const parsed = parseDateInputLocal(requested);
   el("plan-date").value = requested && parsed && formatLocalYmd(parsed) === requested
     ? requested : formatLocalYmd(new Date());
-  el("plan-task").addEventListener("change", () => { el("custom-task-label").hidden = el("plan-task").value !== "__custom__"; });
+  el("select-family").onclick = () => openWorkerSelectModal({
+    workers: workerMaster.filter(worker => ["admin", "family"].includes(worker.role)),
+    selected: selectedFamily, title: "作業者の選択（家族・自分）",
+    onApply: names => { selectedFamily = names; renderWorkers(); },
+  });
+  el("select-parts").onclick = () => openWorkerSelectModal({
+    workers: workerMaster.filter(worker => worker.role === "worker" && worker.employmentStatus !== "retired"),
+    selected: selectedParts, title: "一緒に作業するパートの選択",
+    onApply: names => { selectedParts = names; renderWorkers(); },
+  });
+  el("select-task").onclick = () => openPlanTaskModal({
+    selected: el("plan-task").value,
+    onSelect: task => {
+      el("plan-task").value = task;
+      renderTask();
+      if (task === "__custom__") el("custom-task").focus();
+    },
+  });
   el("cancel-edit").onclick = () => { if (canDiscard()) clearForm(); };
   el("reload").onclick = () => { if (canDiscard()) return loadDay(); };
   el("plan-login").onclick = () => login(`/schedule/daily-plan/index.html?date=${el("plan-date").value}`);
@@ -203,7 +231,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     event.preventDefault();
     try {
       const task = el("plan-task").value === "__custom__" ? el("custom-task").value : el("plan-task").value;
-      const plan = createDirectPlan(inputNames(), task, fields, el("plan-start").value, el("plan-end").value, el("plan-memo").value);
+      const plan = createDirectPlan(selectedFamily, task, fields, el("plan-start").value, el("plan-end").value, el("plan-memo").value, selectedParts);
       await saveRequest({ plan, ...(editingId ? { id: editingId } : {}) });
     } catch (error) {
       console.error("[daily-plan] invalid input", error);

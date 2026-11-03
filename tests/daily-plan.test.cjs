@@ -25,6 +25,10 @@ test("direct plans need only assignees and task, with optional multiple fields a
   }
   assert.throws(() => create([], "耕起", [], "", "", ""), /担当者/);
   assert.throws(() => create(["担当A"], "", [], "", "", ""), /作業内容/);
+  const joint = create(["担当A"], "耕起", [], "", "", "", ["パートA", "パートB"]);
+  assert.deepEqual(Array.from(joint.names), ["担当A", "パートA", "パートB"]);
+  assert.equal(joint.message, "");
+  assert.throws(() => create([], "耕起", [], "", "", "", ["パートA"]), /担当者/);
 });
 test("family selectors use admin/family displays only, with explicit failed loads", async () => {
   const context = load("common/work-plan-form.js", {
@@ -60,7 +64,9 @@ test("direct entry is registered for family/admin, not workers, and optional fie
   assert.deepEqual(page.roles, ["family", "admin"]);
   const html = read("schedule/daily-plan/index.html");
   assert.doesNotMatch(html, /id="plan-(?:start|end)"[^>]*required/);
-  assert.match(html, /id="plan-task"[^>]*required/);
+  assert.match(html, /id="select-task"[^>]*>作業内容を選択/);
+  assert.match(html, /id="select-family"/);
+  assert.match(html, /id="select-parts"/);
   assert.match(html, /時間・圃場・メモ（任意）/);
   const access = load("common/page-access.js", { URL });
   assert.equal(access.getPageAccess(pages, "/schedule/daily-plan/index.html", "family").allowed, true);
@@ -70,7 +76,7 @@ test("direct entry is registered for family/admin, not workers, and optional fie
 function screen(deps = {}) {
   const nodes = {};
   for (const id of ["plan-date", "plan-inputs", "saved-plans", "message-link", "status", "plan-login",
-    "plan-workers", "plan-form", "plan-fields", "editing-label", "custom-task-label", "plan-task",
+    "plan-workers", "plan-parts", "selected-task", "plan-form", "plan-fields", "editing-label", "custom-task-label", "plan-task",
     "custom-task", "plan-start", "plan-end", "plan-memo", "page-area"]) {
     nodes[id] = {
       value: "", children: [], classList: { toggle() {} }, append(child) { this.children.push(child); },
@@ -80,7 +86,7 @@ function screen(deps = {}) {
   nodes["plan-date"].value = "2026-11-04";
   const context = load("schedule/daily-plan/daily-plan.js", {
     hasSession: () => true, document: { getElementById: id => nodes[id] },
-    loadFamilyWorkers: async () => [], getFilterData: () => ({}), setFilterData() {},
+    loadPlanWorkers: async () => [], getFilterData: () => ({}), setFilterData() {},
     fetch: async () => ({ ok: true, json: async () => [] }),
     fetchWorkPlanRecord: async date => ({ date, revision: '"revision"', data: { date, plans: {}, people: {} } }),
     ...deps,
@@ -118,3 +124,52 @@ test("late direct-plan loads cannot replace a newer selected day", async () => {
   assert.equal(vm.runInContext("record.date", context), "2026-11-05");
   assert.equal(nodes["message-link"].href, "/admin/message/index.html?date=2026-11-05");
 });
+
+test("editing separates existing participants by role and preserves custom tasks", () => {
+    const { context, nodes } = screen({ PLAN_TASK_GROUPS: [["圃場管理", ["耕起"]]], confirm: () => true });
+    nodes["plan-form"].querySelector = () => ({});
+    nodes["plan-form"].scrollIntoView = () => {};
+    context.testPlan = { source: "direct", names: ["担当A", "パートA"], memo: "",
+      blocks: [{ task: "道具整備", fields: [], start: "", end: "" }] };
+    vm.runInContext(`workerMaster = [{display:"担当A",role:"family"},{display:"パートA",role:"worker"}];
+      record = {data:{plans:{test:testPlan}}}; editPlan("test");`, context);
+    assert.equal(nodes["plan-workers"].textContent, "担当A");
+    assert.equal(nodes["plan-parts"].textContent, "パートA");
+    assert.equal(nodes["plan-task"].value, "__custom__");
+    assert.equal(nodes["custom-task"].value, "道具整備");
+    assert.equal(nodes["custom-task-label"].hidden, false);
+    context.clearForm();
+    assert.equal(nodes["plan-parts"].textContent, "未選択");
+    assert.equal(nodes["selected-task"].textContent, "未選択");
+    assert.equal(nodes["plan-task"].value, "");
+  });
+
+test("task modal groups choices and selects a task without navigation", () => {
+    const taskButton = { dataset: { planTask: "除草剤散布" } };
+    const closeButton = {};
+    let html, selected, closed = false;
+    const context = load("common/work-plan-form.js", {
+      openModal: content => { html = content; }, closeModal: () => { closed = true; }, bindModalCloseEvents() {},
+      document: { getElementById: () => closeButton, querySelectorAll: () => [taskButton] },
+    });
+    context.openPlanTaskModal({ selected: "耕起", onSelect: task => { selected = task; } });
+    assert.match(html, /<details open><summary>圃場管理/);
+    assert.match(html, /播種・育苗/);
+    assert.match(html, /その他（自由入力）/);
+    assert.doesNotMatch(html, /href=/);
+    taskButton.onclick();
+    assert.equal(selected, "除草剤散布");
+    assert.equal(closed, true);
+  });
+
+test("common worker modal keeps legacy title and supports filtered purpose titles safely", () => {
+    let html;
+    const context = load("common/filter/filter-worker.js", {
+      openModal: content => { html = content; }, bindModalCloseEvents() {},
+      document: { getElementById: () => null, querySelectorAll: () => [] },
+    });
+    context.openWorkerSelectModal({ workers: [{ display: "担当A" }], selected: [] });
+    assert.match(html, /<h3>作業者の選択<\/h3>/);
+    context.openWorkerSelectModal({ workers: [{ display: "担当A" }], selected: [], title: "<家族>" });
+    assert.match(html, /&lt;家族&gt;/);
+  });

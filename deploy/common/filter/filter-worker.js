@@ -2,7 +2,7 @@
 
 import { openModal, closeModal, bindModalCloseEvents } from "./filter-core.js?v=1";
 
-export function openWorkerSelectModal({ workers, selected, onApply }) {
+export function openWorkerSelectModal({ workers, selected, onApply, title = "作業者の選択" }) {
   const selectedSet = new Set(selected || []);
 
   const html = `
@@ -10,7 +10,7 @@ export function openWorkerSelectModal({ workers, selected, onApply }) {
       <div class="modal">
         <div class="modal-close" id="modal-close">×</div>
 
-        <h3>作業者の選択</h3>
+        <h3>${escapeHtml(title)}</h3>
 
         <div class="filter-block open" data-worker-root="1">
           <div class="filter-children" style="display:flex; max-height:50vh; overflow-y:auto;">
