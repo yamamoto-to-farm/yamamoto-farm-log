@@ -12,6 +12,7 @@ import {
   applyAdjustments, defaultScenarioIndex, fitRemaining, toInputTime,
 } from "/admin/shift/shift-logic.js?v=20261101-6";
 import { createMessagePlan, persistMessagePlan } from "./message-plan.js?v=20261103-1";
+import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -201,6 +202,14 @@ function todayIso(offsetDays = 0) {
   const now = new Date();
   now.setDate(now.getDate() + offsetDays);
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function initialMessageDate() {
+  const requested = new URLSearchParams(location.search).get("date");
+  const parsed = parseDateInputLocal(requested);
+  if (requested && parsed && formatLocalYmd(parsed) === requested) return requested;
+  if (requested) console.warn("[message] invalid requested date", requested);
+  return todayIso(1);
 }
 
 function dateLabel(dateIso) {
@@ -544,7 +553,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderHeader({ adminPage: true });
   canEdit = true;
   element("page-area").hidden = false;
-  element("msg-date").value = todayIso(1);  // 既定は明日
+  element("msg-date").value = initialMessageDate();
   syncWorkPlanLink();
 
   await Promise.all([loadMasters(), loadFields()]);
@@ -565,7 +574,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  element("msg-login").addEventListener("click", () => login("/admin/message/index.html"));
+  element("msg-login").addEventListener("click", () => login(`/admin/message/index.html?date=${element("msg-date").value}`));
   element("msg-date").addEventListener("change", () => {
     syncWorkPlanLink();
     return loadFromShift();

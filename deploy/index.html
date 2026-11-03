@@ -294,6 +294,33 @@
       font-size: 13px;
       font-weight: 700;
     }
+    .top-plan-header, .top-plan-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .top-plan-header { justify-content: space-between; }
+    .top-plan-header .ops-card__label { margin: 0; }
+    .top-plan-switch button {
+      padding: 5px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fff;
+      color: #41576d;
+      cursor: pointer;
+    }
+    .top-plan-switch button[aria-pressed="true"] { background: #e8f0ff; border-color: #4f7ad9; color: #2256a5; }
+    #top-plan-date { margin: 8px 0; font-size: 14px; font-weight: 700; }
+    #top-plan-body { max-height: 240px; overflow: auto; overflow-wrap: anywhere; margin-bottom: 12px; font-size: 14px; }
+    .top-plan-person { padding: 8px 0; border-bottom: 1px solid #e6edf5; }
+    .top-plan-person:first-child { padding-top: 0; }
+    .top-plan-person h3 { margin: 0 0 4px; font-size: 14px; }
+    .top-plan-person p { margin: 4px 0; line-height: 1.6; }
+    #top-plan-create { display: block; text-align: center; }
+    .top-plan-note { font-size: 12px; color: #687b92; margin: 8px 0; }
+    #top-plan-hints > summary { font-size: 13px; font-weight: 700; cursor: pointer; color: #41576d; }
+    #top-plan-hints-body { margin-top: 8px; }
     .ops-alert-dot {
       display: inline-block;
       width: 8px;
@@ -586,7 +613,8 @@
     import { showPinGate, verifyLocalAuth } from "./common/ui.js?v=1";
     import { renderHeader } from "./common/header.js?v=1";
     import { loadJSON } from "./common/json.js?v=1";
-    import { loadCSV } from "./common/csv.js?v=1";
+    import { loadCSV } from "./common/csv.js?v=20261104-1";
+    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
     import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-status-2";
 
@@ -1081,47 +1109,68 @@
       const limit = new Date(today);
       limit.setDate(limit.getDate() + 14);
 
+      const rows = await loadPlanningCSV(`/logs/schedule/planting/${today.getFullYear()}.csv`);
+      return rows
+        .map(row => ({ ...row, planDate: row.planPlantDate || row.plantDate || "" }))
+        .filter(row => row.planDate)
+        .filter(row => {
+          const date = new Date(`${row.planDate}T00:00:00`);
+          return !Number.isNaN(date.getTime()) && date >= today && date <= limit;
+        })
+        .sort((a, b) => a.planDate.localeCompare(b.planDate));
+    }
+
+    async function loadPlanningCSV(path) {
       try {
-        const rows = await loadCSV(`/logs/schedule/planting/${today.getFullYear()}.csv`);
-        const upcoming = rows
-          .map(row => ({ ...row, planDate: row.planPlantDate || row.plantDate || "" }))
-          .filter(row => row.planDate)
-          .filter(row => {
-            const date = new Date(`${row.planDate}T00:00:00`);
-            return !Number.isNaN(date.getTime()) && date >= today && date <= limit;
-          })
-          .sort((a, b) => a.planDate.localeCompare(b.planDate));
-        return upcoming;
+        return await loadCSV(path);
       } catch (error) {
-        return [];
+        if (error.status === 404) return [];
+        throw error;
+      }
+    }
+
+    async function renderPlanningHints() {
+      const body = document.getElementById("top-plan-hints-body");
+      body.textContent = "読み込み中…";
+      try {
+        const [schedule, planting, alerts] = await Promise.all([
+          loadScheduleStatus(), loadPlantingStatus(), loadManagementAlerts()
+        ]);
+        renderScheduleCard(schedule, planting, alerts);
+      } catch (error) {
+        console.error("[top] planning hints load failed", error);
+        body.textContent = "確認事項を取得できません。";
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "secondary-btn";
+        retry.textContent = "再試行";
+        retry.onclick = renderPlanningHints;
+        body.append(retry);
       }
     }
 
     function renderScheduleCard(rows, plantingRows, managementAlerts) {
-      const card = document.getElementById("ops-schedule-card");
+      const card = document.getElementById("top-plan-hints-body");
       if (!card) return;
       const preview = rows.slice(0, 3);
       const plannedPlantings = Array.isArray(plantingRows) ? plantingRows : [];
       const plantingFieldCount = new Set(plannedPlantings.map(row => row.field).filter(Boolean)).size;
       const alerts = Array.isArray(managementAlerts) ? managementAlerts : [];
-      const criticalCount = alerts.filter(item => item.severity === "alert").length;
-
-      card.className = `ops-card ${criticalCount ? "ops-card--warn" : rows.length ? "ops-card--alert" : "ops-card--ok"}`;
       card.innerHTML = `
-        <div class="ops-card__label">次の作業</div>
-        <div class="ops-card__value">${rows.length}件</div>
+        <div class="ops-card__section-title">近い定植予定</div>
         <ul class="ops-card__list">
-          ${preview.length ? preview.map(row => `<li>${formatScheduleDate(row.planDate)} ${row.field || "圃場未定"}：定植</li>`).join("") : "<li>14日以内の定植予定はありません</li>"}
+          ${preview.length ? preview.map(row => `<li>${escapeHtml(formatScheduleDate(row.planDate))} ${escapeHtml(row.field || "圃場未定")}：定植</li>`).join("") : "<li>14日以内の定植予定はありません</li>"}
           <li>今月の定植予定：${plannedPlantings.length}件（${plantingFieldCount}圃場）</li>
           <li><a href="/schedule/plan.html">→ 定植予定を見る</a></li>
         </ul>
         ${alerts.length ? `
           <div class="ops-card__section">
-            <div class="ops-card__section-title">管理作業の遅れ ${alerts.length}件${criticalCount ? `（要対応 ${criticalCount}）` : ""}</div>
+            <div class="ops-card__section-title">管理作業の確認候補 ${alerts.length}件</div>
             <ul class="ops-card__list">
-              ${alerts.slice(0, 3).map(item => `<li><span class="ops-alert-dot ops-alert-dot--${item.severity}"></span>${item.field}：${item.reason}</li>`).join("")}
+              ${alerts.slice(0, 3).map(item => `<li>${escapeHtml(item.field)}：${escapeHtml(item.reason)}</li>`).join("")}
               <li><a href="/list/list.html?mode=planting">→ 管理作業を確認する</a></li>
             </ul>
+            <p class="top-plan-note">作業記録の回数・経過日数による候補です。作業の必要性は圃場の状況と合わせて確認してください。</p>
           </div>
         ` : ""}
       `;
@@ -1132,11 +1181,11 @@
       const today = todayYmd();
 
       const [plantingRows, harvestRows, pesticideRows, intertillRows, discardRows] = await Promise.all([
-        loadCSV("/logs/planting/all.csv").catch(() => []),
-        loadCSV("/logs/harvest/all.csv").catch(() => []),
-        loadCSV("/logs/pesticide/all.csv").catch(() => []),
-        loadCSV("/logs/intertill/all.csv").catch(() => []),
-        loadCSV("/logs/discard-planting/all.csv").catch(() => [])
+        loadPlanningCSV("/logs/planting/all.csv"),
+        loadPlanningCSV("/logs/harvest/all.csv"),
+        loadPlanningCSV("/logs/pesticide/all.csv"),
+        loadPlanningCSV("/logs/intertill/all.csv"),
+        loadPlanningCSV("/logs/discard-planting/all.csv")
       ]);
 
       const harvestedRefs = new Set(
@@ -1250,13 +1299,9 @@
     }
 
     async function loadPlantingStatus() {
-      try {
-        const rows = await loadCSV(`/logs/schedule/planting/${new Date().getFullYear()}.csv`);
-        const monthPrefix = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-        return rows.filter(row => String(row.planPlantDate || "").startsWith(monthPrefix));
-      } catch (error) {
-        return [];
-      }
+      const rows = await loadPlanningCSV(`/logs/schedule/planting/${new Date().getFullYear()}.csv`);
+      const monthPrefix = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+      return rows.filter(row => String(row.planPlantDate || "").startsWith(monthPrefix));
     }
 
     async function loadWeatherStatus() {
@@ -1323,16 +1368,12 @@
       if (dashboardTitle) dashboardTitle.textContent = `${formatJapaneseYmd(toYmd(new Date()))}の山本農園`;
       document.getElementById("ops-dashboard").style.display = "block";
       document.getElementById("menu-area").classList.add("menu-area--visible");
+      initTopWorkPlans();
+      renderPlanningHints();
 
       const diaryStatus = await loadRecentDiaryStatus();
       renderDiaryCard(diaryStatus);
-      const [scheduleRows, plantingRows, weatherStatus, managementAlerts] = await Promise.all([
-        loadScheduleStatus(),
-        loadPlantingStatus(),
-        loadWeatherStatus(),
-        loadManagementAlerts()
-      ]);
-      renderScheduleCard(scheduleRows, plantingRows, managementAlerts);
+      const weatherStatus = await loadWeatherStatus();
       renderWeatherCard(weatherStatus);
 
       const role = window.currentRole;
@@ -1431,8 +1472,8 @@
         <div class="ops-card__value">読み込み中...</div>
       </article>
 
-      <article id="ops-schedule-card" class="ops-card ops-card--alert">
-        <div class="ops-card__label">次の作業</div>
+      <article id="ops-schedule-card" class="ops-card ops-card--info">
+        <div class="ops-card__label">作業予定</div>
         <div class="ops-card__value">読み込み中...</div>
       </article>
     </div>

@@ -275,6 +275,13 @@ AWS設定（photos の HTTP API に追加）:
   入力先が一意に決まらない育苗や自由記述の作業、ログ取得失敗時・中止連絡には表示しない。
   時刻は照合せず、完了・未実施の判定や実績の自動作成は行わない。自由記述の作業は完全一致のみ。
   登録元を表示し、現行の保存データは「業務連絡」として扱う。
+  トップ右カードもadmin/family向けに今日・明日の保存済み予定を表示し、
+  「作業予定を作る・連絡する」から選択日を業務連絡ページへ渡す（指定なしは従来どおり明日）。
+  定植予定・管理作業の確認候補は同カード下部に折りたたみ、左の日誌・中央の天候は重複表示しない。
+  workerには非公開予定の取得・作成導線を出さず、確認事項だけを表示する。
+  予定と確認事項の取得失敗はそれぞれ再試行できる。確認候補は作業実施を断定するものではない。
+  トップの変更は `deploy/index.html`・`deploy/common/top-work-plans.js` と業務連絡ページも公開し、
+  `/index.html`・`/`・`/common/top-work-plans.js`・`/admin/message/*` をCloudFront無効化する。
   この表示の公開には `deploy/diary/index.html`・`diary.js`・`diary.css`・`planned-work.js` を更新し、
   `/diary/*` をCloudFront無効化する。既存の予定保存APIが反映済みならAWS側の追加変更は不要。
 - 保存先は `SHIFT_BUCKET` の `<SHIFT_PREFIX>work-plans/YYYY-MM-DD.json`。
