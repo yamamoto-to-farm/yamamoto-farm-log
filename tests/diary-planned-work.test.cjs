@@ -26,6 +26,7 @@ test("planned work uses the same external heading and card styles as work logs",
   assert.match(css, /#plannedWorkPanel > summary::before \{ content: "▶ "; \}/);
   assert.match(css, /#plannedWorkPanel\[open\] > summary::before \{ content: "▼ "; \}/);
   assert.match(css, /summary::-webkit-details-marker \{ display: none; \}/);
+  assert.match(css, /#plannedWorkBody details\.planned-work-related > summary \{\s*font-size: 0\.85rem;\s*font-weight: normal;/);
 });
 
 test("related logs require exact worker tokens, mapped task and specified field, not time", () => {

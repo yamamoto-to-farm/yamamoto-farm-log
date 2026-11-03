@@ -1425,3 +1425,8 @@
 .planned-work-block { margin: 10px 0; }
 .planned-work-block p { margin: 4px 0; }
 .planned-work-related { font-size: 0.85rem; color: #64748b; }
+#plannedWorkBody details.planned-work-related > summary {
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: #64748b;
+}
