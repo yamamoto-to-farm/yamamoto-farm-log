@@ -197,8 +197,7 @@ test("diary uses original plan blocks rather than duplicating personal lunch pro
   await context.renderPlannedWork("2026-11-04", Promise.resolve([]));
   assert.equal((body.innerHTML.match(/<article/g) || []).length, 1);
   assert.equal((body.innerHTML.match(/class="planned-work-block"/g) || []).length, 1);
-  assert.match(body.innerHTML, /<h3>担当A・家族A<\/h3>/);
-  assert.match(body.innerHTML, /08:00〜15:30　草とり/);
+  assert.match(body.innerHTML, /<h3>草とり｜圃場A<\/h3>\s*<p>08:00〜15:30<\/p><p>作業者：担当A・家族A<\/p>/);
   assert.equal((body.innerHTML.match(/href="\/hand-weeding\/index.html"/g) || []).length, 1);
   assert.match(body.innerHTML, /<details class="planned-work-related"><summary>各人の参加時間/);
   assert.match(body.innerHTML, /08:00〜12:00・13:00〜15:30/);
@@ -209,7 +208,8 @@ test("grouped plans retain scoped companions, exact worker matching, partial mis
     blocks: [{ ...block, companions: ["家族A"] }, { ...block, task: "潅水", companions: ["家族B"] }] };
   const joint = log({ worker: "担当A／家族A" });
   const html = render({}, [joint], { one: saved });
-  assert.match(html, /<h3>担当A・家族A・家族B/);
+  assert.match(html, /<h3>草とり｜圃場A<\/h3>/);
+  assert.match(html, /<h3>潅水｜圃場A<\/h3>/);
   assert.match(html, /作業者：担当A・家族A/);
   assert.match(html, /（1件）/);
   assert.doesNotMatch(html, /（2件）|家族Aの該当ログ/);

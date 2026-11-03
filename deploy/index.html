@@ -221,16 +221,6 @@
       font-weight: 700;
       color: #1f2f3f;
     }
-    .ops-dashboard__tag {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #eaf3ff;
-      color: #2256a5;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
     .ops-dashboard__grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -614,7 +604,7 @@
     import { renderHeader } from "./common/header.js?v=1";
     import { loadJSON } from "./common/json.js?v=1";
     import { loadCSV } from "./common/csv.js?v=20261104-1";
-    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-group-2";
+    import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-task-1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
     import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-status-2";
 
@@ -1459,7 +1449,6 @@
   <div id="ops-dashboard" class="ops-dashboard" style="display:none;">
     <div class="ops-dashboard__header">
       <h2 class="ops-dashboard__title">今日の山本農園</h2>
-      <span class="ops-dashboard__tag">運用状況</span>
     </div>
     <div class="ops-dashboard__grid">
       <article id="ops-diary-card" class="ops-card ops-card--warn">

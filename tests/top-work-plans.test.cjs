@@ -108,7 +108,7 @@ test("top renders one card per original plan rather than personal lunch projecti
   const html = nodes["top-plan-body"].innerHTML;
   assert.equal((html.match(/<article/g) || []).length, 1);
   assert.equal((html.match(/草とり/g) || []).length, 1);
-  assert.match(html, /<h3>パートA・家族A<\/h3>/);
+  assert.match(html, /<h3>草とり｜圃場A<\/h3>\s*<p>08:00〜15:30<\/p>\s*<p>作業者：パートA・家族A<\/p>/);
   assert.match(html, /08:00〜15:30/);
   assert.doesNotMatch(html, /08:00〜12:00|13:00〜15:30/);
 });
@@ -120,13 +120,14 @@ test("grouped top cards keep separate plan IDs, scoped workers, cancellation and
   ] };
   const html = context.topPlansHtml({}, { one: saved, two: saved });
   assert.equal((html.match(/<article/g) || []).length, 2);
-  assert.match(html, /担当A・家族A・家族B/);
   assert.match(html, /作業者：担当A・家族A/);
   assert.match(html, /作業者：担当A・家族B/);
   assert.match(html, /潅水｜圃場B・圃場C/);
   const cancelled = context.topPlansHtml({}, { one: { ...saved, names: ["<img>"], off: true, off_reason: "<svg>" } });
   assert.match(cancelled, /中止の連絡/);
-  assert.doesNotMatch(cancelled, /<img>|<svg>|草とり/);
+  assert.doesNotMatch(cancelled, /<img>|<svg>/);
+  assert.match(cancelled, /<h3>草とり｜圃場A<\/h3>/);
+  assert.match(html, /<h3>潅水｜圃場B・圃場C<\/h3>\s*<p>時間未指定<\/p>/);
   assert.match(context.topPlansHtml({ ignored: saved }, {}), /予定は保存されていません/);
 });
 

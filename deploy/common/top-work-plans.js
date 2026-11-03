@@ -1,18 +1,19 @@
-import { fetchWorkPlanRecord } from "/diary/planned-work.js?v=20261104-group-1";
+import { fetchWorkPlanRecord } from "/diary/planned-work.js?v=20261104-task-1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd } from "/common/date-utils.js?v=1";
 
 const escape = value => String(value ?? "").replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 
-function topPlanBlocksHtml(plan, workers = []) {
-  if (plan.off) return `<p>中止の連絡${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>`;
+function topPlanBlocksHtml(plan, fallbackWorkers = []) {
+  const cancelled = plan.off ? `<p>中止の連絡${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>` : "";
+  if (!plan.blocks.length) return `<h3>作業予定</h3><p>作業者：${escape((plan.names || fallbackWorkers).join("・"))}</p>${cancelled}`;
   return plan.blocks.map(block => {
     const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
-    const participants = [...new Set([...(plan.names || []), ...(block.companions || [])])];
-    const scoped = workers.length && participants.length !== workers.length
-      ? `<small>作業者：${escape(participants.join("・"))}</small>` : "";
-    return `${scoped}<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}<br>` : ""}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}</p>`;
+    const participants = [...new Set([...(plan.names || fallbackWorkers), ...(block.companions || [])])];
+    return `<h3>${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}</h3>
+      <p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}` : "時間未指定"}</p>
+      <p>作業者：${escape(participants.join("・"))}</p>${cancelled}`;
   }).join("");
 }
 
@@ -20,14 +21,13 @@ export function topPlansHtml(people, plans) {
   if (plans !== undefined) {
     if (!Object.keys(plans).length) return "<p>この日の予定は保存されていません。</p>";
     return Object.values(plans).map(plan => {
-      const workers = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
-      return `<article class="top-plan-person"><h3>${escape(workers.join("・"))}</h3>${topPlanBlocksHtml(plan, workers)}</article>`;
+      return `<article class="top-plan-person">${topPlanBlocksHtml(plan)}</article>`;
     }).join("");
   }
   if (!Object.keys(people).length) return "<p>この日の予定は保存されていません。</p>";
   return Object.entries(people).map(([worker, saved]) =>
-    `<article class="top-plan-person"><h3>${escape(worker)}</h3>${(saved.entries || [saved]).map(plan =>
-      topPlanBlocksHtml(plan)
+    `<article class="top-plan-person">${(saved.entries || [saved]).map(plan =>
+      topPlanBlocksHtml(plan, [worker])
     ).join("")}</article>`).join("");
 }
 
