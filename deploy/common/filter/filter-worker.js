@@ -2,7 +2,7 @@
 
 import { openModal, closeModal, bindModalCloseEvents } from "./filter-core.js?v=1";
 
-export function openWorkerSelectModal({ workers, selected, onApply, title = "作業者の選択" }) {
+export function openWorkerSelectModal({ workers, selected, onApply, title = "作業者の選択", single = false }) {
   const selectedSet = new Set(selected || []);
 
   const html = `
@@ -34,10 +34,10 @@ export function openWorkerSelectModal({ workers, selected, onApply, title = "作
   `;
 
   openModal(html);
-  initWorkerEvents(selectedSet, onApply);
+  initWorkerEvents(selectedSet, onApply, single);
 }
 
-function initWorkerEvents(selectedSet, onApply) {
+function initWorkerEvents(selectedSet, onApply, single) {
   const applyBtn = document.getElementById("apply-worker");
   const clearBtn = document.getElementById("clear-worker");
 
@@ -52,6 +52,10 @@ function initWorkerEvents(selectedSet, onApply) {
         selectedSet.delete(name);
         el.classList.remove("selected");
       } else {
+        if (single) {
+          selectedSet.clear();
+          document.querySelectorAll("[data-worker].selected").forEach(item => item.classList.remove("selected"));
+        }
         selectedSet.add(name);
         el.classList.add("selected");
       }

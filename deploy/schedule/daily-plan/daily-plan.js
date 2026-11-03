@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { renderHeader } from "/common/header.js?v=1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261104-modal-1";
-import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-modal-1";
+import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-kind-1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-unified-1";
 import { hasSession, login, ensureToken } from "/photos/auth.js?v=20261029-2";
 import { config } from "/photos/config.js";
@@ -50,30 +50,69 @@ let blocks = [newBlock()];
 let workerMaster = [];
 let selectedFamily = [];
 let selectedParts = [];
+let shiftEligible = null;
 let cleanSnapshot = "";
 let sequence = 0;
 let shiftSequence = 0;
 let busy = false;
 let shiftGroups = [];
 const snapshot = () => JSON.stringify([selectedFamily, selectedParts, blocks, editingId,
-  el("plan-memo").value, el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value]);
+  el("plan-memo").value, el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, el("plan-kind").value]);
 const canDiscard = () => snapshot() === cleanSnapshot || confirm("入力中の予定を破棄しますか？");
+const activeParts = () => workerMaster.filter(worker => worker.role === "worker" && worker.employmentStatus !== "retired");
+const selectableParts = () => activeParts().filter(worker => shiftEligible === null || shiftEligible.has(worker.display));
+const inferKind = () => selectedFamily.length ? selectedParts.length ? "mixed" : "family"
+  : selectedParts.length > 1 ? "parts" : "single";
+export function resolveShiftWorker(person, staff, workers) {
+  const normalize = value => String(value || "").normalize("NFKC").replace(/\s/g, "");
+  const member = staff.find(member => member.name === person);
+  const candidates = member?.login ? workers.filter(worker => worker.name === member.login)
+    : workers.filter(worker => normalize(worker.display) === normalize(person)
+      || normalize(worker.name) === normalize(person)
+      || String(worker.display || "").normalize("NFKC").trim().split(/\s+/)[0] === String(person).normalize("NFKC"));
+  if (candidates.length !== 1 || !candidates[0].display) {
+    throw new Error(`「${person}」のパート従業員を一意に特定できません。シフト設定のログイン連携を確認してください。`);
+  }
+  return candidates[0].display;
+}
+function validateParticipants() {
+  const mode = el("plan-kind").value;
+  if (!mode) throw new Error("作業形態を選択してください。");
+  if ((mode === "family" && (!selectedFamily.length || selectedParts.length))
+    || (mode === "mixed" && (!selectedFamily.length || !selectedParts.length))
+    || (mode === "parts" && (selectedFamily.length || selectedParts.length < 2))
+    || (mode === "single" && (selectedFamily.length || selectedParts.length !== 1))) {
+    throw new Error("作業形態に合う作業者を選択してください。");
+  }
+  if (shiftEligible !== null && selectedParts.some(name => !shiftEligible.has(name))) {
+    throw new Error("この日のシフトにいないパート従業員が含まれています。作業者を選び直してください。");
+  }
+}
 function notice(message, error = false) {
   el("status").textContent = message;
   el("status").classList.toggle("error", error);
   el("plan-login").hidden = hasSession();
 }
 function renderWorkers() {
+  const mode = el("plan-kind").value;
+  el("family-group").hidden = !["family", "mixed"].includes(mode);
+  el("parts-group").hidden = !["mixed", "parts", "single"].includes(mode);
+  el("parts-shift-note").textContent = shiftEligible === null ? "シフト未読込：在籍中のパート従業員から選択できます。"
+    : "シフト読込済み：この日のシフトにいるパート従業員だけ選択できます。";
   el("plan-workers").textContent = selectedFamily.join(" / ") || "未選択";
   el("plan-parts").textContent = selectedParts.join(" / ") || "未選択";
-  el("participant-kind").textContent = selectedFamily.length
-    ? selectedParts.length ? "家族とパート（LINE報告なし）" : "家族・自分のみ"
-    : selectedParts.length > 1 ? "パートのみ（連絡係を指定）" : selectedParts.length ? "パート1人（本人が報告）" : "作業者を選択してください。";
+  el("participant-kind").textContent = {
+    family: "家族従業員を選択してください。",
+    mixed: "家族従業員とパート従業員を選択してください（LINE報告なし）。",
+    parts: "パート従業員を2人以上選択し、連絡係を指定してください。",
+    single: "パート従業員を1人選択してください（本人が報告）。",
+  }[mode] || "作業形態を選択してください。";
+  el("reporter-group").hidden = mode !== "parts";
   const reporter = el("plan-reporter").value;
   el("plan-reporter").innerHTML = '<option value="">連絡係を選択</option>' + selectedParts.map(name =>
     `<option value="${escape(name)}">${escape(name)}</option>`).join("");
   el("plan-reporter").value = selectedParts.includes(reporter) ? reporter : selectedParts[0] || "";
-  el("plan-reporter").disabled = Boolean(selectedFamily.length || selectedParts.length < 2);
+  el("plan-reporter").disabled = mode !== "parts" || selectedParts.length < 2;
 }
 function renderBlocks() {
   el("plan-blocks").innerHTML = blocks.map((block, index) => `<fieldset class="plan-block">
@@ -99,6 +138,7 @@ function clearForm() {
   blocks = [newBlock()];
   editingId = null;
   source = "direct";
+  el("plan-kind").value = "";
   renderWorkers();
   renderBlocks();
   el("editing-label").textContent = "新しい予定";
@@ -134,6 +174,8 @@ async function loadDay(preferredId = null) {
   const current = ++sequence;
   ++shiftSequence;
   const date = el("plan-date").value;
+  if (date !== loadedDate) shiftEligible = null;
+  shiftGroups = [];
   record = null;
   loadedDate = date;
   clearForm();
@@ -200,6 +242,7 @@ function editPlan(id) {
   const all = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
   selectedFamily = all.filter(name => !partNames.has(name));
   selectedParts = all.filter(name => partNames.has(name));
+  el("plan-kind").value = inferKind();
   blocks = plan.blocks.map(block => ({ ...structuredClone(block), fields: block.fields ? [...block.fields] : block.field ? [block.field] : [] }));
   renderWorkers();
   renderBlocks();
@@ -224,12 +267,16 @@ async function shiftApi(path, query = {}, method = "GET") {
   return response.json();
 }
 async function loadShift() {
+  if (!record) { notice("先にこの日の予定を再読み込みしてください。", true); return; }
   const current = ++shiftSequence;
   const date = el("plan-date").value;
   el("shift-candidates").replaceChildren();
+  shiftEligible = new Set();
+  shiftGroups = [];
   el("shift-state").textContent = "シフトを読み込み中…";
   try {
-    const [plan, edits] = await Promise.all([shiftApi("/shift/plan", { month: date.slice(0, 7) }), shiftApi("/shift/edits", { month: date.slice(0, 7) })]);
+    const [plan, edits, settings] = await Promise.all([shiftApi("/shift/plan", { month: date.slice(0, 7) }),
+      shiftApi("/shift/edits", { month: date.slice(0, 7) }), shiftApi("/shift/config")]);
     if (current !== shiftSequence || date !== el("plan-date").value) return;
     const scenario = plan.scenarios[defaultScenarioIndex(plan)];
     let items = applyAdjustments(plan, scenario, edits.overrides || {}, edits.base || null);
@@ -239,15 +286,22 @@ async function loadShift() {
       const start = toInputTime(item.start || ""), end = toInputTime(item.proposed_end || "");
       const key = `${start}|${end}`;
       if (!groups.has(key)) groups.set(key, { names: [], start, end });
-      groups.get(key).names.push(item.person);
+      const name = resolveShiftWorker(item.person, settings.staff || plan.staff || [], activeParts());
+      if (!groups.get(key).names.includes(name)) groups.get(key).names.push(name);
     }
     shiftGroups = [...groups.values()];
+    shiftEligible = new Set(shiftGroups.flatMap(group => group.names));
+    renderWorkers();
+    if (selectedParts.some(name => !shiftEligible.has(name))) {
+      notice("選択中にこの日のシフトにいないパート従業員がいます。作業者を選び直してください。", true);
+    } else notice("");
     el("shift-candidates").innerHTML = shiftGroups.map((group, index) =>
       `<button type="button" class="secondary-btn" data-shift-group="${index}">${escape(group.names.join("・"))} ${escape(group.start)}〜${escape(group.end)} を予定入力へ</button>`).join("");
-    el("shift-state").textContent = `${shiftGroups.length}グループ。選択後に作業を指定して保存してください（保存済み予定は自動変更しません）。${plan.generated_at ? ` データ：${plan.generated_at}` : ""}`;
+    el("shift-state").textContent = `${shiftGroups.length}グループ。パート従業員はこの日のシフトにいる人だけ選択できます。選択後に作業を指定して保存してください（保存済み予定は自動変更しません）。${plan.generated_at ? ` データ：${plan.generated_at}` : ""}`;
   } catch (error) {
     if (current !== shiftSequence) return;
     console.error("[daily-plan] shift load failed", error);
+    renderWorkers();
     notice(error.message, true);
     el("shift-state").textContent = "シフト読込に失敗しました。再度読み込んでください。";
   }
@@ -283,17 +337,31 @@ window.addEventListener("DOMContentLoaded", async () => {
   el("plan-date").value = requested && parsed && formatLocalYmd(parsed) === requested ? requested : formatLocalYmd(new Date());
   el("select-family").onclick = () => openWorkerSelectModal({
     workers: workerMaster.filter(worker => ["admin", "family"].includes(worker.role)), selected: selectedFamily,
-    title: "作業者の選択（家族・自分）", onApply: names => {
+    title: "作業者の選択（家族従業員）", onApply: names => {
       selectedFamily = names;
       blocks.forEach(block => { if (block.companions) block.companions = block.companions.filter(name => names.includes(name)); });
       renderWorkers(); renderBlocks();
     },
   });
   el("select-parts").onclick = () => openWorkerSelectModal({
-    workers: workerMaster.filter(worker => worker.role === "worker" && worker.employmentStatus !== "retired"),
-    selected: selectedParts, title: "作業者の選択（パート）",
-    onApply: names => { selectedParts = names; renderWorkers(); renderBlocks(); },
+    workers: selectableParts(),
+    selected: selectedParts.filter(name => selectableParts().some(worker => worker.display === name)),
+    title: "作業者の選択（パート従業員）",
+    single: el("plan-kind").value === "single",
+    onApply: names => {
+      if (el("plan-kind").value === "single" && names.length > 1) { notice("④パート１人は1人だけ選択してください。", true); return; }
+      selectedParts = names; renderWorkers(); renderBlocks();
+    },
   });
+  el("plan-kind").onchange = () => {
+    const mode = el("plan-kind").value;
+    if (!["family", "mixed"].includes(mode)) {
+      selectedFamily = [];
+      blocks.forEach(block => { delete block.companions; });
+    }
+    if (mode === "family" || !mode || (mode === "single" && selectedParts.length > 1)) selectedParts = [];
+    renderWorkers(); renderBlocks();
+  };
   el("add-block").onclick = () => { blocks.push(newBlock()); renderBlocks(); };
   el("plan-blocks").oninput = event => {
     const index = Number(event.target.dataset.block);
@@ -339,12 +407,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     const group = shiftGroups[Number(button.dataset.shiftGroup)];
     clearForm();
     selectedParts = [...group.names];
+    el("plan-kind").value = inferKind();
     blocks[0].start = group.start; blocks[0].end = group.end;
     renderWorkers(); renderBlocks();
   };
   el("plan-form").onsubmit = async event => {
     event.preventDefault();
     try {
+      validateParticipants();
       const plan = createUnifiedPlan(selectedFamily, selectedParts, blocks, el("plan-memo").value,
         el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, source);
       await saveRequest({ plan, ...(editingId ? { id: editingId } : {}) });
