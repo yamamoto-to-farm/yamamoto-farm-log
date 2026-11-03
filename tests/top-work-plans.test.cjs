@@ -25,7 +25,7 @@ function screen(role = "admin", deps = {}) {
     console: { error() {}, warn() {} }, URLSearchParams, location: { search: "" },
     window: { currentRole: role }, hasSession: () => true,
     document: { getElementById: id => nodes[id], createElement: node },
-    fetchPlannedWork: async () => ({ 担当A: plan }), ...deps,
+    fetchWorkPlanRecord: async () => ({ data: { people: { 担当A: plan } } }), ...deps,
   });
   vm.runInContext(strip(read("common/date-utils.js")), context);
   vm.runInContext(strip(read("common/top-work-plans.js")), context);
@@ -35,7 +35,7 @@ function screen(role = "admin", deps = {}) {
 
 test("top switches local today and tomorrow, keeps hints collapsed and passes date to message", async () => {
   const calls = [];
-  const { start, nodes, buttons } = screen("family", { fetchPlannedWork: async date => { calls.push(date); return { 担当A: plan }; } });
+  const { start, nodes, buttons } = screen("family", { fetchWorkPlanRecord: async date => { calls.push(date); return { data: { people: { 担当A: plan } } }; } });
   await start();
   assert.equal(calls[0], "2026-12-31");
   assert.match(nodes["top-plan-body"].innerHTML, /担当A|草とり/);
@@ -52,17 +52,17 @@ test("top switches local today and tomorrow, keeps hints collapsed and passes da
 });
 
 test("top escapes plans and distinguishes empty plans, cancellation and API errors", async () => {
-  const { context, nodes, start } = screen("admin", { fetchPlannedWork: async () => ({}) });
+  const { context, nodes, start } = screen("admin", { fetchWorkPlanRecord: async () => ({ data: { people: {} } }) });
   await start();
   assert.match(nodes["top-plan-body"].innerHTML, /予定は保存されていません/);
   const html = context.topPlansHtml({ "<img>": { off: true, off_reason: "<svg>", blocks: [] } });
   assert.match(html, /中止の連絡/);
   assert.doesNotMatch(html, /<img>|<svg>/);
-  context.fetchPlannedWork = async () => { throw new Error("取得失敗"); };
+  context.fetchWorkPlanRecord = async () => { throw new Error("取得失敗"); };
   await start();
   assert.equal(nodes["top-plan-body"].textContent, "取得失敗");
   assert.equal(nodes["top-plan-body"].children[0].textContent, "再試行");
-  context.fetchPlannedWork = async () => ({ 担当A: plan });
+  context.fetchWorkPlanRecord = async () => ({ data: { people: { 担当A: plan } } });
   await nodes["top-plan-body"].children[0].onclick();
   assert.match(nodes["top-plan-body"].innerHTML, /草とり/);
 });
@@ -70,12 +70,12 @@ test("top escapes plans and distinguishes empty plans, cancellation and API erro
 test("top ignores slow old dates and preserves selected day across login", async () => {
   let finish;
   const { context, nodes, buttons, start } = screen("admin", {
-    fetchPlannedWork: date => date === "2026-12-31"
-      ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({}),
+    fetchWorkPlanRecord: date => date === "2026-12-31"
+      ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ data: { people: {} } }),
   });
   const pending = start();
   await buttons[1].click();
-  finish({ 担当A: plan });
+  finish({ data: { people: { 担当A: plan } } });
   await pending;
   assert.match(nodes["top-plan-body"].innerHTML, /予定は保存されていません/);
   context.hasSession = () => false;
@@ -90,10 +90,44 @@ test("top ignores slow old dates and preserves selected day across login", async
 });
 
 test("workers never fetch private plans or receive a creation link", async () => {
-  const { nodes, start } = screen("worker", { fetchPlannedWork: () => assert.fail("private request") });
+  const { nodes, start } = screen("worker", { fetchWorkPlanRecord: () => assert.fail("private request") });
   await start();
   assert.doesNotMatch(nodes["ops-schedule-card"].innerHTML, /top-plan-create|data-plan-day|top-plan-body/);
   assert.match(nodes["ops-schedule-card"].innerHTML, /top-plan-hints-body/);
+});
+test("top renders one card per original plan rather than personal lunch projections", async () => {
+  const saved = { ...plan, names: ["パートA"], recipients: ["パートA"],
+    blocks: [{ ...plan.blocks[0], companions: ["家族A"], participation: {
+      パートA: [{ start: "08:00", end: "12:00" }, { start: "13:00", end: "15:30" }],
+    } }] };
+  const { nodes, start } = screen("family", { fetchWorkPlanRecord: async () => ({ data: {
+    people: { パートA: { ...saved, blocks: [{ ...saved.blocks[0], end: "12:00" }, { ...saved.blocks[0], start: "13:00" }] },
+      家族A: saved }, plans: { one: saved },
+  } }) });
+  await start();
+  const html = nodes["top-plan-body"].innerHTML;
+  assert.equal((html.match(/<article/g) || []).length, 1);
+  assert.equal((html.match(/草とり/g) || []).length, 1);
+  assert.match(html, /<h3>パートA・家族A<\/h3>/);
+  assert.match(html, /08:00〜15:30/);
+  assert.doesNotMatch(html, /08:00〜12:00|13:00〜15:30/);
+});
+test("grouped top cards keep separate plan IDs, scoped workers, cancellation and escaping", () => {
+  const { context } = screen();
+  const saved = { ...plan, names: ["担当A"], blocks: [
+    { ...plan.blocks[0], companions: ["家族A"] },
+    { start: "", end: "", task: "潅水", fields: ["圃場B", "圃場C"], companions: ["家族B"] },
+  ] };
+  const html = context.topPlansHtml({}, { one: saved, two: saved });
+  assert.equal((html.match(/<article/g) || []).length, 2);
+  assert.match(html, /担当A・家族A・家族B/);
+  assert.match(html, /作業者：担当A・家族A/);
+  assert.match(html, /作業者：担当A・家族B/);
+  assert.match(html, /潅水｜圃場B・圃場C/);
+  const cancelled = context.topPlansHtml({}, { one: { ...saved, names: ["<img>"], off: true, off_reason: "<svg>" } });
+  assert.match(cancelled, /中止の連絡/);
+  assert.doesNotMatch(cancelled, /<img>|<svg>|草とり/);
+  assert.match(context.topPlansHtml({ ignored: saved }, {}), /予定は保存されていません/);
 });
 
 test("message honors valid requested dates and otherwise keeps tomorrow default", () => {

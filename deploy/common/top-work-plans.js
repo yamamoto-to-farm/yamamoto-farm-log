@@ -1,19 +1,33 @@
-import { fetchPlannedWork } from "/diary/planned-work.js?v=20261104-time-1";
+import { fetchWorkPlanRecord } from "/diary/planned-work.js?v=20261104-group-1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd } from "/common/date-utils.js?v=1";
 
 const escape = value => String(value ?? "").replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 
-export function topPlansHtml(people) {
+function topPlanBlocksHtml(plan, workers = []) {
+  if (plan.off) return `<p>中止の連絡${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>`;
+  return plan.blocks.map(block => {
+    const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
+    const participants = [...new Set([...(plan.names || []), ...(block.companions || [])])];
+    const scoped = workers.length && participants.length !== workers.length
+      ? `<small>作業者：${escape(participants.join("・"))}</small>` : "";
+    return `${scoped}<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}<br>` : ""}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}</p>`;
+  }).join("");
+}
+
+export function topPlansHtml(people, plans) {
+  if (plans !== undefined) {
+    if (!Object.keys(plans).length) return "<p>この日の予定は保存されていません。</p>";
+    return Object.values(plans).map(plan => {
+      const workers = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
+      return `<article class="top-plan-person"><h3>${escape(workers.join("・"))}</h3>${topPlanBlocksHtml(plan, workers)}</article>`;
+    }).join("");
+  }
   if (!Object.keys(people).length) return "<p>この日の予定は保存されていません。</p>";
   return Object.entries(people).map(([worker, saved]) =>
     `<article class="top-plan-person"><h3>${escape(worker)}</h3>${(saved.entries || [saved]).map(plan =>
-      plan.off ? `<p>中止の連絡${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>`
-        : plan.blocks.map(block => {
-          const fields = Array.isArray(block.fields) ? block.fields.join("・") : block.field;
-          return `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}<br>` : ""}${escape(block.task)}${fields ? `｜${escape(fields)}` : ""}</p>`;
-        }).join("")
+      topPlanBlocksHtml(plan)
     ).join("")}</article>`).join("");
 }
 
@@ -68,9 +82,9 @@ export function initTopWorkPlans(baseDate = new Date()) {
     }
     body.textContent = "予定を読み込み中…";
     try {
-      const people = await fetchPlannedWork(requestedDate);
+      const record = await fetchWorkPlanRecord(requestedDate);
       if (current !== sequence) return;
-      body.innerHTML = topPlansHtml(people);
+      body.innerHTML = topPlansHtml(record.data.people, record.data.plans);
     } catch (error) {
       if (current !== sequence) return;
       console.error("[top] planned work load failed", requestedDate, error);
