@@ -80,14 +80,25 @@ export async function fetchWorkPlanRecord(date) {
   const result = await response.json();
   const validPlan = plan => plan && typeof plan.off === "boolean" && Array.isArray(plan.blocks)
     && plan.blocks.every(block => block && typeof block.task === "string"
-      && (block.fields === undefined || (Array.isArray(block.fields) && block.fields.every(field => typeof field === "string"))));
+      && (block.fields === undefined || (Array.isArray(block.fields) && block.fields.every(field => typeof field === "string")))
+      && (block.companions === undefined || (Array.isArray(block.companions) && block.companions.every(name => typeof name === "string"))));
+  const validNamedPlan = plan => validPlan(plan) && Array.isArray(plan.names)
+    && plan.names.every(name => typeof name === "string")
+    && (plan.recipients === undefined || (Array.isArray(plan.recipients) && plan.recipients.every(name => typeof name === "string")));
+  const validCommunication = item => item && ["copied", "sent"].includes(item.status)
+    && typeof item.at === "string" && typeof item.plan_revision === "string";
   if (result?.date !== date || result.data?.date !== date || !result.data.people
       || typeof result.data.people !== "object" || Array.isArray(result.data.people)
       || Object.values(result.data.people).some(plan => !validPlan(plan)
         || (plan.entries !== undefined && (!Array.isArray(plan.entries) || !plan.entries.every(validPlan))))
       || (result.data.plans !== undefined && (!result.data.plans || Array.isArray(result.data.plans)
         || typeof result.data.plans !== "object" || Object.values(result.data.plans).some(plan =>
-          !validPlan(plan) || !Array.isArray(plan.names) || !plan.names.every(name => typeof name === "string"))))) {
+          !validNamedPlan(plan) || (plan.last_communication != null && !validCommunication(plan.last_communication)))))
+      || (result.data.communications !== undefined && (!Array.isArray(result.data.communications)
+        || result.data.communications.some(item => !validCommunication(item)
+          || typeof item.id !== "string" || typeof item.plan_id !== "string" || typeof item.message !== "string"
+          || !Array.isArray(item.recipients) || !item.recipients.every(name => typeof name === "string")
+          || !validNamedPlan(item.plan))))) {
     throw new Error("予定データの形式が不正です。");
   }
   return result;

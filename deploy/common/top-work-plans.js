@@ -1,4 +1,4 @@
-import { fetchPlannedWork } from "/diary/planned-work.js?v=20261104-family-1";
+import { fetchPlannedWork } from "/diary/planned-work.js?v=20261104-unified-1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd } from "/common/date-utils.js?v=1";
 
@@ -32,7 +32,7 @@ export function initTopWorkPlans(baseDate = new Date()) {
     <div id="top-plan-body" aria-live="polite"></div>
     <a id="top-plan-direct" class="primary-btn" href="/schedule/daily-plan/index.html">予定を追加・編集</a>
     <a id="top-plan-create" class="secondary-btn" href="/admin/message/index.html">作業予定を連絡する</a>
-    <p class="top-plan-note">業務連絡と直接入力から保存された予定を表示しています。</p>
+    <p class="top-plan-note">保存済み予定を表示しています。連絡文は業務連絡で作成します。</p>
   ` : ""}
     <details class="ops-card__section" id="top-plan-hints">
       <summary>予定を組むための確認事項</summary>

@@ -7,7 +7,7 @@
   <title>業務連絡（LINE下書き） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261104-family-1">
+  <link rel="stylesheet" href="./message.css?v=20261104-unified-1">
 </head>
 <body>
   <div id="header"></div>
@@ -15,7 +15,7 @@
   <div id="page-area" class="page-container" hidden>
     <h1 class="page-title">業務連絡（LINE下書き）</h1>
     <p class="msg-note">文面を作ってコピーし、LINEに貼り付けて送る運用です（このページから自動送信はしません）。</p>
-    <p><a id="direct-plan-link" href="/schedule/daily-plan/index.html">家族・自分だけの予定を追加・編集</a></p>
+    <p><a id="direct-plan-link" class="secondary-btn" href="/schedule/daily-plan/index.html">作業予定を追加・編集</a></p>
     <p id="status" role="status" aria-live="polite"></p>
 
     <div class="msg-tabs">
@@ -26,27 +26,15 @@
     <section id="tab-daily" class="card">
       <div class="msg-toolbar">
         <label>日付 <input id="msg-date" type="date" class="form-input"></label>
-        <button id="load-shift" class="secondary-btn" type="button">🔄 シフトから読み込み</button>
-        <button id="refresh-shift" class="secondary-btn" type="button"
-                title="TimeTreeの最新データでシフトを再計算してから読み込みます（約1分）">☁ TimeTreeから再取得</button>
+        <button id="load-plans" class="secondary-btn" type="button">予定を読み込む</button>
         <button id="msg-login" class="secondary-btn" type="button" hidden>シフト連携ログイン</button>
-        <button id="add-person" class="secondary-btn" type="button">＋人を追加</button>
-        <a id="work-plan-link" class="secondary-btn" href="/schedule/work-plan/index.html"
-           target="_blank" rel="noopener">月の作業計画を開く（別タブ）</a>
-        <span id="shift-state" class="msg-muted"></span>
       </div>
-      <div id="wp-hints" class="wp-hints" hidden></div>
-      <div class="msg-common">
-        <label class="msg-grow">一言メモ
-          <input id="common-memo" class="form-input" placeholder="例：雨が降りそうなら合羽を持ってきてください（空欄でもOK）">
-        </label>
-        <button id="apply-memo" class="secondary-btn" type="button">全員へ反映</button>
-      </div>
-      <p class="msg-muted">コピー時にこの連絡の予定を保存します。宛先の連絡予定は更新し、家族・自分の別の予定は保持します（文面を手修正しても、予定は入力欄が基準です）。</p>
+      <p class="msg-muted">保存済み予定から連絡文を作ります。コピーでは予定を変更せず、連絡時点の予定・文面の控えを保存します。コピーはLINE送信を意味しません。</p>
       <div id="cards" class="msg-cards"></div>
     </section>
 
     <section id="tab-templates" class="card" hidden>
+      <p id="template-status" class="msg-error" role="status"></p>
       <p class="msg-muted">{年}・{月}・{先月}・{来月}・{翌月5日}（曜日付き）は今日の日付から自動で置き換えています。コピーしてLINEへ貼り付けてください。</p>
       <div id="template-list"></div>
       <details class="msg-edit-wrap">
@@ -72,6 +60,6 @@
     <option value="作業の都合により"></option>
   </datalist>
 
-  <script type="module" src="./message.js?v=20261104-family-1"></script>
+  <script type="module" src="./message.js?v=20261104-unified-1"></script>
 </body>
 </html>

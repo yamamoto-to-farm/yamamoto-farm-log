@@ -6,57 +6,54 @@
   <title>作業予定の追加・編集 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./daily-plan.css?v=20261104-modal-1">
+  <link rel="stylesheet" href="./daily-plan.css?v=20261104-unified-1">
 </head>
 <body>
   <div id="header"></div>
   <main id="page-area" class="page-container" hidden>
     <h1 class="page-title">作業予定の追加・編集</h1>
-    <p>家族・自分の予定を、連絡文なしで保存します。一緒に作業するパートも選べます。時間・圃場は任意です。</p>
-    <p class="plan-note">パートへのLINE連絡は別途行ってください。業務連絡で保存した予定は、この入力では置き換わりません。</p>
+    <p>自分・家族・パートの予定をここで作成・編集します。時間・圃場は任意です。</p>
+    <p class="plan-note">保存した予定を業務連絡で読み込んでコピーします。コピー済みの削除は警告付き、送信済みは削除できません。</p>
     <label>日付 <input id="plan-date" type="date" class="form-input"></label>
     <p id="status" role="status" aria-live="polite"></p>
     <button id="reload" type="button" class="secondary-btn">再読み込み</button>
     <button id="plan-login" type="button" class="secondary-btn" hidden>ログイン</button>
+    <div class="plan-actions">
+      <button id="load-shift" type="button" class="secondary-btn">シフトから作業者・時間を読み込む</button>
+      <button id="refresh-shift" type="button" class="secondary-btn">TimeTreeから再取得</button>
+      <a id="work-plan-link" class="secondary-btn" href="/schedule/work-plan/index.html" target="_blank" rel="noopener">月の作業計画を開く</a>
+    </div>
+    <p id="shift-state" class="plan-note"></p>
+    <div id="shift-candidates"></div>
     <section class="card">
       <h2 class="section-title">予定を追加・編集</h2>
       <form id="plan-form">
         <fieldset id="plan-inputs" disabled>
           <legend id="editing-label">新しい予定</legend>
-          <fieldset><legend>担当者（家族・自分／必須・複数選択可）</legend>
+          <fieldset><legend>家族・自分（複数選択可）</legend>
             <button id="select-family" type="button" class="secondary-btn">作業者を選択</button>
             <div id="plan-workers" class="info-block">未選択</div>
           </fieldset>
-          <fieldset><legend>一緒に作業するパート（任意・複数選択可）</legend>
+          <fieldset><legend>パート（複数選択可）</legend>
             <button id="select-parts" type="button" class="secondary-btn">パートを選択</button>
             <div id="plan-parts" class="info-block">未選択</div>
           </fieldset>
-          <fieldset><legend>作業内容（必須）</legend>
-            <button id="select-task" type="button" class="secondary-btn">作業内容を選択</button>
-            <div id="selected-task" class="info-block">未選択</div>
-            <input id="plan-task" type="hidden">
-          </fieldset>
-          <label id="custom-task-label" hidden>作業内容（自由入力）
-            <input id="custom-task" class="form-input" maxlength="200">
-          </label>
-          <details>
-            <summary>時間・圃場・メモ（任意）</summary>
-            <div class="optional-inputs">
-              <label>開始 <input id="plan-start" type="time" class="form-input"></label>
-              <label>終了 <input id="plan-end" type="time" class="form-input"></label>
-              <p>時刻を指定する場合は開始・終了を両方入力してください。</p>
-              <button id="add-field" type="button" class="secondary-btn">圃場を追加（複数可）</button>
-              <div id="plan-fields"></div>
-              <p>圃場を指定しなければ、その日の担当者と作業内容で作業ログを照合します。</p>
-              <label>メモ <textarea id="plan-memo" class="form-textarea" maxlength="2000"></textarea></label>
-            </div>
-          </details>
+          <p id="participant-kind" class="plan-note">作業者を選択してください。</p>
+          <label>連絡係（パートのみ・複数人の場合）<select id="plan-reporter" class="form-input"></select></label>
+          <div id="plan-blocks"></div>
+          <button id="add-block" type="button" class="secondary-btn">＋作業・時間帯を追加</button>
+          <label><input id="plan-off" type="checkbox">この予定を中止にする（削除せず残します）</label>
+          <label>中止理由 <input id="plan-off-reason" class="form-input" maxlength="500"></label>
+          <label>メモ <textarea id="plan-memo" class="form-textarea" maxlength="2000"></textarea></label>
           <div class="plan-actions">
             <button type="submit" class="primary-btn">予定を保存</button>
             <button id="cancel-edit" type="button" class="secondary-btn">入力をクリア</button>
           </div>
         </fieldset>
       </form>
+    </section>
+    <section class="card">
+      <details><summary>連絡時点の控え（コピー・送信の履歴）</summary><div id="communication-history"></div></details>
     </section>
     <section class="card">
       <h2 class="section-title">この日の保存済み予定</h2>
@@ -67,6 +64,6 @@
       <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </main>
-  <script type="module" src="./daily-plan.js?v=20261104-modal-1"></script>
+  <script type="module" src="./daily-plan.js?v=20261104-unified-1"></script>
 </body>
 </html>

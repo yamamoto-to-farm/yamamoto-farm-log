@@ -122,6 +122,32 @@ test("private API uses token, no-store and validates response; errors never mean
   await assert.rejects(context.fetchPlannedWork("2026-11-04"), /ログイン/);
 });
 
+test("shared reader rejects malformed communication snapshots and participant metadata", async () => {
+  const saved = { ...plan, names: ["担当A"], recipients: ["担当A"],
+    last_communication: { status: "copied", at: "2026-11-04T05:00:00+09:00", plan_revision: "v1" } };
+  const snapshot = { id: "copy-a", plan_id: "plan-a", status: "copied", at: "2026-11-04T05:00:00+09:00",
+    plan_revision: "v1", recipients: ["担当A"], message: "連絡文", plan: structuredClone(saved) };
+  const result = { date: "2026-11-04", revision: '"etag"',
+    data: { date: "2026-11-04", people: {}, plans: { "plan-a": saved }, communications: [snapshot] } };
+  const context = load({ config: { api: "https://example.test" }, ensureToken: async () => "test",
+    fetch: async () => ({ ok: true, json: async () => result }) });
+  assert.equal((await context.fetchWorkPlanRecord("2026-11-04")).data.communications.length, 1);
+  const invalid = [
+    value => { value.data.communications = {}; },
+    value => { value.data.communications[0].plan = null; },
+    value => { value.data.communications[0].recipients = "担当A"; },
+    value => { value.data.communications[0].status = "delivered"; },
+    value => { value.data.plans["plan-a"].last_communication = { status: "copied" }; },
+    value => { value.data.plans["plan-a"].blocks[0].companions = "家族A"; },
+  ];
+  for (const mutate of invalid) {
+    const bad = structuredClone(result);
+    mutate(bad);
+    context.fetch = async () => ({ ok: true, json: async () => bad });
+    await assert.rejects(context.fetchWorkPlanRecord("2026-11-04"), /形式が不正/);
+  }
+});
+
 function screen() {
   const body = { textContent: "", innerHTML: "", children: [], replaceChildren() { this.children = []; this.textContent = ""; }, append(node) { this.children.push(node); } };
   const panel = {};

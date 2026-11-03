@@ -3,233 +3,129 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 const vm = require("node:vm");
-
 const read = file => readFileSync(join(__dirname, "..", "deploy", "admin", "message", file), "utf8");
-function load(file, dependencies = {}) {
-  const context = vm.createContext({ console: { error() {} }, structuredClone, ...dependencies });
-  vm.runInContext(read(file).replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, ""), context);
+const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
+function load(file, deps = {}) {
+  const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
+    window: { addEventListener() {} }, URLSearchParams, ...deps });
+  vm.runInContext(strip(read(file)), context);
   return context;
 }
-function card() {
-  return {
-    names: [{ name: "担当A", wish: false }, { name: "担当B", wish: true }],
-    blocks: [{ start: "08:00", end: "12:00", task: "播種", field: "テスト圃場", shed: false }],
-    off: false, offReason: "雨天", kind: "2", reporter: "担当A", memo: "テスト", manualText: null,
-  };
-}
-
-test("plan snapshots preserve structured fields separately from manually edited text", () => {
+const plan = { source: "direct", names: ["パートA"], recipients: ["パートA"], kind: "1",
+  reporter: "", off: false, updated_at: "revision-1", memo: "",
+  blocks: [{ task: "草とり", fields: ["圃場A"], start: "08:00", end: "12:00", companions: ["家族A"] }] };
+test("messages come from saved plans without including family names or implying delivery", () => {
   const context = load("message-plan.js");
-  const original = card();
-  original.manualText = "手修正文面";
-  const result = context.createMessagePlan(original, original.manualText);
-  assert.deepEqual(Array.from(result.names), ["担当A", "担当B"]);
-  assert.equal(result.manual_text, true);
-  assert.equal(result.message, "手修正文面");
-  assert.equal(result.blocks[0].task, "播種");
-  original.blocks[0].task = "変更";
-  original.names[0].name = "変更";
-  assert.equal(result.blocks[0].task, "播種");
-  assert.equal(result.names[0], "担当A");
+  const message = context.buildPlanMessage(plan, "2026-11-04");
+  assert.match(message, /草とり|圃場A|8:00〜12:00/);
+  assert.doesNotMatch(message, /家族A/);
+  assert.equal(context.communicationIssues(plan).length, 0);
+  assert.match(context.buildPlanMessage({ ...plan, off: true, off_reason: "雨天のため" }, "2026-11-04"), /お休み/);
+  assert.doesNotMatch(context.buildPlanMessage({ ...plan, off: true }, "2026-11-04"), /草とり/);
+  assert.match(context.buildPlanMessage({ ...plan, kind: "2", reporter: "パートA" }, "2026-11-04"), /連絡係はパートA/);
+  assert.match(context.buildPlanMessage({ ...plan, kind: "3" }, "2026-11-04"), /1人での作業/);
 });
-
-test("cancellation has no active work blocks and invalid work cannot be copied as a plan", () => {
-  const context = load("message-plan.js");
-  const off = card();
-  off.off = true;
-  off.blocks[0].task = "";
-  const result = context.createMessagePlan(off, "お休み");
-  assert.equal(result.blocks.length, 0);
-  assert.equal(result.off, true);
-  for (const change of [{ start: "24:00" }, { end: "08:00" }, { task: " " }]) {
-    const invalid = card();
-    Object.assign(invalid.blocks[0], change);
-    assert.throws(() => context.createMessagePlan(invalid, "文面"), /作業内容と開始/);
-  }
-  const duplicate = card();
-  duplicate.names[1].name = duplicate.names[0].name;
-  assert.throws(() => context.createMessagePlan(duplicate, "文面"), /重複なく/);
+test("communication requires recipients, paired time and field or meeting point", () => {
+  const { communicationIssues: issues } = load("message-plan.js");
+  assert.ok(issues({ ...plan, recipients: [] }).length);
+  assert.ok(issues({ ...plan, blocks: [{ ...plan.blocks[0], start: "" }] }).length);
+  assert.ok(issues({ ...plan, blocks: [{ ...plan.blocks[0], fields: [] }] }).length);
+  assert.equal(issues({ ...plan, blocks: [{ ...plan.blocks[0], fields: [], shed: true }] }).length, 0);
+  assert.equal(issues({ ...plan, off: true, blocks: [] }).length, 0);
+  assert.ok(issues({ ...plan, kind: "2", reporter: "" }).length);
+  assert.equal(issues({ ...plan, source: "message", recipients: undefined }).length, 0);
 });
-
-test("companions are saved per block without appearing in the message or its recipients", () => {
-  const helper = load("message-plan.js");
-  const original = card();
-  original.kind = "1";
-  original.blocks[0].companions = ["家族A"];
-  original.blocks.push({ ...original.blocks[0], start: "13:00", end: "15:00", companions: ["家族B"] });
-  const context = load("message.js", {
-    window: { addEventListener() {} },
-    document: { getElementById: () => ({ value: "2026-11-04" }) },
+test("copy controls record a snapshot only, never rewrite the plan or claim sent", async () => {
+  const { recordPlanCopy } = load("message-plan.js");
+  let request;
+  await recordPlanCopy("2026-11-04", "test", plan, "連絡文", async () =>
+    ({ revision: '"etag"', data: { plans: { test: plan } } }), async req => {
+    request = req;
+    return { saved: true, date: req.date };
   });
-  const message = context.buildText(original);
-  assert.doesNotMatch(message, /家族A|家族B/);
-  const result = helper.createMessagePlan(original, message);
-  assert.deepEqual(Array.from(result.names), ["担当A", "担当B"]);
-  assert.deepEqual(Array.from(result.blocks[0].companions), ["家族A"]);
-  assert.deepEqual(Array.from(result.blocks[1].companions), ["家族B"]);
-  original.blocks[0].companions.push("追加");
-  assert.equal(result.blocks[0].companions.length, 1);
-  original.kind = "2";
-  assert.equal(helper.createMessagePlan(original, message).blocks[0].companions.length, 0);
+  assert.equal(request.operation, "communicate");
+  assert.equal(request.plan_revision, "revision-1");
+  assert.equal(request.message, "連絡文");
+  assert.equal(request.plan, undefined);
+  assert.equal(request.status, undefined);
+  await assert.rejects(recordPlanCopy("2026-11-04", "test", plan, "連絡文",
+    async () => ({ revision: '"etag"', data: { plans: { test: { ...plan, updated_at: "revision-2" } } } }), async () => assert.fail("write stale")), /変更/);
 });
-
-test("persistence reads current revision and only updates the copied group", async () => {
-  const context = load("message-plan.js");
-  const plan = context.createMessagePlan(card(), "文面");
-  let received;
-  await context.persistMessagePlan("2026-11-02", plan,
-    async (path, query) => {
-      assert.equal(path, "/shift/work-plans");
-      assert.equal(query.date, "2026-11-02");
-      return { date: query.date, revision: '"revision"', data: { plans: {} } };
-    },
-    async (path, body) => {
-      received = body;
-      assert.equal(path, "/shift/work-plans");
-      return { saved: true, date: body.date, id: "message-test" };
-    });
-  assert.equal(received.revision, '"revision"');
-  assert.equal(received.plan, plan);
-});
-
-test("persistence does not overwrite on failed reads and rejects uncertain writes", async () => {
-  const context = load("message-plan.js");
-  let posts = 0;
-  for (const get of [
-    async () => { throw new Error("offline"); },
-    async () => ({ date: "2026-11-02" }),
-    async () => ({ date: "2026-11-02", revision: null, data: { people: {} } }),
-  ]) {
-    await assert.rejects(context.persistMessagePlan("2026-11-02", {}, get, async () => { posts++; }));
-  }
-  assert.equal(posts, 0);
-  await assert.rejects(context.persistMessagePlan("2026-11-02", {},
-    async () => ({ date: "2026-11-02", revision: null, data: { plans: {} } }),
-    async () => ({ saved: false })), /保存完了/);
-});
-
-function copyContext({ session = true, copyFailure = false, saveFailure = false } = {}) {
+function copyScreen({ failCopy = false, failRecord = false } = {}) {
   const helper = load("message-plan.js");
-  const notice = { textContent: "" };
-  const button = { disabled: false, parentElement: { querySelector: () => notice } };
-  const statuses = [];
+  const elements = {};
+  for (const id of ["cards", "msg-date", "direct-plan-link", "msg-login", "tab-daily", "status"]) {
+    elements[id] = { value: "2026-11-04", textContent: "", replaceChildren() {}, classList: { toggle() {} } };
+  }
+  const notice = {};
+  const button = { parentElement: { querySelector: () => notice } };
   const events = [];
   const context = load("message.js", {
-    window: { addEventListener() {} },
-    document: { getElementById: id => id === "msg-date" ? { value: "2026-11-02" } : {} },
-    hasSession: () => session,
-    createMessagePlan: helper.createMessagePlan,
-    persistMessagePlan: async (date, plan) => {
-      events.push("save");
-      assert.equal(date, "2026-11-02");
-      assert.equal(plan.message, "文面");
-      if (saveFailure) throw new Error("保存失敗");
-    },
+    hasSession: () => true, document: { getElementById: id => elements[id] },
+    ...helper, window: { addEventListener() {} },
+    fetchWorkPlanRecord: async () => ({ date: "2026-11-04", revision: '"etag"', data: { plans: { test: plan }, communications: [] } }),
+    writeWorkPlan: async req => { events.push("record"); if (failRecord) throw new Error("offline"); return { saved: true, date: req.date }; },
   });
-  context.testCopy = async () => { events.push("copy"); if (copyFailure) throw new Error("コピー失敗"); };
-  context.testStatus = (message, error) => statuses.push({ message, error });
-  context.testRemember = () => events.push("remember");
-  vm.runInContext("copyText = testCopy; status = testStatus; rememberSent = testRemember; buildText = () => '文面';", context);
-  return { context, notice, button, events, statuses };
+  context.testPlan = plan;
+  context.testCopy = async () => { events.push("copy"); if (failCopy) throw new Error("copy failed"); };
+  vm.runInContext('record={data:{plans:{test:testPlan}}}; loadedDate="2026-11-04"; copyText=testCopy;', context);
+  return { context, button, notice, events, elements };
 }
-
-test("copy then save reports success without claiming LINE delivery", async () => {
-  const { context, notice, button, events } = copyContext();
-  await context.copyAndSavePlan(card(), button);
-  assert.deepEqual(events, ["copy", "save", "remember"]);
-  assert.match(notice.textContent, /予定保存済み.*LINE送信はしていません/);
-  assert.equal(button.disabled, false);
+test("clipboard failure never records a copy, record failure reports copied but unsaved", async () => {
+  const failedCopy = copyScreen({ failCopy: true });
+  await failedCopy.context.copySavedPlan("test", failedCopy.button);
+  assert.deepEqual(failedCopy.events, ["copy"]);
+  const failedRecord = copyScreen({ failRecord: true });
+  await failedRecord.context.copySavedPlan("test", failedRecord.button);
+  assert.deepEqual(failedRecord.events, ["copy", "record"]);
+  assert.match(failedRecord.notice.textContent, /コピー済みですが、控えを保存できません/);
 });
-
-test("copy success with save failure stays explicitly retryable; failed copy never saves", async () => {
-  for (const options of [{ saveFailure: true }, { copyFailure: true }, { session: false }]) {
-    const { context, notice, button, events, statuses } = copyContext(options);
-    await context.copyAndSavePlan(card(), button);
-    assert.equal(button.disabled, false);
-    assert.equal(statuses.at(-1).error, true);
-    if (options.saveFailure) {
-      assert.deepEqual(events, ["copy", "save"]);
-      assert.match(notice.textContent, /コピー済みですが、予定は保存できませんでした/);
-    } else {
-      assert.ok(!events.includes("save"));
-    }
-  }
+test("copy success records once and reports no LINE delivery", async () => {
+  const { context, button, elements, events } = copyScreen();
+  await context.copySavedPlan("test", button);
+  assert.deepEqual(events, ["copy", "record"]);
+  assert.match(elements.status.textContent, /LINE送信はしていません/);
+  assert.equal(elements["tab-daily"].inert, false);
 });
-
-test("repeated clicks while saving do not start a second copy or write", async () => {
-  const { context, button, events } = copyContext();
+test("copy refresh retains this and other pending message drafts", async () => {
+  const { context, button, elements } = copyScreen();
+  vm.runInContext('drafts.set("test","文面の補足"); drafts.set("other","別の下書き");', context);
+  await context.copySavedPlan("test", button);
+  assert.match(elements.cards.innerHTML, /文面の補足/);
+  assert.equal(vm.runInContext('drafts.get("other")', context), "別の下書き");
+});
+test("a stale loaded plan cannot be copied and pending duplicate clicks do not copy twice", async () => {
+  const stale = copyScreen();
+  stale.context.fetchWorkPlanRecord = async () => ({ data: { plans: { test: { ...plan, updated_at: "revision-2" } } } });
+  await stale.context.copySavedPlan("test", stale.button);
+  assert.equal(stale.events.length, 0);
+  assert.match(stale.notice.textContent, /変更・削除/);
+  const pending = copyScreen();
   let finish;
-  context.persistMessagePlan = () => new Promise(resolve => { finish = resolve; });
-  const pending = context.copyAndSavePlan(card(), button);
-  await Promise.resolve();
-  await context.copyAndSavePlan(card(), button);
-  assert.deepEqual(events, ["copy"]);
+  pending.context.testSlowCopy = () => new Promise(resolve => { finish = resolve; });
+  vm.runInContext("copyText=testSlowCopy;", pending.context);
+  const first = pending.context.copySavedPlan("test", pending.button);
+  await new Promise(resolve => setImmediate(resolve));
+  await pending.context.copySavedPlan("test", pending.button);
   finish();
-  await pending;
-  assert.equal(button.disabled, false);
+  await first;
+  assert.deepEqual(pending.events, ["record"]);
 });
-
 test("clipboard fallback checks success and always removes the temporary field", async () => {
-  for (const success of [true, false]) {
-    let removed = false;
-    const context = load("message.js", {
-      window: { addEventListener() {} },
-      navigator: { clipboard: { writeText: async () => { throw new Error("blocked"); } } },
-      document: {
-        body: { appendChild() {} },
-        createElement: () => ({ select() {}, remove: () => { removed = true; } }),
-        execCommand: () => success,
-      },
-      setTimeout() {},
-    });
-
-    const button = { textContent: "コピー", classList: { add() {}, remove() {} } };
-    if (success) {
-      await context.copyText("文面", button);
-      assert.equal(button.textContent, "✓ コピーしました");
-    } else {
-      await assert.rejects(context.copyText("文面", button), /コピーできませんでした/);
-      assert.equal(button.textContent, "コピー");
-    }
-    assert.equal(removed, true);
-  }
-});
-
-test("task selector retains all choices for a populated task and preserves custom input", () => {
-  const container = { innerHTML: "" };
+  let removed = false;
   const context = load("message.js", {
-    window: { addEventListener() {} },
-    document: { getElementById: () => container },
+    navigator: { clipboard: { writeText: async () => { throw new Error("denied"); } } },
+    document: { body: { appendChild() {} }, createElement: () => ({ select() {}, remove() { removed = true; } }), execCommand: () => false },
   });
-  context.testCard = card();
-  vm.runInContext("cards = [testCard]; buildText = () => '文面'; renderCards();", context);
-  assert.match(container.innerHTML, /<select[^>]+data-k="taskChoice"/);
-  assert.match(container.innerHTML, /value="播種" selected/);
-  assert.match(container.innerHTML, /value="収穫"/);
-  assert.match(container.innerHTML, /value="草とり"/);
-  assert.doesNotMatch(container.innerHTML, /list="dl-tasks"/);
-  context.testCard.blocks[0].task = "独自の作業";
-  context.renderCards();
-  assert.match(container.innerHTML, /value="__custom__" selected/);
-  assert.match(container.innerHTML, /data-k="task" value="独自の作業"/);
+  await assert.rejects(context.copyText("文面"), /コピーできません/);
+  assert.equal(removed, true);
 });
-
-test("work plan link follows the selected month and opens without losing the message draft", () => {
-  const date = { value: "2026-11-02" };
-  const link = {};
-  const directLink = {};
-  const context = load("message.js", {
-    window: { addEventListener() {} },
-    document: { getElementById: id => id === "msg-date" ? date : id === "work-plan-link" ? link : directLink },
-  });
-  context.syncWorkPlanLink();
-  assert.equal(link.href, "/schedule/work-plan/index.html?ym=2026-11");
-  assert.equal(directLink.href, "/schedule/daily-plan/index.html?date=2026-11-02");
-  date.value = "2027-01-03";
-  context.syncWorkPlanLink();
-  assert.equal(link.href, "/schedule/work-plan/index.html?ym=2027-01");
-  date.value = "";
-  context.syncWorkPlanLink();
-  assert.equal(link.href, "/schedule/work-plan/index.html");
-  assert.match(read("index.html"), /id="work-plan-link"[\s\S]*?target="_blank" rel="noopener"/);
+test("message UI has saved-plan loading only and preserves monthly template editing", () => {
+  const html = read("index.html");
+  assert.match(html, /id="load-plans"/);
+  assert.doesNotMatch(html, /id="(?:add-person|load-shift|refresh-shift|apply-memo)"/);
+  assert.match(html, /id="template-edit"/);
+  assert.match(html, /コピーでは予定を変更せず/);
+  const source = read("message.js");
+  assert.doesNotMatch(source, /persistMessagePlan|createMessagePlan|loadFromShift/);
 });

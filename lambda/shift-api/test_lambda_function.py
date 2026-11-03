@@ -391,7 +391,7 @@ class WorkPlanTests(unittest.TestCase):
         ]
         for change in ({"names": []}, {"names": ["担当A", "担当A"]},
                        {"blocks": []}, {"off": "false"}, {"kind": "4"},
-                       {"reporter": "不明"}, {"message": ""}, {"memo": "x" * 2001}, {"off": True}):
+                       {"reporter": "不明"}, {"message": "x" * 10001}, {"memo": "x" * 2001}):
             variants.append({"date": "2026-11-02", "revision": None, "plan": {**self.plan, **change}})
         for change in ({"start": "25:00"}, {"end": "08:00"}, {"task": ""}, {"shed": "false"}):
             plan = copy.deepcopy(self.plan)
@@ -598,8 +598,8 @@ class WorkPlanTests(unittest.TestCase):
         fake_s3.put_object.reset_mock()
         self.assertEqual(self.request(body={
             "date": "2026-11-02", "revision": self.revision, "id": message_id, "operation": "delete",
-        })[0], 400)
-        fake_s3.put_object.assert_not_called()
+        })[0], 200)
+        self.assertEqual(self.saved()["plans"], {})
 
     def test_direct_delete_last_plan_and_conflicts(self):
         status, body = self.request(body={"date": "2026-11-02", "revision": None, "plan": self.direct()})
@@ -626,12 +626,12 @@ class WorkPlanTests(unittest.TestCase):
         for change in ({"start": "08:00"}, {"end": "12:00"}, {"start": None, "end": None},
                        {"start": "12:00", "end": "08:00"}, {"fields": "圃場"},
                        {"fields": [""]}, {"fields": [1]}, {"fields": ["圃場"] * 31},
-                       {"companions": ["同伴"]}, {"task": ""}, {"shed": "false"}):
+                       {"companions": ["担当A"]}, {"task": ""}, {"shed": "false"}):
             plan = self.direct()
             plan["blocks"][0].update(change)
             variants.append(plan)
-        for change in ({"off": True}, {"manual_text": True}, {"kind": "2"}, {"reporter": "担当A"},
-                       {"message": "文面"}, {"names": ["担当A"] * 2}, {"names": ["人"] * 21}):
+        for change in ({"off": "true"}, {"manual_text": "true"}, {"kind": "2"},
+                       {"message": 1}, {"names": ["担当A"] * 2}, {"names": ["人"] * 21}):
             variants.append({**self.direct(), **change})
         for plan in variants:
             with self.subTest(plan=plan):
@@ -706,6 +706,371 @@ class WorkPlanTests(unittest.TestCase):
         for raw in ("not-base64", base64.b64encode(b"\xff").decode(),
                     base64.b64encode(b"x" * 65537).decode()):
             self.assertEqual(self.request(raw_body=raw, encoded=True)[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+
+class CommunicationTests(unittest.TestCase):
+    setUp = WorkPlanTests.setUp
+    request = WorkPlanTests.request
+    stored = WorkPlanTests.stored
+    saved = WorkPlanTests.saved
+    save_next = WorkPlanTests.save_next
+    direct = WorkPlanTests.direct
+
+    def communicate(self, identifier=None, **changes):
+        record = self.saved()
+        identifier = identifier or next(iter(record["plans"]))
+        self.stored(record)
+        return self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "operation": "communicate",
+            "id": identifier, "plan_revision": record["plans"][identifier]["updated_at"],
+            "message": "\n連絡文面\n", "recipients": ["担当A"], **changes,
+        })
+
+    def delete(self, identifier, **changes):
+        self.stored(self.saved())
+        return self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "operation": "delete",
+            "id": identifier, **changes,
+        })
+
+    def test_centralized_edit_all_sources_roles_multiblocks_and_recipients(self):
+        for source in ("message", "direct"):
+            for kind in ("1", "2", "3"):
+                with self.subTest(source=source, kind=kind):
+                    fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+                    plan = {
+                        **self.plan, "source": source, "kind": kind, "message": "",
+                        "recipients": ["担当B"], "reporter": "担当B" if kind == "2" else "",
+                        "blocks": [
+                            {"task": "播種", "fields": ["第一", "第二"], "shed": True,
+                             **({"companions": ["同伴"]} if kind == "1" else {})},
+                            {"start": "13:00", "end": "16:00", "task": "収穫", "field": "第三", "shed": False},
+                        ],
+                    }
+                    status, result = self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})
+                    self.assertEqual(status, 200)
+                    identifier = result["id"]
+                    saved = self.saved()["plans"][identifier]
+                    self.assertEqual(saved["source"], source)
+                    self.assertEqual(saved["recipients"], ["担当B"])
+                    self.assertEqual(saved["blocks"][0]["start"], "")
+                    self.assertEqual(saved["blocks"][0]["fields"], ["第一", "第二"])
+                    self.assertEqual(saved["updated_by"], "user-1")
+                    self.assertIsNone(saved["last_communication"])
+                    self.assertFalse(saved["communication_changed"])
+                    self.assertEqual(self.save_next({**saved, "memo": "編集後"}, id=identifier)[0], 200)
+                    self.assertEqual(self.saved()["plans"][identifier]["memo"], "編集後")
+                    self.stored(self.saved())
+                    self.assertEqual(self.request("GET /shift/work-plans")[0], 200)
+
+    def test_recipients_defaults_and_invalid_subsets(self):
+        self.assertEqual(self.request()[0], 200)
+        self.assertEqual(next(iter(self.saved()["plans"].values()))["recipients"], self.plan["names"])
+        self.assertEqual(self.save_next(self.direct())[0], 200)
+        direct = [plan for plan in self.saved()["plans"].values() if plan["source"] == "direct"][0]
+        self.assertEqual(direct["recipients"], [])
+        for recipients in ("担当A", ["不明"], ["担当A", "担当A"], [1], ["担当A"] * 21):
+            with self.subTest(recipients=recipients):
+                self.assertEqual(self.save_next({**self.plan, "recipients": recipients})[0], 400)
+        self.assertEqual(self.save_next({**self.plan, "recipients": ["担当B"]})[0], 400)
+        self.assertEqual(self.save_next({**self.plan, "kind": "1", "reporter": "", "recipients": []})[0], 200)
+
+    def test_exact_unified_frontend_family_payload_and_cancel_spread(self):
+        for source in ("direct", "message"):
+            with self.subTest(source=source):
+                fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+                plan = {
+                    "source": source, "names": ["担当A"], "recipients": ["担当A"],
+                    "kind": "1", "reporter": "", "off": False, "off_reason": "",
+                    "blocks": [{"task": "播種", "start": "", "end": "", "fields": [],
+                                "field": "", "shed": False, "companions": ["家族"]}],
+                    "memo": "", "manual_text": False, "message": "",
+                }
+                status, result = self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})
+                self.assertEqual(status, 200)
+                identifier = result["id"]
+                self.assertEqual(self.communicate(message="作業予定")[0], 200)
+                self.stored(self.saved())
+                loaded = self.request("GET /shift/work-plans")[1]["data"]["plans"][identifier]
+                self.assertEqual(self.save_next({**loaded, "off": True}, id=identifier)[0], 200)
+                saved = self.saved()
+                self.assertTrue(saved["plans"][identifier]["communication_changed"])
+                self.assertEqual(saved["plans"][identifier]["blocks"], plan["blocks"])
+                self.assertEqual(saved["people"]["家族"]["blocks"], [])
+                self.assertEqual(saved["communications"][0]["plan"]["source"], source)
+                self.assertEqual(saved["communications"][0]["plan"]["message"], "")
+                self.assertEqual(self.save_next({**loaded, "off": False}, id=identifier)[0], 200)
+                self.assertFalse(self.saved()["plans"][identifier]["communication_changed"])
+                self.assertEqual(saved["plans"][identifier]["recipients"], ["担当A"])
+
+    def test_old_canonical_metadata_and_legacy_message_are_preserved_on_read(self):
+        self.assertEqual(self.request()[0], 200)
+        record = self.saved()
+        identifier = next(iter(record["plans"]))
+        before = copy.deepcopy(record["plans"][identifier])
+        for plan in record["plans"].values():
+            for key in ("recipients", "last_communication", "communication_changed"):
+                plan.pop(key)
+        record["people"] = api.project_work_plans(record["plans"])
+        record.pop("communications")
+        self.stored(record)
+        result = self.request("GET /shift/work-plans")[1]["data"]
+        for key in ("updated_at", "updated_by", "message", "manual_text"):
+            self.assertEqual(result["plans"][identifier][key], before[key])
+        self.assertEqual(result["communications"], [])
+        self.assertEqual(result["plans"][identifier]["recipients"], self.plan["names"])
+        self.assertEqual(self.save_next(result["plans"][identifier], id=identifier)[0], 200)
+        self.assertEqual(self.saved()["plans"][identifier]["message"], self.plan["message"])
+
+    def test_cancel_preserves_blocks_history_and_reinstates(self):
+        for source in ("message", "direct"):
+            with self.subTest(source=source):
+                fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+                plan = {**self.plan, "source": source, "recipients": self.plan["names"]}
+                self.assertEqual(self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})[0], 200)
+                identifier = next(iter(self.saved()["plans"]))
+                self.assertEqual(self.communicate(identifier)[0], 200)
+                history = copy.deepcopy(self.saved()["communications"])
+                self.assertEqual(self.save_next({**plan, "off": True, "off_reason": "雨天"}, id=identifier)[0], 200)
+                saved = self.saved()
+                self.assertEqual(saved["plans"][identifier]["blocks"], plan["blocks"])
+                self.assertEqual(saved["communications"], history)
+                self.assertTrue(saved["plans"][identifier]["communication_changed"])
+                self.assertTrue(saved["people"]["担当A"]["off"])
+                self.assertEqual(saved["people"]["担当A"]["blocks"], [])
+                self.assertEqual(saved["people"]["担当A"]["entries"][0]["blocks"], plan["blocks"])
+                self.assertEqual(self.save_next(plan, id=identifier)[0], 200)
+                self.assertFalse(self.saved()["plans"][identifier]["communication_changed"])
+                self.assertFalse(self.saved()["people"]["担当A"]["off"])
+
+    def test_copy_response_snapshot_and_read_shape(self):
+        self.assertEqual(self.request()[0], 200)
+        before = copy.deepcopy(self.saved())
+        identifier = next(iter(before["plans"]))
+        status, result = self.communicate()
+        self.assertEqual(status, 200)
+        self.assertEqual(set(result), {"saved", "date", "id", "names", "updated_at", "communication"})
+        item = result["communication"]
+        self.assertEqual(set(item), {"id", "plan_id", "status", "at", "author", "plan",
+                                     "plan_revision", "message", "recipients"})
+        self.assertEqual(str(api.uuid.UUID(item["id"])), item["id"])
+        expected_snapshot = api.plan_snapshot(before["plans"][identifier])
+        self.assertEqual(item["plan"], expected_snapshot)
+        self.assertEqual(item["status"], "copied")
+        self.assertEqual(item["author"], "user-1")
+        self.assertEqual(item["message"], "\n連絡文面\n")
+        self.assertEqual(item["plan_revision"], before["plans"][identifier]["updated_at"])
+        saved = self.saved()
+        last = {"status": "copied", "at": item["at"], "plan_revision": item["plan_revision"]}
+        self.assertEqual(saved["plans"][identifier]["last_communication"], last)
+        self.assertFalse(saved["plans"][identifier]["communication_changed"])
+        self.assertNotIn("message", last)
+        self.assertEqual(saved["plans"][identifier]["updated_at"], before["plans"][identifier]["updated_at"])
+        self.stored(saved)
+        status, result = self.request("GET /shift/work-plans")
+        self.assertEqual(status, 200)
+        self.assertEqual(set(result), {"date", "revision", "data"})
+        self.assertEqual(set(result["data"]), {"date", "plans", "people", "updated_at", "communications"})
+        self.assertEqual(result["data"], saved)
+        self.assertEqual(result["data"]["people"]["担当A"]["entries"][0]["last_communication"], last)
+
+    def test_edit_copy_and_repeated_copy_append_immutable_snapshots(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        self.assertEqual(self.communicate()[0], 200)
+        first = copy.deepcopy(self.saved()["communications"][0])
+        edited = copy.deepcopy(self.plan)
+        edited["blocks"][0]["task"] = "新しい作業"
+        self.assertEqual(self.save_next(edited, id=identifier)[0], 200)
+        self.assertEqual(self.saved()["communications"], [first])
+        self.assertTrue(self.saved()["plans"][identifier]["communication_changed"])
+        self.stored(self.saved())
+        self.assertTrue(self.request("GET /shift/work-plans")[1]["data"]["plans"][identifier]["communication_changed"])
+        self.assertEqual(self.communicate(message="更新連絡")[0], 200)
+        second = copy.deepcopy(self.saved()["communications"][1])
+        self.assertFalse(self.saved()["plans"][identifier]["communication_changed"])
+        self.assertEqual(second["plan"]["blocks"][0]["task"], "新しい作業")
+        self.assertNotIn("last_communication", second["plan"])
+        self.assertNotIn("communications", second["plan"])
+        self.assertEqual(self.communicate(message="もう一度")[0], 200)
+        self.assertEqual(self.saved()["communications"][:2], [first, second])
+        self.assertEqual(len(self.saved()["communications"]), 3)
+        self.assertEqual(len({item["id"] for item in self.saved()["communications"]}), 3)
+        self.assertFalse(self.saved()["plans"][identifier]["communication_changed"])
+
+    def test_metadata_only_edit_does_not_mark_changed(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        self.assertEqual(self.communicate()[0], 200)
+        old = self.saved()["plans"][identifier]["updated_at"]
+        self.claims["username"] = "another-author"
+        self.assertEqual(self.save_next(self.plan, id=identifier)[0], 200)
+        self.assertNotEqual(self.saved()["plans"][identifier]["updated_at"], old)
+        self.assertEqual(self.saved()["plans"][identifier]["updated_by"], "another-author")
+        self.assertFalse(self.saved()["plans"][identifier]["communication_changed"])
+
+    def test_copy_companions_and_recipient_message_validation(self):
+        plan = {**self.plan, "kind": "1", "reporter": ""}
+        plan["blocks"] = [{**self.plan["blocks"][0], "companions": ["同伴"]}]
+        self.assertEqual(self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})[0], 200)
+        self.assertEqual(self.communicate(recipients=["同伴", "担当B"], message="x" * 10000)[0], 200)
+        for changes in (
+                {"message": ""}, {"message": " \n"}, {"message": "x" * 10001}, {"message": None},
+                {"recipients": []}, {"recipients": ["不明"]}, {"recipients": ["担当A", "担当A"]},
+                {"recipients": ["担当A"] * 21}, {"recipients": "担当A"}, {"recipients": [1]}):
+            with self.subTest(changes=changes):
+                self.assertEqual(self.communicate(**changes)[0], 400)
+        self.assertEqual(self.communicate(recipients=["担当A"], message="x")[0], 200)
+        self.assertEqual(len(self.saved()["communications"]), 2)
+
+    def test_delete_copied_requires_boolean_confirmation_and_retains_history(self):
+        for source in ("message", "direct"):
+            with self.subTest(source=source):
+                fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+                plan = {**self.plan, "source": source, "recipients": self.plan["names"]}
+                self.assertEqual(self.request(body={"date": "2026-11-02", "revision": None, "plan": plan})[0], 200)
+                identifier = next(iter(self.saved()["plans"]))
+                self.assertEqual(self.communicate()[0], 200)
+                history = copy.deepcopy(self.saved()["communications"])
+                for confirmation in (None, False, "true", 1):
+                    self.assertEqual(self.delete(identifier, confirm_copied=confirmation)[0], 409)
+                status, error = self.delete(identifier)
+                self.assertEqual(status, 409)
+                self.assertIn("confirm_copied:true", error["message"])
+                self.assertEqual(self.delete(identifier, confirm_copied=True)[0], 200)
+                self.assertEqual(self.saved()["plans"], {})
+                self.assertEqual(self.saved()["people"], {})
+                self.assertEqual(self.saved()["communications"], history)
+                self.stored(self.saved())
+                self.assertEqual(self.request("GET /shift/work-plans")[1]["data"]["communications"], history)
+
+    def test_any_sent_history_prohibits_deletion_even_after_later_copy(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        self.assertEqual(self.communicate()[0], 200)
+        record = self.saved()
+        record["communications"][0]["status"] = "sent"
+        self.stored(record)
+        status, result = self.request("GET /shift/work-plans")
+        self.assertEqual(status, 200)
+        self.assertEqual(result["data"]["plans"][identifier]["last_communication"]["status"], "sent")
+        fake_s3.put_object.reset_mock()
+        for flag in (False, True):
+            self.assertEqual(self.request(body={
+                "date": "2026-11-02", "revision": self.revision, "operation": "delete",
+                "id": identifier, "confirm_copied": flag,
+            })[0], 409)
+        fake_s3.put_object.assert_not_called()
+        self.assertEqual(self.request(body={
+            "date": "2026-11-02", "revision": self.revision, "operation": "communicate",
+            "id": identifier, "plan_revision": record["plans"][identifier]["updated_at"],
+            "message": "再コピー", "recipients": ["担当A"],
+        })[0], 200)
+        self.assertEqual(self.saved()["plans"][identifier]["last_communication"]["status"], "copied")
+        self.assertEqual(self.delete(identifier, confirm_copied=True)[0], 409)
+
+    def test_client_cannot_claim_sent_or_inject_history(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        for changes in ({"status": "sent"}, {"status": "copied"}, {"operation": "sent"},
+                        {"communication": {"status": "sent"}}):
+            self.assertEqual(self.communicate(**changes)[0], 400)
+        forged = {**self.plan, "last_communication": {"status": "sent"}, "communications": [{"status": "sent"}]}
+        self.assertEqual(self.save_next(forged, id=identifier)[0], 200)
+        self.assertEqual(self.saved()["communications"], [])
+        self.assertIsNone(self.saved()["plans"][identifier]["last_communication"])
+
+    def test_communicate_requires_day_and_plan_revisions_existing_id_and_auth(self):
+        self.assertEqual(self.request()[0], 200)
+        for changes in ({"plan_revision": None}, {"plan_revision": "stale"}, {"revision": None}):
+            self.assertEqual(self.communicate(**changes)[0], 409)
+        self.assertEqual(self.communicate(id="missing")[0], 404)
+        record = self.saved()
+        identifier = next(iter(record["plans"]))
+        self.stored(record)
+        body = {
+            "date": "2026-11-02", "revision": self.revision, "operation": "communicate",
+            "id": identifier, "plan_revision": record["plans"][identifier]["updated_at"],
+            "message": "文面", "recipients": ["担当A"],
+        }
+        fake_s3.put_object.reset_mock()
+        for claims, expected in (({**self.claims, "token_use": "id"}, 401),
+                                 ({**self.claims, "cognito:groups": "[worker]"}, 403)):
+            self.assertEqual(self.request(body=body, claims=claims)[0], expected)
+        fake_s3.put_object.assert_not_called()
+        for code in ("PreconditionFailed", "ConditionalRequestConflict", "409", "412"):
+            fake_s3.put_object.side_effect = FakeClientError(code)
+            self.assertEqual(self.request(body=body)[0], 409)
+        fake_s3.put_object.side_effect = None
+        self.assertEqual(self.request(body=body, claims={**self.claims, "cognito:groups": "[family]"})[0], 200)
+
+    def test_stale_plan_revision_after_edit_same_second(self):
+        from datetime import datetime, timezone
+        frozen = datetime(2026, 11, 2, 0, 0, 0, 123456, tzinfo=timezone.utc)
+        with patch.object(api, "datetime") as clock:
+            clock.now.return_value = frozen
+            clock.strptime.side_effect = datetime.strptime
+            clock.fromisoformat.side_effect = datetime.fromisoformat
+            self.assertEqual(self.request()[0], 200)
+            identifier = next(iter(self.saved()["plans"]))
+            before = self.saved()["plans"][identifier]["updated_at"]
+            self.assertEqual(self.save_next({**self.plan, "memo": "更新"}, id=identifier)[0], 200)
+            after = self.saved()["plans"][identifier]["updated_at"]
+            self.assertGreater(after, before)
+            self.assertEqual(self.communicate(plan_revision=before)[0], 409)
+            self.assertEqual(self.communicate()[0], 200)
+            self.assertFalse(self.saved()["plans"][identifier]["communication_changed"])
+
+    def test_legacy_upsert_cannot_overwrite_or_shrink_communicated_plans(self):
+        self.assertEqual(self.request()[0], 200)
+        identifier = next(iter(self.saved()["plans"]))
+        self.assertEqual(self.communicate()[0], 200)
+        original = copy.deepcopy(self.saved())
+        for names in (["担当A"], ["担当A", "担当B"], ["担当B", "別担当"]):
+            plan = {**self.plan, "kind": "1", "reporter": "", "names": names}
+            self.assertEqual(self.save_next(plan)[0], 409)
+            self.assertEqual(self.saved(), original)
+        self.assertEqual(self.save_next({**self.plan, "memo": "id編集"}, id=identifier)[0], 200)
+        self.assertEqual(len(self.saved()["communications"]), 1)
+        self.assertEqual(self.save_next(self.direct())[0], 200)
+
+    def test_malformed_communication_storage_fails_explicitly(self):
+        self.assertEqual(self.request()[0], 200)
+        self.assertEqual(self.communicate()[0], 200)
+        canonical = self.saved()
+        variants = []
+        for history in (None, {}, [None], [{}], canonical["communications"] * 2):
+            record = copy.deepcopy(canonical)
+            record["communications"] = history
+            variants.append(record)
+        for changes in (
+                {"id": "bad"}, {"status": "unknown"}, {"plan_id": "../x"},
+                {"at": "bad"}, {"at": "2026-11-02T00:00:00"}, {"author": ""},
+                {"plan_revision": "wrong"}, {"message": ""}, {"recipients": ["不明"]},
+                {"plan": None}, {"extra": True}):
+            record = copy.deepcopy(canonical)
+            record["communications"][0].update(changes)
+            variants.append(record)
+        for key, value in (("communications", []), ("last_communication", {}), ("id", "other"),
+                           ("memo", 3), ("updated_at", "wrong"), ("unknown", True)):
+            record = copy.deepcopy(canonical)
+            record["communications"][0]["plan"][key] = value
+            variants.append(record)
+        record = copy.deepcopy(canonical)
+        del record["communications"][0]["plan"]["recipients"]
+        variants.append(record)
+        identifier = next(iter(canonical["plans"]))
+        for changes in ({"last_communication": {"status": "sent"}}, {"communication_changed": "false"},
+                        {"communication_changed": 0}):
+            record = copy.deepcopy(canonical)
+            record["plans"][identifier].update(changes)
+            variants.append(record)
+        fake_s3.put_object.reset_mock()
+        for record in variants:
+            with self.subTest(record=record), self.assertLogs(api.LOGGER, level="ERROR"):
+                self.stored(record)
+                self.assertEqual(self.request("GET /shift/work-plans")[0], 500)
         fake_s3.put_object.assert_not_called()
 
 

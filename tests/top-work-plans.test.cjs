@@ -100,14 +100,16 @@ test("message honors valid requested dates and otherwise keeps tomorrow default"
   const source = strip(read("admin/message/message.js"));
   const context = vm.createContext({ console: { warn() {} }, URLSearchParams, location: { search: "" } });
   vm.runInContext(strip(read("common/date-utils.js")), context);
-  vm.runInContext(source.slice(source.indexOf("function todayIso("), source.indexOf("function dateLabel(")), context);
+  vm.runInContext(source.slice(source.indexOf("function initialMessageDate("), source.indexOf("function syncWorkPlanLink(")), context);
   for (const date of ["2026-11-04", "2027-01-01", "2028-02-29"]) {
     context.location.search = `?date=${date}`;
     assert.equal(context.initialMessageDate(), date);
   }
   for (const date of ["", "2026-02-30", "invalid", "2026-13-01"]) {
     context.location.search = `?date=${date}`;
-    assert.equal(context.initialMessageDate(), context.todayIso(1));
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    assert.equal(context.initialMessageDate(), `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`);
   }
   assert.match(read("admin/message/message.js"), /login\(`\/admin\/message\/index.html\?date=\$\{element\("msg-date"\).value\}`\)/);
 });
