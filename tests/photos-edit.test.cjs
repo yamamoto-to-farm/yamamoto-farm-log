@@ -15,17 +15,23 @@ function setup(canEdit = true) {
     if (!nodes.has(id)) nodes.set(id, {
       value: "", hidden: true, disabled: false, textContent: "",
       classList: { toggle() {} }, focus() {}, close() { this.open = false; },
-      showModal() { this.open = true; }, querySelectorAll() { return []; }
+      showModal() { this.open = true; }, querySelectorAll() { return []; },
+      replaceChildren(...children) { this.children = children; }
     });
     return nodes.get(id);
   }
   const context = vm.createContext({
-    document: { getElementById: element },
+    document: { getElementById: element, querySelectorAll: () => [] },
     window: { currentRole: "admin" }, console: { error() {} },
     URLSearchParams, URL, Date, Set,
     location: { search: "" }, hasSession: () => true,
     config: { api: "https://api.test" }, ensureToken: async () => "test",
     clearSession() {},
+    CATEGORY_LABEL: { growth: "栽培記録" },
+    plantingText: () => "",
+    plantingCandidates: async () => [],
+    candidateLabel: candidate => candidate.variety,
+    Option: function(text, value) { this.text = text; this.value = value; },
     fetch: async (url, options) => {
       requests.push({ url, options });
       return { ok: true, json: async () => ({ id: "photo" }) };
@@ -61,12 +67,30 @@ test("save sends only editable values and refreshes the filtered list", async ()
   vm.runInContext("load = async () => { globalThis.refreshed = true; };", context);
   await vm.runInContext("saveEditing({preventDefault(){}})", context);
   assert.deepEqual(JSON.parse(requests[0].options.body), {
-    field: "A", id: "photo", takenOn: "2026-10-28", note: "new memo"
+    field: "A", id: "photo", takenOn: "2026-10-28", note: "new memo",
+    category: "", plantingRef: "", variety: "", plantDate: ""
   });
   assert.equal(requests[0].url, "https://api.test/photos/edit");
   assert.equal(context.refreshed, true);
   assert.equal(element("photo-edit-form").hidden, true);
   assert.equal(vm.runInContext("editingBusy", context), false);
+});
+
+test("growth editing preserves the current planting and sends the selected metadata", async () => {
+  const { context, element, requests } = setup();
+  vm.runInContext(`Object.assign(photos[0], {
+    category: "growth", plantingRef: "original", variety: "品種A", plantDate: "2026-10-01"
+  }); startEditing();`, context);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(element("edit-category").value, "growth");
+  assert.equal(element("edit-planting").value, "original");
+  assert.equal(element("edit-planting").children[1].value, "original");
+  vm.runInContext("load = async () => {};", context);
+  await vm.runInContext("saveEditing({preventDefault(){}})", context);
+  assert.deepEqual(JSON.parse(requests[0].options.body), {
+    field: "A", id: "photo", takenOn: "2026-10-26", note: "old",
+    category: "growth", plantingRef: "original", variety: "品種A", plantDate: "2026-10-01"
+  });
 });
 
 test("failed save retains editor and explicitly reports error", async () => {

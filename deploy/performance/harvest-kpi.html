@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="/common/filter.css?v=1">
 
   <style>
+    #page-area, #kpi-container, .kpi-block { min-width: 0; max-width: 100%; }
+    .kpi-table-scroll { max-width: 100%; overflow-x: auto; }
+    .kpi-table-scroll:focus-visible { outline: 2px solid #1261a0; outline-offset: 2px; }
+    @media print {
+      .kpi-table-scroll { overflow: visible; max-width: none; }
+    }
     .debug-box {
       border: 2px solid #444;
       background: #fafafa;
@@ -149,7 +155,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20261001-1";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20261103-mobile-1";
     import { loadJSON } from "/common/json.js";
     import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {
@@ -315,7 +321,6 @@
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
-
 
 
 

@@ -8,7 +8,7 @@ import { loadJSON } from "/common/json.js";
 import { safeFileName, printInline } from "/common/utils.js?v=20260930-1";
 import { showPlantingDetailModal } from "/common/planting-detail.js?v=20260930-1";
 import { showInfoModal } from "/common/showInfoModal.js?v=1";
-import { renderYearBlock, renderKpiTable } from "./kpi-render.js?v=20260930-1";
+import { renderYearBlock, renderKpiTable } from "./kpi-render.js?v=20261103-mobile-1";
 import {
   calcAreaTanFromPlantingRow,
   groupWeightByRef,

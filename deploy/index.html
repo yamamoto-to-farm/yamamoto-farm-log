@@ -178,6 +178,11 @@
     .menu-modal__links .menu-card a {
       font-size: 0.9rem;
     }
+    .menu-card__unavailable {
+      display: block;
+      color: #64748b;
+      cursor: not-allowed;
+    }
     #menu-area {
       display: none;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -647,7 +652,15 @@
     function createCard(page) {
       const div = document.createElement("div");
       div.className = "menu-card";
-      div.innerHTML = `<a href="${page.path}">${page.name}</a>`;
+      const label = document.createElement(page.disabled ? "span" : "a");
+      label.textContent = `${page.name}${page.disabled ? "（準備中）" : ""}`;
+      if (page.disabled) {
+        label.className = "menu-card__unavailable";
+        label.setAttribute("aria-disabled", "true");
+      } else {
+        label.href = page.path;
+      }
+      div.appendChild(label);
       return div;
     }
 
@@ -1451,4 +1464,3 @@
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
-

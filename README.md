@@ -271,6 +271,16 @@ AWS設定（photos の HTTP API に追加）:
 
 ## ローカル検証
 
+### メニュー・収穫KPI
+
+- メニュー定義の `disabled: true` は「準備中」の非リンク表示にする。育苗ログ・品種分析・
+  年次比較が対象。施肥計画・防除計画も未実装のためボタンを無効表示する。
+- 収穫KPIは表のみ横スクロール可能（キーボード操作可）。印刷時はスクロール制限を解除する。
+- 検証: `node --test tests\*.test.cjs`。
+- 公開時はトップ、施肥・防除の各入力ページ、`deploy\performance\` 内の
+  `harvest-kpi.html`・`harvest-kpi.js`・`kpi-render.js` を更新する。
+  `deploy\data\pages.json` は自動同期の対象外なので別途アップロードし、対応するCloudFrontキャッシュを無効化する。
+
 ### JA請求明細
 
 - ソース: `lambda/ja-statement-analysis/`（PDF解析・分類・取込API）。

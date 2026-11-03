@@ -5,6 +5,7 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
   const hasAnnualPlan = Array.isArray(planSources) && planSources.includes("annual");
   let html = `
     ${hasAnnualPlan ? '<div class="kpi-note">目標面積・目標収量・出荷目標は annual の STEP1 計画です。定植面積は定植記録から集計しています。</div>' : ''}
+    <div class="kpi-table-scroll" tabindex="0" role="region" aria-label="${year}年の収穫KPI（横スクロール可）">
     <table class="kpi-table">
       <thead>
         <tr>
@@ -85,7 +86,7 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
       </tr>
   `;
 
-  html += "</tbody></table>";
+  html += "</tbody></table></div>";
   return html;
 
   document.querySelectorAll(".plan-cell").forEach(cell => {

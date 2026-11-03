@@ -35,6 +35,7 @@
     },
     {
       "id": "nursery-log",
+      "disabled": true,
       "name": "育苗ログ",
       "path": "nursery/index.html",
       "category": "作業ログ/播種・育苗",
@@ -277,6 +278,7 @@
     },
     {
       "id": "variety-analysis",
+      "disabled": true,
       "name": "品種分析",
       "path": "fields/variety.html",
       "category": "分析",
@@ -286,6 +288,7 @@
     },
     {
       "id": "year-compare",
+      "disabled": true,
       "name": "年次比較",
       "path": "fields/year-compare.html",
       "category": "分析",
