@@ -284,14 +284,17 @@ AWS設定（photos の HTTP API に追加）:
 ### 日誌の状態表示
 
 - トップと日誌は `deploy/diary/status.js` の共通判定を使う。日誌JSONがあれば内容が空でも
-  「日誌保存済み」、日誌なし・作業ログありは「作業記録あり／日誌未確定」、両方なしは「記録なし」。
+  「日誌保存済み」、日誌なし・作業ログありは「作業記録あり」、両方なしは「記録なし」。
   記録なしを「作業なし」とは判断しない。
+- 作業ログの自動表示を基本とし、日誌の編集・保存は必要な日の補足に使う。
+  保存していない日を未完了・警告扱いしない。トップの対象日は折りたたみ、注意書きは該当時だけ表示する。
 - 日誌・作業CSVのHTTP 404だけを未登録と扱う。403・5xx・通信失敗・JSON解析失敗は
   「取得できません」と通知し、再試行できる。失敗結果はキャッシュしない。
 - 日誌の取得失敗中は編集・保存を止める。保存直前の既存日誌取得に失敗した場合も上書きしない。
 - 公開時は `deploy/index.html`、`deploy/common/json.js`・`csv.js`、
   `deploy/diary/` の `index.html`・`diary.js`・`status.js`・`loadDiary.js`・
-  `work-summary.js`・`saveDiary.js` を更新し、対応するCloudFrontキャッシュを無効化する。
+  `work-summary.js`・`saveDiary.js`・`viewCard.js`・`editCard.js` を更新し、対応するCloudFrontキャッシュを無効化する。
+  日誌のJSON/CSV読込モジュールには更新版のクエリを付け、古いHTTPエラー処理の再利用を避ける。
   API・Lambda・メニュー定義の変更は不要。
 
 ### JA請求明細

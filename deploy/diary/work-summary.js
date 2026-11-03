@@ -2,7 +2,7 @@
 // diary/work-summary.js — list.json + headerName 対応版（field 抽出対応）
 // =========================================================
 
-import { loadCSV, normalizeKeys } from "/common/csv.js";
+import { loadCSV, normalizeKeys } from "/common/csv.js?v=20261103-status-2";
 import { buildTimestampKey } from "/common/timestamp.js?v=1";
 
 let searchIndexCache = null;

@@ -3,8 +3,8 @@
 // 作業編集カードの生成（既存日誌を反映）
 // =========================================================
 
-import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js";
-import { loadDiaryByDate } from "./loadDiary.js";
+import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js?v=20261103-status-2";
+import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { buildTimestampDefaults, createSessionKey, loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
 
@@ -621,4 +621,3 @@ function expandMergedGroup(group) {
     }]
   }));
 }
-

@@ -588,7 +588,7 @@
     import { loadJSON } from "./common/json.js?v=1";
     import { loadCSV } from "./common/csv.js?v=1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
-    import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-1";
+    import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-status-2";
 
     const TOP_CATEGORY_ORDER = [
       "作業ログ",
@@ -1023,8 +1023,7 @@
       if (!diaryCard) return;
 
       const hasErrors = status.statuses.some(item => item.state === "error");
-      const pendingCount = status.monitoredEntries.filter(item => item.state === "pending").length;
-      const cardClass = hasErrors ? "ops-card--alert" : pendingCount ? "ops-card--warn" : "ops-card--ok";
+      const cardClass = hasErrors ? "ops-card--alert" : "ops-card--ok";
       diaryCard.className = `ops-card ${cardClass}`;
 
       const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
@@ -1034,22 +1033,26 @@
       const workDetails = status?.latestEntry ? renderDiaryWorkDetails(status.latestEntry.diary) : "";
       const diaryMemo = status?.latestEntry ? renderDiaryMemo(status.latestEntry.diary) : "";
       const todayStatus = status.statuses[0];
+      const groupLabels = { ...diaryStateLabels, saved: "日誌保存", error: "取得エラー" };
+      const counts = [];
       const groups = ["saved", "pending", "empty", "error"].map(state => {
         const dates = status.monitoredEntries.filter(item => item.state === state);
         if (!dates.length) return "";
+        counts.push(`${groupLabels[state]} ${dates.length}日`);
         const links = [...dates].reverse().map(item =>
           `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
         ).join("・");
-        return `<p><strong>${diaryStateLabels[state]}：${dates.length}日</strong><br>${links}</p>`;
+        return `<p><strong>${groupLabels[state]}</strong><br>${links}</p>`;
       }).join("");
 
       diaryCard.innerHTML = `
         <div class="ops-card__label">作業日誌</div>
         <div class="ops-card__value">今日：${diaryStateLabels[todayStatus.state]}</div>
-        <div class="diary-card__preview">過去7日間${groups}</div>
-        <p>「記録なし」は作業なしを意味しません。</p>
+        <p>過去7日：${counts.join(" ／ ")}</p>
+        <details class="diary-card__preview"><summary>対象日を表示</summary>${groups}</details>
+        ${status.statuses.some(item => item.state === "empty") ? '<p>「記録なし」は作業なしを意味しません。</p>' : ""}
         ${status.latestEntry ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の保存済み日誌</span>${latestDateLink}${workDetails}${diaryMemo}</div>` : ""}
-        ${hasErrors ? '<p role="alert">取得できなかった日は状態を判定していません。</p><button type="button" class="secondary-btn" data-diary-retry>再試行</button>' : ""}
+        ${hasErrors ? '<button type="button" class="secondary-btn" data-diary-retry>再試行</button>' : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>

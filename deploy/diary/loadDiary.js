@@ -2,7 +2,7 @@
 // diary/loadDiary.js — 日誌データの読み込み専用（404対応）
 // =========================================================
 
-import { loadJSON } from "/common/json.js";
+import { loadJSON } from "/common/json.js?v=20261103-status-2";
 
 const diaryCache = new Map();
 

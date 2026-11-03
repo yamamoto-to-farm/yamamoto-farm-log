@@ -1,9 +1,9 @@
-import { loadDiaryByDate, clearDiaryCache } from "./loadDiary.js";
-import { loadLogsByDate, clearWorkSummaryCache } from "./work-summary.js";
+import { loadDiaryByDate, clearDiaryCache } from "./loadDiary.js?v=20261103-status-2";
+import { loadLogsByDate, clearWorkSummaryCache } from "./work-summary.js?v=20261103-status-2";
 
 export const diaryStateLabels = Object.freeze({
   saved: "日誌保存済み",
-  pending: "作業記録あり／日誌未確定",
+  pending: "作業記録あり",
   empty: "記録なし",
   error: "取得できません",
 });

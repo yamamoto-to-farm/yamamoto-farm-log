@@ -2,8 +2,8 @@
 // diary/viewCard.js — 閲覧専用カード（マージ表示対応）
 // =========================================================
 
-import { loadDiaryByDate } from "./loadDiary.js";
-import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js";
+import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
+import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js?v=20261103-status-2";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
 
@@ -51,7 +51,7 @@ export async function initViewPageWithOptions(options = {}) {
   if (!diary && !workList.length) {
     area.innerHTML = `
       <div class="card view-card">
-        <p>この日の作業日誌はありません。</p>
+        <p>この日の作業記録はありません。</p>
       </div>
     `;
     return;
@@ -68,7 +68,7 @@ export async function initViewPageWithOptions(options = {}) {
     infoCard.className = "card view-card diary-memo";
     infoCard.innerHTML = `
       <h3 class="view-card-title">作業内容</h3>
-      <p>この日の保存済み日誌はありません。作業ログから自動表示しています。</p>
+      <p>作業ログから自動表示しています。補足がある場合だけ編集・保存してください。</p>
     `;
     frag.appendChild(infoCard);
   }
@@ -436,4 +436,3 @@ function normalizeViewGroups(workList) {
     return String(a.type || "").localeCompare(String(b.type || ""), "ja");
   });
 }
-

@@ -52,6 +52,7 @@ test("diary only caches true absence and successful objects, not HTTP or malform
 
 test("shared diary state treats saved empty or memo-only diaries as saved, never as no work", async () => {
   const context = contextFor("diary/status.js");
+  assert.equal(vm.runInContext("diaryStateLabels.pending", context), "作業記録あり");
   assert.equal(vm.runInContext('diaryState({work: [], memo: ""}, [])', context), "saved");
   assert.equal(vm.runInContext('diaryState({memo: "メモ"}, [])', context), "saved");
   assert.equal(vm.runInContext('diaryState(null, [{}])', context), "pending");
@@ -111,6 +112,49 @@ test("top status keeps failures separate and monitors seven previous days plus t
   assert.equal(result.statuses.filter(day => day.state === "error").length, 1);
   assert.equal(result.monitoredEntries.filter(day => day.state === "pending").length, 2);
   assert.equal(result.latestEntry.state, "saved");
+});
+
+test("top treats auto-displayed records as complete enough and collapses the date list", () => {
+  const source = read("index.html").match(/    function renderDiaryCard\(status\) \{[\s\S]*?\n    \}/)[0];
+  const card = { querySelectorAll: () => [], querySelector: () => null };
+  const labels = contextFor("diary/status.js");
+  const context = vm.createContext({
+    document: { getElementById: () => card },
+    diaryStateLabels: vm.runInContext("diaryStateLabels", labels),
+    formatJapaneseYmd: date => date,
+    formatShortDiaryDate: date => date,
+  });
+  vm.runInContext(source, context);
+  context.status = {
+    statuses: [{ ymd: "2026-11-03", state: "pending" }],
+    monitoredEntries: [{ ymd: "2026-11-02", state: "pending" }],
+    latestEntry: null,
+  };
+  vm.runInContext("renderDiaryCard(status)", context);
+  assert.equal(card.className, "ops-card ops-card--ok");
+  assert.match(card.innerHTML, /今日：作業記録あり/);
+  assert.match(card.innerHTML, /過去7日：作業記録あり 1日/);
+  assert.match(card.innerHTML, /<details[^>]*><summary>対象日を表示<\/summary>/);
+  assert.doesNotMatch(card.innerHTML, /未確定|意味しません|data-diary-retry/);
+  context.status.monitoredEntries.push({ ymd: "2026-11-01", state: "empty" });
+  context.status.statuses.push({ ymd: "2026-11-01", state: "empty" }, { ymd: "2026-10-31", state: "error" });
+  vm.runInContext("renderDiaryCard(status)", context);
+  assert.equal(card.className, "ops-card ops-card--alert");
+  assert.match(card.innerHTML, /意味しません/);
+  assert.match(card.innerHTML, /data-diary-retry/);
+  assert.doesNotMatch(card.innerHTML, /取得できなかった日は状態を判定していません/);
+});
+
+test("diary readers bypass cached shared readers lacking HTTP status metadata", () => {
+  for (const file of ["diary/loadDiary.js", "diary/saveDiary.js"]) {
+    assert.match(read(file), /from "\/common\/json\.js\?v=20261103-status-2"/);
+  }
+  assert.match(read("diary/work-summary.js"), /from "\/common\/csv\.js\?v=20261103-status-2"/);
+  for (const file of ["diary/status.js", "diary/diary.js", "diary/editCard.js", "diary/viewCard.js", "diary/saveDiary.js"]) {
+    assert.match(read(file), /from "\.\/loadDiary\.js\?v=20261103-status-2"/);
+  }
+  assert.match(read("diary/viewCard.js"), /補足がある場合だけ編集・保存/);
+  assert.doesNotMatch(read("diary/viewCard.js"), /保存済み日誌はありません/);
 });
 
 function screenContext() {

@@ -3,8 +3,8 @@
 // 保存先を data/diary/ に変更した版（field 対応）
 // =========================================================
 
-import { loadJSON, saveJSON } from "/common/json.js";
-import { clearDiaryCache } from "./loadDiary.js";
+import { loadJSON, saveJSON } from "/common/json.js?v=20261103-status-2";
+import { clearDiaryCache } from "./loadDiary.js?v=20261103-status-2";
 import {
   showSaveModal,
   completeSaveModal,
