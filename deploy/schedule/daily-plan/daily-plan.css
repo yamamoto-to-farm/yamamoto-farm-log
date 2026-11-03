@@ -26,3 +26,7 @@
 .work-time-candidates { margin: 10px 0; overflow-wrap: anywhere; }
 .work-time-candidates button { margin: 0 8px 8px 0; }
 .plan-note.warning { color: #b45309; }
+#plan-off { display: none; }
+#plan-form .plan-toggle { white-space: normal; text-align: left; }
+#plan-form .plan-toggle[aria-pressed="true"] { background: #2256a5; border-color: #2256a5; color: #fff; }
+#plan-form .plan-toggle:focus-visible { outline: 2px solid #2256a5; outline-offset: 3px; }

@@ -21,12 +21,16 @@ const timedPlan = () => {
 };
 
 test("time candidates exclude noon breaks and retain later departure for each participant", () => {
-  assert.deepEqual(plain(availability().candidates), [range("08:00", "12:00"), range("13:00", "16:00")]);
+  assert.deepEqual(plain(availability().candidates), [range("08:00", "12:00"), range("13:00", "16:00"),
+    { ...range("08:00", "16:00"), through: true }]);
   const parts = plain(context.participationForWork(block, ["A", "B"], availability()));
   assert.deepEqual(parts, { A: [range("13:00", "15:30")], B: [range("13:00", "16:00")] });
   const morning = plain(context.participationForWork(range("08:00", "12:00"), ["A", "B"], availability()));
   assert.equal(morning.B[0].start, "09:00");
-  assert.throws(() => context.participationForWork(range("11:00", "14:00"), ["A", "B"], availability()), /昼休憩/);
+  assert.deepEqual(plain(context.participationForWork(range("11:00", "14:00"), ["A", "B"], availability())),
+    { A: [range("11:00", "12:00"), range("13:00", "14:00")], B: [range("11:00", "12:00"), range("13:00", "14:00")] });
+  assert.throws(() => context.participationForWork(range("12:00", "13:00"), ["A", "B"], availability()), /昼休憩/);
+  assert.throws(() => context.participationForWork(range("11:00", "12:30"), ["A", "B"], availability()), /昼休憩/);
   assert.throws(() => context.participationForWork(range("15:30", "16:00"), ["A", "B"], availability()), /参加できない/);
 });
 test("availability excludes individual commitments, ignores editing self and cancelled work, and flags untimed plans", () => {
@@ -36,7 +40,8 @@ test("availability excludes individual commitments, ignores editing self and can
   assert.deepEqual(plain(availability(plans, "self").unknown), ["A", "B"]);
   assert.deepEqual(plain(availability({ existing: saved }).candidates), [range("08:00", "12:00")]);
   assert.deepEqual(plain(availability({}, "", [range("09:30", "10:30")]).candidates),
-    [range("08:00", "09:30"), range("10:30", "12:00"), range("13:00", "16:00")]);
+    [range("08:00", "09:30"), range("10:30", "12:00"), range("13:00", "16:00"),
+      { ...range("10:30", "16:00"), through: true }]);
 });
 test("unknown duty or break settings never produce success-shaped time candidates", () => {
   assert.throws(() => availability({}, "", [], { A: [] }), /出退勤時間/);
@@ -48,6 +53,32 @@ test("split shifts and custom noon break length remain distinct", () => {
     [range("08:00", "12:00"), range("12:45", "16:00")]);
   assert.deepEqual(plain(context.workingTimeRanges([range("08:00", "11:00"), range("14:00", "16:00")], 60)),
     [range("08:00", "11:00"), range("14:00", "16:00")]);
+});
+test("all-day work remains one saved task with separate participation before and after lunch", () => {
+  const duty = { A: [range("08:00", "15:30")] };
+  const free = context.availableWorkTimes(["A"], duty, {}, "", [], 60);
+  const through = free.candidates.find(item => item.through);
+  assert.deepEqual(plain(through), { ...range("08:00", "15:30"), through: true });
+  const work = { ...block, ...through, participation: context.participationForWork(through, ["A"], free) };
+  const plan = context.createUnifiedPlan([], ["A"], [work], "", "", false, "", "direct", duty);
+  assert.equal(plan.blocks.length, 1);
+  assert.deepEqual(plain(plan.blocks[0].participation.A), [range("08:00", "12:00"), range("13:00", "15:30")]);
+  const message = context.buildGroupMessage(context.messageGroups({ p: plan })[0], "2026-11-04");
+  assert.match(message, /8:00〜12:00/);
+  assert.match(message, /13:00〜15:30/);
+  assert.equal((message.match(/作業：収穫/g) || []).length, 2);
+});
+test("through candidates never bridge other work or arbitrary gaps in duty", () => {
+  const duty = { A: [range("08:00", "15:30")] };
+  const lunchWork = { names: ["A"], blocks: [{ task: "別作業", ...range("12:00", "13:00") }], off: false };
+  const free = context.availableWorkTimes(["A"], duty, { other: lunchWork }, "", [], 60);
+  assert.equal(free.candidates.some(item => item.through), false);
+  assert.throws(() => context.participationForWork(range("08:00", "15:30"), ["A"], free), /別作業/);
+  const split = context.availableWorkTimes(["A"], { A: [range("08:00", "11:00"), range("14:00", "16:00")] }, {}, "", [], 60);
+  assert.equal(split.candidates.some(item => item.through), false);
+  const custom = context.availableWorkTimes(["A"], duty, {}, "", [], 45);
+  assert.equal(custom.candidates.find(item => item.through).end, "15:30");
+  assert.equal(context.participationForWork(range("08:00", "15:30"), ["A"], custom).A[1].start, "12:45");
 });
 test("saved attendance and participation produce two messages with exact departure and task times", () => {
   const plan = timedPlan(), groups = context.messageGroups({ harvest: plan });

@@ -59,13 +59,31 @@ test("cancellation preserves tasks, supports old message edits and separate sour
   assert.equal(cancelled.blocks[0].task, "耕起");
   assert.equal(cancelled.message, "");
 });
+test("work-time and meeting toggles reflect selection, and cancellation reset stays in sync", () => {
+  const { context, nodes } = screen();
+  vm.runInContext(`
+    record={data:{plans:{}}};shiftReady=true;shiftEligible=new Set(["パートA"]);noonBreak=60;selectedParts=["パートA"];
+    shiftGroups=[{names:["パートA"],start:"08:00",end:"15:30"}];
+    blocks=[{task:"収穫",start:"08:00",end:"15:30",fields:[],shed:true}];renderBlocks();setPlanOff(true);`, context);
+  assert.match(nodes["plan-blocks"].innerHTML, /aria-pressed="true">08:00〜15:30（通し・昼休憩あり）/);
+  assert.match(nodes["plan-blocks"].innerHTML, /data-shed="0" aria-pressed="true">作業場集合/);
+  assert.doesNotMatch(nodes["plan-blocks"].innerHTML, /type="checkbox"/);
+  assert.equal(nodes["plan-off"].checked, true);
+  assert.equal(nodes["plan-off-toggle"]["aria-pressed"], "true");
+  vm.runInContext("clearForm();", context);
+  assert.equal(nodes["plan-off"].checked, false);
+  assert.equal(nodes["plan-off-toggle"]["aria-pressed"], "false");
+  assert.match(read("schedule/daily-plan/index.html"), /id="plan-off-toggle" type="button"/);
+  assert.match(read("schedule/daily-plan/daily-plan.css"), /plan-toggle\[aria-pressed="true"\]/);
+});
 function screen(deps = {}) {
   const nodes = {};
   const ids = ["plan-date", "plan-inputs", "saved-plans", "message-link", "status", "plan-login", "plan-workers",
     "plan-parts", "participant-kind", "plan-form", "plan-blocks", "editing-label", "plan-memo", "page-area",
-    "plan-reporter", "plan-off", "plan-off-reason", "communication-history", "shift-candidates", "shift-state", "work-plan-link",
+    "plan-reporter", "plan-off", "plan-off-toggle", "plan-off-reason", "communication-history", "shift-candidates", "shift-state", "work-plan-link",
     "plan-kind", "plan-scope", "reporter-group", "unplanned-parts", "continue-team"];
   for (const id of ids) nodes[id] = { value: "", checked: false, children: [], innerHTML: "",
+    setAttribute(key, value) { this[key] = value; },
     classList: { toggle() {} }, replaceChildren() { this.children = []; }, reset() {}, scrollIntoView() {} };
   nodes["plan-date"].value = "2026-11-04";
   const context = load("schedule/daily-plan/daily-plan.js", {
@@ -260,4 +278,27 @@ test("scope filters work modes and normal mixed plans do not repeat family selec
   vm.runInContext('blocks=[{task:"草とり",fields:[],start:"",end:"",companions:[]}];renderBlocks();', context);
   assert.match(nodes["plan-blocks"].innerHTML, /既存の作業別参加者設定/);
   assert.doesNotMatch(read("schedule/daily-plan/index.html"), /team-roster|select-family|select-parts/);
+});
+test("shift headcount hides multiple-part mode without dropping participants or restoring it on clear", () => {
+  const { context, nodes } = screen();
+  vm.runInContext('inputScope="parts";renderWorkers();', context);
+  assert.match(nodes["plan-kind"].innerHTML, /③パート複数/);
+  nodes["plan-kind"].value = "parts";
+  vm.runInContext('shiftReady=true;shiftEligible=new Set(["パートA"]);selectedParts=["パートA"];renderWorkers();', context);
+  assert.doesNotMatch(nodes["plan-kind"].innerHTML, /③パート複数/);
+  assert.equal(nodes["plan-kind"].value, "single");
+  assert.equal(nodes["reporter-group"].hidden, true);
+  assert.doesNotMatch(nodes["participant-kind"].textContent, /1人しか/);
+  assert.deepEqual(Array.from(vm.runInContext("selectedParts", context)), ["パートA"]);
+  vm.runInContext("validateParticipants();clearForm();", context);
+  assert.doesNotMatch(nodes["plan-kind"].innerHTML, /③パート複数/);
+  vm.runInContext('shiftEligible=new Set(["パートA","パートB"]);renderWorkers();', context);
+  assert.match(nodes["plan-kind"].innerHTML, /③パート複数/);
+  nodes["plan-kind"].value = "mixed";
+  vm.runInContext('shiftEligible=new Set(["パートA"]);renderWorkers();', context);
+  assert.equal(nodes["plan-kind"].value, "mixed");
+  vm.runInContext('shiftEligible=new Set();renderWorkers();', context);
+  assert.doesNotMatch(nodes["plan-kind"].innerHTML, /③パート複数/);
+  vm.runInContext('shiftReady=false;shiftEligible=null;renderWorkers();', context);
+  assert.match(nodes["plan-kind"].innerHTML, /③パート複数/);
 });

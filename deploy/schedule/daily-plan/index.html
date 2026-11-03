@@ -6,7 +6,7 @@
   <title>作業予定の追加・編集 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./daily-plan.css?v=20261104-time-1">
+  <link rel="stylesheet" href="./daily-plan.css?v=20261104-time-2">
 </head>
 <body>
   <div id="header"></div>
@@ -46,7 +46,8 @@
           <label id="reporter-group" hidden>連絡係（パートのみ・複数人の場合）<select id="plan-reporter" class="form-input"></select></label>
           <div id="plan-blocks"></div>
           <button id="add-block" type="button" class="secondary-btn">＋作業・時間帯を追加</button>
-          <label><input id="plan-off" type="checkbox">この予定を中止にする（削除せず残します）</label>
+          <input id="plan-off" type="checkbox" hidden>
+          <div class="plan-actions"><button id="plan-off-toggle" type="button" class="secondary-btn plan-toggle" aria-pressed="false">この予定を中止にする（削除せず残します）</button></div>
           <label>中止理由 <input id="plan-off-reason" class="form-input" maxlength="500"></label>
           <label>メモ <textarea id="plan-memo" class="form-textarea" maxlength="2000"></textarea></label>
           <div class="plan-actions">
@@ -70,6 +71,6 @@
       <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </main>
-  <script type="module" src="./daily-plan.js?v=20261104-time-1"></script>
+  <script type="module" src="./daily-plan.js?v=20261104-time-3"></script>
 </body>
 </html>

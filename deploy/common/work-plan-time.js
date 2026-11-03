@@ -63,12 +63,27 @@ export function availableWorkTimes(names, attendance, plans, editingId, otherBlo
   }
   const candidates = subtractTimeRanges(Object.values(shifts).flat(), occupied)
     .filter(range => names.every(name => intersectTimeRanges(shifts[name], [range]).length));
+  if (noonBreak > 0) {
+    const morning = candidates.find(range => range.end === "12:00");
+    const afternoon = candidates.find(range => range.start === clock(720 + noonBreak));
+    const span = morning && afternoon ? { start: morning.start, end: afternoon.end } : null;
+    if (span && !occupied.some(range => range.start < span.end && span.start < range.end)
+      && subtractTimeRanges([span], names.flatMap(name => attendance[name])).every(range =>
+      range.start >= "12:00" && range.end <= clock(720 + noonBreak))) {
+      candidates.push({ ...span, through: true });
+    }
+  }
   return { shifts, candidates, unknown: [...unknown] };
 }
 export function participationForWork(block, names, availability) {
   if (!validTimeRange(block)) throw new Error("パートを含む作業は開始・終了を指定してください。");
   if (!availability.candidates.some(range => range.start <= block.start && range.end >= block.end)) {
-    throw new Error("勤務時間外・昼休憩・別作業と重なる時間です。時間候補の範囲内で指定してください。");
+    throw new Error("勤務時間外・別作業と重なる時間です。時間候補の範囲内で指定してください。");
+  }
+  const working = Object.values(availability.shifts).flat();
+  if (!working.some(range => range.start <= block.start && block.start < range.end)
+    || !working.some(range => range.start < block.end && block.end <= range.end)) {
+    throw new Error("開始・終了は昼休憩中ではなく、作業できる時間に指定してください。");
   }
   const participation = Object.fromEntries(names.map(name => [name, intersectTimeRanges(availability.shifts[name], [block])]));
   if (Object.values(participation).some(ranges => !ranges.length)) {

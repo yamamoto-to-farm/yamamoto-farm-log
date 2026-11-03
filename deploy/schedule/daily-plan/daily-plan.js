@@ -4,7 +4,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-work-1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
-import { availableWorkTimes, participationForWork, mergeTimeRanges, validTimeRange } from "/common/work-plan-time.js?v=20261104-time-1";
+import { availableWorkTimes, participationForWork, mergeTimeRanges, validTimeRange } from "/common/work-plan-time.js?v=20261104-time-2";
 import { hasSession, login, ensureToken } from "/photos/auth.js?v=20261029-2";
 import { config } from "/photos/config.js";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -108,11 +108,14 @@ function renderUnplannedParts() {
 function renderScope() {
   el("plan-scope").value = inputScope;
   const mode = el("plan-kind").value;
-  const options = inputScope === "family" ? [["family", "①家族のみ"], ["mixed", "②家族＋パート"]]
-    : [["mixed", "②家族＋パート"], ["parts", "③パート複数"], ["single", "④パート１人"]];
+  const options = (inputScope === "family" ? [["family", "①家族のみ"], ["mixed", "②家族＋パート"]]
+    : [["mixed", "②家族＋パート"], ["parts", "③パート複数"], ["single", "④パート１人"]])
+    .filter(([value]) => value !== "parts" || !shiftReady || shiftEligible.size >= 2);
   el("plan-kind").innerHTML = '<option value="">作業形態を選択</option>' + options.map(([value, label]) =>
     `<option value="${value}">${label}</option>`).join("");
-  el("plan-kind").value = options.some(([value]) => value === mode) ? mode : inputScope === "family" ? "family" : "";
+  el("plan-kind").value = options.some(([value]) => value === mode) ? mode
+    : mode === "parts" && inputScope === "parts" && shiftReady && shiftEligible.size === 1
+      && !selectedFamily.length && selectedParts.length <= 1 ? "single" : inputScope === "family" ? "family" : "";
 }
 export function resolveShiftWorker(person, staff, workers) {
   const normalize = value => String(value || "").normalize("NFKC").replace(/\s/g, "");
@@ -145,6 +148,7 @@ function notice(message, error = false) {
   el("plan-login").hidden = hasSession();
 }
 function renderWorkers() {
+  renderScope();
   const mode = el("plan-kind").value;
   el("plan-workers").textContent = [...selectedFamily, ...selectedParts].join(" / ") || "未選択";
   el("participant-kind").textContent = {
@@ -176,13 +180,14 @@ function renderBlocks() {
           throw new Error(`${description ? `保存済み参加時間 ${description}。` : ""}シフトを読み込むと勤務時間・他の予定から時間候補を表示します。`);
         }
         const availability = blockAvailability(index);
-        const first = availability.candidates[0], last = availability.candidates.at(-1);
-        bounds = first ? ` min="${first.start}" max="${last.end}"` : "";
+        const starts = availability.candidates.map(range => range.start).sort();
+        const ends = availability.candidates.map(range => range.end).sort();
+        bounds = starts.length ? ` min="${starts[0]}" max="${ends.at(-1)}"` : "";
         times = `<div class="work-time-candidates"><p>作業時間の候補（勤務・昼休憩・別予定を考慮）</p>${availability.candidates.map((range, target) =>
-          `<button type="button" class="secondary-btn" data-time-block="${index}" data-time-choice="${target}">${range.start}〜${range.end}</button>`).join("")
+          `<button type="button" class="secondary-btn plan-toggle" data-time-block="${index}" data-time-choice="${target}" aria-pressed="${block.start === range.start && block.end === range.end}">${range.start}〜${range.end}${range.through ? "（通し・昼休憩あり）" : ""}</button>`).join("")
           || "<p>選択した全員が参加できる時間候補がありません。</p>"}
           ${availability.unknown.length ? `<p class="plan-note">${escape(availability.unknown.join("・"))}の時間未指定の予定は差し引いていません。</p>` : ""}
-          <p class="plan-note">作業時間は候補内で短く調整できます。出退勤が違う人は各人の勤務時間内だけ参加します。</p>`;
+          <p class="plan-note">通しは昼休憩を挟んで同じ作業を行います。作業時間は候補内で短く調整でき、各人の参加時間から昼休憩を除きます。</p>`;
         if (validTimeRange(block)) {
           try {
             const participation = participationForWork(block, selectedParts, availability);
@@ -204,7 +209,7 @@ function renderBlocks() {
       ${times}
       <label>開始 <input type="time" class="form-input" data-block="${index}" data-key="start" value="${escape(block.start)}"${bounds}></label>
       <label>終了 <input type="time" class="form-input" data-block="${index}" data-key="end" value="${escape(block.end)}"${bounds}></label>
-      <label><input type="checkbox" data-block="${index}" data-key="shed"${block.shed ? " checked" : ""}>作業場集合</label>
+      <div class="plan-actions"><button type="button" class="secondary-btn plan-toggle" data-shed="${index}" aria-pressed="${Boolean(block.shed)}">作業場集合</button></div>
       <button type="button" class="secondary-btn" data-field="${index}">圃場を追加（複数可）</button>
       <div>${block.fields.map((field, target) => `<button type="button" class="secondary-btn" data-remove-field="${index}" data-field-index="${target}">${escape(field)} ×</button>`).join("")}</div>
     </details>
@@ -217,6 +222,7 @@ function renderBlocks() {
 }
 function clearForm() {
   el("plan-form").reset();
+  setPlanOff(false);
   selectedFamily = [];
   selectedParts = [];
   blocks = [newBlock()];
@@ -229,6 +235,10 @@ function clearForm() {
   renderBlocks();
   el("editing-label").textContent = "新しい予定";
   cleanSnapshot = snapshot();
+}
+function setPlanOff(off) {
+  el("plan-off").checked = off;
+  el("plan-off-toggle").setAttribute("aria-pressed", String(off));
 }
 function hasSentCommunication(id, plan) {
   return plan.last_communication?.status === "sent"
@@ -340,7 +350,7 @@ function editPlan(id) {
   renderBlocks();
   el("plan-reporter").value = plan.reporter || selectedParts[0] || "";
   el("plan-memo").value = plan.memo || "";
-  el("plan-off").checked = plan.off;
+  setPlanOff(plan.off);
   el("plan-off-reason").value = plan.off_reason || "";
   el("editing-label").textContent = "保存済み予定を編集";
   cleanSnapshot = snapshot();
@@ -493,6 +503,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (["start", "end"].includes(event.target.dataset.key)) renderBlocks();
   };
   el("plan-blocks").onclick = event => {
+    const shed = event.target.closest("[data-shed]");
+    if (shed) {
+      const block = blocks[Number(shed.dataset.shed)];
+      block.shed = !block.shed;
+      shed.setAttribute("aria-pressed", String(block.shed));
+      return;
+    }
     const time = event.target.closest("[data-time-block]");
     if (time) {
       const index = Number(time.dataset.timeBlock);
@@ -527,6 +544,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   };
   el("cancel-edit").onclick = () => { if (canDiscard()) clearForm(); };
+  el("plan-off-toggle").onclick = () => setPlanOff(!el("plan-off").checked);
   el("continue-team").onclick = () => {
     if (!record || !canDiscard()) return;
     clearForm();
