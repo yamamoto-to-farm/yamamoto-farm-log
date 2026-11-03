@@ -1406,3 +1406,10 @@
     background: transparent;
   }
 }
+#plannedWorkPanel > summary { font-size: 1rem; margin: 0; }
+.planned-work-person { border-top: 1px solid #e2e8f0; margin-top: 12px; padding-top: 10px; overflow-wrap: anywhere; }
+.planned-work-person h3 { font-size: 1rem; margin: 0 0 8px; }
+.planned-work-person small { font-size: 0.8rem; font-weight: normal; color: #64748b; }
+.planned-work-block { margin: 10px 0; }
+.planned-work-block p { margin: 4px 0; }
+.planned-work-related { font-size: 0.85rem; color: #64748b; }

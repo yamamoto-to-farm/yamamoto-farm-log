@@ -168,7 +168,7 @@ function screenContext() {
   const context = contextFor("diary/diary.js", {
     document: { getElementById: get },
     window: { addEventListener() {} },
-    renderWeatherBox() {}, renderDayPhotos() {},
+    renderWeatherBox() {}, renderDayPhotos() {}, renderPlannedWork() {},
     loadTimestampRows: async () => [],
     loadDiaryStatus: async () => { throw new Error("offline"); },
     diaryStateLabels: { saved: "日誌保存済み", error: "取得できません" },

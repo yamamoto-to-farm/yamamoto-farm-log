@@ -18,6 +18,7 @@ import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./status.js?v=20261103-status-2";
+import { renderPlannedWork } from "./planned-work.js?v=20261103-1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -473,8 +474,10 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
   void renderDayPhotos(date);
 
   let data;
+  const screenData = loadDiaryScreenData(date);
+  void renderPlannedWork(date, screenData.then(result => result.logs, () => null));
   try {
-    data = await loadDiaryScreenData(date);
+    data = await screenData;
   } catch (error) {
     if (renderSeq !== diaryRenderSeq) return;
     console.error("[diary] status failed", date, error);
