@@ -23,10 +23,13 @@ export async function loadDiaryByDate(date) {
 
   try {
     const diary = await loadJSON(path);
+    if (!diary || typeof diary !== "object" || Array.isArray(diary)) {
+      throw new Error("日誌データの形式が不正です。");
+    }
     diaryCache.set(cacheKey, diary);
     return diary;
   } catch (e) {
-    // 404 の場合は「日誌なし」として null を返す
+    if (e.status !== 404) throw e;
     diaryCache.set(cacheKey, null);
     return null;
   }

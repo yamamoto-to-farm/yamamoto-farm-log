@@ -20,7 +20,9 @@ export async function loadJSON(path) {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     console.error("[loadJSON] fetch failed:", url, res.status);
-    throw new Error("JSON fetch failed: " + url);
+    const error = new Error(`JSON fetch failed (${res.status}): ${url}`);
+    error.status = res.status;
+    throw error;
   }
 
   return await res.json();

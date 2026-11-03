@@ -588,6 +588,7 @@
     import { loadJSON } from "./common/json.js?v=1";
     import { loadCSV } from "./common/csv.js?v=1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
+    import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-1";
 
     const TOP_CATEGORY_ORDER = [
       "作業ログ",
@@ -1003,38 +1004,27 @@
         date.setHours(0, 0, 0, 0);
         date.setDate(today.getDate() - offset);
         const ymd = toYmd(date);
-        const year = ymd.slice(0, 4);
-
         try {
-          const diary = await loadJSON(`/data/diary/${year}/${ymd}.json`);
-          const workList = Array.isArray(diary?.work) ? diary.work : [];
-          const hasMemo = String(diary?.memo || "").trim().length > 0;
-          statuses.push({ ymd, workCount: workList.length, hasContent: workList.length > 0 || hasMemo, diary });
+          statuses.push(await loadDiaryStatus(ymd));
         } catch (error) {
-          statuses.push({ ymd, workCount: 0, hasContent: false, diary: null });
+          console.error("[top] diary status failed", ymd, error);
+          statuses.push({ ymd, state: "error", diary: null });
         }
       }
 
-      const recentEntries = statuses.filter(item => item.hasContent);
+      const recentEntries = statuses.filter(item => item.state === "saved");
       const latestEntry = recentEntries.length ? recentEntries[0] : null;
       const monitoredEntries = statuses.filter(item => item.ymd !== toYmd(today));
-      const missingEntries = monitoredEntries.filter(item => !item.hasContent);
-
-      return {
-        missingCount: missingEntries.length,
-        missingEntries,
-        latestEntry,
-        recentEntries
-      };
+      return { statuses, monitoredEntries, latestEntry, recentEntries };
     }
 
     function renderDiaryCard(status) {
       const diaryCard = document.getElementById("ops-diary-card");
       if (!diaryCard) return;
 
-      const missingCount = Number(status?.missingCount || 0);
-      const isMissing = missingCount > 0;
-      const cardClass = missingCount >= 2 ? "ops-card--warn" : isMissing ? "ops-card--alert" : "ops-card--ok";
+      const hasErrors = status.statuses.some(item => item.state === "error");
+      const pendingCount = status.monitoredEntries.filter(item => item.state === "pending").length;
+      const cardClass = hasErrors ? "ops-card--alert" : pendingCount ? "ops-card--warn" : "ops-card--ok";
       diaryCard.className = `ops-card ${cardClass}`;
 
       const latestDateText = status?.latestEntry ? formatJapaneseYmd(status.latestEntry.ymd) : "記録なし";
@@ -1043,21 +1033,23 @@
         : latestDateText;
       const workDetails = status?.latestEntry ? renderDiaryWorkDetails(status.latestEntry.diary) : "";
       const diaryMemo = status?.latestEntry ? renderDiaryMemo(status.latestEntry.diary) : "";
-      const missingEntries = Array.isArray(status?.missingEntries) ? status.missingEntries : [];
-      const missingLinks = [...missingEntries].reverse().map(item =>
-        `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
-      ).join("・");
+      const todayStatus = status.statuses[0];
+      const groups = ["saved", "pending", "empty", "error"].map(state => {
+        const dates = status.monitoredEntries.filter(item => item.state === state);
+        if (!dates.length) return "";
+        const links = [...dates].reverse().map(item =>
+          `<a href="/diary/index.html?date=${item.ymd}">${formatShortDiaryDate(item.ymd)}</a>`
+        ).join("・");
+        return `<p><strong>${diaryStateLabels[state]}：${dates.length}日</strong><br>${links}</p>`;
+      }).join("");
 
       diaryCard.innerHTML = `
         <div class="ops-card__label">作業日誌</div>
-        ${isMissing ? `
-          <div class="ops-card__value">${missingCount}日分の日誌がありません</div>
-          <p class="diary-card__warning">確認が必要な日：<span class="diary-card__missing-links">${missingLinks}</span></p>
-        ` : `
-          <p class="diary-card__preview"><strong>直近の記録</strong><br>${latestDateLink}</p>
-          ${workDetails}${diaryMemo}
-        `}
-        ${isMissing ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の記録</span>${latestDateLink}${workDetails}${diaryMemo}</div>` : ""}
+        <div class="ops-card__value">今日：${diaryStateLabels[todayStatus.state]}</div>
+        <div class="diary-card__preview">過去7日間${groups}</div>
+        <p>「記録なし」は作業なしを意味しません。</p>
+        ${status.latestEntry ? `<div class="diary-card__latest"><span class="diary-card__latest-label">直近の保存済み日誌</span>${latestDateLink}${workDetails}${diaryMemo}</div>` : ""}
+        ${hasErrors ? '<p role="alert">取得できなかった日は状態を判定していません。</p><button type="button" class="secondary-btn" data-diary-retry>再試行</button>' : ""}
         <div class="diary-card__actions">
           <a href="/diary/index.html">作業日誌を見る</a>
           <a href="/schedule/monthly-work/index.html">作業カレンダーを見る</a>
@@ -1066,6 +1058,11 @@
       diaryCard.querySelectorAll("[data-diary-date]").forEach(button => button.addEventListener("click", () => {
         openDiaryPreviewModal(status.latestEntry.ymd, status.latestEntry.diary);
       }));
+      diaryCard.querySelector("[data-diary-retry]")?.addEventListener("click", async event => {
+        event.currentTarget.disabled = true;
+        clearDiaryStatusCache();
+        renderDiaryCard(await loadRecentDiaryStatus());
+      });
     }
 
     function formatScheduleDate(ymd) {

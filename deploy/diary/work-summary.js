@@ -23,14 +23,14 @@ function resetWorkSummaryCaches() {
 async function loadFolderList() {
   if (folderListCache) return folderListCache;
 
-  const res = await fetch("/diary/list.json");
+  const res = await fetch("/diary/list.json", { cache: "no-store" });
   if (!res.ok) {
-    console.error("list.json が読み込めませんでした");
-    folderListCache = [];
-    return folderListCache;
+    throw new Error(`作業ログの一覧を取得できません（${res.status}）。`);
   }
 
-  folderListCache = await res.json();
+  const list = await res.json();
+  if (!Array.isArray(list) || !list.length) throw new Error("作業ログの一覧が不正です。");
+  folderListCache = list;
   return folderListCache;
 }
 
@@ -46,6 +46,7 @@ async function loadLogCsv(folder) {
     csvRowsCache.set(folder, normalized);
     return normalized;
   } catch (e) {
+    if (e.status !== 404) throw e;
     console.warn(`[work-summary] all.csv が見つかりません: ${folder}`);
     csvRowsCache.set(folder, null);
     return null; // ← 存在しないフォルダは読み飛ばす

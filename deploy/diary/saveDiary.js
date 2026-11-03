@@ -28,7 +28,12 @@ export async function saveDiary(date, autoList) {
   let current;
   try {
     current = await loadJSON(loadPath);
-  } catch {
+  } catch (error) {
+    if (error.status !== 404) {
+      console.error("[diary] existing diary load failed", error);
+      alert("既存の日誌を取得できないため保存を中止しました。再試行してください。");
+      return false;
+    }
     current = { date, work: [], memo: "" };
   }
 
@@ -74,7 +79,7 @@ export async function saveDiary(date, autoList) {
       `メモ: ${current.memo ? "あり" : "なし"}`
     ]
   });
-  if (!confirmed) return;
+  if (!confirmed) return false;
 
   // -------------------------------
   // 保存（data/diary/ 配下なので確実に保存される）
@@ -84,10 +89,12 @@ export async function saveDiary(date, autoList) {
     await saveJSON(savePath, current);
     clearDiaryCache(date);
     completeSaveModal("保存が完了しました");
+    return true;
   } catch (e) {
     closeSaveModal();
     console.error(e);
     alert("保存に失敗しました");
+    return false;
   }
 }
 

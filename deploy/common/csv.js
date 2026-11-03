@@ -79,7 +79,9 @@ export async function loadCSV(path) {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     console.error("[loadCSV] fetch failed:", url, res.status);
-    throw new Error("CSV fetch failed: " + url);
+    const error = new Error(`CSV fetch failed (${res.status}): ${url}`);
+    error.status = res.status;
+    throw error;
   }
 
   const text = await res.text();

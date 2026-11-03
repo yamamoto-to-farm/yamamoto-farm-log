@@ -4,7 +4,7 @@
 
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
-import { loadLogsByDate, showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js";
+import { showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js";
 import { initEditPage } from "./editCard.js";
 import { initViewPageWithOptions } from "./viewCard.js";
 import { saveDiary } from "./saveDiary.js";
@@ -17,6 +17,7 @@ import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
+import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./status.js?v=20261103-1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -444,17 +445,23 @@ async function printDiaryAsA4Pdf() {
 }
 
 async function loadDiaryScreenData(date) {
-  const [diary, logs, timestampRows] = await Promise.all([
-    loadDiaryByDate(date),
-    loadLogsByDate(date),
+  const [status, timestampRows] = await Promise.all([
+    loadDiaryStatus(date),
     loadTimestampRows(date)
   ]);
 
-  return { diary, logs, timestampRows };
+  return { ...status, timestampRows };
 }
 
 async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, clearSearch = true }) {
   const renderSeq = ++diaryRenderSeq;
+  const notice = document.getElementById("diaryDataStatus");
+  const retry = document.getElementById("retryDiaryData");
+  notice.textContent = "日誌と作業記録を取得しています…";
+  retry.hidden = true;
+  retry.disabled = false;
+  isEditPageLoading = true;
+  if (saveBtn) saveBtn.disabled = true;
   const workList = document.getElementById("workList");
   if (workList) workList.innerHTML = "<p>作業ログを読み込み中…</p>";
 
@@ -465,20 +472,36 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
   void renderWeatherBox(date);
   void renderDayPhotos(date);
 
-  const data = await loadDiaryScreenData(date);
+  let data;
+  try {
+    data = await loadDiaryScreenData(date);
+  } catch (error) {
+    if (renderSeq !== diaryRenderSeq) return;
+    console.error("[diary] status failed", date, error);
+    notice.textContent = `${diaryStateLabels.error}。未登録かどうかは判定していません。再試行してください。`;
+    if (workList) workList.textContent = "作業ログを表示できません。";
+    if (editWorkArea) editWorkArea.textContent = "データを取得できないため、表示・編集を中止しました。";
+    window.__currentDiaryWorkGroups = [];
+    retry.hidden = false;
+    retry.onclick = () => {
+      clearDiaryStatusCache(date);
+      return renderDiaryForDate({ mode, date, saveBtn: document.getElementById("saveDiaryBtn"), updateHistory, clearSearch });
+    };
+    return;
+  }
   if (renderSeq !== diaryRenderSeq) return;
+  notice.textContent = diaryStateLabels[data.state]
+    + (data.state === "empty" ? "。「作業なし」を意味するものではありません。" : "");
 
   if (mode === "edit") {
-    isEditPageLoading = true;
-    if (saveBtn) saveBtn.disabled = true;
     await initEditPage({ date, ...data });
     if (renderSeq !== diaryRenderSeq) return;
-    isEditPageLoading = false;
-    if (saveBtn) saveBtn.disabled = false;
   } else {
     await initViewPageWithOptions({ date, ...data });
     if (renderSeq !== diaryRenderSeq) return;
   }
+  isEditPageLoading = false;
+  if (saveBtn) saveBtn.disabled = false;
 
   void (async () => {
     await showWorkSummary(date, data.logs);
@@ -803,6 +826,14 @@ function renderSearchLoading(keyword, anchorDate, searchDays) {
   box.innerHTML = `<p class="diary-search-empty">検索しています…</p>`;
 }
 
+function renderSearchFailure(error) {
+  console.error("[diary] search failed", error);
+  activeSearchState = null;
+  document.getElementById("diarySearchSummary").textContent = "検索データを取得できません。「検索」で再試行してください。";
+  document.getElementById("diarySearchResults").textContent = "検索結果は未確定です。";
+  renderLoadMoreControl(null);
+}
+
 function renderLoadMoreControl(state) {
   const area = document.getElementById("diarySearchMoreArea");
   if (!area) return;
@@ -851,7 +882,13 @@ function bindSearchEvents({ mode, dateInput }) {
     }
 
     renderSearchLoading(keyword, dateInput.value, DIARY_BLOCK_DAYS);
-    const result = await searchAllSources(keyword, dateInput.value, DIARY_BLOCK_DAYS);
+    let result;
+    try {
+      result = await searchAllSources(keyword, dateInput.value, DIARY_BLOCK_DAYS);
+    } catch (error) {
+      if (token === searchToken) renderSearchFailure(error);
+      return;
+    }
     if (token !== searchToken) return;
 
     activeSearchState = {
@@ -926,12 +963,18 @@ function bindSearchEvents({ mode, dateInput }) {
       const nextDays = activeSearchState.searchedDays + DIARY_BLOCK_DAYS;
       renderSearchLoading(activeSearchState.keyword, activeSearchState.anchorDate, nextDays);
 
-      const nextDiary = await searchDiaryJsonByKeywordRange(
-        activeSearchState.keyword,
-        activeSearchState.anchorDate,
-        activeSearchState.searchedDays,
-        DIARY_BLOCK_DAYS
-      );
+      let nextDiary;
+      try {
+        nextDiary = await searchDiaryJsonByKeywordRange(
+          activeSearchState.keyword,
+          activeSearchState.anchorDate,
+          activeSearchState.searchedDays,
+          DIARY_BLOCK_DAYS
+        );
+      } catch (error) {
+        renderSearchFailure(error);
+        return;
+      }
 
       activeSearchState.searchedDays = nextDays;
       activeSearchState.diaryTotal += nextDiary.total;
@@ -1065,7 +1108,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (mode === "edit") {
     if (saveBar) saveBar.style.display = "flex";
     saveBtn.style.display = "block";
-    saveBtn.disabled = false;
+    saveBtn.disabled = isEditPageLoading;
 
     saveBtn.addEventListener("click", async () => {
       if (isEditPageLoading) {
@@ -1087,7 +1130,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       let saveSucceeded = false;
 
       try {
-        await saveDiary(date, window.__currentDiaryWorkGroups || []);
+        const saved = await saveDiary(date, window.__currentDiaryWorkGroups || []);
+        if (!saved) return;
         saveSucceeded = true;
 
         const currentSearch = document.getElementById("diarySearchInput")?.value?.trim() || "";
