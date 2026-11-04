@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/common/css/main.css">
 
   <!-- diaryページ専用CSS -->
-  <link rel="stylesheet" href="/diary/diary.css?v=20261104-actual-2">
+  <link rel="stylesheet" href="/diary/diary.css?v=20261104-status-chip-1">
   <link rel="stylesheet" href="/photos/panel.css?v=20261029-2">
 </head>
 
@@ -22,8 +22,9 @@
 
     <!-- モード切り替え -->
     <div id="modeSwitchArea"></div>
-    <div class="card" role="status" aria-live="polite">
-      <p id="diaryDataStatus"></p>
+    <span id="diaryDataStatus" class="diary-status-chip print-hide" role="status" aria-live="polite"></span>
+    <div id="diaryDataError" class="card diary-data-error" role="status" aria-live="polite" hidden>
+      <p id="diaryDataErrorText"></p>
       <button id="retryDiaryData" type="button" class="secondary-btn print-hide" hidden>再試行</button>
     </div>
 
@@ -128,7 +129,7 @@
   <script type="module" src="/diary/viewCard.js?v=20261104-actual-1"></script>
   <script type="module" src="/diary/weather-box.js?v=20260810-1"></script>
   <script type="module" src="/diary/loadDiary.js"></script>
-  <script type="module" src="/diary/diary.js?v=20261104-actual-1"></script>
+  <script type="module" src="/diary/diary.js?v=20261104-status-chip-1"></script>
 
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>

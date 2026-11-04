@@ -10,12 +10,17 @@
 .simultaneous-fertilizer > div + div { border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 8px; }
 #modeSwitchArea {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   margin: 8px 0 14px;
   padding: 2px 0;
 }
+.diary-status-chip { display: inline-flex; align-items: center; padding: 4px 9px; border: 1px solid #d8dee7;
+  border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 12px; line-height: 1.4; white-space: nowrap; }
+.diary-data-error { color: #b91c1c; border: 1px solid #fca5a5; }
+.diary-data-error[hidden] { display: none; }
 
 .mode-switch-left,
 .mode-switch-right {

@@ -185,17 +185,39 @@ function screenContext() {
   return { context, get };
 }
 
+test("mode switch keeps the same live status chip before view buttons on every render", () => {
+  const chip = { textContent: "日誌保存済み" };
+  const inserted = [];
+  const area = { innerHTML: "", querySelector: () => ({ prepend: node => inserted.push(node) }) };
+  const context = contextFor("diary/diary.js", {
+    document: { getElementById: id => id === "diaryDataStatus" ? chip
+      : id === "modeSwitchArea" ? area : { value: "2026-11-04" } },
+    window: { addEventListener() {}, currentRole: "admin" }, URLSearchParams,
+    location: { search: "" },
+  });
+  vm.runInContext('buildDiaryUrl=(mode,date)=>`?mode=${mode}&date=${date}`;renderModeSwitch("view");renderModeSwitch("edit");', context);
+  assert.equal(inserted.length, 2);
+  assert.ok(inserted.every(node => node === chip));
+  assert.equal(chip.textContent, "日誌保存済み");
+  assert.match(area.innerHTML, /mode-switch-right/);
+  const html = read("diary/index.html");
+  assert.match(html, /id="diaryDataStatus" class="diary-status-chip print-hide" role="status"/);
+  assert.match(html, /id="diaryDataError"[^>]+hidden/);
+});
 test("diary fetch failure blocks editing and saving, and retry recovers the same date", async () => {
   const { context, get } = screenContext();
   context.saveBtn = get("saveDiaryBtn");
   await vm.runInContext('renderDiaryForDate({mode:"edit",date:"2026-11-03",saveBtn,updateHistory:false,clearSearch:false})', context);
   assert.equal(get("saveDiaryBtn").disabled, true);
-  assert.match(get("diaryDataStatus").textContent, /取得できません.*判定していません/);
+  assert.equal(get("diaryDataStatus").textContent, "取得できません");
+  assert.match(get("diaryDataErrorText").textContent, /取得できません.*判定していません/);
+  assert.equal(get("diaryDataError").hidden, false);
   assert.equal(get("retryDiaryData").hidden, false);
   assert.equal(vm.runInContext("isEditPageLoading", context), true);
   context.loadDiaryStatus = async date => ({ ymd: date, state: "saved", diary: {}, logs: [] });
   await get("retryDiaryData").onclick();
   assert.equal(get("diaryDataStatus").textContent, "日誌保存済み");
+  assert.equal(get("diaryDataError").hidden, true);
   assert.equal(get("retryDiaryData").hidden, true);
   assert.equal(get("saveDiaryBtn").disabled, false);
   assert.equal(vm.runInContext("isEditPageLoading", context), false);

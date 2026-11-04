@@ -305,6 +305,7 @@ function bindMonthMiniDateJump({ mode }) {
 function renderModeSwitch(mode, keyword = "") {
   const area = document.getElementById("modeSwitchArea");
   if (!area) return;
+  const statusChip = document.getElementById("diaryDataStatus");
 
   const date = document.getElementById("diaryDate").value;
   const modeUrlView = buildDiaryUrl("view", date, keyword);
@@ -354,6 +355,8 @@ function renderModeSwitch(mode, keyword = "") {
       ${rightButtons}
     </div>
   `;
+  const right = area.querySelector(".mode-switch-right");
+  if (statusChip) right.prepend(statusChip);
 }
 
 function bindDiaryBackOriginButton() {
@@ -458,7 +461,8 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
   const renderSeq = ++diaryRenderSeq;
   const notice = document.getElementById("diaryDataStatus");
   const retry = document.getElementById("retryDiaryData");
-  notice.textContent = "日誌と作業記録を取得しています…";
+  notice.textContent = "取得中…";
+  document.getElementById("diaryDataError").hidden = true;
   retry.hidden = true;
   retry.disabled = false;
   isEditPageLoading = true;
@@ -484,7 +488,10 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
     finishReferences([]);
     if (renderSeq !== diaryRenderSeq) return;
     console.error("[diary] status failed", date, error);
-    notice.textContent = `${diaryStateLabels.error}。未登録かどうかは判定していません。再試行してください。`;
+    notice.textContent = diaryStateLabels.error;
+    document.getElementById("diaryDataErrorText").textContent =
+      `${diaryStateLabels.error}。未登録かどうかは判定していません。再試行してください。`;
+    document.getElementById("diaryDataError").hidden = false;
     if (workList) workList.textContent = "作業ログを表示できません。";
     if (editWorkArea) editWorkArea.textContent = "データを取得できないため、表示・編集を中止しました。";
     window.__currentDiaryWorkGroups = [];
