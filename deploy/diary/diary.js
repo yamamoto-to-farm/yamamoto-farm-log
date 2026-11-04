@@ -6,7 +6,7 @@ import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js?v=20261103-status-2";
 import { initEditPage } from "./editCard.js?v=20261103-status-2";
-import { initViewPageWithOptions } from "./viewCard.js?v=20261103-status-2";
+import { initViewPageWithOptions } from "./viewCard.js?v=20261104-actual-1";
 import { saveDiary } from "./saveDiary.js?v=20261103-status-2";
 import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { renderWeatherBox } from "./weather-box.js";
@@ -18,7 +18,7 @@ import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./status.js?v=20261103-status-2";
-import { renderPlannedWork } from "./planned-work.js?v=20261104-task-1";
+import { renderPlannedWork } from "./planned-work.js?v=20261104-actual-1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -475,10 +475,13 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
 
   let data;
   const screenData = loadDiaryScreenData(date);
-  void renderPlannedWork(date, screenData.then(result => result.logs, () => null));
+  let finishReferences;
+  const references = new Promise(resolve => { finishReferences = resolve; });
+  void renderPlannedWork(date, screenData.then(result => result.logs, () => null), references);
   try {
     data = await screenData;
   } catch (error) {
+    finishReferences([]);
     if (renderSeq !== diaryRenderSeq) return;
     console.error("[diary] status failed", date, error);
     notice.textContent = `${diaryStateLabels.error}。未登録かどうかは判定していません。再試行してください。`;
@@ -492,14 +495,16 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
     };
     return;
   }
-  if (renderSeq !== diaryRenderSeq) return;
+  if (renderSeq !== diaryRenderSeq) { finishReferences([]); return; }
   notice.textContent = diaryStateLabels[data.state];
 
   if (mode === "edit") {
+    finishReferences([]);
     await initEditPage({ date, ...data });
     if (renderSeq !== diaryRenderSeq) return;
   } else {
-    await initViewPageWithOptions({ date, ...data });
+    const actualReferences = await initViewPageWithOptions({ date, ...data, isCurrent: () => renderSeq === diaryRenderSeq });
+    finishReferences(actualReferences || []);
     if (renderSeq !== diaryRenderSeq) return;
   }
   isEditPageLoading = false;

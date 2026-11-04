@@ -42,6 +42,21 @@ test("related logs require exact worker tokens, mapped task and specified field,
   assert.equal(match("担当A", { ...block, task: "道具" },
     [log({ workType: "道具整備" }, "other")]).length, 0);
 });
+test("plan references show compact actual times and jump to the real card without duplicating details", () => {
+  const { plannedWorkHtml: render } = load();
+  const logs = [log()];
+  const html = render({ 担当A: plan }, logs, undefined,
+    [{ anchor: "actual-work-0", start: "08:00", end: "14:00" }]);
+  assert.match(html, /実績時間：08:00〜14:00/);
+  assert.match(html, /href="#actual-work-0">実績を見る/);
+  assert.doesNotMatch(html, /使用量|機械：/);
+  const noTime = render({ 担当A: plan }, logs, undefined, [{ anchor: "actual-work-0", start: "", end: "" }]);
+  assert.match(noTime, /実績を見る/);
+  assert.doesNotMatch(noTime, /実績時間：/);
+  const noMatch = render({ 担当C: plan }, logs, undefined,
+    [{ anchor: "actual-work-0", start: "08:00", end: "14:00" }]);
+  assert.doesNotMatch(noMatch, /実績を見る|実績時間/);
+});
 
 test("plans present neutral references per person, cancellation and safe escaped content", () => {
   const { plannedWorkHtml: render } = load();

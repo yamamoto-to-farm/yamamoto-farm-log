@@ -6,6 +6,7 @@ import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js?v=20261103-status-2";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
+import { loadFertilizerDetails, combineSimultaneousWork } from "./actual-work.js?v=20261104-actual-1";
 
 const WORK_LOG_TYPE_BY_CARD = [
   { pattern: /手作業除草/, type: "hand-weeding" },
@@ -44,9 +45,12 @@ export async function initViewPageWithOptions(options = {}) {
   const timestampRows = Array.isArray(options?.timestampRows) ? options.timestampRows : await loadTimestampRows(date);
   const autoList = extractWorkForEdit(logs, timestampRows);
   const autoSowingCategoryMap = buildSowingCategoryMap(autoList);
-  const workList = Array.isArray(diary?.work) && diary.work.length
+  const originalWorkList = Array.isArray(diary?.work) && diary.work.length
     ? normalizeViewGroups(hydrateSowingCategoryForView(diary.work, autoSowingCategoryMap))
     : normalizeViewGroups(mergeWorkEntries(autoList, timestampRows));
+  const fertilizer = await loadFertilizerDetails(logs, date);
+  if (options.isCurrent && !options.isCurrent()) return;
+  const { groups: workList, references } = combineSimultaneousWork(originalWorkList, autoList, fertilizer.entries);
 
   if (!diary && !workList.length) {
     area.innerHTML = `
@@ -62,6 +66,13 @@ export async function initViewPageWithOptions(options = {}) {
   // ---------------------------------------------
   area.innerHTML = "";
   const frag = document.createDocumentFragment();
+  if (fertilizer.errors.length) {
+    const warning = document.createElement("p");
+    warning.className = "diary-actual-warning";
+    warning.setAttribute("role", "status");
+    warning.textContent = `同時施肥の照合ができないため、別カードで表示しています。再読み込みで再試行してください。${fertilizer.errors.join("／")}`;
+    frag.appendChild(warning);
+  }
 
   if (!diary && workList.length) {
     const infoCard = document.createElement("div");
@@ -81,10 +92,12 @@ export async function initViewPageWithOptions(options = {}) {
     frag.appendChild(createMemoCard(diary.memo));
   }
   area.appendChild(frag);
+  return references;
 }
 
 function createViewWorkCard(w) {
-  const title = String(w?.type || w?.workType || "").trim();
+  const baseTitle = String(w?.type || w?.workType || "").trim();
+  const title = `${baseTitle}${w.simultaneous?.length ? "（同時施肥あり）" : ""}`;
   const isSowing = isSowingWorkItem(w);
   const workerLine = normalizeMultiText(w?.workers) || "（未入力）";
   const machineLine = String(w?.machine || "").trim() || "（未入力）";
@@ -92,14 +105,16 @@ function createViewWorkCard(w) {
   const subItems = Array.isArray(w?.items) ? w.items : [];
   const fieldParts = isSowing ? [] : getFieldParts(w?.field, subItems);
   const date = String(document.getElementById("diaryDate")?.value || "").trim();
-  const workLogType = resolveWorkLogType(title);
+  const workLogType = resolveWorkLogType(baseTitle);
 
   const card = document.createElement("div");
   card.className = `card view-card ${getWorkToneClass(title)}`;
+  card.id = w.anchor;
+  card.tabIndex = -1;
 
   const h3 = document.createElement("h3");
   h3.className = `view-card-title ${getWorkToneClass(title)}`;
-  const titleLinkInfo = resolveWorkTitleLink(title);
+  const titleLinkInfo = resolveWorkTitleLink(baseTitle);
   if (titleLinkInfo?.href) {
     const titleLink = document.createElement("a");
     titleLink.className = "work-title-link";
@@ -125,12 +140,42 @@ function createViewWorkCard(w) {
     card.appendChild(createLine("播種区分", sowingCategoryLine, "view-field-line"));
   }
   card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || ""), "view-time-line"));
+  if (w.linkWarning) card.appendChild(createLine("同時施肥",
+    "対応する作業を一意に照合できないか日誌の補正内容が異なるため、別カードで表示しています。", "diary-actual-warning"));
 
   if (subItems.length > 1) {
     card.appendChild(createSubItemsDetails(subItems, isSowing));
   }
+  if (w.simultaneous?.length) card.appendChild(createSimultaneousDetails(w.simultaneous));
 
   return card;
+}
+function createSimultaneousDetails(entries) {
+  const details = document.createElement("details");
+  details.className = "simultaneous-fertilizer";
+  const summary = document.createElement("summary");
+  summary.textContent = "同時施肥の内容";
+  details.appendChild(summary);
+  entries.forEach(entry => {
+    const section = document.createElement("div");
+    section.appendChild(createLine("圃場", entry.field));
+    const amounts = (entry.distributed || []).filter(item => tokenField(item.field) === tokenField(entry.field));
+    if (amounts.length) amounts.forEach(item => section.appendChild(createLine(
+      item.name || item.fertilizer_id || "肥料",
+      item.amount_kg !== null && item.amount_kg !== undefined && String(item.amount_kg).trim()
+        && Number.isFinite(Number(item.amount_kg)) ? `${item.amount_kg} kg` : "使用量未記録")));
+    else section.appendChild(createLine("使用量", "圃場別の使用量は元の施肥記録で確認してください。"));
+    if (entry.notes) section.appendChild(createLine("備考", entry.notes));
+    const link = document.createElement("a");
+    link.href = buildFieldWorkLogsUrl({ field: entry.field, end: entry.date, type: "fertilizer" });
+    link.textContent = "施肥記録を見る";
+    section.appendChild(link);
+    details.appendChild(section);
+  });
+  return details;
+}
+function tokenField(value) {
+  return String(value || "").normalize("NFKC").trim();
 }
 
 function createMemoCard(memoValue) {

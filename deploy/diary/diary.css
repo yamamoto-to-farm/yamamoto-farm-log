@@ -3,6 +3,12 @@
 ================================ */
 
 /* モード切り替え */
+.view-card[id^="actual-work-"] { scroll-margin-top: 20px; }
+.view-card[id^="actual-work-"]:target { outline: 2px solid #2563eb; outline-offset: 3px; }
+.diary-actual-warning { color: #92400e; font-size: 13px; overflow-wrap: anywhere; }
+.simultaneous-fertilizer { margin-top: 12px; }
+.simultaneous-fertilizer > summary { font-size: 14px; font-weight: normal; cursor: pointer; }
+.simultaneous-fertilizer > div + div { border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 8px; }
 #modeSwitchArea {
   display: flex;
   align-items: center;
