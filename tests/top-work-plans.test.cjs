@@ -151,7 +151,7 @@ test("top folds only the third and later plans, counting plans rather than task 
   assert.doesNotMatch(page.match(/#top-plan-body \{[^}]+\}/)[0], /max-height|overflow: auto/);
 });
 
-test("message honors valid requested dates and otherwise keeps tomorrow default", () => {
+test("message honors valid requested dates and otherwise starts with today", () => {
   const source = strip(read("admin/message/message.js"));
   const context = vm.createContext({ console: { warn() {} }, URLSearchParams, location: { search: "" } });
   vm.runInContext(strip(read("common/date-utils.js")), context);
@@ -162,9 +162,8 @@ test("message honors valid requested dates and otherwise keeps tomorrow default"
   }
   for (const date of ["", "2026-02-30", "invalid", "2026-13-01"]) {
     context.location.search = `?date=${date}`;
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    assert.equal(context.initialMessageDate(), `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`);
+    const today = new Date();
+    assert.equal(context.initialMessageDate(), `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`);
   }
   assert.match(read("admin/message/message.js"), /login\(`\/admin\/message\/index.html\?date=\$\{element\("msg-date"\).value\}`\)/);
 });

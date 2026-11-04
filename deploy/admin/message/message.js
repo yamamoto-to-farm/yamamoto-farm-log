@@ -35,9 +35,7 @@ function initialMessageDate() {
   const parsed = parseDateInputLocal(requested);
   if (requested && parsed && formatLocalYmd(parsed) === requested) return requested;
   if (requested) console.warn("[message] invalid requested date", requested);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return formatLocalYmd(tomorrow);
+  return formatLocalYmd(new Date());
 }
 function syncWorkPlanLink() {
   const date = element("msg-date").value;
@@ -160,7 +158,7 @@ function renderCards() {
   }).join("") : "<p>この日のパート向け連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
   syncCommonSelection();
 }
-async function loadSavedPlans() {
+async function loadSavedPlans(autoSelectDate = false) {
   const current = ++sequence;
   const date = element("msg-date").value;
   if (!date) { status("日付を選択してください。", true); return; }
@@ -175,6 +173,19 @@ async function loadSavedPlans() {
     const result = await fetchWorkPlanRecord(date);
     if (current !== sequence) return;
     if (!result.data.plans || !Array.isArray(result.data.communications)) throw new Error("予定APIの更新が必要です。");
+    if (autoSelectDate === true && date === formatLocalYmd(new Date())) {
+      const groups = messageGroups(result.data.plans);
+      const completed = groups.length > 0 && groups.every(group => {
+        const communication = groupCommunicationState(group, result.data.communications);
+        return communication && !communication.changed && ["copied", "sent"].includes(communication.status);
+      });
+      if (completed) {
+        const tomorrow = parseDateInputLocal(date);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        element("msg-date").value = formatLocalYmd(tomorrow);
+        return loadSavedPlans();
+      }
+    }
     record = result;
     loadedDate = date;
     renderCards();
@@ -321,9 +332,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     try { await saveMasters(); renderTemplates(); }
     catch (error) { console.error("[message] template save failed", error); status(error.message, true); }
   };
+  const plansLoading = loadSavedPlans(!new URLSearchParams(location.search).has("date"));
   await loadMasters();
   tplDraft = structuredClone(masters.templates);
   renderTemplates();
   renderTemplateEditor();
-  await loadSavedPlans();
+  await plansLoading;
 });

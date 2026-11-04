@@ -73,7 +73,8 @@ function copyScreen({ failCopy = false, failRecord = false, plans = { test: plan
   const helper = load("message-plan.js");
   const elements = {};
   for (const id of ["cards", "msg-date", "direct-plan-link", "back-plan-link", "msg-login", "tab-daily", "status",
-    "common-open", "common-panel", "common-apply", "common-text", "common-status"]) {
+    "common-open", "common-panel", "common-apply", "common-text", "common-status", "page-area", "load-plans",
+    "common-all", "common-clear", "common-cancel", "template-list", "template-edit", "add-template", "save-templates"]) {
     elements[id] = { value: "", textContent: "", replaceChildren() {}, classList: { toggle() {} },
       setAttribute(name, value) { this[name] = value; }, querySelectorAll: () => [], focus() {} };
   }
@@ -91,17 +92,123 @@ function copyScreen({ failCopy = false, failRecord = false, plans = { test: plan
   const events = [];
   const copiedTexts = [];
   const requests = [];
+  let initialize;
   const context = load("message.js", {
-    hasSession: () => true, document: { getElementById: id => elements[id] },
-    ...helper, window: { addEventListener() {} },
+    hasSession: () => true, document: { getElementById: id => elements[id], querySelectorAll: () => [] },
+    ...helper, window: { currentRole: "admin", addEventListener(name, callback) { initialize = callback; } },
+    verifyLocalAuth: async () => true, renderHeader() {}, fetch: async () => ({ status: 404 }),
     fetchWorkPlanRecord: async () => ({ date: "2026-11-04", revision: '"etag"', data: { plans, communications: [] } }),
     writeWorkPlan: async req => { events.push("record"); requests.push(req); if (failRecord) throw new Error("offline"); return { saved: true, date: req.date }; },
   });
   context.testPlans = plans;
   context.testCopy = async text => { events.push("copy"); copiedTexts.push(text); if (failCopy) throw new Error("copy failed"); };
   vm.runInContext('record={data:{plans:testPlans,communications:[]}}; loadedDate="2026-11-04"; copyText=testCopy;', context);
-  return { context, button, notice, events, elements, cards, copiedTexts, requests };
+  return { context, button, notice, events, elements, cards, copiedTexts, requests, initialize };
 }
+function defaultDateScreen({ search = "", communications, failDate = "", todayPlans, now = [2026, 10, 4] } = {}) {
+  const screen = copyScreen();
+  const { context } = screen;
+  context.Date = class extends Date {
+    constructor(...args) { super(...(args.length ? args : now)); }
+  };
+  vm.runInContext(strip(readFileSync(join(__dirname, "..", "deploy", "common", "date-utils.js"), "utf8")), context);
+  context.location = { search };
+  const calls = [];
+  context.fetchWorkPlanRecord = async date => {
+    calls.push(date);
+    if (date === failDate) throw new Error("offline");
+    return { date, revision: '"etag"', data: {
+      plans: todayPlans ?? { test: plan },
+      communications: communications ?? [{ plan_id: "test", plan_revision: plan.updated_at,
+        recipients: plan.recipients, status: "copied", at: "copy-time" }],
+    } };
+  };
+  return { ...screen, calls };
+}
+test("unspecified date opens tomorrow only after all today's exact groups have unchanged copy records", async () => {
+  const screen = defaultDateScreen();
+  await screen.initialize();
+  assert.deepEqual(screen.calls, ["2026-11-04", "2026-11-05"]);
+  assert.equal(screen.elements["msg-date"].value, "2026-11-05");
+  assert.equal(screen.elements["direct-plan-link"].href, "/schedule/daily-plan/index.html?date=2026-11-05");
+  assert.equal(screen.elements["back-plan-link"].href, "/schedule/daily-plan/index.html?date=2026-11-05");
+  assert.match(screen.elements.cards.innerHTML, /2026-11-05/);
+  assert.deepEqual(screen.events, []);
+});
+test("missing, changed or wrong-recipient copies and no contact plans keep today", async () => {
+  const copied = { plan_id: "test", plan_revision: plan.updated_at, recipients: plan.recipients, status: "copied", at: "copy" };
+  for (const options of [
+    { communications: [] },
+    { communications: [{ ...copied, plan_revision: "old" }] },
+    { communications: [{ ...copied, recipients: ["別の人"] }] },
+    { todayPlans: {} },
+    { todayPlans: { family: { ...plan, recipients: [] } } },
+    { todayPlans: { test: plan, second: { ...plan, recipients: ["B"], names: ["B"] } } },
+  ]) {
+    const screen = defaultDateScreen(options);
+    await screen.initialize();
+    assert.deepEqual(screen.calls, ["2026-11-04"], JSON.stringify(options));
+    assert.equal(screen.elements["msg-date"].value, "2026-11-04");
+  }
+});
+test("explicit dates, manual reloads and date changes never auto-advance", async () => {
+  for (const date of ["2026-11-04", "2026-11-03", "2026-11-06"]) {
+    const screen = defaultDateScreen({ search: `?date=${date}` });
+    await screen.initialize();
+    assert.deepEqual(screen.calls, [date]);
+    assert.equal(screen.elements["msg-date"].value, date);
+  }
+  const screen = defaultDateScreen();
+  await screen.initialize();
+  screen.elements["msg-date"].value = "2026-11-04";
+  await screen.elements["msg-date"].onchange({ type: "change" });
+  await screen.elements["load-plans"].onclick({ type: "click" });
+  assert.deepEqual(screen.calls, ["2026-11-04", "2026-11-05", "2026-11-04", "2026-11-04"]);
+});
+test("time-split recipients must each have a current communication before advancing", async () => {
+  const shared = { ...plan, names: ["A", "B"], recipients: ["A", "B"],
+    attendance: { A: [{ start: "08:00", end: "16:00" }], B: [{ start: "13:00", end: "16:00" }] } };
+  const copies = ["A", "B"].map((name, index) => ({ plan_id: "shared", plan_revision: shared.updated_at,
+    recipients: [name], status: index ? "sent" : "copied", at: `copy-${name}` }));
+  for (const [communications, expected] of [[copies.slice(0, 1), "2026-11-04"], [copies, "2026-11-05"]]) {
+    const screen = defaultDateScreen({ todayPlans: { shared }, communications });
+    await screen.initialize();
+    assert.equal(screen.elements["msg-date"].value, expected);
+  }
+});
+test("load failures show an error without silently skipping today or retrying past tomorrow", async () => {
+  for (const date of ["2026-11-04", "2026-11-05"]) {
+    const screen = defaultDateScreen({ failDate: date });
+    await screen.initialize();
+    assert.equal(screen.elements["msg-date"].value, date);
+    assert.match(screen.elements.status.textContent, /offline.*再試行/);
+    assert.deepEqual(screen.calls, date.endsWith("04") ? ["2026-11-04"] : ["2026-11-04", "2026-11-05"]);
+  }
+});
+test("automatic tomorrow selection uses local calendar arithmetic across month and year boundaries", async () => {
+  for (const [now, expected] of [[[2026, 11, 31], "2027-01-01"], [[2028, 1, 28], "2028-02-29"]]) {
+    const screen = defaultDateScreen({ now });
+    await screen.initialize();
+    assert.equal(screen.elements["msg-date"].value, expected);
+    assert.equal(screen.calls.length, 2);
+  }
+});
+test("a stale initial fetch cannot override a manual date selection", async () => {
+  const screen = defaultDateScreen();
+  const fetchRecord = screen.context.fetchWorkPlanRecord;
+  let finish;
+  screen.context.fetchWorkPlanRecord = date => date === "2026-11-04"
+    ? new Promise(resolve => { finish = async () => resolve(await fetchRecord(date)); }) : fetchRecord(date);
+  const initializing = screen.initialize();
+  await new Promise(resolve => setImmediate(resolve));
+  screen.elements["msg-date"].value = "2026-11-06";
+  await screen.elements["msg-date"].onchange();
+  await finish();
+  await initializing;
+  assert.equal(screen.elements["msg-date"].value, "2026-11-06");
+  assert.match(screen.elements.cards.innerHTML, /2026-11-06/);
+  assert.ok(!screen.calls.includes("2026-11-05"));
+});
 test("common additions preserve edited content and go before the last closing line, or append without one", () => {
   const { appendCommonMessage: add } = load("message.js");
   assert.equal(add("時間変更済み\n\nよろしくお願いします。", "かっぱを持ってきてください。"),
