@@ -16,7 +16,7 @@ const escape = value => String(value ?? "").replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 const newBlock = () => ({ task: "", start: "", end: "", fields: [], field: "", shed: false });
 
-export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", off = false, reason = "", source = "direct", attendance = null) {
+export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", off = false, reason = "", source = "direct", attendance = null, familyRecipients = []) {
   const all = [...family, ...parts];
   if (!all.length || all.some(name => !name.trim()) || new Set(all).size !== all.length || all.length > 20) {
     throw new Error("作業者を重複なく1〜20人選択してください。");
@@ -25,7 +25,7 @@ export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", of
   if (!off && kind === "2" && !parts.includes(reporter)) throw new Error("連絡係をパートから選択してください。");
   if ((!off && !blocks.length) || blocks.length > 30) throw new Error("作業内容を1〜30件指定してください。");
   const timed = parts.length && attendance && blocks.every(block => block.participation
-    && Object.keys(block.participation).length === parts.length && parts.every(name => block.participation[name]?.length));
+    && Object.keys(block.participation).every(name => all.includes(name)) && parts.every(name => block.participation[name]?.length));
   if (parts.length && attendance && !off && !timed) throw new Error("各パートの作業参加時間を確認してください。");
   const validated = blocks.map(block => {
     if (!block.task.trim()) throw new Error("作業内容を入力してください。");
@@ -36,15 +36,32 @@ export function createUnifiedPlan(family, parts, blocks, memo, reporter = "", of
     return {
       task: block.task.trim(), start: block.start, end: block.end,
       fields: [...block.fields], field: "", shed: Boolean(block.shed),
-      ...(timed ? { participation: structuredClone(block.participation) } : {}),
+      ...(timed ? { participation: Object.fromEntries(parts.map(name => [name, structuredClone(block.participation[name])])) } : {}),
       ...(parts.length && family.length ? { companions: (block.companions || family).filter(name => family.includes(name)) } : {}),
     };
   });
+  if (new Set(familyRecipients).size !== familyRecipients.length || familyRecipients.some(name => !family.includes(name))) {
+    throw new Error("家族の連絡先は選択した家族から指定してください。");
+  }
+  const duty = timed ? Object.fromEntries(parts.map(name => [name, attendance[name]])) : {};
+  if (familyRecipients.length && (!off || timed)) {
+    if (parts.length && !timed) throw new Error("パートの勤務時間を確認してください。");
+    for (const name of familyRecipients) {
+      if (validated.some(block => !validTimeRange(block) || (parts.length && !block.companions.includes(name)))) {
+        throw new Error("連絡する家族は全作業に参加し、全作業の開始・終了時刻を指定してください。");
+      }
+      duty[name] = mergeTimeRanges(validated.map(({ start, end }) => ({ start, end })));
+    }
+    for (const block of validated) {
+      block.participation = { ...block.participation, ...Object.fromEntries(
+        familyRecipients.map(name => [name, [{ start: block.start, end: block.end }]])) };
+    }
+  }
   return {
-    source, names: parts.length ? [...parts] : [...family], recipients: [...parts],
+    source, names: parts.length ? [...parts] : [...family], recipients: [...parts, ...familyRecipients],
     kind, reporter: kind === "2" ? reporter : "", off, off_reason: reason.trim(),
     blocks: validated, memo: memo.trim(), manual_text: false, message: "",
-    ...(timed ? { attendance: Object.fromEntries(parts.map(name => [name, attendance[name]])) } : {}),
+    ...(Object.keys(duty).length ? { attendance: duty } : {}),
   };
 }
 
@@ -56,6 +73,7 @@ let blocks = [newBlock()];
 let workerMaster = [];
 let selectedFamily = [];
 let selectedParts = [];
+let selectedFamilyRecipients = [];
 let shiftEligible = null;
 let shiftReady = false;
 let cleanSnapshot = "";
@@ -86,7 +104,7 @@ function initializeWorkTime() {
     if (availability.candidates.length === 1) Object.assign(blocks[index], availability.candidates[0]);
   }
 }
-const snapshot = () => JSON.stringify([selectedFamily, selectedParts, blocks, editingId,
+const snapshot = () => JSON.stringify([selectedFamily, selectedParts, selectedFamilyRecipients, blocks, editingId,
   el("plan-memo").value, el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, el("plan-kind").value]);
 const canDiscard = () => snapshot() === cleanSnapshot || confirm("入力中の予定を破棄しますか？");
 const activeParts = () => workerMaster.filter(worker => worker.role === "worker" && worker.employmentStatus !== "retired");
@@ -154,6 +172,11 @@ function renderWorkers() {
   renderScope();
   const mode = el("plan-kind").value;
   el("plan-workers").textContent = [...selectedFamily, ...selectedParts].join(" / ") || "未選択";
+  const familyContacts = workerMaster.filter(worker => worker.role === "family" && selectedFamily.includes(worker.display));
+  selectedFamilyRecipients = selectedFamilyRecipients.filter(name => familyContacts.some(worker => worker.display === name));
+  el("family-recipients").innerHTML = familyContacts.map(worker =>
+    `<label><input type="checkbox" data-family-recipient="${escape(worker.display)}"${selectedFamilyRecipients.includes(worker.display) ? " checked" : ""}> ${escape(worker.display)}</label>`).join("");
+  el("family-recipients-group").hidden = !familyContacts.length;
   el("participant-kind").textContent = {
     family: "家族従業員を選択してください。",
     mixed: "家族従業員とパート従業員を選択してください（LINE報告なし）。",
@@ -233,6 +256,7 @@ function clearForm() {
   setPlanOff(false);
   selectedFamily = [];
   selectedParts = [];
+  selectedFamilyRecipients = [];
   blocks = [newBlock()];
   editingId = null;
   source = "direct";
@@ -429,6 +453,7 @@ function editPlan(id) {
   const all = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
   selectedFamily = all.filter(name => !partNames.has(name));
   selectedParts = all.filter(name => partNames.has(name));
+  selectedFamilyRecipients = communicationRecipients(plan).filter(name => selectedFamily.includes(name));
   inputScope = selectedParts.length ? "parts" : "family";
   renderScope();
   el("plan-kind").value = inferKind();
@@ -529,6 +554,13 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderHeader();
   el("page-area").hidden = false;
   clearForm();
+  el("family-recipients").onchange = event => {
+    const name = event.target.dataset.familyRecipient;
+    if (!name || !selectedFamily.includes(name)) return;
+    selectedFamilyRecipients = event.target.checked
+      ? [...new Set([...selectedFamilyRecipients, name])]
+      : selectedFamilyRecipients.filter(item => item !== name);
+  };
   const params = new URLSearchParams(location.search);
   const requested = params.get("date"), parsed = parseDateInputLocal(requested);
   el("plan-date").value = requested && parsed && formatLocalYmd(parsed) === requested ? requested : formatLocalYmd(new Date());
@@ -666,7 +698,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
       const plan = createUnifiedPlan(selectedFamily, selectedParts, blocks, el("plan-memo").value,
         el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, source,
-        selectedParts.length && (shiftReady || Object.keys(savedAttendance).length) ? attendanceForSelection() : null);
+        selectedParts.length && (shiftReady || Object.keys(savedAttendance).length) ? attendanceForSelection() : null,
+        selectedFamilyRecipients);
       await saveRequest({ plan, ...(editingId ? { id: editingId } : {}) });
     } catch (error) { console.error("[daily-plan] invalid input", error); notice(error.message, true); }
   };

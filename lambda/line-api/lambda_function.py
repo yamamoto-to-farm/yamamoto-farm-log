@@ -96,7 +96,7 @@ def workers():
     data, revision = read_json(os.environ["WORKERS_BUCKET"], "data/workers.json", None)
     if not revision or not isinstance(data, list):
         fail(500, "作業者マスタを取得できません。")
-    selected = [item for item in data if item.get("role") == "worker"
+    selected = [item for item in data if item.get("role") in ("worker", "family")
                 and item.get("active") is not False]
     if (any(not isinstance(item.get("name"), str) or not item["name"]
             or not isinstance(item.get("display"), str) or not item["display"]
@@ -204,7 +204,7 @@ class Service:
     def registration(self, req, author):
         worker = next((worker for worker in workers() if worker["name"] == req.get("worker")), None)
         if worker is None:
-            fail(400, "有効なパートを選択してください。")
+            fail(400, "有効な作業者（パート・家族）を選択してください。")
         state, revision = self.links()
         members = state["members"]
         member = members.setdefault(worker["name"], {})

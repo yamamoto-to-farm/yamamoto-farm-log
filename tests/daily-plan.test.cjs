@@ -51,6 +51,36 @@ test("single free interval initializes once, worker changes never overwrite ente
   vm.runInContext('blocks[0].start="";blocks[0].end="";shiftGroups[0].start="08:00";initializeWorkTime();', context);
   assert.equal(vm.runInContext("blocks[0].start", context), "");
 });
+test("family notices are opt-in, timed and retained on editing", () => {
+  const { context, nodes } = screen();
+  const create = context.createUnifiedPlan;
+  const timed = { ...block, start: "08:00", end: "12:00", fields: ["圃場"] };
+  const plan = create(["家族A"], [], [timed], "", "", false, "", "direct", null, ["家族A"]);
+  assert.deepEqual(Array.from(plan.recipients), ["家族A"]);
+  assert.equal(plan.attendance["家族A"][0].start, "08:00");
+  assert.equal(plan.blocks[0].participation["家族A"][0].end, "12:00");
+  assert.throws(() => create(["家族A"], [], [block], "", "", false, "", "direct", null, ["家族A"]), /開始・終了/);
+  assert.throws(() => create(["家族A"], [], [timed], "", "", false, "", "direct", null, ["別人"]), /家族の連絡先/);
+  context.testFamilyPlan = plan;
+  vm.runInContext(`record={data:{plans:{test:testFamilyPlan}}};
+    workerMaster=[{display:"家族A",role:"family"}];cleanSnapshot=snapshot();editPlan("test");`, context);
+  assert.match(nodes["family-recipients"].innerHTML, /data-family-recipient="家族A" checked/);
+  assert.equal(vm.runInContext('selectedFamilyRecipients[0]', context), "家族A");
+  vm.runInContext("selectedFamily=[];renderWorkers();", context);
+  assert.equal(vm.runInContext("selectedFamilyRecipients.length", context), 0);
+});
+test("mixed notices keep part duty and require notified family on every block", () => {
+  const { createUnifiedPlan: create } = load("schedule/daily-plan/daily-plan.js");
+  const timed = { ...block, start: "08:00", end: "16:00", fields: ["圃場"],
+    participation: { "パートA": [{ start: "13:00", end: "16:00" }] } };
+  const duty = { "パートA": [{ start: "13:00", end: "16:00" }] };
+  const plan = create(["家族A"], ["パートA"], [timed], "", "", false, "", "direct", duty, ["家族A"]);
+  assert.deepEqual(Array.from(plan.recipients), ["パートA", "家族A"]);
+  assert.equal(plan.attendance["パートA"][0].start, "13:00");
+  assert.equal(plan.attendance["家族A"][0].start, "08:00");
+  assert.throws(() => create(["家族A"], ["パートA"], [{ ...timed, companions: [] }],
+    "", "", false, "", "direct", duty, ["家族A"]), /全作業に参加/);
+});
 test("cancellation preserves tasks, supports old message edits and separate sources", () => {
   const { createUnifiedPlan: create } = load("schedule/daily-plan/daily-plan.js");
   const cancelled = create(["家族A"], ["パートA"], [block], "", "", true, "雨天", "message");
@@ -108,7 +138,8 @@ function screen(deps = {}) {
   const ids = ["plan-date", "plan-inputs", "saved-plans", "message-link", "status", "plan-login", "plan-workers",
     "plan-parts", "participant-kind", "plan-form", "plan-blocks", "editing-label", "plan-memo", "page-area",
     "plan-reporter", "plan-off", "plan-off-toggle", "plan-off-reason", "communication-history", "shift-candidates", "shift-state", "work-plan-link",
-    "plan-kind", "plan-scope", "reporter-group", "unplanned-parts", "continue-team"];
+    "plan-kind", "plan-scope", "reporter-group", "unplanned-parts", "continue-team",
+    "family-recipients", "family-recipients-group"];
   for (const id of ids) nodes[id] = { value: "", checked: false, children: [], innerHTML: "",
     setAttribute(key, value) { this[key] = value; },
     classList: { toggle() {} }, replaceChildren() { this.children = []; }, reset() {}, scrollIntoView() {} };

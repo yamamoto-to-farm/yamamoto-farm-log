@@ -8,7 +8,7 @@ export function communicationIssues(plan) {
   const recipients = planRecipients(plan);
   const participants = new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])]);
   const issues = [];
-  if (!recipients.length) issues.push("連絡するパートを予定編集で選択してください。");
+  if (!recipients.length) issues.push("連絡する作業者を予定編集で選択してください。");
   if (recipients.some(name => !participants.has(name))) issues.push("連絡先が作業者に含まれていません。");
   if (!plan.off) {
     if (recipients.some(name => !plan.attendance?.[name]?.length)) issues.push("出退勤時間を予定編集でシフトから確認・保存してください。");
@@ -56,7 +56,7 @@ export function buildPlanMessage(plan, date, envelope = true) {
   return lines.join("\n");
 }
 
-export function messageGroups(plans) {
+export function messageGroups(plans, familyNames = new Set()) {
   const idsByPerson = new Map();
   for (const id of Object.keys(plans).sort()) {
     for (const name of planRecipients(plans[id])) {
@@ -69,7 +69,8 @@ export function messageGroups(plans) {
     const active = ids.filter(id => !plans[id].off);
     const attendance = mergeTimeRanges(active.flatMap(id => plans[id].attendance?.[name] || []));
     const attendanceKeys = active.map(id => JSON.stringify(mergeTimeRanges(plans[id].attendance?.[name] || [])));
-    const issues = new Set(attendanceKeys).size > 1 ? ["予定間で出退勤時間が異なります。シフトを再読込し、各予定を編集・保存してください。"] : [];
+    const issues = !familyNames.has(name) && new Set(attendanceKeys).size > 1
+      ? ["予定間で出退勤時間が異なります。シフトを再読込し、各予定を編集・保存してください。"] : [];
     const personal = ids.map(id => {
       const plan = plans[id];
       const blocks = plan.blocks.flatMap(block => {
@@ -89,13 +90,14 @@ export function messageGroups(plans) {
       (a.displayPlan.blocks[0]?.start || "99:99").localeCompare(b.displayPlan.blocks[0]?.start || "99:99") || a.id.localeCompare(b.id));
     const id = group.ids.length === 1 && group.recipients.length === planRecipients(entries[0].plan).length
       ? group.ids[0] : JSON.stringify([group.ids, group.recipients]);
-    return { ...group, entries, id };
+    return { ...group, entries, id, includesFamily: group.recipients.some(name => familyNames.has(name)) };
   });
 }
 export function buildGroupMessage(group, date) {
   const attendance = group.attendance.length ? [
-    `出勤：${group.attendance[0].start}　退勤：${group.attendance.at(-1).end}`,
-    ...(group.attendance.length > 1 ? [`勤務時間帯：${group.attendance.map(range => `${range.start}〜${range.end}`).join("／")}`] : []), "",
+    group.includesFamily ? `予定時間：${group.attendance[0].start}〜${group.attendance.at(-1).end}`
+      : `出勤：${group.attendance[0].start}　退勤：${group.attendance.at(-1).end}`,
+    ...(group.attendance.length > 1 ? [`${group.includesFamily ? "予定時間帯" : "勤務時間帯"}：${group.attendance.map(range => `${range.start}〜${range.end}`).join("／")}`] : []), "",
   ] : [];
   if (group.entries.length === 1 && !attendance.length) return buildPlanMessage(group.entries[0].displayPlan, date);
   return ["お疲れさまです。", `${date}の作業予定です。`, "",

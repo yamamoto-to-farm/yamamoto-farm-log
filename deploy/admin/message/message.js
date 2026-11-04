@@ -3,7 +3,8 @@ import { renderHeader } from "/common/header.js?v=1.1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
-import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-restore-1";
+import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
+import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-line-family-1";
 import { initLineMessaging, decorateLineCards } from "./line.js?v=20261104-line-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
@@ -20,6 +21,7 @@ const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g,
 let masters = { templates: structuredClone(DEFAULT_TEMPLATES) };
 let tplDraft = [];
 let record;
+let familyRecipientNames = new Set();
 let sequence = 0;
 let copying = false;
 let loadedDate = "";
@@ -68,7 +70,7 @@ export function appendCommonMessage(text, addition) {
   return before + separator + addition + (closing ? newline + newline + text.slice(index) : "");
 }
 function syncCommonSelection() {
-  const ids = new Set(record ? messageGroups(record.data.plans).map(group => group.id) : []);
+  const ids = new Set(record ? messageGroups(record.data.plans, familyRecipientNames).map(group => group.id) : []);
   for (const id of commonSelection) if (!ids.has(id)) commonSelection.delete(id);
   element("common-open").disabled = !ids.size;
   element("common-open").setAttribute("aria-expanded", String(commonMode));
@@ -93,7 +95,7 @@ function setCommonMode(active) {
 }
 function selectCommonCards(all) {
   commonSelection.clear();
-  if (all && record) messageGroups(record.data.plans).forEach(group => commonSelection.add(group.id));
+  if (all && record) messageGroups(record.data.plans, familyRecipientNames).forEach(group => commonSelection.add(group.id));
   syncCommonSelection();
 }
 function currentMessageText(group) {
@@ -107,7 +109,7 @@ function applyCommonMessage() {
   if (!commonMode || !record || copying) return;
   if (!commonSelection.size) { error.textContent = "追加先のカードを選択してください。"; return; }
   if (!addition) { error.textContent = "共通の連絡内容を入力してください。"; return; }
-  const updates = messageGroups(record.data.plans).filter(group => commonSelection.has(group.id))
+  const updates = messageGroups(record.data.plans, familyRecipientNames).filter(group => commonSelection.has(group.id))
     .map(group => [group.id, appendCommonMessage(currentMessageText(group), addition)]);
   if (updates.length !== commonSelection.size) {
     error.textContent = "追加先の予定が変わりました。カードを選び直してください。";
@@ -139,12 +141,12 @@ function handleCardClick(event) {
   if (copy) return copySavedPlan(copy.dataset.copy, copy);
   const reset = event.target.closest("[data-reset]");
   if (reset && record) {
-    const group = messageGroups(record.data.plans).find(item => item.id === reset.dataset.reset);
+    const group = messageGroups(record.data.plans, familyRecipientNames).find(item => item.id === reset.dataset.reset);
     if (group) { drafts.set(group.id, buildGroupMessage(group, loadedDate)); renderCards(); }
   }
 }
 function renderCards() {
-  const groups = messageGroups(record.data.plans);
+  const groups = messageGroups(record.data.plans, familyRecipientNames);
   element("cards").innerHTML = groups.length ? groups.map(group => {
     const { id, entries } = group;
     const issues = [...new Set([...group.issues, ...entries.flatMap(({ plan }) => communicationIssues(plan))])];
@@ -166,7 +168,7 @@ function renderCards() {
       <button type="button" class="primary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>📋 コピー（送信はしません）</button>
       <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
     </article>`;
-  }).join("") : "<p>この日のパート向け連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
+  }).join("") : "<p>この日の連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
   syncCommonSelection();
   decorateLineCards();
 }
@@ -183,11 +185,12 @@ async function loadSavedPlans(autoSelectDate = false) {
   syncWorkPlanLink();
   status("保存済み予定を読み込み中…");
   try {
-    const result = await fetchWorkPlanRecord(date);
+    const [result, workers] = await Promise.all([fetchWorkPlanRecord(date), loadPlanWorkers()]);
     if (current !== sequence) return;
+    familyRecipientNames = new Set(workers.filter(worker => worker.role === "family").map(worker => worker.display));
     if (!result.data.plans || !Array.isArray(result.data.communications)) throw new Error("予定APIの更新が必要です。");
     if (autoSelectDate === true && date === formatLocalYmd(new Date())) {
-      const groups = messageGroups(result.data.plans);
+      const groups = messageGroups(result.data.plans, familyRecipientNames);
       const completed = groups.length > 0 && groups.every(group => {
         const communication = groupCommunicationState(group, result.data.communications);
         return communication && !communication.changed && ["copied", "sent"].includes(communication.status);
@@ -211,7 +214,7 @@ async function loadSavedPlans(autoSelectDate = false) {
 }
 export async function copySavedPlan(id, button) {
   if (copying || !record) return;
-  const group = messageGroups(record.data.plans).find(item => item.id === id);
+  const group = messageGroups(record.data.plans, familyRecipientNames).find(item => item.id === id);
   const date = loadedDate;
   const notice = button.parentElement.querySelector("[data-copy-status]");
   let copied = false;
@@ -325,7 +328,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("cards").onclick = handleCardClick;
   initLineMessaging({
     date: () => element("msg-date").value,
-    groups: () => record ? messageGroups(record.data.plans) : [],
+    groups: () => record ? messageGroups(record.data.plans, familyRecipientNames) : [],
     message: currentMessageText,
     check: async group => {
       if (!record || loadedDate !== element("msg-date").value) throw new Error("予定を再取得してください。");

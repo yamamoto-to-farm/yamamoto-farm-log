@@ -7,7 +7,7 @@ const read = file => readFileSync(join(__dirname, "..", "deploy", "admin", "mess
 const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
-    initLineMessaging() {}, decorateLineCards() {},
+    initLineMessaging() {}, decorateLineCards() {}, loadPlanWorkers: async () => [],
     window: { addEventListener() {} }, URLSearchParams, ...deps });
   vm.runInContext(strip(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8")), context);
   vm.runInContext(strip(read(file)), context);
@@ -52,6 +52,20 @@ test("communication requires recipients, paired time and field or meeting point"
   assert.equal(issues({ ...plan, off: true, blocks: [] }).length, 0);
   assert.ok(issues({ ...plan, kind: "2", reporter: "" }).length);
   assert.equal(issues({ ...plan, source: "message", recipients: undefined }).length, 0);
+});
+test("family day groups merge task times without weakening part shift consistency", () => {
+  const context = load("message-plan.js");
+  const first = { ...plan, names: ["Family"], recipients: ["Family"],
+    attendance: { Family: [{ start: "08:00", end: "10:00" }] },
+    blocks: [{ ...plan.blocks[0], start: "08:00", end: "10:00", companions: [] }] };
+  const second = { ...first, attendance: { Family: [{ start: "13:00", end: "15:00" }] },
+    blocks: [{ ...first.blocks[0], start: "13:00", end: "15:00" }] };
+  const groups = context.messageGroups({ first, second }, new Set(["Family"]));
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].issues.length, 0);
+  assert.match(context.buildGroupMessage(groups[0], "2026-11-05"), /予定時間帯：08:00〜10:00／13:00〜15:00/);
+  assert.doesNotMatch(context.buildGroupMessage(groups[0], "2026-11-05"), /出勤：|退勤：/);
+  assert.match(context.messageGroups({ first, second })[0].issues[0], /出退勤時間が異なります/);
 });
 test("copy controls record a snapshot only, never rewrite the plan or claim sent", async () => {
   const { recordGroupCopy, messageGroups } = load("message-plan.js");

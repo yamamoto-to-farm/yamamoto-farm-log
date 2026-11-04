@@ -42,6 +42,11 @@
           </select></label>
           <button id="select-workers" type="button" class="secondary-btn">作業者を選択</button>
           <fieldset><legend>作業者</legend><div id="plan-workers" class="info-block">未選択</div></fieldset>
+          <fieldset id="family-recipients-group" hidden>
+            <legend>家族への業務連絡（任意）</legend>
+            <p class="plan-note">連絡する家族を選択してください。全作業への参加と開始・終了時刻が必要です。作業時間から連絡用の時間帯を作ります。未選択なら従来どおり家族には連絡しません。</p>
+            <div id="family-recipients"></div>
+          </fieldset>
           <p id="participant-kind" class="plan-note" role="status">作業者を選択してください。</p>
           <label id="reporter-group" hidden>連絡係（パートのみ・複数人の場合）<select id="plan-reporter" class="form-input"></select></label>
           <div id="plan-blocks"></div>
@@ -73,6 +78,6 @@
       <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </main>
-  <script type="module" src="./daily-plan.js?v=20261104-line-1"></script>
+  <script type="module" src="./daily-plan.js?v=20261104-line-family-1"></script>
 </body>
 </html>

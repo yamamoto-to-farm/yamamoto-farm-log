@@ -359,13 +359,45 @@ class LineApiTests(unittest.TestCase):
             "targets": [{"id": "p1", "plan_revision": self.current["updated_at"]}],
         })[0], 409)
 
-    def test_5000_utf16_limit_and_worker_master_does_not_allow_family(self):
+    def test_5000_utf16_limit(self):
         self.ready()
         self.assertEqual(self.call("prepare", {
             "date": DATE, "names": NAMES, "message": "\U0001f600" * 2501,
             "targets": [{"id": "p1", "plan_revision": self.current["updated_at"]}],
         })[0], 400)
-        self.assertEqual(self.call("issue", {"worker": "family"})[0], 400)
+
+    def test_family_can_register_approve_and_receive_without_changing_role(self):
+        self.assertIn("family", [member["worker"] for member in self.call()[1]["members"]])
+        self.approve("family")
+        self.current = {
+            **self.current, "names": ["Family"], "recipients": ["Family"], "kind": "1",
+            "reporter": "", "attendance": {"Family": [{"start": "08:00", "end": "12:00"}]},
+            "blocks": [{**self.current["blocks"][0],
+                        "participation": {"Family": [{"start": "08:00", "end": "12:00"}]}}],
+        }
+        self.current = core.validate_work_plan(self.current) | {
+            "id": "p1", "updated_at": "2026-11-04T09:00:00+00:00", "updated_by": "admin"}
+        self.save_plans()
+        self.line.reset_mock()
+        status, job = self.call("prepare", {
+            "date": DATE, "names": ["Family"], "message": "Family work notice",
+            "targets": [{"id": "p1", "plan_revision": self.current["updated_at"]}],
+        })
+        self.assertEqual(status, 200, job)
+        status, delivered = self.send(job, "Family")
+        self.assertEqual(status, 200, delivered)
+        self.assertTrue(delivered["recorded"])
+        self.assertEqual(self.line.call_args.args[1]["to"], UID)
+        self.assertEqual(self.get("public", "data/workers.json")[2]["role"], "family")
+
+    def test_inactive_family_and_admin_are_not_registration_targets(self):
+        master = self.get("public", "data/workers.json")
+        master[2]["active"] = False
+        master.append({"name": "admin", "display": "Admin", "role": "admin"})
+        self.store("public", "data/workers.json", master)
+        self.assertEqual([member["worker"] for member in self.call()[1]["members"]], ["a", "b"])
+        for name in ("family", "admin"):
+            self.assertEqual(self.call("issue", {"worker": name})[0], 400)
 
     def test_exact_5000_utf16_units_are_accepted(self):
         self.approve("a", UID)
