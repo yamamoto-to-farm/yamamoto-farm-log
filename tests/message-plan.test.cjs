@@ -7,6 +7,7 @@ const read = file => readFileSync(join(__dirname, "..", "deploy", "admin", "mess
 const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
+    initLineMessaging() {}, decorateLineCards() {},
     window: { addEventListener() {} }, URLSearchParams, ...deps });
   vm.runInContext(strip(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8")), context);
   vm.runInContext(strip(read(file)), context);

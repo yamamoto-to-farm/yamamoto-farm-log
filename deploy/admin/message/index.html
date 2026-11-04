@@ -4,17 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>業務連絡（LINE下書き） - 山本農園</title>
+  <title>業務連絡 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261104-common-1">
+  <link rel="stylesheet" href="./message.css?v=20261104-line-1">
 </head>
 <body>
   <div id="header"></div>
 
   <div id="page-area" class="page-container" hidden>
-    <h1 class="page-title">業務連絡（LINE下書き）</h1>
-    <p class="msg-note">文面を作ってコピーし、LINEに貼り付けて送る運用です（このページから自動送信はしません）。</p>
+    <h1 class="page-title">業務連絡</h1>
+    <p class="msg-note">文面をコピーして手動送信、または登録済みのLINEへ宛先・全文を確認して送信できます。定時・自動送信はしません。</p>
     <p><a id="direct-plan-link" class="secondary-btn" href="/schedule/daily-plan/index.html">作業予定を追加・編集</a></p>
     <p id="status" role="status" aria-live="polite"></p>
 
@@ -44,9 +44,26 @@
           <button id="common-cancel" class="secondary-btn" type="button">キャンセル</button>
         </div>
         <p id="common-status" class="msg-error" role="status" aria-live="polite"></p>
-        <p class="msg-muted">追加は文面だけに反映します。コピーするまでは控えに保存されず、日付変更・再読み込みで消えます。</p>
+        <p class="msg-muted">追加は文面だけに反映します。コピーまたはLINE送信準備をするまでは保存されず、日付変更・再読み込みで消えます。送信準備した文面は下のLINE送信履歴に残ります。</p>
       </div>
       <div id="cards" class="msg-cards"></div>
+      <details id="line-management" class="line-management">
+        <summary>LINE登録・承認・この日の送信履歴</summary>
+        <p>LINE連携の初回設定後に利用できます。未設定・エラーでもコピーは使えます。返信は公式アカウント管理アプリで対応してください。</p>
+        <button id="line-refresh" type="button" class="secondary-btn">LINE連携を取得</button>
+        <p id="line-status" role="status" aria-live="polite">登録状態は未取得です。</p>
+        <h3>パートの登録</h3>
+        <p>登録コードを対象の本人へ個別に渡します。本人が公式アカウントへ送信した後、LINE表示名を本人に確認して承認してください。表示名だけでは自動で紐づけません。</p>
+        <div id="line-code" hidden>
+          <label for="line-code-text">本人へ渡す登録メッセージ（15分有効・全文を個人LINEから送信）</label>
+          <textarea id="line-code-text" rows="2" readonly class="form-input"></textarea>
+          <p>コードは秘密扱いです。本人以外への共有・画面画像の投稿はしないでください。発行し直すと旧コードは無効になります。</p>
+        </div>
+        <div id="line-members"></div>
+        <h3>選択日の送信履歴・未完了の送信</h3>
+        <p>受付済みは配達・既読の保証ではありません。結果不明時は新規送信を作らず、同じ履歴から再試行してください（最初の試行から23時間以内）。</p>
+        <div id="line-jobs"></div>
+      </details>
     </section>
 
     <section id="tab-templates" class="card" hidden>
@@ -76,6 +93,16 @@
     <option value="作業の都合により"></option>
   </datalist>
 
-  <script type="module" src="./message.js?v=20261104-restore-1"></script>
+  <dialog id="line-confirm" aria-labelledby="line-confirm-title">
+    <h2 id="line-confirm-title">LINE送信の確認</h2>
+    <p id="line-confirm-recipients"></p>
+    <pre id="line-confirm-text" class="line-preview"></pre>
+    <pre id="line-confirm-results" class="line-preview" aria-live="polite"></pre>
+    <p>この全文を各人の個人LINEへ送ります。受付済みの人には再送しません。新規送信は宛先1人あたり原則1通を使用します。</p>
+    <p id="line-confirm-error" class="msg-error" role="alert"></p>
+    <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
+    <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
+  </dialog>
+  <script type="module" src="./message.js?v=20261104-line-1"></script>
 </body>
 </html>

@@ -156,7 +156,7 @@ test("copied and sent status is displayed with sent deletion disabled and histor
   context.testPlan = { source: "direct", names: ["家族A"], blocks: [block], off: false,
     last_communication: { status: "sent" }, communication_changed: true };
   vm.runInContext("record={data:{plans:{test:testPlan},communications:[]}}; renderSaved();", context);
-  assert.match(nodes["saved-plans"].innerHTML, /送信済み・連絡後に変更あり/);
+  assert.match(nodes["saved-plans"].innerHTML, /送信済み（LINE受付・配達未確認）・連絡後に変更あり/);
   assert.match(nodes["saved-plans"].innerHTML, /data-delete="test" disabled/);
   assert.match(nodes["saved-plans"].innerHTML, /data-off="test"/);
   vm.runInContext(`testPlan.last_communication.status="copied";

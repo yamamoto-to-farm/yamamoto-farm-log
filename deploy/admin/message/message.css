@@ -114,3 +114,8 @@
 .companions { border: 1px solid #e2e8f0; border-radius: 6px; margin: 8px 0; font-size: 12px; }
 .companions label { display: inline-flex; align-items: center; gap: 4px; margin: 4px 12px 4px 0; }
 .msg-error { color: #b91c1c; font-size: 13px; }
+.line-management { margin-top: 20px; }
+.line-member, .line-job { border-top: 1px solid #cbd5e1; padding: 12px 0; }
+.line-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+#line-confirm { width: min(640px, 90vw); max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
+#line-confirm::backdrop { background: rgb(0 0 0 / 45%); }

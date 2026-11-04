@@ -4,6 +4,7 @@ import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-restore-1";
+import { initLineMessaging, decorateLineCards } from "./line.js?v=20261104-line-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -152,7 +153,7 @@ function renderCards() {
     return `<article class="msg-card" data-group="${escapeHtml(id)}">
       <button type="button" class="secondary-btn msg-select" data-select="${escapeHtml(id)}" aria-label="${escapeHtml(group.recipients.join("・"))} の連絡文を追加先に選択" aria-pressed="false" hidden>追加先に選択</button>
       <h3>${escapeHtml(group.recipients.join("・"))} へ</h3>
-      <p class="msg-muted">${communication ? `${communication.status === "sent" ? "送信済み" : "連絡用にコピー済み"}${communication.changed ? "・連絡後に変更あり" : ""}` : "この宛先・予定の組合せでは連絡前"}</p>
+      <p class="msg-muted">${communication ? `${communication.status === "sent" ? "送信済み（LINE受付・配達未確認）" : "連絡用にコピー済み"}${communication.changed ? "・連絡後に変更あり" : ""}` : "この宛先・予定の組合せでは連絡前"}</p>
       ${entries.map(({ id: planId, plan, displayPlan }) => `<p>${plan.off ? "中止の連絡：" : ""}${displayPlan.blocks.map(block =>
         `${escapeHtml(block.start)}〜${escapeHtml(block.end)} ${escapeHtml(block.task)}`).join("・")}
         <a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集</a></p>`).join("")}
@@ -167,8 +168,10 @@ function renderCards() {
     </article>`;
   }).join("") : "<p>この日のパート向け連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
   syncCommonSelection();
+  decorateLineCards();
 }
 async function loadSavedPlans(autoSelectDate = false) {
+  if (copying) return;
   const current = ++sequence;
   const date = element("msg-date").value;
   if (!date) { status("日付を選択してください。", true); return; }
@@ -320,6 +323,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (event.target.dataset.preview) drafts.set(event.target.dataset.preview, event.target.value);
   };
   element("cards").onclick = handleCardClick;
+  initLineMessaging({
+    date: () => element("msg-date").value,
+    groups: () => record ? messageGroups(record.data.plans) : [],
+    message: currentMessageText,
+    check: async group => {
+      if (!record || loadedDate !== element("msg-date").value) throw new Error("予定を再取得してください。");
+      const issues = [...group.issues, ...group.entries.flatMap(({ plan }) => communicationIssues(plan))];
+      if (issues.length) throw new Error(issues.join(" "));
+      checkMessageGroup(group, (await fetchWorkPlanRecord(loadedDate)).data.plans);
+    },
+    lock: active => {
+      copying = active;
+      element("tab-daily").inert = active;
+    },
+    reload: async () => {
+      record = await fetchWorkPlanRecord(loadedDate);
+      renderCards();
+    },
+  });
   element("template-list").onclick = async event => {
     const button = event.target.closest("[data-tpl-copy]");
     if (!button) return;

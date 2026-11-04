@@ -325,12 +325,12 @@ function renderCommunicationHistory() {
   el("communication-history").innerHTML = groups.length ? groups.map(([latest, ...past]) => {
     const changes = communicationChanges(latest, record.data.plans);
     return `<article class="communication-recipient"><h3>${escape(latest.recipients.join("・"))} へ</h3>
-      <p>最新：${escape(communicationTime(latest.at))}（日本時間） ${latest.status === "sent" ? "送信済み" : "コピー済み"}</p>
+      <p>最新：${escape(communicationTime(latest.at))}（日本時間） ${latest.status === "sent" ? "送信済み（LINE受付・配達未確認）" : "コピー済み"}</p>
       <p class="plan-note${changes.length ? " warning" : ""}">${changes.length
         ? `変更あり・再連絡が必要（${changes.map(escape).join("／")}）` : "現在の予定から変更なし"}</p>
       ${communicationSnapshotHtml(latest)}
       ${past.length ? `<details class="communication-past"><summary>過去の履歴 ${past.length}件</summary>${past.map(event =>
-        `<article class="communication-event"><p>${escape(communicationTime(event.at))}（日本時間） ${event.status === "sent" ? "送信済み" : "コピー済み"}</p>${communicationSnapshotHtml(event)}</article>`).join("")}</details>` : ""}
+        `<article class="communication-event"><p>${escape(communicationTime(event.at))}（日本時間） ${event.status === "sent" ? "送信済み（LINE受付・配達未確認）" : "コピー済み"}</p>${communicationSnapshotHtml(event)}</article>`).join("")}</details>` : ""}
     </article>`;
   }).join("") : "<p>連絡の控えはありません。</p>";
 }
@@ -342,7 +342,7 @@ function renderSaved() {
     const sent = hasSentCommunication(id, plan);
     const hasRecipients = communicationRecipients(plan).length > 0;
     return `<article class="saved-plan"><h3>${escape(participants.join("・"))}</h3>
-      ${hasRecipients || plan.last_communication ? `<p class="plan-note">${plan.last_communication ? `${sent ? "送信済み" : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>` : ""}
+      ${hasRecipients || plan.last_communication ? `<p class="plan-note">${plan.last_communication ? `${sent ? "送信済み（LINE受付・配達未確認）" : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>` : ""}
       ${plan.off ? `<p>中止${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>` : ""}
       ${plan.blocks.map(block => `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : ""}${escape(block.task)}${block.fields?.length || block.field ? `｜${escape((block.fields || [block.field]).join("・"))}` : ""}</p>`).join("")}
       ${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}
