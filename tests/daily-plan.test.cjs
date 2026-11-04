@@ -179,6 +179,107 @@ test("family-only cards omit communication prompts while part and legacy message
   assert.match(nodes["saved-plans"].innerHTML, /連絡前/);
   assert.match(nodes["saved-plans"].innerHTML, /連絡文を開く/);
 });
+function historyFixture() {
+  const plan = { source: "direct", names: ["A"], recipients: ["A"], kind: "1", reporter: "", off: false,
+    off_reason: "", memo: "", manual_text: false, message: "", updated_at: "revision-1",
+    attendance: { A: [{ start: "08:00", end: "16:30" }] },
+    blocks: [{ task: "草とり", fields: ["圃場A"], field: "", start: "08:00", end: "16:30", shed: false,
+      companions: ["家族"], participation: { A: [{ start: "08:00", end: "12:00" }, { start: "13:00", end: "16:30" }] } }] };
+  const item = { id: "copy", plan_id: "a", status: "copied", at: "2026-11-04T06:43:10.725128+00:00",
+    author: "admin", plan_revision: plan.updated_at, recipients: ["A"], plan: structuredClone(plan),
+    message: "かっぱを持ってきてください。\n\nよろしくお願いします。" };
+  return { plan, item };
+}
+test("history groups a multi-plan copy once and retains older events per exact recipient set", () => {
+  const { communicationHistoryGroups: group } = load("schedule/daily-plan/daily-plan.js");
+  const { item } = historyFixture();
+  const items = [
+    { ...item, at: "2026-11-04T06:00:00Z", recipients: ["B", "A"] },
+    { ...item, plan_id: "b", recipients: ["A", "B"] },
+    { ...item, recipients: ["B", "A"] },
+    { ...item, recipients: ["A"], at: "2026-11-04T06:44:00Z" },
+  ];
+  const before = JSON.stringify(items);
+  const groups = group(items);
+  assert.equal(groups.length, 2);
+  assert.deepEqual(Array.from(groups[0][0].recipients), ["A"]);
+  assert.equal(groups[1].length, 2);
+  assert.equal(groups[1][0].items.length, 2);
+  assert.equal(groups[1][1].items.length, 1);
+  assert.equal(JSON.stringify(items), before);
+});
+test("history compares meaningful plan contents rather than revision or metadata and object key order", () => {
+  const { communicationChanges: changes } = load("schedule/daily-plan/daily-plan.js");
+  const { plan, item } = historyFixture();
+  const event = { ...item, items: [item] };
+  const current = structuredClone(plan);
+  current.updated_at = "revision-2";
+  current.updated_by = "someone";
+  current.last_communication = { status: "copied" };
+  current.communication_changed = true;
+  current.blocks[0].participation.A = current.blocks[0].participation.A.map(({ start, end }) => ({ end, start }));
+  assert.equal(changes(event, { a: current }).length, 0);
+  const cases = [
+    ["出退勤・作業時間", p => { p.blocks[0].start = "09:00"; }],
+    ["出退勤・作業時間", p => { p.attendance.A[0].start = "09:00"; }],
+    ["出退勤・作業時間", p => { p.blocks[0].participation.A[0].end = "11:30"; }],
+    ["作業内容", p => { p.blocks[0].task = "収穫"; }],
+    ["圃場・集合場所", p => { p.blocks[0].fields = ["圃場B"]; }],
+    ["圃場・集合場所", p => { p.blocks[0].shed = true; }],
+    ["作業者・宛先", p => { p.blocks[0].companions = ["別の家族"]; }],
+    ["作業者・宛先", p => { p.recipients = []; }],
+    ["作業形態・連絡係", p => { p.kind = "2"; p.reporter = "A"; }],
+    ["中止・中止理由", p => { p.off = true; p.off_reason = "雨天"; }],
+    ["メモ・予定の補足", p => { p.memo = "注意"; }],
+  ];
+  for (const [label, change] of cases) {
+    const updated = structuredClone(plan);
+    change(updated);
+    assert.ok(changes(event, { a: updated }).includes(label), label);
+  }
+});
+test("history detects deletion and new assignments for the copied recipients, not unrelated family or other people", () => {
+  const { communicationChanges: changes } = load("schedule/daily-plan/daily-plan.js");
+  const { plan, item } = historyFixture();
+  const event = { ...item, items: [item] };
+  assert.deepEqual(Array.from(changes(event, {})), ["予定の削除"]);
+  assert.deepEqual(Array.from(changes(event, { a: plan, added: plan })), ["予定の追加"]);
+  assert.equal(changes(event, { a: plan, family: { ...plan, recipients: [] },
+    other: { ...plan, names: ["B"], recipients: ["B"] } }).length, 0);
+  assert.deepEqual(Array.from(changes(event, { a: plan, legacy: { ...plan, source: "message", recipients: undefined } })), ["予定の追加"]);
+});
+test("history shows latest Japanese time and change warning while messages and older copies start collapsed", () => {
+  const { context, nodes } = screen();
+  const { plan, item } = historyFixture();
+  context.testPlan = { ...plan, blocks: [{ ...plan.blocks[0], fields: ["圃場B"] }] };
+  context.testHistory = [item, { ...item, id: "old", at: "2026-11-04T06:42:00Z", message: "<script>old</script>" }];
+  vm.runInContext("record={data:{plans:{a:testPlan},communications:testHistory}}; renderSaved();", context);
+  const html = nodes["communication-history"].innerHTML;
+  assert.equal((html.match(/class="communication-recipient"/g) || []).length, 1);
+  assert.match(html, /最新：2026\/11\/04 15:43（日本時間） コピー済み/);
+  assert.match(html, /変更あり・再連絡が必要（圃場・集合場所）/);
+  assert.match(html, /過去の履歴 1件/);
+  assert.match(html, /かっぱを持ってきてください/);
+  assert.match(html, /出退勤：08:00〜16:30/);
+  assert.match(html, /参加：08:00〜12:00・13:00〜16:30/);
+  assert.match(html, /&lt;script&gt;old&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<details[^>]*open|<script>|06:43:10/);
+  assert.match(read("schedule/daily-plan/index.html"), /コピー済みはLINE送信完了を意味しません/);
+});
+test("history combines multiple snapshots with one exact copied message, and displays unchanged or empty states", () => {
+  const { context, nodes } = screen();
+  const { plan, item } = historyFixture();
+  context.testPlan = plan;
+  context.testHistory = [item, { ...item, id: "second", plan_id: "b" }];
+  vm.runInContext("record={data:{plans:{a:testPlan,b:testPlan},communications:testHistory}};renderSaved();", context);
+  const html = nodes["communication-history"].innerHTML;
+  assert.equal((html.match(/<pre>/g) || []).length, 1);
+  assert.equal((html.match(/class="communication-snapshot"/g) || []).length, 2);
+  assert.match(html, /現在の予定から変更なし/);
+  assert.doesNotMatch(html, /過去の履歴|再連絡が必要/);
+  vm.runInContext("record.data.communications=[]; renderSaved();", context);
+  assert.match(nodes["communication-history"].innerHTML, /控えはありません/);
+});
 test("worker and task modals retain common UI and task group ordering", () => {
   let html;
   const context = load("common/work-plan-form.js", {

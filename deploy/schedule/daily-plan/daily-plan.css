@@ -16,6 +16,13 @@
 .plan-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .plan-block label { display: block; margin: 8px 0; }
 #communication-history pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+#communication-history .communication-recipient { border-bottom: 1px solid #e2e8f0; padding: 12px 0; overflow-wrap: anywhere; }
+#communication-history h3 { font-size: 15px; margin: 0 0 8px; }
+#communication-history p { margin: 8px 0; }
+#communication-history details { margin: 8px 0; padding: 8px; box-shadow: none; }
+#communication-history summary { font-size: 13px; font-weight: normal; color: #475569; cursor: pointer; }
+#communication-history .communication-event + .communication-event,
+#communication-history .communication-snapshot + .communication-snapshot { border-top: 1px solid #e2e8f0; margin-top: 12px; padding-top: 8px; }
 #plan-fields { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .saved-plan { border-bottom: 1px solid #e2e8f0; padding: 12px 0; overflow-wrap: anywhere; }
 .saved-plan h3 { font-size: 16px; margin: 0 0 8px; }

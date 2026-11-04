@@ -252,13 +252,95 @@ function hasSentCommunication(id, plan) {
   return plan.last_communication?.status === "sent"
     || record.data.communications.some(item => item.plan_id === id && item.status === "sent");
 }
+function communicationRecipients(plan) {
+  return plan.recipients || (plan.source === "message" ? plan.names : []);
+}
+function comparableValue(value) {
+  if (Array.isArray(value)) return value.map(comparableValue);
+  if (value && typeof value === "object") return Object.fromEntries(
+    Object.keys(value).sort().map(key => [key, comparableValue(value[key])]));
+  return value;
+}
+function communicationPlanSections(plan) {
+  const blocks = plan.blocks;
+  return {
+    "作業者・宛先": [plan.names, communicationRecipients(plan), blocks.map(block => block.companions || [])],
+    "出退勤・作業時間": [plan.attendance || {}, blocks.map(block =>
+      [block.start || "", block.end || "", block.participation || {}])],
+    "作業内容": blocks.map(block => block.task),
+    "圃場・集合場所": blocks.map(block => [block.fields || (block.field ? [block.field] : []), Boolean(block.shed)]),
+    "作業形態・連絡係": [plan.kind || "1", plan.reporter || ""],
+    "中止・中止理由": [plan.off, plan.off_reason || ""],
+    "メモ・予定の補足": [plan.memo || "", Boolean(plan.manual_text), plan.message || ""],
+  };
+}
+export function communicationHistoryGroups(communications) {
+  const events = new Map();
+  for (const item of communications) {
+    const recipients = [...item.recipients].sort();
+    const key = JSON.stringify([recipients, item.at, item.author, item.status, item.message]);
+    if (!events.has(key)) events.set(key, { ...item, recipients, items: [] });
+    events.get(key).items.push(item);
+  }
+  const groups = new Map();
+  for (const event of [...events.values()].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))) {
+    const key = JSON.stringify(event.recipients);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(event);
+  }
+  return [...groups.values()];
+}
+export function communicationChanges(event, plans) {
+  const changes = new Set();
+  const copiedIds = new Set(event.items.map(item => item.plan_id));
+  for (const item of event.items) {
+    const current = plans[item.plan_id];
+    if (!current) { changes.add("予定の削除"); continue; }
+    const before = communicationPlanSections(item.plan);
+    const after = communicationPlanSections(current);
+    for (const label of Object.keys(before)) {
+      if (JSON.stringify(comparableValue(before[label])) !== JSON.stringify(comparableValue(after[label]))) changes.add(label);
+    }
+  }
+  if (Object.entries(plans).some(([id, plan]) => !copiedIds.has(id)
+    && communicationRecipients(plan).some(name => event.recipients.includes(name)))) changes.add("予定の追加");
+  return [...changes];
+}
+function communicationTime(at) {
+  return new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(at));
+}
+function communicationSnapshotHtml(event) {
+  return `<details class="communication-detail"><summary>連絡時点の予定・文面を確認</summary>
+    ${event.items.map(item => `<div class="communication-snapshot"><p>作業者：${escape(item.plan.names.join("・"))}${item.plan.off ? `（中止：${escape(item.plan.off_reason || "理由未指定")}）` : ""}</p>
+      ${Object.entries(item.plan.attendance || {}).map(([name, ranges]) =>
+        `<p>${escape(name)} 出退勤：${ranges.map(range => `${escape(range.start)}〜${escape(range.end)}`).join("・")}</p>`).join("")}
+      ${item.plan.blocks.map(block => `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : ""}${escape(block.task)}${block.fields?.length || block.field ? `｜${escape((block.fields || [block.field]).join("・"))}` : ""}${block.shed ? "（作業場集合）" : ""}${block.companions?.length ? `（共同作業：${escape(block.companions.join("・"))}）` : ""}</p>
+        ${Object.entries(block.participation || {}).map(([name, ranges]) => `<p class="plan-note">${escape(name)} 参加：${ranges.map(range => `${escape(range.start)}〜${escape(range.end)}`).join("・")}</p>`).join("")}`).join("")}
+      ${item.plan.memo ? `<p>メモ：${escape(item.plan.memo)}</p>` : ""}</div>`).join("")}
+    <p class="plan-note">コピー・送信時点の文面（共通の注意事項・手修正を含みます）</p><pre>${escape(event.message)}</pre></details>`;
+}
+function renderCommunicationHistory() {
+  const groups = communicationHistoryGroups(record.data.communications);
+  el("communication-history").innerHTML = groups.length ? groups.map(([latest, ...past]) => {
+    const changes = communicationChanges(latest, record.data.plans);
+    return `<article class="communication-recipient"><h3>${escape(latest.recipients.join("・"))} へ</h3>
+      <p>最新：${escape(communicationTime(latest.at))}（日本時間） ${latest.status === "sent" ? "送信済み" : "コピー済み"}</p>
+      <p class="plan-note${changes.length ? " warning" : ""}">${changes.length
+        ? `変更あり・再連絡が必要（${changes.map(escape).join("／")}）` : "現在の予定から変更なし"}</p>
+      ${communicationSnapshotHtml(latest)}
+      ${past.length ? `<details class="communication-past"><summary>過去の履歴 ${past.length}件</summary>${past.map(event =>
+        `<article class="communication-event"><p>${escape(communicationTime(event.at))}（日本時間） ${event.status === "sent" ? "送信済み" : "コピー済み"}</p>${communicationSnapshotHtml(event)}</article>`).join("")}</details>` : ""}
+    </article>`;
+  }).join("") : "<p>連絡の控えはありません。</p>";
+}
 function renderSaved() {
   renderUnplannedParts();
   const plans = Object.entries(record.data.plans);
   el("saved-plans").innerHTML = plans.length ? plans.map(([id, plan]) => {
     const participants = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
     const sent = hasSentCommunication(id, plan);
-    const hasRecipients = (plan.recipients || (plan.source === "message" ? plan.names : [])).length > 0;
+    const hasRecipients = communicationRecipients(plan).length > 0;
     return `<article class="saved-plan"><h3>${escape(participants.join("・"))}</h3>
       ${hasRecipients || plan.last_communication ? `<p class="plan-note">${plan.last_communication ? `${sent ? "送信済み" : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>` : ""}
       ${plan.off ? `<p>中止${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>` : ""}
@@ -270,11 +352,7 @@ function renderSaved() {
         ${hasRecipients ? `<a class="secondary-btn" href="/admin/message/index.html?date=${loadedDate}">連絡文を開く</a>` : ""}</div>
     </article>`;
   }).join("") : "<p>この日の予定は保存されていません。</p>";
-  el("communication-history").innerHTML = record.data.communications.length ? [...record.data.communications].reverse().map(item =>
-    `<article class="saved-plan"><p>${escape(item.at)} ${item.status === "sent" ? "送信済み" : "連絡用にコピー済み"} → ${escape(item.recipients.join("・"))}</p>
-      <details><summary>連絡時点の予定・文面</summary><p>${escape(item.plan.names.join("・"))}${item.plan.off ? "（中止）" : ""}</p>
-      ${item.plan.blocks.map(block => `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : ""}${escape(block.task)}${block.fields?.length || block.field ? `｜${escape((block.fields || [block.field]).join("・"))}` : ""}${block.companions?.length ? `（共同作業：${escape(block.companions.join("・"))}）` : ""}</p>`).join("")}
-      <pre>${escape(item.message)}</pre></details></article>`).join("") : "<p>連絡の控えはありません。</p>";
+  renderCommunicationHistory();
 }
 async function loadDay(preferredId = null) {
   const current = ++sequence;
