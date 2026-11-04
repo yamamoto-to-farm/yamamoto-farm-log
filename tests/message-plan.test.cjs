@@ -16,6 +16,21 @@ const plan = { source: "direct", names: ["パートA"], recipients: ["パートA
   attendance: { パートA: [{ start: "08:00", end: "16:00" }] },
   reporter: "", off: false, updated_at: "revision-1", memo: "",
   blocks: [{ task: "草とり", fields: ["圃場A"], start: "08:00", end: "12:00", companions: ["家族A"] }] };
+test("message footer matches daily-plan navigation and carries the selected date to both edit links", () => {
+  const elements = Object.fromEntries(["msg-date", "direct-plan-link", "back-plan-link"].map(id => [id, {}]));
+  const context = load("message.js", { document: { getElementById: id => elements[id] } });
+  for (const date of ["2026-11-05", "2026-11-06"]) {
+    elements["msg-date"].value = date;
+    context.syncWorkPlanLink();
+    assert.equal(elements["direct-plan-link"].href, `/schedule/daily-plan/index.html?date=${date}`);
+    assert.equal(elements["back-plan-link"].href, `/schedule/daily-plan/index.html?date=${date}`);
+  }
+  const html = read("index.html");
+  assert.match(html, /id="back-plan-link" class="secondary-btn"/);
+  assert.match(html, /href="\/index.html">トップへ戻る<\/a>/);
+  assert.doesNotMatch(html, /back-action-slot|unified-back-btn|管理ページへ戻る|シフト管理へ/);
+  assert.match(read("message.js"), /renderHeader\(\{ adminPage: true \}\)/);
+});
 test("messages come from saved plans without including family names or implying delivery", () => {
   const context = load("message-plan.js");
   const message = context.buildPlanMessage(plan, "2026-11-04");
@@ -54,26 +69,206 @@ test("copy controls record a snapshot only, never rewrite the plan or claim sent
   await assert.rejects(recordGroupCopy("2026-11-04", group, "連絡文",
     async () => ({ revision: '"etag"', data: { plans: { test: { ...plan, updated_at: "revision-2" } } } }), async () => assert.fail("write stale")), /変更/);
 });
-function copyScreen({ failCopy = false, failRecord = false } = {}) {
+function copyScreen({ failCopy = false, failRecord = false, plans = { test: plan } } = {}) {
   const helper = load("message-plan.js");
   const elements = {};
-  for (const id of ["cards", "msg-date", "direct-plan-link", "msg-login", "tab-daily", "status"]) {
-    elements[id] = { value: "2026-11-04", textContent: "", replaceChildren() {}, classList: { toggle() {} } };
+  for (const id of ["cards", "msg-date", "direct-plan-link", "back-plan-link", "msg-login", "tab-daily", "status",
+    "common-open", "common-panel", "common-apply", "common-text", "common-status"]) {
+    elements[id] = { value: "", textContent: "", replaceChildren() {}, classList: { toggle() {} },
+      setAttribute(name, value) { this[name] = value; }, querySelectorAll: () => [], focus() {} };
   }
+  elements["msg-date"].value = "2026-11-04";
+  const cards = helper.messageGroups(plans).map(group => {
+    const classes = new Set();
+    const select = { setAttribute(name, value) { this[name] = value; } };
+    return { dataset: { group: group.id }, select, classes,
+      classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); } },
+      querySelector: () => select };
+  });
+  elements.cards.querySelectorAll = () => cards;
   const notice = {};
   const button = { parentElement: { querySelector: () => notice } };
   const events = [];
+  const copiedTexts = [];
+  const requests = [];
   const context = load("message.js", {
     hasSession: () => true, document: { getElementById: id => elements[id] },
     ...helper, window: { addEventListener() {} },
-    fetchWorkPlanRecord: async () => ({ date: "2026-11-04", revision: '"etag"', data: { plans: { test: plan }, communications: [] } }),
-    writeWorkPlan: async req => { events.push("record"); if (failRecord) throw new Error("offline"); return { saved: true, date: req.date }; },
+    fetchWorkPlanRecord: async () => ({ date: "2026-11-04", revision: '"etag"', data: { plans, communications: [] } }),
+    writeWorkPlan: async req => { events.push("record"); requests.push(req); if (failRecord) throw new Error("offline"); return { saved: true, date: req.date }; },
   });
-  context.testPlan = plan;
-  context.testCopy = async () => { events.push("copy"); if (failCopy) throw new Error("copy failed"); };
-  vm.runInContext('record={data:{plans:{test:testPlan}}}; loadedDate="2026-11-04"; copyText=testCopy;', context);
-  return { context, button, notice, events, elements };
+  context.testPlans = plans;
+  context.testCopy = async text => { events.push("copy"); copiedTexts.push(text); if (failCopy) throw new Error("copy failed"); };
+  vm.runInContext('record={data:{plans:testPlans,communications:[]}}; loadedDate="2026-11-04"; copyText=testCopy;', context);
+  return { context, button, notice, events, elements, cards, copiedTexts, requests };
 }
+test("common additions preserve edited content and go before the last closing line, or append without one", () => {
+  const { appendCommonMessage: add } = load("message.js");
+  assert.equal(add("時間変更済み\n\nよろしくお願いします。", "かっぱを持ってきてください。"),
+    "時間変更済み\n\nかっぱを持ってきてください。\n\nよろしくお願いします。");
+  assert.equal(add("よろしくお願いします。\n作業内容\nよろしくお願いします。\n追伸", "注意"),
+    "よろしくお願いします。\n作業内容\n\n注意\n\nよろしくお願いします。\n追伸");
+  assert.equal(add("独自の結び", "注意"), "独自の結び\n\n注意");
+  assert.equal(add("", "注意"), "注意");
+  assert.equal(add("本文\r\n\r\nよろしくお願いします。\r\n", "注意"),
+    "本文\r\n\r\n注意\r\n\r\nよろしくお願いします。\r\n");
+});
+function commonScreen() {
+  const personPlan = (name, start, task) => ({ ...structuredClone(plan), names: [name], recipients: [name],
+    attendance: { [name]: [{ start, end: "16:00" }] },
+    blocks: [{ ...plan.blocks[0], start, end: "16:00", task }] });
+  return copyScreen({ plans: {
+    a: personPlan("A", "08:00", "草とり"),
+    b: personPlan("B", "13:00", "草とり"),
+    c: personPlan("C", "08:00", "収穫"),
+  } });
+}
+function clickCard(context, card, { interactive = false, select = false } = {}) {
+  context.handleCardClick({ target: { closest(selector) {
+    if (selector === "[data-group]") return card;
+    if (selector === "[data-select]") return select ? card.select : null;
+    if (selector === "button, a, textarea, input, select, label") return interactive ? {} : null;
+    return null;
+  } } });
+}
+test("card selection is mode-only, reversible and does not interfere with editing", () => {
+  const { context, cards, elements } = commonScreen();
+  context.renderCards();
+  clickCard(context, cards[0]);
+  assert.equal(cards[0].classes.has("selected"), false);
+  assert.equal(cards[0].select.hidden, true);
+  context.setCommonMode(true);
+  assert.equal(elements["common-panel"].hidden, false);
+  assert.equal(elements["common-open"]["aria-expanded"], "true");
+  clickCard(context, cards[0], { interactive: true });
+  assert.equal(cards[0].select["aria-pressed"], "false");
+  clickCard(context, cards[0]);
+  assert.equal(cards[0].classes.has("selected"), true);
+  assert.equal(cards[0].select["aria-pressed"], "true");
+  assert.equal(elements["common-apply"].textContent, "選択した1件に追加");
+  clickCard(context, cards[0], { select: true });
+  assert.equal(cards[0].classes.has("selected"), false);
+  context.selectCommonCards(true);
+  assert.ok(cards.every(card => card.classes.has("selected")));
+  context.selectCommonCards(false);
+  assert.ok(cards.every(card => !card.classes.has("selected")));
+  context.setCommonMode(false);
+  assert.equal(elements["common-panel"].hidden, true);
+  assert.ok(cards.every(card => card.select.hidden));
+});
+test("shared notes target two time-split cards and all-task cards without changing plans or other drafts", async () => {
+  const { context, cards, elements, events, button, copiedTexts, requests } = commonScreen();
+  const before = JSON.stringify(context.testPlans);
+  vm.runInContext('drafts.set("a", buildGroupMessage(messageGroups(record.data.plans).find(g=>g.id==="a"),loadedDate).replace("お疲れさまです。","手直し済み"));', context);
+  context.setCommonMode(true);
+  clickCard(context, cards[0]);
+  clickCard(context, cards[1]);
+  elements["common-text"].value = "かっぱを持ってきてください。";
+  context.applyCommonMessage();
+  for (const id of ["a", "b"]) {
+    const text = vm.runInContext(`drafts.get("${id}")`, context);
+    assert.match(text, /かっぱを持ってきてください。\n\nよろしくお願いします。/);
+    assert.match(text, id === "a" ? /出勤：08:00/ : /出勤：13:00/);
+  }
+  assert.match(vm.runInContext('drafts.get("a")', context), /手直し済み/);
+  assert.equal(vm.runInContext('drafts.has("c")', context), false);
+  assert.deepEqual(events, []);
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  elements["common-text"].value = "熱中症に注意してください。";
+  context.applyCommonMessage();
+  for (const id of ["a", "b", "c"]) assert.match(vm.runInContext(`drafts.get("${id}")`, context), /熱中症/);
+  assert.match(vm.runInContext('drafts.get("c")', context), /収穫/);
+  assert.match(vm.runInContext('drafts.get("a")', context), /かっぱ.*\n\n熱中症/);
+  assert.equal(JSON.stringify(context.testPlans), before);
+  assert.equal(elements["common-panel"].hidden, true);
+  await context.copySavedPlan("a", button);
+  assert.match(copiedTexts[0], /かっぱ/);
+  assert.match(requests[0].message, /熱中症/);
+  assert.equal(requests[0].plan, undefined);
+  assert.match(elements.cards.innerHTML, /かっぱ/);
+  assert.equal(JSON.stringify(context.testPlans), before);
+});
+test("empty selection or note and oversized batches fail explicitly without partial updates", () => {
+  const { context, elements } = commonScreen();
+  context.setCommonMode(true);
+  elements["common-text"].value = "注意";
+  context.applyCommonMessage();
+  assert.match(elements["common-status"].textContent, /カードを選択/);
+  context.selectCommonCards(true);
+  elements["common-text"].value = "  \n ";
+  context.applyCommonMessage();
+  assert.match(elements["common-status"].textContent, /内容を入力/);
+  vm.runInContext('drafts.set("b","x".repeat(9999));', context);
+  elements["common-text"].value = "注意";
+  context.applyCommonMessage();
+  assert.match(elements["common-status"].textContent, /10000文字/);
+  assert.equal(vm.runInContext('drafts.has("a")', context), false);
+  assert.equal(vm.runInContext('drafts.get("b").length', context), 9999);
+  vm.runInContext('drafts.set("b","x".repeat(9996));', context);
+  context.applyCommonMessage();
+  assert.equal(vm.runInContext('drafts.get("b").length', context), 10000);
+});
+test("one shared plan with different attendance creates independently selectable cards and copies the right recipients", async () => {
+  const shared = { ...structuredClone(plan), names: ["A", "B"], recipients: ["A", "B"],
+    attendance: { A: [{ start: "08:00", end: "16:30" }], B: [{ start: "13:00", end: "16:30" }] },
+    blocks: [{ ...plan.blocks[0], start: "08:00", end: "16:30", participation: {
+      A: [{ start: "08:00", end: "12:00" }, { start: "13:00", end: "16:30" }],
+      B: [{ start: "13:00", end: "16:30" }],
+    } }] };
+  const { context, cards, elements, button, requests } = copyScreen({ plans: { shared } });
+  assert.equal(cards.length, 2);
+  assert.notEqual(cards[0].dataset.group, cards[1].dataset.group);
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  elements["common-text"].value = "かっぱを持ってきてください。";
+  context.applyCommonMessage();
+  const helper = load("message-plan.js");
+  const groups = helper.messageGroups({ shared });
+  for (const group of groups) {
+    const text = vm.runInContext(`drafts.get(${JSON.stringify(group.id)})`, context);
+    assert.match(text, /かっぱを持ってきてください。\n\nよろしくお願いします。/);
+    assert.match(text, group.recipients[0] === "A" ? /出勤：08:00/ : /出勤：13:00/);
+  }
+  await context.copySavedPlan(groups[1].id, button);
+  assert.deepEqual(Array.from(requests[0].recipients), ["B"]);
+  assert.equal(requests[0].copies[0].id, "shared");
+  assert.match(requests[0].message, /出勤：13:00/);
+  assert.doesNotMatch(requests[0].message, /出勤：08:00/);
+});
+test("refreshing cards removes stale selections rather than reporting a zero-card success", () => {
+  const { context, elements } = commonScreen();
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  vm.runInContext("delete record.data.plans.b;", context);
+  elements["common-text"].value = "注意";
+  context.applyCommonMessage();
+  assert.match(elements["common-status"].textContent, /予定が変わりました/);
+  assert.equal(vm.runInContext("drafts.size", context), 0);
+  assert.equal(elements["common-apply"].textContent, "選択した2件に追加");
+});
+test("cancel does not change drafts and reload clears selections and unsaved shared notes", async () => {
+  const { context, elements, cards } = commonScreen();
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  elements["common-text"].value = "追加しない";
+  context.setCommonMode(false);
+  assert.equal(vm.runInContext("drafts.size", context), 0);
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  context.applyCommonMessage();
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  await context.loadSavedPlans();
+  assert.equal(vm.runInContext("drafts.size", context), 0);
+  assert.equal(elements["common-text"].value, "");
+  assert.equal(elements["common-panel"].hidden, true);
+  assert.ok(cards.every(card => !card.classes.has("selected")));
+  context.testPlans = {};
+  vm.runInContext('record={data:{plans:{},communications:[]}};', context);
+  context.renderCards();
+  assert.equal(elements["common-open"].disabled, true);
+});
 test("clipboard failure never records a copy, record failure reports copied but unsaved", async () => {
   const failedCopy = copyScreen({ failCopy: true });
   await failedCopy.context.copySavedPlan("test", failedCopy.button);

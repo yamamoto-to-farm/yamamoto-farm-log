@@ -7,7 +7,7 @@
   <title>業務連絡（LINE下書き） - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261104-unified-1">
+  <link rel="stylesheet" href="./message.css?v=20261104-common-1">
 </head>
 <body>
   <div id="header"></div>
@@ -30,6 +30,22 @@
         <button id="msg-login" class="secondary-btn" type="button" hidden>シフト連携ログイン</button>
       </div>
       <p class="msg-muted">参加する作業予定の組合せが同じパートをまとめ、１日分の連絡文を作ります。コピーでは予定を変更せず、連絡時点の全予定・文面の控えを保存します。コピーはLINE送信を意味しません。</p>
+      <button id="common-open" class="secondary-btn" type="button" aria-expanded="false" aria-controls="common-panel" disabled>＋共通の連絡を追加</button>
+      <div id="common-panel" class="msg-common-panel" hidden>
+        <p>追加先のカードをクリックして選択してください。選択した文面の「よろしくお願いします。」の直前に追加します。結びを変更・削除した文面には末尾に追加します。</p>
+        <div class="msg-toolbar">
+          <button id="common-all" class="secondary-btn" type="button">すべて選択</button>
+          <button id="common-clear" class="secondary-btn" type="button">選択を解除</button>
+        </div>
+        <label for="common-text">共通の連絡内容</label>
+        <textarea id="common-text" class="form-input" rows="3" maxlength="10000" placeholder="例：かっぱを持ってきてください。"></textarea>
+        <div class="msg-toolbar">
+          <button id="common-apply" class="primary-btn" type="button">選択した0件に追加</button>
+          <button id="common-cancel" class="secondary-btn" type="button">キャンセル</button>
+        </div>
+        <p id="common-status" class="msg-error" role="status" aria-live="polite"></p>
+        <p class="msg-muted">追加は文面だけに反映します。コピーするまでは控えに保存されず、日付変更・再読み込みで消えます。</p>
+      </div>
       <div id="cards" class="msg-cards"></div>
     </section>
 
@@ -47,9 +63,9 @@
       </details>
     </section>
 
-    <div class="back-action-slot">
-      <a href="/admin/shift/index.html" class="secondary-btn unified-back-btn">シフト管理へ</a>
-      <a href="/admin/index.html" class="secondary-btn unified-back-btn">管理ページへ戻る</a>
+    <div class="msg-navigation">
+      <a id="back-plan-link" class="secondary-btn" href="/schedule/daily-plan/index.html">作業予定編集ページへ</a>
+      <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </div>
 
@@ -60,6 +76,6 @@
     <option value="作業の都合により"></option>
   </datalist>
 
-  <script type="module" src="./message.js?v=20261104-time-1"></script>
+  <script type="module" src="./message.js?v=20261104-common-1"></script>
 </body>
 </html>

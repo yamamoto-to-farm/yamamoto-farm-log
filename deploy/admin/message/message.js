@@ -23,6 +23,8 @@ let sequence = 0;
 let copying = false;
 let loadedDate = "";
 const drafts = new Map();
+let commonMode = false;
+const commonSelection = new Set();
 function status(message, error = false) {
   element("status").textContent = message;
   element("status").classList.toggle("error", error);
@@ -40,6 +42,7 @@ function initialMessageDate() {
 function syncWorkPlanLink() {
   const date = element("msg-date").value;
   element("direct-plan-link").href = `/schedule/daily-plan/index.html?date=${date}`;
+  element("back-plan-link").href = `/schedule/daily-plan/index.html?date=${date}`;
 }
 export async function copyText(text) {
   try {
@@ -56,6 +59,83 @@ export async function copyText(text) {
     }
   }
 }
+export function appendCommonMessage(text, addition) {
+  const closing = [...text.matchAll(/^[ \t]*よろしくお願いします。[ \t]*\r?$/gm)].at(-1);
+  const index = closing ? closing.index : text.length;
+  const before = text.slice(0, index);
+  const newline = text.includes("\r\n") ? "\r\n" : "\n";
+  const separator = !before || before.endsWith(newline + newline) ? ""
+    : before.endsWith(newline) ? newline : newline + newline;
+  return before + separator + addition + (closing ? newline + newline + text.slice(index) : "");
+}
+function syncCommonSelection() {
+  const ids = new Set(record ? messageGroups(record.data.plans).map(group => group.id) : []);
+  for (const id of commonSelection) if (!ids.has(id)) commonSelection.delete(id);
+  element("common-open").disabled = !ids.size;
+  element("common-open").setAttribute("aria-expanded", String(commonMode));
+  element("common-panel").hidden = !commonMode;
+  element("common-apply").textContent = `選択した${commonSelection.size}件に追加`;
+  element("cards").querySelectorAll("[data-group]").forEach(card => {
+    const selected = commonSelection.has(card.dataset.group);
+    card.classList.toggle("selectable", commonMode);
+    card.classList.toggle("selected", commonMode && selected);
+    const button = card.querySelector("[data-select]");
+    button.hidden = !commonMode;
+    button.setAttribute("aria-pressed", String(selected));
+    button.textContent = selected ? "✓ 追加先に選択中" : "追加先に選択";
+  });
+}
+function setCommonMode(active) {
+  commonMode = active;
+  commonSelection.clear();
+  element("common-status").textContent = "";
+  syncCommonSelection();
+  if (active) element("common-text").focus();
+}
+function selectCommonCards(all) {
+  commonSelection.clear();
+  if (all && record) messageGroups(record.data.plans).forEach(group => commonSelection.add(group.id));
+  syncCommonSelection();
+}
+function applyCommonMessage() {
+  const addition = element("common-text").value.trim();
+  const error = element("common-status");
+  if (!commonMode || !record || copying) return;
+  if (!commonSelection.size) { error.textContent = "追加先のカードを選択してください。"; return; }
+  if (!addition) { error.textContent = "共通の連絡内容を入力してください。"; return; }
+  const updates = messageGroups(record.data.plans).filter(group => commonSelection.has(group.id))
+    .map(group => [group.id, appendCommonMessage(drafts.get(group.id) ?? buildGroupMessage(group, loadedDate), addition)]);
+  if (updates.length !== commonSelection.size) {
+    error.textContent = "追加先の予定が変わりました。カードを選び直してください。";
+    syncCommonSelection();
+    return;
+  }
+  if (updates.some(([, text]) => text.length > 10000)) {
+    error.textContent = "追加後の文面が10000文字を超えるカードがあります。内容を短くしてください（まだ追加していません）。";
+    return;
+  }
+  updates.forEach(([id, text]) => drafts.set(id, text));
+  element("common-text").value = "";
+  setCommonMode(false);
+  renderCards();
+  status(`${updates.length}件の文面に共通の連絡を追加しました。内容を確認してコピーしてください（予定は変更していません）。`);
+  element("common-open").focus();
+}
+function handleCardClick(event) {
+  const select = event.target.closest("[data-select]");
+  const card = event.target.closest("[data-group]");
+  if (commonMode && card && (select || !event.target.closest("button, a, textarea, input, select, label"))) {
+    const id = card.dataset.group;
+    if (commonSelection.has(id)) commonSelection.delete(id);
+    else commonSelection.add(id);
+    syncCommonSelection();
+    return;
+  }
+  const copy = event.target.closest("[data-copy]");
+  if (copy) return copySavedPlan(copy.dataset.copy, copy);
+  const reset = event.target.closest("[data-reset]");
+  if (reset && record) { drafts.delete(reset.dataset.reset); renderCards(); }
+}
 function renderCards() {
   const groups = messageGroups(record.data.plans);
   element("cards").innerHTML = groups.length ? groups.map(group => {
@@ -63,7 +143,8 @@ function renderCards() {
     const issues = [...new Set([...group.issues, ...entries.flatMap(({ plan }) => communicationIssues(plan))])];
     const text = drafts.get(id) ?? buildGroupMessage(group, loadedDate);
     const communication = groupCommunicationState(group, record.data.communications);
-    return `<article class="msg-card">
+    return `<article class="msg-card" data-group="${escapeHtml(id)}">
+      <button type="button" class="secondary-btn msg-select" data-select="${escapeHtml(id)}" aria-label="${escapeHtml(group.recipients.join("・"))} の連絡文を追加先に選択" aria-pressed="false" hidden>追加先に選択</button>
       <h3>${escapeHtml(group.recipients.join("・"))} へ</h3>
       <p class="msg-muted">${communication ? `${communication.status === "sent" ? "送信済み" : "連絡用にコピー済み"}${communication.changed ? "・連絡後に変更あり" : ""}` : "この宛先・予定の組合せでは連絡前"}</p>
       ${entries.map(({ id: planId, plan, displayPlan }) => `<p>${plan.off ? "中止の連絡：" : ""}${displayPlan.blocks.map(block =>
@@ -77,6 +158,7 @@ function renderCards() {
       <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
     </article>`;
   }).join("") : "<p>この日のパート向け連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
+  syncCommonSelection();
 }
 async function loadSavedPlans() {
   const current = ++sequence;
@@ -85,6 +167,8 @@ async function loadSavedPlans() {
   record = null;
   drafts.clear();
   element("cards").replaceChildren();
+  element("common-text").value = "";
+  setCommonMode(false);
   syncWorkPlanLink();
   status("保存済み予定を読み込み中…");
   try {
@@ -206,15 +290,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("msg-login").onclick = () => login(`/admin/message/index.html?date=${element("msg-date").value}`);
   element("load-plans").onclick = loadSavedPlans;
   element("msg-date").onchange = loadSavedPlans;
+  element("common-open").onclick = () => setCommonMode(!commonMode);
+  element("common-all").onclick = () => selectCommonCards(true);
+  element("common-clear").onclick = () => selectCommonCards(false);
+  element("common-apply").onclick = applyCommonMessage;
+  element("common-cancel").onclick = () => { setCommonMode(false); element("common-open").focus(); };
   element("cards").oninput = event => {
     if (event.target.dataset.preview) drafts.set(event.target.dataset.preview, event.target.value);
   };
-  element("cards").onclick = event => {
-    const copy = event.target.closest("[data-copy]");
-    if (copy) return copySavedPlan(copy.dataset.copy, copy);
-    const reset = event.target.closest("[data-reset]");
-    if (reset && record) { drafts.delete(reset.dataset.reset); renderCards(); }
-  };
+  element("cards").onclick = handleCardClick;
   element("template-list").onclick = async event => {
     const button = event.target.closest("[data-tpl-copy]");
     if (!button) return;
