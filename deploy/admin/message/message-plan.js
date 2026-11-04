@@ -112,15 +112,21 @@ export function checkMessageGroup(group, plans) {
 }
 export function groupCommunicationState(group, communications) {
   const recipientKey = JSON.stringify(group.recipients);
-  const relevant = communications.filter(item => JSON.stringify([...item.recipients].sort()) === recipientKey
-    && group.ids.includes(item.plan_id));
-  const stamps = [...new Set(relevant.map(item => item.at))].reverse();
+  const relevant = communications.filter(item => JSON.stringify([...item.recipients].sort()) === recipientKey);
+  const stamps = [...new Set(relevant.map(item => item.at))].reverse()
+    .sort((a, b) => Date.parse(b) - Date.parse(a));
   for (const at of stamps) {
     const items = relevant.filter(item => item.at === at);
+    if (!items.some(item => group.ids.includes(item.plan_id))) continue;
     if (group.ids.every(id => items.some(item => item.plan_id === id))) {
+      const changed = items.some(item => !group.ids.includes(item.plan_id))
+        || group.entries.some(({ id, plan }) => items.find(item => item.plan_id === id).plan_revision !== plan.updated_at);
+      const message = !changed && typeof items[0].message === "string"
+        && items.every(item => item.message === items[0].message) ? items[0].message : null;
       return { status: items.some(item => item.status === "sent") ? "sent" : "copied",
-        changed: group.entries.some(({ id, plan }) => items.find(item => item.plan_id === id).plan_revision !== plan.updated_at) };
+        changed, message };
     }
+    return null;
   }
   return null;
 }

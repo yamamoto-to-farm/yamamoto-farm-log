@@ -392,6 +392,70 @@ test("copy success records once and reports no LINE delivery", async () => {
   assert.match(elements.status.textContent, /LINE送信はしていません/);
   assert.equal(elements["tab-daily"].inert, false);
 });
+test("reopening restores the latest saved message and copies it without losing common notes", async () => {
+  const { context, elements, button, copiedTexts, requests } = copyScreen();
+  const saved = "手修正した連絡文\n\nかっぱを持ってきてください。\n\nよろしくお願いします。";
+  const communications = [
+    { plan_id: "test", plan_revision: plan.updated_at, recipients: plan.recipients,
+      at: "2026-11-04T06:43:00Z", status: "copied", message: saved },
+    { plan_id: "test", plan_revision: plan.updated_at, recipients: plan.recipients,
+      at: "2026-11-04T06:42:00Z", status: "copied", message: "古い注意" },
+  ];
+  context.fetchWorkPlanRecord = async () => ({ date: "2026-11-04", revision: '"etag"',
+    data: { plans: { test: plan }, communications } });
+  await context.loadSavedPlans();
+  assert.match(elements.cards.innerHTML, /かっぱを持ってきてください/);
+  assert.match(elements.cards.innerHTML, /最新の控えから文面を復元/);
+  await context.copySavedPlan("test", button);
+  assert.equal(copiedTexts[0], saved);
+  assert.equal(requests[0].message, saved);
+  context.setCommonMode(true);
+  context.selectCommonCards(true);
+  elements["common-text"].value = "熱中症に注意してください。";
+  context.applyCommonMessage();
+  const draft = vm.runInContext('drafts.get("test")', context);
+  assert.match(draft, /かっぱ.*\n\n熱中症.*\n\nよろしく/);
+  context.handleCardClick({ target: { closest: selector => selector === "[data-reset]"
+    ? { dataset: { reset: "test" } } : null } });
+  assert.doesNotMatch(vm.runInContext('drafts.get("test")', context), /かっぱ|手修正|熱中症/);
+  await context.copySavedPlan("test", button);
+  assert.doesNotMatch(copiedTexts[1], /かっぱ/);
+  await context.loadSavedPlans();
+  assert.match(elements.cards.innerHTML, /かっぱ/);
+  assert.equal(communications[0].message, saved);
+});
+test("restoration never reuses a different recipient, changed revision or superseded plan set", () => {
+  const helper = load("message-plan.js");
+  const group = helper.messageGroups({ test: plan })[0];
+  const item = { plan_id: "test", plan_revision: plan.updated_at, recipients: plan.recipients,
+    at: "2026-11-04T06:43:00Z", status: "copied", message: "雨具のお願い" };
+  assert.equal(helper.groupCommunicationState(group, [item]).message, item.message);
+  assert.equal(helper.groupCommunicationState(group, [{ ...item, recipients: ["別の人"] }]), null);
+  assert.equal(helper.groupCommunicationState(group, [{ ...item, plan_revision: "old" }]).message, null);
+  assert.equal(helper.groupCommunicationState(group, [item, { ...item, plan_id: "deleted" }]).message, null);
+  assert.equal(helper.groupCommunicationState(group, [
+    { ...item, at: "2026-11-04T06:42:00Z" }, { ...item, plan_revision: "changed" },
+  ]).message, null);
+  const multiple = helper.messageGroups({ test: plan, second: plan })[0];
+  assert.equal(helper.groupCommunicationState(multiple, [item]), null);
+  const full = [item, { ...item, plan_id: "second" }];
+  assert.equal(helper.groupCommunicationState(multiple, full).message, item.message);
+  assert.equal(helper.groupCommunicationState(multiple, [item, { ...item, plan_id: "second", message: "不一致" }]).message, null);
+  assert.equal(helper.groupCommunicationState(multiple, [
+    ...full, { ...item, at: "2026-11-04T06:44:00Z" },
+  ]), null);
+});
+test("changed plans show fresh text and a history warning instead of restoring old times", () => {
+  const { context, elements } = copyScreen();
+  context.savedCopy = { plan_id: "test", plan_revision: "old", recipients: plan.recipients,
+    at: "2026-11-04T06:43:00Z", status: "copied", message: "古い作業時間とかっぱの注意" };
+  vm.runInContext("record.data.communications=[savedCopy]; renderCards();", context);
+  assert.match(elements.cards.innerHTML, /現在の予定から文面を作り直しました/);
+  assert.match(elements.cards.innerHTML, /連絡時点の控え/);
+  assert.doesNotMatch(elements.cards.innerHTML, /古い作業時間/);
+  vm.runInContext('drafts.set("test","編集中の文面");renderCards();', context);
+  assert.match(elements.cards.innerHTML, /編集中の文面/);
+});
 test("copy refresh retains this and other pending message drafts", async () => {
   const { context, button, elements } = copyScreen();
   vm.runInContext('drafts.set("test","文面の補足"); drafts.set("other","別の下書き");', context);

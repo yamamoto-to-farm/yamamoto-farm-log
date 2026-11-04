@@ -3,7 +3,7 @@ import { renderHeader } from "/common/header.js?v=1.1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
-import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-time-1";
+import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-restore-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -95,6 +95,11 @@ function selectCommonCards(all) {
   if (all && record) messageGroups(record.data.plans).forEach(group => commonSelection.add(group.id));
   syncCommonSelection();
 }
+function currentMessageText(group) {
+  return drafts.get(group.id)
+    ?? groupCommunicationState(group, record.data.communications)?.message
+    ?? buildGroupMessage(group, loadedDate);
+}
 function applyCommonMessage() {
   const addition = element("common-text").value.trim();
   const error = element("common-status");
@@ -102,7 +107,7 @@ function applyCommonMessage() {
   if (!commonSelection.size) { error.textContent = "追加先のカードを選択してください。"; return; }
   if (!addition) { error.textContent = "共通の連絡内容を入力してください。"; return; }
   const updates = messageGroups(record.data.plans).filter(group => commonSelection.has(group.id))
-    .map(group => [group.id, appendCommonMessage(drafts.get(group.id) ?? buildGroupMessage(group, loadedDate), addition)]);
+    .map(group => [group.id, appendCommonMessage(currentMessageText(group), addition)]);
   if (updates.length !== commonSelection.size) {
     error.textContent = "追加先の予定が変わりました。カードを選び直してください。";
     syncCommonSelection();
@@ -132,14 +137,17 @@ function handleCardClick(event) {
   const copy = event.target.closest("[data-copy]");
   if (copy) return copySavedPlan(copy.dataset.copy, copy);
   const reset = event.target.closest("[data-reset]");
-  if (reset && record) { drafts.delete(reset.dataset.reset); renderCards(); }
+  if (reset && record) {
+    const group = messageGroups(record.data.plans).find(item => item.id === reset.dataset.reset);
+    if (group) { drafts.set(group.id, buildGroupMessage(group, loadedDate)); renderCards(); }
+  }
 }
 function renderCards() {
   const groups = messageGroups(record.data.plans);
   element("cards").innerHTML = groups.length ? groups.map(group => {
     const { id, entries } = group;
     const issues = [...new Set([...group.issues, ...entries.flatMap(({ plan }) => communicationIssues(plan))])];
-    const text = drafts.get(id) ?? buildGroupMessage(group, loadedDate);
+    const text = currentMessageText(group);
     const communication = groupCommunicationState(group, record.data.communications);
     return `<article class="msg-card" data-group="${escapeHtml(id)}">
       <button type="button" class="secondary-btn msg-select" data-select="${escapeHtml(id)}" aria-label="${escapeHtml(group.recipients.join("・"))} の連絡文を追加先に選択" aria-pressed="false" hidden>追加先に選択</button>
@@ -150,6 +158,8 @@ function renderCards() {
         <a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集</a></p>`).join("")}
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
       <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
+      ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました（共通の連絡・手修正を含みます）。</p>' : ""}
+      ${communication?.changed ? `<p class="msg-error">予定が変わったため、現在の予定から文面を作り直しました。以前の注意事項は<a href="/schedule/daily-plan/index.html?date=${loadedDate}">連絡時点の控え</a>で確認してください。</p>` : ""}
       <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="10" aria-label="連絡文面">${escapeHtml(text)}</textarea>
       <button type="button" class="secondary-btn" data-reset="${escapeHtml(id)}">保存済み予定から文面を戻す</button>
       <button type="button" class="primary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>📋 コピー（送信はしません）</button>
@@ -211,7 +221,7 @@ export async function copySavedPlan(id, button) {
     if (issues.length) throw new Error(issues.join(" "));
     const latest = await fetchWorkPlanRecord(date);
     checkMessageGroup(group, latest.data.plans);
-    const text = drafts.get(id) ?? buildGroupMessage(group, date);
+    const text = currentMessageText(group);
     if (!text.trim()) throw new Error("連絡文面を入力してください。");
     if (text.length > 10000) throw new Error("連絡文面は10000文字以内にしてください。");
     await copyText(text);
