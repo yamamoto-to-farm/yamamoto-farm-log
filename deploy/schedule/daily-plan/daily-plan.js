@@ -4,7 +4,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-work-1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
-import { availableWorkTimes, participationForWork, mergeTimeRanges, validTimeRange } from "/common/work-plan-time.js?v=20261104-time-2";
+import { availableWorkTimes, participationForWork, mergeTimeRanges, validTimeRange } from "/common/work-plan-time.js?v=20261104-mixed-time-1";
 import { hasSession, login, ensureToken } from "/photos/auth.js?v=20261029-2";
 import { config } from "/photos/config.js";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
@@ -74,6 +74,9 @@ const attendanceForSelection = () => Object.fromEntries(selectedParts.map(name =
 function blockAvailability(index) {
   return availableWorkTimes(selectedParts, attendanceForSelection(), record.data.plans, editingId,
     blocks.filter((_, other) => other !== index), noonBreak);
+}
+function blockFamily(block) {
+  return (block.companions || selectedFamily).filter(name => selectedFamily.includes(name));
 }
 function initializeWorkTime() {
   if (!selectedParts.length || !shiftReady || !record) return;
@@ -169,6 +172,8 @@ function renderWorkers() {
 }
 function renderBlocks() {
   el("plan-blocks").innerHTML = blocks.map((block, index) => {
+    const family = blockFamily(block);
+    const mixed = selectedParts.length > 0 && family.length > 0;
     let times = "";
     let bounds = "";
     if (selectedParts.length) {
@@ -182,15 +187,18 @@ function renderBlocks() {
         const availability = blockAvailability(index);
         const starts = availability.candidates.map(range => range.start).sort();
         const ends = availability.candidates.map(range => range.end).sort();
-        bounds = starts.length ? ` min="${starts[0]}" max="${ends.at(-1)}"` : "";
-        times = `<div class="work-time-candidates"><p>作業時間の候補（勤務・昼休憩・別予定を考慮）</p>${availability.candidates.map((range, target) =>
+        bounds = !mixed && starts.length ? ` min="${starts[0]}" max="${ends.at(-1)}"` : "";
+        times = `<div class="work-time-candidates"><p>${mixed ? "パートの参加時間候補（作業全体の時間は変更できます）" : "作業時間の候補（勤務・昼休憩・別予定を考慮）"}</p>${availability.candidates.map((range, target) =>
           `<button type="button" class="secondary-btn plan-toggle" data-time-block="${index}" data-time-choice="${target}" aria-pressed="${block.start === range.start && block.end === range.end}">${range.start}〜${range.end}${range.through ? "（通し・昼休憩あり）" : ""}</button>`).join("")
           || "<p>選択した全員が参加できる時間候補がありません。</p>"}
           ${availability.unknown.length ? `<p class="plan-note">${escape(availability.unknown.join("・"))}の時間未指定の予定は差し引いていません。</p>` : ""}
-          <p class="plan-note">通しは昼休憩を挟んで同じ作業を行います。作業時間は候補内で短く調整でき、各人の参加時間から昼休憩を除きます。</p>`;
+          <p class="plan-note">${mixed
+            ? "開始・終了は家族を含む作業全体の時間です。パートは本人の勤務時間内だけ参加し、昼休憩を除きます。"
+            : "通しは昼休憩を挟んで同じ作業を行います。作業時間は候補内で短く調整でき、各人の参加時間から昼休憩を除きます。"}</p>`;
         if (validTimeRange(block)) {
           try {
-            const participation = participationForWork(block, selectedParts, availability);
+            const participation = participationForWork(block, selectedParts, availability, mixed);
+            if (mixed) times += `<p>家族：${escape(family.join("・"))} ${escape(block.start)}〜${escape(block.end)}（作業全体）</p>`;
             times += Object.entries(participation).map(([name, ranges]) =>
               `<p>${escape(name)}：${ranges.map(range => `${range.start}〜${range.end}`).join("・")}</p>`).join("");
           } catch (error) { times += `<p class="plan-note warning">${escape(error.message)}</p>`; }
@@ -205,10 +213,10 @@ function renderBlocks() {
     <button type="button" class="secondary-btn" data-task="${index}">作業内容を選択</button>
     <p>${escape(block.task || "未選択")}</p>
     <label>作業内容（自由入力・修正）<input class="form-input" data-block="${index}" data-key="task" value="${escape(block.task)}" maxlength="200"></label>
-    <details${selectedParts.length || block.start || block.fields.length || block.shed ? " open" : ""}><summary>時間・圃場${selectedParts.length ? "（パートの時間は勤務内）" : "（任意）"}</summary>
+    <details${selectedParts.length || block.start || block.fields.length || block.shed ? " open" : ""}><summary>時間・圃場${mixed ? "（作業全体と各人の参加時間）" : selectedParts.length ? "（パートの時間は勤務内）" : "（任意）"}</summary>
       ${times}
-      <label>開始 <input type="time" class="form-input" data-block="${index}" data-key="start" value="${escape(block.start)}"${bounds}></label>
-      <label>終了 <input type="time" class="form-input" data-block="${index}" data-key="end" value="${escape(block.end)}"${bounds}></label>
+      <label>${mixed ? "作業全体の開始" : "開始"} <input type="time" class="form-input" data-block="${index}" data-key="start" value="${escape(block.start)}"${bounds}></label>
+      <label>${mixed ? "作業全体の終了" : "終了"} <input type="time" class="form-input" data-block="${index}" data-key="end" value="${escape(block.end)}"${bounds}></label>
       <div class="plan-actions"><button type="button" class="secondary-btn plan-toggle" data-shed="${index}" aria-pressed="${Boolean(block.shed)}">作業場集合</button></div>
       <button type="button" class="secondary-btn" data-field="${index}">圃場を追加（複数可）</button>
       <div>${block.fields.map((field, target) => `<button type="button" class="secondary-btn" data-remove-field="${index}" data-field-index="${target}">${escape(field)} ×</button>`).join("")}</div>
@@ -574,7 +582,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
         if (current !== sequence || date !== loadedDate) throw new Error("日付が変更されました。入力を確認してください。");
         if (!shiftReady) throw new Error("パートの勤務時間を確認できません。シフトを読み込み直してください。");
-        blocks.forEach((block, index) => { block.participation = participationForWork(block, selectedParts, blockAvailability(index)); });
+        blocks.forEach((block, index) => {
+          block.participation = participationForWork(block, selectedParts, blockAvailability(index), blockFamily(block).length > 0);
+        });
       }
       const plan = createUnifiedPlan(selectedFamily, selectedParts, blocks, el("plan-memo").value,
         el("plan-reporter").value, el("plan-off").checked, el("plan-off-reason").value, source,

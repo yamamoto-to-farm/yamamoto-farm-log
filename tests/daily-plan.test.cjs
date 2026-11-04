@@ -59,6 +59,33 @@ test("cancellation preserves tasks, supports old message edits and separate sour
   assert.equal(cancelled.blocks[0].task, "耕起");
   assert.equal(cancelled.message, "");
 });
+test("mixed editor separates overall family time from part duty and retains it on edit", () => {
+  const { context, nodes } = screen();
+  vm.runInContext(`
+    record={data:{plans:{}}};shiftReady=true;shiftEligible=new Set(["パートA"]);noonBreak=60;
+    selectedFamily=["家族A"];selectedParts=["パートA"];
+    shiftGroups=[{names:["パートA"],start:"13:00",end:"16:30"}];
+    blocks=[{task:"草とり",start:"08:00",end:"16:30",fields:["圃場"],shed:false}];
+    initializeWorkTime();renderBlocks();`, context);
+  assert.match(nodes["plan-blocks"].innerHTML, /作業全体の開始/);
+  assert.match(nodes["plan-blocks"].innerHTML, /家族：家族A 08:00〜16:30/);
+  assert.match(nodes["plan-blocks"].innerHTML, /パートA：13:00〜16:30/);
+  assert.doesNotMatch(nodes["plan-blocks"].innerHTML, / min=| max=|勤務時間外/);
+  vm.runInContext(`
+    blocks[0].participation=participationForWork(blocks[0],selectedParts,blockAvailability(0),blockFamily(blocks[0]).length>0);
+    record.data.plans.test=createUnifiedPlan(selectedFamily,selectedParts,blocks,"","",false,"","direct",attendanceForSelection());`, context);
+  vm.runInContext(`
+    cleanSnapshot=snapshot();
+    workerMaster=[{display:"家族A",role:"family"},{display:"パートA",role:"worker"}];
+    editPlan("test");`, context);
+  assert.equal(vm.runInContext('blocks[0].start', context), "08:00");
+  assert.equal(vm.runInContext('blocks[0].end', context), "16:30");
+  assert.equal(vm.runInContext('blocks[0].participation["パートA"][0].start', context), "13:00");
+  assert.doesNotMatch(nodes["plan-blocks"].innerHTML, /勤務時間外/);
+  vm.runInContext('blocks[0].companions=[];renderBlocks();', context);
+  assert.match(nodes["plan-blocks"].innerHTML, / min="13:00"/);
+  assert.match(nodes["plan-blocks"].innerHTML, /勤務時間外/);
+});
 test("work-time and meeting toggles reflect selection, and cancellation reset stays in sync", () => {
   const { context, nodes } = screen();
   vm.runInContext(`

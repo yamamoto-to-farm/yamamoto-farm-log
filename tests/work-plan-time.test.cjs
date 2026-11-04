@@ -48,6 +48,36 @@ test("unknown duty or break settings never produce success-shaped time candidate
   assert.throws(() => context.workingTimeRanges(attendance.A, null), /休憩/);
   assert.throws(() => context.mergeTimeRanges([range("25:00", "26:00")]), /形式/);
 });
+test("family all-day work allows afternoon-only part participation without changing overall times", () => {
+  const duty = { A: [range("13:00", "16:30")] };
+  const free = context.availableWorkTimes(["A"], duty, {}, "", [], 60);
+  const overall = { ...block, start: "08:00", end: "16:30" };
+  const participation = context.participationForWork(overall, ["A"], free, true);
+  assert.deepEqual(plain(participation), { A: [range("13:00", "16:30")] });
+  assert.throws(() => context.participationForWork(overall, ["A"], free), /勤務時間外/);
+  const saved = context.createUnifiedPlan(["家族"], ["A"], [{ ...overall, participation }], "", "", false, "", "direct", duty);
+  assert.equal(saved.blocks[0].start, "08:00");
+  assert.equal(saved.blocks[0].end, "16:30");
+  const message = context.buildGroupMessage(context.messageGroups({ p: saved })[0], "2026-11-04");
+  assert.match(message, /13:00〜16:30/);
+  assert.doesNotMatch(message, /8:00/);
+});
+test("mixed work checks actual participation per person and still rejects conflicts and absent participation", () => {
+  const duty = { A: [range("13:00", "16:30")], B: [range("08:00", "12:00")] };
+  const other = { names: ["A"], off: false, blocks: [{ ...block, start: "08:00", end: "12:00" }] };
+  const free = context.availableWorkTimes(["A", "B"], duty, { other }, "", [], 60);
+  assert.deepEqual(plain(context.participationForWork(range("08:00", "17:00"), ["A", "B"], free, true)), {
+    A: [range("13:00", "16:30")], B: [range("08:00", "12:00")],
+  });
+  const conflict = { ...other, blocks: [{ ...block, start: "14:00", end: "15:00" }] };
+  const busy = context.availableWorkTimes(["A", "B"], duty, { conflict }, "", [], 60);
+  assert.throws(() => context.participationForWork(range("08:00", "17:00"), ["A", "B"], busy, true), /別作業/);
+  const editing = context.availableWorkTimes(["A", "B"], duty, { conflict }, "conflict", [], 60);
+  assert.equal(context.participationForWork(range("08:00", "17:00"), ["A", "B"], editing, true).A[0].start, "13:00");
+  const sibling = context.availableWorkTimes(["A", "B"], duty, {}, "", [range("14:00", "15:00")], 60);
+  assert.throws(() => context.participationForWork(range("08:00", "17:00"), ["A", "B"], sibling, true), /別作業/);
+  assert.throws(() => context.participationForWork(range("08:00", "12:00"), ["A", "B"], free, true), /参加できない/);
+});
 test("split shifts and custom noon break length remain distinct", () => {
   assert.deepEqual(plain(context.workingTimeRanges([range("08:00", "16:00")], 45)),
     [range("08:00", "12:00"), range("12:45", "16:00")]);

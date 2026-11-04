@@ -47,6 +47,7 @@ export function availableWorkTimes(names, attendance, plans, editingId, otherBlo
     return [name, workingTimeRanges(attendance[name], noonBreak)];
   }));
   const occupied = [];
+  const occupiedByPerson = Object.fromEntries(names.map(name => [name, []]));
   const unknown = new Set();
   for (const name of names) {
     for (const [id, plan] of Object.entries(plans)) {
@@ -54,12 +55,13 @@ export function availableWorkTimes(names, attendance, plans, editingId, otherBlo
       for (const block of plan.blocks) {
         if (!plan.names.includes(name) && !(block.companions || []).includes(name)) continue;
         if (!validTimeRange(block)) unknown.add(name);
-        else occupied.push(...assignmentTimeRanges(plan, block, name));
+        else occupiedByPerson[name].push(...assignmentTimeRanges(plan, block, name));
       }
     }
     for (const block of otherBlocks) {
-      if (validTimeRange(block)) occupied.push(...intersectTimeRanges(shifts[name], [block]));
+      if (validTimeRange(block)) occupiedByPerson[name].push(...intersectTimeRanges(shifts[name], [block]));
     }
+    occupied.push(...occupiedByPerson[name]);
   }
   const candidates = subtractTimeRanges(Object.values(shifts).flat(), occupied)
     .filter(range => names.every(name => intersectTimeRanges(shifts[name], [range]).length));
@@ -73,21 +75,26 @@ export function availableWorkTimes(names, attendance, plans, editingId, otherBlo
       candidates.push({ ...span, through: true });
     }
   }
-  return { shifts, candidates, unknown: [...unknown] };
+  return { shifts, candidates, occupiedByPerson, unknown: [...unknown] };
 }
-export function participationForWork(block, names, availability) {
+export function participationForWork(block, names, availability, hasFamily = false) {
   if (!validTimeRange(block)) throw new Error("パートを含む作業は開始・終了を指定してください。");
-  if (!availability.candidates.some(range => range.start <= block.start && range.end >= block.end)) {
+  if (!hasFamily && !availability.candidates.some(range => range.start <= block.start && range.end >= block.end)) {
     throw new Error("勤務時間外・別作業と重なる時間です。時間候補の範囲内で指定してください。");
   }
   const working = Object.values(availability.shifts).flat();
-  if (!working.some(range => range.start <= block.start && block.start < range.end)
-    || !working.some(range => range.start < block.end && block.end <= range.end)) {
+  if (!hasFamily && (!working.some(range => range.start <= block.start && block.start < range.end)
+    || !working.some(range => range.start < block.end && block.end <= range.end))) {
     throw new Error("開始・終了は昼休憩中ではなく、作業できる時間に指定してください。");
   }
   const participation = Object.fromEntries(names.map(name => [name, intersectTimeRanges(availability.shifts[name], [block])]));
   if (Object.values(participation).some(ranges => !ranges.length)) {
     throw new Error("この作業時間に参加できないパートがいます。作業者または時間を変更してください。");
+  }
+  for (const name of names) {
+    if (intersectTimeRanges(participation[name], availability.occupiedByPerson[name]).length) {
+      throw new Error(`${name}の参加時間が別作業と重なっています。作業時間または作業者を変更してください。`);
+    }
   }
   return participation;
 }
