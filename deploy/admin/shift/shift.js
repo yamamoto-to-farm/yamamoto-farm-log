@@ -19,7 +19,7 @@ const WORK_LABELS = {
   seed: "播種", nursery: "育苗", tillage: "耕起", weeding: "除草", "field-maintenance": "圃場整備",
   pesticide: "防除", fertilizer: "施肥", watering: "潅水", "hand-weeding": "手除草",
   intertill: "中耕", bedmaking: "畝立て", planting: "定植", harvest: "収穫", other: "他",
-  "shipping-work": "出荷調整", herbicide: "除草剤散布", cleanup: "片付け",
+  "shipping-work": "出荷", herbicide: "除草剤散布", cleanup: "片付け",
 };
 const escapeWorkText = value => String(value).replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
@@ -283,12 +283,12 @@ function renderCalendar(eff) {
     if (works.length) {
       const counts = new Map();
       for (const w of works) {
-        const label = w.task || WORK_LABELS[w.type] || w.type;
+        const label = (w.task === "出荷調整" ? "出荷" : w.task) || WORK_LABELS[w.type] || w.type;
         counts.set(label, (counts.get(label) || 0) + 1);
       }
       const text = [...counts.entries()]
         .map(([label, count]) => `${label}${count > 1 ? `×${count}` : ""}`).join("・");
-      const title = works.map((w) => `${w.task || WORK_LABELS[w.type] || w.type}${w.note ? "：" + w.note : ""}`).join("、");
+      const title = works.map((w) => `${(w.task === "出荷調整" ? "出荷" : w.task) || WORK_LABELS[w.type] || w.type}${w.note ? "：" + w.note : ""}`).join("、");
       workTags = `<div class="wp-tags" title="${escapeWorkText(title)}">${escapeWorkText(text)}</div>`;
     }
     if (Number.isSafeInteger(shipment) && shipment >= 0) {

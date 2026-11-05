@@ -271,6 +271,11 @@ AWS設定（photos の HTTP API に追加）:
   月間計画取得エラー時は空データの上書きを防ぐため保存を止める（未作成404のみ新規作成可）。
   公開対象は `schedule/work-plan/`、`common/work-plan-form.js`、`common/css/work-plan-form.css`、
   `schedule/daily-plan/index.html`・`daily-plan.css`、`admin/shift/shift.js` とそのHTML。
+- 作業選択はトップのメニューに合わせた分類別カードで、初期状態では全分類を展開する。
+  「出荷調整」は「出荷」に統一し、保存済みの月間 `shipping-work` は維持する。
+  「選択を解除」は月間ではその行の作業を未選択にし、反映時に作業一覧から除外する（出荷基数は維持）。
+  日別予定では作業内容を空欄に戻し、保存時は従来どおり作業内容が必須。
+  出荷基数はスピンボタンなしのテンキー向け入力で、整数検証は反映時に行う。
 
 ### 機械資料・操作メモ
 

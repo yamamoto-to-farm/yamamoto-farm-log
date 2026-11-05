@@ -119,7 +119,7 @@ test("monthly editor reuses the daily task picker and shift calendar includes sh
   assert.match(source, /import \{ openPlanTaskModal \} from "\/common\/work-plan-form.js/);
   assert.match(source, /onClose: \(\) => \{ element\("day-dialog"\).showModal\(\)/);
   assert.match(read("admin/shift/shift.js"), /workPlan\?\.shipments\?\.\[cell.date\]/);
-  assert.match(read("schedule/work-plan/index.html"), /id="shipment-count" type="number" min="0" step="1"/);
+  assert.match(read("schedule/work-plan/index.html"), /id="shipment-count" type="text" inputmode="numeric" pattern="\[0-9\]\*"/);
 });
 test("every shared task choice maps to a stable monthly type", () => {
   const { context } = setup();
@@ -164,6 +164,62 @@ test("shift calendar renders shipments and escaped custom names alongside legacy
       days: { "2026-12-16": [{ type: "other", task: "<点検>", note: '"メモ"' }, { type: "harvest" }] },
       shipments: { "2026-12-16": 12 },
     },
+  });
+  test("cleared monthly task is excluded without removing the contracted shipment", () => {
+    const { context, el } = setup();
+    vm.runInContext('data.days={"2026-12-16":[{type:"harvest"}]};', context);
+    el("day-rows").querySelectorAll = () => [workRow("2026-12-16", "")];
+    el("shipment-count").value = "12";
+    context.applyDay();
+    assert.equal(vm.runInContext('data.days["2026-12-16"]', context), undefined);
+    assert.equal(vm.runInContext('data.shipments["2026-12-16"]', context), 12);
+  });
+  test("numeric keypad field rejects exponents, signs, unsafe integers and text without changing data", () => {
+    for (const value of ["1e2", "+2", "2.0", "abc", "9007199254740992"]) {
+      const { context, el } = setup();
+      el("shipment-count").value = value;
+      context.applyDay();
+      assert.match(el("day-error").textContent, /整数/);
+      assert.equal(vm.runInContext("Object.keys(data.shipments).length", context), 0);
+    }
+  });
+  test("legacy monthly shipping labels display as shipping without changing the saved identifier", () => {
+    const { context, el } = setup();
+    vm.runInContext('data.days={"2026-12-16":[{type:"shipping-work",task:"出荷調整"}]};', context);
+    context.render();
+    assert.match(el("calendar").innerHTML, />出荷<\/span>/);
+    assert.doesNotMatch(el("calendar").innerHTML, /出荷調整/);
+    assert.equal(vm.runInContext('data.days["2026-12-16"][0].type', context), "shipping-work");
+  });
+  test("shared task picker clears selection, preserves cancel and highlights legacy shipping", () => {
+    const nodes = {}, selections = [];
+    let html = "", closed = 0, restored = 0;
+    const context = vm.createContext({
+      openModal: value => { html = value; }, closeModal: () => { closed++; },
+      bindModalCloseEvents() {},
+      document: {
+        getElementById: id => nodes[id] ||= {},
+        querySelectorAll: () => [],
+      },
+    });
+    vm.runInContext(strip(read("common/work-plan-form.js")), context);
+    const open = selected => context.openPlanTaskModal({
+      selected, onSelect: value => selections.push(value), onClose: () => restored++,
+    });
+    open("出荷調整");
+    assert.match(html, /data-plan-task="出荷" aria-pressed="true"/);
+    assert.doesNotMatch(html, /出荷調整/);
+    assert.equal((html.match(/<details open>/g) || []).length, 6);
+    nodes["clear-plan-task"].onclick();
+    assert.deepEqual(selections, [""]);
+    assert.equal(closed, 1);
+    assert.equal(restored, 1);
+    open("収穫");
+    nodes["close-plan-task"].onclick();
+    assert.deepEqual(selections, [""]);
+    assert.equal(restored, 2);
+    open("__custom__");
+    assert.match(html, /data-plan-task="__custom__" aria-pressed="true"/);
   });
   vm.runInContext(
     source.slice(source.indexOf("const WORK_LABELS"), source.indexOf("function currentScenario")) +

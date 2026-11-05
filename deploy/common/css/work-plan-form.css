@@ -1,6 +1,18 @@
-.plan-task-modal { width: min(720px, calc(100vw - 32px)); box-sizing: border-box; }
+.plan-task-modal { width: min(720px, calc(100vw - 32px)); max-width: 720px; box-sizing: border-box; }
 .plan-task-groups { max-height: 60vh; overflow-y: auto; }
-.plan-task-groups details { padding: 10px 0; box-shadow: none; }
-.plan-task-groups summary { cursor: pointer; font-size: 15px; font-weight: 700; color: #41576d; }
-.plan-task-choices { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
-.plan-task-choices button[aria-pressed="true"] { background: #e8f0ff; color: #2256a5; }
+.plan-task-modal h3 { margin: 0 42px 14px 0; padding-bottom: 12px; border-bottom: 1px solid #e6edf5; }
+.plan-task-groups details { margin: 0 0 16px; padding: 0; box-shadow: none; border: 0; border-radius: 0; }
+.plan-task-groups summary { display: list-item; margin: 0; padding: 8px 0; cursor: pointer; font-size: 15px; font-weight: 700; color: #5b6f87; }
+.plan-task-groups details[open] summary { color: #1f2f3f; }
+.plan-task-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 8px; }
+.plan-task-choices .plan-task-card {
+  display: block; width: 100%; min-width: 0; min-height: 44px; margin: 0;
+  padding: 10px 12px; border: 1px solid #d9dce1; border-radius: 6px;
+  background: #fff; color: #334155; text-align: left; font: inherit; font-size: 14px;
+  box-shadow: 0 1px 3px rgba(15, 48, 76, 0.1); cursor: pointer;
+}
+.plan-task-choices .plan-task-card:hover { background: #f5f8fc; border-color: #9db4d4; }
+.plan-task-choices .plan-task-card:focus-visible { outline: 2px solid #2256a5; outline-offset: 2px; }
+.plan-task-choices .plan-task-card[aria-pressed="true"] { background: #e8f0ff; border-color: #759bd2; color: #2256a5; }
+.plan-task-modal .modal-footer { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid #e6edf5; }
+.plan-task-modal .modal-footer button { margin: 0; }

@@ -17,25 +17,27 @@ export async function loadFamilyWorkers() {
 export const PLAN_TASK_GROUPS = [
   ["播種・育苗", ["播種", "育苗"]],
   ["定植", ["定植"]],
-  ["収穫・出荷", ["収穫", "出荷調整"]],
+  ["収穫・出荷", ["収穫", "出荷"]],
   ["栽培管理", ["防除", "施肥", "潅水", "中耕"]],
   ["圃場管理", ["耕起", "畝立て", "除草剤散布", "草刈り", "草とり", "圃場整備"]],
   ["その他", ["片付け", "その他（自由入力）"]],
 ];
 
 export function openPlanTaskModal({ selected, onSelect, onClose = null }) {
+  if (selected === "出荷調整") selected = "出荷";
   openModal(`<div class="modal-bg" id="modal-bg"><div class="modal plan-task-modal" role="dialog" aria-modal="true" aria-labelledby="plan-task-title">
     <button type="button" class="modal-close" id="modal-close" aria-label="閉じる">×</button>
     <h3 id="plan-task-title">作業内容の選択</h3>
     <div class="plan-task-groups">${PLAN_TASK_GROUPS.map(([group, tasks]) => `
-      <details${tasks.includes(selected) || (selected === "__custom__" && tasks.includes("その他（自由入力）")) ? " open" : ""}><summary>${group}</summary>
-        <div class="plan-task-choices">${tasks.map(task => `<button type="button" class="secondary-btn" data-plan-task="${task === "その他（自由入力）" ? "__custom__" : task}"${task === selected ? ' aria-pressed="true"' : ""}>${task}</button>`).join("")}</div>
+      <details open><summary>${group}</summary>
+        <div class="plan-task-choices">${tasks.map(task => `<button type="button" class="plan-task-card" data-plan-task="${task === "その他（自由入力）" ? "__custom__" : task}" aria-pressed="${task === selected || (selected === "__custom__" && task === "その他（自由入力）")}">${task}</button>`).join("")}</div>
       </details>`).join("")}</div>
-    <div class="modal-footer"><button type="button" class="secondary-btn" id="close-plan-task">閉じる</button></div>
+    <div class="modal-footer"><button type="button" class="secondary-btn" id="clear-plan-task">選択を解除</button><button type="button" class="secondary-btn" id="close-plan-task">閉じる</button></div>
   </div></div>`);
   const close = () => { closeModal(); onClose?.(); };
   bindModalCloseEvents({ onClose });
   document.getElementById("close-plan-task").onclick = close;
+  document.getElementById("clear-plan-task").onclick = () => { onSelect(""); close(); };
   document.querySelectorAll("[data-plan-task]").forEach(button => {
     button.onclick = () => {
       onSelect(button.dataset.planTask);

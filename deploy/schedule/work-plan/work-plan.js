@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260821-quote-fix";
-import { openPlanTaskModal } from "/common/work-plan-form.js?v=20261105-monthly-1";
+import { openPlanTaskModal } from "/common/work-plan-form.js?v=20261105-task-2";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 
@@ -14,7 +14,7 @@ export const WORK_TYPES = [
   ["fertilizer", "施肥", "tone-care"], ["watering", "潅水", "tone-care"],
   ["hand-weeding", "手作業除草", "tone-care"], ["intertill", "中耕", "tone-field"],
   ["bedmaking", "畝立て", "tone-field"], ["planting", "定植", "tone-start"],
-  ["harvest", "収穫", "tone-harvest"], ["shipping-work", "出荷調整", "tone-harvest"],
+  ["harvest", "収穫", "tone-harvest"], ["shipping-work", "出荷", "tone-harvest"],
   ["herbicide", "除草剤散布", "tone-care"], ["cleanup", "片付け", ""], ["other", "その他", ""],
 ];
 const TYPE_LABEL = Object.fromEntries(WORK_TYPES.map(([key, label]) => [key, label]));
@@ -32,6 +32,7 @@ const escape = value => String(value ?? "").replace(/[&<>"']/g,
   char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 const TASK_TYPES = { ...Object.fromEntries(WORK_TYPES.map(([key, label]) => [label, key])),
   "草刈り": "weeding", "草とり": "hand-weeding" };
+const taskLabel = entry => (entry.task === "出荷調整" ? "出荷" : entry.task) || TYPE_LABEL[entry.type] || entry.type;
 
 function validateShipments(shipments) {
   if (!shipments || typeof shipments !== "object" || Array.isArray(shipments)) throw new Error("出荷予定の保存形式が不正です。");
@@ -112,15 +113,15 @@ function render() {
       // 同じ種別はまとめて表示（×件数）。詳細はツールチップで
       const groups = new Map();
       for (const entry of entries) {
-        const label = entry.task || TYPE_LABEL[entry.type] || entry.type;
+        const label = taskLabel(entry);
         if (!groups.has(label)) groups.set(label, []);
         groups.get(label).push(entry);
       }
       const pills = [...groups.entries()].map(([label, list]) => {
         const type = list[0].type;
-        const title = list.map((entry) => `${entry.task || label}${entry.note ? "：" + entry.note : ""}`).join("、");
+        const title = list.map((entry) => `${taskLabel(entry)}${entry.note ? "：" + entry.note : ""}`).join("、");
         const text = list.length === 1
-          ? `${list[0].task || label}${list[0].note ? " " + list[0].note : ""}`
+          ? `${taskLabel(list[0])}${list[0].note ? " " + list[0].note : ""}`
           : `${label} ×${list.length}`;
         return `<span class="wp-pill ${TYPE_TONE[type] || ""}" title="${escape(title)}">${escape(text)}</span>`;
       }).join("");
@@ -144,7 +145,7 @@ function dayRow(entry = { type: "harvest", note: "" }) {
   const last = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5)), 0)).getUTCDate();
   row.innerHTML =
     `<input type="date" class="wp-row-date" value="${editingDate}" min="${ym}-01" max="${ym}-${String(last).padStart(2, "0")}">` +
-    `<button type="button" class="secondary-btn wp-task-select">${escape(entry.task || TYPE_LABEL[entry.type] || entry.type)}</button>` +
+    `<button type="button" class="secondary-btn wp-task-select">${escape(taskLabel(entry) || "作業を選択")}</button>` +
     `<input type="text" class="wp-task-custom" maxlength="100" aria-label="自由入力の作業内容" placeholder="作業内容" value="${escape(entry.type === "other" ? entry.task || "" : "")}"${entry.type === "other" ? "" : " hidden"}>` +
     `<input type="text" class="wp-row-note" maxlength="50" aria-label="作業メモ" placeholder="メモ（圃場名など）" value="${escape(entry.note)}">` +
     '<button type="button" class="danger-btn">削除</button>';
@@ -156,9 +157,9 @@ function dayRow(entry = { type: "harvest", note: "" }) {
         || ({ weeding: "草刈り", "hand-weeding": "草とり" }[row.dataset.type] || TYPE_LABEL[row.dataset.type]),
       onSelect: task => {
         delete row.dataset.legacyOther;
-        row.dataset.type = task === "__custom__" ? "other" : TASK_TYPES[task];
+        row.dataset.type = !task ? "" : task === "__custom__" ? "other" : TASK_TYPES[task];
         row.dataset.task = task === "__custom__" ? "" : task;
-        row.querySelector(".wp-task-select").textContent = task === "__custom__" ? "その他（自由入力）" : task;
+        row.querySelector(".wp-task-select").textContent = !task ? "作業を選択" : task === "__custom__" ? "その他（自由入力）" : task;
         row.querySelector(".wp-task-custom").hidden = task !== "__custom__";
       },
       onClose: () => { element("day-dialog").showModal(); row.querySelector(".wp-task-select").focus(); },
@@ -184,12 +185,13 @@ function openDay(date) {
 function applyDay() {
   const rawCount = element("shipment-count").value.trim();
   const count = rawCount === "" ? null : Number(rawCount);
-  if (element("shipment-count").validity.badInput || (count !== null && (!Number.isSafeInteger(count) || count < 0))) {
+  if ((rawCount !== "" && !/^[0-9]+$/.test(rawCount)) || (count !== null && (!Number.isSafeInteger(count) || count < 0))) {
     element("day-error").textContent = "出荷基数は0以上の整数で入力してください。空欄でこの日の出荷予定を解除します。";
     return;
   }
   const byDate = new Map();
   for (const row of element("day-rows").querySelectorAll(".wp-row")) {
+    if (!row.dataset.type) continue;
     const date = row.querySelector(".wp-row-date").value || editingDate;
     const entry = {
       type: row.dataset.type,
