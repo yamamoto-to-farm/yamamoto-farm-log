@@ -91,9 +91,11 @@
 
   <!-- QRコード生成ライブラリ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
 </head>
 
-<body>
+<body class="recent-page admin-page">
 
   <!-- ===============================
        PIN 入力
@@ -108,6 +110,7 @@
     <h1 class="page-title">QRコード生成</h1>
 
     <!-- ページ選択 -->
+    <section class="card" aria-label="QRコードの対象を選択">
     <div class="form-field">
       <label>ページを選択</label>
       <select id="page-select" class="form-input"></select>
@@ -123,9 +126,10 @@
 
     <!-- 生成ボタン -->
     <button id="generate-btn" class="primary-btn">QRコード生成</button>
+    </section>
 
     <!-- QR表示エリア -->
-    <div id="qr-area" class="card" style="text-align:center;">
+    <div id="qr-area" class="card">
       <div class="qr-result-layout">
         <div class="qr-preview">
           <img id="qr-icon" style="display:none; width:80px;">

@@ -263,6 +263,10 @@ AWS設定（photos の HTTP API に追加）:
 
 ### 機械資料・操作メモ
 
+- 管理配下の全14画面は `recent-page admin-page` と `common/css/admin-pages.css` を使い、
+  管理トップ・動的JSON一覧・在籍一覧・操作カードも統一する。CSV編集は1800px、ログ編集は1600pxの
+  最大幅と表内スクロールを維持し、マニュアルの印刷ルールや認証・保存処理は変更しない。
+  公開時は変更した管理HTML、`admin/edit-json/edit-json.js`、共通の2つのレイアウトCSSを配置する。
 - 機械資料・日別予定・月間作業計画・業務連絡・シフト設定・経費分析は
   `common/css/recent-pages.css` を明示的に読み込み、`recent-page` 内だけでカード・見出し・操作ボタン・
   開閉見出しの間隔を統一する。経費の表は幅広のレイアウトを維持し、旧画面の共通CSSは変更しない。

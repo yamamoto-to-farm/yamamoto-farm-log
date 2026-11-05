@@ -1,0 +1,95 @@
+.admin-page #admin-area {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  min-width: 0;
+}
+.admin-page--csv { --page-width: 1800px; }
+.admin-page--log { --page-width: 1600px; }
+.admin-page.admin-page--csv #page-area.page-container,
+.admin-page.admin-page--log #page-area.page-container { max-width: var(--page-width); }
+.admin-page :is(.back-action-slot, .admin-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+.admin-page :is(.labor-note, .info-line, .page-subtitle) {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted-text);
+}
+.admin-page .card h3 { font-size: 16px; line-height: 1.5; margin: 0 0 8px; }
+.admin-page :is(.admin-group, .json-editor-section) { margin-bottom: 20px; }
+.admin-page :is(.admin-group, .json-editor-section) > h2 {
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+  font-size: 18px;
+  line-height: 1.5;
+  color: #2a4d2f;
+}
+.admin-page :is(.admin-grid, .json-editor-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
+}
+.admin-page .admin-grid a {
+  padding: 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 4%);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.admin-page .admin-grid a:focus-visible { outline: 2px solid #287b52; outline-offset: 3px; }
+.admin-page .json-editor-grid .card { margin: 0; display: flex; flex-direction: column; align-items: start; }
+.admin-page .json-editor-grid .primary-btn { margin-top: auto; }
+.admin-page .json-editor-file { margin: 0 0 8px; color: var(--muted-text); overflow-wrap: anywhere; }
+.admin-page .json-editor-description { margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: var(--muted-text); }
+.admin-page .json-editor-intro p { margin: 0; }
+.admin-page .admin-table-scroll { max-width: 100%; overflow-x: auto; }
+.admin-page .employee-table { width: 100%; border-collapse: collapse; }
+.admin-page .employee-table :is(th, td) { padding: 10px; text-align: left; border-bottom: 1px solid var(--panel-border); }
+.admin-page .employee-table th { background: #f0f4f1; font-size: 14px; }
+.admin-page .employee-status { min-width: 110px; }
+.admin-page .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+.admin-page .row select { width: auto; min-width: 0; }
+.admin-page .csv-navigation-row { margin-top: 12px; }
+.admin-page .admin-toolbar > :first-child { margin-top: 0; }
+.admin-page #qr-area { text-align: left; }
+.admin-page .manual { max-width: none; }
+.admin-page .manual h2 {
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 22px 0 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.admin-page .manual h3 { font-size: 16px; line-height: 1.5; }
+.admin-page .manual :is(p, li) { line-height: 1.7; overflow-wrap: anywhere; }
+.admin-page .manual table { display: table; min-width: 0; width: 100%; white-space: normal; table-layout: fixed; }
+.admin-page .manual :is(th, td) { white-space: normal; overflow-wrap: anywhere; }
+.admin-page .manual .tools td:first-child { white-space: normal; }
+.admin-page .shift-toolbar { gap: 10px; align-items: end; }
+.admin-page .shift-toolbar label { min-width: 0; }
+.admin-page .shift-toolbar .primary-btn,
+.admin-page .shift-toolbar .secondary-btn { margin: 0; }
+@media (max-width: 600px) {
+  .admin-page :is(.admin-group, .json-editor-section) > h2,
+  .admin-page .manual h2 { font-size: 17px; }
+  .admin-page .admin-grid a { padding: 14px; }
+  .admin-page #edit-container :is(input, select, button) { min-width: 0 !important; }
+}
+@media print {
+  .admin-page .manual { max-width: none; }
+  .admin-page .manual .admin-table-scroll { overflow: visible; }
+  .admin-page:has(.manual) .back-action-slot { display: none; }
+}

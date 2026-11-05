@@ -13,7 +13,7 @@ const pages = [
 test("recent screens opt into the same layout without changing global stylesheet imports", () => {
   for (const file of pages) {
     const html = read(file);
-    assert.match(html, /<body class="recent-page(?: recent-page--wide)?">/, file);
+    assert.match(html, /<body class="recent-page(?: (?:recent-page--wide|admin-page))?">/, file);
     assert.match(html, /href="\/common\/css\/recent-pages.css\?v=20261105-layout-1"/, file);
     for (const [, href] of html.matchAll(/<link[^>]*href="([^"?]+)/g)) {
       const path = href.startsWith("/") ? join(root, ...href.slice(1).split("/"))

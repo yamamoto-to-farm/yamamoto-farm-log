@@ -218,18 +218,18 @@ function renderJsonList(container) {
 
   const sectionHtml = sections.map(section => {
     const cards = section.items.map(item => `
-      <div class="card" style="margin:0;">
-        <h3 style="margin:0 0 8px;">${item.label}</h3>
-        <p style="margin:0 0 8px; color:#555;">${item.file}</p>
-        <p style="margin:0 0 14px; color:#666; font-size:0.95em;">${item.desc}</p>
+      <div class="card">
+        <h3>${item.label}</h3>
+        <p class="json-editor-file">${item.file}</p>
+        <p class="json-editor-description">${item.desc}</p>
         <button class="primary-btn" onclick="location.href='?data=${item.data}'">編集する</button>
       </div>
     `).join("");
 
     return `
-      <section style="margin-bottom:26px;">
-        <h2 style="margin:0 0 12px;">${section.title}</h2>
-        <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));">
+      <section class="json-editor-section">
+        <h2>${section.title}</h2>
+        <div class="json-editor-grid">
           ${cards}
         </div>
       </section>
@@ -237,9 +237,9 @@ function renderJsonList(container) {
   }).join("");
 
   container.insertAdjacentHTML("beforeend", `
-    <div class="card" style="margin-bottom:20px;">
-      <h2 style="margin-bottom:6px;">JSON 編集一覧</h2>
-      <p style="margin:0; color:#666;">編集したいデータをカテゴリから選んでください。</p>
+    <div class="card json-editor-intro">
+      <h2>JSON 編集一覧</h2>
+      <p>編集したいデータをカテゴリから選んでください。</p>
     </div>
     ${sectionHtml}
   `);

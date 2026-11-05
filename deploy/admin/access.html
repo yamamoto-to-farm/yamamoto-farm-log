@@ -5,8 +5,10 @@
   <title>在籍状況管理</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
 </head>
-<body>
+<body class="recent-page admin-page">
   <div id="header"></div>
   <main id="page-area" class="page-container" style="display:none;">
     <h1 class="page-title">在籍状況管理</h1>
@@ -16,7 +18,10 @@
       <a class="secondary-btn" href="/admin/shift/config.html">シフトのスタッフ・設定（同期）</a>
       <a class="secondary-btn" href="/admin/index.html">管理ページに戻る</a>
     </div>
-    <div id="employee-list"></div>
+    <section class="card" aria-labelledby="employee-list-title">
+      <h2 id="employee-list-title">従業員の在籍状況</h2>
+      <div id="employee-list" class="admin-table-scroll"></div>
+    </section>
     <div class="back-action-slot">
       <button id="save-employees-btn" class="primary-btn" type="button">保存する</button>
     </div>

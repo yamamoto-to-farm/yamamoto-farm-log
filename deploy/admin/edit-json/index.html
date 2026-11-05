@@ -7,9 +7,11 @@
 
   <!-- 共通デザイン -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
 </head>
 
-<body>
+<body class="recent-page admin-page">
 
   <div id="page-area" class="page-container" style="display:none;">
     <h1 id="page-title" class="page-title">管理データ編集（JSON）</h1>
@@ -42,7 +44,7 @@
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js?v=1.1";
 
-    import { initEditJson } from "/admin/edit-json/edit-json.js?v=3";
+    import { initEditJson } from "/admin/edit-json/edit-json.js?v=20261105-admin-1";
 
     window.addEventListener("DOMContentLoaded", async () => {
 
@@ -95,4 +97,3 @@
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
-
