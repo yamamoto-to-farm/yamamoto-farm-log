@@ -110,10 +110,16 @@ function render() {
       if (!day) return '<td class="empty"></td>';
       const date = `${ym}-${String(day).padStart(2, "0")}`;
       const entries = data.days[date] || [];
+      const hasShipment = Object.hasOwn(data.shipments || {}, date);
+      const shippingNotes = [];
       // 同じ種別はまとめて表示（×件数）。詳細はツールチップで
       const groups = new Map();
       for (const entry of entries) {
         const label = taskLabel(entry);
+        if (hasShipment && (entry.type === "shipping-work" || label === "出荷")) {
+          if (entry.note) shippingNotes.push(entry.note);
+          continue;
+        }
         if (!groups.has(label)) groups.set(label, []);
         groups.get(label).push(entry);
       }
@@ -125,8 +131,9 @@ function render() {
           : `${label} ×${list.length}`;
         return `<span class="wp-pill ${TYPE_TONE[type] || ""}" title="${escape(title)}">${escape(text)}</span>`;
       }).join("");
-      const shipment = Object.hasOwn(data.shipments || {}, date)
-        ? `<span class="wp-pill tone-shipping" title="契約出荷予定 ${data.shipments[date]}基">出荷 ${data.shipments[date]}基</span>` : "";
+      const shipmentTitle = `契約出荷予定 ${data.shipments?.[date]}基${shippingNotes.length ? "：" + shippingNotes.join("、") : ""}`;
+      const shipment = hasShipment
+        ? `<span class="wp-pill tone-shipping" title="${escape(shipmentTitle)}">出荷 ${data.shipments[date]}基</span>` : "";
       return `<td class="${canEdit ? "editable" : ""}" data-date="${date}"><span class="day-no">${day}</span>${shipment}${pills}</td>`;
     }).join("") + "</tr>";
   }

@@ -161,7 +161,8 @@ test("shift calendar renders shipments and escaped custom names alongside legacy
     buildCalendar: () => [[{ date: "2026-12-16", day: 16, items: [] }]],
     plan: { month: "2026-12", staff: [], requests: {} }, calMode: "plan",
     workPlan: {
-      days: { "2026-12-16": [{ type: "other", task: "<点検>", note: '"メモ"' }, { type: "harvest" }] },
+      days: { "2026-12-16": [{ type: "other", task: "<点検>", note: '"メモ"' }, { type: "harvest" },
+        { type: "shipping-work", task: "出荷調整", note: "<出荷メモ>" }] },
       shipments: { "2026-12-16": 12 },
     },
   });
@@ -270,4 +271,33 @@ test("shift calendar renders shipments and escaped custom names alongside legacy
   assert.match(nodes.calendar.innerHTML, /&lt;点検&gt;/);
   assert.match(nodes.calendar.innerHTML, /収穫/);
   assert.doesNotMatch(nodes.calendar.innerHTML, /<点検>/);
+  assert.doesNotMatch(nodes.calendar.innerHTML, />出荷<\/div>/);
+  assert.match(nodes.calendar.innerHTML, /出荷 12基<\/div>/);
+  assert.match(nodes.calendar.innerHTML, /契約出荷予定 12基：&lt;出荷メモ&gt;/);
+  vm.runInContext('workPlan.days["2026-12-16"]=[{type:"shipping-work"}];', context);
+  context.renderCalendar([]);
+  assert.equal((nodes.calendar.innerHTML.match(/class="wp-tags"/g) || []).length, 1);
+  vm.runInContext('workPlan.shipments={};', context);
+  context.renderCalendar([]);
+  assert.match(nodes.calendar.innerHTML, />出荷<\/div>/);
+});
+
+test("monthly shipping quantity replaces the work pill without changing entries or hiding other work", () => {
+  for (const count of [0, 8]) {
+    const { context, el } = setup();
+    vm.runInContext(`data.days={"2026-12-16":[
+      {type:"shipping-work",task:"出荷調整",note:"<出荷メモ>"},
+      {type:"shipping-work",task:"出荷",note:"追加メモ"},
+      {type:"harvest",note:"収穫メモ"}]};data.shipments={"2026-12-16":${count}};`, context);
+    context.render();
+    const html = el("calendar").innerHTML;
+    assert.equal((html.match(/class="wp-pill /g) || []).length, 2);
+    assert.match(html, new RegExp(`>出荷 ${count}基</span>`));
+    assert.match(html, /収穫メモ/);
+    assert.match(html, /&lt;出荷メモ&gt;、追加メモ/);
+    assert.equal(vm.runInContext('data.days["2026-12-16"].length', context), 3);
+    vm.runInContext("data.shipments={};", context);
+    context.render();
+    assert.match(el("calendar").innerHTML, />出荷 ×2<\/span>/);
+  }
 });

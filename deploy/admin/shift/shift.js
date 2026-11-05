@@ -279,20 +279,27 @@ function renderCalendar(eff) {
     if (!cell) return '<td class="empty"></td>';
     const works = workPlan?.days?.[cell.date] || [];
     const shipment = workPlan?.shipments?.[cell.date];
+    const hasShipment = Number.isSafeInteger(shipment) && shipment >= 0;
+    const shippingNotes = [];
     let workTags = "";
     if (works.length) {
       const counts = new Map();
       for (const w of works) {
         const label = (w.task === "出荷調整" ? "出荷" : w.task) || WORK_LABELS[w.type] || w.type;
+        if (hasShipment && (w.type === "shipping-work" || label === "出荷")) {
+          if (w.note) shippingNotes.push(w.note);
+          continue;
+        }
         counts.set(label, (counts.get(label) || 0) + 1);
       }
       const text = [...counts.entries()]
         .map(([label, count]) => `${label}${count > 1 ? `×${count}` : ""}`).join("・");
       const title = works.map((w) => `${(w.task === "出荷調整" ? "出荷" : w.task) || WORK_LABELS[w.type] || w.type}${w.note ? "：" + w.note : ""}`).join("、");
-      workTags = `<div class="wp-tags" title="${escapeWorkText(title)}">${escapeWorkText(text)}</div>`;
+      if (text) workTags = `<div class="wp-tags" title="${escapeWorkText(title)}">${escapeWorkText(text)}</div>`;
     }
-    if (Number.isSafeInteger(shipment) && shipment >= 0) {
-      workTags += `<div class="wp-tags">出荷 ${shipment}基</div>`;
+    if (hasShipment) {
+      const title = `契約出荷予定 ${shipment}基${shippingNotes.length ? "：" + shippingNotes.join("、") : ""}`;
+      workTags += `<div class="wp-tags" title="${escapeWorkText(title)}">出荷 ${shipment}基</div>`;
     }
     const chips = cell.items.map((item) => {
       const color = colors.get(item.person) || "#757575";
