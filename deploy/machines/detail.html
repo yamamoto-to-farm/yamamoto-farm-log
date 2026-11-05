@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>機械の資料・メモ - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="./machines.css?v=20261105-1">
+</head>
+<body>
+  <main id="machine-area" class="page-container" hidden>
+    <h1 id="machine-title" class="page-title">機械の資料・メモ</h1>
+    <p id="machine-status" role="status" aria-live="polite"></p>
+    <div class="machine-actions">
+      <button id="machine-reload" type="button" class="secondary-btn">再読み込み</button>
+      <a href="./index.html" class="secondary-btn">機械一覧へ</a>
+      <a id="machine-work" class="secondary-btn" hidden>この機械の作業ログを入力</a>
+    </div>
+    <p class="machine-caution">メーカーの取扱説明書・安全指示を優先してください。農園メモは独自の控えです。目盛り・調整値は作業機や使用条件により変わるため、使用前に実機を確認してください。</p>
+    <section id="machine-tools" class="card" hidden>
+      <button id="machine-add" type="button" class="primary-btn">＋ 資料・メモを追加</button>
+      <p>文章・写真で自由に保存できます。例：ホッパーの開度目盛り、作業機との組合せ、操作手順。固定のメモリ番号欄はありません。</p>
+    </section>
+    <section class="card">
+      <label for="machine-search">タイトル・本文で検索</label>
+      <input id="machine-search" class="form-input" type="search" maxlength="100">
+      <div id="machine-record"></div>
+    </section>
+  </main>
+  <dialog id="machine-editor" aria-labelledby="machine-editor-title">
+    <form id="machine-form">
+      <h2 id="machine-editor-title">資料・メモの編集</h2>
+      <fieldset id="machine-inputs">
+        <legend>資料内容</legend>
+        <label>分類<select id="entry-kind" class="form-input">
+          <option value="manual">取扱説明書</option>
+          <option value="operation">操作メモ</option>
+          <option value="setting">目盛り・調整の控え</option>
+        </select></label>
+        <label>タイトル<input id="entry-title" class="form-input" maxlength="100" required></label>
+        <label>本文<textarea id="entry-body" class="form-textarea" maxlength="10000" rows="9" placeholder="使用する作業機・条件、目盛りや調整値、確認日、注意点などを自由に記入"></textarea></label>
+        <label>メーカー等の資料リンク（任意・https）<input id="entry-url" class="form-input" type="url" maxlength="2000" placeholder="https://..."></label>
+        <p>PDFは20MB、JPEG・PNGは10MBまで。1資料10件、1台合計50件まで。写真は原寸のまま保存します。第三者に共有する権利がある資料だけを登録してください。</p>
+        <label>添付を追加<input id="entry-files" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" multiple></label>
+        <ul id="entry-attachments"></ul>
+      </fieldset>
+      <p id="entry-status" role="status" aria-live="polite"></p>
+      <div class="machine-actions">
+        <button id="entry-save" type="submit" class="primary-btn">保存する</button>
+        <button id="entry-cancel" type="button" class="secondary-btn">閉じる</button>
+      </div>
+    </form>
+  </dialog>
+  <script type="module" src="./machines.js?v=20261105-result-1"></script>
+</body>
+</html>

@@ -5,6 +5,8 @@
     { "id": "photo-callback-access", "path": "/photos/callback.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "top-access", "path": "/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "machine-hub-access", "path": "/machine-work-hub.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
+    { "id": "machine-library", "name": "機械資料", "path": "/machines/index.html", "category": "機械・設備", "roles": ["worker", "family", "admin"], "openLog": false },
+    { "id": "machine-library-detail-access", "path": "/machines/detail.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "open-log-access", "path": "/open-log.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "common-access", "path": "/common/index.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
     { "id": "save-modal-access", "path": "/common/save-modal.html", "roles": ["worker", "family", "admin"], "accessOnly": true },

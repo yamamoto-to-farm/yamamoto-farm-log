@@ -1,0 +1,20 @@
+.machine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; margin-top: 16px; }
+.machine-card { display: block; padding: 18px; border: 1px solid #d5dfd5; border-radius: 10px; text-decoration: none; overflow-wrap: anywhere; }
+.machine-card strong, .machine-card small { display: block; }
+.machine-card small, .machine-meta { color: #555; margin-top: 6px; font-size: .9rem; }
+.machine-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; align-items: center; }
+.machine-caution { padding: 14px; border-left: 4px solid #b37716; background: #fff8e9; line-height: 1.7; }
+.machine-entry { border-top: 1px solid #ddd; padding: 16px 0; overflow-wrap: anywhere; }
+.machine-entry h3 { margin: 0 0 10px; }
+.machine-body { white-space: pre-wrap; line-height: 1.8; }
+.machine-entry ul, #entry-attachments { padding-left: 22px; }
+.machine-entry li, #entry-attachments li { margin: 8px 0; overflow-wrap: anywhere; }
+.machine-file { text-align: left; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+#machine-editor { box-sizing: border-box; width: min(94vw, 700px); max-height: 90vh; overflow-y: auto; border: 1px solid #ccc; border-radius: 12px; padding: 20px; }
+#machine-editor::backdrop { background: rgb(0 0 0 / 45%); }
+#machine-editor fieldset { min-width: 0; margin: 0; padding: 12px; }
+#machine-editor label { display: block; margin: 12px 0; }
+#machine-editor input, #machine-editor textarea, #machine-editor select { box-sizing: border-box; max-width: 100%; }
+#machine-editor input[type="file"] { width: 100%; }
+#machine-editor p { line-height: 1.6; }
+#machine-status.error, #entry-status.error { color: #a71919; }

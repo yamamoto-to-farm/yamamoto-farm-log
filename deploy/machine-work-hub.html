@@ -73,6 +73,7 @@
       <p class="hub-subtitle">
         行った作業を選択してください。
       </p>
+      <a id="machine-library-link" class="secondary-btn" hidden>この機械の資料・操作メモを見る</a>
       <div id="work-grid" class="work-grid"></div>
     </div>
   </div>
@@ -134,6 +135,11 @@
       const machine = (machines || []).find(m => m.id === machineId);
       const machineLabel = machine ? `${machine.name} (${machine.id})` : machineId;
       document.getElementById("machine-name").textContent = `機械: ${machineLabel}`;
+      if (machine) {
+        const libraryLink = document.getElementById("machine-library-link");
+        libraryLink.href = `/machines/detail.html?machine=${encodeURIComponent(machineId)}`;
+        libraryLink.hidden = false;
+      }
 
       const hasAllowList = Array.isArray(machine?.allowedPageIds);
       const allowSet = hasAllowList
@@ -180,4 +186,3 @@
 </body>
 
 </html>
-

@@ -1,4 +1,5 @@
 import { verifyLocalAuth } from "/common/ui.js";
+import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
@@ -244,6 +245,9 @@ function syncEmployment() {
 }
 
 async function save() {
+  if (element("save").disabled) return;
+  element("save").disabled = true;
+  let saved = false;
   element("save-result").textContent = "";
   try {
     const out = JSON.parse(JSON.stringify(cfg));
@@ -252,11 +256,14 @@ async function save() {
     if (!confirm("設定を保存しますか？（保存前の設定は自動でバックアップされます）")) return;
     const result = await api("/shift/config", { body: out });
     cfg = out;
+    saved = true;
     element("save-result").textContent = `✅ 保存しました（スタッフ${result.staff}人）。`;
+    await showSaveResult(`設定を保存しました（スタッフ${result.staff}人）。`);
     await offerRegenerate();
   } catch (error) {
     element("save-result").textContent = `⚠ ${error.message}`;
-  }
+    await showSaveResult(`${saved ? "設定は保存済みですが、再計算の開始を確認できません。" : "設定の保存を確認できません。入力は残しています。"}\n${error.message}`);
+  } finally { element("save").disabled = false; }
 }
 
 // 保存後、最新月のシフト案の再計算を提案する

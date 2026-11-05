@@ -1,5 +1,28 @@
 let blockingEnabled = false;
 
+export function showSaveResult(message) {
+  const dialog = document.createElement("dialog");
+  dialog.setAttribute("aria-label", "保存結果");
+  dialog.style.cssText = "border:0;border-radius:8px;padding:24px;width:min(360px,calc(100vw - 48px));box-sizing:border-box;";
+  const text = document.createElement("p");
+  text.style.cssText = "white-space:pre-wrap;overflow-wrap:anywhere;";
+  text.textContent = message;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "OK";
+  dialog.append(text, button);
+  document.body.appendChild(dialog);
+  return new Promise(resolve => {
+    dialog.addEventListener("close", () => {
+      dialog.remove();
+      resolve();
+    }, { once: true });
+    button.onclick = () => dialog.close();
+    dialog.showModal();
+    button.focus();
+  });
+}
+
 function ensureModalElements() {
   let modal = document.getElementById("saveModal");
   let msg = document.getElementById("saveModalMessage");

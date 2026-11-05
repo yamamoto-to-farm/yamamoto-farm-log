@@ -7,6 +7,7 @@ const read = file => readFileSync(join(__dirname, "..", "deploy", ...file.split(
 const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
+    showSaveResult: async message => { context.lastSaveResult = message; },
     window: { addEventListener() {} }, URLSearchParams, ...deps });
   vm.runInContext(strip(read("common/work-plan-time.js")), context);
   vm.runInContext(strip(read(file)), context);
@@ -168,6 +169,7 @@ test("failed writes lock until reload and late loads cannot replace new dates", 
   await context.loadDay();
   await context.saveRequest({ plan: {} });
   assert.equal(nodes["plan-inputs"].disabled, true);
+  assert.match(context.lastSaveResult, /offline.*保存状態を確認/);
   await context.saveRequest({ plan: {} });
   assert.equal(writes, 1);
   await context.loadDay();

@@ -1,4 +1,5 @@
 import { verifyLocalAuth } from "/common/ui.js";
+import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
@@ -431,19 +432,21 @@ async function saveGroup() {
     el("save-edit").disabled = el("cancel-edit").disabled = false;
     el("edit-category").disabled = el("edit-subcategory").disabled = false;
     status(message, failed);
+    await showSaveResult(message);
   }
 }
 
 async function saveEdit(event) {
   event.preventDefault();
   if (editGroup) return saveGroup();
-  if (savingEdit || !editItem) return;
+  if (savingEdit || busy || !editItem) return;
   const remember = el("remember").checked;
   if (remember && !el("keyword").value.trim()) {
     el("edit-status").textContent = "辞書キーワードを入力してください。";
     return;
   }
-  savingEdit = true;
+  savingEdit = busy = true;
+  updateButtons();
   el("save-edit").disabled = el("cancel-edit").disabled = true;
   el("edit-status").textContent = "保存中…";
   try {
@@ -454,19 +457,20 @@ async function saveEdit(event) {
     });
     el("edit-dialog").close();
     status("分類を保存しました。最新データを取得しています…");
-    await run(async () => {
-      try {
-        await loadData();
-      } catch (error) {
-        throw new Error(`分類は保存済みですが、表示の更新に失敗しました。 ${error.message}`);
-      }
-      status("分類を保存しました。");
-    });
+    try {
+      await loadData();
+    } catch (error) {
+      throw new Error(`分類は保存済みですが、表示の更新に失敗しました。 ${error.message}`);
+    }
+    status("分類を保存しました。");
+    await showSaveResult("分類を保存しました。");
   } catch (error) {
     el("edit-status").textContent = error.message;
     status(error.message, true);
+    await showSaveResult(error.message);
   } finally {
-    savingEdit = false;
+    savingEdit = busy = false;
+    updateButtons();
     el("save-edit").disabled = el("cancel-edit").disabled = false;
   }
 }

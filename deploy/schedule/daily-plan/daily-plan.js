@@ -1,4 +1,5 @@
 import { verifyLocalAuth } from "/common/ui.js?v=1";
+import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261104-modal-1";
@@ -432,6 +433,7 @@ async function saveRequest(request) {
     await writeWorkPlan({ date: loadedDate, revision: record.revision, ...request });
     await loadDay();
     notice(record ? "予定を保存しました。" : "保存済みですが、再取得できません。再読み込みしてください。", !record);
+    await showSaveResult(record ? "予定を保存しました。" : "保存済みですが、再取得できません。再読み込みしてください。");
   } catch (error) {
     console.error("[daily-plan] save failed", error);
     record = null;
@@ -440,6 +442,7 @@ async function saveRequest(request) {
     el("plan-inputs").disabled = true;
     el("saved-plans").inert = true;
     notice(`${error.message} 保存状態を確認するため「再読み込み」を押してください。`, true);
+    await showSaveResult(`${error.message} 保存状態を確認するため「再読み込み」を押してください。`);
   } finally { busy = false; el("page-area").inert = false; }
 }
 function editPlan(id) {

@@ -1,4 +1,5 @@
 import { verifyLocalAuth } from "/common/ui.js?v=1";
+import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
@@ -280,6 +281,7 @@ async function saveMasters() {
   });
   if (!put.ok) throw new Error(`保存に失敗しました（${put.status}）。`);
   status("定型文を保存しました。");
+  await showSaveResult("定型文を保存しました。");
 }
 function payday(now) {
   const date = new Date(now.getFullYear(), now.getMonth() + 1, 5);
@@ -363,9 +365,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   };
   element("add-template").onclick = () => { tplDraft.push({ title: "新しい定型文", body: "" }); renderTemplateEditor(); };
   element("save-templates").onclick = async () => {
+    if (element("save-templates").disabled) return;
+    element("save-templates").disabled = true;
     masters.templates = tplDraft.filter(tpl => tpl.title.trim() || tpl.body.trim());
     try { await saveMasters(); renderTemplates(); }
-    catch (error) { console.error("[message] template save failed", error); status(error.message, true); }
+    catch (error) {
+      console.error("[message] template save failed", error);
+      status(error.message, true);
+      await showSaveResult(`${error.message}\n入力は残しています。保存状態を確認してから再操作してください。`);
+    } finally { element("save-templates").disabled = false; }
   };
   const plansLoading = loadSavedPlans(!new URLSearchParams(location.search).has("date"));
   await loadMasters();

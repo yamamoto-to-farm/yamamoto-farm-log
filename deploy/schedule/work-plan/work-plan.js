@@ -1,4 +1,5 @@
 import { verifyLocalAuth } from "/common/ui.js?v=1";
+import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260821-quote-fix";
 
@@ -155,6 +156,8 @@ function applyDay() {
 
 // ───── 保存（既存の presign 方式で公開バケットへ） ─────
 async function save() {
+  if (element("save").disabled) return;
+  element("save").disabled = true;
   try {
     status("保存中…");
     const body = JSON.stringify({
@@ -173,9 +176,13 @@ async function save() {
     if (!put.ok) throw new Error(`保存に失敗しました（${put.status}）`);
     dirty = false;
     status("✅ 保存しました");
+    await showSaveResult("月間作業計画を保存しました。");
   } catch (error) {
     console.error(error);
     status(`⚠ ${error.message}`, true);
+    await showSaveResult(`${error.message}\n入力は残しています。保存状態を確認してから再操作してください。`);
+  } finally {
+    element("save").disabled = false;
   }
 }
 

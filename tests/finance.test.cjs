@@ -106,6 +106,7 @@ test("batch classification reports partial saves and retries only unfinished lin
   await vm.runInContext("saveGroup()", context);
   assert.match(element("edit-status").textContent, /1件保存済み、残り1件.*offline/);
   assert.equal(vm.runInContext("editGroup.items.length", context), 1);
+  assert.match(context.lastSaveResult, /1件保存済み、残り1件.*offline/);
   assert.equal(element("save-edit").disabled, false);
   assert.equal(element("edit-category").disabled, false);
   await vm.runInContext("saveGroup()", context);
@@ -114,6 +115,7 @@ test("batch classification reports partial saves and retries only unfinished lin
   assert.equal(JSON.parse(requests[1].options.body).remember, false);
   assert.match(element("status").textContent, /2件の分類を保存/);
   assert.equal(element("edit-dialog").open, false);
+  assert.match(context.lastSaveResult, /2件の分類を保存/);
 });
 
 test("batch rejects unclassified destination and distinguishes refresh failure after saving", async () => {
@@ -131,6 +133,7 @@ test("batch rejects unclassified destination and distinguishes refresh failure a
   await vm.runInContext("saveGroup()", context);
   assert.match(element("status").textContent, /1件の分類を保存.*表示の更新に失敗.*refresh offline/);
   assert.equal(vm.runInContext("busy || savingEdit", context), false);
+  assert.match(context.lastSaveResult, /保存.*表示の更新に失敗/);
 });
 
 test("chart scale uses readable ticks and covers stacked amounts after filtering", async () => {
@@ -205,6 +208,7 @@ function setup() {
   }
   const requests = [];
   const context = vm.createContext({
+    showSaveResult: async message => { context.lastSaveResult = message; },
     document: { getElementById: element },
     console: { error() {} },
     ensureToken: async () => "mock-token",

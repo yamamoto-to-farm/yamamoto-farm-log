@@ -183,7 +183,14 @@
       };
 
       // ページ一覧
-      [machineHubOption, ...pages.filter(page => !page.accessOnly)].forEach(p => {
+      const machineLibraryOption = {
+        id: "machine-library-detail",
+        name: "機械資料・操作メモ（機械指定）",
+        path: "machines/detail.html",
+        openLog: false,
+        requireMachine: true
+      };
+      [machineHubOption, machineLibraryOption, ...pages.filter(page => !page.accessOnly)].forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.id;
         opt.textContent = p.name;
@@ -278,4 +285,3 @@
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>
-
