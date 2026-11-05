@@ -23,7 +23,7 @@ export const PLAN_TASK_GROUPS = [
   ["その他", ["片付け", "その他（自由入力）"]],
 ];
 
-export function openPlanTaskModal({ selected, onSelect }) {
+export function openPlanTaskModal({ selected, onSelect, onClose = null }) {
   openModal(`<div class="modal-bg" id="modal-bg"><div class="modal plan-task-modal" role="dialog" aria-modal="true" aria-labelledby="plan-task-title">
     <button type="button" class="modal-close" id="modal-close" aria-label="閉じる">×</button>
     <h3 id="plan-task-title">作業内容の選択</h3>
@@ -33,12 +33,13 @@ export function openPlanTaskModal({ selected, onSelect }) {
       </details>`).join("")}</div>
     <div class="modal-footer"><button type="button" class="secondary-btn" id="close-plan-task">閉じる</button></div>
   </div></div>`);
-  bindModalCloseEvents();
-  document.getElementById("close-plan-task").onclick = closeModal;
+  const close = () => { closeModal(); onClose?.(); };
+  bindModalCloseEvents({ onClose });
+  document.getElementById("close-plan-task").onclick = close;
   document.querySelectorAll("[data-plan-task]").forEach(button => {
     button.onclick = () => {
       onSelect(button.dataset.planTask);
-      closeModal();
+      close();
     };
   });
 }

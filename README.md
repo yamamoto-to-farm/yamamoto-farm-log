@@ -261,6 +261,17 @@ AWS設定（photos の HTTP API に追加）:
   バケットへアップロードし、CloudFront で `/admin/shift/*` と `/data/pages.json` を
   無効化します。
 
+### 月間作業計画・契約出荷予定
+
+- 月間作業計画は日別予定と同じ分類付き作業選択を利用する。既存の `days` に加え、
+  `shipments: { "YYYY-MM-DD": 基数 }` で申込済みの契約出荷予定を日別合計として保存する。
+  基数は0以上の整数、空欄は予定解除。収穫作業の移動では出荷予定日を動かさず、シフトカレンダーにも表示する。
+  申込の実行・申込手続き日・出荷実績・日別予定への自動同期は行わない。
+  保存先は従来の公開 `data/work-plan/` のままなので、取引先・契約金額等の非公開情報は書かない。
+  月間計画取得エラー時は空データの上書きを防ぐため保存を止める（未作成404のみ新規作成可）。
+  公開対象は `schedule/work-plan/`、`common/work-plan-form.js`、`common/css/work-plan-form.css`、
+  `schedule/daily-plan/index.html`・`daily-plan.css`、`admin/shift/shift.js` とそのHTML。
+
 ### 機械資料・操作メモ
 
 - 管理配下の全14画面は `recent-page admin-page` と `common/css/admin-pages.css` を使い、

@@ -87,7 +87,7 @@ test("monthly work plan reports success only after PUT, preserves draft on failu
     },
   });
   vm.runInContext(strip(read("schedule/work-plan/work-plan.js")), context);
-  vm.runInContext('status=()=>{}; ym="2026-11"; data={days:{}}; dirty=true;', context);
+  vm.runInContext('status=()=>{}; ym="2026-11"; data={days:{}}; dirty=true; loadReady=true;', context);
   const pending = context.save();
   await context.save();
   await pending;

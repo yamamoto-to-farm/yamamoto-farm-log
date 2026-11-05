@@ -1,0 +1,6 @@
+.plan-task-modal { width: min(720px, calc(100vw - 32px)); box-sizing: border-box; }
+.plan-task-groups { max-height: 60vh; overflow-y: auto; }
+.plan-task-groups details { padding: 10px 0; box-shadow: none; }
+.plan-task-groups summary { cursor: pointer; font-size: 15px; font-weight: 700; color: #41576d; }
+.plan-task-choices { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
+.plan-task-choices button[aria-pressed="true"] { background: #e8f0ff; color: #2256a5; }

@@ -2,6 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1.1";
 import { loadCSV, normalizeKeys } from "/common/csv.js?v=20260821-quote-fix";
+import { openPlanTaskModal } from "/common/work-plan-form.js?v=20261105-monthly-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 
@@ -13,7 +14,8 @@ export const WORK_TYPES = [
   ["fertilizer", "施肥", "tone-care"], ["watering", "潅水", "tone-care"],
   ["hand-weeding", "手作業除草", "tone-care"], ["intertill", "中耕", "tone-field"],
   ["bedmaking", "畝立て", "tone-field"], ["planting", "定植", "tone-start"],
-  ["harvest", "収穫", "tone-harvest"], ["other", "その他", ""],
+  ["harvest", "収穫", "tone-harvest"], ["shipping-work", "出荷調整", "tone-harvest"],
+  ["herbicide", "除草剤散布", "tone-care"], ["cleanup", "片付け", ""], ["other", "その他", ""],
 ];
 const TYPE_LABEL = Object.fromEntries(WORK_TYPES.map(([key, label]) => [key, label]));
 const TYPE_TONE = Object.fromEntries(WORK_TYPES.map(([key, , tone]) => [key, tone]));
@@ -25,6 +27,21 @@ let data = { month: "", days: {}, memo: "" };
 let dirty = false;
 let canEdit = false;
 let editingDate = null;
+let loadReady = false;
+const escape = value => String(value ?? "").replace(/[&<>"']/g,
+  char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+const TASK_TYPES = { ...Object.fromEntries(WORK_TYPES.map(([key, label]) => [label, key])),
+  "草刈り": "weeding", "草とり": "hand-weeding" };
+
+function validateShipments(shipments) {
+  if (!shipments || typeof shipments !== "object" || Array.isArray(shipments)) throw new Error("出荷予定の保存形式が不正です。");
+  for (const [date, count] of Object.entries(shipments)) {
+    const last = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5)), 0)).getUTCDate();
+    if (!date.startsWith(`${ym}-`) || !/^\d{4}-\d{2}-\d{2}$/.test(date)
+        || Number(date.slice(8)) < 1 || Number(date.slice(8)) > last
+        || !Number.isSafeInteger(count) || count < 0) throw new Error("出荷予定日・基数の保存形式が不正です。");
+  }
+}
 
 function status(message, isError = false) {
   element("status").textContent = message;
@@ -51,16 +68,24 @@ function shiftMonth(value, diff) {
 
 async function load() {
   status("読み込み中…");
-  data = { month: ym, days: {}, memo: "" };
+  loadReady = false;
+  element("save").disabled = true;
+  data = { month: ym, days: {}, shipments: {}, memo: "" };
   try {
     const response = await fetch(`/data/work-plan/${ym}.json?ts=${Date.now()}`, { cache: "no-store" });
     if (response.ok) {
       const loaded = await response.json();
-      data = { month: ym, days: loaded.days || {}, memo: loaded.memo || "" };
-    }
+      validateShipments(loaded.shipments ?? {});
+      data = { ...loaded, month: ym, days: loaded.days || {}, shipments: loaded.shipments ?? {}, memo: loaded.memo || "" };
+    } else if (response.status !== 404) throw new Error(`月間計画を取得できません（${response.status}）。`);
+    loadReady = true;
   } catch (error) {
     console.warn("work-plan load failed", error);
+    element("calendar").innerHTML = "";
+    status(`${error.message} 再読み込みしてください。既存データ保護のため保存できません。`, true);
+    return;
   }
+  element("save").disabled = false;
   dirty = false;
   element("memo").value = data.memo;
   element("month-title").textContent = `${Number(ym.slice(0, 4))}年${Number(ym.slice(5))}月`;
@@ -87,18 +112,21 @@ function render() {
       // 同じ種別はまとめて表示（×件数）。詳細はツールチップで
       const groups = new Map();
       for (const entry of entries) {
-        if (!groups.has(entry.type)) groups.set(entry.type, []);
-        groups.get(entry.type).push(entry);
+        const label = entry.task || TYPE_LABEL[entry.type] || entry.type;
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(entry);
       }
-      const pills = [...groups.entries()].map(([type, list]) => {
-        const label = TYPE_LABEL[type] || type;
-        const title = list.map((entry) => `${label}${entry.note ? "：" + entry.note : ""}`).join("、");
+      const pills = [...groups.entries()].map(([label, list]) => {
+        const type = list[0].type;
+        const title = list.map((entry) => `${entry.task || label}${entry.note ? "：" + entry.note : ""}`).join("、");
         const text = list.length === 1
-          ? `${label}${list[0].note ? " " + list[0].note : ""}`
+          ? `${list[0].task || label}${list[0].note ? " " + list[0].note : ""}`
           : `${label} ×${list.length}`;
-        return `<span class="wp-pill ${TYPE_TONE[type] || ""}" title="${title.replace(/"/g, "&quot;")}">${text}</span>`;
+        return `<span class="wp-pill ${TYPE_TONE[type] || ""}" title="${escape(title)}">${escape(text)}</span>`;
       }).join("");
-      return `<td class="${canEdit ? "editable" : ""}" data-date="${date}"><span class="day-no">${day}</span>${pills}</td>`;
+      const shipment = Object.hasOwn(data.shipments || {}, date)
+        ? `<span class="wp-pill tone-shipping" title="契約出荷予定 ${data.shipments[date]}基">出荷 ${data.shipments[date]}基</span>` : "";
+      return `<td class="${canEdit ? "editable" : ""}" data-date="${date}"><span class="day-no">${day}</span>${shipment}${pills}</td>`;
     }).join("") + "</tr>";
   }
   element("calendar").innerHTML =
@@ -109,41 +137,79 @@ function render() {
 function dayRow(entry = { type: "harvest", note: "" }) {
   const row = document.createElement("div");
   row.className = "wp-row";
+  row.dataset.type = entry.type;
+  if (entry.type === "other" && !entry.task) row.dataset.legacyOther = "true";
+  if (entry.task) row.dataset.task = entry.task;
   if (entry.src) row.dataset.src = entry.src;  // 取り込み由来（移動しても再取り込みしない）
   const last = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5)), 0)).getUTCDate();
   row.innerHTML =
     `<input type="date" class="wp-row-date" value="${editingDate}" min="${ym}-01" max="${ym}-${String(last).padStart(2, "0")}">` +
-    `<select>${WORK_TYPES.map(([key, label]) =>
-      `<option value="${key}"${key === entry.type ? " selected" : ""}>${label}</option>`).join("")}</select>` +
-    `<input type="text" class="wp-row-note" maxlength="50" placeholder="メモ（圃場名など）" value="${(entry.note || "").replace(/"/g, "&quot;")}">` +
+    `<button type="button" class="secondary-btn wp-task-select">${escape(entry.task || TYPE_LABEL[entry.type] || entry.type)}</button>` +
+    `<input type="text" class="wp-task-custom" maxlength="100" aria-label="自由入力の作業内容" placeholder="作業内容" value="${escape(entry.type === "other" ? entry.task || "" : "")}"${entry.type === "other" ? "" : " hidden"}>` +
+    `<input type="text" class="wp-row-note" maxlength="50" aria-label="作業メモ" placeholder="メモ（圃場名など）" value="${escape(entry.note)}">` +
     '<button type="button" class="danger-btn">削除</button>';
-  row.querySelector("button").addEventListener("click", () => row.remove());
+  row.querySelector(".danger-btn").addEventListener("click", () => row.remove());
+  row.querySelector(".wp-task-select").onclick = () => {
+    element("day-dialog").close();
+    openPlanTaskModal({
+      selected: row.dataset.type === "other" ? "__custom__" : row.dataset.task
+        || ({ weeding: "草刈り", "hand-weeding": "草とり" }[row.dataset.type] || TYPE_LABEL[row.dataset.type]),
+      onSelect: task => {
+        delete row.dataset.legacyOther;
+        row.dataset.type = task === "__custom__" ? "other" : TASK_TYPES[task];
+        row.dataset.task = task === "__custom__" ? "" : task;
+        row.querySelector(".wp-task-select").textContent = task === "__custom__" ? "その他（自由入力）" : task;
+        row.querySelector(".wp-task-custom").hidden = task !== "__custom__";
+      },
+      onClose: () => { element("day-dialog").showModal(); row.querySelector(".wp-task-select").focus(); },
+    });
+  };
   return row;
 }
 
 function openDay(date) {
+  if (!loadReady) return;
   editingDate = date;
   element("day-title").textContent =
     `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}` +
-    `(${WEEKDAYS[new Date(date + "T00:00:00").getDay()]}) の作業`;
+    `(${WEEKDAYS[new Date(date + "T00:00:00").getDay()]}) の作業・出荷予定`;
   const rows = element("day-rows");
   rows.innerHTML = "";
   for (const entry of data.days[date] || []) rows.appendChild(dayRow(entry));
+  element("shipment-count").value = data.shipments?.[date] ?? "";
+  element("day-error").textContent = "";
   element("day-dialog").showModal();
 }
 
 function applyDay() {
+  const rawCount = element("shipment-count").value.trim();
+  const count = rawCount === "" ? null : Number(rawCount);
+  if (element("shipment-count").validity.badInput || (count !== null && (!Number.isSafeInteger(count) || count < 0))) {
+    element("day-error").textContent = "出荷基数は0以上の整数で入力してください。空欄でこの日の出荷予定を解除します。";
+    return;
+  }
   const byDate = new Map();
   for (const row of element("day-rows").querySelectorAll(".wp-row")) {
     const date = row.querySelector(".wp-row-date").value || editingDate;
     const entry = {
-      type: row.querySelector("select").value,
+      type: row.dataset.type,
       note: row.querySelector(".wp-row-note").value.trim(),
     };
+    const task = entry.type === "other" ? row.querySelector(".wp-task-custom").value.trim() : row.dataset.task;
+    if (task) entry.task = task;
+    if (entry.type === "other" && !task && !row.dataset.legacyOther) {
+      element("day-error").textContent = "その他の作業内容を入力してください。"; return;
+    }
+    if (!date.startsWith(`${ym}-`) || !row.querySelector(".wp-row-date").checkValidity()) {
+      element("day-error").textContent = "作業日は表示中の月内で指定してください。"; return;
+    }
     if (row.dataset.src) entry.src = row.dataset.src;
     if (!byDate.has(date)) byDate.set(date, []);
     byDate.get(date).push(entry);
   }
+  data.shipments ||= {};
+  if (count === null) delete data.shipments[editingDate];
+  else data.shipments[editingDate] = count;
   delete data.days[editingDate];
   for (const [date, entries] of byDate) {
     if (date === editingDate) data.days[date] = entries;           // この日の一覧は置き換え
@@ -156,12 +222,12 @@ function applyDay() {
 
 // ───── 保存（既存の presign 方式で公開バケットへ） ─────
 async function save() {
-  if (element("save").disabled) return;
+  if (element("save").disabled || !loadReady) return;
   element("save").disabled = true;
   try {
     status("保存中…");
     const body = JSON.stringify({
-      month: ym, days: data.days, memo: element("memo").value.trim(),
+      ...data, month: ym, days: data.days, shipments: data.shipments || {}, memo: element("memo").value.trim(),
       updated_at: new Date().toISOString(),
     }, null, 1);
     const presign = await fetch(PRESIGN_URL, {

@@ -32,6 +32,14 @@
 .wp-row button { flex-shrink: 0; font-size: 0.75rem; padding: 4px 8px; }
 #day-add { font-size: 0.8rem; padding: 4px 10px; margin: 4px 0 12px; }
 .wp-dialog-actions { display: flex; gap: 8px; }
+.wp-dialog { box-sizing: border-box; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+.wp-row .wp-task-select { flex: 1 1 130px; text-align: left; justify-content: start; }
+.wp-row .wp-task-custom { flex: 1 1 160px; }
+.wp-shipment { border: 1px solid #dce3df; border-radius: 8px; padding: 12px; margin: 16px 0; min-width: 0; }
+.wp-shipment label { display: block; font-size: 14px; margin-bottom: 6px; }
+.wp-shipment input { max-width: 180px; }
+.wp-pill.tone-shipping { background: #e8e4f7; color: #503485; font-weight: 600; }
+#day-error { color: #b91c1c; }
 
 .wp-import-list { max-height: 50vh; overflow-y: auto; margin: 8px 0 12px; }
 .wp-import-row { display: flex; gap: 8px; align-items: baseline; font-size: 0.85rem;
