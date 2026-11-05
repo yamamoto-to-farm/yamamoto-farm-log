@@ -162,6 +162,23 @@ test("stored text and file names are escaped and unsafe links are not rendered",
   assert.match(html, /&lt;svg&gt;.png/);
 });
 
+test("documents start collapsed to titles and searching still matches hidden body text", async () => {
+  const entry = { id: randomUUID(), kind: "setting", title: "Hopper",
+    body: "opening mark 3", url: "https://example.com/manual",
+    attachments: [], updatedAt: "2026-11-05T00:00:00Z" };
+  const h = await harness({ entries: [entry] });
+  const html = h.el("machine-record").innerHTML;
+  assert.match(html, /<details class="machine-entry"><summary>Hopper<\/summary>/);
+  assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
+  assert.match(html, /<\/summary>[\s\S]*opening mark 3[\s\S]*data-edit=[\s\S]*<\/details>/);
+  h.el("machine-search").value = "opening mark";
+  h.el("machine-search").oninput();
+  assert.match(h.el("machine-record").innerHTML, /<summary>Hopper<\/summary>/);
+  h.el("machine-search").value = "no matching text";
+  h.el("machine-search").oninput();
+  assert.doesNotMatch(h.el("machine-record").innerHTML, /<summary>/);
+});
+
 test("file validation accepts exact boundaries and rejects oversize or executable content", async () => {
   const h = await harness();
   assert.doesNotThrow(() => h.context.checkFiles([{ name: "manual.pdf", type: "application/pdf", size: 20 * 1024 * 1024 }], 9));

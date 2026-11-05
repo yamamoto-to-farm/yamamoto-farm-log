@@ -77,13 +77,13 @@ function render() {
   el("machine-record").innerHTML = Object.entries(labels).map(([kind, label]) => {
     const items = entries.filter(entry => entry.kind === kind);
     return `<section><h2>${label}</h2>${items.map(entry =>
-      `<article class="machine-entry"><h3>${escape(entry.title)}</h3>
+      `<details class="machine-entry"><summary>${escape(entry.title)}</summary>
         <p class="machine-meta">${kind === "manual" ? "登録資料" : "農園独自メモ"} ／ 更新：${escape(formatTime(entry.updatedAt))}</p>
         <div class="machine-body">${escape(entry.body)}</div>
         ${safeLink(entry.url) ? `<p><a href="${escape(safeLink(entry.url))}" target="_blank" rel="noopener noreferrer">外部の資料を開く</a></p>` : ""}
         <ul>${entry.attachments.map(id => `<li><button type="button" class="secondary-btn machine-file" data-file="${escape(id)}">${escape(state.record.assets[id].name)} を開く</button></li>`).join("")}</ul>
         ${state.canEdit ? `<div class="machine-actions"><button type="button" class="secondary-btn" data-edit="${escape(entry.id)}">編集</button><button type="button" class="secondary-btn" data-delete="${escape(entry.id)}">資料を削除</button></div>` : ""}
-      </article>`).join("") || "<p>資料はありません。</p>"}</section>`;
+      </details>`).join("") || "<p>資料はありません。</p>"}</section>`;
   }).join("");
 }
 

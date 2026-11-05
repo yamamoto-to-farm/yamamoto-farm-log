@@ -5,7 +5,8 @@
 .machine-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; align-items: center; }
 .machine-caution { padding: 14px; border-left: 4px solid #b37716; background: #fff8e9; line-height: 1.7; }
 .machine-entry { border-top: 1px solid #ddd; padding: 16px 0; overflow-wrap: anywhere; }
-.machine-entry h3 { margin: 0 0 10px; }
+.machine-entry summary { cursor: pointer; font-weight: bold; padding: 8px 0; }
+.machine-entry summary:focus-visible { outline: 2px solid #287b52; outline-offset: 3px; }
 .machine-body { white-space: pre-wrap; line-height: 1.8; }
 .machine-entry ul, #entry-attachments { padding-left: 22px; }
 .machine-entry li, #entry-attachments li { margin: 8px 0; overflow-wrap: anywhere; }
