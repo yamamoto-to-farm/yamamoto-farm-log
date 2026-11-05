@@ -1,0 +1,79 @@
+.recent-page {
+  --page-width: 900px;
+  --panel-border: #dce3df;
+  --muted-text: #5b6860;
+}
+.recent-page--wide { --page-width: 1200px; }
+.recent-page [hidden] { display: none !important; }
+.recent-page :is(#page-area, #machine-area) {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  padding: 0;
+  min-width: 0;
+}
+.recent-page .page-title { font-size: 22px; line-height: 1.4; margin: 8px 0 12px; }
+.recent-page .card {
+  padding: 18px;
+  margin: 0 0 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 4%);
+}
+.recent-page .card h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #2a4d2f;
+  cursor: auto;
+}
+.recent-page :is(.plan-note, .wp-note, .msg-note, .shift-note, .finance-note, .machine-note) {
+  color: var(--muted-text);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.recent-page :is(.primary-btn, .secondary-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-height: 42px;
+  max-width: 100%;
+  margin-top: 0;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.recent-page :is(.primary-btn, .secondary-btn):focus-visible {
+  outline: 2px solid #287b52;
+  outline-offset: 3px;
+}
+.recent-page :is(.plan-actions, .machine-actions, .cfg-actions, .msg-navigation, .msg-toolbar, .finance-toolbar, .wp-toolbar) {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.recent-page :is(input, select, textarea) { font-family: inherit; max-width: 100%; }
+.recent-page :is(input[type="search"], .form-input, .form-textarea) { font-size: 16px; }
+.recent-page details[open] { box-shadow: none; }
+.recent-page details > summary {
+  margin: 0;
+  padding: 10px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.recent-page :is(#status, #machine-status):empty { display: none; }
+.recent-page .page-toolbar label { display: block; margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+.recent-page .page-toolbar input[type="date"] { display: block; width: auto; margin-top: 6px; }
+.recent-page .page-toolbar .plan-actions { margin-top: 10px; }
+.recent-page .page-toolbar > p:last-child { margin-bottom: 0; }
+.recent-page .cfg-grid { grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); }
+.recent-page :is(.cfg-grid > *, .msg-toolbar > *, .finance-toolbar > *) { min-width: 0; }
+@media (max-width: 600px) {
+  .recent-page .card { padding: 14px; margin-bottom: 12px; }
+  .recent-page .card h2 { font-size: 17px; margin-bottom: 10px; }
+}

@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>機械の資料・メモ - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./machines.css?v=20261105-fold-1">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <link rel="stylesheet" href="./machines.css?v=20261105-layout-1">
 </head>
-<body>
+<body class="recent-page">
   <main id="machine-area" class="page-container" hidden>
     <h1 id="machine-title" class="page-title">機械の資料・メモ</h1>
     <p id="machine-status" role="status" aria-live="polite"></p>
@@ -19,13 +20,13 @@
     <p class="machine-caution">メーカーの取扱説明書・安全指示を優先してください。農園メモは独自の控えです。目盛り・調整値は作業機や使用条件により変わるため、使用前に実機を確認してください。</p>
     <section id="machine-tools" class="card" hidden>
       <button id="machine-add" type="button" class="primary-btn">＋ 資料・メモを追加</button>
-      <p>文章・写真で自由に保存できます。例：ホッパーの開度目盛り、作業機との組合せ、操作手順。固定のメモリ番号欄はありません。</p>
+      <p class="machine-note">文章・写真で自由に保存できます。例：ホッパーの開度目盛り、作業機との組合せ、操作手順。固定のメモリ番号欄はありません。</p>
     </section>
-    <section class="card">
+    <section class="card machine-search-card" aria-label="資料を検索">
       <label for="machine-search">タイトル・本文で検索</label>
-      <input id="machine-search" class="form-input" type="search" maxlength="100">
-      <div id="machine-record"></div>
+      <input id="machine-search" class="form-input" type="search" maxlength="100" placeholder="例：BSM201、目盛り、取付">
     </section>
+    <div id="machine-record"></div>
   </main>
   <dialog id="machine-editor" aria-labelledby="machine-editor-title">
     <form id="machine-form">
@@ -51,6 +52,6 @@
       </div>
     </form>
   </dialog>
-  <script type="module" src="./machines.js?v=20261105-fold-1"></script>
+  <script type="module" src="./machines.js?v=20261105-layout-1"></script>
 </body>
 </html>

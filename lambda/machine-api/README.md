@@ -10,6 +10,7 @@
 - `/machines/detail.html?machine=SL350`：機械ごとの資料、本文検索、作業ログへのリンク。
 - 各資料は初期表示ではタイトルのみ。三角マーク／タイトルを押すと本文・添付・編集操作を開く。
   検索は折りたたみ中の本文も対象とする。
+- 検索カードと分類別カードは分離し、分類ごとに表示件数を示す。
 - 分類は「取扱説明書」「操作メモ」「目盛り・調整の控え」。本文・写真に作業機、条件、
   実際の目盛り、確認日などを自由記入する。更新日時はサーバーで付与する。
 - worker/family/adminは閲覧、family/adminのみ編集・添付。APIでも検証する。
@@ -176,6 +177,7 @@ CORSは既存OS Origin、GET/POST、Authorization/Content-Typeを許可する。
 以下を公開サイトS3へ配置する。`data/` は通常同期から除外されるのでページマスタは個別配置。
 
 - `deploy/machines/` 全体 → `machines/`
+- `deploy/common/css/recent-pages.css` → `common/css/recent-pages.css`
 - `deploy/index.html` → `index.html`
 - `deploy/data/pages.json` → `data/pages.json`
 - `deploy/admin/machine-qr.html` → `admin/machine-qr.html`
@@ -186,7 +188,7 @@ CORSは既存OS Origin、GET/POST、Authorization/Content-Typeを許可する。
 機械マスタは更新不要。ローカルの古い機械一覧で本番を上書きしない。
 CloudFront無効化：
 `/machines/*`、`/index.html`、`/data/pages.json`、
-`/admin/machine-qr.html`、`/machine-work-hub.html`。
+`/admin/machine-qr.html`、`/machine-work-hub.html`、`/common/css/recent-pages.css`。
 
 ## 検証
 

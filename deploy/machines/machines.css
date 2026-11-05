@@ -1,12 +1,21 @@
-.machine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; margin-top: 16px; }
-.machine-card { display: block; padding: 18px; border: 1px solid #d5dfd5; border-radius: 10px; text-decoration: none; overflow-wrap: anywhere; }
+.machine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; margin-bottom: 16px; }
+.machine-card { display: block; padding: 18px; border: 1px solid #dce3df; border-radius: 10px; background: #fff; text-decoration: none; overflow-wrap: anywhere; color: #2a4d2f; box-shadow: 0 2px 6px rgb(0 0 0 / 4%); }
+.machine-card:hover { border-color: #85a992; background: #f7faf8; }
 .machine-card strong, .machine-card small { display: block; }
 .machine-card small, .machine-meta { color: #555; margin-top: 6px; font-size: .9rem; }
 .machine-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; align-items: center; }
 .machine-caution { padding: 14px; border-left: 4px solid #b37716; background: #fff8e9; line-height: 1.7; }
-.machine-entry { border-top: 1px solid #ddd; padding: 16px 0; overflow-wrap: anywhere; }
-.machine-entry summary { cursor: pointer; font-weight: bold; padding: 8px 0; }
+.machine-search-card label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+.machine-category h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.machine-count { font-size: 12px; font-weight: normal; color: #5b6860; background: #eef3ef; padding: 2px 8px; border-radius: 12px; }
+.machine-empty { margin: 0; color: #5b6860; font-size: 14px; }
+.machine-entry { border-top: 1px solid #e5eae7; padding: 0; overflow-wrap: anywhere; }
+.recent-page .machine-entry summary { cursor: pointer; font-weight: 600; padding: 12px 0; font-size: 16px; margin: 0; }
+.machine-entry summary:hover { color: #287b52; }
 .machine-entry summary:focus-visible { outline: 2px solid #287b52; outline-offset: 3px; }
+.machine-entry[open] { padding-bottom: 8px; }
+.machine-category .machine-meta { margin: 0 0 10px; }
+#machine-tools p { margin-bottom: 0; }
 .machine-body { white-space: pre-wrap; line-height: 1.8; }
 .machine-entry ul, #entry-attachments { padding-left: 22px; }
 .machine-entry li, #entry-attachments li { margin: 8px 0; overflow-wrap: anywhere; }

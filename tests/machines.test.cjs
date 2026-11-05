@@ -169,6 +169,7 @@ test("documents start collapsed to titles and searching still matches hidden bod
   const h = await harness({ entries: [entry] });
   const html = h.el("machine-record").innerHTML;
   assert.match(html, /<details class="machine-entry"><summary>Hopper<\/summary>/);
+  assert.match(html, /class="card machine-category"><h2>目盛り・調整の控え<span class="machine-count">1件/);
   assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
   assert.match(html, /<\/summary>[\s\S]*opening mark 3[\s\S]*data-edit=[\s\S]*<\/details>/);
   h.el("machine-search").value = "opening mark";
@@ -177,6 +178,7 @@ test("documents start collapsed to titles and searching still matches hidden bod
   h.el("machine-search").value = "no matching text";
   h.el("machine-search").oninput();
   assert.doesNotMatch(h.el("machine-record").innerHTML, /<summary>/);
+  assert.match(h.el("machine-record").innerHTML, /検索条件に一致する資料はありません/);
 });
 
 test("file validation accepts exact boundaries and rejects oversize or executable content", async () => {

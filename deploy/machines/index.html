@@ -5,21 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>機械資料 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./machines.css?v=20261105-fold-1">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <link rel="stylesheet" href="./machines.css?v=20261105-layout-1">
 </head>
-<body>
+<body class="recent-page">
   <main id="machine-area" class="page-container" hidden>
     <h1 class="page-title">機械資料</h1>
-    <p>取扱説明書・操作メモ・目盛りや調整の控えを機械ごとに確認できます。</p>
+    <p class="machine-note">取扱説明書・操作メモ・目盛りや調整の控えを機械ごとに確認できます。</p>
     <p id="machine-status" role="status" aria-live="polite"></p>
-    <button id="machine-reload" type="button" class="secondary-btn">再読み込み</button>
-    <section class="card">
+    <div class="machine-actions"><button id="machine-reload" type="button" class="secondary-btn">再読み込み</button></div>
+    <section class="card machine-search-card" aria-label="機械を検索">
       <label for="machine-search">機械名・IDで検索</label>
-      <input id="machine-search" class="form-input" type="search" maxlength="100">
-      <div id="machine-list" class="machine-grid"></div>
+      <input id="machine-search" class="form-input" type="search" maxlength="100" placeholder="例：EF228、トラクター">
     </section>
+    <div id="machine-list" class="machine-grid"></div>
     <a class="secondary-btn" href="/index.html">トップへ戻る</a>
   </main>
-  <script type="module" src="./machines.js?v=20261105-fold-1"></script>
+  <script type="module" src="./machines.js?v=20261105-layout-1"></script>
 </body>
 </html>

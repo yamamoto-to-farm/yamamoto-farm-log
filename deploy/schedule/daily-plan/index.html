@@ -7,13 +7,15 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="./daily-plan.css?v=20261104-history-1">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
 </head>
-<body>
+<body class="recent-page">
   <div id="header"></div>
   <main id="page-area" class="page-container" hidden>
     <h1 class="page-title">作業予定の追加・編集</h1>
     <p>作業形態を選び、家族従業員・パート従業員の予定を作成・編集します。家族の時間・圃場は任意、パートの時間はシフトに合わせて設定します。</p>
     <p class="plan-note">保存した予定を業務連絡で読み込み、コピーまたは確認後にLINE送信します。コピー済みの削除は警告付き、送信済みは削除できません。LINE受付は配達・既読の保証ではありません。</p>
+    <section class="card page-toolbar" aria-label="対象日とシフト連携">
     <label>日付 <input id="plan-date" type="date" class="form-input"></label>
     <p id="status" role="status" aria-live="polite"></p>
     <button id="reload" type="button" class="secondary-btn">再読み込み</button>
@@ -24,6 +26,7 @@
       <a id="work-plan-link" class="secondary-btn" href="/schedule/work-plan/index.html" target="_blank" rel="noopener">月の作業計画を開く</a>
     </div>
     <p id="shift-state" class="plan-note"></p>
+    </section>
     <section class="card">
       <h2 class="section-title">予定を追加・編集</h2>
       <form id="plan-form">
