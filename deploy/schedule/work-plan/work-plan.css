@@ -25,10 +25,11 @@
 .wp-dialog { border: 1px solid #ccc; border-radius: 10px; padding: 16px 20px; max-width: 460px; width: 92%; }
 .wp-dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
 .wp-dialog h3 { margin: 0 0 10px; font-size: 1.05rem; }
-.wp-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; flex-wrap: wrap; }
+.wp-row { display: flex; gap: 8px; margin-bottom: 12px; padding: 12px; border: 1px solid #dce3df; border-radius: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
 .wp-row .wp-row-date { width: auto; flex-shrink: 0; padding: 5px 6px; font-size: 0.85rem; }
 .wp-row select { width: 8em; flex-shrink: 0; padding: 6px; }
-.wp-row .wp-row-note { flex: 1; min-width: 8em; padding: 6px 8px; }
+.wp-row .wp-note-field { flex: 1 1 100%; min-width: 0; font-size: 14px; }
+.wp-row .wp-row-note { display: block; box-sizing: border-box; width: 100%; min-width: 0; padding: 8px; margin-top: 6px; resize: vertical; font: inherit; }
 .wp-row button { flex-shrink: 0; font-size: 0.75rem; padding: 4px 8px; }
 #day-add { font-size: 0.8rem; padding: 4px 10px; margin: 4px 0 12px; }
 .wp-dialog-actions { display: flex; gap: 8px; }
@@ -36,6 +37,7 @@
 .wp-row .wp-task-select { flex: 1 1 130px; text-align: left; justify-content: start; }
 .wp-row .wp-task-custom { flex: 1 1 160px; }
 .wp-shipment { border: 1px solid #dce3df; border-radius: 8px; padding: 12px; margin: 16px 0; min-width: 0; }
+.wp-row .wp-shipment { flex: 1 1 100%; margin: 0; box-sizing: border-box; }
 .wp-shipment label { display: block; font-size: 14px; margin-bottom: 6px; }
 .wp-shipment input { max-width: 180px; }
 .wp-pill.tone-shipping { background: #e8e4f7; color: #503485; font-weight: 600; }

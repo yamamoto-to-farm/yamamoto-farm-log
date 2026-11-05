@@ -135,6 +135,20 @@ function render() {
 }
 
 // ───── 日の編集ダイアログ ─────
+function parkShipmentEditor() {
+  element("day-dialog").insertBefore(element("shipment-editor"), element("day-error"));
+}
+
+function updateShipmentEditor() {
+  const rows = [...element("day-rows").querySelectorAll(".wp-row")];
+  const shipping = rows.find(row => row.dataset.type === "shipping-work");
+  const editor = element("shipment-editor");
+  if (shipping) shipping.appendChild(editor);
+  else parkShipmentEditor();
+  editor.hidden = !shipping && !Object.hasOwn(data.shipments || {}, editingDate)
+    && element("shipment-count").value.trim() === "";
+}
+
 function dayRow(entry = { type: "harvest", note: "" }) {
   const row = document.createElement("div");
   row.className = "wp-row";
@@ -147,9 +161,13 @@ function dayRow(entry = { type: "harvest", note: "" }) {
     `<input type="date" class="wp-row-date" value="${editingDate}" min="${ym}-01" max="${ym}-${String(last).padStart(2, "0")}">` +
     `<button type="button" class="secondary-btn wp-task-select">${escape(taskLabel(entry) || "作業を選択")}</button>` +
     `<input type="text" class="wp-task-custom" maxlength="100" aria-label="自由入力の作業内容" placeholder="作業内容" value="${escape(entry.type === "other" ? entry.task || "" : "")}"${entry.type === "other" ? "" : " hidden"}>` +
-    `<input type="text" class="wp-row-note" maxlength="50" aria-label="作業メモ" placeholder="メモ（圃場名など）" value="${escape(entry.note)}">` +
-    '<button type="button" class="danger-btn">削除</button>';
-  row.querySelector(".danger-btn").addEventListener("click", () => row.remove());
+    '<button type="button" class="danger-btn">削除</button>' +
+    `<label class="wp-note-field">作業メモ<textarea class="wp-row-note" rows="3" maxlength="1000" placeholder="圃場・段取り・注意点など">${escape(entry.note)}</textarea></label>`;
+  row.querySelector(".danger-btn").addEventListener("click", () => {
+    parkShipmentEditor();
+    row.remove();
+    updateShipmentEditor();
+  });
   row.querySelector(".wp-task-select").onclick = () => {
     element("day-dialog").close();
     openPlanTaskModal({
@@ -161,6 +179,7 @@ function dayRow(entry = { type: "harvest", note: "" }) {
         row.dataset.task = task === "__custom__" ? "" : task;
         row.querySelector(".wp-task-select").textContent = !task ? "作業を選択" : task === "__custom__" ? "その他（自由入力）" : task;
         row.querySelector(".wp-task-custom").hidden = task !== "__custom__";
+        updateShipmentEditor();
       },
       onClose: () => { element("day-dialog").showModal(); row.querySelector(".wp-task-select").focus(); },
     });
@@ -175,9 +194,11 @@ function openDay(date) {
     `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}` +
     `(${WEEKDAYS[new Date(date + "T00:00:00").getDay()]}) の作業・出荷予定`;
   const rows = element("day-rows");
+  parkShipmentEditor();
   rows.innerHTML = "";
   for (const entry of data.days[date] || []) rows.appendChild(dayRow(entry));
   element("shipment-count").value = data.shipments?.[date] ?? "";
+  updateShipmentEditor();
   element("day-error").textContent = "";
   element("day-dialog").showModal();
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>月間作業計画 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./work-plan.css?v=20261105-shipping-1">
+  <link rel="stylesheet" href="./work-plan.css?v=20261105-notes-1">
   <link rel="stylesheet" href="/common/css/work-plan-form.css?v=20261105-task-2">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
 </head>
@@ -45,11 +45,11 @@
     <h3 id="day-title"></h3>
     <div id="day-rows"></div>
     <button id="day-add" class="secondary-btn" type="button">＋ 作業を追加</button>
-    <fieldset class="wp-shipment">
+    <fieldset id="shipment-editor" class="wp-shipment" hidden>
       <legend>契約出荷の予定</legend>
       <label for="shipment-count">この出荷予定日の合計基数</label>
       <input id="shipment-count" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例：12">
-      <p class="wp-note">申込済みの出荷予定日と基数の控えです。申込手続きや出荷実績の記録は行いません。収穫・作業日を動かしても、この出荷日は変わりません。空欄で解除します。</p>
+      <p class="wp-note">この画面の日付の契約出荷予定です（同日の合計を1つ登録）。作業日・作業内容を変更しても出荷予定は残ります。空欄にして反映すると解除します。</p>
     </fieldset>
     <p id="day-error" role="alert"></p>
     <div class="wp-dialog-actions">
@@ -68,7 +68,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="./work-plan.js?v=20261105-task-2"></script>
+  <script type="module" src="./work-plan.js?v=20261105-notes-1"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

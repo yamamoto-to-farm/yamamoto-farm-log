@@ -221,6 +221,45 @@ test("shift calendar renders shipments and escaped custom names alongside legacy
     open("__custom__");
     assert.match(html, /data-plan-task="__custom__" aria-pressed="true"/);
   });
+  test("shipment editor follows the first shipping row only and preserves saved or draft quantities", () => {
+    const { context, el } = setup();
+    const row = workRow("2026-12-16", "harvest");
+    let parent = null;
+    row.appendChild = node => { parent = row; };
+    el("day-dialog").insertBefore = () => { parent = "dialog"; };
+    el("day-rows").querySelectorAll = () => [row];
+    context.updateShipmentEditor();
+    assert.equal(el("shipment-editor").hidden, true);
+    row.dataset.type = "shipping-work";
+    context.updateShipmentEditor();
+    assert.equal(el("shipment-editor").hidden, false);
+    assert.equal(parent, row);
+    el("shipment-count").value = "12";
+    row.dataset.type = "harvest";
+    context.updateShipmentEditor();
+    assert.equal(el("shipment-editor").hidden, false);
+    assert.equal(parent, "dialog");
+    assert.equal(el("shipment-count").value, "12");
+    el("shipment-count").value = "";
+    context.updateShipmentEditor();
+    assert.equal(el("shipment-editor").hidden, true);
+    vm.runInContext('data.shipments["2026-12-16"]=0;', context);
+    context.updateShipmentEditor();
+    assert.equal(el("shipment-editor").hidden, false);
+  });
+  test("each task uses a full-width multiline note and preserves multiline content on apply", () => {
+    const { context, el } = setup();
+    const row = workRow("2026-12-16");
+    const original = row.querySelector;
+    row.querySelector = selector => selector === ".wp-row-note"
+      ? { value: "圃場A\n段取りを確認\n" + "あ".repeat(150) } : original(selector);
+    el("day-rows").querySelectorAll = () => [row];
+    context.applyDay();
+    const note = vm.runInContext('data.days["2026-12-16"][0].note', context);
+    assert.match(note, /圃場A\n段取りを確認/);
+    assert.ok(note.length > 150);
+    assert.match(read("schedule/work-plan/work-plan.js"), /<textarea class="wp-row-note" rows="3" maxlength="1000"/);
+  });
   vm.runInContext(
     source.slice(source.indexOf("const WORK_LABELS"), source.indexOf("function currentScenario")) +
     source.slice(source.indexOf("function renderCalendar("), source.indexOf("function renderPersons(")),
