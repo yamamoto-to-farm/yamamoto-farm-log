@@ -155,6 +155,25 @@ function domNode(tag = "") {
 function find(node, predicate) {
   return [node, ...node.children.flatMap(child => find(child, predicate))].filter(predicate);
 }
+test("person-specific view times use a closed details section without altering saved ranges", () => {
+  const context = load("viewCard.js", {
+    getWorkToneClass: () => "tone",
+    document: { getElementById: () => ({ value: "2026-11-06" }),
+      createElement: domNode, createTextNode: text => ({ ...domNode(), textContent: text }) },
+  });
+  const work = { type: "草とり", workers: ["A", "B"], start: "08:00", end: "16:30",
+    participation: { A: [{ start: "08:00", end: "16:30" }], B: [{ start: "13:00", end: "16:30" }] } };
+  context.work = work;
+  const before = JSON.stringify(work);
+  const card = vm.runInContext("createViewWorkCard(work)", context);
+  const details = find(card, node => node.className === "diary-participation-view")[0];
+  assert.equal(details.tag, "details");
+  assert.ok(!details.open);
+  assert.equal(details.children[0].tag, "summary");
+  assert.equal(details.children[0].textContent, "従事時間（人別）");
+  assert.ok(find(details, node => node.textContent.includes("13:00〜16:30")).length);
+  assert.equal(JSON.stringify(work), before);
+});
 test("saved diary renders one combined card with expandable amounts and unchanged standalone cards, no data writes", async () => {
   const f = fixture();
   const actual = load("actual-work.js");

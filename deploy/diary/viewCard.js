@@ -143,10 +143,10 @@ function createViewWorkCard(w) {
   card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || ""), "view-time-line"));
   if (hasParticipation(w)) {
     validateDiaryTimes(w);
-    const section = document.createElement("section");
+    const section = document.createElement("details");
     section.className = "diary-participation-view";
-    const heading = document.createElement("strong");
-    heading.textContent = "各人の参加時間（実績）";
+    const heading = document.createElement("summary");
+    heading.textContent = "従事時間（人別）";
     section.appendChild(heading);
     for (const name of diaryWorkers(w.workers)) {
       const ranges = w.participation[name] || [];

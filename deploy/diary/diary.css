@@ -1502,6 +1502,8 @@
 .diary-participation button { margin: 4px 4px 4px 0; font-size: 13px; padding: 7px 10px; }
 .diary-candidate { display: block; text-align: left; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
 .diary-participation-view { margin-top: 10px; padding-top: 10px; border-top: 1px solid #edf0f3; }
+.diary-participation-view > summary { cursor: pointer; font-size: 15px; font-weight: 700; }
+.diary-participation-view[open] > summary { margin-bottom: 8px; }
 #editWorkArea { grid-template-columns: minmax(0, 1fr); }
 #editWorkArea > .card, .merge-toolbar-row > div { min-width: 0; }
 #editWorkArea .edit-time-row { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
