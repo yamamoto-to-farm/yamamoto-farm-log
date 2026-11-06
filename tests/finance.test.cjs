@@ -7,6 +7,11 @@ const vm = require("node:vm");
 
 const root = join(__dirname, "..", "deploy", "finance");
 const logic = () => import(pathToFileURL(join(root, "finance-logic.js")).href);
+test("annual coverage, comparison and caveats share one help modal while totals stay visible", () => {
+  const html = readFileSync(join(root, "index.html"), "utf8");
+  assert.match(html, /<h2>年間の分類割合・前年比較<\/h2>\s*<div data-help="年間集計の取り込み状況・前年比較">[\s\S]*?id="annual-coverage"[\s\S]*?id="annual-comparison"[\s\S]*?比較は参考値[\s\S]*?<\/div>\s*<label>対象年/);
+  assert.match(html, /<p id="annual-period" class="finance-note"><\/p>/);
+});
 test("invoice reimport and import history panels are collapsed by default", () => {
   const html = readFileSync(join(root, "index.html"), "utf8");
   for (const [title, id] of [["請求書・再取り込み", "invoices"], ["取り込み履歴", "imports"]]) {

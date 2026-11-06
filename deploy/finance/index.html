@@ -66,12 +66,14 @@
       </section>
       <section class="card">
         <h2>年間の分類割合・前年比較</h2>
+        <div data-help="年間集計の取り込み状況・前年比較">
+          <p id="annual-coverage"></p>
+          <p id="annual-comparison"></p>
+          <p>取引がある月と請求書の締め月を表示します。取引なし・未取り込みの区別はできません。未取り込み分がある場合、比較は参考値です。今年は現在まで、過去年は年間を前年の同期間と比較します。</p>
+          <p>取引日基準の取り込み済み経費（税込・返品等を差し引いた金額）です。上の期間・検索・分類条件には連動しません。</p>
+        </div>
         <label>対象年<select id="annual-year"></select></label>
         <p id="annual-period" class="finance-note"></p>
-        <p id="annual-coverage" class="finance-note"></p>
-        <p id="annual-comparison" class="finance-note"></p>
-        <p class="finance-note" data-help-keep>取引がある月と請求書の締め月を表示します。取引なし・未取り込みの区別はできません。未取り込み分がある場合、比較は参考値です。今年は現在まで、過去年は年間を前年の同期間と比較します。</p>
-        <p class="finance-note">取引日基準の取り込み済み経費（税込・返品等を差し引いた金額）です。上の期間・検索・分類条件には連動しません。</p>
         <div id="annual-chart" class="finance-annual"></div>
       </section>
       <details class="card finance-record-panel" id="groups-section">
