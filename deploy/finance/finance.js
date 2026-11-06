@@ -5,8 +5,8 @@ import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   categories, chartScale, filterItems, flattenItems, formatYen, latestForecast, monthlyTotals,
-  annualCategoryTotals, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
-} from "./finance-logic.js?v=20261107-annual-1";
+  annualCategoryTotals, annualComparison, nextForecast, periodPreset, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
+} from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const el = id => document.getElementById(id);
@@ -110,7 +110,9 @@ async function loadData() {
   renderForecasts();
   renderInvoices();
   renderImports();
+  updateAnnualYears();
   renderAnnualChart();
+  renderOverview();
   el("data-area").hidden = false;
   el("login-area").hidden = true;
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}（財務データは端末に保存しません）`;
@@ -143,12 +145,19 @@ function render() {
   const values = filters();
   el("filter-error").textContent = values.from && values.to && values.from > values.to
     ? "開始月は終了月以前にしてください。" : "";
+  el("filter-state").textContent = [
+    `集計：${values.basis === "settlement" ? "決済月" : "取引日の月"}`,
+    `期間：${values.from || "開始指定なし"}〜${values.to || "終了指定なし"}`,
+    `分類：${values.category || "すべて"}`, `検索：${values.query || "なし"}`,
+    ...(el("review-only").checked ? ["明細：要確認・未分類のみ"] : []),
+    ...(el("machine-only").checked ? ["明細：農機課のみ"] : []),
+  ].join(" ／ ");
   const filtered = filteredItems();
   const total = filtered.reduce((sum, item) => sum + item.amount, 0);
   el("summary").replaceChildren(
     statistic("選択条件の合計（税込）", formatYen(total)),
     statistic("明細数", `${filtered.length}件`),
-    statistic("要確認・未分類", `${filtered.filter(item => needsReview(item) || item.category === "未分類").length}件`),
+    actionStatistic("要確認・未分類", `${filtered.filter(item => needsReview(item) || item.category === "未分類").length}件`, () => openAttention("details")),
   );
   const rows = monthlyTotals(filtered, values.basis);
   const legend = el("legend");
@@ -176,6 +185,64 @@ function render() {
   updateAttention("details", filtered.filter(item => needsReview(item) || item.category === "未分類").length, "要確認・未分類");
 }
 
+function actionStatistic(label, value, action) {
+  const result = node("button", undefined, "finance-stat finance-stat-action");
+  result.type = "button";
+  result.disabled = busy;
+  result.append(node("span", label), node("strong", value));
+  result.addEventListener("click", action);
+  return result;
+}
+
+function openAttention(prefix, allData = false) {
+  if (busy || savingEdit) return;
+  if (allData) clearFilters(false);
+  if (prefix === "details") {
+    el("review-only").checked = true;
+    el("machine-only").checked = false;
+  }
+  page = 0;
+  render();
+  const panel = el(`${prefix}-section`);
+  panel.open = true;
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  panel.querySelector("summary").focus();
+}
+
+function applyPeriod(preset) {
+  if (busy || savingEdit) return;
+  const range = periodPreset(preset, todayLocalYmd());
+  el("from").value = range.from;
+  el("to").value = range.to;
+  page = 0;
+  render();
+}
+
+function clearFilters(redraw = true) {
+  el("basis").value = "trade";
+  for (const id of ["from", "to", "category", "query"]) el(id).value = "";
+  el("review-only").checked = el("machine-only").checked = false;
+  el("detail-sort").value = "date-desc";
+  page = 0;
+  if (redraw) render();
+}
+
+function renderOverview() {
+  const today = todayLocalYmd();
+  const annual = annualCategoryTotals(items, today);
+  const next = nextForecast(invoices, today);
+  const unclassified = unclassifiedGroups(items).reduce((sum, group) => sum + group.items.length, 0);
+  const review = items.filter(item => needsReview(item) || item.category === "未分類").length;
+  el("overview").replaceChildren(
+    statistic("今年の経費累計（税込）", formatYen(annual.total)),
+    statistic(next ? `次回引落予定（未確定） ${next.month}${next.onwards ? "以降" : ""}` : "次回引落予定（未確定）",
+      next ? formatYen(next.amount) : "当月以降の予定記載なし"),
+    actionStatistic("未分類の整理（全データ）", `${unclassified}件`, () => openAttention("groups", true)),
+    actionStatistic("要確認・未分類（全データ）", `${review}件`, () => openAttention("details", true)),
+  );
+  el("overview-period").textContent = `${annual.start}〜${annual.end}・取引日基準の取り込み済み分。件数は全取り込みデータ（検索条件とは独立）。次回予定は最新請求書の当月以降の記載分で、引落済みかどうかは判定しません。`;
+}
+
 function updateAttention(prefix, count, label) {
   const badge = el(`${prefix}-attention`);
   badge.textContent = count ? `！${label} ${count}件` : "";
@@ -183,9 +250,31 @@ function updateAttention(prefix, count, label) {
   el(`${prefix}-section`).classList.toggle("finance-needs-attention", count > 0);
 }
 
+function updateAnnualYears() {
+  const todayYear = todayLocalYmd().slice(0, 4);
+  const selected = el("annual-year").value;
+  const years = [...new Set([todayYear, ...items.map(item => item.trade_date.slice(0, 4))])]
+    .filter(year => year <= todayYear).sort().reverse();
+  el("annual-year").replaceChildren(...years.map(year => {
+    const option = node("option", `${year}年`);
+    option.value = year;
+    return option;
+  }));
+  el("annual-year").value = years.includes(selected) ? selected : todayYear;
+}
+
 function renderAnnualChart() {
-  const annual = annualCategoryTotals(items, todayLocalYmd());
+  const year = Number(el("annual-year").value);
+  const comparison = annualComparison(items, todayLocalYmd(), year);
+  const annual = comparison.current;
   el("annual-period").textContent = `${annual.start} 〜 ${annual.end} ／ 合計 ${formatYen(annual.total)}`;
+  const closingMonths = invoices.filter(invoice => invoice.closing_date >= annual.start && invoice.closing_date <= annual.end)
+    .map(invoice => invoice.closing_date.slice(0, 7));
+  el("annual-coverage").textContent = `取引がある月：${comparison.currentMonths.join("、") || "なし"} ／ 取り込み済み請求書の締め月：${[...new Set(closingMonths)].sort().join("、") || "なし"} ／ 前年の取引がある月：${comparison.previousMonths.join("、") || "なし"}`;
+  el("annual-comparison").textContent = `前年同期間：${comparison.previous.start}〜${comparison.previous.end} ／ `
+    + (comparison.difference === null ? "比較対象の明細が不足しているため比較できません。"
+      : `${formatYen(comparison.previous.total)} ／ 差額 ${comparison.difference > 0 ? "+" : ""}${formatYen(comparison.difference)}`
+        + (comparison.percent === null ? "（前年合計が0以下のため増減率なし）" : `（${comparison.percent > 0 ? "+" : ""}${comparison.percent.toFixed(1)}%）`));
   const area = el("annual-chart");
   area.replaceChildren();
   if (annual.drawable) {
@@ -193,7 +282,7 @@ function renderAnnualChart() {
     svg.setAttribute("viewBox", "0 0 120 120");
     svg.setAttribute("class", "finance-donut");
     svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", `今年の分類割合：${annual.rows.map(row => `${row.category} ${row.percent.toFixed(1)}%`).join("、")}`);
+    svg.setAttribute("aria-label", `${year}年の分類割合：${annual.rows.map(row => `${row.category} ${row.percent.toFixed(1)}%`).join("、")}`);
     let offset = 0;
     for (const row of annual.rows.filter(row => row.amount > 0)) {
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -210,10 +299,10 @@ function renderAnnualChart() {
   } else {
     area.append(node("p", annual.rows.some(row => row.amount < 0)
       ? "返品等で分類別合計がマイナスのため、円グラフは表示せず金額を表示します。"
-      : "今年の分類割合を表示できる購入金額がありません。"));
+      : "対象年の分類割合を表示できる購入金額がありません。"));
   }
   const table = node("table");
-  table.append(node("caption", "今年の分類別金額・割合"));
+  table.append(node("caption", `${year}年の分類別金額・割合`));
   const head = node("tr");
   for (const label of ["分類", "金額（税込）", "割合"]) head.append(node("th", label));
   const thead = node("thead");
@@ -230,7 +319,7 @@ function renderAnnualChart() {
   const scroll = node("div", undefined, "finance-scroll");
   scroll.tabIndex = 0;
   scroll.setAttribute("role", "region");
-  scroll.setAttribute("aria-label", "今年の分類別金額・割合");
+  scroll.setAttribute("aria-label", `${year}年の分類別金額・割合`);
   scroll.append(table);
   area.append(scroll);
 }
@@ -619,6 +708,18 @@ async function initialize() {
     el("from").value = el("to").value = "";
     page = 0;
     render();
+  });
+  document.querySelectorAll("[data-period]").forEach(button => {
+    button.addEventListener("click", () => applyPeriod(button.dataset.period));
+  });
+  el("clear-filters").addEventListener("click", () => {
+    if (!busy && !savingEdit) clearFilters();
+  });
+  el("annual-year").addEventListener("change", renderAnnualChart);
+  el("details-attention").addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    openAttention("details");
   });
   for (const id of ["basis", "from", "to", "category", "query", "review-only", "machine-only", "detail-sort"]) {
     el(id).addEventListener("input", () => { page = 0; render(); });

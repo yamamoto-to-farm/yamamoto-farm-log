@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>JA経費分析 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./finance.css?v=20261107-annual-1">
+  <link rel="stylesheet" href="./finance.css?v=20261107-dashboard-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -21,17 +21,30 @@
       <p data-help="経費分析のログイン">写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
     </div>
     <div id="data-area" hidden>
-      <section class="card">
-        <h2>データ取り込み</h2>
+      <section class="card" aria-labelledby="overview-title">
+        <h2 id="overview-title">経費の確認</h2>
         <div class="finance-toolbar">
-          <label>JA請求明細PDF（20MBまで）<input id="pdf" type="file" accept=".pdf,application/pdf"></label>
-          <button id="upload" type="button" class="primary-btn">アップロード・取り込み</button>
           <button id="refresh" type="button" class="secondary-btn">最新データに更新</button>
         </div>
+        <div id="overview" class="finance-summary"></div>
+        <p id="overview-period" class="finance-note"></p>
         <p id="updated-at" class="finance-note"></p>
       </section>
       <section class="card">
+        <h2>今後の引落予定（未確定）</h2>
+        <p id="forecast-source" class="finance-note"></p>
+        <div id="forecasts" class="finance-summary"></div>
+      </section>
+      <section class="card">
         <h2>経費の推移</h2>
+        <div class="finance-toolbar" role="group" aria-label="期間の簡単選択">
+          <button type="button" class="secondary-btn" data-period="month">今月</button>
+          <button type="button" class="secondary-btn" data-period="previous-month">先月</button>
+          <button type="button" class="secondary-btn" data-period="year">今年</button>
+          <button type="button" class="secondary-btn" data-period="previous-year">前年</button>
+          <button type="button" class="secondary-btn" data-period="all">全期間</button>
+          <button id="clear-filters" type="button" class="secondary-btn">条件をすべて解除</button>
+        </div>
         <div class="finance-toolbar">
           <label>集計基準<select id="basis"><option value="trade">取引日の月</option><option value="settlement">決済月</option></select></label>
           <label>開始月<input id="from" type="month"></label>
@@ -41,6 +54,7 @@
           <label>品名・規格・部署<input id="query" type="search" placeholder="例：ザクサ 5L"></label>
         </div>
         <p id="filter-error" role="alert"></p>
+        <p id="filter-state" class="finance-note" role="status"></p>
         <div id="summary" class="finance-summary"></div>
         <p class="finance-note">月別集計と明細に上記の条件を適用します。請求予定は期間にかかわらず最新発行分です。</p>
         <div id="legend" class="finance-legend"></div>
@@ -51,8 +65,12 @@
         </div>
       </section>
       <section class="card">
-        <h2>今年の分類割合（年初〜現在）</h2>
+        <h2>年間の分類割合・前年比較</h2>
+        <label>対象年<select id="annual-year"></select></label>
         <p id="annual-period" class="finance-note"></p>
+        <p id="annual-coverage" class="finance-note"></p>
+        <p id="annual-comparison" class="finance-note"></p>
+        <p class="finance-note" data-help-keep>取引がある月と請求書の締め月を表示します。取引なし・未取り込みの区別はできません。未取り込み分がある場合、比較は参考値です。今年は現在まで、過去年は年間を前年の同期間と比較します。</p>
         <p class="finance-note">取引日基準の取り込み済み経費（税込・返品等を差し引いた金額）です。上の期間・検索・分類条件には連動しません。</p>
         <div id="annual-chart" class="finance-annual"></div>
       </section>
@@ -64,13 +82,8 @@
           <table><thead><tr><th>品名・部署</th><th>明細数</th><th>合計金額</th><th>分類</th></tr></thead><tbody id="unclassified-groups"></tbody></table>
         </div>
       </details>
-      <section class="card">
-        <h2>今後の引落予定（未確定）</h2>
-        <p id="forecast-source" class="finance-note"></p>
-        <div id="forecasts" class="finance-summary"></div>
-      </section>
       <details id="details-section" class="card finance-record-panel">
-        <summary><h2>明細・要確認・機械整備費</h2> <span id="details-attention" class="finance-attention" role="status" hidden></span></summary>
+        <summary><h2>明細・要確認・機械整備費</h2> <button id="details-attention" type="button" class="finance-attention" hidden></button></summary>
         <div class="finance-toolbar">
           <label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label><input id="machine-only" type="checkbox">農機課のみ（整備・部品費）</label>
@@ -84,6 +97,13 @@
           <button id="previous" type="button" class="secondary-btn">前へ</button>
           <span id="page-number"></span>
           <button id="next" type="button" class="secondary-btn">次へ</button>
+        </div>
+      </details>
+      <details class="card finance-record-panel">
+        <summary><h2>データ取り込み</h2></summary>
+        <div class="finance-toolbar">
+          <label>JA請求明細PDF（20MBまで）<input id="pdf" type="file" accept=".pdf,application/pdf"></label>
+          <button id="upload" type="button" class="primary-btn">アップロード・取り込み</button>
         </div>
       </details>
       <details class="card finance-record-panel">
@@ -117,6 +137,6 @@
       <button id="close-report" type="button" class="secondary-btn">閉じる</button>
     </dialog>
   </main>
-  <script type="module" src="./finance.js?v=20261107-annual-1"></script>
+  <script type="module" src="./finance.js?v=20261107-dashboard-1"></script>
 </body>
 </html>

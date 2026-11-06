@@ -47,6 +47,93 @@ test("attention badge shows actionable counts without opening panels and clears 
   assert.equal(element("groups-attention").hidden, true);
   assert.deepEqual(toggles, [["finance-needs-attention", true], ["finance-needs-attention", false]]);
 });
+
+test("year selection compares current YTD with the same prior-year endpoint, including leap day", async () => {
+  const { annualComparison, previousPeriodEnd } = await logic();
+  const entries = [
+    { trade_date: "2026-01-01", amount: 150, category: "肥料費" },
+    { trade_date: "2025-01-01", amount: 100, category: "肥料費" },
+    { trade_date: "2025-12-01", amount: 900, category: "肥料費" },
+    { trade_date: "2024-12-01", amount: 500, category: "肥料費" },
+  ];
+  const current = annualComparison(entries, "2026-11-07", 2026);
+  assert.equal(current.current.total, 150);
+  assert.equal(current.previous.end, "2025-11-07");
+  assert.equal(current.previous.total, 100);
+  assert.equal(current.difference, 50);
+  assert.equal(current.percent, 50);
+  assert.deepEqual(current.currentMonths, ["2026-01"]);
+  const past = annualComparison(entries, "2026-11-07", 2025);
+  assert.equal(past.current.end, "2025-12-31");
+  assert.equal(past.current.total, 1000);
+  assert.equal(past.previous.end, "2024-12-31");
+  assert.equal(past.previous.total, 500);
+  assert.equal(previousPeriodEnd("2024-02-29"), "2023-02-28");
+  assert.equal(annualComparison([], "2026-11-07", 2026).difference, null);
+  const zero = annualComparison([
+    { trade_date: "2026-01-01", amount: 100, category: "肥料費" },
+    { trade_date: "2025-01-01", amount: 0, category: "肥料費" },
+  ], "2026-11-07", 2026);
+  assert.equal(zero.difference, 100);
+  assert.equal(zero.percent, null);
+});
+
+test("period shortcuts handle January rollover, full prior year and all periods", async () => {
+  const { periodPreset } = await logic();
+  assert.deepEqual(periodPreset("previous-month", "2026-01-07"), { from: "2025-12", to: "2025-12" });
+  assert.deepEqual(periodPreset("month", "2026-11-07"), { from: "2026-11", to: "2026-11" });
+  assert.deepEqual(periodPreset("year", "2026-11-07"), { from: "2026-01", to: "2026-11" });
+  assert.deepEqual(periodPreset("previous-year", "2026-11-07"), { from: "2025-01", to: "2025-12" });
+  assert.deepEqual(periodPreset("all", "2026-11-07"), { from: "", to: "" });
+  assert.throws(() => periodPreset("bad", "2026-11-07"), /不正/);
+});
+
+test("overview next forecast uses latest issuance and first current-or-future month, not past amounts", async () => {
+  const { nextForecast } = await logic();
+  const latest = { issue_date: "2026-10-02", closing_date: "2026-09-30", forecasts: [
+    { settlement_month: "2026-10", amount: 100 },
+    { settlement_month: "2026-12", amount: 200 },
+    { settlement_month: "2026-11", amount: 300 },
+    { settlement_month: "2026-11", amount: 50, onwards: true },
+  ] };
+  assert.deepEqual(nextForecast([latest], "2026-11-07"), {
+    month: "2026-11", amount: 350, onwards: true, issue_date: "2026-10-02",
+  });
+  assert.equal(nextForecast([latest], "2027-01-01"), null);
+  assert.equal(nextForecast([], "2026-11-07"), null);
+  assert.equal(nextForecast([latest, { ...latest, issue_date: "2026-11-02", forecasts: [] }], "2026-11-07"), null);
+});
+
+test("dashboard navigation clears filters only for all-data links and opens matching panels", async () => {
+  const { context, element } = setup();
+  context.periodPreset = (await logic()).periodPreset;
+  context.todayLocalYmd = () => "2026-11-07";
+  context.render = () => {};
+  for (const prefix of ["groups", "details"]) {
+    element(`${prefix}-section`).scrollIntoView = () => {};
+    element(`${prefix}-section`).querySelector = () => ({ focus() {} });
+  }
+  element("query").value = "肥料";
+  vm.runInContext('applyPeriod("year")', context);
+  assert.equal(element("from").value, "2026-01");
+  assert.equal(element("to").value, "2026-11");
+  assert.equal(element("query").value, "肥料");
+  element("machine-only").checked = true;
+  vm.runInContext('openAttention("details")', context);
+  assert.equal(element("details-section").open, true);
+  assert.equal(element("review-only").checked, true);
+  assert.equal(element("machine-only").checked, false);
+  assert.equal(element("query").value, "肥料");
+  vm.runInContext('openAttention("groups", true)', context);
+  assert.equal(element("groups-section").open, true);
+  for (const id of ["query", "from", "to", "category"]) assert.equal(element(id).value, "");
+  assert.equal(element("basis").value, "trade");
+  assert.equal(element("review-only").checked, false);
+  element("category").value = "肥料費";
+  vm.runInContext('clearFilters()', context);
+  assert.equal(element("category").value, "");
+  assert.equal(element("detail-sort").value, "date-desc");
+});
 const invoices = [{
   invoice_no: "04026970", issue_date: "2026-10-02", closing_date: "2026-09-30",
   settlement_date: "2026-10-31", forecast_total: 300,

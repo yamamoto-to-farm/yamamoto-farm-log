@@ -20,19 +20,70 @@ export function needsReview(item) {
   return Boolean(item.needs_review && item.review_confirmed !== true);
 }
 
-export function annualCategoryTotals(items, today) {
-  const start = `${today.slice(0, 4)}-01-01`;
+export function annualCategoryTotals(items, today, year = Number(today.slice(0, 4))) {
+  const { start, end } = annualPeriod(year, today);
   const totals = new Map(categories.map(category => [category, 0]));
   for (const item of items) {
-    if (item.trade_date >= start && item.trade_date <= today) {
+    if (item.trade_date >= start && item.trade_date <= end) {
       totals.set(item.category, (totals.get(item.category) || 0) + item.amount);
     }
   }
   const rows = [...totals].map(([category, amount]) => ({ category, amount }));
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
   const drawable = total > 0 && rows.every(row => row.amount >= 0);
-  return { start, end: today, total, drawable,
+  return { start, end, total, drawable,
     rows: rows.map(row => ({ ...row, percent: drawable ? row.amount / total * 100 : null })) };
+}
+
+export function annualPeriod(year, today) {
+  const end = year === Number(today.slice(0, 4)) ? today : `${year}-12-31`;
+  return { start: `${year}-01-01`, end };
+}
+
+export function previousPeriodEnd(end) {
+  const year = Number(end.slice(0, 4)) - 1;
+  const month = Number(end.slice(5, 7));
+  const day = Math.min(Number(end.slice(8, 10)), new Date(Date.UTC(year, month, 0)).getUTCDate());
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export function annualComparison(items, today, year) {
+  const current = annualCategoryTotals(items, today, year);
+  const previousEnd = previousPeriodEnd(current.end);
+  const previous = annualCategoryTotals(items, previousEnd);
+  const coverage = period => [...new Set(items.filter(item =>
+    item.trade_date >= period.start && item.trade_date <= period.end).map(item => item.trade_date.slice(0, 7)))].sort();
+  const currentMonths = coverage(current), previousMonths = coverage(previous);
+  const difference = currentMonths.length && previousMonths.length ? current.total - previous.total : null;
+  return { current, previous, currentMonths, previousMonths, difference,
+    percent: difference !== null && previous.total > 0 ? difference / previous.total * 100 : null };
+}
+
+export function periodPreset(preset, today) {
+  const year = Number(today.slice(0, 4)), month = Number(today.slice(5, 7));
+  if (preset === "all") return { from: "", to: "" };
+  if (preset === "year") return { from: `${year}-01`, to: today.slice(0, 7) };
+  if (preset === "previous-year") return { from: `${year - 1}-01`, to: `${year - 1}-12` };
+  if (preset === "previous-month") {
+    const previous = month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, "0")}`;
+    return { from: previous, to: previous };
+  }
+  if (preset === "month") return { from: today.slice(0, 7), to: today.slice(0, 7) };
+  throw new Error("期間の指定が不正です。");
+}
+
+export function nextForecast(invoices, today) {
+  const latest = latestForecast(invoices);
+  if (!latest) return null;
+  const month = today.slice(0, 7);
+  const upcoming = latest.forecasts.filter(item => item.settlement_month >= month)
+    .sort((a, b) => a.settlement_month.localeCompare(b.settlement_month));
+  if (!upcoming.length) return null;
+  const first = upcoming[0];
+  return { month: first.settlement_month,
+    amount: upcoming.filter(item => item.settlement_month === first.settlement_month).reduce((sum, item) => sum + item.amount, 0),
+    onwards: upcoming.some(item => item.settlement_month === first.settlement_month && item.onwards),
+    issue_date: latest.issue_date };
 }
 
 export function filterItems(items, { basis, from, to, category, query, reviewOnly, machineOnly }) {

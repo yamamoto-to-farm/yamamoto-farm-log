@@ -16,6 +16,8 @@ button:disabled { cursor: wait; opacity: .6; }
 .finance-summary { display: flex; flex-wrap: wrap; gap: 10px; }
 .finance-stat { background: #edf5f2; border-radius: 8px; padding: 12px; flex: 1 1 150px; }
 .finance-stat strong { display: block; font-size: 1.2rem; margin-top: 5px; }
+.finance-stat-action { color: inherit; border: 1px solid #aebac4; text-align: left; }
+.finance-stat-action:hover, .finance-stat-action:focus-visible { background: #dceee6; outline: 2px solid #398651; outline-offset: 2px; }
 .finance-scroll { overflow-x: auto; margin: 14px 0; }
 table { border-collapse: collapse; width: 100%; font-size: .9rem; }
 caption { text-align: left; padding-bottom: 8px; }
