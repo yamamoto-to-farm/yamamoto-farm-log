@@ -121,9 +121,9 @@ function timeRow(name, range = { start: "", end: "" }) {
 
 export function renderDiaryParticipation(card, work) {
   if (hasParticipation(work)) validateDiaryTimes(work);
-  const area = document.createElement("section");
+  const area = document.createElement("details");
   area.className = "diary-participation";
-  area.innerHTML = '<h4>各人の参加時間（実績）</h4><p class="memo-desc" data-help="各人の参加時間について">空欄は未記録です。途中参加・退出や休憩は時間帯を分けて記録してください。予定・シフトは候補で、保存後に実績として扱います。</p><div class="diary-time-candidates"></div>';
+  area.innerHTML = '<summary>各人の作業時間（実績）</summary><p class="memo-desc" data-help="各人の参加時間について">空欄は未記録です。途中参加・退出や休憩は時間帯を分けて記録してください。予定・シフトは候補で、保存後に実績として扱います。</p><div class="diary-time-candidates"></div>';
   for (const name of diaryWorkers(work.workers)) {
     const person = document.createElement("div");
     person.className = "diary-person";
@@ -151,6 +151,33 @@ export function renderDiaryParticipation(card, work) {
     area.appendChild(warning);
   }
   card.appendChild(area);
+  const timeControls = card.querySelector(".edit-time-row");
+  if (timeControls) {
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "secondary-btn diary-apply-overall";
+    copy.textContent = "全員に反映";
+    copy.onclick = () => applyDiaryOverallTime(card);
+    timeControls.appendChild(copy);
+  }
+}
+
+export function applyDiaryOverallTime(card) {
+  const inputs = card.querySelectorAll(".edit-time-row input");
+  const overall = { start: inputs[0].value, end: inputs[1].value };
+  if (!validTimeRange(overall)) {
+    alert("作業全体の開始・終了を両方入力し、終了を開始より後にしてください。");
+    return false;
+  }
+  const names = [...card.querySelectorAll(".diary-person")].map(person => person.dataset.person);
+  if (!names.length) {
+    alert("反映する従事者がいません。");
+    return false;
+  }
+  if (!confirm("作業全体の開始・終了を全員にそのまま反映します。各人の入力済み時間・休憩の区切りを置き換えます。途中参加・退出や休憩は反映後に修正してください。（保存はまだ行いません）")) return false;
+  applyCandidate(card, Object.fromEntries(names.map(name => [name, [overall]])));
+  card.querySelector(".diary-participation").open = true;
+  return true;
 }
 
 export function readDiaryParticipation(card) {

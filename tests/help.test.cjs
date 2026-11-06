@@ -18,6 +18,8 @@ test("all admin and recent pages opt in to the same help module", () => {
   for (const file of files) assert.match(readFileSync(file, "utf8"), /src="\/common\/help.js\?v=20261106-1"/, file);
 });
 test("dynamic diary and plan explanations are marked while warnings remain inline", () => {
+  assert.match(read("diary/editCard.js"), /<p class="memo-desc diary-memo-example">/);
+  assert.doesNotMatch(read("diary/editCard.js"), /data-help="日誌メモの記入例"/);
   assert.match(read("diary/participation.js"), /data-help="各人の参加時間について"/);
   assert.match(read("schedule/daily-plan/daily-plan.js"), /data-help="作業全体と参加時間の扱い"/);
   assert.match(read("admin/message/message.js"), /data-help="連絡文の手修正について"/);

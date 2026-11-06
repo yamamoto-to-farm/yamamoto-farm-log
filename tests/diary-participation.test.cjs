@@ -28,6 +28,46 @@ const log = (folder, worker = "パートB", field = "圃場A") => ({
   folder, displayName: folder === "hand-weeding" ? "手作業除草" : "収穫",
   data: { worker, field, workType: "草取り" },
 });
+test("overall time copies to every person only after confirmation and reveals collapsed detail", () => {
+  const alerts = [];
+  let accepted = false, confirmations = 0;
+  const detail = { open: false };
+  const inputs = [{ value: "08:00" }, { value: "16:30" }];
+  const people = ["家族A", "パートB"].map(name => ({
+    dataset: { person: name }, rows: ["existing"],
+    querySelector() { return { replaceChildren: (...rows) => { this.rows = rows; } }; },
+  }));
+  const card = {
+    querySelectorAll: selector => selector === ".diary-person" ? people : inputs,
+    querySelector: () => detail,
+  };
+  const c = load({
+    alert: message => alerts.push(message),
+    confirm: () => { confirmations++; return accepted; },
+    document: { createElement: () => ({ querySelector: () => ({}) }) },
+  });
+  assert.equal(c.applyDiaryOverallTime(card), false);
+  assert.deepEqual(people[0].rows, ["existing"]);
+  assert.equal(detail.open, false);
+  accepted = true;
+  assert.equal(c.applyDiaryOverallTime(card), true);
+  assert.equal(detail.open, true);
+  for (const person of people) {
+    assert.equal(person.rows.length, 1);
+    assert.match(person.rows[0].innerHTML, /value="08:00"/);
+    assert.match(person.rows[0].innerHTML, /value="16:30"/);
+  }
+  for (const range of [["", ""], ["08:00", ""], ["16:30", "08:00"]]) {
+    [inputs[0].value, inputs[1].value] = range;
+    assert.equal(c.applyDiaryOverallTime(card), false);
+  }
+  assert.equal(alerts.length, 3);
+  assert.equal(confirmations, 2);
+  assert.match(read("diary/participation.js"), /createElement\("details"\)/);
+  assert.match(read("diary/participation.js"), /<summary>各人の作業時間（実績）<\/summary>/);
+  assert.match(read("diary/editCard.js"), /target.closest\("input, button, textarea, select, option, a, summary"\)/);
+});
+
 test("one work stores different crews' ranges including breaks, and unknown is never full-day attendance", () => {
   const c = load();
   const item = work();

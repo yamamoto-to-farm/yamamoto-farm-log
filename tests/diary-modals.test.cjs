@@ -34,6 +34,16 @@ function setup(file, module = false) {
   return { context, get };
 }
 
+test("work-card toolbar groups merge and time actions with consistent sizing", () => {
+  const read = file => readFileSync(join(__dirname, "..", "deploy", "diary", file), "utf8");
+  const source = read("editCard.js");
+  assert.match(source, /aria-labelledby="diary-merge-title"[\s\S]*id="merge-selected-btn"[\s\S]*id="merge-clear-btn"[\s\S]*<\/section>/);
+  assert.match(source, /aria-labelledby="diary-time-title"[\s\S]*id="diary-load-plans"[\s\S]*id="diary-load-shift"[\s\S]*<\/section>/);
+  assert.match(read("diary.css"), /\.merge-toolbar \.merge-toolbar-actions > button \{[\s\S]*?min-height: 42px;[\s\S]*?margin: 0;/);
+  assert.doesNotMatch(read("diary.css"), /\.merge-toolbar #diary-load-plans[^{]*\{/);
+  assert.match(read("diary.css"), /@media \(max-width: 640px\) \{\s*\.merge-toolbar-row \{\s*grid-template-columns: minmax\(0, 1fr\);/);
+});
+
 test("date opens in dialog without an inline calendar and synchronizes expanded state", () => {
   const { context, get } = setup("diary.js");
   vm.runInContext("setDiaryMonthMiniOpen(true)", context);

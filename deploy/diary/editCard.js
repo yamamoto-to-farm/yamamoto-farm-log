@@ -10,7 +10,7 @@ import { getWorkToneClass } from "/common/work-tone.js";
 import {
   renderDiaryParticipation, readDiaryParticipation, validateDiaryTimes, mergeDiaryParticipation,
   diaryPlanCandidates, loadDiaryPlanCandidates, loadDiaryShiftTimes, showDiaryTimeCandidates,
-} from "./participation.js?v=20261106-help-1";
+} from "./participation.js?v=20261106-collapse-1";
 
 let timeSources = { plans: null, shifts: null, logs: [], autoList: [] };
 
@@ -24,20 +24,26 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
   const toolbar = document.createElement("div");
   toolbar.className = "card merge-toolbar";
   toolbar.innerHTML = `
+    <h3 class="edit-title">作業カード</h3>
     <div class="merge-toolbar-row">
-      <div>
-        <h3 class="edit-title">作業カード</h3>
+      <section class="merge-toolbar-group" aria-labelledby="diary-merge-title">
+        <h4 id="diary-merge-title">カードをまとめる</h4>
         <p class="memo-desc" data-help="作業カードのまとめ方">時刻が無い過去データは、複数選択して1件にまとめられます。</p>
+        <div class="merge-toolbar-actions">
+          <button id="merge-selected-btn" class="secondary-btn" type="button" disabled>選択カードをマージ</button>
+          <button id="merge-clear-btn" class="secondary-btn" type="button">選択解除</button>
+        </div>
         <p id="merge-type-guide" class="merge-type-guide">同じ作業種類のカードを選択するとマージできます。</p>
+      </section>
+      <section class="merge-toolbar-group" aria-labelledby="diary-time-title">
+        <h4 id="diary-time-title">時間の候補を読み込む</h4>
         <p class="memo-desc" data-help="作業時間の候補について">ログの登録時刻は作業時間に使いません。日別予定・シフトは候補を確認して取り込んでください。</p>
-        <button id="diary-load-plans" class="secondary-btn" type="button">日別予定の時間候補を読む</button>
-        <button id="diary-load-shift" class="secondary-btn" type="button">シフトの目安を読む</button>
+        <div class="merge-toolbar-actions">
+          <button id="diary-load-plans" class="secondary-btn" type="button">日別予定の時間候補を読む</button>
+          <button id="diary-load-shift" class="secondary-btn" type="button">シフトの目安を読む</button>
+        </div>
         <p id="diary-time-source-status" role="status"></p>
-      </div>
-      <div class="merge-toolbar-actions">
-        <button id="merge-selected-btn" class="secondary-btn" type="button" disabled>選択カードをマージ</button>
-        <button id="merge-clear-btn" class="secondary-btn" type="button">選択解除</button>
-      </div>
+      </section>
     </div>
   `;
   area.appendChild(toolbar);
@@ -149,8 +155,8 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     <p class="memo-desc" data-help="日誌メモの使い方">
       この日の作業ログがない場合や、未実装の作業がある場合はここに記入できます。
     </p>
-    <p class="memo-desc" data-help="日誌メモの記入例" style="margin-top:6px; color:#666;">
-      記入例：午前　防鳥ネット張る（直輝／咲子）
+    <p class="memo-desc diary-memo-example">
+      記入例：午前　防鳥ネット張る（直輝／咲子）<br>
       午後　会合（雅彦）
     </p>
 
@@ -431,7 +437,7 @@ function bindManualMergeControls(diary, timestampRows) {
   if (!mergeBtn || !clearBtn || !cards.length) return;
 
   const isInteractiveTarget = target => {
-    return Boolean(target.closest("input, button, textarea, select, option, a"));
+    return Boolean(target.closest("input, button, textarea, select, option, a, summary"));
   };
 
   const getSelectedCards = () => cards.filter(card => card.dataset.selected === "true");
