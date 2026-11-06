@@ -56,8 +56,11 @@ function plannedBlockHtml(block, workers, logs, off = false, references = []) {
   const page = Object.hasOwn(TASK_FOLDERS, task) ? LOG_PAGES[TASK_FOLDERS[task]] : undefined;
   const actual = matches ? [...new Map(matches.map(log => references[logs.indexOf(log)])
     .filter(Boolean).map(reference => [reference.anchor, reference])).values()] : [];
-  const times = [...new Set(actual.map(item => item.start && item.end ? `${item.start}〜${item.end}`
-    : item.end ? `終了${item.end}` : item.start ? `開始${item.start}` : "").filter(Boolean))];
+  const times = [...new Set(actual.flatMap(item => Object.hasOwn(item, "participation")
+    ? workers.map(name => `${name}：${item.participation[name]?.length
+      ? item.participation[name].map(range => `${range.start}〜${range.end}`).join("・") : "参加時間未記録"}`)
+    : [item.start && item.end ? `作業全体 ${item.start}〜${item.end}`
+    : item.end ? `終了${item.end}` : item.start ? `開始${item.start}` : ""]).filter(Boolean))];
   const result = matches === null ? "作業ログを取得できないため、比較できません。"
     : matches.length ? `関連する作業ログ：${[...new Set(matches.map(log => log.displayName))].map(escape).join("・")}（${matches.length}件）`
       + (times.length ? `／実績時間：${times.map(escape).join("・")}` : "")

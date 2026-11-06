@@ -6,7 +6,8 @@ import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js?v=20261103-status-2";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
-import { loadFertilizerDetails, combineSimultaneousWork } from "./actual-work.js?v=20261104-actual-1";
+import { loadFertilizerDetails, combineSimultaneousWork } from "./actual-work.js?v=20261106-time-1";
+import { diaryWorkers, hasParticipation, validateDiaryTimes } from "./participation.js?v=20261106-time-1";
 
 const WORK_LOG_TYPE_BY_CARD = [
   { pattern: /手作業除草/, type: "hand-weeding" },
@@ -47,7 +48,7 @@ export async function initViewPageWithOptions(options = {}) {
   const autoSowingCategoryMap = buildSowingCategoryMap(autoList);
   const originalWorkList = Array.isArray(diary?.work) && diary.work.length
     ? normalizeViewGroups(hydrateSowingCategoryForView(diary.work, autoSowingCategoryMap))
-    : normalizeViewGroups(mergeWorkEntries(autoList, timestampRows));
+    : normalizeViewGroups(mergeWorkEntries(autoList, timestampRows).map(work => ({ ...work, start: "", end: "" })));
   const fertilizer = await loadFertilizerDetails(logs, date);
   if (options.isCurrent && !options.isCurrent()) return;
   const { groups: workList, references } = combineSimultaneousWork(originalWorkList, autoList, fertilizer.entries);
@@ -140,6 +141,22 @@ function createViewWorkCard(w) {
     card.appendChild(createLine("播種区分", sowingCategoryLine, "view-field-line"));
   }
   card.appendChild(createStartEndLine(String(w?.start || ""), String(w?.end || ""), "view-time-line"));
+  if (hasParticipation(w)) {
+    validateDiaryTimes(w);
+    const section = document.createElement("section");
+    section.className = "diary-participation-view";
+    const heading = document.createElement("strong");
+    heading.textContent = "各人の参加時間（実績）";
+    section.appendChild(heading);
+    for (const name of diaryWorkers(w.workers)) {
+      const ranges = w.participation[name] || [];
+      section.appendChild(createLine(name, ranges.length
+        ? ranges.map(range => `${range.start}〜${range.end}`).join("・") : "未記録"));
+    }
+    card.appendChild(section);
+  } else if (w.start || w.end) {
+    card.appendChild(createLine("時間の扱い", "作業全体の時間です。人別の参加時間は未記録です。", "memo-desc"));
+  }
   if (w.linkWarning) card.appendChild(createLine("同時施肥",
     "対応する作業を一意に照合できないか日誌の補正内容が異なるため、別カードで表示しています。", "diary-actual-warning"));
 
@@ -320,7 +337,7 @@ function createStartEndLine(start, end, extraClass = "") {
   const p = document.createElement("p");
   if (extraClass) p.className = extraClass;
   const ss = document.createElement("strong");
-  ss.textContent = "開始：";
+  ss.textContent = "作業全体の開始：";
   p.appendChild(ss);
   p.appendChild(document.createTextNode(` ${start}　`));
 
@@ -352,7 +369,7 @@ function createSubItemsDetails(subItems, hideField = false) {
 
     const time = document.createElement("span");
     time.className = "merged-work-time";
-    time.textContent = `／ ${String(subItem?.end || subItem?.start || subItem?.timestampTime || "-")}`;
+    time.textContent = `／ ${String(subItem?.end || subItem?.start || "時間未記録")}`;
     li.appendChild(time);
 
     ul.appendChild(li);
@@ -458,8 +475,8 @@ function normalizeViewGroups(workList) {
     if (Array.isArray(item?.items) && item.items.length > 0) {
       groups.push({
         ...item,
-        start: item.start || item.items[0]?.start || "",
-        end: item.end || item.items[item.items.length - 1]?.end || ""
+        start: item.start ?? item.items[0]?.start ?? "",
+        end: item.end ?? item.items[item.items.length - 1]?.end ?? ""
       });
       return;
     }

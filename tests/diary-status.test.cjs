@@ -7,6 +7,10 @@ const vm = require("node:vm");
 const read = file => readFileSync(join(__dirname, "..", "deploy", file), "utf8");
 function contextFor(file, dependencies = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, ...dependencies });
+  if (file === "diary/saveDiary.js") {
+    vm.runInContext(read("common/work-plan-time.js").replace(/^export /gm, ""), context);
+    vm.runInContext(read("diary/participation.js").replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, ""), context);
+  }
   const source = read(file).replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
   vm.runInContext(source, context);
   return context;

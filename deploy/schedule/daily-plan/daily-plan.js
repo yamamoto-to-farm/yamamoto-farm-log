@@ -2,7 +2,7 @@ import { verifyLocalAuth } from "/common/ui.js?v=1";
 import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { renderHeader } from "/common/header.js?v=1";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
-import { loadPlanWorkers, openPlanTaskModal } from "/common/work-plan-form.js?v=20261105-task-2";
+import { loadPlanWorkers, openPlanTaskModal, resolveShiftWorker as resolveWorker } from "/common/work-plan-form.js?v=20261106-diary-time-1";
 import { openWorkerSelectModal } from "/common/filter/filter-worker.js?v=20261104-work-1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { availableWorkTimes, participationForWork, mergeTimeRanges, validTimeRange } from "/common/work-plan-time.js?v=20261104-mixed-time-1";
@@ -140,16 +140,7 @@ function renderScope() {
       && !selectedFamily.length && selectedParts.length <= 1 ? "single" : inputScope === "family" ? "family" : "";
 }
 export function resolveShiftWorker(person, staff, workers) {
-  const normalize = value => String(value || "").normalize("NFKC").replace(/\s/g, "");
-  const member = staff.find(member => member.name === person);
-  const candidates = member?.login ? workers.filter(worker => worker.name === member.login)
-    : workers.filter(worker => normalize(worker.display) === normalize(person)
-      || normalize(worker.name) === normalize(person)
-      || String(worker.display || "").normalize("NFKC").trim().split(/\s+/)[0] === String(person).normalize("NFKC"));
-  if (candidates.length !== 1 || !candidates[0].display) {
-    throw new Error(`「${person}」のパート従業員を一意に特定できません。シフト設定のログイン連携を確認してください。`);
-  }
-  return candidates[0].display;
+  return resolveWorker(person, staff, workers);
 }
 function validateParticipants() {
   const mode = el("plan-kind").value;

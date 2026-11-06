@@ -5,8 +5,14 @@
 
 import { loadLogsByDate, extractWorkForEdit } from "./work-summary.js?v=20261103-status-2";
 import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
-import { buildTimestampDefaults, createSessionKey, loadTimestampRows } from "/common/timestamp.js?v=1";
+import { createSessionKey, loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
+import {
+  renderDiaryParticipation, readDiaryParticipation, validateDiaryTimes, mergeDiaryParticipation,
+  diaryPlanCandidates, loadDiaryPlanCandidates, loadDiaryShiftTimes, showDiaryTimeCandidates,
+} from "./participation.js?v=20261106-time-1";
+
+let timeSources = { plans: null, shifts: null, logs: [], autoList: [] };
 
 // ---------------------------------------------------------
 // 編集カードを描画
@@ -23,6 +29,10 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
         <h3 class="edit-title">作業カード</h3>
         <p class="memo-desc">時刻が無い過去データは、複数選択して1件にまとめられます。</p>
         <p id="merge-type-guide" class="merge-type-guide">同じ作業種類のカードを選択するとマージできます。</p>
+        <p class="memo-desc">ログの登録時刻は作業時間に使いません。日別予定・シフトは候補を確認して取り込んでください。</p>
+        <button id="diary-load-plans" class="secondary-btn" type="button">日別予定の時間候補を読む</button>
+        <button id="diary-load-shift" class="secondary-btn" type="button">シフトの目安を読む</button>
+        <p id="diary-time-source-status" role="status"></p>
       </div>
       <div class="merge-toolbar-actions">
         <button id="merge-selected-btn" class="secondary-btn" type="button" disabled>選択カードをマージ</button>
@@ -40,19 +50,17 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     existingBySourceKey[key] = w;
   });
 
-  const timestampDefaults = buildTimestampDefaults(autoList, timestampRows);
-
   // -------------------------------
   // 自動抽出された作業カード
   // -------------------------------
   autoList.forEach((item, idx) => {
 
     // ★ sourceKey 一致を優先、旧データは index でフォールバック
-    const existing = existingBySourceKey[item.sourceKey] || diary?.work?.[idx] || {};
+    const legacy = diary?.work?.[idx];
+    const existing = existingBySourceKey[item.sourceKey] || (!legacy?.sourceKey ? legacy : null) || {};
 
-    const defaults = timestampDefaults[idx] || { start: "", end: "" };
-    const start = String(item.start || existing.start || defaults.start || "").trim();
-    const end = String(item.end || existing.end || defaults.end || "").trim();
+    const start = String(item.start ?? existing.start ?? "").trim();
+    const end = String(item.end ?? existing.end ?? "").trim();
 
     // ★ ログ由来の値を優先（同期を維持）
     const isSeedWork = isSowingWorkItem(item) || String(item?.folder || existing?.folder || "").trim() === "seed";
@@ -84,7 +92,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
             ${subItems.map(subItem => `
               <li>
                 <span class="merged-work-field">${escapeHtml(normalizeMultiText(subItem.field) || "未入力圃場")}</span>
-                <span class="merged-work-time">／ ${escapeHtml(subItem.timestampTime || subItem.start || "-")}</span>
+                <span class="merged-work-time">／ ${escapeHtml(subItem.end || subItem.start || "時間未記録")}</span>
               </li>
             `).join("")}
           </ul>
@@ -116,14 +124,15 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
       <input type="hidden" id="machine_${idx}" value="${machine}">
 
       <div class="time-row edit-time-row">
-        <label>開始</label>
-        <input type="time" id="start_${idx}" class="form-input" value="${start}">
+        <label>作業全体の開始
+        <input type="time" id="start_${idx}" class="form-input" value="${start}"></label>
 
-        <label>終了</label>
-        <input type="time" id="end_${idx}" class="form-input" value="${end}">
+        <label>終了
+        <input type="time" id="end_${idx}" class="form-input" value="${end}"></label>
       </div>
     `;
 
+    renderDiaryParticipation(card, { ...item, start, end });
     area.appendChild(card);
   });
 
@@ -150,6 +159,44 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
 
   area.appendChild(memoCard);
   bindManualMergeControls(diary, timestampRows);
+  bindTimeSources(autoList);
+}
+
+function drawTimeCandidates(groups) {
+  [...document.querySelectorAll(".edit-card[data-group-index]")].forEach((card, index) => {
+    const group = groups[index];
+    const keys = new Set(getGroupSourceKeys(group));
+    const logs = timeSources.autoList.filter(item => keys.has(item.sourceKey))
+      .map(item => timeSources.logs[item.logIndex]).filter(Boolean);
+    showDiaryTimeCandidates(card, group,
+      timeSources.plans === null ? [] : diaryPlanCandidates(group, logs, timeSources.plans), timeSources.shifts);
+  });
+}
+
+function bindTimeSources(groups) {
+  if (timeSources.plans !== null || timeSources.shifts !== null) drawTimeCandidates(groups);
+  const date = document.getElementById("diaryDate").value;
+  for (const [id, kind, loader] of [
+    ["diary-load-plans", "plans", loadDiaryPlanCandidates],
+    ["diary-load-shift", "shifts", () => loadDiaryShiftTimes(date)],
+  ]) {
+    const button = document.getElementById(id);
+    button.onclick = async () => {
+      button.disabled = true;
+      const notice = document.getElementById("diary-time-source-status");
+      notice.textContent = "時間候補を読み込み中…";
+      try {
+        const result = await loader();
+        if (!button.isConnected || document.getElementById("diaryDate").value !== date) return;
+        timeSources[kind] = result;
+        drawTimeCandidates(groups);
+        notice.textContent = "候補を読み込みました。入力・保存済みの時間は変更していません。";
+      } catch (error) {
+        console.error("[diary] time candidates failed", error);
+        if (button.isConnected) notice.textContent = `${error.message} 手入力できます。このボタンで再試行してください。`;
+      } finally { button.disabled = false; }
+    };
+  }
 }
 
 function normalizeMultiText(value) {
@@ -257,6 +304,8 @@ export async function initEditPage(options = {}) {
   const autoList = extractWorkForEdit(logs, timestampRows);
   const hydratedList = mergeSavedDiaryGroups(diary, autoList);
 
+  if (options.isCurrent && !options.isCurrent()) return;
+  timeSources = { plans: null, shifts: null, logs, autoList };
   window.__currentDiaryWorkGroups = hydratedList;
 
   // ★ 既存日誌を反映して描画
@@ -313,8 +362,8 @@ function mergeSavedDiaryGroups(diary, fallbackGroups) {
       field: normalizeMultiText(group?.field || hydratedItems.map(item => item.field).filter(Boolean).join("／")),
       workers: normalizeMultiText(group?.workers || hydratedItems.map(item => item.workers).filter(Boolean).join("／")),
       machine: String(group?.machine || hydratedItems.map(item => item.machine).filter(Boolean).join("／") || "").trim(),
-      start: String(group?.start || firstStart || "").trim(),
-      end: String(group?.end || firstEnd || "").trim(),
+      start: String(group?.start ?? firstStart ?? "").trim(),
+      end: String(group?.end ?? firstEnd ?? "").trim(),
       items: hydratedItems
     };
   });
@@ -343,6 +392,7 @@ function normalizeSavedGroup(item, index) {
     machine: String(item?.machine || normalizedItems.map(v => v.machine).filter(Boolean).join("／") || "").trim(),
     start: String(item?.start || "").trim(),
     end: String(item?.end || "").trim(),
+    ...(Object.hasOwn(item || {}, "participation") ? { participation: structuredClone(item.participation) } : {}),
     items: normalizedItems
   };
 }
@@ -358,6 +408,7 @@ function normalizeSavedSubItem(item, index, parent) {
     machine: String(item?.machine || parent?.machine || "").trim(),
     start: String(item?.start || parent?.start || "").trim(),
     end: String(item?.end || parent?.end || "").trim(),
+    ...(Object.hasOwn(item || {}, "participation") ? { participation: structuredClone(item.participation) } : {}),
     timestampTime: String(item?.end || item?.start || parent?.end || parent?.start || "").trim()
   };
 }
@@ -451,7 +502,9 @@ function bindManualMergeControls(diary, timestampRows) {
 
     if (selectedIndexes.length < 2) return;
 
-    syncGroupsFromCurrentInputs();
+    try { syncGroupsFromCurrentInputs(); } catch (error) {
+      console.error("[diary] merge time validation failed", error); alert(error.message); return;
+    }
 
     const currentGroups = Array.isArray(window.__currentDiaryWorkGroups) ? [...window.__currentDiaryWorkGroups] : [];
     const selectedGroups = selectedIndexes.map(index => currentGroups[index]).filter(Boolean);
@@ -483,7 +536,9 @@ function bindManualMergeControls(diary, timestampRows) {
       const index = Number(button.dataset.groupIndex);
       if (!Number.isFinite(index)) return;
 
-      syncGroupsFromCurrentInputs();
+      try { syncGroupsFromCurrentInputs(); } catch (error) {
+        console.error("[diary] unmerge time validation failed", error); alert(error.message); return;
+      }
 
       const currentGroups = Array.isArray(window.__currentDiaryWorkGroups) ? [...window.__currentDiaryWorkGroups] : [];
       const group = currentGroups[index];
@@ -512,8 +567,11 @@ function syncGroupsFromCurrentInputs() {
     const fieldInput = document.getElementById(`field_${index}`);
     const machineInput = document.getElementById(`machine_${index}`);
 
-    group.start = startInput?.value || group.start || "";
-    group.end = endInput?.value || group.end || "";
+    group.start = startInput ? startInput.value : group.start || "";
+    group.end = endInput ? endInput.value : group.end || "";
+    const card = document.querySelector(`.edit-card[data-group-index="${index}"]`);
+    if (card) group.participation = readDiaryParticipation(card);
+    validateDiaryTimes(group);
     group.field = fieldInput?.value || group.field || "";
     group.machine = machineInput?.value || group.machine || "";
 
@@ -523,6 +581,7 @@ function syncGroupsFromCurrentInputs() {
       items[0].end = group.end;
       items[0].field = group.field || items[0].field || "";
       items[0].machine = group.machine || items[0].machine || "";
+      if (group.participation) items[0].participation = structuredClone(group.participation);
     }
   });
 }
@@ -574,7 +633,7 @@ function buildManualMergedGroup(groups) {
     .sort((a, b) => a.localeCompare(b));
 
   const nonEmptyEnds = items
-    .map(item => normalizeTime(item?.end || item?.start || item?.timestampTime))
+    .map(item => normalizeTime(item?.end))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
@@ -593,6 +652,7 @@ function buildManualMergedGroup(groups) {
     machine: [...machineSet].join("／"),
     start: mergedStart,
     end: mergedEnd,
+    ...mergeDiaryParticipation(groups),
     items: items.map(item => ({
       ...item,
       sessionKey: String(item?.sessionKey || sessionKey).trim()
@@ -614,6 +674,8 @@ function expandMergedGroup(group) {
     machine: String(item?.machine || group?.machine || "").trim(),
     start: String(item?.start || "").trim(),
     end: String(item?.end || "").trim(),
+    ...(Object.hasOwn(item, "participation") ? { participation: structuredClone(item.participation) }
+      : Object.hasOwn(group, "participation") ? { participation: structuredClone(group.participation) } : {}),
     items: [{
       ...item,
       start: String(item?.start || "").trim(),

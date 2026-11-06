@@ -11,6 +11,7 @@ import {
   closeSaveModal,
   confirmSaveBeforeSubmit
 } from "/common/save-modal.js?v=1";
+import { readDiaryParticipation, validateDiaryTimes, diaryTimeOverlaps } from "./participation.js?v=20261106-time-1";
 
 export async function saveDiary(date, autoList) {
 
@@ -52,6 +53,7 @@ export async function saveDiary(date, autoList) {
     machine: String(document.getElementById(`machine_${idx}`)?.value || item.machine || "").trim(),
     start: document.getElementById(`start_${idx}`)?.value || "",
     end: document.getElementById(`end_${idx}`)?.value || "",
+    participation: readDiaryParticipation(document.querySelector(`.edit-card[data-group-index="${idx}"]`)),
     items: Array.isArray(item.items) ? item.items.map(subItem => ({
       sourceKey: String(subItem.sourceKey || ""),
       sessionKey: String(subItem.sessionKey || item.sessionKey || "").trim(),
@@ -62,11 +64,23 @@ export async function saveDiary(date, autoList) {
       workers: normalizeMultiValueAsArray(subItem.workers || ""),
       machine: String(subItem.machine || item.machine || "").trim(),
       start: String(subItem.start || item.start || "").trim(),
-      end: String(subItem.end || item.end || "").trim()
+      end: String(subItem.end || item.end || "").trim(),
+      ...(Object.hasOwn(subItem, "participation") ? { participation: structuredClone(subItem.participation) } : {})
     })) : []
   }));
 
   const filteredWork = newWork.filter(entry => hasValidWorkType(entry));
+  try {
+    filteredWork.forEach(validateDiaryTimes);
+  } catch (error) {
+    console.error("[diary] invalid participation", error);
+    alert(error.message);
+    return false;
+  }
+  const overlaps = diaryTimeOverlaps(filteredWork);
+  if (overlaps.length && !await confirmSaveBeforeSubmit({
+    lines: [...overlaps, "同時作業の場合を除き、人別の参加時間を修正してください。このまま保存しますか？"],
+  })) return false;
 
   current.work = filteredWork;
   current.workType = Array.from(new Set(filteredWork.map(w => String(w.type || w.workType || "").trim()).filter(Boolean))).join("／");
@@ -76,6 +90,7 @@ export async function saveDiary(date, autoList) {
     lines: [
       `日付: ${date}`,
       `作業件数: ${filteredWork.length}件`,
+      `人別時間未記録: ${filteredWork.reduce((count, work) => count + Object.values(work.participation).filter(ranges => !ranges.length).length, 0)}人・作業`,
       `メモ: ${current.memo ? "あり" : "なし"}`
     ]
   });

@@ -10,6 +10,9 @@ function load(file, deps = {}) {
     showSaveResult: async message => { context.lastSaveResult = message; },
     window: { addEventListener() {} }, URLSearchParams, ...deps });
   vm.runInContext(strip(read("common/work-plan-time.js")), context);
+  const shared = vm.createContext({});
+  vm.runInContext(strip(read("common/work-plan-form.js")), shared);
+  context.resolveWorker = shared.resolveShiftWorker;
   vm.runInContext(strip(read(file)), context);
   return context;
 }

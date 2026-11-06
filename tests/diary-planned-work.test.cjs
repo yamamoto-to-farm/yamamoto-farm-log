@@ -47,7 +47,7 @@ test("plan references show compact actual times and jump to the real card withou
   const logs = [log()];
   const html = render({ 担当A: plan }, logs, undefined,
     [{ anchor: "actual-work-0", start: "08:00", end: "14:00" }]);
-  assert.match(html, /実績時間：08:00〜14:00/);
+  assert.match(html, /実績時間：作業全体 08:00〜14:00/);
   assert.match(html, /href="#actual-work-0">実績を見る/);
   assert.doesNotMatch(html, /使用量|機械：/);
   const noTime = render({ 担当A: plan }, logs, undefined, [{ anchor: "actual-work-0", start: "", end: "" }]);

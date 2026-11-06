@@ -62,6 +62,7 @@ export function combineSimultaneousWork(workList, autoList, details) {
     if (!parent || matches.some(match => !match || match.group !== parent)) continue;
     // A diary may have custom merged crews/times. Do not hide those differences.
     if (!sameCrew(parent, fertilizer) || parent.start !== fertilizer.start || parent.end !== fertilizer.end
+      || JSON.stringify(parent.participation ?? null) !== JSON.stringify(fertilizer.participation ?? null)
       || fieldKey([parent.field]) !== fieldKey(parent.rawItems.map(item => item.field))
       || fieldKey([fertilizer.field]) !== fieldKey(fertilizer.rawItems.map(item => item.field))) continue;
     const competing = groups.filter(group => group !== fertilizer && group.rawItems.some(raw =>
@@ -77,7 +78,8 @@ export function combineSimultaneousWork(workList, autoList, details) {
   displayed.forEach((group, index) => {
     group.anchor = `actual-work-${index}`;
     group.rawItems.forEach(item => {
-      references[item.logIndex] = { anchor: group.anchor, start: group.start || "", end: group.end || "" };
+      references[item.logIndex] = { anchor: group.anchor, start: group.start || "", end: group.end || "",
+        ...(Object.hasOwn(group, "participation") ? { participation: group.participation } : {}) };
     });
   });
   return { groups: displayed, references };

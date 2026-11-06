@@ -1,5 +1,18 @@
 import { openModal, closeModal, bindModalCloseEvents } from "/common/filter/filter-core.js?v=1";
 
+export function resolveShiftWorker(person, staff, workers) {
+  const normalize = value => String(value || "").normalize("NFKC").replace(/\s/g, "");
+  const member = staff.find(member => member.name === person);
+  const candidates = member?.login ? workers.filter(worker => worker.name === member.login)
+    : workers.filter(worker => normalize(worker.display) === normalize(person)
+      || normalize(worker.name) === normalize(person)
+      || String(worker.display || "").normalize("NFKC").trim().split(/\s+/)[0] === String(person).normalize("NFKC"));
+  if (candidates.length !== 1 || !candidates[0].display) {
+    throw new Error(`「${person}」のパート従業員を一意に特定できません。シフト設定のログイン連携を確認してください。`);
+  }
+  return candidates[0].display;
+}
+
 export async function loadPlanWorkers() {
   const response = await fetch("/data/workers.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`担当者を取得できません（${response.status}）。`);

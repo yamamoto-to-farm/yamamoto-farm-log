@@ -1440,3 +1440,17 @@
   font-weight: normal;
   color: #64748b;
 }
+.diary-participation { width: 100%; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e6edf5; }
+.diary-participation h4 { margin: 0 0 8px; font-size: 15px; }
+.diary-person { padding: 10px 0; border-top: 1px solid #edf0f3; }
+.diary-person-range { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.diary-person-range input { width: 112px; min-width: 0; padding: 6px; box-sizing: border-box; }
+.diary-participation button, .merge-toolbar #diary-load-plans, .merge-toolbar #diary-load-shift { margin: 4px 4px 4px 0; font-size: 13px; padding: 7px 10px; }
+.diary-candidate { display: block; text-align: left; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+.diary-participation-view { margin-top: 10px; padding-top: 10px; border-top: 1px solid #edf0f3; }
+#editWorkArea { grid-template-columns: minmax(0, 1fr); }
+#editWorkArea > .card, .merge-toolbar-row > div { min-width: 0; }
+#editWorkArea .edit-time-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); }
+#editWorkArea .edit-time-row label { width: auto; min-width: 0; }
+#editWorkArea .edit-time-row input { display: block; width: 100%; min-width: 0; box-sizing: border-box; }
+.diary-person, .diary-participation-view, #diary-time-source-status { overflow-wrap: anywhere; }

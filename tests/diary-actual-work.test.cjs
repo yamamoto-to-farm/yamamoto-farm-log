@@ -6,7 +6,12 @@ const vm = require("node:vm");
 const source = name => readFileSync(join(__dirname, "..", "deploy", "diary", name), "utf8")
   .replace(/^import.*\r?\n/gm, "").replace(/^export /gm, "");
 function load(name, deps = {}) {
-  const context = vm.createContext({ console: { error() {} }, URLSearchParams, ...deps });
+  const context = vm.createContext({ console: { error() {} }, URLSearchParams, structuredClone, ...deps });
+  if (name === "viewCard.js") {
+    vm.runInContext(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8")
+      .replace(/^export /gm, ""), context);
+    vm.runInContext(source("participation.js"), context);
+  }
   vm.runInContext(source(name), context);
   return context;
 }
@@ -51,6 +56,7 @@ test("standalone work and ambiguous or mismatched simultaneous records retain se
     f => { f.groups[1].end = "15:00"; },
     f => { f.groups[1].workers = "A／B"; },
     f => { f.groups[1].field = "補正した圃場"; },
+    f => { f.groups[0].participation = { A: [{ start: "08:00", end: "12:00" }] }; },
     f => { f.auto.push({ ...f.auto[0], sourceKey: "another" }); f.groups.push({
       ...f.groups[0], items: [f.auto.at(-1)] }); },
   ];
