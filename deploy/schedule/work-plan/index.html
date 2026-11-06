@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="./work-plan.css?v=20261105-notes-1">
   <link rel="stylesheet" href="/common/css/work-plan-form.css?v=20261105-task-2">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
 <body class="recent-page">
   <div id="header"></div>
@@ -32,7 +33,7 @@
 
     <section class="card">
       <h2 class="wp-h2">カレンダー</h2>
-      <p class="wp-note" id="edit-hint" hidden>日付をクリックすると作業と出荷予定の基数を追加・編集できます。変更後は「保存する」を押してください。</p>
+      <p class="wp-note" id="edit-hint" data-help="カレンダーの編集方法" hidden>日付をクリックすると作業と出荷予定の基数を追加・編集できます。変更後は「保存する」を押してください。</p>
       <div id="calendar"></div>
     </section>
 
@@ -68,7 +69,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="./work-plan.js?v=20261105-shipping-merged-1"></script>
+  <script type="module" src="./work-plan.js?v=20261106-help-1"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

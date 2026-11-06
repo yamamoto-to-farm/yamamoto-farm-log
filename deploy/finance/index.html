@@ -8,16 +8,17 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="./finance.css?v=20261103-4">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
 <body class="recent-page recent-page--wide">
   <div id="header"></div>
   <main id="page-area" class="page-container" hidden>
     <h1 class="page-title">JA経費分析</h1>
-    <p class="finance-note">管理用の購入経費です。使用量・在庫・税務上の仕訳とは異なります。財務情報の共有にご注意ください。</p>
+    <p class="finance-note" data-help-keep>管理用の購入経費です。使用量・在庫・税務上の仕訳とは異なります。財務情報の共有にご注意ください。</p>
     <p id="status" role="status" aria-live="polite"></p>
     <div id="login-area" hidden>
       <button id="login" type="button" class="primary-btn">ログインする</button>
-      <p>写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
+      <p data-help="経費分析のログイン">写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
     </div>
     <div id="data-area" hidden>
       <section class="card">

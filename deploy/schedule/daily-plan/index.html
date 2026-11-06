@@ -9,13 +9,14 @@
   <link rel="stylesheet" href="./daily-plan.css?v=20261105-task-1">
   <link rel="stylesheet" href="/common/css/work-plan-form.css?v=20261105-task-2">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
 <body class="recent-page">
   <div id="header"></div>
   <main id="page-area" class="page-container" hidden>
     <h1 class="page-title">作業予定の追加・編集</h1>
-    <p>作業形態を選び、家族従業員・パート従業員の予定を作成・編集します。家族の時間・圃場は任意、パートの時間はシフトに合わせて設定します。</p>
-    <p class="plan-note">保存した予定を業務連絡で読み込み、コピーまたは確認後にLINE送信します。コピー済みの削除は警告付き、送信済みは削除できません。LINE受付は配達・既読の保証ではありません。</p>
+    <p data-help="作業予定の入力について">作業形態を選び、家族従業員・パート従業員の予定を作成・編集します。家族の時間・圃場は任意、パートの時間はシフトに合わせて設定します。</p>
+    <p class="plan-note" data-help="作業予定と業務連絡">保存した予定を業務連絡で読み込み、コピーまたは確認後にLINE送信します。コピー済みの削除は警告付き、送信済みは削除できません。LINE受付は配達・既読の保証ではありません。</p>
     <section class="card page-toolbar" aria-label="対象日とシフト連携">
     <label>日付 <input id="plan-date" type="date" class="form-input"></label>
     <p id="status" role="status" aria-live="polite"></p>
@@ -48,7 +49,7 @@
           <fieldset><legend>作業者</legend><div id="plan-workers" class="info-block">未選択</div></fieldset>
           <fieldset id="family-recipients-group" hidden>
             <legend>家族への業務連絡（任意）</legend>
-            <p class="plan-note">連絡する家族を選択してください。全作業への参加と開始・終了時刻が必要です。作業時間から連絡用の時間帯を作ります。未選択なら従来どおり家族には連絡しません。</p>
+            <p class="plan-note" data-help="家族への業務連絡">連絡する家族を選択してください。全作業への参加と開始・終了時刻が必要です。作業時間から連絡用の時間帯を作ります。未選択なら従来どおり家族には連絡しません。</p>
             <div id="family-recipients"></div>
           </fieldset>
           <p id="participant-kind" class="plan-note" role="status">作業者を選択してください。</p>
@@ -68,7 +69,7 @@
     </section>
     <section class="card">
       <h2 class="section-title">連絡時点の控え</h2>
-      <p class="plan-note">宛先ごとの最新の控えと現在の予定を比較します。コピー済みはLINE送信完了を意味しません。</p>
+      <p class="plan-note" data-help="連絡時点の控えについて">宛先ごとの最新の控えと現在の予定を比較します。コピー済みはLINE送信完了を意味しません。</p>
       <div id="communication-history"></div>
     </section>
     <section class="card">
@@ -82,6 +83,6 @@
       <a class="secondary-btn" href="/index.html">トップへ戻る</a>
     </div>
   </main>
-  <script type="module" src="./daily-plan.js?v=20261106-time-1"></script>
+  <script type="module" src="./daily-plan.js?v=20261106-help-1"></script>
 </body>
 </html>

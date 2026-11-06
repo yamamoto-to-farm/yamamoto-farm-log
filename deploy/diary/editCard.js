@@ -10,7 +10,7 @@ import { getWorkToneClass } from "/common/work-tone.js";
 import {
   renderDiaryParticipation, readDiaryParticipation, validateDiaryTimes, mergeDiaryParticipation,
   diaryPlanCandidates, loadDiaryPlanCandidates, loadDiaryShiftTimes, showDiaryTimeCandidates,
-} from "./participation.js?v=20261106-time-1";
+} from "./participation.js?v=20261106-help-1";
 
 let timeSources = { plans: null, shifts: null, logs: [], autoList: [] };
 
@@ -27,9 +27,9 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     <div class="merge-toolbar-row">
       <div>
         <h3 class="edit-title">作業カード</h3>
-        <p class="memo-desc">時刻が無い過去データは、複数選択して1件にまとめられます。</p>
+        <p class="memo-desc" data-help="作業カードのまとめ方">時刻が無い過去データは、複数選択して1件にまとめられます。</p>
         <p id="merge-type-guide" class="merge-type-guide">同じ作業種類のカードを選択するとマージできます。</p>
-        <p class="memo-desc">ログの登録時刻は作業時間に使いません。日別予定・シフトは候補を確認して取り込んでください。</p>
+        <p class="memo-desc" data-help="作業時間の候補について">ログの登録時刻は作業時間に使いません。日別予定・シフトは候補を確認して取り込んでください。</p>
         <button id="diary-load-plans" class="secondary-btn" type="button">日別予定の時間候補を読む</button>
         <button id="diary-load-shift" class="secondary-btn" type="button">シフトの目安を読む</button>
         <p id="diary-time-source-status" role="status"></p>
@@ -146,10 +146,10 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
 
   memoCard.innerHTML = `
     <h3 class="edit-title edit-card-title">日誌メモ</h3>
-    <p class="memo-desc">
+    <p class="memo-desc" data-help="日誌メモの使い方">
       この日の作業ログがない場合や、未実装の作業がある場合はここに記入できます。
     </p>
-    <p class="memo-desc" style="margin-top:6px; color:#666;">
+    <p class="memo-desc" data-help="日誌メモの記入例" style="margin-top:6px; color:#666;">
       記入例：午前　防鳥ネット張る（直輝／咲子）
       午後　会合（雅彦）
     </p>

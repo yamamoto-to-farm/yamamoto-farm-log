@@ -161,7 +161,7 @@ function renderCards() {
         `${escapeHtml(block.start)}〜${escapeHtml(block.end)} ${escapeHtml(block.task)}`).join("・")}
         <a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集</a></p>`).join("")}
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
-      <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
+      <p class="msg-muted" data-help="連絡文の手修正について">文面の補足・言い換えは予定には反映されません。</p>
       ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました（共通の連絡・手修正を含みます）。</p>' : ""}
       ${communication?.changed ? `<p class="msg-error">予定が変わったため、現在の予定から文面を作り直しました。以前の注意事項は<a href="/schedule/daily-plan/index.html?date=${loadedDate}">連絡時点の控え</a>で確認してください。</p>` : ""}
       <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="10" aria-label="連絡文面">${escapeHtml(text)}</textarea>

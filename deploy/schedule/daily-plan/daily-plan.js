@@ -207,7 +207,7 @@ function renderBlocks() {
           `<button type="button" class="secondary-btn plan-toggle" data-time-block="${index}" data-time-choice="${target}" aria-pressed="${block.start === range.start && block.end === range.end}">${range.start}〜${range.end}${range.through ? "（通し・昼休憩あり）" : ""}</button>`).join("")
           || "<p>選択した全員が参加できる時間候補がありません。</p>"}
           ${availability.unknown.length ? `<p class="plan-note">${escape(availability.unknown.join("・"))}の時間未指定の予定は差し引いていません。</p>` : ""}
-          <p class="plan-note">${mixed
+          <p class="plan-note" data-help="作業全体と参加時間の扱い">${mixed
             ? "開始・終了は家族を含む作業全体の時間です。パートは本人の勤務時間内だけ参加し、昼休憩を除きます。"
             : "通しは昼休憩を挟んで同じ作業を行います。作業時間は候補内で短く調整でき、各人の参加時間から昼休憩を除きます。"}</p>`;
         if (validTimeRange(block)) {

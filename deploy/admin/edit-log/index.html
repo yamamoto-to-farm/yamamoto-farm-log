@@ -188,6 +188,7 @@
   </style>
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
+  <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
 
 <body class="recent-page admin-page admin-page--log">
@@ -196,7 +197,7 @@
     <h1 class="page-title">ログ編集（管理者）</h1>
 
     <div class="card">
-      <p style="margin-top:0; color:#555;">
+      <p data-help="ログ編集の保存方式" style="margin-top:0; color:#555;">
         圃場別ログJSONを編集し、保存時に all.csv を再生成します。
       </p>
 
@@ -318,7 +319,7 @@
 
     <div class="card">
       <h2>選択行の詳細項目（可変入力）</h2>
-      <p style="margin-top:0; color:#666;">
+      <p data-help="入力項目の表示について" style="margin-top:0; color:#666;">
         作業内容に応じて入力項目を自動表示します。既存JSONにある項目はすべて表示し、未入力項目も追加入力できます。
       </p>
       <div id="dynamic-field-status" style="margin-bottom:8px; color:#666;">行を選択してください</div>

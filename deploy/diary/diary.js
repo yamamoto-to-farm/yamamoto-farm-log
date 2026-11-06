@@ -5,9 +5,9 @@
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js?v=20261103-status-2";
-import { initEditPage } from "./editCard.js?v=20261106-time-1";
-import { initViewPageWithOptions } from "./viewCard.js?v=20261106-time-1";
-import { saveDiary } from "./saveDiary.js?v=20261106-time-1";
+import { initEditPage } from "./editCard.js?v=20261106-help-1";
+import { initViewPageWithOptions } from "./viewCard.js?v=20261106-help-1";
+import { saveDiary } from "./saveDiary.js?v=20261106-help-1";
 import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { renderWeatherBox } from "./weather-box.js";
 import { renderDayPhotos, initDayPhotosModal } from "./day-photos.js?v=20261029-3";

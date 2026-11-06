@@ -123,7 +123,7 @@ export function renderDiaryParticipation(card, work) {
   if (hasParticipation(work)) validateDiaryTimes(work);
   const area = document.createElement("section");
   area.className = "diary-participation";
-  area.innerHTML = '<h4>各人の参加時間（実績）</h4><p class="memo-desc">空欄は未記録です。途中参加・退出や休憩は時間帯を分けて記録してください。予定・シフトは候補で、保存後に実績として扱います。</p><div class="diary-time-candidates"></div>';
+  area.innerHTML = '<h4>各人の参加時間（実績）</h4><p class="memo-desc" data-help="各人の参加時間について">空欄は未記録です。途中参加・退出や休憩は時間帯を分けて記録してください。予定・シフトは候補で、保存後に実績として扱います。</p><div class="diary-time-candidates"></div>';
   for (const name of diaryWorkers(work.workers)) {
     const person = document.createElement("div");
     person.className = "diary-person";

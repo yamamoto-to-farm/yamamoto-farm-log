@@ -354,7 +354,7 @@ async function openImport() {
   status("");
   const list = element("import-list");
   if (!suggestions.length) {
-    list.innerHTML = "<p class='wp-note'>この月に取り込める予定はありません（または既に計画済みです）。</p>";
+    list.innerHTML = "<p class='wp-note' role='status'>この月に取り込める予定はありません（または既に計画済みです）。</p>";
   } else {
     list.innerHTML = suggestions.map((s, index) =>
       `<label class="wp-import-row"><input type="checkbox" data-index="${index}" checked>` +
