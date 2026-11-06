@@ -16,13 +16,32 @@ export function itemMonth(item, basis) {
   return (basis === "settlement" ? item.settlement_date : item.trade_date).slice(0, 7);
 }
 
+export function needsReview(item) {
+  return Boolean(item.needs_review && item.review_confirmed !== true);
+}
+
+export function annualCategoryTotals(items, today) {
+  const start = `${today.slice(0, 4)}-01-01`;
+  const totals = new Map(categories.map(category => [category, 0]));
+  for (const item of items) {
+    if (item.trade_date >= start && item.trade_date <= today) {
+      totals.set(item.category, (totals.get(item.category) || 0) + item.amount);
+    }
+  }
+  const rows = [...totals].map(([category, amount]) => ({ category, amount }));
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const drawable = total > 0 && rows.every(row => row.amount >= 0);
+  return { start, end: today, total, drawable,
+    rows: rows.map(row => ({ ...row, percent: drawable ? row.amount / total * 100 : null })) };
+}
+
 export function filterItems(items, { basis, from, to, category, query, reviewOnly, machineOnly }) {
   const search = (query || "").normalize("NFKC").toLocaleLowerCase("ja").trim().split(/\s+/).filter(Boolean);
   return items.filter(item => {
     const month = itemMonth(item, basis);
     return (!from || month >= from) && (!to || month <= to)
       && (!category || item.category === category)
-      && (!reviewOnly || item.needs_review || item.category === "未分類")
+      && (!reviewOnly || needsReview(item) || item.category === "未分類")
       && (!machineOnly || item.department === "農機課")
       && search.every(word => `${item.item_name} ${item.spec} ${item.department}`.normalize("NFKC")
         .toLocaleLowerCase("ja").includes(word));

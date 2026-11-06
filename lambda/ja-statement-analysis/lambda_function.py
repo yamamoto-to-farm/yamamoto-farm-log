@@ -1,6 +1,7 @@
 """Cognito-protected JA statement API and private-S3 invoice importer."""
 
 import base64
+import hashlib
 import json
 import logging
 import os
@@ -208,6 +209,61 @@ def _load_custom_rules(bucket):
     return [ClassificationRule(**rule) for rule in stored]
 
 
+def _review_fingerprint(item):
+    fields = (
+        "trade_date", "trade_no", "item_name_raw", "spec_raw", "quantity",
+        "unit_price", "amount", "tax_flag", "department", "note", "review_reason",
+    )
+    value = json.dumps([item.get(field) for field in fields], ensure_ascii=False)
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _apply_review_confirmations(record):
+    confirmations = record.get("review_confirmations", {})
+    valid = {}
+    for item in record["items"]:
+        confirmation = confirmations.get(str(item["line_seq"]), {})
+        item["review_confirmed"] = bool(
+            item.get("needs_review")
+            and confirmation.get("fingerprint") == _review_fingerprint(item)
+        )
+        if item["review_confirmed"]:
+            valid[str(item["line_seq"])] = confirmation
+    record["review_confirmations"] = valid
+
+
+def _review_request(bucket, data):
+    invoice_no = _invoice_no(data)
+    line_seq = data.get("line_seq")
+    confirmed = data.get("review_confirmed")
+    if not isinstance(line_seq, int) or isinstance(line_seq, bool) or line_seq < 1:
+        raise RequestError(400, "line_seq が不正です。")
+    if not isinstance(confirmed, bool):
+        raise RequestError(400, "review_confirmed は真偽値で指定してください。")
+    if set(data) - {"invoice_no", "line_seq", "review_confirmed"}:
+        raise RequestError(400, "確認状態と分類は別々に保存してください。")
+    key = f"invoices/{invoice_no}.json"
+    record = _read_json(bucket, key)
+    item = next((value for value in record["items"] if value["line_seq"] == line_seq), None)
+    if item is None:
+        raise RequestError(404, "指定された明細行がありません。")
+    if confirmed and (not item.get("needs_review") or item["category"] == "未分類"):
+        raise RequestError(400, "分類済みの要確認明細を指定してください。未分類の場合は先に分類を修正してください。")
+    confirmations = dict(record.get("review_confirmations", {}))
+    if confirmed:
+        confirmations[str(line_seq)] = {
+            "fingerprint": _review_fingerprint(item),
+            "confirmed_at": datetime.now(timezone.utc).isoformat(),
+        }
+    else:
+        confirmations.pop(str(line_seq), None)
+    record["review_confirmations"] = confirmations
+    _apply_review_confirmations(record)
+    _write_json(bucket, key, record)
+    LOGGER.info("JA line review confirmation updated")
+    return {"invoice_no": invoice_no, "line_seq": line_seq, "review_confirmed": confirmed}
+
+
 def _rule_json(rule):
     return {
         "keyword": rule.keyword,
@@ -302,7 +358,9 @@ def _import_record(bucket, source_key):
         "source_file": source_key,
         "imported_at": imported_at,
         "manual_overrides": manual_overrides,
+        "review_confirmations": old_record.get("review_confirmations", {}),
     }
+    _apply_review_confirmations(invoice)
     _write_json(bucket, f"invoices/{statement.invoice_no}.json", invoice)
     _write_json(bucket, f"imports/{source_id}.json", report)
     LOGGER.info(
@@ -324,6 +382,7 @@ def _reclassify_invoices(bucket, rules):
         )
         items = _apply_manual_overrides(items, record.get("manual_overrides", {}))
         record["items"] = [_item_json(item) for item in items]
+        _apply_review_confirmations(record)
         _write_json(bucket, key, record)
 
 
@@ -365,6 +424,8 @@ def _invoice_no(value):
 
 
 def _classify_request(bucket, data):
+    if "review_confirmed" in data:
+        return _review_request(bucket, data)
     invoice_no = _invoice_no(data)
     line_seq = data.get("line_seq")
     if not isinstance(line_seq, int) or isinstance(line_seq, bool) or line_seq < 1:
@@ -418,6 +479,7 @@ def _classify_request(bucket, data):
             _item_json(model) if current["line_seq"] == line_seq else current
             for current in record["items"]
         ]
+        _apply_review_confirmations(record)
         _write_json(bucket, key, record)
     LOGGER.info("JA line classification updated")
     return {"invoice_no": invoice_no, "line_seq": line_seq, "remembered": remember}

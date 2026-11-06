@@ -7,6 +7,46 @@ const vm = require("node:vm");
 
 const root = join(__dirname, "..", "deploy", "finance");
 const logic = () => import(pathToFileURL(join(root, "finance-logic.js")).href);
+test("invoice reimport and import history panels are collapsed by default", () => {
+  const html = readFileSync(join(root, "index.html"), "utf8");
+  for (const [title, id] of [["請求書・再取り込み", "invoices"], ["取り込み履歴", "imports"]]) {
+    assert.match(html, new RegExp(`<details class="card finance-record-panel">\\s*<summary><h2>${title}</h2></summary>\\s*<div id="${id}" class="finance-records"></div>\\s*</details>`));
+  }
+  assert.match(html, /<details class="card finance-record-panel" id="groups-section">/);
+  assert.match(html, /<details id="details-section" class="card finance-record-panel">/);
+});
+test("annual breakdown uses year-to-date trade dates and signed net amounts independently of filters", async () => {
+  const { annualCategoryTotals } = await logic();
+  const entry = (trade_date, amount, category = "農薬費") => ({ trade_date, amount, category });
+  const items = [entry("2025-12-31", 999), entry("2026-01-01", 100), entry("2026-11-07", 100, "肥料費"),
+    entry("2026-11-06", -50), entry("2026-11-08", 999), entry("2027-01-01", 999)];
+  const before = JSON.stringify(items);
+  const annual = annualCategoryTotals(items, "2026-11-07");
+  assert.equal(annual.total, 150);
+  assert.equal(annual.rows[0].amount, 50);
+  assert.equal(annual.rows[1].amount, 100);
+  assert.ok(Math.abs(annual.rows.reduce((sum, row) => sum + row.percent, 0) - 100) < 1e-10);
+  assert.equal(annual.drawable, true);
+  assert.equal(JSON.stringify(items), before);
+  assert.equal(annualCategoryTotals([], "2026-11-07").drawable, false);
+  const negative = annualCategoryTotals([entry("2026-01-01", -50), entry("2026-01-01", 100, "肥料費")], "2026-11-07");
+  assert.equal(negative.total, 50);
+  assert.equal(negative.drawable, false);
+  assert.equal(negative.rows[0].percent, null);
+});
+
+test("attention badge shows actionable counts without opening panels and clears at zero", () => {
+  const { context, element } = setup();
+  const toggles = [];
+  element("groups-section").classList.toggle = (name, value) => toggles.push([name, value]);
+  vm.runInContext('updateAttention("groups", 3, "未分類")', context);
+  assert.equal(element("groups-attention").textContent, "！未分類 3件");
+  assert.equal(element("groups-attention").hidden, false);
+  assert.notEqual(element("groups-section").open, true);
+  vm.runInContext('updateAttention("groups", 0, "未分類")', context);
+  assert.equal(element("groups-attention").hidden, true);
+  assert.deepEqual(toggles, [["finance-needs-attention", true], ["finance-needs-attention", false]]);
+});
 const invoices = [{
   invoice_no: "04026970", issue_date: "2026-10-02", closing_date: "2026-09-30",
   settlement_date: "2026-10-31", forecast_total: 300,
@@ -37,6 +77,47 @@ test("filters cover date, category, NFKC search, review and machinery", async ()
   assert.equal(filterItems(items, { basis: "trade", query: "５ｌ", category: "農薬費" }).length, 1);
   assert.equal(filterItems(items, { basis: "trade", query: "ザクサ ５ｌ" }).length, 1);
   assert.equal(filterItems(items, { basis: "trade", machineOnly: true, reviewOnly: true }).length, 1);
+});
+
+test("confirmed review removes highlighting eligibility and review filtering but not warnings or unclassified items", async () => {
+  const { needsReview, filterItems } = await logic();
+  const item = { ...invoices[0].items[1], settlement_date: "2026-10-31",
+    review_reason: "高額：税理士確認", review_confirmed: true };
+  assert.equal(needsReview(item), false);
+  assert.equal(needsReview({ ...item, review_confirmed: false }), true);
+  assert.equal(needsReview({ ...item, review_confirmed: undefined }), true);
+  assert.equal(filterItems([item], { basis: "trade", reviewOnly: true }).length, 0);
+  assert.equal(filterItems([item], { basis: "trade" }).length, 1);
+  assert.equal(filterItems([{ ...item, category: "未分類" }], { basis: "trade", reviewOnly: true }).length, 1);
+  assert.equal(item.review_reason, "高額：税理士確認");
+});
+
+test("review action persists explicitly, supports undo and reports save failures without success", async () => {
+  const { context, requests } = setup();
+  context.confirm = () => true;
+  context.loadData = async () => { context.reloaded = true; };
+  context.item = { invoice_no: "04026970", line_seq: 2, review_confirmed: false };
+  context.fetch = async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({ review_confirmed: JSON.parse(options.body).review_confirmed }) };
+  };
+  await vm.runInContext("saveReview(item)", context);
+  assert.deepEqual(JSON.parse(requests[0].options.body), {
+    invoice_no: "04026970", line_seq: 2, review_confirmed: true,
+  });
+  assert.equal(context.reloaded, true);
+  assert.match(context.lastSaveResult, /確認済み/);
+  context.item.review_confirmed = true;
+  await vm.runInContext("saveReview(item)", context);
+  assert.equal(JSON.parse(requests[1].options.body).review_confirmed, false);
+  context.confirm = () => false;
+  await vm.runInContext("saveReview(item)", context);
+  assert.equal(requests.length, 2);
+  context.confirm = () => true;
+  context.lastSaveResult = null;
+  context.fetch = async () => ({ ok: false, status: 500, text: async () => "" });
+  await assert.rejects(() => vm.runInContext("saveReview(item)", context), /500/);
+  assert.equal(context.lastSaveResult, null);
 });
 
 test("unclassified groups use exact product and department, exclude manual and honor input filters", async () => {
@@ -80,6 +161,7 @@ test("month selection applies both month bounds, amount order, clears detail tog
   assert.equal(element("machine-only").checked, false);
   assert.equal(vm.runInContext("page", context), 0);
   assert.equal(context.scrolled, true);
+  assert.equal(element("details-section").open, true);
   vm.runInContext('busy = true; selectMonth("2026-09")', context);
   assert.equal(element("from").value, "2026-08");
 });
@@ -208,6 +290,7 @@ function setup() {
   }
   const requests = [];
   const context = vm.createContext({
+    needsReview: item => Boolean(item.needs_review && item.review_confirmed !== true),
     showSaveResult: async message => { context.lastSaveResult = message; },
     document: { getElementById: element },
     console: { error() {} },

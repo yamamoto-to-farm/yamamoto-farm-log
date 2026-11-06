@@ -5,8 +5,9 @@ import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   categories, chartScale, filterItems, flattenItems, formatYen, latestForecast, monthlyTotals,
-  sortItems, unclassifiedGroups, uploadOutcome,
-} from "./finance-logic.js?v=20261103-4";
+  annualCategoryTotals, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
+} from "./finance-logic.js?v=20261107-annual-1";
+import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -109,6 +110,7 @@ async function loadData() {
   renderForecasts();
   renderInvoices();
   renderImports();
+  renderAnnualChart();
   el("data-area").hidden = false;
   el("login-area").hidden = true;
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}（財務データは端末に保存しません）`;
@@ -146,7 +148,7 @@ function render() {
   el("summary").replaceChildren(
     statistic("選択条件の合計（税込）", formatYen(total)),
     statistic("明細数", `${filtered.length}件`),
-    statistic("要確認・未分類", `${filtered.filter(item => item.needs_review || item.category === "未分類").length}件`),
+    statistic("要確認・未分類", `${filtered.filter(item => needsReview(item) || item.category === "未分類").length}件`),
   );
   const rows = monthlyTotals(filtered, values.basis);
   const legend = el("legend");
@@ -169,6 +171,68 @@ function render() {
   }));
   renderItems();
   renderGroups(filtered);
+  const unclassifiedCount = unclassifiedGroups(filtered).reduce((sum, group) => sum + group.items.length, 0);
+  updateAttention("groups", unclassifiedCount, "未分類");
+  updateAttention("details", filtered.filter(item => needsReview(item) || item.category === "未分類").length, "要確認・未分類");
+}
+
+function updateAttention(prefix, count, label) {
+  const badge = el(`${prefix}-attention`);
+  badge.textContent = count ? `！${label} ${count}件` : "";
+  badge.hidden = count === 0;
+  el(`${prefix}-section`).classList.toggle("finance-needs-attention", count > 0);
+}
+
+function renderAnnualChart() {
+  const annual = annualCategoryTotals(items, todayLocalYmd());
+  el("annual-period").textContent = `${annual.start} 〜 ${annual.end} ／ 合計 ${formatYen(annual.total)}`;
+  const area = el("annual-chart");
+  area.replaceChildren();
+  if (annual.drawable) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 120 120");
+    svg.setAttribute("class", "finance-donut");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `今年の分類割合：${annual.rows.map(row => `${row.category} ${row.percent.toFixed(1)}%`).join("、")}`);
+    let offset = 0;
+    for (const row of annual.rows.filter(row => row.amount > 0)) {
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      for (const [key, value] of Object.entries({
+        cx: 60, cy: 60, r: 44, fill: "none", "stroke-width": 20, pathLength: 100,
+        "stroke-dasharray": `${row.percent} ${100 - row.percent}`,
+        "stroke-dashoffset": -offset, transform: "rotate(-90 60 60)",
+        class: `category-${categories.indexOf(row.category)}`,
+      })) circle.setAttribute(key, String(value));
+      svg.appendChild(circle);
+      offset += row.percent;
+    }
+    area.append(svg);
+  } else {
+    area.append(node("p", annual.rows.some(row => row.amount < 0)
+      ? "返品等で分類別合計がマイナスのため、円グラフは表示せず金額を表示します。"
+      : "今年の分類割合を表示できる購入金額がありません。"));
+  }
+  const table = node("table");
+  table.append(node("caption", "今年の分類別金額・割合"));
+  const head = node("tr");
+  for (const label of ["分類", "金額（税込）", "割合"]) head.append(node("th", label));
+  const thead = node("thead");
+  thead.append(head);
+  const body = node("tbody");
+  for (const row of annual.rows) {
+    const tr = node("tr");
+    const name = node("th");
+    name.append(node("span", "", `finance-key category-${categories.indexOf(row.category)}`), document.createTextNode(row.category));
+    tr.append(name, node("td", formatYen(row.amount)), node("td", row.percent === null ? "—" : `${row.percent.toFixed(1)}%`));
+    body.append(tr);
+  }
+  table.append(thead, body);
+  const scroll = node("div", undefined, "finance-scroll");
+  scroll.tabIndex = 0;
+  scroll.setAttribute("role", "region");
+  scroll.setAttribute("aria-label", "今年の分類別金額・割合");
+  scroll.append(table);
+  area.append(scroll);
 }
 
 function selectMonth(month) {
@@ -178,6 +242,7 @@ function selectMonth(month) {
   el("review-only").checked = el("machine-only").checked = false;
   page = 0;
   render();
+  el("details-section").open = true;
   el("details-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -239,7 +304,7 @@ function renderItems() {
   const body = el("items");
   body.replaceChildren();
   for (const item of list.slice(page * pageSize, (page + 1) * pageSize)) {
-    const tr = node("tr", undefined, item.needs_review ? "finance-review" : "");
+    const tr = node("tr", undefined, needsReview(item) ? "finance-review" : "");
     const dateCell = node("td", item.trade_date);
     dateCell.append(node("small", `請求書 ${item.invoice_no}\n決済 ${item.settlement_date}`));
     const product = node("td", item.item_name);
@@ -255,6 +320,14 @@ function renderItems() {
     button.disabled = busy;
     button.addEventListener("click", () => openEdit(item));
     edit.append(button);
+    if (item.needs_review && item.category !== "未分類") {
+      if (item.review_confirmed === true) edit.append(node("small", "確認済み"));
+      const review = node("button", item.review_confirmed === true ? "要確認に戻す" : "確認済みにする", "secondary-btn");
+      review.type = "button";
+      review.disabled = busy;
+      review.addEventListener("click", () => run(() => saveReview(item)));
+      edit.append(review);
+    }
     tr.append(dateCell, product, quantity, node("td", formatYen(item.amount)), category, edit);
     body.append(tr);
   }
@@ -265,6 +338,21 @@ function renderItems() {
     row.append(cell);
     body.append(row);
   }
+}
+
+async function saveReview(item) {
+  const confirmed = item.review_confirmed !== true;
+  if (!confirm(confirmed
+    ? "この明細を確認済みにします。必要な税理士確認・資産計上／修繕費の判断が済んでいることを確認してください。注意文は残ります。"
+    : "この明細を要確認に戻しますか？")) return;
+  const result = await api("/classifications", {
+    invoice_no: item.invoice_no, line_seq: item.line_seq, review_confirmed: confirmed,
+  });
+  if (result.review_confirmed !== confirmed) throw new Error("確認状態の保存結果を確認できません。最新データに更新してください。");
+  await loadData();
+  const message = confirmed ? "確認済みにしました。" : "要確認に戻しました。";
+  status(message);
+  await showSaveResult(message);
 }
 
 function renderGroups(filtered) {

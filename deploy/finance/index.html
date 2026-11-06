@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>JA経費分析 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./finance.css?v=20261103-4">
+  <link rel="stylesheet" href="./finance.css?v=20261107-annual-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -51,26 +51,32 @@
         </div>
       </section>
       <section class="card">
-        <h2>未分類をまとめて整理</h2>
+        <h2>今年の分類割合（年初〜現在）</h2>
+        <p id="annual-period" class="finance-note"></p>
+        <p class="finance-note">取引日基準の取り込み済み経費（税込・返品等を差し引いた金額）です。上の期間・検索・分類条件には連動しません。</p>
+        <div id="annual-chart" class="finance-annual"></div>
+      </section>
+      <details class="card finance-record-panel" id="groups-section">
+        <summary><h2>未分類をまとめて整理</h2> <span id="groups-attention" class="finance-attention" role="status" hidden></span></summary>
         <p class="finance-note">上の期間・分類・検索条件内で、同じ品名＋部署の未分類を合計金額順に表示します。規格違いも含みます。手動確定済みは対象外です。</p>
         <p id="group-summary" class="finance-note"></p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="未分類の商品別一覧">
           <table><thead><tr><th>品名・部署</th><th>明細数</th><th>合計金額</th><th>分類</th></tr></thead><tbody id="unclassified-groups"></tbody></table>
         </div>
-      </section>
+      </details>
       <section class="card">
         <h2>今後の引落予定（未確定）</h2>
         <p id="forecast-source" class="finance-note"></p>
         <div id="forecasts" class="finance-summary"></div>
       </section>
-      <section id="details-section" class="card">
-        <h2>明細・要確認・機械整備費</h2>
+      <details id="details-section" class="card finance-record-panel">
+        <summary><h2>明細・要確認・機械整備費</h2> <span id="details-attention" class="finance-attention" role="status" hidden></span></summary>
         <div class="finance-toolbar">
           <label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label><input id="machine-only" type="checkbox">農機課のみ（整備・部品費）</label>
           <label>並び順<select id="detail-sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option><option value="amount-asc">金額が小さい順</option></select></label>
         </div>
-        <p class="finance-note">分類は各明細の「分類修正」から変更できます。10万円以上の税理士確認は分類後も残ります。</p>
+        <p class="finance-note">分類は各明細の「分類修正」から変更できます。税理士確認などの対応が済んだ明細は「確認済みにする」でハイライトと要確認一覧から外せます。注意文は残り、「要確認に戻す」で取り消せます。未分類は先に分類してください。</p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="請求明細一覧">
           <table><thead><tr><th>取引日 / 請求書</th><th>品名・規格</th><th>数量 / 単価</th><th>金額</th><th>分類</th><th>確認・編集</th></tr></thead><tbody id="items"></tbody></table>
         </div>
@@ -79,15 +85,15 @@
           <span id="page-number"></span>
           <button id="next" type="button" class="secondary-btn">次へ</button>
         </div>
-      </section>
-      <section class="card">
-        <h2>請求書・再取り込み</h2>
+      </details>
+      <details class="card finance-record-panel">
+        <summary><h2>請求書・再取り込み</h2></summary>
         <div id="invoices" class="finance-records"></div>
-      </section>
-      <section class="card">
-        <h2>取り込み履歴</h2>
+      </details>
+      <details class="card finance-record-panel">
+        <summary><h2>取り込み履歴</h2></summary>
         <div id="imports" class="finance-records"></div>
-      </section>
+      </details>
     </div>
     <dialog id="edit-dialog">
       <form id="edit-form">
@@ -111,6 +117,6 @@
       <button id="close-report" type="button" class="secondary-btn">閉じる</button>
     </dialog>
   </main>
-  <script type="module" src="./finance.js?v=20261105-result-1"></script>
+  <script type="module" src="./finance.js?v=20261107-annual-1"></script>
 </body>
 </html>

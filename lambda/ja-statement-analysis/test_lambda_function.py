@@ -137,6 +137,83 @@ class FinanceApiTests(unittest.TestCase):
         self.assertEqual(json.loads(self.s3.objects["invoices/04026970.json"]), original)
         self.assertIn(f"imports/{'a' * 32}.json", self.s3.objects)
 
+    def test_review_confirmation_survives_reload_reimport_and_reclassification(self):
+        parsed = statement()
+        parsed.items = [replace(parsed.items[0], amount=150000)]
+        with patch.object(lambda_function, "parse_statement", return_value=parsed):
+            lambda_function._import_record("finance-private", self.source)
+            payload = {"invoice_no": "04026970", "line_seq": 1, "review_confirmed": True}
+            result = self.call("POST /finance/classifications", payload)
+            self.assertEqual(result["statusCode"], 200)
+            self.assertTrue(json.loads(result["body"])["review_confirmed"])
+            original = json.loads(self.s3.objects["invoices/04026970.json"])
+            reason = original["items"][0]["review_reason"]
+            self.assertTrue(original["items"][0]["needs_review"])
+            self.assertTrue(original["items"][0]["review_confirmed"])
+            lambda_function._import_record("finance-private", self.source)
+            lambda_function._reclassify_invoices("finance-private", lambda_function.DEFAULT_RULES)
+            saved = json.loads(self.s3.objects["invoices/04026970.json"])
+            self.assertTrue(saved["items"][0]["review_confirmed"])
+            self.assertEqual(saved["items"][0]["review_reason"], reason)
+            self.assertEqual(saved["review_confirmations"], original["review_confirmations"])
+            self.assertEqual(self.call("POST /finance/classifications", {
+                **payload, "review_confirmed": False,
+            })["statusCode"], 200)
+            saved = json.loads(self.s3.objects["invoices/04026970.json"])
+            self.assertFalse(saved["items"][0]["review_confirmed"])
+            self.assertTrue(saved["items"][0]["needs_review"])
+            self.assertEqual(saved["review_confirmations"], {})
+
+    def test_changed_reimported_line_requires_review_again(self):
+        parsed = statement()
+        parsed.items = [replace(parsed.items[0], amount=150000)]
+        with patch.object(lambda_function, "parse_statement", return_value=parsed):
+            lambda_function._import_record("finance-private", self.source)
+            self.call("POST /finance/classifications", {
+                "invoice_no": "04026970", "line_seq": 1, "review_confirmed": True,
+            })
+            parsed.items = [replace(parsed.items[0], amount=160000)]
+            lambda_function._import_record("finance-private", self.source)
+            saved = json.loads(self.s3.objects["invoices/04026970.json"])
+            self.assertFalse(saved["items"][0]["review_confirmed"])
+            self.assertEqual(saved["review_confirmations"], {})
+
+    def test_review_validation_and_auth_never_write_invalid_confirmation(self):
+        self.save("invoices/04026970.json", lambda_function._statement_json(statement()))
+        payload = {"invoice_no": "04026970", "line_seq": 1, "review_confirmed": True}
+        for changes in [
+            {"line_seq": True}, {"line_seq": 0}, {"review_confirmed": "true"},
+            {"invoice_no": "../bad"}, {"category": "農薬費"},
+        ]:
+            self.assertEqual(self.call("POST /finance/classifications", {
+                **payload, **changes,
+            })["statusCode"], 400)
+        self.assertEqual(self.call("POST /finance/classifications", payload)["statusCode"], 400)
+        self.assertEqual(self.call("POST /finance/classifications", {
+            **payload, "line_seq": 2,
+        })["statusCode"], 404)
+        self.assertEqual(self.call("POST /finance/classifications", payload, claims={})["statusCode"], 401)
+        self.assertEqual(self.call("POST /finance/classifications", payload, claims={
+            **self.claims, "cognito:groups": "[worker]",
+        })["statusCode"], 403)
+        saved = json.loads(self.s3.objects["invoices/04026970.json"])
+        self.assertNotIn("review_confirmations", saved)
+
+    def test_classification_keeps_confirmation_only_when_review_reason_is_unchanged(self):
+        parsed = statement()
+        parsed.items = [replace(parsed.items[0], amount=150000)]
+        with patch.object(lambda_function, "parse_statement", return_value=parsed):
+            lambda_function._import_record("finance-private", self.source)
+        self.call("POST /finance/classifications", {
+            "invoice_no": "04026970", "line_seq": 1, "review_confirmed": True,
+        })
+        result = self.call("POST /finance/classifications", {
+            "invoice_no": "04026970", "line_seq": 1, "category": "肥料費", "subcategory": "その他",
+        })
+        self.assertEqual(result["statusCode"], 200)
+        saved = json.loads(self.s3.objects["invoices/04026970.json"])
+        self.assertTrue(saved["items"][0]["review_confirmed"])
+
     def test_parse_exception_logs_locations_without_exception_content(self):
         with patch.object(lambda_function, "parse_statement", side_effect=ValueError("private content")):
             with self.assertLogs(lambda_function.LOGGER, level="WARNING") as logs:
