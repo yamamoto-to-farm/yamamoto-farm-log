@@ -22,7 +22,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
   area.innerHTML = "";
 
   const toolbar = document.createElement("div");
-  toolbar.className = "card merge-toolbar";
+  toolbar.className = "card merge-toolbar print-hide";
   toolbar.innerHTML = `
     <h3 class="edit-title">作業カード</h3>
     <div class="merge-toolbar-row">
@@ -157,7 +157,7 @@ export function renderEditCards(autoList, diary, timestampRows = []) {
     </p>
     <p class="memo-desc diary-memo-example">
       記入例：午前　防鳥ネット張る（直輝／咲子）<br>
-      午後　会合（雅彦）
+      　　　　午後　会合（雅彦）
     </p>
 
     <textarea id="freeMemo" class="form-textarea">${memo}</textarea>

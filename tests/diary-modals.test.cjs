@@ -37,6 +37,9 @@ function setup(file, module = false) {
 test("work-card toolbar groups merge and time actions with consistent sizing", () => {
   const read = file => readFileSync(join(__dirname, "..", "deploy", "diary", file), "utf8");
   const source = read("editCard.js");
+  assert.match(source, /toolbar.className = "card merge-toolbar print-hide"/);
+  const printSource = readFileSync(join(__dirname, "..", "deploy", "common", "utils.js"), "utf8");
+  assert.match(printSource, /\.print-hide \{\s*display: none !important;/);
   assert.match(source, /aria-labelledby="diary-merge-title"[\s\S]*id="merge-selected-btn"[\s\S]*id="merge-clear-btn"[\s\S]*<\/section>/);
   assert.match(source, /aria-labelledby="diary-time-title"[\s\S]*id="diary-load-plans"[\s\S]*id="diary-load-shift"[\s\S]*<\/section>/);
   assert.match(read("diary.css"), /\.merge-toolbar \.merge-toolbar-actions > button \{[\s\S]*?min-height: 42px;[\s\S]*?margin: 0;/);
