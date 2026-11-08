@@ -13,7 +13,7 @@ try {
         throw "Failed to install JA statement Lambda dependencies."
     }
 
-    foreach ($file in @("lambda_function.py", "statement_parser.py", "classifier.py")) {
+    foreach ($file in @("lambda_function.py", "statement_parser.py", "classifier.py", "bank_statement_parser.py")) {
         Copy-Item (Join-Path $sourceDir $file) -Destination $buildDir
     }
 
@@ -34,7 +34,7 @@ with ZipFile(destination) as archive:
     names = archive.namelist()
     if len(names) != len(set(names)) or archive.testzip() is not None:
         raise RuntimeError("Invalid Lambda archive")
-    for name in ("lambda_function.py", "statement_parser.py", "classifier.py", "pypdf/__init__.py"):
+    for name in ("lambda_function.py", "statement_parser.py", "classifier.py", "bank_statement_parser.py", "pypdf/__init__.py", "boto3/__init__.py"):
         if name not in names:
             raise RuntimeError(f"Missing Lambda module: {name}")
 print(f"Verified {len(names)} unique ZIP entries.")

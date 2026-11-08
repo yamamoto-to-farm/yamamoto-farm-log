@@ -551,12 +551,11 @@ AWS設定（photos の HTTP API に追加）:
   「○月以降決済予定」は `onwards: true` として保持し、特定月の予定と区別して表示する。
 - バケットのCORSには公開サイトのOriginだけを許可し、アップロード用に `POST` を許可する。
 
-テストはAWSに接続しない。ローカルAPIテストには、ルートの `requirements.txt` に指定された
-`boto3==1.34.144` も必要（Lambdaではランタイム付属のSDKを使う）。
+テストはAWSに接続しない。PDF解析とSDKはこのLambdaの `requirements.txt` から導入する。
+口座明細の条件付きS3書き込みに対応するため、SDKもZIPへ同梱する。
 
 ```powershell
 python -m pip install -r .\lambda\ja-statement-analysis\requirements.txt
-python -m pip install boto3==1.34.144
 python -B -m unittest discover -s .\lambda\ja-statement-analysis -p "test_*.py"
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_ja_statement_lambda_zip.ps1
 ```
@@ -622,6 +621,97 @@ CloudFrontで `/finance/*` と `/data/pages.json` を無効化する。
 確認済み機能は先にJA明細分析Lambdaを再デプロイし、その後にフロントを公開する（APIルート追加は不要）。
 公開後にadmin/familyで確認済みの保存・解除・再読み込み、請求書表示・分類保存・PDFアップロードを
 実APIで確認すること。ローカルブラウザ検証では認証とAPIを模擬しており、実アカウントでの確認とは別。
+
+### JA口座明細・資金繰り
+
+- 新ページ `/bank/index.html` はJA経費と同じ見た目・Cognito・期間選択・保存結果モーダルを使う。
+  PDF・明細・取り込み履歴は既存の非公開経費バケットの `bank/` 配下へ分離する。
+  既存JA経費の請求書・分類辞書・履歴には混ぜない。APIは同じ経費Lambdaを使用する。
+- JAバンク＋の標準A4 PDF（表紙＋明細、20MB以下）を対象とし、取得期間は同じ月の1日〜末日。
+  月途中・複数月・暗号化・画像のみ・取引のないPDFは保留にして通知する。
+  口座情報・期間・入金／出金列を検証し、各取引後残高の連続性を照合する。
+  金額列が読めない場合や残高不一致は月次明細を更新せず、失敗履歴を残す。
+  月初残高は最初の取引から逆算、月末残高は最後の取引後残高。
+  隣接月の残高不一致は警告として残す。欠落した前後月は推測して補完しない。
+- 同じ口座・同じ月は同じ `statement_id`（口座識別情報＋月のSHA-256）に保存する。
+  口座名義はJSONへ重複保存せず、表示は口座番号をマスクする。PDF原本は非公開で保持する。
+  取引日・入出金額・残高・原摘要と同一内容の出現順から `transaction_id` を作る。
+  行番号が変わっても同一取引の手動分類・メモ・確認済みを維持し、取引内容が変われば引き継がない。
+  行番号は表示・並び順にのみ使用する。完全な月次PDFを再取り込みするとその月全体を置き換える。
+- 用途は「売上・経費・借入・借入返済・口座振替・現金移動・その他入金・その他出金・未分類」。
+  自動分類は限定的な摘要ルールの候補で、必ず要確認にする。
+  不明な給与振込・借入元本／利息・カード引落などを経費と決めつけない。
+  手動分類・確認用メモ・確認済み／取り消しを保存する。未分類は確認済みにできない。
+  分類変更時は確認を解除する。未分類の一括整理は原摘要の完全一致・入出金別でまとめ、
+  手動確定済みを除く。途中失敗時は保存済み件数を表示し、再試行は残りのみ対象。
+- 月別入金・出金・差引・残高、年間の入金／出金別用途割合と前年同期間比較を表示する。
+  期間・用途・入出金・摘要／メモで絞り込み、30件ずつ表示する。残高は口座全体のままで、
+  分類や検索に合わせて残高を再計算しない。複数口座は選択して別々に表示する。
+  年間集計は選択口座・今年は現在まで／過去年は年間。検索・期間条件とは独立する。
+  取り込み済み月を明示し、未取り込みと取引なしは断定しない。
+- 編集はS3 ETagを `revision` として送信し、条件付き書き込みを行う。競合は409で止め、
+  最新取得・対象選び直しを案内する。再取り込みも条件付きで保存し、並行編集を無言で消さない。
+  S3イベント側の競合・S3障害は例外として再試行対象になる。
+- 入出金の差引は利益ではない。JA請求書・販売精算との自動照合や合算は今回は未実装。
+  金融データをlocalStorageや公開 `data/` に保存しない。原本をGitやLambda ZIPへ含めない。
+
+#### AWS側の設定・公開手順（既存経費環境へ追加）
+
+1. **S3は新規作成不要。** `yamamoto-farm-private-finance-01` のパブリックアクセス全ブロック、
+   バージョニング、SSE-S3を維持する。公開サイト用バケットとは別物なので取り違えない。
+2. **IAM → ロール → `yamamoto-farm-finance-import-role` → `FinanceBucketAccess` を編集。**
+   既存の許可を残し、`s3:GetObject` / `s3:PutObject` のResourceへ
+   `arn:aws:s3:::yamamoto-farm-private-finance-01/bank/*` を追加する。
+   `s3:ListBucket` のバケット全体許可・ログ出力権限も残す。削除権限・公開読み取り許可は追加しない。
+3. **Lambda ZIPを再作成し、既存 `yamamoto-farm-finance-api` にアップロード。**
+   下記ビルドを実行し、生成した `ja-statement-analysis.zip` をコードの「アップロード元 → .zip」で指定する。
+   ハンドラーは `lambda_function.lambda_handler`、Python 3.13 / x86_64、512MB、60秒、
+   `FINANCE_BUCKET=yamamoto-farm-private-finance-01` を維持する。
+   `bank_statement_parser.py`・pypdf・新しいboto3を含むZIP全体を使う。単独のPythonファイルだけでは不足する。
+4. **API Gateway → 既存HTTP API → ルートに下の7ルートを追加。**
+   すべて既存の経費Lambdaへ統合し、既存JWTオーソライザー `farm-photos-cognito`、
+   必須スコープ `openid` を全ルートへ設定する。認証なしルートにしない。
+   既存の `/finance/*` は変更しない。自動デプロイが無効なら既存ステージへデプロイする。
+   CORSは既存公開サイトOriginと `Authorization` / `Content-Type`、GET / POSTを許可する設定を確認する。
+
+   | メソッド | パス |
+   |---|---|
+   | POST | `/bank/uploads` |
+   | GET | `/bank/statements` |
+   | GET | `/bank/statements/{statement_id}` |
+   | GET | `/bank/imports` |
+   | GET | `/bank/imports/{import_id}` |
+   | POST | `/bank/classifications` |
+   | POST | `/bank/reimport` |
+
+5. **S3 → 非公開経費バケット → プロパティ → イベント通知を追加。**
+   名前は例 `bank-pdf-import`、イベントはオブジェクトのすべての作成、
+   prefix **`bank/uploads/`**、suffix **`.pdf`**、送信先は既存経費Lambda。
+   既存の `uploads/` 通知を消さない。`bank/` 全体やJSONへ通知しない（再帰起動防止）。
+   S3からLambdaを呼び出せるリソースベースポリシーがあることも確認する。
+   既存の同じバケット向け呼出権限があれば再利用できる。コンソール作成で不足時は許可追加を求められる。
+6. **非公開バケットのCORSを確認。** 公開サイトOriginからPOSTできる既存設定なら追加不要。
+   ワイルドカード公開、バケットポリシーによる匿名アクセスは設定しない。
+   Cognitoは既存callbackを使うためcallback URLの追加は不要。
+7. **フロントを公開。** `deploy/bank/` の4ファイルを公開サイトS3の `bank/` へ。
+   共通依存の既存 `finance/finance.css`・`finance/finance-logic.js`・認証／モーダル／helpも必要。
+   メニューは `deploy/data/pages.json` を公開サイトの `data/pages.json` へ別途配置する。
+   CloudFrontで `/bank/*` と `/data/pages.json` を無効化する。JA経費からも口座ページへリンクする場合は
+   更新した `finance/index.html` を配置し `/finance/index.html` も無効化する。
+8. **本番確認。** admin/familyで1か月分PDFを取り込み、履歴の完了・明細数・入出金・PDF残高を照合する。
+   分類・メモ・確認済みを保存→更新→同じPDF再取り込みで維持・件数不変を確認する。
+   worker／未認証ではAPIが403／401になることも確認し、既存JA経費の表示・分類・取り込みを回帰確認する。
+   失敗時は履歴とCloudWatchログを確認する。PDF内容や口座情報をログへ貼り付けない。
+
+```powershell
+python -m pip install -r .\lambda\ja-statement-analysis\requirements.txt
+python -B -m unittest discover -s .\lambda\ja-statement-analysis -p "test_*.py"
+node --test tests\bank.test.cjs tests\finance.test.cjs tests\auth-policy.test.cjs
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_ja_statement_lambda_zip.ps1
+```
+
+ローカルではPDF読取・AWSを模擬したAPI・画面を検証する。本番AWSの設定変更・アップロード・
+実Cognitoでの動作確認はこの実装作業では行わない。
 
 ```bash
 python -m py_compile src/gdd/__init__.py src/gdd/weather_loader.py src/gdd/gdd_calculator.py src/gdd/model.py src/gdd/app.py

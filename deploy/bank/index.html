@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>口座明細・資金繰り - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
+  <link rel="stylesheet" href="./bank.css?v=20261109-1">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <script type="module" src="/common/help.js?v=20261106-1"></script>
+</head>
+<body class="recent-page recent-page--wide">
+  <div id="header"></div>
+  <main id="page-area" class="page-container" hidden>
+    <h1 class="page-title">口座明細・資金繰り</h1>
+    <p class="finance-note" data-help-keep>非公開の口座入出金です。差引は利益ではありません。金融情報の共有にご注意ください。</p>
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="login-area" hidden><button id="login" class="primary-btn" type="button">ログインする</button>
+      <p data-help="口座明細のログイン">写真・JA経費と同じCognitoアカウントを使います（admin / family）。</p>
+    </div>
+    <div id="data-area" hidden>
+      <section class="card">
+        <h2>口座の確認</h2>
+        <div class="finance-toolbar">
+          <label>口座<select id="account"></select></label>
+          <button id="refresh" class="secondary-btn" type="button">最新データに更新</button>
+          <a class="secondary-btn" href="/finance/index.html">JA経費分析へ</a>
+        </div>
+        <div id="overview" class="finance-summary"></div><p id="updated-at" class="finance-note"></p>
+        <p data-help="口座明細の集計について">月初残高は最初の入出金・取引後残高から逆算します。月末残高は最後の取引後残高です。借入・元本返済・現金移動・カード決済なども含むため、入金＝売上、出金＝経費とは限りません。JA請求書・販売精算との照合は未実装で、これらを合算しません。</p>
+      </section>
+      <section class="card">
+        <h2>入出金の推移</h2>
+        <div class="finance-toolbar" role="group" aria-label="期間の簡単選択">
+          <button data-period="month" class="secondary-btn" type="button">今月</button>
+          <button data-period="previous-month" class="secondary-btn" type="button">先月</button>
+          <button data-period="year" class="secondary-btn" type="button">今年</button>
+          <button data-period="previous-year" class="secondary-btn" type="button">前年</button>
+          <button data-period="all" class="secondary-btn" type="button">全期間</button>
+          <button id="clear-filters" class="secondary-btn" type="button">条件をすべて解除</button>
+        </div>
+        <div class="finance-toolbar">
+          <label>開始月<input id="from" type="month"></label><label>終了月<input id="to" type="month"></label>
+          <label>用途<select id="category"><option value="">すべて</option></select></label>
+          <label>入出金<select id="direction"><option value="">すべて</option><option value="deposit">入金</option><option value="withdrawal">出金</option></select></label>
+          <label>摘要・メモ<input id="query" type="search"></label>
+        </div>
+        <p id="filter-error" role="alert"></p><p id="filter-state" class="finance-note"></p>
+        <div id="summary" class="finance-summary"></div>
+        <p class="finance-note">入出金と明細は上の条件内。残高は絞り込みに関係なく口座全体です。月を押すと明細を開きます。</p>
+        <div id="chart" class="bank-chart" role="group" aria-label="月別入出金グラフ"></div>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金">
+          <table><thead><tr><th>月</th><th>入金</th><th>出金</th><th>差引（利益ではない）</th><th>月初残高（逆算）</th><th>月末残高</th></tr></thead><tbody id="monthly"></tbody></table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>年間の用途割合・前年比較</h2>
+        <p data-help="年間の口座集計">選択口座の取引日基準です。上の期間・検索条件とは独立します。今年は現在まで、過去年は年間を集計します。取り込み済み月のみ対象で、空月は取引なし・未取り込みの区別ができません。前年比較は参考値です。入金と出金の割合は別々に算出します。</p>
+        <label>対象年<select id="annual-year"></select></label><p id="annual-period" class="finance-note"></p>
+        <p id="annual-coverage" class="finance-note"></p><p id="annual-comparison" class="finance-note"></p>
+        <div id="annual" class="finance-annual"></div>
+      </section>
+      <details id="groups-section" class="card finance-record-panel">
+        <summary><h2>未分類をまとめて整理</h2><span id="groups-attention" class="finance-attention" hidden></span></summary>
+        <p class="finance-note">条件内の未分類を摘要の完全一致・入出金別でまとめます。手動確定済みは対象外です。</p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="未分類一覧"><table><thead><tr><th>摘要</th><th>入出金</th><th>件数・金額</th><th>整理</th></tr></thead><tbody id="groups"></tbody></table></div>
+      </details>
+      <details id="details-section" class="card finance-record-panel">
+        <summary><h2>明細・要確認</h2><button id="details-attention" class="finance-attention" type="button" hidden></button></summary>
+        <div class="finance-toolbar"><label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
+          <label>並び順<select id="sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option></select></label>
+        </div>
+        <p class="finance-note">自動分類は候補です。分類・用途を確認したら「確認済みにする」で要確認から外せます。分類修正時は再確認になります。</p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="口座取引明細"><table><thead><tr><th>取引日</th><th>摘要</th><th>入金</th><th>出金</th><th>取引後残高</th><th>用途・確認</th></tr></thead><tbody id="items"></tbody></table></div>
+        <div class="finance-toolbar"><button id="previous" type="button" class="secondary-btn">前へ</button><span id="page-number"></span><button id="next" type="button" class="secondary-btn">次へ</button></div>
+      </details>
+      <details class="card finance-record-panel">
+        <summary><h2>データ取り込み</h2></summary>
+        <p class="finance-note">JAバンク＋で取得期間を1日〜末日に指定した1か月分のPDF（20MBまで）。月途中・複数月・取引なしのPDFは未対応です。同じ口座・月は更新し、同一取引の手動分類・確認を維持します。</p>
+        <div class="finance-toolbar"><label>口座明細PDF<input id="pdf" type="file" accept=".pdf,application/pdf"></label><button id="upload" type="button" class="primary-btn">アップロード・取り込み</button></div>
+      </details>
+      <details class="card finance-record-panel"><summary><h2>月次明細・再取り込み</h2></summary><div id="statements"></div></details>
+      <details class="card finance-record-panel"><summary><h2>取り込み履歴</h2></summary><div id="imports"></div></details>
+    </div>
+    <dialog id="edit-dialog" aria-labelledby="edit-title"><form id="edit-form">
+      <h2 id="edit-title">用途の分類修正</h2><p id="edit-item"></p>
+      <label>用途<select id="edit-category" required></select></label><label>確認用メモ<input id="edit-note" maxlength="300"></label>
+      <p id="edit-status" role="alert"></p><div class="finance-toolbar"><button id="save-edit" type="submit" class="primary-btn">保存</button><button id="cancel-edit" type="button" class="secondary-btn">キャンセル</button></div>
+    </form></dialog>
+    <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
+  </main>
+  <script type="module" src="./bank.js?v=20261109-1"></script>
+</body>
+</html>

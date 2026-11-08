@@ -27,6 +27,7 @@ from classifier import (
     classify,
 )
 from statement_parser import LineItem, ParsedStatement, normalize_text, parse_statement
+from bank_statement_parser import BANK_CATEGORIES, parse_bank_statement
 
 
 LOGGER = logging.getLogger(__name__)
@@ -69,26 +70,28 @@ def user_groups(claims):
     return set(str(claims.get("cognito:groups", "")).strip("[]").replace(",", " ").split())
 
 
-def _read_json(bucket, key, missing_ok=False):
+def _read_json(bucket, key, missing_ok=False, with_etag=False):
     try:
         result = S3.get_object(Bucket=bucket, Key=key)
     except ClientError as error:
         if missing_ok and error.response["Error"]["Code"] in ("NoSuchKey", "404"):
-            return None
+            return (None, None) if with_etag else None
         if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
             raise RequestError(404, "指定された請求データがありません。") from error
         raise
     with result["Body"] as stream:
-        return json.loads(stream.read().decode("utf-8"))
+        value = json.loads(stream.read().decode("utf-8"))
+    return (value, result["ETag"]) if with_etag else value
 
 
-def _write_json(bucket, key, value):
-    S3.put_object(
+def _write_json(bucket, key, value, condition=None):
+    return S3.put_object(
         Bucket=bucket,
         Key=key,
         Body=(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"),
         ContentType="application/json; charset=utf-8",
         CacheControl="no-store",
+        **({"IfNoneMatch": "*"} if condition == "*" else {"IfMatch": condition} if condition else {}),
     )
 
 
@@ -520,6 +523,151 @@ def _import_summaries(bucket):
         for item in records
     ]
 
+def _bank_id(data, name="statement_id"):
+    value = _text(data, name, 64)
+    if not re.fullmatch(r"[a-f0-9]{64}", value):
+        raise RequestError(400, f"{name} が不正です。")
+    return value
+
+
+def _bank_summary(record):
+    return {key: record[key] for key in (
+        "statement_id", "account_id", "account_label", "month", "period_start", "period_end",
+        "opening_balance", "closing_balance", "deposit_total", "withdrawal_total", "imported_at",
+        "validation_status", "warnings",
+    )}
+
+
+def _bank_record(bucket, statement_id):
+    record, etag = _read_json(bucket, f"bank/statements/{statement_id}.json", with_etag=True)
+    return {**record, "revision": etag}
+
+
+def _bank_import_record(bucket, source_key):
+    if not re.fullmatch(r"bank/uploads/[a-f0-9]{32}\.pdf", source_key):
+        raise ValueError("Unexpected bank statement source key")
+    source_id = source_key.rsplit("/", 1)[-1].removesuffix(".pdf")
+    report = {
+        "import_id": source_id, "source_file": source_key,
+        "imported_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "validation_status": "failed", "validation_errors": [], "warnings": [],
+    }
+    temp_path = None
+    try:
+        size = S3.head_object(Bucket=bucket, Key=source_key)["ContentLength"]
+        if not 1 <= size <= MAX_PDF_BYTES:
+            raise ValueError("PDFは20MB以下にしてください。")
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as stream:
+            temp_path = Path(stream.name)
+        S3.download_file(bucket, source_key, str(temp_path))
+        if temp_path.read_bytes()[:5] != b"%PDF-":
+            raise ValueError("PDFファイルではありません。")
+        parsed = parse_bank_statement(temp_path)
+    except (PdfReadError, ValueError, OSError, EOFError) as error:
+        LOGGER.warning("Bank PDF could not be parsed (%s)", type(error).__name__)
+        message = str(error) if isinstance(error, ValueError) else "PDFの構成・文字を読み取れません。"
+        report["validation_errors"] = [message]
+        _write_json(bucket, f"bank/imports/{source_id}.json", report)
+        return report
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+    report.update({
+        "statement_id": parsed["statement_id"], "month": parsed["month"],
+        "validation_status": parsed["validation_status"],
+        "validation_errors": parsed["validation_errors"], "warnings": parsed["warnings"],
+        "item_count": len(parsed["items"]),
+    })
+    if report["validation_status"] == "failed":
+        _write_json(bucket, f"bank/imports/{source_id}.json", report)
+        return report
+    key = f"bank/statements/{parsed['statement_id']}.json"
+    old, etag = _read_json(bucket, key, missing_ok=True, with_etag=True)
+    old_items = {item["transaction_id"]: item for item in (old or {}).get("items", [])}
+    for item in parsed["items"]:
+        previous = old_items.get(item["transaction_id"])
+        if previous:
+            for field in ("category", "note", "classified_by", "review_confirmed", "review_reason"):
+                item[field] = previous[field]
+    adjacent = _list_records(bucket, "bank/statements/")
+    for other in adjacent:
+        if other["account_id"] != parsed["account_id"] or other["statement_id"] == parsed["statement_id"]:
+            continue
+        before = date.fromisoformat(other["period_end"])
+        after = date.fromisoformat(parsed["period_end"])
+        if (date.fromisoformat(parsed["period_start"]) - before).days == 1 and other["closing_balance"] != parsed["opening_balance"]:
+            report["warnings"].append("前月の月末残高と今回の逆算月初残高が一致しません。期間・欠落明細を確認してください。")
+        if (date.fromisoformat(other["period_start"]) - after).days == 1 and parsed["closing_balance"] != other["opening_balance"]:
+            report["warnings"].append("翌月の逆算月初残高と今回の月末残高が一致しません。期間・欠落明細を確認してください。")
+    saved = {**parsed, "source_file": source_key, "imported_at": report["imported_at"]}
+    _write_json(bucket, key, saved, condition=etag or "*")
+    _write_json(bucket, f"bank/imports/{source_id}.json", report)
+    LOGGER.info("Bank statement import completed (%d items)", len(parsed["items"]))
+    return report
+
+
+def _bank_classify(bucket, data):
+    if set(data) - {"statement_id", "transaction_id", "revision", "category", "note", "review_confirmed"}:
+        raise RequestError(400, "分類リクエストに不明な項目があります。")
+    statement_id = _bank_id(data)
+    transaction_id = _bank_id(data, "transaction_id")
+    revision = _text(data, "revision", 100)
+    key = f"bank/statements/{statement_id}.json"
+    record, etag = _read_json(bucket, key, with_etag=True)
+    if etag != revision:
+        raise RequestError(409, "明細が更新されています。最新データを取得してから再操作してください。")
+    item = next((item for item in record["items"] if item["transaction_id"] == transaction_id), None)
+    if item is None:
+        raise RequestError(404, "指定された口座明細がありません。")
+    if "category" in data:
+        category = _text(data, "category", 40)
+        if category not in BANK_CATEGORIES:
+            raise RequestError(400, "分類が不正です。")
+        item.update(category=category, note=_text(data, "note", 300, required=False), classified_by="manual",
+                    review_confirmed=False, review_reason="用途・分類を確認してください。")
+    else:
+        if "note" in data or not isinstance(data.get("review_confirmed"), bool):
+            raise RequestError(400, "確認状態を真偽値で指定してください。")
+        if item["category"] == "未分類" and data["review_confirmed"]:
+            raise RequestError(400, "先に用途を分類してください。")
+        item["review_confirmed"] = data["review_confirmed"]
+    if "category" in data and "review_confirmed" in data:
+        raise RequestError(400, "分類変更と確認は別々に操作してください。")
+    written = _write_json(bucket, key, record, condition=etag)
+    return {"saved": True, "statement_id": statement_id, "transaction_id": transaction_id, "revision": written["ETag"]}
+
+
+def _bank_route(bucket, route, data, parameters):
+    if route == "POST /bank/uploads":
+        key = f"bank/uploads/{uuid.uuid4().hex}.pdf"
+        upload = S3.generate_presigned_post(
+            Bucket=bucket, Key=key, Fields={"Content-Type": "application/pdf"},
+            Conditions=[{"Content-Type": "application/pdf"}, ["content-length-range", 1, MAX_PDF_BYTES]], ExpiresIn=300,
+        )
+        return {"key": key, "upload": upload, "expires_in": 300}
+    if route == "GET /bank/statements":
+        records = _list_records(bucket, "bank/statements/")
+        return {"statements": [_bank_summary(record) for record in sorted(records, key=lambda item: item["month"], reverse=True)]}
+    if route == "GET /bank/statements/{statement_id}":
+        return _bank_record(bucket, _bank_id(parameters))
+    if route == "GET /bank/imports":
+        records = _list_records(bucket, "bank/imports/")
+        return {"imports": sorted(records, key=lambda item: item["imported_at"], reverse=True)}
+    if route == "GET /bank/imports/{import_id}":
+        import_id = _text(parameters, "import_id", 32)
+        if not re.fullmatch(r"[a-f0-9]{32}", import_id):
+            raise RequestError(400, "取り込みIDが不正です。")
+        return _read_json(bucket, f"bank/imports/{import_id}.json")
+    if route == "POST /bank/classifications":
+        return _bank_classify(bucket, data)
+    if route == "POST /bank/reimport":
+        record = _bank_record(bucket, _bank_id(data))
+        if record["revision"] != _text(data, "revision", 100):
+            raise RequestError(409, "明細が更新されています。最新データを取得してください。")
+        report = _bank_import_record(bucket, record["source_file"])
+        return {**report, "saved": report["validation_status"] != "failed"}
+    raise RequestError(404, "不明な口座明細ルートです。")
+
 
 def lambda_handler(event, context):
     if event.get("Records"):
@@ -528,6 +676,9 @@ def lambda_handler(event, context):
             if bucket != os.environ["FINANCE_BUCKET"]:
                 raise ValueError("Unexpected S3 invoice upload bucket")
             key = unquote(record["s3"]["object"]["key"].replace("+", " "))
+            if re.fullmatch(r"bank/uploads/[a-f0-9]{32}\.pdf", key):
+                _bank_import_record(bucket, key)
+                continue
             if not re.fullmatch(r"uploads/[a-f0-9]{32}\.pdf", key):
                 raise ValueError("Unexpected S3 invoice upload event")
             _import_record(bucket, key)
@@ -549,6 +700,8 @@ def lambda_handler(event, context):
         bucket = os.environ["FINANCE_BUCKET"]
         route = event.get("routeKey", "")
         data = _request_data(event, route)
+        if route.startswith(("GET /bank/", "POST /bank/")):
+            return response(200, _bank_route(bucket, route, data, event.get("pathParameters") or {}))
 
         if route == "POST /finance/uploads":
             key = f"uploads/{uuid.uuid4().hex}.pdf"
@@ -614,6 +767,8 @@ def lambda_handler(event, context):
         raise RequestError(404, "不明なルートです。")
     except RequestError as error:
         return response(error.status, {"message": error.message})
-    except ClientError:
+    except ClientError as error:
+        if error.response["Error"]["Code"] in ("PreconditionFailed", "ConditionalRequestConflict"):
+            return response(409, {"message": "データが更新されています。最新データを取得してから再操作してください。"})
         LOGGER.exception("JA statement S3 operation failed")
         return response(500, {"message": "JA明細データの保存または読み込みに失敗しました。"})

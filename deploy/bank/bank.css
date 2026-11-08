@@ -1,0 +1,12 @@
+.bank-chart { display: flex; gap: 12px; overflow-x: auto; padding: 12px 0; }
+.bank-month { flex: 1 0 90px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #dce4e8; background: white; color: inherit; border-radius: 6px; padding: 8px; }
+.bank-bars { height: 160px; display: flex; gap: 5px; align-items: end; }
+.bank-bar { display: block; width: 24px; }
+.bank-deposit { background: #398651; }
+.bank-withdrawal { background: #3279af; }
+.bank-month:focus-visible { outline: 2px solid #398651; }
+.bank-donut { width: 190px; max-width: 100%; height: auto; }
+.bank-annual-part { flex: 1 1 300px; min-width: 0; }
+.bank-annual-part h3 { margin-bottom: 12px; }
+#edit-note { width: 100%; }
+#edit-item { overflow-wrap: anywhere; }
