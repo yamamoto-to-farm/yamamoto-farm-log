@@ -53,6 +53,25 @@ test("communication requires recipients, paired time and field or meeting point"
   assert.ok(issues({ ...plan, kind: "2", reporter: "" }).length);
   assert.equal(issues({ ...plan, source: "message", recipients: undefined }).length, 0);
 });
+test("generated plan messages use month, day and weekday without year or relative dates", () => {
+  const context = load("message-plan.js");
+  const group = context.messageGroups({ one: plan })[0];
+  for (const [date, label] of [
+    ["2026-11-09", "11月9日（月）"],
+    ["2026-11-08", "11月8日（日）"],
+    ["2027-01-01", "1月1日（金）"],
+    ["2028-02-29", "2月29日（火）"],
+  ]) {
+    assert.ok(context.buildPlanMessage(plan, date).includes(`${label}の作業予定です。`));
+    const message = context.buildGroupMessage(group, date);
+    assert.ok(message.includes(`${label}の作業予定です。`));
+    assert.ok(!message.includes(date));
+    assert.match(message, /出勤：08:00　退勤：16:00/);
+    assert.ok(context.buildGroupMessage({ ...group, attendance: [] }, date).includes(label));
+    assert.ok(context.buildPlanMessage({ ...plan, off: true }, date).includes(`${label}の作業ですが`));
+    assert.ok(!context.buildPlanMessage(plan, date, false).includes(label));
+  }
+});
 test("family day groups merge task times without weakening part shift consistency", () => {
   const context = load("message-plan.js");
   const first = { ...plan, names: ["Family"], recipients: ["Family"],

@@ -5,7 +5,7 @@ import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
-import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261104-line-family-1";
+import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261108-date-1";
 import { initLineMessaging, decorateLineCards } from "./line.js?v=20261104-line-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";

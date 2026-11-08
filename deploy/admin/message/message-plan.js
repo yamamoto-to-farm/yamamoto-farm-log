@@ -19,16 +19,13 @@ export function communicationIssues(plan) {
   return issues;
 }
 
-export function buildPlanMessage(plan, date, envelope = true) {
-  const today = new Date();
-  const local = offset => {
-    const day = new Date(today);
-    day.setDate(day.getDate() + offset);
-    return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-  };
+function messageDateLabel(date) {
   const parsed = new Date(`${date}T00:00:00`);
-  const label = date === local(0) ? "今日" : date === local(1) ? "明日"
-    : `${parsed.getMonth() + 1}/${parsed.getDate()}（${"日月火水木金土"[parsed.getDay()]}）`;
+  return `${parsed.getMonth() + 1}月${parsed.getDate()}日（${"日月火水木金土"[parsed.getDay()]}）`;
+}
+
+export function buildPlanMessage(plan, date, envelope = true) {
+  const label = messageDateLabel(date);
   const lines = envelope ? ["お疲れさまです。"] : [];
   if (plan.off) {
     lines.push(envelope ? `${label}の作業ですが、${plan.off_reason || "作業の都合により"}、お休みとさせて下さい。`
@@ -100,7 +97,7 @@ export function buildGroupMessage(group, date) {
     ...(group.attendance.length > 1 ? [`${group.includesFamily ? "予定時間帯" : "勤務時間帯"}：${group.attendance.map(range => `${range.start}〜${range.end}`).join("／")}`] : []), "",
   ] : [];
   if (group.entries.length === 1 && !attendance.length) return buildPlanMessage(group.entries[0].displayPlan, date);
-  return ["お疲れさまです。", `${date}の作業予定です。`, "",
+  return ["お疲れさまです。", `${messageDateLabel(date)}の作業予定です。`, "",
     ...attendance, ...group.entries.map(({ displayPlan }) => buildPlanMessage(displayPlan, date, false)), "よろしくお願いします。"].join("\n");
 }
 export function checkMessageGroup(group, plans) {
