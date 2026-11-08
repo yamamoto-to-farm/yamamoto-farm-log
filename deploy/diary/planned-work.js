@@ -175,7 +175,7 @@ export async function writeWorkPlan(request) {
   return result;
 }
 
-export async function renderPlannedWork(date, logsPromise, referencesPromise = []) {
+export async function renderPlannedWork(date, logsPromise, referencesPromise = [], savedDiaryPromise = false) {
   const current = ++sequence;
   const panel = document.getElementById("plannedWorkPanel");
   if (!panel) return;
@@ -183,7 +183,7 @@ export async function renderPlannedWork(date, logsPromise, referencesPromise = [
   panel.hidden = !["admin", "family"].includes(window.currentRole);
   body.replaceChildren();
   if (panel.hidden) return;
-  panel.open = true;
+  panel.open = false;
   const button = (label, action) => {
     const element = document.createElement("button");
     element.type = "button";
@@ -192,13 +192,16 @@ export async function renderPlannedWork(date, logsPromise, referencesPromise = [
     element.onclick = action;
     body.append(element);
   };
-  if (!hasSession()) {
-    body.textContent = "予定の表示にはシフト連携ログインが必要です。";
-    button("ログイン", () => login(`/diary/index.html${location.search}`));
-    return;
-  }
   body.textContent = "予定を読み込み中…";
   try {
+    const savedDiary = await savedDiaryPromise;
+    if (current !== sequence) return;
+    panel.open = !savedDiary;
+    if (!hasSession()) {
+      body.textContent = "予定の表示にはシフト連携ログインが必要です。";
+      button("ログイン", () => login(`/diary/index.html${location.search}`));
+      return;
+    }
     const [record, logs, references] = await Promise.all([fetchWorkPlanRecord(date), logsPromise, referencesPromise]);
     if (current !== sequence) return;
     body.innerHTML = plannedWorkHtml(record.data.people, logs, record.data.plans, references);
@@ -207,6 +210,6 @@ export async function renderPlannedWork(date, logsPromise, referencesPromise = [
     console.error("[diary] planned work load failed", date, error);
     body.textContent = error.message;
     if (!hasSession()) button("ログイン", () => login(`/diary/index.html${location.search}`));
-    button("再試行", () => renderPlannedWork(date, logsPromise, referencesPromise));
+    button("再試行", () => renderPlannedWork(date, logsPromise, referencesPromise, savedDiaryPromise));
   }
 }

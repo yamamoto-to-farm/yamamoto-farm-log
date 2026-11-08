@@ -5,9 +5,9 @@
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
 import { showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js?v=20261103-status-2";
-import { initEditPage } from "./editCard.js?v=20261108-single-1";
-import { initViewPageWithOptions } from "./viewCard.js?v=20261108-single-1";
-import { saveDiary } from "./saveDiary.js?v=20261108-single-1";
+import { initEditPage } from "./editCard.js?v=20261108-saved-fold-1";
+import { initViewPageWithOptions } from "./viewCard.js?v=20261108-saved-fold-1";
+import { saveDiary } from "./saveDiary.js?v=20261108-saved-fold-1";
 import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { renderWeatherBox } from "./weather-box.js";
 import { renderDayPhotos, initDayPhotosModal } from "./day-photos.js?v=20261029-3";
@@ -18,7 +18,7 @@ import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./status.js?v=20261103-status-2";
-import { renderPlannedWork } from "./planned-work.js?v=20261106-time-1";
+import { renderPlannedWork } from "./planned-work.js?v=20261108-saved-fold-1";
 
 const SEARCH_LIMIT = 80;
 const DIARY_SEARCH_LIMIT = 40;
@@ -481,7 +481,8 @@ async function renderDiaryForDate({ mode, date, saveBtn, updateHistory = true, c
   const screenData = loadDiaryScreenData(date);
   let finishReferences;
   const references = new Promise(resolve => { finishReferences = resolve; });
-  void renderPlannedWork(date, screenData.then(result => result.logs, () => null), references);
+  void renderPlannedWork(date, screenData.then(result => result.logs, () => null), references,
+    screenData.then(result => result.state === "saved", () => false));
   try {
     data = await screenData;
   } catch (error) {

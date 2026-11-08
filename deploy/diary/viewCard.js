@@ -7,7 +7,7 @@ import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-sum
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
 import { loadFertilizerDetails, combineSimultaneousWork } from "./actual-work.js?v=20261106-time-1";
-import { diaryWorkers, hasParticipation, validateDiaryTimes } from "./participation.js?v=20261108-single-1";
+import { diaryWorkers, hasParticipation, validateDiaryTimes } from "./participation.js?v=20261108-saved-fold-1";
 
 const WORK_LOG_TYPE_BY_CARD = [
   { pattern: /手作業除草/, type: "hand-weeding" },

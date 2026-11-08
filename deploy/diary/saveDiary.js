@@ -11,7 +11,7 @@ import {
   closeSaveModal,
   confirmSaveBeforeSubmit
 } from "/common/save-modal.js?v=1";
-import { readDiaryParticipation, validateDiaryTimes, diaryTimeOverlaps } from "./participation.js?v=20261108-single-1";
+import { readDiaryParticipation, validateDiaryTimes, diaryTimeOverlaps } from "./participation.js?v=20261108-saved-fold-1";
 
 export async function saveDiary(date, autoList) {
 

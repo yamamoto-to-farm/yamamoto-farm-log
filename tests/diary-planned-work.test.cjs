@@ -252,11 +252,44 @@ test("plan errors are retryable independently and late responses cannot replace 
   let finish;
   context.fetchWorkPlanRecord = date => date === "2026-11-03" ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ data: { people: {} } });
   const old = context.renderPlannedWork("2026-11-03", Promise.resolve([]));
+  await Promise.resolve();
   await context.renderPlannedWork("2026-11-04", Promise.resolve([]));
   finish({ data: { people: { 担当A: plan } } });
   await old;
   assert.match(body.innerHTML, /予定は保存されていません/);
   assert.equal(panel.open, true);
+});
+test("saved diaries keep plans collapsed through loading, retry and date changes", async () => {
+  const { context, body, panel } = screen();
+  let finishSaved;
+  const saved = new Promise(resolve => { finishSaved = resolve; });
+  context.fetchWorkPlanRecord = async () => ({ data: { people: { 担当A: plan } } });
+  const rendering = context.renderPlannedWork("2026-11-04", Promise.resolve([]), [], saved);
+  assert.equal(panel.open, false);
+  finishSaved(true);
+  await rendering;
+  assert.equal(panel.open, false);
+  assert.match(body.innerHTML, /担当A/);
+  panel.open = true;
+  assert.match(body.innerHTML, /草とり/);
+  context.fetchWorkPlanRecord = async () => { throw new Error("offline"); };
+  await context.renderPlannedWork("2026-11-04", [], [], true);
+  assert.equal(panel.open, false);
+  assert.equal(body.textContent, "offline");
+  context.fetchWorkPlanRecord = async () => ({ data: { people: {} } });
+  await body.children[0].onclick();
+  assert.equal(panel.open, false);
+  await context.renderPlannedWork("2026-11-05", [], [], false);
+  assert.equal(panel.open, true);
+  let finishOld;
+  const old = context.renderPlannedWork("2026-11-05", [], [],
+    new Promise(resolve => { finishOld = resolve; }));
+  await context.renderPlannedWork("2026-11-04", [], [], true);
+  finishOld(false);
+  await old;
+  assert.equal(panel.open, false);
+  const diarySource = readFileSync(join(__dirname, "..", "deploy", "diary", "diary.js"), "utf8");
+  assert.match(diarySource, /screenData\.then\(result => result\.state === "saved"/);
 });
 test("workers cannot load private plans and missing login offers explicit login", async () => {
   const { context, body, panel } = screen();

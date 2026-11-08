@@ -1,5 +1,5 @@
 import { validTimeRange, intersectTimeRanges, mergeTimeRanges, workingTimeRanges } from "/common/work-plan-time.js?v=20261104-mixed-time-1";
-import { relatedPlanLogs, fetchWorkPlanRecord } from "./planned-work.js?v=20261106-time-1";
+import { relatedPlanLogs, fetchWorkPlanRecord } from "./planned-work.js?v=20261108-saved-fold-1";
 import { config } from "/photos/config.js";
 import { ensureToken } from "/photos/auth.js?v=20261029-2";
 import { applyAdjustments, defaultScenarioIndex, fitRemaining, toInputTime } from "/admin/shift/shift-logic.js?v=20261101-6";
