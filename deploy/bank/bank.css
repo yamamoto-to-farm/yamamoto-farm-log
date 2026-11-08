@@ -10,3 +10,7 @@
 .bank-annual-part h3 { margin-bottom: 12px; }
 #edit-note { width: 100%; }
 #edit-item { overflow-wrap: anywhere; }
+#edit-related-items { max-height: 240px; overflow-y: auto; }
+.bank-edit-choice { display: flex; align-items: start; gap: 8px; padding: 8px 0; }
+.bank-edit-choice input { flex: 0 0 auto; }
+.bank-edit-choice span { overflow-wrap: anywhere; }

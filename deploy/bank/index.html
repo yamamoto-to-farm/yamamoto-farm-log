@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261109-1">
+  <link rel="stylesheet" href="./bank.css?v=20261109-2">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -72,7 +72,7 @@
         <div class="finance-toolbar"><label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label>並び順<select id="sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option></select></label>
         </div>
-        <p class="finance-note">自動分類は候補です。分類・用途を確認したら「確認済みにする」で要確認から外せます。分類修正時は再確認になります。</p>
+        <p class="finance-note">自動分類は候補です。分類修正では同じ摘要の明細も選んで変更できます。「保存と同時に確認済みにする」を選ばない場合は再確認になります。</p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="口座取引明細"><table><thead><tr><th>取引日</th><th>摘要</th><th>入金</th><th>出金</th><th>取引後残高</th><th>用途・確認</th></tr></thead><tbody id="items"></tbody></table></div>
         <div class="finance-toolbar"><button id="previous" type="button" class="secondary-btn">前へ</button><span id="page-number"></span><button id="next" type="button" class="secondary-btn">次へ</button></div>
       </details>
@@ -87,10 +87,16 @@
     <dialog id="edit-dialog" aria-labelledby="edit-title"><form id="edit-form">
       <h2 id="edit-title">用途の分類修正</h2><p id="edit-item"></p>
       <label>用途<select id="edit-category" required></select></label><label>確認用メモ<input id="edit-note" maxlength="300"></label>
+      <section id="edit-related" hidden>
+        <h3>まとめて変更する明細</h3>
+        <p class="finance-note">同じ口座・同じ摘要・同じ入出金方向の取り込み済み全期間から表示します（全角・半角と空白の違いは同一扱い）。追加対象は選択してください。ほかの明細のメモは維持します。</p>
+        <div id="edit-related-items"></div>
+      </section>
+      <label><input id="edit-confirm" type="checkbox">保存と同時に確認済みにする</label>
       <p id="edit-status" role="alert"></p><div class="finance-toolbar"><button id="save-edit" type="submit" class="primary-btn">保存</button><button id="cancel-edit" type="button" class="secondary-btn">キャンセル</button></div>
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261109-1"></script>
+  <script type="module" src="./bank.js?v=20261109-2"></script>
 </body>
 </html>

@@ -79,10 +79,21 @@ test("annual analysis cuts at today, separates incoming/outgoing percentages and
   assert.equal(c.annualAnalysis(rows, [], "account-a", 2028, "2029-02-01").current.deposit, 200);
   assert.equal(result.months.length, 0);
 });
+test("related classification matches normalized exact memo across months, but separates account and direction", () => {
+  const c = logic();
+  const base = { ...item({ memo: "ﾃﾞﾘｺ ｷｬﾍﾞﾂ" }), account_id: "account-a", statement_id: "a".repeat(64) };
+  const related = { ...base, transaction_id: "c".repeat(64), trade_date: "2026-01-05", memo: "デリコ　キャベツ",
+    classified_by: "manual", review_confirmed: true, note: "keep" };
+  const matches = c.relatedItems([base, related, { ...related, account_id: "other" },
+    { ...related, withdrawal: 100, deposit: 0 }, { ...related, memo: "デリコ キャベツ追加" }], base);
+  assert.equal(matches.length, 1);
+  assert.equal(matches[0].note, "keep");
+  assert.equal(c.relatedItems([{ ...related, memo: "" }], { ...base, memo: "" }).length, 0);
+});
 function screen(deps = {}) {
   const elements = {};
   for (const id of ["login-area", "data-area", "page-area", "status", "account", "from", "to", "category", "direction",
-    "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-dialog", "edit-status", "pdf"]) {
+    "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf"]) {
     elements[id] = { value: "", checked: false, textContent: "", querySelectorAll: () => [], classList: { toggle() {} },
       close() { this.closed = true; } };
   }
@@ -145,6 +156,52 @@ test("save success followed by refresh failure is explicit and never becomes uns
   await c.saveEdit({ preventDefault() {} });
   assert.match(elements.status.textContent, /保存済み.*表示更新/);
   assert.equal(vm.runInContext("targets.length", c), 0);
+});
+test("selected related rows preserve notes and confirmation retries do not repeat classification", async () => {
+  const { c, elements } = screen();
+  c.primary = { ...item(), statement_id: "a".repeat(64) };
+  c.other = { ...item({ transaction_id: "c".repeat(64), note: "keep" }), statement_id: "d".repeat(64) };
+  c.excluded = { ...item({ transaction_id: "e".repeat(64) }), statement_id: "a".repeat(64) };
+  vm.runInContext(`targets = [primary]; editSelection = [
+    {item: primary, checkbox: {checked: true}}, {item: other, checkbox: {checked: true}},
+    {item: excluded, checkbox: {checked: false}}];
+    revisions.set(primary.statement_id, '"first"'); revisions.set(other.statement_id, '"other"');`, c);
+  elements["edit-category"].value = "売上";
+  elements["edit-note"].value = "new note";
+  elements["edit-confirm"].checked = true;
+  c.loadData = async () => {};
+  const requests = [];
+  let fail = true;
+  c.api = async (_path, body) => {
+    requests.push(body);
+    if (body.review_confirmed && fail) { fail = false; throw new Error("offline"); }
+    return { saved: true, revision: `"new-${requests.length}"` };
+  };
+  await c.saveEdit({ preventDefault() {} });
+  assert.match(elements["edit-status"].textContent, /分類保存済み.*確認状態/);
+  await c.saveEdit({ preventDefault() {} });
+  assert.equal(requests.length, 5);
+  assert.equal(requests[0].note, "new note");
+  assert.equal(requests[1].review_confirmed, true);
+  assert.equal(requests[2].review_confirmed, true);
+  assert.equal(requests[2].revision, '"new-1"');
+  assert.equal(requests[3].note, "keep");
+  assert.equal(requests[3].revision, '"other"');
+  assert.equal(requests[4].revision, '"new-4"');
+  assert.ok(requests.every(body => body.transaction_id !== c.excluded.transaction_id));
+});
+test("selection and confirmation validation prevent empty saves or confirmed unclassified", async () => {
+  const { c, elements } = screen();
+  c.row = item();
+  vm.runInContext("targets = [row]; editSelection = [{item: row, checkbox: {checked: false}}]", c);
+  c.api = async () => assert.fail("must not save");
+  await c.saveEdit({ preventDefault() {} });
+  assert.match(elements["edit-status"].textContent, /選択/);
+  vm.runInContext("editSelection[0].checkbox.checked = true", c);
+  elements["edit-category"].value = "未分類";
+  elements["edit-confirm"].checked = true;
+  await c.saveEdit({ preventDefault() {} });
+  assert.match(elements["edit-status"].textContent, /未分類以外/);
 });
 test("bulk classification cannot manually hide unknown groups as unclassified", async () => {
   const { c, elements } = screen();

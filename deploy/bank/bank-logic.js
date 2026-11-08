@@ -86,6 +86,15 @@ export function unclassifiedGroups(items) {
   return [...groups.values()].sort((a, b) => b.total - a.total);
 }
 
+export function relatedItems(items, selected) {
+  const memo = selected.memo.normalize("NFKC").replace(/\s+/g, " ").trim();
+  if (!memo) return [];
+  return sortItems(items.filter(item => item.account_id === selected.account_id
+    && (item.deposit > 0) === (selected.deposit > 0)
+    && item.memo.normalize("NFKC").replace(/\s+/g, " ").trim() === memo
+    && !(item.statement_id === selected.statement_id && item.transaction_id === selected.transaction_id)), "date-desc");
+}
+
 export function annualAnalysis(items, records, account, year, today) {
   const period = annualPeriod(year, today);
   const previous = { start: `${year - 1}-01-01`, end: previousPeriodEnd(period.end) };

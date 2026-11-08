@@ -6,13 +6,14 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
-  unclassifiedGroups, annualAnalysis } from "./bank-logic.js?v=20261109-1";
+  unclassifiedGroups, annualAnalysis, relatedItems } from "./bank-logic.js?v=20261109-2";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
 const colors = ["#398651", "#3279af", "#9360b2", "#be6d32", "#258d92", "#a35f83", "#797330", "#465774", "#6b7280"];
 let statements = [], imports = [], items = [];
 let page = 0, busy = false, targets = [], revisions = new Map();
+let editStarted = false, editSelection = [];
 
 function node(tag, text, className) {
   const result = document.createElement(tag);
@@ -61,7 +62,7 @@ async function api(path, body) {
 function updateButtons() {
   el("page-area").querySelectorAll("button").forEach(button => { button.disabled = busy; });
   el("data-area").querySelectorAll("input, select").forEach(input => { input.disabled = busy; });
-  el("edit-category").disabled = el("edit-note").disabled = busy;
+  el("edit-form").querySelectorAll("input, select").forEach(input => { input.disabled = busy || editStarted; });
   if (!busy) {
     const count = filtered().length;
     el("previous").disabled = page <= 0;
@@ -368,21 +369,53 @@ function renderRecords() {
 
 function openEdit(selected) {
   if (busy) return;
+  editStarted = false;
+  editSelection = [];
   targets = [...selected];
   revisions = new Map(statements.map(record => [record.statement_id, record.revision]));
   el("edit-item").textContent = `${selected.length}件：${selected[0].memo || "摘要なし"}`;
   el("edit-category").value = selected[0].category;
   el("edit-note").value = selected.length === 1 ? selected[0].note : "";
   el("edit-status").textContent = "";
+  el("edit-confirm").checked = false;
+  el("edit-related").hidden = selected.length !== 1;
+  el("edit-related-items").replaceChildren();
+  if (selected.length === 1) {
+    for (const item of [selected[0], ...relatedItems(items, selected[0])]) {
+      const label = node("label", undefined, "bank-edit-choice"), checkbox = node("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = item === selected[0];
+      label.append(checkbox, node("span", `${item.trade_date} / ${item.deposit ? "入金" : "出金"} ${formatYen(item.deposit + item.withdrawal)} / ${item.category}${item.classified_by === "manual" ? "・手動修正済み" : ""}${item.review_confirmed ? "・確認済み" : ""}`));
+      el("edit-related-items").append(label);
+      editSelection.push({ item, checkbox });
+    }
+  }
+  updateButtons();
   el("edit-dialog").showModal();
 }
 
 async function saveEdit(event) {
   event.preventDefault();
-  if (busy || !targets.length) return;
+  if (busy) return;
+  if (!editStarted && editSelection.length) targets = editSelection.filter(choice => choice.checkbox.checked).map(choice => choice.item);
+  if (!targets.length) {
+    el("edit-status").textContent = "保存する明細を選択してください。";
+    return;
+  }
   if (targets.length > 1 && el("edit-category").value === "未分類") {
     el("edit-status").textContent = "まとめて整理する場合は、未分類以外の用途を選択してください。";
     return;
+  }
+  if (el("edit-confirm").checked && el("edit-category").value === "未分類") {
+    el("edit-status").textContent = "確認済みにする場合は、未分類以外の用途を選択してください。";
+    return;
+  }
+  if (!editStarted) {
+    const primary = editSelection[0]?.item;
+    targets = targets.map(item => ({ ...item,
+      editNote: !primary || item === primary ? el("edit-note").value.trim() : item.note,
+      pendingReview: false }));
+    editStarted = true;
   }
   await run(async () => {
     let saved = 0;
@@ -390,14 +423,19 @@ async function saveEdit(event) {
       while (targets.length) {
         const item = targets[0];
         const result = await api("/classifications", { statement_id: item.statement_id, transaction_id: item.transaction_id,
-          revision: revisions.get(item.statement_id), category: el("edit-category").value, note: el("edit-note").value.trim() });
+          revision: revisions.get(item.statement_id),
+          ...(item.pendingReview ? { review_confirmed: true } : { category: el("edit-category").value, note: item.editNote }) });
         if (result.saved !== true || typeof result.revision !== "string") throw new Error("分類の保存結果を確認できません。最新データを取得してください。");
         revisions.set(item.statement_id, result.revision);
+        if (!item.pendingReview && el("edit-confirm").checked) {
+          item.pendingReview = true;
+          continue;
+        }
         targets.shift();
         saved++;
       }
     } catch (error) {
-      el("edit-status").textContent = `${saved}件保存済み・残り${targets.length}件。${error.message} 409の場合は閉じて最新データを取得し、対象を選び直してください。`;
+      el("edit-status").textContent = `${saved}件保存済み・残り${targets.length}件。${targets[0]?.pendingReview ? "先頭の明細は分類保存済み・確認状態の保存待ちです。" : ""}${error.message} 409の場合は閉じて最新データを取得し、対象を選び直してください。`;
       throw new Error(el("edit-status").textContent);
     }
     el("edit-dialog").close();
