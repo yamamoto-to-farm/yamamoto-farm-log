@@ -79,6 +79,53 @@ test("one work stores different crews' ranges including breaks, and unknown is n
   c.validateDiaryTimes(item);
   assert.equal(Object.hasOwn(item, "participation"), false);
 });
+test("single worker follows overall input, preserves manual/saved times and never follows for multiple workers", () => {
+  function setup(saved = [], workers = ["A"]) {
+    const inputs = [{ value: "", listeners: {} }, { value: "", listeners: {} }];
+    inputs.forEach(input => { input.addEventListener = (type, callback) => { input.listeners[type] = callback; }; });
+    const area = { open: false, listeners: {}, addEventListener(type, callback) { this.listeners[type] = callback; } };
+    const time = { after() {} };
+    const person = { dataset: { person: "A" }, rows: ["untouched"],
+      querySelector() { return { replaceChildren: (...rows) => { this.rows = rows; } }; } };
+    const card = { querySelector: selector => selector === ".diary-participation" ? area : time,
+      querySelectorAll: selector => selector === ".diary-person" ? [person] : inputs };
+    const c = load({ document: { createElement: () => ({ setAttribute() {}, querySelector: () => ({}) }) } });
+    c.bindSingleWorkerTime(card, { workers, participation: { A: saved } });
+    const input = (start, end) => { inputs[0].value = start; inputs[1].value = end; inputs[1].listeners.input?.(); };
+    return { c, card, area, person, input };
+  }
+  const auto = setup();
+  auto.input("08:00", "");
+  assert.deepEqual(auto.person.rows, ["untouched"]);
+  auto.input("08:00", "16:30");
+  assert.match(auto.person.rows[0].innerHTML, /value="08:00"/);
+  assert.match(auto.person.rows[0].innerHTML, /value="16:30"/);
+  assert.equal(auto.area.open, false);
+  auto.input("09:00", "15:00");
+  assert.match(auto.person.rows[0].innerHTML, /value="09:00"/);
+  auto.input("", "");
+  assert.equal(auto.person.rows.length, 0);
+  auto.input("08:00", "16:30");
+  auto.area.listeners.input({ target: { closest: () => true } });
+  const before = auto.person.rows[0];
+  auto.input("09:00", "15:00");
+  assert.equal(auto.person.rows[0], before);
+  const removed = setup();
+  removed.area.listeners.click({ target: { closest: () => true } });
+  removed.input("08:00", "16:30");
+  assert.deepEqual(removed.person.rows, ["untouched"]);
+  const saved = setup([{ start: "08:00", end: "12:00" }, { start: "13:00", end: "16:30" }]);
+  saved.input("09:00", "17:00");
+  assert.deepEqual(saved.person.rows, ["untouched"]);
+  const multiple = setup([], ["A", "B"]);
+  multiple.input("08:00", "16:30");
+  assert.deepEqual(multiple.person.rows, ["untouched"]);
+  const candidate = setup();
+  candidate.c.card = candidate.card;
+  vm.runInContext('applyCandidate(card, { A: [{ start: "13:00", end: "16:30" }] })', candidate.c);
+  candidate.input("08:00", "17:00");
+  assert.match(candidate.person.rows[0].innerHTML, /value="13:00"/);
+});
 test("invalid, overlapping, outside-work ranges and unrecognized names fail explicitly", () => {
   const c = load();
   for (const range of [

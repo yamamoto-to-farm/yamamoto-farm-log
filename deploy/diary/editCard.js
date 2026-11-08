@@ -10,7 +10,7 @@ import { getWorkToneClass } from "/common/work-tone.js";
 import {
   renderDiaryParticipation, readDiaryParticipation, validateDiaryTimes, mergeDiaryParticipation,
   diaryPlanCandidates, loadDiaryPlanCandidates, loadDiaryShiftTimes, showDiaryTimeCandidates,
-} from "./participation.js?v=20261106-collapse-1";
+} from "./participation.js?v=20261108-single-1";
 
 let timeSources = { plans: null, shifts: null, logs: [], autoList: [] };
 

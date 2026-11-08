@@ -109,6 +109,8 @@ export async function loadDiaryShiftTimes(date) {
   return Object.fromEntries(Object.entries(attendance).map(([name, ranges]) => [name, workingTimeRanges(ranges, noonBreak)]));
 }
 
+const singleWorkerSync = new WeakMap();
+
 function timeRow(name, range = { start: "", end: "" }) {
   const row = document.createElement("div");
   row.className = "diary-person-range";
@@ -159,6 +161,48 @@ export function renderDiaryParticipation(card, work) {
     copy.textContent = "全員に反映";
     copy.onclick = () => applyDiaryOverallTime(card);
     timeControls.appendChild(copy);
+    bindSingleWorkerTime(card, work);
+  }
+}
+
+export function bindSingleWorkerTime(card, work) {
+  const names = diaryWorkers(work.workers);
+  if (names.length !== 1) return;
+  const area = card.querySelector(".diary-participation");
+  const notice = document.createElement("p");
+  notice.className = "memo-desc";
+  notice.setAttribute("role", "status");
+  const state = { automatic: !(work.participation?.[names[0]] || []).length, notice };
+  singleWorkerSync.set(card, state);
+  const updateNotice = () => {
+    notice.textContent = state.automatic
+      ? "1人作業：全体の開始・終了を入力すると本人の時間にも自動反映します。"
+      : "人別時間を維持しています。全体時間の変更は自動反映しません。「全員に反映」で置き換えられます。";
+  };
+  state.updateNotice = updateNotice;
+  updateNotice();
+  card.querySelector(".edit-time-row").after(notice);
+  const stopAutomatic = () => {
+    state.automatic = false;
+    updateNotice();
+  };
+  area.addEventListener("input", event => {
+    if (event.target.closest(".diary-person")) stopAutomatic();
+  });
+  area.addEventListener("click", event => {
+    if (event.target.closest(".diary-person button")) stopAutomatic();
+  }, true);
+  for (const input of card.querySelectorAll(".edit-time-row input")) {
+    input.addEventListener("input", () => {
+      if (!state.automatic) return;
+      const inputs = card.querySelectorAll(".edit-time-row input");
+      const overall = { start: inputs[0].value, end: inputs[1].value };
+      if (!overall.start && !overall.end) {
+        applyCandidate(card, { [names[0]]: [] }, undefined, true);
+      } else if (validTimeRange(overall)) {
+        applyCandidate(card, { [names[0]]: [overall] }, undefined, true);
+      }
+    });
   }
 }
 
@@ -188,7 +232,12 @@ export function readDiaryParticipation(card) {
     }).filter(range => range.start || range.end)]));
 }
 
-function applyCandidate(card, participation, overall) {
+function applyCandidate(card, participation, overall, automatic = false) {
+  const state = singleWorkerSync.get(card);
+  if (state && !automatic) {
+    state.automatic = false;
+    state.updateNotice();
+  }
   const inputs = card.querySelectorAll(".edit-time-row input");
   if (overall && !inputs[0].value && !inputs[1].value) {
     inputs[0].value = overall.start;
