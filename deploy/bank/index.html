@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261110-1">
+  <link rel="stylesheet" href="./bank.css?v=20261110-2">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -44,13 +44,14 @@
         <div class="finance-toolbar">
           <label>開始月<input id="from" type="month"></label><label>終了月<input id="to" type="month"></label>
           <label>用途<select id="category"><option value="">すべて</option></select></label>
+          <label>内訳<select id="subcategory"><option value="">すべて</option></select></label>
           <label>入出金<select id="direction"><option value="">すべて</option><option value="deposit">入金</option><option value="withdrawal">出金</option></select></label>
           <label>摘要・メモ<input id="query" type="search"></label>
         </div>
         <p id="filter-error" role="alert"></p><p id="filter-state" class="finance-note"></p>
         <div id="summary" class="finance-summary"></div>
         <div data-help="入出金グラフの見方">
-          <p>入出金と明細は上の条件内。残高は絞り込みに関係なく口座全体です。月を押すと明細を開きます。</p>
+          <p>入出金と明細は上の条件内。内訳分割がある場合、条件内金額・グラフは一致した内訳の金額、取引明細は元の取引全額を表示します。残高は絞り込みに関係なく口座全体です。月を押すと明細を開きます。分類は資金の用途を見える化するためのもので、税務申告用の勘定科目・損益ではありません。</p>
           <p>緑：入金 ／ 青：出金</p>
         </div>
         <div id="chart" class="finance-chart" role="group" aria-label="月別入出金グラフ" aria-describedby="chart-detail"></div>
@@ -68,7 +69,7 @@
       </section>
       <details class="card finance-record-panel">
         <summary><h2>自動分類ルール</h2></summary>
-        <p class="finance-note">選択口座の摘要部分一致ルールです。姓だけでも登録できますが、同じ文字を含む別の相手にも一致するため確認してください。変更・削除は保存済み明細を変更しません。次回の取り込み・再取り込みから適用され、手動修正済み・確認済みは維持します。異なる用途のルールが競合すると未分類・要確認にします。</p>
+        <p class="finance-note">選択口座の摘要部分一致ルールです。姓だけでも登録できますが、同じ文字を含む別の相手にも一致するため確認してください。変更・削除は保存済み明細を変更しません。次回の取り込み・再取り込みから適用され、手動修正済み・確認済み・分割内訳は維持します。用途または内訳が異なるルールの競合は未分類・要確認にします。金額の分割は自動化しません。</p>
         <div id="rules-list"></div>
       </details>
       <details id="groups-section" class="card finance-record-panel">
@@ -95,7 +96,9 @@
     </div>
     <dialog id="edit-dialog" aria-labelledby="edit-title"><form id="edit-form">
       <h2 id="edit-title">用途の分類修正</h2><p id="edit-item"></p>
-      <label>用途<select id="edit-category" required></select></label><label>確認用メモ<input id="edit-note" maxlength="300"></label>
+      <label>用途<select id="edit-category" required></select></label>
+      <label>内訳（候補から選択・自由入力可）<input id="edit-subcategory" list="subcategory-suggestions" maxlength="80"></label>
+      <label>確認用メモ<input id="edit-note" maxlength="300"></label>
       <section id="edit-related" hidden>
         <h3>まとめて変更する明細</h3>
         <div data-help="まとめて変更する明細の使い方">
@@ -115,11 +118,26 @@
       <label>摘要に含む文字<input id="rule-contains" required maxlength="100"></label>
       <label>入出金<select id="rule-direction"><option value="deposit">入金</option><option value="withdrawal">出金</option></select></label>
       <label>用途<select id="rule-category" required></select></label>
+      <label>内訳（候補から選択・自由入力可）<input id="rule-subcategory" list="subcategory-suggestions" maxlength="80"></label>
       <p id="rule-status" role="alert"></p>
       <div class="finance-toolbar"><button type="submit" class="primary-btn">保存</button><button id="cancel-rule" type="button" class="secondary-btn">キャンセル</button></div>
     </form></dialog>
+    <datalist id="subcategory-suggestions"></datalist>
+    <dialog id="split-dialog" aria-labelledby="split-title"><form id="split-form">
+      <h2 id="split-title">内訳・分割</h2><p id="split-item"></p>
+      <div data-help="内訳・分割の使い方">
+        <p>元の取引はそのまま残し、用途・内訳名・金額を入力します。例：収入保険は「経費／保険・共済掛金」と「積立・預け金／収入保険積立金」。返済は元本と利息を分けます。1〜30行、正の整数円で、合計は元の入出金額に一致させてください。</p>
+        <p>1行に戻して保存すると分割を解除できます。確認用メモは維持します。変更後は確認待ちになり、「保存と同時に確認済みにする」を選んだ場合のみ確定します。再取り込みでも同一取引の内訳を維持します。税務処理を確定する機能ではありません。</p>
+      </div>
+      <div id="split-rows"></div>
+      <button id="add-split" type="button" class="secondary-btn">内訳を追加</button>
+      <p id="split-total" role="status"></p>
+      <label><input id="split-confirm" type="checkbox">保存と同時に確認済みにする</label>
+      <p id="split-status" role="alert"></p>
+      <div class="finance-toolbar"><button id="save-split" type="submit" class="primary-btn">保存</button><button id="cancel-split" type="button" class="secondary-btn">キャンセル</button></div>
+    </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-1"></script>
+  <script type="module" src="./bank.js?v=20261110-2"></script>
 </body>
 </html>

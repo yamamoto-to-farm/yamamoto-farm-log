@@ -14,3 +14,8 @@
 .bank-edit-choice span { overflow-wrap: anywhere; }
 #rule-form label { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
 #rule-status { color: #a51f25; }
+#split-status { color: #a51f25; }
+.bank-split-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0; border-bottom: 1px solid #dce4e8; }
+.bank-split-row > * { min-width: 0; width: 100%; }
+#split-form > label { display: flex; align-items: center; margin: 14px 0; }
+.finance-annual > details { flex: 1 1 100%; min-width: 0; }

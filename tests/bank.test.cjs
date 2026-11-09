@@ -33,6 +33,13 @@ test("bank rows validate identities, dates, amounts and duplicates without silen
     assert.throws(() => c.flattenStatements([record(extra)]), /不正/);
   }
 });
+test("frontend and Lambda expose the same categories and existing category order is retained", () => {
+  const c = logic();
+  const python = readFileSync(join(__dirname, "..", "lambda", "ja-statement-analysis", "bank_statement_parser.py"), "utf8");
+  const names = [...python.match(/BANK_CATEGORIES = \(([\s\S]*?)\)/)[1].matchAll(/"([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(Array.from(vm.runInContext("categories", c)), names);
+  assert.equal(names.length, 15);
+});
 test("filtering separates accounts, direction, normalized search, period and review state", () => {
   const c = logic();
   const rows = c.flattenStatements([record({ items: [item(), item({ transaction_id: "c".repeat(64), deposit: 0, withdrawal: 50,
@@ -44,6 +51,34 @@ test("filtering separates accounts, direction, normalized search, period and rev
   assert.equal(c.filterItems(rows, filters({ from: "2026-11" })).length, 0);
   assert.equal(c.filterItems(rows, filters({ category: "経費" })).length, 1);
   assert.equal(c.needsAttention(item({ category: "未分類", review_confirmed: true })), true);
+});
+test("split allocations validate exact sums, preserve parent rows and never double count totals", () => {
+  const c = logic();
+  const parts = [{ category: "経費", subcategory: "保険・共済掛金", amount: 40 },
+    { category: "積立・預け金", subcategory: "収入保険積立金", amount: 60 }];
+  const rows = c.flattenStatements([record({ items: [item({ category: "内訳分割", allocations: parts, review_confirmed: true })] })]);
+  assert.equal(rows.length, 1);
+  const allocated = c.allocatedItems(rows);
+  assert.equal(c.totals(allocated).deposit, 100);
+  const expense = c.filterItems(allocated, filters({ category: "経費" }));
+  assert.equal(c.totals(expense).deposit, 40);
+  assert.equal(c.filterItems(rows, filters({ category: "経費" })).length, 1);
+  assert.equal(c.filterItems(rows, filters({ category: "経費", subcategory: "収入保険積立金" })).length, 0);
+  assert.equal(c.filterItems(rows, filters({ subcategory: "収入保険積立金" })).length, 1);
+  assert.equal(c.monthlyTotals(expense, [record()], filters())[0].closing, 1100);
+  const annual = c.annualAnalysis(rows, [record()], "account-a", 2026, "2026-11-10");
+  assert.equal(annual.current.deposit, 100);
+  assert.equal(annual.categories.find(row => row.category === "経費").deposit, 40);
+  assert.equal(annual.categories.find(row => row.category === "積立・預け金").deposit, 60);
+  assert.equal(c.relatedItems(rows, { ...rows[0], transaction_id: "c".repeat(64) }).length, 0);
+  for (const bad of [[], [...parts, parts[0]], [{ ...parts[0], amount: 100.5 }], [{ ...parts[0], amount: -1 }],
+    [{ ...parts[0], amount: true }], [{ ...parts[0], amount: 100, subcategory: "x".repeat(81) }], Array(31).fill(parts[0])]) {
+    assert.throws(() => c.validateAllocations(bad, 100), /内訳/);
+  }
+  assert.equal(c.validateAllocations(Array.from({ length: 30 }, () => ({ ...parts[0], amount: 1 })), 30).length, 30);
+  assert.throws(() => c.flattenStatements([record({ items: [item({ category: "内訳分割" })] })]), /内訳/);
+  assert.throws(() => c.flattenStatements([record({ items: [item({ allocations: parts })] })]), /不正/);
+  assert.equal(c.needsAttention({ ...rows[0], allocations: [{ ...parts[0], category: "未分類" }, parts[1]] }), true);
 });
 test("monthly totals never recompute balances from filtered transactions or combine accounts", () => {
   const c = logic(), rec = record();
@@ -100,7 +135,9 @@ function screen(deps = {}) {
   for (const id of ["login-area", "data-area", "page-area", "status", "account", "from", "to", "category", "direction",
     "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf",
     "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "chart", "chart-detail", "monthly",
-    "edit-save-rule", "rule-form", "rules-list", "rule-status", "rule-contains", "rule-category", "rule-direction", "rule-dialog"]) {
+    "edit-save-rule", "rule-form", "rules-list", "rule-status", "rule-contains", "rule-category", "rule-direction", "rule-dialog",
+    "edit-subcategory", "rule-subcategory", "subcategory", "split-form", "save-split", "split-status", "split-rows",
+    "split-item", "split-confirm", "split-total", "split-dialog"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
@@ -359,6 +396,37 @@ test("rule management edits and deletes only explicit rules using current revisi
   assert.equal(requests[1].body.revision, "new");
   assert.equal(requests[1].body.delete, true);
   assert.match(elements["rules-list"].children[0].textContent, /ありません/);
+});
+test("split form validates totals, saves atomically and distinguishes post-save refresh errors", async () => {
+  const { c, elements } = screen();
+  c.base = { ...item(), statement_id: "a".repeat(64) };
+  vm.runInContext('splitItem=base; splitRevision="original"; splitRows=[{category:{value:"経費"},detail:{value:"保険料"},amount:{value:"40"}},{category:{value:"積立・預け金"},detail:{value:"積立"},amount:{value:"50"}}]', c);
+  c.api = async () => assert.fail("invalid sum must not save");
+  await c.saveSplit({ preventDefault() {} });
+  assert.match(elements["split-status"].textContent, /一致/);
+  vm.runInContext('splitRows[1].amount.value="60"', c);
+  elements["split-confirm"].checked = true;
+  let payload;
+  c.api = async (_path, body) => { payload = body; return { saved: true, revision: "new" }; };
+  c.loadData = async () => { throw new Error("offline"); };
+  await c.saveSplit({ preventDefault() {} });
+  assert.equal(payload.allocations.length, 2);
+  assert.equal(payload.review_confirmed, true);
+  assert.equal(payload.revision, "original");
+  assert.equal(elements["split-dialog"].closed, true);
+  assert.match(elements.status.textContent, /内訳は保存済み.*表示更新/);
+  c.api = async () => assert.fail("saved rows must not retry");
+  await c.saveSplit({ preventDefault() {} });
+});
+test("split conflict keeps the editor open with its original revision and does not report success", async () => {
+  const { c, elements } = screen();
+  c.base = { ...item(), statement_id: "a".repeat(64) };
+  vm.runInContext('splitItem=base; splitRevision="stale"; splitRows=[{category:{value:"経費"},detail:{value:"燃料費"},amount:{value:"100"}}]', c);
+  c.api = async () => { throw new Error("409 changed"); };
+  await c.saveSplit({ preventDefault() {} });
+  assert.match(elements["split-status"].textContent, /409.*最新データ/);
+  assert.equal(vm.runInContext("splitSaved", c), false);
+  assert.notEqual(elements["split-dialog"].closed, true);
 });
 test("bank navigation, finance links, shared styles and closed sections are wired", () => {
   const pages = JSON.parse(read("data/pages.json")).pages;

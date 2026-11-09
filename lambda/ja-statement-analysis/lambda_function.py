@@ -554,7 +554,7 @@ def _bank_rules(bucket):
 
 
 def _bank_save_rule(bucket, data):
-    if set(data) - {"revision", "rule_id", "delete", "account_id", "direction", "contains", "category"}:
+    if set(data) - {"revision", "rule_id", "delete", "account_id", "direction", "contains", "category", "subcategory"}:
         raise RequestError(400, "ルールに不明な項目があります。")
     current = _bank_rules(bucket)
     if data.get("revision") != current["revision"]:
@@ -583,7 +583,7 @@ def _bank_save_rule(bucket, data):
         if duplicate:
             raise RequestError(409, "同じ条件のルールがあります。一覧から変更してください。")
         rule = {"rule_id": rule_id or uuid.uuid4().hex, "account_id": account_id, "direction": direction,
-                "contains": contains, "category": category}
+                "contains": contains, "category": category, "subcategory": _text(data, "subcategory", 80, required=False)}
         if existing is not None:
             current["rules"].remove(existing)
         current["rules"].append(rule)
@@ -598,10 +598,11 @@ def _bank_apply_rules(parsed, rules):
                    and rule["contains"] in _bank_rule_text(item["memo"])]
         if not matches:
             continue
-        categories = {rule["category"] for rule in matches}
-        item.update(category=next(iter(categories)) if len(categories) == 1 else "未分類",
+        classifications = {(rule["category"], rule.get("subcategory", "")) for rule in matches}
+        category, subcategory = next(iter(classifications)) if len(classifications) == 1 else ("未分類", "")
+        item.update(category=category, subcategory=subcategory,
                     classified_by="rule", review_confirmed=False,
-                    review_reason="保存ルールによる分類候補です。用途を確認してください。" if len(categories) == 1
+                    review_reason="保存ルールによる分類候補です。用途を確認してください。" if len(classifications) == 1
                     else "複数の分類ルールが競合しています。用途を確認してください。")
 
 
@@ -652,6 +653,8 @@ def _bank_import_record(bucket, source_key):
         if previous and (previous["classified_by"] == "manual" or previous["review_confirmed"]):
             for field in ("category", "note", "classified_by", "review_confirmed", "review_reason"):
                 item[field] = previous[field]
+            item["subcategory"] = previous.get("subcategory", "")
+            item["allocations"] = previous.get("allocations", [])
     adjacent = _list_records(bucket, "bank/statements/")
     for other in adjacent:
         if other["account_id"] != parsed["account_id"] or other["statement_id"] == parsed["statement_id"]:
@@ -670,7 +673,7 @@ def _bank_import_record(bucket, source_key):
 
 
 def _bank_classify(bucket, data):
-    if set(data) - {"statement_id", "transaction_id", "revision", "category", "note", "review_confirmed"}:
+    if set(data) - {"statement_id", "transaction_id", "revision", "category", "subcategory", "allocations", "note", "review_confirmed"}:
         raise RequestError(400, "分類リクエストに不明な項目があります。")
     statement_id = _bank_id(data)
     transaction_id = _bank_id(data, "transaction_id")
@@ -682,22 +685,53 @@ def _bank_classify(bucket, data):
     item = next((item for item in record["items"] if item["transaction_id"] == transaction_id), None)
     if item is None:
         raise RequestError(404, "指定された口座明細がありません。")
-    if "category" in data:
+    if "allocations" in data:
+        if set(data) - {"statement_id", "transaction_id", "revision", "allocations", "review_confirmed"}:
+            raise RequestError(400, "内訳と分類変更は別々に保存してください。")
+        allocations = _bank_allocations(data["allocations"], item["deposit"] + item["withdrawal"])
+        confirmed = data.get("review_confirmed", False)
+        if not isinstance(confirmed, bool) or (confirmed and any(part["category"] == "未分類" for part in allocations)):
+            raise RequestError(400, "未分類を含む内訳は確認済みにできません。")
+        item.update(category="内訳分割" if len(allocations) > 1 else allocations[0]["category"],
+                    subcategory="" if len(allocations) > 1 else allocations[0]["subcategory"],
+                    allocations=allocations if len(allocations) > 1 else [],
+                    classified_by="manual", review_confirmed=confirmed, review_reason="用途・内訳を確認してください。")
+    elif "category" in data:
+        if item.get("allocations"):
+            raise RequestError(400, "分割済み明細は「内訳・分割」で編集してください。")
         category = _text(data, "category", 40)
         if category not in BANK_CATEGORIES:
             raise RequestError(400, "分類が不正です。")
-        item.update(category=category, note=_text(data, "note", 300, required=False), classified_by="manual",
+        item.update(category=category, subcategory=_text(data, "subcategory", 80, required=False),
+                    note=_text(data, "note", 300, required=False), classified_by="manual",
                     review_confirmed=False, review_reason="用途・分類を確認してください。")
     else:
-        if "note" in data or not isinstance(data.get("review_confirmed"), bool):
+        if "note" in data or "subcategory" in data or not isinstance(data.get("review_confirmed"), bool):
             raise RequestError(400, "確認状態を真偽値で指定してください。")
-        if item["category"] == "未分類" and data["review_confirmed"]:
+        if (item["category"] == "未分類" or any(part["category"] == "未分類" for part in item.get("allocations", []))) and data["review_confirmed"]:
             raise RequestError(400, "先に用途を分類してください。")
         item["review_confirmed"] = data["review_confirmed"]
     if "category" in data and "review_confirmed" in data:
         raise RequestError(400, "分類変更と確認は別々に操作してください。")
     written = _write_json(bucket, key, record, condition=etag)
     return {"saved": True, "statement_id": statement_id, "transaction_id": transaction_id, "revision": written["ETag"]}
+
+
+def _bank_allocations(value, total):
+    if not isinstance(value, list) or not 1 <= len(value) <= 30:
+        raise RequestError(400, "内訳は1〜30行で指定してください。")
+    parts = []
+    for part in value:
+        if not isinstance(part, dict) or set(part) - {"category", "subcategory", "amount"}:
+            raise RequestError(400, "内訳の形式が不正です。")
+        category = _text(part, "category", 40)
+        amount = part.get("amount")
+        if category not in BANK_CATEGORIES or type(amount) is not int or not 1 <= amount <= 9007199254740991:
+            raise RequestError(400, "内訳の用途・金額（正の整数円）を確認してください。")
+        parts.append({"category": category, "subcategory": _text(part, "subcategory", 80, required=False), "amount": amount})
+    if sum(part["amount"] for part in parts) != total:
+        raise RequestError(400, "内訳合計が元の入出金額と一致しません。")
+    return parts
 
 
 def _bank_route(bucket, route, data, parameters):

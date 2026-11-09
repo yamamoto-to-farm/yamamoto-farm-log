@@ -6,16 +6,18 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
-  unclassifiedGroups, annualAnalysis, relatedItems } from "./bank-logic.js?v=20261109-3";
+  unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations } from "./bank-logic.js?v=20261110-2";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
-const colors = ["#398651", "#3279af", "#9360b2", "#be6d32", "#258d92", "#a35f83", "#797330", "#465774", "#6b7280"];
+const colors = ["#398651", "#3279af", "#9360b2", "#be6d32", "#258d92", "#a35f83", "#797330", "#465774", "#6b7280",
+  "#a86a19", "#6352a5", "#237b78", "#b25365", "#7d7045", "#436f8f"];
 let statements = [], imports = [], items = [];
 let page = 0, busy = false, targets = [], revisions = new Map();
 let editStarted = false, editSelection = [];
 let editPrimary = null;
 let ruleState = { rules: [], revision: "" }, pendingRule = null, editingRuleId = null;
+let splitItem = null, splitRevision = "", splitRows = [], splitSaved = false;
 
 function node(tag, text, className) {
   const result = document.createElement(tag);
@@ -66,6 +68,8 @@ function updateButtons() {
   el("data-area").querySelectorAll("input, select").forEach(input => { input.disabled = busy; });
   el("edit-form").querySelectorAll("input, select").forEach(input => { input.disabled = busy || editStarted; });
   el("rule-form").querySelectorAll("input, select").forEach(input => { input.disabled = busy; });
+  el("split-form").querySelectorAll("input, select").forEach(input => { input.disabled = busy || splitSaved; });
+  el("save-split").disabled = busy || splitSaved;
   if (!busy) {
     const count = filtered().length;
     el("previous").disabled = page <= 0;
@@ -89,7 +93,7 @@ async function run(action) {
 
 function filters() {
   return { account: el("account").value, from: el("from").value, to: el("to").value,
-    category: el("category").value, direction: el("direction").value, query: el("query").value,
+    category: el("category").value, subcategory: el("subcategory").value, direction: el("direction").value, query: el("query").value,
     reviewOnly: el("review-only").checked };
 }
 
@@ -109,6 +113,16 @@ async function loadData() {
   statements = records;
   imports = history.imports;
   items = rows;
+  const selectedSubcategory = el("subcategory").value;
+  el("subcategory").replaceChildren(node("option", "すべて"));
+  el("subcategory").firstElementChild.value = "";
+  const details = [...new Set([...Object.values(subcategories).flat(), ...items.flatMap(item => itemParts(item).map(part => part.subcategory))])].filter(Boolean).sort();
+  for (const value of details) {
+    const option = node("option", value);
+    option.value = value;
+    el("subcategory").append(option);
+  }
+  el("subcategory").value = details.includes(selectedSubcategory) ? selectedSubcategory : "";
   page = 0;
   const selectedAccount = el("account").value;
   el("account").replaceChildren();
@@ -139,7 +153,7 @@ function renderRules() {
   el("rules-list").replaceChildren();
   for (const rule of ruleState.rules.filter(rule => rule.account_id === el("account").value)) {
     const row = node("div", undefined, "finance-record");
-    row.append(node("p", `${rule.direction === "deposit" ? "入金" : "出金"} ／「${rule.contains}」を含む → ${rule.category}`));
+    row.append(node("p", `${rule.direction === "deposit" ? "入金" : "出金"} ／「${rule.contains}」を含む → ${rule.category}${rule.subcategory ? ` / ${rule.subcategory}` : ""}`));
     const edit = node("button", "変更", "secondary-btn"), remove = node("button", "削除", "secondary-btn");
     edit.type = remove.type = "button";
     edit.disabled = remove.disabled = busy;
@@ -147,6 +161,7 @@ function renderRules() {
       editingRuleId = rule.rule_id;
       el("rule-contains").value = rule.contains;
       el("rule-category").value = rule.category;
+      el("rule-subcategory").value = rule.subcategory || "";
       el("rule-direction").value = rule.direction;
       el("rule-status").textContent = "";
       el("rule-dialog").showModal();
@@ -178,7 +193,8 @@ async function saveRule(event) {
       const rule = ruleState.rules.find(rule => rule.rule_id === editingRuleId);
       if (!rule) throw new Error("変更対象のルールがありません。最新データを取得してください。");
       acceptRules(await api("/rules", { revision: ruleState.revision, rule_id: rule.rule_id, account_id: rule.account_id,
-        direction: el("rule-direction").value, contains: el("rule-contains").value.trim(), category: el("rule-category").value }));
+        direction: el("rule-direction").value, contains: el("rule-contains").value.trim(), category: el("rule-category").value,
+        subcategory: el("rule-subcategory").value.trim() }));
       el("rule-dialog").close();
       renderRules();
       status("ルールを変更しました。次回の取り込み・再取り込みから適用されます。");
@@ -210,7 +226,7 @@ function showAttention() {
 }
 
 function clearFilters() {
-  for (const id of ["from", "to", "category", "query", "direction"]) el(id).value = "";
+  for (const id of ["from", "to", "category", "subcategory", "query", "direction"]) el(id).value = "";
   el("review-only").checked = false;
   el("sort").value = "date-desc";
   page = 0;
@@ -226,8 +242,9 @@ function badge(id, count) {
 function render() {
   const current = filters(), list = filtered();
   el("filter-error").textContent = current.from && current.to && current.from > current.to ? "開始月は終了月以前にしてください。" : "";
-  el("filter-state").textContent = `期間：${current.from || "指定なし"}〜${current.to || "指定なし"} ／ 用途：${current.category || "すべて"} ／ 入出金：${current.direction === "deposit" ? "入金" : current.direction === "withdrawal" ? "出金" : "すべて"} ／ 検索：${current.query || "なし"}${current.reviewOnly ? " ／ 要確認のみ" : ""}`;
-  const total = totals(list);
+  el("filter-state").textContent = `期間：${current.from || "指定なし"}〜${current.to || "指定なし"} ／ 用途：${current.category || "すべて"} ／ 内訳：${current.subcategory || "すべて"} ／ 入出金：${current.direction === "deposit" ? "入金" : current.direction === "withdrawal" ? "出金" : "すべて"} ／ 検索：${current.query || "なし"}${current.reviewOnly ? " ／ 要確認のみ" : ""}`;
+  const allocated = current.from && current.to && current.from > current.to ? [] : filterItems(allocatedItems(items), current);
+  const total = totals(allocated);
   el("summary").replaceChildren(stat("条件内入金", formatYen(total.deposit)), stat("条件内出金", formatYen(total.withdrawal)), stat("条件内差引", formatYen(total.net)));
   const accountItems = items.filter(item => item.account_id === current.account);
   const accountRecords = statements.filter(record => record.account_id === current.account).sort((a, b) => b.month.localeCompare(a.month));
@@ -237,7 +254,7 @@ function render() {
     stat("今年の入金（現在まで）", formatYen(annual.current.deposit)), stat("今年の出金（現在まで）", formatYen(annual.current.withdrawal)),
     stat(latest ? `${latest.month} 月末残高` : "月末残高", latest ? formatYen(latest.closing_balance) : "未取り込み"),
     stat("要確認・未分類", `${accountItems.filter(needsAttention).length}件`, showAttention));
-  renderMonthly(monthlyTotals(list, statements, current));
+  renderMonthly(monthlyTotals(allocated, statements, current));
   const groups = unclassifiedGroups(list);
   el("groups").replaceChildren();
   for (const group of groups) {
@@ -333,14 +350,22 @@ function renderItems() {
     const row = node("tr", undefined, needsAttention(item) ? "finance-review" : "");
     const memo = node("td", item.memo || "摘要なし");
     memo.append(node("small", item.note));
-    const cell = node("td", `${item.category} / ${item.classified_by === "manual" ? "手動確定" : "分類候補"}`);
+    const cell = node("td", `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""} / ${item.classified_by === "manual" ? "手動確定" : "分類候補"}`);
+    if (item.allocations?.length) {
+      for (const part of item.allocations) cell.append(node("small", `${part.category} / ${part.subcategory || "内訳なし"}：${formatYen(part.amount)}`));
+    }
     cell.append(node("small", item.review_confirmed ? "確認済み" : item.review_reason));
     const edit = node("button", "分類修正", "secondary-btn");
     edit.type = "button";
     edit.disabled = busy;
-    edit.onclick = () => openEdit([item]);
+    edit.onclick = () => item.allocations?.length ? openSplit(item) : openEdit([item]);
     cell.append(edit);
-    if (item.category !== "未分類") {
+    const split = node("button", "内訳・分割", "secondary-btn");
+    split.type = "button";
+    split.disabled = busy;
+    split.onclick = () => openSplit(item);
+    cell.append(split);
+    if (itemParts(item).every(part => part.category !== "未分類")) {
       const review = node("button", item.review_confirmed ? "要確認に戻す" : "確認済みにする", "secondary-btn");
       review.type = "button";
       review.disabled = busy;
@@ -408,6 +433,33 @@ function renderAnnual() {
     part.append(scroll);
     el("annual").append(part);
   }
+  const breakdown = node("details"), heading = node("summary", "用途別の内訳金額");
+  breakdown.append(heading);
+  const detailRows = filterItems(allocatedItems(items), { account: el("account").value,
+    from: analysis.period.start.slice(0, 7), to: analysis.period.end.slice(0, 7) })
+    .filter(item => item.trade_date <= analysis.period.end);
+  const groups = new Map();
+  for (const item of detailRows) {
+    const key = JSON.stringify([item.category, item.subcategory || "内訳なし"]);
+    if (!groups.has(key)) groups.set(key, { category: item.category, subcategory: item.subcategory || "内訳なし", deposit: 0, withdrawal: 0 });
+    const group = groups.get(key);
+    group.deposit += item.deposit;
+    group.withdrawal += item.withdrawal;
+  }
+  const scroll = node("div", undefined, "finance-scroll"), table = node("table"), head = node("tr");
+  head.append(...["用途", "内訳", "入金", "出金"].map(label => node("th", label)));
+  const thead = node("thead"), tbody = node("tbody");
+  thead.append(head);
+  for (const row of groups.values()) {
+    const tr = node("tr");
+    tr.append(node("td", row.category), node("td", row.subcategory), node("td", formatYen(row.deposit)), node("td", formatYen(row.withdrawal)));
+    tbody.append(tr);
+  }
+  table.append(thead, tbody);
+  scroll.tabIndex = 0;
+  scroll.append(table);
+  breakdown.append(scroll);
+  el("annual").append(breakdown);
 }
 
 function showReport(report) {
@@ -458,6 +510,7 @@ function openEdit(selected) {
   revisions = new Map(statements.map(record => [record.statement_id, record.revision]));
   el("edit-item").textContent = `${selected.length}件：${selected[0].memo || "摘要なし"}`;
   el("edit-category").value = selected[0].category;
+  el("edit-subcategory").value = selected.length === 1 ? selected[0].subcategory || "" : "";
   el("edit-note").value = selected.length === 1 ? selected[0].note : "";
   el("edit-status").textContent = "";
   el("edit-confirm").checked = false;
@@ -489,6 +542,93 @@ function renderEditRelated() {
   }
 }
 
+function addSplitRow(part) {
+  const row = node("div", undefined, "bank-split-row"), category = node("select"), detail = node("input"), amount = node("input");
+  category.setAttribute("aria-label", "内訳の用途");
+  for (const value of categories) {
+    const option = node("option", value);
+    option.value = value;
+    category.append(option);
+  }
+  category.value = part.category;
+  detail.value = part.subcategory;
+  detail.maxLength = 80;
+  detail.setAttribute("list", "subcategory-suggestions");
+  detail.setAttribute("aria-label", "内訳名");
+  detail.placeholder = "例：収入保険積立金";
+  amount.value = String(part.amount);
+  amount.inputMode = "numeric";
+  amount.setAttribute("aria-label", "内訳金額（円）");
+  amount.placeholder = "整数円";
+  const remove = node("button", "行を削除", "secondary-btn");
+  remove.type = "button";
+  const entry = { row, category, detail, amount };
+  remove.onclick = () => {
+    if (busy || splitSaved) return;
+    splitRows = splitRows.filter(value => value !== entry);
+    row.remove();
+    updateSplitTotal();
+  };
+  amount.oninput = updateSplitTotal;
+  row.append(category, detail, amount, remove);
+  splitRows.push(entry);
+  el("split-rows").append(row);
+}
+
+function updateSplitTotal() {
+  const total = splitRows.reduce((sum, entry) => sum + (/^\d+$/.test(entry.amount.value) ? Number(entry.amount.value) : 0), 0);
+  const original = splitItem.deposit + splitItem.withdrawal;
+  el("split-total").textContent = `内訳合計：${formatYen(total)} ／ 元の金額：${formatYen(original)} ／ 差額：${formatYen(original - total)}`;
+}
+
+function openSplit(item) {
+  if (busy) return;
+  splitItem = item;
+  splitRevision = statements.find(record => record.statement_id === item.statement_id).revision;
+  splitRows = [];
+  splitSaved = false;
+  el("split-item").textContent = `${item.trade_date} / ${item.memo || "摘要なし"} / ${item.deposit ? "入金" : "出金"} ${formatYen(item.deposit + item.withdrawal)}`;
+  el("split-status").textContent = "";
+  el("split-confirm").checked = false;
+  el("split-rows").replaceChildren();
+  for (const part of itemParts(item)) addSplitRow(part);
+  updateSplitTotal();
+  updateButtons();
+  el("split-dialog").showModal();
+}
+
+async function saveSplit(event) {
+  event.preventDefault();
+  if (busy || splitSaved) return;
+  let parts;
+  try {
+    parts = validateAllocations(splitRows.map(entry => ({
+      category: entry.category.value, subcategory: entry.detail.value.trim(),
+      amount: /^\d+$/.test(entry.amount.value) ? Number(entry.amount.value) : NaN,
+    })), splitItem.deposit + splitItem.withdrawal);
+    if (el("split-confirm").checked && parts.some(part => part.category === "未分類")) throw new Error("未分類を含む内訳は確認済みにできません。");
+  } catch (error) {
+    el("split-status").textContent = error.message;
+    return;
+  }
+  await run(async () => {
+    try {
+      const result = await api("/classifications", { statement_id: splitItem.statement_id, transaction_id: splitItem.transaction_id,
+        revision: splitRevision, allocations: parts, review_confirmed: el("split-confirm").checked });
+      if (result.saved !== true || typeof result.revision !== "string") throw new Error("内訳の保存結果を確認できません。最新データを取得してください。");
+      splitSaved = true;
+      el("split-dialog").close();
+      try { await loadData(); }
+      catch (error) { throw new Error(`内訳は保存済みですが、表示更新に失敗しました。 ${error.message}`); }
+      status("内訳を保存しました。口座の入出金額・残高は変更していません。");
+      await showSaveResult("内訳を保存しました。");
+    } catch (error) {
+      el("split-status").textContent = `${error.message} 409の場合は閉じて最新データを取得してください。`;
+      throw error;
+    }
+  });
+}
+
 async function saveEdit(event) {
   event.preventDefault();
   if (busy) return;
@@ -505,6 +645,7 @@ async function saveEdit(event) {
     pendingRule = { revision: ruleState.revision, account_id: editPrimary.account_id,
       direction: editPrimary.deposit ? "deposit" : "withdrawal", contains: el("edit-match").value.trim(),
       category: el("edit-category").value };
+    pendingRule.subcategory = el("edit-subcategory").value.trim();
   }
   if (targets.length > 1 && el("edit-category").value === "未分類") {
     el("edit-status").textContent = "まとめて整理する場合は、未分類以外の用途を選択してください。";
@@ -528,7 +669,8 @@ async function saveEdit(event) {
         const item = targets[0];
         const result = await api("/classifications", { statement_id: item.statement_id, transaction_id: item.transaction_id,
           revision: revisions.get(item.statement_id),
-          ...(item.pendingReview ? { review_confirmed: true } : { category: el("edit-category").value, note: item.editNote }) });
+          ...(item.pendingReview ? { review_confirmed: true } : { category: el("edit-category").value,
+            subcategory: el("edit-subcategory").value.trim(), note: item.editNote }) });
         if (result.saved !== true || typeof result.revision !== "string") throw new Error("分類の保存結果を確認できません。最新データを取得してください。");
         revisions.set(item.statement_id, result.revision);
         if (!item.pendingReview && el("edit-confirm").checked) {
@@ -612,7 +754,7 @@ async function initialize() {
   el("refresh").onclick = () => run(async () => { status("最新データを取得しています…"); await loadData(); status("最新データを取得しました。"); });
   el("upload").onclick = () => run(uploadPdf);
   el("clear-filters").onclick = clearFilters;
-  for (const id of ["account", "from", "to", "category", "direction", "query", "review-only", "sort"]) {
+  for (const id of ["account", "from", "to", "category", "subcategory", "direction", "query", "review-only", "sort"]) {
     el(id).addEventListener("input", () => { page = 0; render(); if (id === "account") { renderRecords(); renderRules(); } });
   }
   document.querySelectorAll("[data-period]").forEach(button => {
@@ -636,6 +778,21 @@ async function initialize() {
   el("previous").onclick = () => { page--; renderItems(); };
   el("next").onclick = () => { page++; renderItems(); };
   el("edit-form").onsubmit = saveEdit;
+  const suggestions = [...new Set(Object.values(subcategories).flat())];
+  for (const value of suggestions) {
+    const option = node("option", value);
+    option.value = value;
+    el("subcategory-suggestions").append(option);
+  }
+  el("split-form").onsubmit = saveSplit;
+  el("add-split").onclick = () => {
+    if (busy || splitSaved) return;
+    if (splitRows.length >= 30) { el("split-status").textContent = "内訳は30行までです。"; return; }
+    addSplitRow({ category: "未分類", subcategory: "", amount: "" });
+    updateSplitTotal();
+  };
+  el("cancel-split").onclick = () => el("split-dialog").close();
+  el("split-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   el("rule-form").onsubmit = saveRule;
   el("cancel-rule").onclick = () => el("rule-dialog").close();
   el("rule-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });

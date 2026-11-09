@@ -2,7 +2,50 @@ import { annualPeriod, previousPeriodEnd } from "/finance/finance-logic.js?v=202
 
 export const categories = Object.freeze([
   "売上", "経費", "借入", "借入返済", "口座振替", "現金移動", "その他入金", "その他出金", "未分類",
+  "その他事業収入", "固定資産購入", "積立・預け金", "事業主入金", "事業主支出", "決済・内訳確認",
 ]);
+
+export const subcategories = Object.freeze({
+  "売上": ["キャベツ", "その他農産物"],
+  "経費": ["種苗費", "肥料費", "農薬費", "資材・消耗品", "燃料費", "雇人費", "専従者給与",
+    "修繕費", "保険・共済掛金", "労働保険料", "支払報酬", "支払手数料", "諸会費", "研修費",
+    "水利費", "支払利息", "租税公課", "通信費", "作業委託費"],
+  "その他事業収入": ["補助金・奨励金", "共済金・保険金", "受託作業収入", "その他"],
+  "固定資産購入": ["農業機械", "車両", "設備・施設"],
+  "借入": ["事業借入", "つなぎ資金"],
+  "借入返済": ["借入元本"],
+  "積立・預け金": ["収入保険積立金", "その他積立・預け金"],
+  "口座振替": ["自己口座間移動"],
+  "現金移動": ["手元現金"],
+  "事業主入金": ["個人資金の投入"],
+  "事業主支出": ["小規模企業共済（所得控除）", "生活費", "個人の税金・社会保険", "その他"],
+  "決済・内訳確認": ["JA請求引落", "カード引落", "ローン・割賦", "内訳待ち"],
+});
+
+export function itemParts(item) {
+  return item.allocations?.length ? item.allocations : [{
+    category: item.category, subcategory: item.subcategory || "", amount: item.deposit + item.withdrawal,
+  }];
+}
+
+export function validateAllocations(parts, total) {
+  if (!Array.isArray(parts) || parts.length < 1 || parts.length > 30
+      || parts.some(part => !part || !categories.includes(part.category)
+        || typeof part.subcategory !== "string" || part.subcategory.length > 80
+        || !Number.isSafeInteger(part.amount) || part.amount <= 0)
+      || parts.reduce((sum, part) => sum + part.amount, 0) !== total) {
+    throw new Error("内訳は1〜30行、正の整数円で入力し、合計を元の入出金額に一致させてください。");
+  }
+  return parts;
+}
+
+export function allocatedItems(items) {
+  return items.flatMap(item => itemParts(item).map(part => ({
+    ...item, category: part.category, subcategory: part.subcategory, allocations: [],
+    deposit: item.deposit ? part.amount : 0, withdrawal: item.withdrawal ? part.amount : 0,
+    review_confirmed: !needsAttention(item),
+  })));
+}
 
 export function flattenStatements(records) {
   const ids = new Set();
@@ -27,9 +70,15 @@ export function flattenStatements(records) {
           || ![item.withdrawal, item.deposit].every(value => Number.isSafeInteger(value) && value >= 0)
           || (item.withdrawal > 0) === (item.deposit > 0) || !Number.isSafeInteger(item.balance)
           || typeof item.memo !== "string" || typeof item.note !== "string"
-          || !categories.includes(item.category) || typeof item.review_confirmed !== "boolean") {
+          || !(categories.includes(item.category) || item.category === "内訳分割") || typeof item.review_confirmed !== "boolean"
+          || (item.subcategory !== undefined && (typeof item.subcategory !== "string" || item.subcategory.length > 80))) {
         throw new Error("口座明細行の形式が不正です。");
       }
+      if (item.allocations !== undefined && !Array.isArray(item.allocations)) throw new Error("口座明細の内訳が不正です。");
+      if (item.allocations?.length) {
+        validateAllocations(item.allocations, item.deposit + item.withdrawal);
+        if (item.category !== "内訳分割" || item.allocations.length < 2) throw new Error("口座明細の分割状態が不正です。");
+      } else if (item.category === "内訳分割") throw new Error("口座明細の分割内訳がありません。");
       transactionIds.add(item.transaction_id);
       return { ...item, statement_id: record.statement_id, account_id: record.account_id };
     });
@@ -37,17 +86,17 @@ export function flattenStatements(records) {
 }
 
 export function needsAttention(item) {
-  return item.category === "未分類" || !item.review_confirmed;
+  return itemParts(item).some(part => part.category === "未分類") || !item.review_confirmed;
 }
 
-export function filterItems(items, { account, from, to, category, direction, query, reviewOnly }) {
+export function filterItems(items, { account, from, to, category, subcategory, direction, query, reviewOnly }) {
   const words = (query || "").normalize("NFKC").toLocaleLowerCase("ja").trim().split(/\s+/).filter(Boolean);
   return items.filter(item => (!account || item.account_id === account)
     && (!from || item.trade_date.slice(0, 7) >= from) && (!to || item.trade_date.slice(0, 7) <= to)
-    && (!category || item.category === category)
+    && itemParts(item).some(part => (!category || part.category === category) && (!subcategory || part.subcategory === subcategory))
     && (!direction || (direction === "deposit" ? item.deposit > 0 : item.withdrawal > 0))
     && (!reviewOnly || needsAttention(item))
-    && words.every(word => `${item.memo} ${item.note}`.normalize("NFKC").toLocaleLowerCase("ja").includes(word)));
+    && words.every(word => `${item.memo} ${item.note} ${itemParts(item).map(part => `${part.category} ${part.subcategory}`).join(" ")}`.normalize("NFKC").toLocaleLowerCase("ja").includes(word)));
 }
 
 export function totals(items) {
@@ -92,6 +141,7 @@ export function relatedItems(items, selected, query = "") {
   const memo = normalize(selected.memo);
   if (!memo && !search) return [];
   return sortItems(items.filter(item => item.account_id === selected.account_id
+    && !item.allocations?.length
     && (item.deposit > 0) === (selected.deposit > 0)
     && (search ? item.category === "未分類" && item.classified_by !== "manual" && normalize(item.memo).includes(search)
       : normalize(item.memo) === memo)
@@ -101,7 +151,7 @@ export function relatedItems(items, selected, query = "") {
 export function annualAnalysis(items, records, account, year, today) {
   const period = annualPeriod(year, today);
   const previous = { start: `${year - 1}-01-01`, end: previousPeriodEnd(period.end) };
-  const inPeriod = range => items.filter(item => (!account || item.account_id === account)
+  const inPeriod = range => allocatedItems(items).filter(item => (!account || item.account_id === account)
     && item.trade_date >= range.start && item.trade_date <= range.end);
   const currentItems = inPeriod(period);
   const coverage = range => records.filter(record => (!account || record.account_id === account)

@@ -267,6 +267,73 @@ class BankApiTests(unittest.TestCase):
         self.assertEqual(self.call("POST /bank/classifications", {**payload, "category": "経費"})["statusCode"], 409)
         self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "review_confirmed": True})["statusCode"], 400)
 
+    def test_expanded_categories_and_subcategories_backward_compatible(self):
+        self.import_pdf()
+        for category in ("その他事業収入", "固定資産購入", "積立・預け金", "事業主入金", "事業主支出", "決済・内訳確認"):
+            result = self.call("POST /bank/classifications", {**self.payload(), "category": category, "subcategory": "内訳テスト"})
+            self.assertEqual(result["statusCode"], 200)
+            self.assertEqual(self.record()["items"][0]["subcategory"], "内訳テスト")
+        self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "category": "経費", "subcategory": "a" * 81})["statusCode"], 400)
+        self.call("POST /bank/classifications", {**self.payload(), "category": "経費"})
+        self.assertEqual(self.record()["items"][0]["subcategory"], "")
+
+    def test_split_save_reimport_collapse_and_original_amount_identity_unchanged(self):
+        self.import_pdf()
+        original = self.record()
+        parts = [{"category": "経費", "subcategory": "保険・共済掛金", "amount": 40},
+                 {"category": "積立・預け金", "subcategory": "収入保険積立金", "amount": 60}]
+        result = self.call("POST /bank/classifications", {**self.payload(), "allocations": parts, "review_confirmed": True})
+        self.assertEqual(result["statusCode"], 200)
+        saved = self.record()
+        for field in ("opening_balance", "closing_balance", "deposit_total", "withdrawal_total"):
+            self.assertEqual(saved[field], original[field])
+        for field in ("transaction_id", "deposit", "withdrawal", "balance", "memo", "trade_date"):
+            self.assertEqual(saved["items"][0][field], original["items"][0][field])
+        self.assertEqual(saved["items"][0]["category"], "内訳分割")
+        self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "category": "経費"})["statusCode"], 400)
+        self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "allocations": parts})["statusCode"], 200)
+        self.assertFalse(self.record()["items"][0]["review_confirmed"])
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["allocations"], parts)
+        self.call("POST /bank/classifications", {**self.payload(), "allocations": [
+            {"category": "積立・預け金", "subcategory": "戻す", "amount": 100}]})
+        saved = self.record()["items"][0]
+        self.assertEqual(saved["category"], "積立・預け金")
+        self.assertEqual(saved["subcategory"], "戻す")
+        self.assertEqual(saved["allocations"], [])
+
+    def test_invalid_splits_never_write_and_unknown_parts_cannot_be_confirmed(self):
+        self.import_pdf()
+        part = {"category": "経費", "subcategory": "", "amount": 100}
+        for parts in ([], [part] * 31, [{**part, "amount": 99}], [{**part, "amount": 0}],
+                      [{**part, "amount": -100}], [{**part, "amount": 100.0}], [{**part, "amount": True}],
+                      [{**part, "category": "内訳分割"}], [{**part, "subcategory": "x" * 81}],
+                      [{**part, "amount": 9007199254740992}], [{**part, "extra": 1}]):
+            before = self.record()["revision"]
+            self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "allocations": parts})["statusCode"], 400)
+            self.assertEqual(self.record()["revision"], before)
+        parts = [{**part, "category": "未分類", "amount": 40}, {**part, "amount": 60}]
+        self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "allocations": parts, "review_confirmed": True})["statusCode"], 400)
+        self.call("POST /bank/classifications", {**self.payload(), "allocations": parts})
+        self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "review_confirmed": True})["statusCode"], 400)
+        thirty = [{**part, "amount": 1}] * 29 + [{**part, "amount": 71}]
+        self.assertEqual(self.call("POST /bank/classifications", {**self.payload(), "allocations": thirty})["statusCode"], 200)
+
+    def test_rules_include_subcategory_conflicts_and_preserve_legacy_manual_fields(self):
+        self.import_pdf()
+        rule = {"account_id": self.value["account_id"], "direction": "deposit",
+                "contains": "キャベツ", "category": "売上", "subcategory": "キャベツ"}
+        self.call("POST /bank/rules", {"revision": "", **rule})
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["subcategory"], "キャベツ")
+        state = lambda_function._bank_rules("finance-private")
+        self.call("POST /bank/rules", {"revision": state["revision"], **rule, "contains": "ベツ", "subcategory": "別内訳"})
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["category"], "未分類")
+        self.call("POST /bank/classifications", {**self.payload(), "category": "経費"})
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["subcategory"], "")
+
     def test_conditional_write_cannot_overwrite_concurrent_edit(self):
         self.import_pdf()
         old = self.record()
