@@ -4,9 +4,9 @@ import { showSaveResult } from "/common/save-modal.js?v=20261105-result-1";
 import { config } from "/photos/config.js";
 import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=20261029-2";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
-import { formatYen, periodPreset } from "/finance/finance-logic.js?v=20261107-dashboard-1";
+import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
-  unclassifiedGroups, annualAnalysis, relatedItems } from "./bank-logic.js?v=20261109-2";
+  unclassifiedGroups, annualAnalysis, relatedItems } from "./bank-logic.js?v=20261109-3";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -14,6 +14,7 @@ const colors = ["#398651", "#3279af", "#9360b2", "#be6d32", "#258d92", "#a35f83"
 let statements = [], imports = [], items = [];
 let page = 0, busy = false, targets = [], revisions = new Map();
 let editStarted = false, editSelection = [];
+let editPrimary = null;
 
 function node(tag, text, className) {
   const result = document.createElement(tag);
@@ -216,8 +217,23 @@ function selectMonth(month) {
 
 function renderMonthly(rows) {
   el("monthly").replaceChildren();
-  el("chart").replaceChildren(node("p", "緑：入金 ／ 青：出金"));
-  const maximum = Math.max(1, ...rows.flatMap(row => [row.deposit, row.withdrawal]));
+  el("chart").replaceChildren();
+  el("chart-detail").textContent = "棒にマウスを合わせるか、月にフォーカスすると金額を表示します。";
+  const { maximum, ticks } = chartScale(rows.flatMap(row =>
+    [row.deposit, row.withdrawal].map(amount => ({ categories: { amount } }))));
+  const axis = node("div", undefined, "finance-axis"), plot = node("div", undefined, "finance-plot");
+  const grid = node("div", undefined, "finance-grid"), columns = node("div", undefined, "finance-columns");
+  axis.setAttribute("aria-hidden", "true");
+  grid.setAttribute("aria-hidden", "true");
+  for (const tick of ticks) {
+    const position = `${(1 - tick / maximum) * 100}%`;
+    const label = node("span", tick >= 10000 ? `${tick / 10000}万円` : formatYen(tick));
+    label.style.top = position;
+    axis.append(label);
+    const line = node("div", undefined, "finance-gridline");
+    line.style.top = position;
+    grid.append(line);
+  }
   for (const row of rows) {
     const tr = node("tr"), month = node("button", row.month, "secondary-btn"), cell = node("td");
     month.type = "button";
@@ -226,20 +242,27 @@ function renderMonthly(rows) {
     cell.append(month);
     tr.append(cell, ...[row.deposit, row.withdrawal, row.net, row.opening, row.closing].map(amount => node("td", amount === null ? "—" : formatYen(amount))));
     el("monthly").append(tr);
-    const button = node("button", row.month, "bank-month");
+    const button = node("button", undefined, "finance-column bank-month");
     button.type = "button";
     button.disabled = busy;
     button.setAttribute("aria-label", `${row.month} 入金${formatYen(row.deposit)} 出金${formatYen(row.withdrawal)}。明細を開く`);
+    const description = `${row.month} ／ 入金：${formatYen(row.deposit)} ／ 出金：${formatYen(row.withdrawal)}`;
+    button.title = description;
+    button.onmouseenter = button.onfocus = () => { el("chart-detail").textContent = description; };
     const bars = node("span", undefined, "bank-bars");
     for (const direction of ["deposit", "withdrawal"]) {
       const bar = node("span", undefined, `bank-bar bank-${direction}`);
-      bar.style.height = `${row[direction] / maximum * 160}px`;
+      bar.style.height = `${row[direction] / maximum * 100}%`;
+      bar.title = `${direction === "deposit" ? "入金" : "出金"}：${formatYen(row[direction])}`;
       bars.append(bar);
     }
-    button.append(bars);
+    button.append(node("span", ""), bars, node("span", row.month));
     button.onclick = () => selectMonth(row.month);
-    el("chart").append(button);
+    columns.append(button);
   }
+  plot.append(grid, columns);
+  if (rows.length) el("chart").append(axis, plot);
+  else el("chart").append(node("p", "対象の明細がありません。"));
   emptyTable("monthly", rows.length, 6);
 }
 
@@ -379,19 +402,30 @@ function openEdit(selected) {
   el("edit-status").textContent = "";
   el("edit-confirm").checked = false;
   el("edit-related").hidden = selected.length !== 1;
+  editPrimary = selected.length === 1 ? selected[0] : null;
+  el("edit-match").value = "";
+  renderEditRelated();
+  updateButtons();
+  el("edit-dialog").showModal();
+}
+
+function renderEditRelated() {
+  if (busy || editStarted) return;
+  const primaryChecked = editSelection[0]?.checkbox.checked ?? true;
+  editSelection = [];
   el("edit-related-items").replaceChildren();
-  if (selected.length === 1) {
-    for (const item of [selected[0], ...relatedItems(items, selected[0])]) {
+  if (editPrimary) {
+    const related = relatedItems(items, editPrimary, el("edit-match").value);
+    el("edit-match-count").textContent = `追加候補：${related.length}件（追加対象は未選択です）`;
+    for (const item of [editPrimary, ...related]) {
       const label = node("label", undefined, "bank-edit-choice"), checkbox = node("input");
       checkbox.type = "checkbox";
-      checkbox.checked = item === selected[0];
-      label.append(checkbox, node("span", `${item.trade_date} / ${item.deposit ? "入金" : "出金"} ${formatYen(item.deposit + item.withdrawal)} / ${item.category}${item.classified_by === "manual" ? "・手動修正済み" : ""}${item.review_confirmed ? "・確認済み" : ""}`));
+      checkbox.checked = item === editPrimary && primaryChecked;
+      label.append(checkbox, node("span", `${item.trade_date} / ${item.memo || "摘要なし"} / ${item.deposit ? "入金" : "出金"} ${formatYen(item.deposit + item.withdrawal)} / ${item.category}${item.classified_by === "manual" ? "・手動修正済み" : ""}${item.review_confirmed ? "・確認済み" : ""}`));
       el("edit-related-items").append(label);
       editSelection.push({ item, checkbox });
     }
   }
-  updateButtons();
-  el("edit-dialog").showModal();
 }
 
 async function saveEdit(event) {
@@ -527,6 +561,7 @@ async function initialize() {
   el("previous").onclick = () => { page--; renderItems(); };
   el("next").onclick = () => { page++; renderItems(); };
   el("edit-form").onsubmit = saveEdit;
+  el("edit-match").oninput = renderEditRelated;
   el("cancel-edit").onclick = () => el("edit-dialog").close();
   el("edit-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   el("close-report").onclick = () => el("report-dialog").close();

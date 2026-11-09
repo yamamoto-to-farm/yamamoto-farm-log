@@ -1,6 +1,4 @@
-.bank-chart { display: flex; gap: 12px; overflow-x: auto; padding: 12px 0; }
-.bank-month { flex: 1 0 90px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #dce4e8; background: white; color: inherit; border-radius: 6px; padding: 8px; }
-.bank-bars { height: 160px; display: flex; gap: 5px; align-items: end; }
+.bank-bars { height: 200px; display: flex; gap: 5px; align-items: end; justify-content: center; }
 .bank-bar { display: block; width: 24px; }
 .bank-deposit { background: #398651; }
 .bank-withdrawal { background: #3279af; }

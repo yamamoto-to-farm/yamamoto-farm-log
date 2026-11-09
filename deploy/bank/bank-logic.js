@@ -86,12 +86,15 @@ export function unclassifiedGroups(items) {
   return [...groups.values()].sort((a, b) => b.total - a.total);
 }
 
-export function relatedItems(items, selected) {
-  const memo = selected.memo.normalize("NFKC").replace(/\s+/g, " ").trim();
-  if (!memo) return [];
+export function relatedItems(items, selected, query = "") {
+  const normalize = value => value.normalize("NFKC").replace(/\s+/g, " ").trim();
+  const search = normalize(query);
+  const memo = normalize(selected.memo);
+  if (!memo && !search) return [];
   return sortItems(items.filter(item => item.account_id === selected.account_id
     && (item.deposit > 0) === (selected.deposit > 0)
-    && item.memo.normalize("NFKC").replace(/\s+/g, " ").trim() === memo
+    && (search ? item.category === "未分類" && item.classified_by !== "manual" && normalize(item.memo).includes(search)
+      : normalize(item.memo) === memo)
     && !(item.statement_id === selected.statement_id && item.transaction_id === selected.transaction_id)), "date-desc");
 }
 

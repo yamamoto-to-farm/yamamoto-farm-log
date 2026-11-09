@@ -9,7 +9,7 @@ function logic(deps = {}) {
   const finance = vm.createContext({});
   vm.runInContext(strip(read("finance/finance-logic.js")), finance);
   const context = vm.createContext({ console, ...deps, annualPeriod: finance.annualPeriod, previousPeriodEnd: finance.previousPeriodEnd,
-    formatYen: finance.formatYen, periodPreset: finance.periodPreset });
+    formatYen: finance.formatYen, periodPreset: finance.periodPreset, chartScale: finance.chartScale });
   vm.runInContext(strip(read("bank/bank-logic.js")), context);
   return context;
 }
@@ -92,18 +92,69 @@ test("related classification matches normalized exact memo across months, but se
 });
 function screen(deps = {}) {
   const elements = {};
+  const element = () => ({ value: "", checked: false, textContent: "", children: [], style: {},
+    querySelectorAll: () => [], classList: { toggle() {} }, setAttribute(key, value) { this[key] = value; },
+    append(...children) { this.children.push(...children); },
+    replaceChildren(...children) { this.children = children; },
+    close() { this.closed = true; }, showModal() { this.closed = false; } });
   for (const id of ["login-area", "data-area", "page-area", "status", "account", "from", "to", "category", "direction",
-    "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf"]) {
-    elements[id] = { value: "", checked: false, textContent: "", querySelectorAll: () => [], classList: { toggle() {} },
-      close() { this.closed = true; } };
+    "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf",
+    "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "chart", "chart-detail", "monthly"]) {
+    elements[id] = element();
   }
   elements.account.value = "account-a";
-  const c = logic({ document: { getElementById: id => elements[id] }, config: { api: "https://api.example.test" },
+  const c = logic({ document: { getElementById: id => elements[id], createElement: element }, config: { api: "https://api.example.test" },
     ensureToken: async () => "test", clearSession() { c.cleared = true; }, console: { error() {} }, showSaveResult: async () => {},
     ...deps });
   vm.runInContext(strip(read("bank/bank.js")).replace(/initialize\(\)\.catch[\s\S]*$/, ""), c);
   return { c, elements };
 }
+test("partial memo search only suggests automatic unclassified in the same account and direction", () => {
+  const c = logic();
+  const base = { ...item({ memo: "10-5 ﾃｽﾄ", category: "未分類" }), account_id: "account-a", statement_id: "a" };
+  const match = { ...base, memo: "9-5 テスト", transaction_id: "c", deposit: 200 };
+  const rows = [base, match, { ...match, category: "経費" }, { ...match, classified_by: "manual" },
+    { ...match, account_id: "other" }, { ...match, deposit: 0, withdrawal: 100 }, { ...match, memo: "9-5 別名" }];
+  assert.equal(c.relatedItems(rows, base, "　ﾃｽﾄ ").length, 1);
+  assert.equal(c.relatedItems(rows, base).length, 0);
+});
+test("changing partial search resets extra choices, preserves primary choice, and shows full memo", () => {
+  const { c, elements } = screen();
+  c.base = { ...item({ memo: "10-5 名前", category: "未分類" }), account_id: "account-a", statement_id: "a" };
+  c.other = { ...c.base, memo: "9-5 名前", transaction_id: "c" };
+  vm.runInContext("items = [base, other];", c);
+  c.openEdit([c.base]);
+  assert.equal(elements["edit-related-items"].children.length, 1);
+  elements["edit-match"].value = "名前";
+  c.renderEditRelated();
+  assert.equal(elements["edit-related-items"].children.length, 2);
+  assert.match(elements["edit-related-items"].children[1].children[1].textContent, /9-5 名前/);
+  vm.runInContext("editSelection[1].checkbox.checked = true; editSelection[0].checkbox.checked = false;", c);
+  c.renderEditRelated();
+  assert.equal(vm.runInContext("editSelection.some(choice => choice.checkbox.checked)", c), false);
+  vm.runInContext("editStarted = true", c);
+  elements["edit-match"].value = "別名";
+  c.renderEditRelated();
+  assert.equal(elements["edit-related-items"].children.length, 2);
+});
+test("monthly chart shares finance scale, aligns bar heights, exposes hover and focus amounts and empty state", () => {
+  const { c, elements } = screen();
+  const rows = [{ month: "2026-01", deposit: 150000, withdrawal: 100000, net: 50000, opening: 0, closing: 50000 }];
+  c.renderMonthly(rows);
+  const [axis, plot] = elements.chart.children;
+  assert.equal(axis.children.length, 4);
+  assert.equal(plot.children[0].children.length, 4);
+  const button = plot.children[1].children[0];
+  assert.equal(button.children[1].children[0].style.height, "100%");
+  assert.equal(button.children[1].children[1].style.height, `${100000 / 150000 * 100}%`);
+  assert.match(button.children[1].children[0].title, /150,000/);
+  button.onmouseenter();
+  assert.match(elements["chart-detail"].textContent, /150,000.*100,000/);
+  button.onfocus();
+  assert.match(elements["chart-detail"].textContent, /2026-01/);
+  c.renderMonthly([]);
+  assert.match(elements.chart.children[0].textContent, /ありません/);
+});
 test("bank API uses private no-store bearer requests and auth failures hide financial data", async () => {
   let request;
   const { c, elements } = screen({ fetch: async (url, options) => { request = { url, options }; return { ok: true, json: async () => ({ saved: true }) }; } });
