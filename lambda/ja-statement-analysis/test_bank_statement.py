@@ -161,6 +161,63 @@ class BankApiTests(unittest.TestCase):
         self.assertTrue(self.s3.presigned["Key"].startswith("bank/uploads/"))
         self.assertIn(["content-length-range", 1, lambda_function.MAX_PDF_BYTES], self.s3.presigned["Conditions"])
 
+    def test_rules_create_update_delete_validation_and_conflict(self):
+        self.import_pdf()
+        state = lambda_function._bank_rules("finance-private")
+        data = {"revision": state["revision"], "account_id": self.value["account_id"], "direction": "deposit",
+                "contains": "ｷｬﾍﾞﾂ", "category": "その他入金"}
+        self.assertEqual(self.call("GET /bank/rules", claims={})["statusCode"], 401)
+        result = self.call("POST /bank/rules", data)
+        self.assertEqual(result["statusCode"], 200)
+        result = json.loads(result["body"])
+        self.assertEqual(result["rules"][0]["contains"], "キャベツ")
+        self.assertEqual(self.call("POST /bank/rules", data)["statusCode"], 409)
+        self.assertEqual(self.call("POST /bank/rules", {**data, "revision": result["revision"]})["statusCode"], 409)
+        update = {**data, "revision": result["revision"], "rule_id": result["rules"][0]["rule_id"]}
+        for extra in [{"contains": " "}, {"category": "未分類"}, {"direction": "invalid"}, {"account_id": "f" * 64}]:
+            self.assertEqual(self.call("POST /bank/rules", {**update, **extra})["statusCode"], 400)
+        changed = json.loads(self.call("POST /bank/rules", {**update, "category": "売上"})["body"])
+        deleted = self.call("POST /bank/rules", {"revision": changed["revision"], "rule_id": update["rule_id"], "delete": True})
+        self.assertEqual(json.loads(deleted["body"])["rules"], [])
+
+    def test_import_rules_candidates_conflicts_and_manual_preservation(self):
+        self.import_pdf()
+        rule = {"revision": "", "account_id": self.value["account_id"], "direction": "deposit",
+                "contains": "キャベツ", "category": "その他入金"}
+        self.assertEqual(self.call("POST /bank/rules", rule)["statusCode"], 200)
+        self.import_pdf()
+        item = self.record()["items"][0]
+        self.assertEqual(item["category"], "その他入金")
+        self.assertFalse(item["review_confirmed"])
+        state = lambda_function._bank_rules("finance-private")
+        self.assertEqual(self.call("POST /bank/rules", {**rule, "revision": state["revision"],
+                                                       "contains": "ベツ", "category": "売上"})["statusCode"], 200)
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["category"], "未分類")
+        self.assertIn("競合", self.record()["items"][0]["review_reason"])
+        self.call("POST /bank/classifications", {**self.payload(), "category": "経費", "note": "keep"})
+        self.call("POST /bank/classifications", {**self.payload(), "review_confirmed": True})
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["category"], "経費")
+        self.assertTrue(self.record()["items"][0]["review_confirmed"])
+        self.assertEqual(self.record()["items"][0]["note"], "keep")
+
+    def test_rules_separate_account_direction_and_keep_confirmed_automatic_classification(self):
+        value = parsed()
+        rule = {"account_id": "other", "direction": "deposit", "contains": "キャベツ", "category": "経費"}
+        lambda_function._bank_apply_rules(value, [rule])
+        self.assertEqual(value["items"][0]["category"], "売上")
+        rule["account_id"] = value["account_id"]
+        rule["direction"] = "withdrawal"
+        lambda_function._bank_apply_rules(value, [rule])
+        self.assertEqual(value["items"][0]["category"], "売上")
+        self.import_pdf()
+        self.call("POST /bank/classifications", {**self.payload(), "review_confirmed": True})
+        self.call("POST /bank/rules", {"revision": "", **rule, "direction": "deposit"})
+        self.import_pdf()
+        self.assertEqual(self.record()["items"][0]["category"], "売上")
+        self.assertTrue(self.record()["items"][0]["review_confirmed"])
+
     def test_reimport_preserves_classification_notes_confirmation_without_duplicates(self):
         self.import_pdf()
         payload = self.payload()

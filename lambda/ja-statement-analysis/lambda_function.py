@@ -9,6 +9,7 @@ import re
 import tempfile
 import traceback
 import uuid
+import unicodedata
 from dataclasses import replace
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -543,6 +544,67 @@ def _bank_record(bucket, statement_id):
     return {**record, "revision": etag}
 
 
+def _bank_rule_text(value):
+    return " ".join(unicodedata.normalize("NFKC", value).split())
+
+
+def _bank_rules(bucket):
+    value, etag = _read_json(bucket, "bank/classification-rules.json", missing_ok=True, with_etag=True)
+    return {"rules": value["rules"] if value is not None else [], "revision": etag or ""}
+
+
+def _bank_save_rule(bucket, data):
+    if set(data) - {"revision", "rule_id", "delete", "account_id", "direction", "contains", "category"}:
+        raise RequestError(400, "ルールに不明な項目があります。")
+    current = _bank_rules(bucket)
+    if data.get("revision") != current["revision"]:
+        raise RequestError(409, "ルールが更新されています。最新データを取得してください。")
+    rule_id = data.get("rule_id")
+    existing = next((rule for rule in current["rules"] if rule["rule_id"] == rule_id), None)
+    if rule_id is not None and existing is None:
+        raise RequestError(404, "指定されたルールがありません。")
+    if "delete" in data and data["delete"] is not True:
+        raise RequestError(400, "削除指定が不正です。")
+    if data.get("delete"):
+        if existing is None:
+            raise RequestError(400, "削除するルールを指定してください。")
+        current["rules"].remove(existing)
+    else:
+        account_id = _bank_id(data, "account_id")
+        direction = _text(data, "direction", 20)
+        contains = _bank_rule_text(_text(data, "contains", 100))
+        category = _text(data, "category", 40)
+        if not contains or direction not in ("deposit", "withdrawal") or category not in BANK_CATEGORIES or category == "未分類":
+            raise RequestError(400, "検索文字・入出金・用途を確認してください。")
+        if not any(record["account_id"] == account_id for record in _list_records(bucket, "bank/statements/")):
+            raise RequestError(400, "取り込み済みの口座を指定してください。")
+        duplicate = next((rule for rule in current["rules"] if rule["rule_id"] != rule_id
+                          and (rule["account_id"], rule["direction"], rule["contains"]) == (account_id, direction, contains)), None)
+        if duplicate:
+            raise RequestError(409, "同じ条件のルールがあります。一覧から変更してください。")
+        rule = {"rule_id": rule_id or uuid.uuid4().hex, "account_id": account_id, "direction": direction,
+                "contains": contains, "category": category}
+        if existing is not None:
+            current["rules"].remove(existing)
+        current["rules"].append(rule)
+    written = _write_json(bucket, "bank/classification-rules.json", {"rules": current["rules"]}, condition=current["revision"] or "*")
+    return {"saved": True, "rules": current["rules"], "revision": written["ETag"]}
+
+
+def _bank_apply_rules(parsed, rules):
+    for item in parsed["items"]:
+        matches = [rule for rule in rules if rule["account_id"] == parsed["account_id"]
+                   and rule["direction"] == ("deposit" if item["deposit"] else "withdrawal")
+                   and rule["contains"] in _bank_rule_text(item["memo"])]
+        if not matches:
+            continue
+        categories = {rule["category"] for rule in matches}
+        item.update(category=next(iter(categories)) if len(categories) == 1 else "未分類",
+                    classified_by="rule", review_confirmed=False,
+                    review_reason="保存ルールによる分類候補です。用途を確認してください。" if len(categories) == 1
+                    else "複数の分類ルールが競合しています。用途を確認してください。")
+
+
 def _bank_import_record(bucket, source_key):
     if not re.fullmatch(r"bank/uploads/[a-f0-9]{32}\.pdf", source_key):
         raise ValueError("Unexpected bank statement source key")
@@ -584,9 +646,10 @@ def _bank_import_record(bucket, source_key):
     key = f"bank/statements/{parsed['statement_id']}.json"
     old, etag = _read_json(bucket, key, missing_ok=True, with_etag=True)
     old_items = {item["transaction_id"]: item for item in (old or {}).get("items", [])}
+    _bank_apply_rules(parsed, _bank_rules(bucket)["rules"])
     for item in parsed["items"]:
         previous = old_items.get(item["transaction_id"])
-        if previous:
+        if previous and (previous["classified_by"] == "manual" or previous["review_confirmed"]):
             for field in ("category", "note", "classified_by", "review_confirmed", "review_reason"):
                 item[field] = previous[field]
     adjacent = _list_records(bucket, "bank/statements/")
@@ -638,6 +701,10 @@ def _bank_classify(bucket, data):
 
 
 def _bank_route(bucket, route, data, parameters):
+    if route == "GET /bank/rules":
+        return _bank_rules(bucket)
+    if route == "POST /bank/rules":
+        return _bank_save_rule(bucket, data)
     if route == "POST /bank/uploads":
         key = f"bank/uploads/{uuid.uuid4().hex}.pdf"
         upload = S3.generate_presigned_post(

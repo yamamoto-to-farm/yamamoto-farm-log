@@ -15,6 +15,7 @@ let statements = [], imports = [], items = [];
 let page = 0, busy = false, targets = [], revisions = new Map();
 let editStarted = false, editSelection = [];
 let editPrimary = null;
+let ruleState = { rules: [], revision: "" }, pendingRule = null, editingRuleId = null;
 
 function node(tag, text, className) {
   const result = document.createElement(tag);
@@ -64,6 +65,7 @@ function updateButtons() {
   el("page-area").querySelectorAll("button").forEach(button => { button.disabled = busy; });
   el("data-area").querySelectorAll("input, select").forEach(input => { input.disabled = busy; });
   el("edit-form").querySelectorAll("input, select").forEach(input => { input.disabled = busy || editStarted; });
+  el("rule-form").querySelectorAll("input, select").forEach(input => { input.disabled = busy; });
   if (!busy) {
     const count = filtered().length;
     el("previous").disabled = page <= 0;
@@ -97,7 +99,9 @@ function filtered() {
 }
 
 async function loadData() {
-  const [list, history] = await Promise.all([api("/statements"), api("/imports")]);
+  const [list, history, rules] = await Promise.all([api("/statements"), api("/imports"), api("/rules")]);
+  if (!Array.isArray(rules.rules) || typeof rules.revision !== "string") throw new Error("分類ルールの取得結果が不正です。");
+  ruleState = rules;
   if (!Array.isArray(list.statements) || !Array.isArray(history.imports)) throw new Error("口座APIの一覧形式が不正です。");
   const records = [];
   for (const record of list.statements) records.push(await api(`/statements/${encodeURIComponent(record.statement_id)}`));
@@ -128,6 +132,61 @@ async function loadData() {
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}`;
   render();
   renderRecords();
+  renderRules();
+}
+
+function renderRules() {
+  el("rules-list").replaceChildren();
+  for (const rule of ruleState.rules.filter(rule => rule.account_id === el("account").value)) {
+    const row = node("div", undefined, "finance-record");
+    row.append(node("p", `${rule.direction === "deposit" ? "入金" : "出金"} ／「${rule.contains}」を含む → ${rule.category}`));
+    const edit = node("button", "変更", "secondary-btn"), remove = node("button", "削除", "secondary-btn");
+    edit.type = remove.type = "button";
+    edit.disabled = remove.disabled = busy;
+    edit.onclick = () => {
+      editingRuleId = rule.rule_id;
+      el("rule-contains").value = rule.contains;
+      el("rule-category").value = rule.category;
+      el("rule-direction").value = rule.direction;
+      el("rule-status").textContent = "";
+      el("rule-dialog").showModal();
+    };
+    remove.onclick = () => run(async () => {
+      if (!confirm(`「${rule.contains}」の分類ルールを削除しますか？保存済み明細は変更しません。`)) return;
+      const result = await api("/rules", { revision: ruleState.revision, rule_id: rule.rule_id, delete: true });
+      acceptRules(result);
+      renderRules();
+      status("ルールを削除しました。保存済み明細は変更していません。");
+    });
+    row.append(edit, remove);
+    el("rules-list").append(row);
+  }
+  if (!el("rules-list").children.length) el("rules-list").append(node("p", "この口座の保存ルールはありません。"));
+}
+
+function acceptRules(result) {
+  if (result.saved !== true || !Array.isArray(result.rules) || typeof result.revision !== "string" || !result.revision) {
+    throw new Error("ルールの保存結果を確認できません。最新データを取得してください。");
+  }
+  ruleState = result;
+}
+
+async function saveRule(event) {
+  event.preventDefault();
+  await run(async () => {
+    try {
+      const rule = ruleState.rules.find(rule => rule.rule_id === editingRuleId);
+      if (!rule) throw new Error("変更対象のルールがありません。最新データを取得してください。");
+      acceptRules(await api("/rules", { revision: ruleState.revision, rule_id: rule.rule_id, account_id: rule.account_id,
+        direction: el("rule-direction").value, contains: el("rule-contains").value.trim(), category: el("rule-category").value }));
+      el("rule-dialog").close();
+      renderRules();
+      status("ルールを変更しました。次回の取り込み・再取り込みから適用されます。");
+    } catch (error) {
+      el("rule-status").textContent = `${error.message} 競合の場合は閉じて最新データを取得してください。`;
+      throw error;
+    }
+  });
 }
 
 function stat(label, value, action) {
@@ -393,6 +452,7 @@ function renderRecords() {
 function openEdit(selected) {
   if (busy) return;
   editStarted = false;
+  pendingRule = null;
   editSelection = [];
   targets = [...selected];
   revisions = new Map(statements.map(record => [record.statement_id, record.revision]));
@@ -401,6 +461,7 @@ function openEdit(selected) {
   el("edit-note").value = selected.length === 1 ? selected[0].note : "";
   el("edit-status").textContent = "";
   el("edit-confirm").checked = false;
+  el("edit-save-rule").checked = false;
   el("edit-related").hidden = selected.length !== 1;
   editPrimary = selected.length === 1 ? selected[0] : null;
   el("edit-match").value = "";
@@ -432,9 +493,18 @@ async function saveEdit(event) {
   event.preventDefault();
   if (busy) return;
   if (!editStarted && editSelection.length) targets = editSelection.filter(choice => choice.checkbox.checked).map(choice => choice.item);
-  if (!targets.length) {
+  if (!targets.length && !pendingRule) {
     el("edit-status").textContent = "保存する明細を選択してください。";
     return;
+  }
+  if (!editStarted && el("edit-save-rule").checked) {
+    if (!editPrimary || !el("edit-match").value.trim() || el("edit-category").value === "未分類") {
+      el("edit-status").textContent = "ルール保存には「摘要に含む文字」と未分類以外の用途を指定してください。";
+      return;
+    }
+    pendingRule = { revision: ruleState.revision, account_id: editPrimary.account_id,
+      direction: editPrimary.deposit ? "deposit" : "withdrawal", contains: el("edit-match").value.trim(),
+      category: el("edit-category").value };
   }
   if (targets.length > 1 && el("edit-category").value === "未分類") {
     el("edit-status").textContent = "まとめて整理する場合は、未分類以外の用途を選択してください。";
@@ -468,8 +538,12 @@ async function saveEdit(event) {
         targets.shift();
         saved++;
       }
+      if (pendingRule) {
+        acceptRules(await api("/rules", pendingRule));
+        pendingRule = null;
+      }
     } catch (error) {
-      el("edit-status").textContent = `${saved}件保存済み・残り${targets.length}件。${targets[0]?.pendingReview ? "先頭の明細は分類保存済み・確認状態の保存待ちです。" : ""}${error.message} 409の場合は閉じて最新データを取得し、対象を選び直してください。`;
+      el("edit-status").textContent = `${saved}件保存済み・残り${targets.length}件。${pendingRule ? "ルールは保存未確認です。" : ""}${targets[0]?.pendingReview ? "先頭の明細は分類保存済み・確認状態の保存待ちです。" : ""}${error.message} 409の場合は閉じて最新データを取得し、対象を選び直してください。`;
       throw new Error(el("edit-status").textContent);
     }
     el("edit-dialog").close();
@@ -528,7 +602,8 @@ async function initialize() {
   if (!["admin", "family"].includes(window.currentRole)) { location.replace("/index.html"); return; }
   renderHeader();
   el("page-area").hidden = false;
-  for (const category of categories) for (const id of ["category", "edit-category"]) {
+  for (const category of categories) for (const id of ["category", "edit-category", "rule-category"]) {
+    if (id === "rule-category" && category === "未分類") continue;
     const option = node("option", category);
     option.value = category;
     el(id).append(option);
@@ -538,7 +613,7 @@ async function initialize() {
   el("upload").onclick = () => run(uploadPdf);
   el("clear-filters").onclick = clearFilters;
   for (const id of ["account", "from", "to", "category", "direction", "query", "review-only", "sort"]) {
-    el(id).addEventListener("input", () => { page = 0; render(); if (id === "account") renderRecords(); });
+    el(id).addEventListener("input", () => { page = 0; render(); if (id === "account") { renderRecords(); renderRules(); } });
   }
   document.querySelectorAll("[data-period]").forEach(button => {
     button.onclick = () => {
@@ -561,6 +636,9 @@ async function initialize() {
   el("previous").onclick = () => { page--; renderItems(); };
   el("next").onclick = () => { page++; renderItems(); };
   el("edit-form").onsubmit = saveEdit;
+  el("rule-form").onsubmit = saveRule;
+  el("cancel-rule").onclick = () => el("rule-dialog").close();
+  el("rule-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   el("edit-match").oninput = renderEditRelated;
   el("cancel-edit").onclick = () => el("edit-dialog").close();
   el("edit-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });

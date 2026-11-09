@@ -99,7 +99,8 @@ function screen(deps = {}) {
     close() { this.closed = true; }, showModal() { this.closed = false; } });
   for (const id of ["login-area", "data-area", "page-area", "status", "account", "from", "to", "category", "direction",
     "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf",
-    "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "chart", "chart-detail", "monthly"]) {
+    "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "chart", "chart-detail", "monthly",
+    "edit-save-rule", "rule-form", "rules-list", "rule-status", "rule-contains", "rule-category", "rule-direction", "rule-dialog"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
@@ -297,6 +298,67 @@ test("monthly graph explanations share one help source while hover amounts remai
   assert.equal((between.match(/data-help=/g) || []).length, 1);
   assert.doesNotMatch(between, /class="finance-note"/);
   assert.match(html, /id="chart-detail" class="finance-note" aria-live="polite"/);
+});
+test("related classification help is grouped beside the heading without hiding search or candidate count", () => {
+  const section = read("bank/index.html").split('<section id="edit-related" hidden>')[1].split("</section>")[0];
+  assert.match(section, /<h3>まとめて変更する明細<\/h3>\s*<div data-help="まとめて変更する明細の使い方">/);
+  assert.equal((section.match(/data-help=/g) || []).length, 1);
+  assert.doesNotMatch(section, /class="finance-note"/);
+  const help = section.split('<div data-help=')[1].split("</div>")[0];
+  assert.match(help, /ほかの明細のメモは維持/);
+  assert.match(help, /部分一致[\s\S]*手動修正済み[\s\S]*選択は解除[\s\S]*ルールとして保存/);
+  assert.doesNotMatch(help, /<input|role="status"/);
+  assert.match(section, /<\/div>\s*<label>摘要に含む文字/);
+  assert.match(section, /id="edit-match-count" role="status"/);
+});
+test("optional rule is saved after classifications and failed rule saves retry without repeating rows", async () => {
+  const { c, elements } = screen();
+  c.base = { ...item(), account_id: "a".repeat(64), statement_id: "b".repeat(64) };
+  vm.runInContext("targets=[base]; editPrimary=base; ruleState={rules:[],revision:''};", c);
+  elements["edit-category"].value = "経費";
+  elements["edit-match"].value = "姓";
+  elements["edit-save-rule"].checked = true;
+  const requests = [];
+  let fail = true;
+  c.api = async (path, body) => {
+    requests.push({ path, body });
+    if (path === "/rules") {
+      if (fail) { fail = false; throw new Error("offline"); }
+      return { saved: true, revision: "rules-new", rules: [] };
+    }
+    return { saved: true, revision: "row-new" };
+  };
+  c.loadData = async () => {};
+  await c.saveEdit({ preventDefault() {} });
+  assert.match(elements["edit-status"].textContent, /ルールは保存未確認/);
+  await c.saveEdit({ preventDefault() {} });
+  assert.deepEqual(requests.map(r => r.path), ["/classifications", "/rules", "/rules"]);
+  assert.equal(requests[1].body.contains, "姓");
+  assert.equal(requests[1].body.direction, "deposit");
+});
+test("rule management edits and deletes only explicit rules using current revisions", async () => {
+  const { c, elements } = screen({ confirm: () => true });
+  c.rule = { rule_id: "one", account_id: "account-a", contains: "姓", direction: "withdrawal", category: "経費" };
+  vm.runInContext('ruleState={rules:[rule],revision:"original"}', c);
+  c.renderRules();
+  elements["rules-list"].children[0].children[1].onclick();
+  assert.equal(elements["rule-contains"].value, "姓");
+  assert.equal(elements["rule-category"].value, "経費");
+  elements["rule-contains"].value = "別姓";
+  const requests = [];
+  c.api = async (path, body) => {
+    requests.push({ path, body });
+    return { saved: true, revision: "new", rules: body.delete ? [] : [{ ...c.rule, contains: body.contains }] };
+  };
+  await c.saveRule({ preventDefault() {} });
+  assert.equal(requests[0].body.revision, "original");
+  assert.equal(requests[0].body.rule_id, "one");
+  assert.equal(requests[0].body.contains, "別姓");
+  assert.equal(elements["rule-dialog"].closed, true);
+  await elements["rules-list"].children[0].children[2].onclick();
+  assert.equal(requests[1].body.revision, "new");
+  assert.equal(requests[1].body.delete, true);
+  assert.match(elements["rules-list"].children[0].textContent, /ありません/);
 });
 test("bank navigation, finance links, shared styles and closed sections are wired", () => {
   const pages = JSON.parse(read("data/pages.json")).pages;

@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261109-3">
+  <link rel="stylesheet" href="./bank.css?v=20261110-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -66,6 +66,11 @@
         <p id="annual-coverage" class="finance-note"></p><p id="annual-comparison" class="finance-note"></p>
         <div id="annual" class="finance-annual"></div>
       </section>
+      <details class="card finance-record-panel">
+        <summary><h2>自動分類ルール</h2></summary>
+        <p class="finance-note">選択口座の摘要部分一致ルールです。姓だけでも登録できますが、同じ文字を含む別の相手にも一致するため確認してください。変更・削除は保存済み明細を変更しません。次回の取り込み・再取り込みから適用され、手動修正済み・確認済みは維持します。異なる用途のルールが競合すると未分類・要確認にします。</p>
+        <div id="rules-list"></div>
+      </details>
       <details id="groups-section" class="card finance-record-panel">
         <summary><h2>未分類をまとめて整理</h2><span id="groups-attention" class="finance-attention" hidden></span></summary>
         <p class="finance-note">条件内の未分類を摘要の完全一致・入出金別でまとめます。手動確定済みは対象外です。</p>
@@ -93,17 +98,28 @@
       <label>用途<select id="edit-category" required></select></label><label>確認用メモ<input id="edit-note" maxlength="300"></label>
       <section id="edit-related" hidden>
         <h3>まとめて変更する明細</h3>
-        <p class="finance-note">同じ口座・同じ摘要・同じ入出金方向の取り込み済み全期間から表示します（全角・半角と空白の違いは同一扱い）。追加対象は選択してください。ほかの明細のメモは維持します。</p>
+        <div data-help="まとめて変更する明細の使い方">
+          <p>同じ口座・同じ摘要・同じ入出金方向の取り込み済み全期間から表示します（全角・半角と空白の違いは同一扱い）。追加対象は選択してください。ほかの明細のメモは維持します。</p>
+          <p>「摘要に含む文字」を入力すると、同じ口座・入出金方向の未分類から部分一致で探します。手動修正済みは除外します。空欄は同じ摘要の明細を表示します。検索を変えると追加対象の選択は解除されます。「この条件を次回以降の自動分類にも使う」を選ぶと、口座・入出金方向・検索文字・用途をルールとして保存します。次回は確認待ちの分類候補になり、手動修正済み・確認済みは上書きしません。姓だけでも指定できますが、別の相手への一致に注意してください。</p>
+        </div>
         <label>摘要に含む文字（名前など）<input id="edit-match" type="search" placeholder="例：名前の部分だけ" autocomplete="off"></label>
-        <p class="finance-note">入力すると、同じ口座・入出金方向の未分類から部分一致で探します。手動修正済みは除外します。空欄は同じ摘要の明細を表示します。検索を変えると追加対象の選択は解除されます。今後の自動分類ルールは登録しません。</p>
         <p id="edit-match-count" role="status"></p>
         <div id="edit-related-items"></div>
+        <label><input id="edit-save-rule" type="checkbox">この条件を次回以降の自動分類にも使う</label>
       </section>
       <label><input id="edit-confirm" type="checkbox">保存と同時に確認済みにする</label>
       <p id="edit-status" role="alert"></p><div class="finance-toolbar"><button id="save-edit" type="submit" class="primary-btn">保存</button><button id="cancel-edit" type="button" class="secondary-btn">キャンセル</button></div>
     </form></dialog>
+    <dialog id="rule-dialog" aria-labelledby="rule-title"><form id="rule-form">
+      <h2 id="rule-title">自動分類ルールの変更</h2>
+      <label>摘要に含む文字<input id="rule-contains" required maxlength="100"></label>
+      <label>入出金<select id="rule-direction"><option value="deposit">入金</option><option value="withdrawal">出金</option></select></label>
+      <label>用途<select id="rule-category" required></select></label>
+      <p id="rule-status" role="alert"></p>
+      <div class="finance-toolbar"><button type="submit" class="primary-btn">保存</button><button id="cancel-rule" type="button" class="secondary-btn">キャンセル</button></div>
+    </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261109-3"></script>
+  <script type="module" src="./bank.js?v=20261110-1"></script>
 </body>
 </html>

@@ -12,3 +12,5 @@
 .bank-edit-choice { display: flex; align-items: start; gap: 8px; padding: 8px 0; }
 .bank-edit-choice input { flex: 0 0 auto; }
 .bank-edit-choice span { overflow-wrap: anywhere; }
+#rule-form label { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+#rule-status { color: #a51f25; }
