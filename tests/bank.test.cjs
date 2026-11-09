@@ -290,6 +290,14 @@ test("upload timeout remains pending, not a success-shaped fallback", async () =
   await c.uploadPdf();
   assert.match(elements.status.textContent, /未確認.*再アップロードは不要/);
 });
+test("monthly graph explanations share one help source while hover amounts remain visible", () => {
+  const html = read("bank/index.html");
+  assert.match(html, /<div data-help="入出金グラフの見方">[\s\S]*?残高は絞り込みに関係なく口座全体[\s\S]*?緑：入金 ／ 青：出金[\s\S]*?<\/div>/);
+  const between = html.split('<div id="summary"')[1].split('<div id="chart"')[0];
+  assert.equal((between.match(/data-help=/g) || []).length, 1);
+  assert.doesNotMatch(between, /class="finance-note"/);
+  assert.match(html, /id="chart-detail" class="finance-note" aria-live="polite"/);
+});
 test("bank navigation, finance links, shared styles and closed sections are wired", () => {
   const pages = JSON.parse(read("data/pages.json")).pages;
   const page = pages.find(item => item.id === "bank-statements");

@@ -49,8 +49,10 @@
         </div>
         <p id="filter-error" role="alert"></p><p id="filter-state" class="finance-note"></p>
         <div id="summary" class="finance-summary"></div>
-        <p class="finance-note">入出金と明細は上の条件内。残高は絞り込みに関係なく口座全体です。月を押すと明細を開きます。</p>
-        <p class="finance-note">緑：入金 ／ 青：出金</p>
+        <div data-help="入出金グラフの見方">
+          <p>入出金と明細は上の条件内。残高は絞り込みに関係なく口座全体です。月を押すと明細を開きます。</p>
+          <p>緑：入金 ／ 青：出金</p>
+        </div>
         <div id="chart" class="finance-chart" role="group" aria-label="月別入出金グラフ" aria-describedby="chart-detail"></div>
         <p id="chart-detail" class="finance-note" aria-live="polite"></p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金">
