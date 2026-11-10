@@ -423,9 +423,12 @@ test("JA memo opens candidates, explicit save/unlink uses revisions and failures
   assert.equal(request.revision, "links-r1");
   c.renderItems();
   const linkedMemo = elements.items.children[0].children[1];
-  assert.equal(linkedMemo.children[0].tagName, "a");
+  assert.equal(linkedMemo.children[0].tagName, "button");
+  assert.equal(linkedMemo.children[0]["aria-haspopup"], "dialog");
   assert.match(linkedMemo.children[1].textContent, /一致/);
-  c.openInvoiceLink(c.row);
+  linkedMemo.children[0].onclick();
+  assert.equal(elements["invoice-link-choice"].value, "123456");
+  assert.match(elements["invoice-link-preview"].href, /invoice=123456/);
   c.api = async () => { throw new Error("409 conflict"); };
   await c.saveInvoiceLink(true);
   assert.match(elements["invoice-link-status"].textContent, /409/);
@@ -452,6 +455,33 @@ test("invoice candidate mismatch requires confirmation, empty catalog offers upl
   c.api = async () => { throw new Error("should not save without mismatch confirmation"); };
   await c.saveInvoiceLink();
   assert.equal(elements["invoice-link-status"].textContent, "");
+});
+test("all outgoing memos open a generic invoice dialog without extra action buttons; incoming memos stay plain", () => {
+  const { c, elements } = screen();
+  c.rows = [
+    { ...item({ memo: "TEST supplier", deposit: 0, withdrawal: 100 }), account_id: "account-a", statement_id: "a".repeat(64) },
+    { ...item({ memo: "TEST deposit", transaction_id: "c".repeat(64) }), account_id: "account-a", statement_id: "a".repeat(64) },
+  ];
+  vm.runInContext('items = rows; statements = [{ statement_id: rows[0].statement_id, revision: "r1" }]', c);
+  c.renderItems();
+  const memos = elements.items.children.map(row => row.children[1]);
+  assert.equal(memos[0].children.filter(child => child.tagName === "button").length, 1);
+  assert.equal(memos[0].children[0].textContent, "TEST supplier");
+  assert.match(memos[0].children[0]["aria-label"], /請求書の紐づけを開く/);
+  memos[0].children[0].onclick();
+  assert.equal(elements["invoice-link-dialog"].closed, false);
+  assert.equal(memos[1].textContent, "TEST deposit");
+  assert.equal(memos[1].children.filter(child => child.tagName === "button").length, 0);
+  vm.runInContext("busy = true", c);
+  c.renderItems();
+  assert.equal(elements.items.children[0].children[1].children[0].disabled, true);
+  const html = read("bank/index.html");
+  assert.match(html, /id="invoice-link-title">請求書の紐づけ<\/h2>/);
+  assert.match(html, /対応中の請求元：JA/);
+  assert.doesNotMatch(html, /<details[^>]*id="invoice-links-section"[^>]*\bopen\b/);
+  assert.ok(html.indexOf('id="details-section"') < html.indexOf('id="invoice-links-section"'));
+  assert.ok(html.indexOf('id="invoice-links-section"') < html.indexOf("<h2>自動分類ルール</h2>"));
+  assert.ok(html.indexOf("<h2>自動分類ルール</h2>") < html.indexOf("<h2>データ取り込み</h2>"));
 });
 test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
   const { c, elements } = screen();

@@ -542,25 +542,16 @@ function renderItems() {
     const row = node("tr", undefined, needsAttention(item) ? "finance-review" : "");
     const memo = node("td");
     const linked = findInvoiceLink(item);
-    const jaMemo = item.withdrawal > 0 && /ノウキ[ョヨ]ウ/.test(item.memo.normalize("NFKC"));
-    if (linked) {
-      const anchor = node("a", item.memo || "摘要なし");
-      anchor.href = jaInvoiceUrl(linked.invoice_no, item);
-      memo.append(anchor, node("small", `JA請求書 ${linked.invoice_no} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
-    } else if (jaMemo) {
+    if (item.withdrawal > 0) {
       const button = node("button", item.memo || "摘要なし", "bank-memo-link");
       button.type = "button";
       button.disabled = busy;
+      button.setAttribute("aria-haspopup", "dialog");
+      button.setAttribute("aria-label", `${item.memo || "摘要なし"}：請求書の紐づけを開く`);
       button.onclick = () => openInvoiceLink(item);
-      memo.append(button, node("small", "JA請求書：未紐づけ"));
+      memo.append(button);
+      if (linked) memo.append(node("small", `JA請求書 ${linked.invoice_no} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
     } else memo.textContent = item.memo || "摘要なし";
-    if (item.withdrawal > 0) {
-      const manage = node("button", linked ? "紐づけ変更・解除" : "JA請求書を紐づけ", "secondary-btn");
-      manage.type = "button";
-      manage.disabled = busy;
-      manage.onclick = () => openInvoiceLink(item);
-      memo.append(manage);
-    }
     memo.append(node("small", item.note));
     const cell = node("td", `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""} / ${item.classified_by === "manual" ? "手動確定" : "分類候補"}`);
     if (item.allocations?.length) {
