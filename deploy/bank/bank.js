@@ -6,7 +6,8 @@ import { clearSession, ensureToken, hasSession, login } from "/photos/auth.js?v=
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
-  unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations } from "./bank-logic.js?v=20261110-2";
+  unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
+  statementCoverage, balanceTrend, unclassifiedSummary } from "./bank-logic.js?v=20261110-4";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -225,6 +226,34 @@ function showAttention() {
   el("details-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function showUnclassified() {
+  clearFilters();
+  el("category").value = "未分類";
+  el("sort").value = "amount-desc";
+  render();
+  el("details-section").open = true;
+  el("details-section").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderAccountOverview(accountItems, accountRecords, account) {
+  const latest = accountRecords[0];
+  const coverage = statementCoverage(accountRecords, account);
+  el("coverage").textContent = coverage
+    ? `取り込み済み実績：${coverage.start}〜${coverage.end}（${coverage.months.length}か月分）。残高は${coverage.end}時点で、現在の口座残高ではありません。`
+    : "取り込み済みの口座明細はありません。";
+  el("coverage-gaps").textContent = coverage?.missing.length ? `期間内の未取り込み月：${coverage.missing.join("、")}。集計には含まれません。` : "";
+  const annual = annualAnalysis(accountItems, accountRecords, account, Number(todayLocalYmd().slice(0, 4)), todayLocalYmd());
+  el("overview").replaceChildren(
+    stat("今年の入金（取込済み実績）", formatYen(annual.current.deposit)), stat("今年の出金（取込済み実績）", formatYen(annual.current.withdrawal)),
+    stat(latest ? `${latest.month} 月末残高` : "月末残高", latest ? formatYen(latest.closing_balance) : "未取り込み"),
+    stat("要確認・未分類", `${accountItems.filter(needsAttention).length}件`, showAttention));
+  const unknown = unclassifiedSummary(accountItems);
+  el("unclassified-summary").replaceChildren(
+    stat("未分類の取引（全取込期間）", `${unknown.count}件`, showUnclassified),
+    stat("未分類の入金", formatYen(unknown.deposit), showUnclassified),
+    stat("未分類の出金", formatYen(unknown.withdrawal), showUnclassified));
+}
+
 function clearFilters() {
   for (const id of ["from", "to", "category", "subcategory", "query", "direction"]) el(id).value = "";
   el("review-only").checked = false;
@@ -248,13 +277,9 @@ function render() {
   el("summary").replaceChildren(stat("条件内入金", formatYen(total.deposit)), stat("条件内出金", formatYen(total.withdrawal)), stat("条件内差引", formatYen(total.net)));
   const accountItems = items.filter(item => item.account_id === current.account);
   const accountRecords = statements.filter(record => record.account_id === current.account).sort((a, b) => b.month.localeCompare(a.month));
-  const latest = accountRecords[0];
-  const annual = annualAnalysis(accountItems, accountRecords, current.account, Number(todayLocalYmd().slice(0, 4)), todayLocalYmd());
-  el("overview").replaceChildren(
-    stat("今年の入金（現在まで）", formatYen(annual.current.deposit)), stat("今年の出金（現在まで）", formatYen(annual.current.withdrawal)),
-    stat(latest ? `${latest.month} 月末残高` : "月末残高", latest ? formatYen(latest.closing_balance) : "未取り込み"),
-    stat("要確認・未分類", `${accountItems.filter(needsAttention).length}件`, showAttention));
+  renderAccountOverview(accountItems, accountRecords, current.account);
   renderMonthly(monthlyTotals(allocated, statements, current));
+  renderBalance(balanceTrend(statements, current));
   const groups = unclassifiedGroups(list);
   el("groups").replaceChildren();
   for (const group of groups) {
@@ -342,8 +367,65 @@ function renderMonthly(rows) {
   emptyTable("monthly", rows.length, 6);
 }
 
+function renderBalance(rows) {
+  const area = el("balance-chart");
+  area.replaceChildren();
+  el("balance-detail").textContent = "点にマウスを合わせるかフォーカスすると月末残高を表示します。";
+  const available = rows.filter(row => row.balance !== null);
+  if (!available.length) {
+    area.append(node("p", "対象期間に取り込み済みの残高がありません。"));
+    el("balance-minimum").textContent = "期間内の最低月末残高：データなし";
+    return;
+  }
+  const minimum = Math.min(...available.map(row => row.balance));
+  el("balance-minimum").textContent = `期間内の最低月末残高：${formatYen(minimum)}（${available.filter(row => row.balance === minimum).map(row => row.month).join("、")}）。月途中の最低残高ではありません。`;
+  const scale = chartScale(available.map(row => ({ categories: { amount: Math.abs(row.balance) } })));
+  const lower = minimum < 0 ? -scale.maximum : 0;
+  const upper = Math.max(...available.map(row => row.balance)) > 0 ? scale.maximum : lower < 0 ? 0 : scale.maximum;
+  const width = Math.max(420, rows.length * 90 + 100), left = 85, right = width - 35, top = 25, bottom = 205;
+  const x = index => rows.length === 1 ? (left + right) / 2 : left + index / (rows.length - 1) * (right - left);
+  const y = balance => top + (upper - balance) / (upper - lower) * (bottom - top);
+  const svgNode = (tag, attributes, text) => {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
+    if (text !== undefined) element.textContent = text;
+    return element;
+  };
+  const svg = svgNode("svg", { viewBox: `0 0 ${width} 255`, width, height: 255, class: "bank-balance-svg",
+    role: "group", "aria-label": "月末残高の推移", "aria-describedby": "balance-detail" });
+  const ticks = [...new Set([...(lower < 0 ? scale.ticks.map(value => -value) : []), ...(upper > 0 ? scale.ticks : [0])])].sort((a, b) => a - b);
+  for (const tick of ticks) {
+    svg.append(svgNode("line", { x1: left, x2: right, y1: y(tick), y2: y(tick), class: "bank-balance-grid", "aria-hidden": "true" }),
+      svgNode("text", { x: left - 8, y: y(tick) + 4, "text-anchor": "end", class: "bank-balance-label", "aria-hidden": "true" },
+        Math.abs(tick) >= 10000 ? `${tick / 10000}万円` : formatYen(tick)));
+  }
+  let previous = null;
+  for (const [index, row] of rows.entries()) {
+    svg.append(svgNode("text", { x: x(index), y: 235, "text-anchor": "middle", class: "bank-balance-label", "aria-hidden": "true" }, row.month));
+    if (row.balance === null) {
+      svg.append(svgNode("text", { x: x(index), y: 155, "text-anchor": "middle", class: "bank-balance-label" }, "未取り込み"));
+      previous = null;
+      continue;
+    }
+    if (previous !== null) svg.append(svgNode("line", { x1: x(previous.index), y1: y(previous.balance),
+      x2: x(index), y2: y(row.balance), class: "bank-balance-line", "aria-hidden": "true" }));
+    const description = `${row.month} 月末残高：${formatYen(row.balance)}`;
+    const point = svgNode("circle", { cx: x(index), cy: y(row.balance), r: 7, class: "bank-balance-point",
+      tabindex: 0, role: "button", "aria-label": `${description}。明細を開く` });
+    point.append(svgNode("title", {}, description));
+    point.onmouseenter = point.onfocus = () => { el("balance-detail").textContent = description; };
+    point.onclick = () => selectMonth(row.month);
+    point.onkeydown = event => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMonth(row.month); }
+    };
+    svg.append(point);
+    previous = { index, balance: row.balance };
+  }
+  area.append(svg);
+}
+
 function renderItems() {
-  const list = sortItems(filtered(), el("sort").value);
+  const list = sortItems(filtered(), el("sort").value, el("category").value);
   page = Math.min(Math.max(0, page), Math.max(0, Math.ceil(list.length / pageSize) - 1));
   el("items").replaceChildren();
   for (const item of list.slice(page * pageSize, (page + 1) * pageSize)) {

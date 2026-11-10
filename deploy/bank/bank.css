@@ -19,3 +19,9 @@
 .bank-split-row > * { min-width: 0; width: 100%; }
 #split-form > label { display: flex; align-items: center; margin: 14px 0; }
 .finance-annual > details { flex: 1 1 100%; min-width: 0; }
+.bank-balance-svg { display: block; min-width: 100%; }
+.bank-balance-grid { stroke: #dce4e8; stroke-width: 1; }
+.bank-balance-label { fill: #465774; font-size: 12px; }
+.bank-balance-line { stroke: #9360b2; stroke-width: 3; }
+.bank-balance-point { fill: #9360b2; stroke: white; stroke-width: 2; cursor: pointer; }
+.bank-balance-point:hover, .bank-balance-point:focus { fill: #58277b; stroke: #58277b; outline: none; }

@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261110-2">
+  <link rel="stylesheet" href="./bank.css?v=20261110-4">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -28,7 +28,10 @@
           <button id="refresh" class="secondary-btn" type="button">最新データに更新</button>
           <a class="secondary-btn" href="/finance/index.html">JA経費分析へ</a>
         </div>
+        <p id="coverage" class="finance-note"></p><p id="coverage-gaps" class="finance-note"></p>
         <div id="overview" class="finance-summary"></div><p id="updated-at" class="finance-note"></p>
+        <div id="unclassified-summary" class="finance-summary"></div>
+        <p data-help="未分類の金額について">選択口座の全取り込み期間が対象です。分類済みで確認待ちの明細は含めません。分割内訳は未分類部分の金額だけを集計し、件数は元の取引ごとに1件と数えます。押すと期間・検索条件を解除し、未分類金額の大きい順に明細を開きます。明細の入出金欄は元の取引全額です。</p>
         <p data-help="口座明細の集計について">月初残高は最初の入出金・取引後残高から逆算します。月末残高は最後の取引後残高です。借入・元本返済・現金移動・カード決済なども含むため、入金＝売上、出金＝経費とは限りません。JA請求書・販売精算との照合は未実装で、これらを合算しません。</p>
       </section>
       <section class="card">
@@ -56,6 +59,11 @@
         </div>
         <div id="chart" class="finance-chart" role="group" aria-label="月別入出金グラフ" aria-describedby="chart-detail"></div>
         <p id="chart-detail" class="finance-note" aria-live="polite"></p>
+        <h3>月末残高の推移</h3>
+        <p class="finance-note" data-help-keep>上の開始月・終了月に対応した口座全体の残高です。用途・内訳・入出金・検索・確認状態による絞り込みには影響されません。未取り込み月は線をつながず、残高を推測しません。</p>
+        <p id="balance-minimum" class="finance-note"></p>
+        <div id="balance-chart" class="finance-scroll" tabindex="0" role="region" aria-label="月末残高グラフ"></div>
+        <p id="balance-detail" class="finance-note" aria-live="polite"></p>
         <details id="monthly-details">
           <summary>月別の入出金・残高一覧</summary>
           <div class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金">
@@ -141,6 +149,6 @@
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-3"></script>
+  <script type="module" src="./bank.js?v=20261110-4"></script>
 </body>
 </html>

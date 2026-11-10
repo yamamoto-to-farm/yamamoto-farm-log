@@ -90,6 +90,42 @@ test("monthly totals never recompute balances from filtered transactions or comb
   assert.equal(month.closing, 1100);
   assert.equal(c.monthlyTotals([], [rec], filters({ from: "2026-11" })).length, 0);
 });
+test("statement coverage reports account-specific periods and missing months across years", () => {
+  const c = logic();
+  const records = [record({ month: "2027-02", period_start: "2027-02-01", period_end: "2027-02-28" }),
+    record({ month: "2026-12", period_start: "2026-12-01", period_end: "2026-12-31" }),
+    record({ account_id: "other", month: "2027-01" })];
+  const coverage = c.statementCoverage(records, "account-a");
+  assert.equal(coverage.start, "2026-12-01");
+  assert.equal(coverage.end, "2027-02-28");
+  assert.deepEqual(Array.from(coverage.months), ["2026-12", "2027-02"]);
+  assert.deepEqual(Array.from(coverage.missing), ["2027-01"]);
+  assert.equal(c.statementCoverage(records, "missing"), null);
+});
+test("balance trend preserves zero and negative balances, marks missing months and ignores non-period filters", () => {
+  const c = logic();
+  const records = [record({ month: "2026-01", closing_balance: 0 }), record({ month: "2026-03", closing_balance: -100 }),
+    record({ month: "2026-04", closing_balance: 500 }), record({ account_id: "other", month: "2026-02", closing_balance: 999 })];
+  const rows = c.balanceTrend(records, filters({ category: "未分類", direction: "deposit", query: "nothing", reviewOnly: true }));
+  assert.deepEqual(Array.from(rows, row => [row.month, row.balance]), [["2026-01", 0], ["2026-02", null], ["2026-03", -100], ["2026-04", 500]]);
+  assert.equal(c.balanceTrend(records, filters({ from: "2026-03", to: "2026-03" })).length, 1);
+  assert.equal(c.balanceTrend(records, filters({ from: "2026-05" })).length, 0);
+  assert.equal(c.balanceTrend(records, filters({ from: "2026-04", to: "2026-01" })).length, 0);
+});
+test("unclassified summary counts parent transactions once and only their unclassified portions", () => {
+  const c = logic();
+  const rows = [item({ category: "未分類", classified_by: "manual", deposit: 200 }),
+    item({ category: "内訳分割", deposit: 0, withdrawal: 1000, allocations: [
+      { category: "未分類", subcategory: "", amount: 40 }, { category: "未分類", subcategory: "", amount: 60 },
+      { category: "経費", subcategory: "", amount: 900 }] }), item({ category: "経費", review_confirmed: false })];
+  const result = c.unclassifiedSummary(rows);
+  assert.equal(result.count, 2);
+  assert.equal(result.deposit, 200);
+  assert.equal(result.withdrawal, 100);
+  assert.equal(c.unclassifiedSummary([]).count, 0);
+  assert.equal(c.sortItems(rows.slice(0, 2), "amount-desc", "未分類")[0], rows[0]);
+  assert.equal(c.sortItems(rows.slice(0, 2), "amount-desc")[0], rows[1]);
+});
 test("unclassified grouping uses exact memo and direction, never manual-confirmed unclassified", () => {
   const c = logic(), base = item({ category: "未分類", memo: "same", classified_by: "unclassified" });
   const groups = c.unclassifiedGroups([base, { ...base }, { ...base, deposit: 0, withdrawal: 50 },
@@ -128,7 +164,8 @@ test("related classification matches normalized exact memo across months, but se
 function screen(deps = {}) {
   const elements = {};
   const element = () => ({ value: "", checked: false, textContent: "", children: [], style: {},
-    querySelectorAll: () => [], classList: { toggle() {} }, setAttribute(key, value) { this[key] = value; },
+    querySelectorAll: () => [], classList: { toggle() {}, add() {} }, setAttribute(key, value) { this[key] = value; },
+    closest() { return this; }, scrollIntoView() { this.scrolled = true; },
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
     close() { this.closed = true; }, showModal() { this.closed = false; } });
@@ -138,11 +175,14 @@ function screen(deps = {}) {
     "edit-save-rule", "rule-form", "rules-list", "rule-status", "rule-contains", "rule-category", "rule-direction", "rule-dialog",
     "edit-subcategory", "rule-subcategory", "subcategory", "split-form", "save-split", "split-status", "split-rows",
     "split-item", "split-confirm", "split-total", "split-dialog", "annual", "annual-year", "annual-period",
-    "annual-coverage", "annual-comparison"]) {
+    "annual-coverage", "annual-comparison", "coverage", "coverage-gaps", "overview", "unclassified-summary",
+    "balance-chart", "balance-minimum", "balance-detail", "sort", "details-section", "filter-error", "filter-state",
+    "summary", "groups", "groups-attention", "details-attention", "items", "page-number"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
   const c = logic({ document: { getElementById: id => elements[id], createElement: tag => ({ ...element(), tagName: tag }),
+    createElementNS: (_namespace, tag) => ({ ...element(), tagName: tag }),
     createTextNode: text => ({ textContent: text }) }, config: { api: "https://api.example.test" },
     todayLocalYmd: () => "2026-11-10",
     ensureToken: async () => "test", clearSession() { c.cleared = true; }, console: { error() {} }, showSaveResult: async () => {},
@@ -150,6 +190,62 @@ function screen(deps = {}) {
   vm.runInContext(strip(read("bank/bank.js")).replace(/initialize\(\)\.catch[\s\S]*$/, ""), c);
   return { c, elements };
 }
+test("balance SVG breaks lines over missing months, exposes amounts and supports keyboard drilldown", () => {
+  const { c, elements } = screen();
+  c.renderBalance([{ month: "2026-01", balance: 500 }, { month: "2026-02", balance: null },
+    { month: "2026-03", balance: -100 }, { month: "2026-04", balance: 0 }]);
+  const svg = elements["balance-chart"].children[0];
+  assert.equal(svg.children.filter(child => child.class === "bank-balance-line").length, 1);
+  const points = svg.children.filter(child => child.tagName === "circle");
+  assert.equal(points.length, 3);
+  assert.ok(points.every(point => Number.isFinite(Number(point.cy)) && Number(point.cy) >= 25 && Number(point.cy) <= 205));
+  assert.match(elements["balance-minimum"].textContent, /-100.*2026-03/);
+  points[1].onmouseenter();
+  assert.match(elements["balance-detail"].textContent, /2026-03.*-100/);
+  points[2].onfocus();
+  assert.match(elements["balance-detail"].textContent, /2026-04.*0円/);
+  c.selectMonth = month => { c.selectedMonth = month; };
+  let prevented = false;
+  for (const key of ["Enter", " "]) {
+    points[0].onkeydown({ key, preventDefault() { prevented = true; } });
+    assert.equal(c.selectedMonth, "2026-01");
+    assert.equal(prevented, true);
+  }
+  for (const balance of [0, -100, 100]) {
+    c.renderBalance([{ month: "2026-01", balance }]);
+    const point = elements["balance-chart"].children[0].children.find(child => child.tagName === "circle");
+    assert.ok(Number.isFinite(Number(point.cy)));
+  }
+  c.renderBalance([]);
+  assert.match(elements["balance-chart"].children[0].textContent, /ありません/);
+  assert.match(elements["balance-minimum"].textContent, /データなし/);
+});
+test("overview shows imported dates, missing months and unclassified amounts; card opens all-period unclassified list", () => {
+  const { c, elements } = screen();
+  const rec = record({ items: [item({ category: "未分類" })] });
+  c.records = [rec, record({ statement_id: "d".repeat(64), month: "2026-08", period_start: "2026-08-01", period_end: "2026-08-31",
+    items: [item({ trade_date: "2026-08-01" })] })];
+  vm.runInContext("statements = records; items = flattenStatements(records);", c);
+  c.render();
+  assert.match(elements.coverage.textContent, /2026-08-01.*2026-10-31.*2か月/);
+  assert.match(elements["coverage-gaps"].textContent, /2026-09/);
+  assert.equal(elements["unclassified-summary"].children[0].children[0].textContent, "1件");
+  assert.equal(elements["unclassified-summary"].children[1].children[0].textContent, "100円");
+  elements.from.value = "2026-11";
+  elements.query.value = "no match";
+  elements["review-only"].checked = true;
+  elements["unclassified-summary"].children[0].onclick();
+  assert.equal(elements.from.value, "");
+  assert.equal(elements.query.value, "");
+  assert.equal(elements.category.value, "未分類");
+  assert.equal(elements.sort.value, "amount-desc");
+  assert.equal(elements["review-only"].checked, false);
+  assert.equal(elements["details-section"].open, true);
+  assert.equal(elements["details-section"].scrolled, true);
+  c.renderAccountOverview([], [], "missing");
+  assert.match(elements.coverage.textContent, /ありません/);
+  assert.equal(elements["coverage-gaps"].textContent, "");
+});
 test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
   const { c, elements } = screen();
   c.renderAnnual();

@@ -105,6 +105,51 @@ export function totals(items) {
   return { deposit, withdrawal, net: deposit - withdrawal };
 }
 
+function monthNumber(month) {
+  const [year, value] = month.split("-").map(Number);
+  return year * 12 + value - 1;
+}
+
+function monthLabel(value) {
+  return `${Math.floor(value / 12)}-${String(value % 12 + 1).padStart(2, "0")}`;
+}
+
+export function statementCoverage(records, account) {
+  const selected = records.filter(record => record.account_id === account).sort((a, b) => a.month.localeCompare(b.month));
+  if (!selected.length) return null;
+  const months = new Set(selected.map(record => record.month));
+  const missing = [];
+  for (let value = monthNumber(selected[0].month); value <= monthNumber(selected.at(-1).month); value++) {
+    if (!months.has(monthLabel(value))) missing.push(monthLabel(value));
+  }
+  return { start: selected[0].period_start, end: selected.at(-1).period_end, months: [...months], missing };
+}
+
+export function balanceTrend(records, { account, from, to }) {
+  const selected = records.filter(record => record.account_id === account
+    && (!from || record.month >= from) && (!to || record.month <= to)).sort((a, b) => a.month.localeCompare(b.month));
+  if (!selected.length) return [];
+  const byMonth = new Map(selected.map(record => [record.month, record.closing_balance]));
+  const rows = [];
+  for (let value = monthNumber(selected[0].month); value <= monthNumber(selected.at(-1).month); value++) {
+    const month = monthLabel(value);
+    rows.push({ month, balance: byMonth.has(month) ? byMonth.get(month) : null });
+  }
+  return rows;
+}
+
+export function unclassifiedSummary(items) {
+  let count = 0, deposit = 0, withdrawal = 0;
+  for (const item of items) {
+    const amount = itemParts(item).filter(part => part.category === "未分類").reduce((sum, part) => sum + part.amount, 0);
+    if (!amount) continue;
+    count++;
+    if (item.deposit) deposit += amount;
+    else withdrawal += amount;
+  }
+  return { count, deposit, withdrawal };
+}
+
 export function monthlyTotals(items, statements, filters) {
   const months = [...new Set(statements.filter(record => (!filters.account || record.account_id === filters.account)
     && (!filters.from || record.month >= filters.from) && (!filters.to || record.month <= filters.to)).map(record => record.month))].sort();
@@ -116,9 +161,12 @@ export function monthlyTotals(items, statements, filters) {
   });
 }
 
-export function sortItems(items, order) {
+export function sortItems(items, order, category = "") {
+  const amount = item => category === "未分類"
+    ? itemParts(item).filter(part => part.category === category).reduce((sum, part) => sum + part.amount, 0)
+    : item.deposit + item.withdrawal;
   return [...items].sort((a, b) =>
-    (order === "amount-desc" ? b.deposit + b.withdrawal - a.deposit - a.withdrawal : 0)
+    (order === "amount-desc" ? amount(b) - amount(a) : 0)
     || b.trade_date.localeCompare(a.trade_date) || a.statement_id.localeCompare(b.statement_id) || b.line_seq - a.line_seq);
 }
 
