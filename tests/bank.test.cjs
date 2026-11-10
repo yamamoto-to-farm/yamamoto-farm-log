@@ -177,7 +177,7 @@ function screen(deps = {}) {
     "split-item", "split-confirm", "split-total", "split-dialog", "annual", "annual-year", "annual-period",
     "annual-coverage", "annual-comparison", "coverage", "coverage-gaps", "overview", "unclassified-summary",
     "balance-minimum", "chart-mode", "chart-legend", "sort", "details-section", "filter-error", "filter-state",
-    "summary", "groups", "groups-attention", "details-attention", "items", "page-number"]) {
+    "summary", "groups", "groups-attention", "details-attention", "details-query", "details-result", "items", "page-number"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
@@ -299,6 +299,49 @@ test("overview shows imported dates, missing months and unclassified amounts; ca
   c.renderAccountOverview([], [], "missing");
   assert.match(elements.coverage.textContent, /ありません/);
   assert.equal(elements["coverage-gaps"].textContent, "");
+});
+test("detail search syncs both directions, resets paging and clears only search while respecting other filters", () => {
+  const { c, elements } = screen();
+  c.records = [record({ items: [item({ review_confirmed: true }),
+    item({ transaction_id: "c".repeat(64), memo: "共済", category: "経費", deposit: 0, withdrawal: 50 })] })];
+  vm.runInContext("statements = records; items = flattenStatements(records); page = 3;", c);
+  c.setDetailsQuery("キャベツ");
+  assert.equal(elements.query.value, "キャベツ");
+  assert.equal(elements["details-query"].value, "キャベツ");
+  assert.match(elements["details-result"].textContent, /検索結果 1件.*キャベツ/);
+  assert.equal(vm.runInContext("page", c), 0);
+  assert.equal(elements.items.children[0].children[1].textContent, "キャベツ");
+  elements.query.value = "共済";
+  c.render();
+  assert.equal(elements["details-query"].value, "共済");
+  assert.equal(elements["details-attention"].textContent, "要確認 1件");
+  elements.from.value = "2026-10";
+  elements.category.value = "経費";
+  elements.sort.value = "amount-desc";
+  elements["review-only"].checked = true;
+  c.setDetailsQuery("");
+  assert.equal(elements.query.value, "");
+  assert.equal(elements["details-query"].value, "");
+  assert.equal(elements.from.value, "2026-10");
+  assert.equal(elements.category.value, "経費");
+  assert.equal(elements.sort.value, "amount-desc");
+  assert.equal(elements["review-only"].checked, true);
+  assert.match(elements["details-result"].textContent, /検索結果 1件/);
+  c.setDetailsQuery("not found");
+  assert.match(elements["details-result"].textContent, /検索結果 0件/);
+  c.clearFilters();
+  assert.equal(elements["details-query"].value, "");
+  assert.match(elements["details-result"].textContent, /検索結果 2件/);
+  vm.runInContext("busy = true", c);
+  c.setDetailsQuery("ignored");
+  assert.equal(elements.query.value, "");
+  const html = read("bank/index.html").split('<details id="details-section"')[1].split("</details>")[0];
+  assert.match(html, /<h2>取引明細<span data-help=/);
+  assert.equal((html.match(/data-help=/g) || []).length, 1);
+  assert.match(html, /id="details-query" type="search"/);
+  assert.match(html, /id="clear-details-query"/);
+  assert.match(read("bank/bank.js"), /el\("details-query"\)\.oninput = .*setDetailsQuery/);
+  assert.match(read("bank/bank.js"), /el\("clear-details-query"\)\.onclick = .*setDetailsQuery\(""\)/);
 });
 test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
   const { c, elements } = screen();

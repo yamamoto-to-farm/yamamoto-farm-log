@@ -262,14 +262,22 @@ function clearFilters() {
   render();
 }
 
+function setDetailsQuery(value) {
+  if (busy) return;
+  el("query").value = value;
+  page = 0;
+  render();
+}
+
 function badge(id, count) {
   el(id).hidden = count === 0;
-  el(id).textContent = `！${count}件`;
+  el(id).textContent = id === "details-attention" ? `要確認 ${count}件` : `！${count}件`;
   el(id).closest("details").classList.toggle("finance-needs-attention", count > 0);
 }
 
 function render() {
   const current = filters(), list = filtered();
+  el("details-query").value = current.query;
   el("filter-error").textContent = current.from && current.to && current.from > current.to ? "開始月は終了月以前にしてください。" : "";
   el("filter-state").textContent = `期間：${current.from || "指定なし"}〜${current.to || "指定なし"} ／ 用途：${current.category || "すべて"} ／ 内訳：${current.subcategory || "すべて"} ／ 入出金：${current.direction === "deposit" ? "入金" : current.direction === "withdrawal" ? "出金" : "すべて"} ／ 検索：${current.query || "なし"}${current.reviewOnly ? " ／ 要確認のみ" : ""}`;
   const allocated = current.from && current.to && current.from > current.to ? [] : filterItems(allocatedItems(items), current);
@@ -419,6 +427,7 @@ function renderCombinedChart(rows) {
 
 function renderItems() {
   const list = sortItems(filtered(), el("sort").value, el("category").value);
+  el("details-result").textContent = `検索結果 ${list.length}件（${el("query").value.trim() ? `検索：${el("query").value.trim()} ／ ` : ""}上の期間・用途などの条件を適用）`;
   page = Math.min(Math.max(0, page), Math.max(0, Math.ceil(list.length / pageSize) - 1));
   el("items").replaceChildren();
   for (const item of list.slice(page * pageSize, (page + 1) * pageSize)) {
@@ -845,6 +854,8 @@ async function initialize() {
   });
   el("annual-year").onchange = renderAnnual;
   el("chart-mode").onchange = render;
+  el("details-query").oninput = () => setDetailsQuery(el("details-query").value);
+  el("clear-details-query").onclick = () => setDetailsQuery("");
   el("details-attention").onclick = event => {
     event.preventDefault();
     event.stopPropagation();

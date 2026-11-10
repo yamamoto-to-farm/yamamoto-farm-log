@@ -95,11 +95,15 @@
         <div class="finance-scroll" tabindex="0" role="region" aria-label="未分類一覧"><table><thead><tr><th>摘要</th><th>入出金</th><th>件数・金額</th><th>整理</th></tr></thead><tbody id="groups"></tbody></table></div>
       </details>
       <details id="details-section" class="card finance-record-panel">
-        <summary><h2>明細・要確認</h2><button id="details-attention" class="finance-attention" type="button" hidden></button></summary>
+        <summary><h2>取引明細<span data-help="取引明細の確認・検索">取引日・摘要・入出金・残高の確認と、分類修正・内訳分割・確認済みの管理ができます。検索は上の「摘要・メモ」と連動し、摘要・メモ・用途・内訳名を対象にします。期間や用途など上の条件も適用されます。「検索解除」は検索文字だけを解除します。自動分類は候補です。分類修正では同じ摘要の明細も選んで変更できます。「保存と同時に確認済みにする」を選ばない場合は再確認になります。</span></h2><button id="details-attention" class="finance-attention" type="button" hidden></button></summary>
+        <div class="finance-toolbar">
+          <label>明細を検索<input id="details-query" type="search" placeholder="相手名・給与・共済など" aria-describedby="details-result"></label>
+          <button id="clear-details-query" class="secondary-btn" type="button">検索解除</button>
+        </div>
+        <p id="details-result" class="finance-note" role="status" aria-live="polite"></p>
         <div class="finance-toolbar"><label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label>並び順<select id="sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option></select></label>
         </div>
-        <p class="finance-note">自動分類は候補です。分類修正では同じ摘要の明細も選んで変更できます。「保存と同時に確認済みにする」を選ばない場合は再確認になります。</p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="口座取引明細"><table><thead><tr><th>取引日</th><th>摘要</th><th>入金</th><th>出金</th><th>取引後残高</th><th>用途・確認</th></tr></thead><tbody id="items"></tbody></table></div>
         <div class="finance-toolbar"><button id="previous" type="button" class="secondary-btn">前へ</button><span id="page-number"></span><button id="next" type="button" class="secondary-btn">次へ</button></div>
       </details>
@@ -155,6 +159,6 @@
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-6"></script>
+  <script type="module" src="./bank.js?v=20261110-7"></script>
 </body>
 </html>
