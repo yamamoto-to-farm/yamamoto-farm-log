@@ -124,9 +124,10 @@
         <h3>まとめて変更する明細</h3>
         <div data-help="まとめて変更する明細の使い方">
           <p>同じ口座・同じ摘要・同じ入出金方向の取り込み済み全期間から表示します（全角・半角と空白の違いは同一扱い）。追加対象は選択してください。ほかの明細のメモは維持します。</p>
-          <p>「摘要に含む文字」を入力すると、同じ口座・入出金方向の未分類から部分一致で探します。手動修正済みは除外します。空欄は同じ摘要の明細を表示します。検索を変えると追加対象の選択は解除されます。「この条件を次回以降の自動分類にも使う」を選ぶと、口座・入出金方向・検索文字・用途をルールとして保存します。次回は確認待ちの分類候補になり、手動修正済み・確認済みは上書きしません。姓だけでも指定できますが、別の相手への一致に注意してください。</p>
+          <p>「摘要に含む文字」を入力すると、同じ口座・入出金方向の未分類から部分一致で探します。通常は手動修正済みを除外します。「分類済み・確認済みも候補に含める」を選ぶと、経費などに分類した取引や手動修正済みも候補に表示します。分割済みは対象外です。追加候補は自動で変更せず、変更する明細にチェックを入れてください。空欄は同じ摘要の明細を表示します。検索や候補範囲を変えると追加対象の選択は解除されます。「この条件を次回以降の自動分類にも使う」を選ぶと、口座・入出金方向・検索文字・用途をルールとして保存します。次回は確認待ちの分類候補になり、手動修正済み・確認済みは上書きしません。姓だけでも指定できますが、別の相手への一致に注意してください。</p>
         </div>
         <label>摘要に含む文字（名前など）<input id="edit-match" type="search" placeholder="例：名前の部分だけ" autocomplete="off"></label>
+        <label><input id="edit-include-classified" type="checkbox">分類済み・確認済みも候補に含める（部分一致検索）</label>
         <p id="edit-match-count" role="status"></p>
         <div id="edit-related-items"></div>
         <label><input id="edit-save-rule" type="checkbox">この条件を次回以降の自動分類にも使う</label>
@@ -158,6 +159,6 @@
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-8"></script>
+  <script type="module" src="./bank.js?v=20261110-9"></script>
 </body>
 </html>

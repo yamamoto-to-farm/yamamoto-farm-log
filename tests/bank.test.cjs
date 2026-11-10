@@ -172,7 +172,7 @@ function screen(deps = {}) {
     close() { this.closed = true; }, showModal() { this.closed = false; } });
   for (const id of ["login-area", "data-area", "page-area", "status", "account", "from", "to", "category", "direction",
     "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf",
-    "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "chart", "chart-detail", "monthly",
+    "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "edit-include-classified", "chart", "chart-detail", "monthly",
     "edit-save-rule", "rule-form", "rules-list", "rule-status", "rule-contains", "rule-category", "rule-direction", "rule-dialog",
     "edit-subcategory", "rule-subcategory", "subcategory", "split-form", "save-split", "split-status", "split-rows",
     "split-item", "split-confirm", "split-total", "split-dialog", "annual", "annual-year", "annual-period",
@@ -398,6 +398,50 @@ test("partial memo search only suggests automatic unclassified in the same accou
     { ...match, account_id: "other" }, { ...match, deposit: 0, withdrawal: 100 }, { ...match, memo: "9-5 別名" }];
   assert.equal(c.relatedItems(rows, base, "　ﾃｽﾄ ").length, 1);
   assert.equal(c.relatedItems(rows, base).length, 0);
+});
+test("opt-in classified partial matches save only selected transactions across months with subcategory and preserved notes", async () => {
+  const { c, elements } = screen();
+  c.base = { ...item({ memo: "10-5 テスト", category: "経費", classified_by: "manual", review_confirmed: true }),
+    account_id: "account-a", statement_id: "a".repeat(64) };
+  c.other = { ...c.base, memo: "9-4 ﾃｽﾄ", statement_id: "d".repeat(64),
+    transaction_id: "c".repeat(64), subcategory: "旧内訳", note: "keep" };
+  c.skipped = { ...c.other, transaction_id: "e".repeat(64), memo: "8-5 テスト" };
+  const matching = [c.base, c.other, c.skipped, { ...c.other, account_id: "other" },
+    { ...c.other, deposit: 0, withdrawal: 100 }, { ...c.other, allocations: [{ category: "経費", subcategory: "", amount: 100 }] }];
+  assert.equal(c.relatedItems(matching, c.base, "テスト").length, 0);
+  assert.equal(c.relatedItems(matching, c.base, "テスト", true).length, 2);
+  vm.runInContext("items = [base, other, skipped]; statements = [{ statement_id: base.statement_id, revision: 'r1' }, { statement_id: other.statement_id, revision: 'r2' }]", c);
+  c.openEdit([c.base]);
+  elements["edit-match"].value = "テスト";
+  c.renderEditRelated();
+  assert.equal(elements["edit-related-items"].children.length, 1);
+  assert.match(elements["edit-match-count"].textContent, /分類済み・確認済みも候補/);
+  elements["edit-include-classified"].checked = true;
+  c.renderEditRelated();
+  assert.equal(elements["edit-related-items"].children.length, 3);
+  assert.match(elements["edit-related-items"].children[1].children[1].textContent, /旧内訳.*手動修正済み.*確認済み/);
+  assert.equal(vm.runInContext("editSelection[1].checkbox.checked", c), false);
+  vm.runInContext("editSelection[1].checkbox.checked = true", c);
+  c.renderEditRelated();
+  assert.equal(vm.runInContext("editSelection[1].checkbox.checked", c), false);
+  vm.runInContext("editSelection[1].checkbox.checked = true", c);
+  elements["edit-category"].value = "経費";
+  elements["edit-subcategory"].value = "雇人費";
+  elements["edit-confirm"].checked = true;
+  c.loadData = async () => {};
+  const requests = [];
+  c.api = async (_path, body) => { requests.push(body); return { saved: true, revision: `new-${requests.length}` }; };
+  await c.saveEdit({ preventDefault() {} });
+  assert.equal(requests.length, 4);
+  assert.deepEqual(requests.map(body => body.transaction_id), [c.base.transaction_id, c.base.transaction_id, c.other.transaction_id, c.other.transaction_id]);
+  assert.equal(requests[0].subcategory, "雇人費");
+  assert.equal(requests[2].subcategory, "雇人費");
+  assert.equal(requests[2].note, "keep");
+  assert.equal(requests[1].review_confirmed, true);
+  assert.equal(requests[3].review_confirmed, true);
+  assert.equal(requests[2].revision, "r2");
+  c.openEdit([c.base]);
+  assert.equal(elements["edit-include-classified"].checked, false);
 });
 test("changing partial search resets extra choices, preserves primary choice, and shows full memo", () => {
   const { c, elements } = screen();

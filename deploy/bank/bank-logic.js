@@ -183,7 +183,7 @@ export function unclassifiedGroups(items) {
   return [...groups.values()].sort((a, b) => b.total - a.total);
 }
 
-export function relatedItems(items, selected, query = "") {
+export function relatedItems(items, selected, query = "", includeClassified = false) {
   const normalize = value => value.normalize("NFKC").replace(/\s+/g, " ").trim();
   const search = normalize(query);
   const memo = normalize(selected.memo);
@@ -191,7 +191,7 @@ export function relatedItems(items, selected, query = "") {
   return sortItems(items.filter(item => item.account_id === selected.account_id
     && !item.allocations?.length
     && (item.deposit > 0) === (selected.deposit > 0)
-    && (search ? item.category === "未分類" && item.classified_by !== "manual" && normalize(item.memo).includes(search)
+    && (search ? (includeClassified || item.category === "未分類" && item.classified_by !== "manual") && normalize(item.memo).includes(search)
       : normalize(item.memo) === memo)
     && !(item.statement_id === selected.statement_id && item.transaction_id === selected.transaction_id)), "date-desc");
 }

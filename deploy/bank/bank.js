@@ -7,7 +7,7 @@ import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
   unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
-  statementCoverage, balanceTrend, unclassifiedSummary } from "./bank-logic.js?v=20261110-4";
+  statementCoverage, balanceTrend, unclassifiedSummary } from "./bank-logic.js?v=20261110-9";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -604,6 +604,7 @@ function openEdit(selected) {
   el("edit-related").hidden = selected.length !== 1;
   editPrimary = selected.length === 1 ? selected[0] : null;
   el("edit-match").value = "";
+  el("edit-include-classified").checked = false;
   renderEditRelated();
   updateButtons();
   el("edit-dialog").showModal();
@@ -615,13 +616,13 @@ function renderEditRelated() {
   editSelection = [];
   el("edit-related-items").replaceChildren();
   if (editPrimary) {
-    const related = relatedItems(items, editPrimary, el("edit-match").value);
-    el("edit-match-count").textContent = `追加候補：${related.length}件（追加対象は未選択です）`;
+    const related = relatedItems(items, editPrimary, el("edit-match").value, el("edit-include-classified").checked);
+    el("edit-match-count").textContent = `追加候補：${related.length}件（追加対象は未選択です）。${el("edit-match").value.trim() && !el("edit-include-classified").checked ? "分類済み・手動修正済みを探す場合は「分類済み・確認済みも候補に含める」を選んでください。" : "変更する明細にチェックを入れてください。"}分割済みは対象外です。`;
     for (const item of [editPrimary, ...related]) {
       const label = node("label", undefined, "bank-edit-choice"), checkbox = node("input");
       checkbox.type = "checkbox";
       checkbox.checked = item === editPrimary && primaryChecked;
-      label.append(checkbox, node("span", `${item.trade_date} / ${item.memo || "摘要なし"} / ${item.deposit ? "入金" : "出金"} ${formatYen(item.deposit + item.withdrawal)} / ${item.category}${item.classified_by === "manual" ? "・手動修正済み" : ""}${item.review_confirmed ? "・確認済み" : ""}`));
+      label.append(checkbox, node("span", `${item.trade_date} / ${item.memo || "摘要なし"} / ${item.deposit ? "入金" : "出金"} ${formatYen(item.deposit + item.withdrawal)} / ${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""}${item.classified_by === "manual" ? "・手動修正済み" : ""}${item.review_confirmed ? "・確認済み" : ""}`));
       el("edit-related-items").append(label);
       editSelection.push({ item, checkbox });
     }
@@ -909,6 +910,7 @@ async function initialize() {
   el("cancel-rule").onclick = () => el("rule-dialog").close();
   el("rule-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   el("edit-match").oninput = renderEditRelated;
+  el("edit-include-classified").onchange = renderEditRelated;
   el("cancel-edit").onclick = () => el("edit-dialog").close();
   el("edit-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   el("close-report").onclick = () => el("report-dialog").close();
