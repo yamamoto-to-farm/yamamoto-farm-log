@@ -278,8 +278,7 @@ function render() {
   const accountItems = items.filter(item => item.account_id === current.account);
   const accountRecords = statements.filter(record => record.account_id === current.account).sort((a, b) => b.month.localeCompare(a.month));
   renderAccountOverview(accountItems, accountRecords, current.account);
-  renderMonthly(monthlyTotals(allocated, statements, current));
-  renderBalance(balanceTrend(statements, current));
+  renderMonthly(monthlyTotals(allocated, statements, current), balanceTrend(statements, current));
   const groups = unclassifiedGroups(list);
   el("groups").replaceChildren();
   for (const group of groups) {
@@ -316,25 +315,8 @@ function selectMonth(month) {
   el("details-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function renderMonthly(rows) {
+function renderMonthly(rows, trend = rows.map(row => ({ month: row.month, balance: row.closing }))) {
   el("monthly").replaceChildren();
-  el("chart").replaceChildren();
-  el("chart-detail").textContent = "棒にマウスを合わせるか、月にフォーカスすると金額を表示します。";
-  const { maximum, ticks } = chartScale(rows.flatMap(row =>
-    [row.deposit, row.withdrawal].map(amount => ({ categories: { amount } }))));
-  const axis = node("div", undefined, "finance-axis"), plot = node("div", undefined, "finance-plot");
-  const grid = node("div", undefined, "finance-grid"), columns = node("div", undefined, "finance-columns");
-  axis.setAttribute("aria-hidden", "true");
-  grid.setAttribute("aria-hidden", "true");
-  for (const tick of ticks) {
-    const position = `${(1 - tick / maximum) * 100}%`;
-    const label = node("span", tick >= 10000 ? `${tick / 10000}万円` : formatYen(tick));
-    label.style.top = position;
-    axis.append(label);
-    const line = node("div", undefined, "finance-gridline");
-    line.style.top = position;
-    grid.append(line);
-  }
   for (const row of rows) {
     const tr = node("tr"), month = node("button", row.month, "secondary-btn"), cell = node("td");
     month.type = "button";
@@ -343,34 +325,27 @@ function renderMonthly(rows) {
     cell.append(month);
     tr.append(cell, ...[row.deposit, row.withdrawal, row.net, row.opening, row.closing].map(amount => node("td", amount === null ? "—" : formatYen(amount))));
     el("monthly").append(tr);
-    const button = node("button", undefined, "finance-column bank-month");
-    button.type = "button";
-    button.disabled = busy;
-    button.setAttribute("aria-label", `${row.month} 入金${formatYen(row.deposit)} 出金${formatYen(row.withdrawal)}。明細を開く`);
-    const description = `${row.month} ／ 入金：${formatYen(row.deposit)} ／ 出金：${formatYen(row.withdrawal)}`;
-    button.title = description;
-    button.onmouseenter = button.onfocus = () => { el("chart-detail").textContent = description; };
-    const bars = node("span", undefined, "bank-bars");
-    for (const direction of ["deposit", "withdrawal"]) {
-      const bar = node("span", undefined, `bank-bar bank-${direction}`);
-      bar.style.height = `${row[direction] / maximum * 100}%`;
-      bar.title = `${direction === "deposit" ? "入金" : "出金"}：${formatYen(row[direction])}`;
-      bars.append(bar);
-    }
-    button.append(node("span", ""), bars, node("span", row.month));
-    button.onclick = () => selectMonth(row.month);
-    columns.append(button);
   }
-  plot.append(grid, columns);
-  if (rows.length) el("chart").append(axis, plot);
-  else el("chart").append(node("p", "対象の明細がありません。"));
   emptyTable("monthly", rows.length, 6);
+  const amounts = new Map(rows.map(row => [row.month, row]));
+  renderCombinedChart(trend.map(row => ({ ...row, deposit: amounts.get(row.month)?.deposit ?? 0,
+    withdrawal: amounts.get(row.month)?.withdrawal ?? 0 })));
 }
 
-function renderBalance(rows) {
-  const area = el("balance-chart");
+function renderCombinedChart(rows) {
+  const area = el("chart");
+  const mode = el("chart-mode").value || "combined";
+  const showBars = mode !== "balance", showBalance = mode !== "cashflow";
+  const graphLabel = mode === "cashflow" ? "月別入出金の推移" : mode === "balance"
+    ? "月末残高の推移（口座全体）" : "月別入出金・月末残高の推移（共通の金額軸）";
+  el("chart-legend").textContent = [
+    ...(showBars ? ["緑の棒：入金", "青の棒：出金"] : []),
+    ...(showBalance ? ["紫の線：月末残高（口座全体）"] : []),
+  ].join(" ／ ");
+  area.setAttribute("aria-label", graphLabel);
+  el("balance-minimum").hidden = !showBalance;
   area.replaceChildren();
-  el("balance-detail").textContent = "点にマウスを合わせるかフォーカスすると月末残高を表示します。";
+  el("chart-detail").textContent = "棒・点にマウスを合わせるかフォーカスすると、その月の入金・出金・月末残高を表示します。";
   const available = rows.filter(row => row.balance !== null);
   if (!available.length) {
     area.append(node("p", "対象期間に取り込み済みの残高がありません。"));
@@ -379,11 +354,14 @@ function renderBalance(rows) {
   }
   const minimum = Math.min(...available.map(row => row.balance));
   el("balance-minimum").textContent = `期間内の最低月末残高：${formatYen(minimum)}（${available.filter(row => row.balance === minimum).map(row => row.month).join("、")}）。月途中の最低残高ではありません。`;
-  const scale = chartScale(available.map(row => ({ categories: { amount: Math.abs(row.balance) } })));
-  const lower = minimum < 0 ? -scale.maximum : 0;
-  const upper = Math.max(...available.map(row => row.balance)) > 0 ? scale.maximum : lower < 0 ? 0 : scale.maximum;
-  const width = Math.max(420, rows.length * 90 + 100), left = 85, right = width - 35, top = 25, bottom = 205;
-  const x = index => rows.length === 1 ? (left + right) / 2 : left + index / (rows.length - 1) * (right - left);
+  const scale = chartScale(rows.flatMap(row => [...(showBars ? [row.deposit, row.withdrawal] : []),
+    ...(showBalance ? [Math.abs(row.balance ?? 0)] : [])]
+    .map(amount => ({ categories: { amount } }))));
+  const lower = showBalance && minimum < 0 ? -scale.maximum : 0;
+  const upper = scale.maximum;
+  const width = Math.max(420, rows.length * 90 + 130), left = 85, right = width - 20, top = 25, bottom = 205;
+  const slot = (right - left) / rows.length;
+  const x = index => left + (index + 0.5) * slot;
   const y = balance => top + (upper - balance) / (upper - lower) * (bottom - top);
   const svgNode = (tag, attributes, text) => {
     const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -392,13 +370,26 @@ function renderBalance(rows) {
     return element;
   };
   const svg = svgNode("svg", { viewBox: `0 0 ${width} 255`, width, height: 255, class: "bank-balance-svg",
-    role: "group", "aria-label": "月末残高の推移", "aria-describedby": "balance-detail" });
+    role: "group", "aria-label": graphLabel, "aria-describedby": "chart-detail" });
   const ticks = [...new Set([...(lower < 0 ? scale.ticks.map(value => -value) : []), ...(upper > 0 ? scale.ticks : [0])])].sort((a, b) => a - b);
   for (const tick of ticks) {
     svg.append(svgNode("line", { x1: left, x2: right, y1: y(tick), y2: y(tick), class: "bank-balance-grid", "aria-hidden": "true" }),
       svgNode("text", { x: left - 8, y: y(tick) + 4, "text-anchor": "end", class: "bank-balance-label", "aria-hidden": "true" },
         Math.abs(tick) >= 10000 ? `${tick / 10000}万円` : formatYen(tick)));
   }
+  const bars = svgNode("g", {}), lines = svgNode("g", {}), points = svgNode("g", {});
+  svg.append(bars, lines, points);
+  const interactive = (element, description, month) => {
+    element.setAttribute("tabindex", 0);
+    element.setAttribute("role", "button");
+    element.setAttribute("aria-label", `${description}。明細を開く`);
+    element.append(svgNode("title", {}, description));
+    element.onmouseenter = element.onfocus = () => { el("chart-detail").textContent = description; };
+    element.onclick = () => selectMonth(month);
+    element.onkeydown = event => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMonth(month); }
+    };
+  };
   let previous = null;
   for (const [index, row] of rows.entries()) {
     svg.append(svgNode("text", { x: x(index), y: 235, "text-anchor": "middle", class: "bank-balance-label", "aria-hidden": "true" }, row.month));
@@ -407,18 +398,20 @@ function renderBalance(rows) {
       previous = null;
       continue;
     }
-    if (previous !== null) svg.append(svgNode("line", { x1: x(previous.index), y1: y(previous.balance),
+    const description = `${row.month} ／ 入金：${formatYen(row.deposit)} ／ 出金：${formatYen(row.withdrawal)} ／ 月末残高（口座全体）：${formatYen(row.balance)}`;
+    for (const [offset, direction] of (showBars ? ["deposit", "withdrawal"] : []).entries()) {
+      const bar = svgNode("rect", { x: x(index) + (offset - 1) * 24, y: y(row[direction]),
+        width: 22, height: y(0) - y(row[direction]), class: `bank-combined-bar bank-${direction}` });
+      interactive(bar, description, row.month);
+      bars.append(bar);
+    }
+    if (showBalance && previous !== null) lines.append(svgNode("line", { x1: x(previous.index), y1: y(previous.balance),
       x2: x(index), y2: y(row.balance), class: "bank-balance-line", "aria-hidden": "true" }));
-    const description = `${row.month} 月末残高：${formatYen(row.balance)}`;
-    const point = svgNode("circle", { cx: x(index), cy: y(row.balance), r: 7, class: "bank-balance-point",
-      tabindex: 0, role: "button", "aria-label": `${description}。明細を開く` });
-    point.append(svgNode("title", {}, description));
-    point.onmouseenter = point.onfocus = () => { el("balance-detail").textContent = description; };
-    point.onclick = () => selectMonth(row.month);
-    point.onkeydown = event => {
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMonth(row.month); }
-    };
-    svg.append(point);
+    if (showBalance) {
+      const point = svgNode("circle", { cx: x(index), cy: y(row.balance), r: 7, class: "bank-balance-point" });
+      interactive(point, description, row.month);
+      points.append(point);
+    }
     previous = { index, balance: row.balance };
   }
   area.append(svg);
@@ -851,6 +844,7 @@ async function initialize() {
     };
   });
   el("annual-year").onchange = renderAnnual;
+  el("chart-mode").onchange = render;
   el("details-attention").onclick = event => {
     event.preventDefault();
     event.stopPropagation();

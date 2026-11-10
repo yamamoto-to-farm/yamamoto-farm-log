@@ -176,7 +176,7 @@ function screen(deps = {}) {
     "edit-subcategory", "rule-subcategory", "subcategory", "split-form", "save-split", "split-status", "split-rows",
     "split-item", "split-confirm", "split-total", "split-dialog", "annual", "annual-year", "annual-period",
     "annual-coverage", "annual-comparison", "coverage", "coverage-gaps", "overview", "unclassified-summary",
-    "balance-chart", "balance-minimum", "balance-detail", "sort", "details-section", "filter-error", "filter-state",
+    "balance-minimum", "chart-mode", "chart-legend", "sort", "details-section", "filter-error", "filter-state",
     "summary", "groups", "groups-attention", "details-attention", "items", "page-number"]) {
     elements[id] = element();
   }
@@ -190,20 +190,22 @@ function screen(deps = {}) {
   vm.runInContext(strip(read("bank/bank.js")).replace(/initialize\(\)\.catch[\s\S]*$/, ""), c);
   return { c, elements };
 }
-test("balance SVG breaks lines over missing months, exposes amounts and supports keyboard drilldown", () => {
+test("combined SVG breaks lines over missing months, exposes all amounts and supports keyboard drilldown", () => {
   const { c, elements } = screen();
-  c.renderBalance([{ month: "2026-01", balance: 500 }, { month: "2026-02", balance: null },
-    { month: "2026-03", balance: -100 }, { month: "2026-04", balance: 0 }]);
-  const svg = elements["balance-chart"].children[0];
-  assert.equal(svg.children.filter(child => child.class === "bank-balance-line").length, 1);
-  const points = svg.children.filter(child => child.tagName === "circle");
+  c.renderCombinedChart([{ month: "2026-01", balance: 500, deposit: 200, withdrawal: 100 }, { month: "2026-02", balance: null, deposit: 0, withdrawal: 0 },
+    { month: "2026-03", balance: -100, deposit: 10, withdrawal: 20 }, { month: "2026-04", balance: 0, deposit: 0, withdrawal: 0 }]);
+  const svg = elements.chart.children[0];
+  const groups = svg.children.filter(child => child.tagName === "g");
+  assert.equal(groups[1].children.length, 1);
+  assert.equal(groups[0].children.length, 6);
+  const points = groups[2].children;
   assert.equal(points.length, 3);
   assert.ok(points.every(point => Number.isFinite(Number(point.cy)) && Number(point.cy) >= 25 && Number(point.cy) <= 205));
   assert.match(elements["balance-minimum"].textContent, /-100.*2026-03/);
   points[1].onmouseenter();
-  assert.match(elements["balance-detail"].textContent, /2026-03.*-100/);
+  assert.match(elements["chart-detail"].textContent, /2026-03.*10円.*20円.*-100/);
   points[2].onfocus();
-  assert.match(elements["balance-detail"].textContent, /2026-04.*0円/);
+  assert.match(elements["chart-detail"].textContent, /2026-04.*0円/);
   c.selectMonth = month => { c.selectedMonth = month; };
   let prevented = false;
   for (const key of ["Enter", " "]) {
@@ -212,13 +214,59 @@ test("balance SVG breaks lines over missing months, exposes amounts and supports
     assert.equal(prevented, true);
   }
   for (const balance of [0, -100, 100]) {
-    c.renderBalance([{ month: "2026-01", balance }]);
-    const point = elements["balance-chart"].children[0].children.find(child => child.tagName === "circle");
+    c.renderCombinedChart([{ month: "2026-01", balance, deposit: 0, withdrawal: 0 }]);
+    const point = elements.chart.children[0].children.filter(child => child.tagName === "g")[2].children[0];
     assert.ok(Number.isFinite(Number(point.cy)));
   }
-  c.renderBalance([]);
-  assert.match(elements["balance-chart"].children[0].textContent, /ありません/);
+  c.renderCombinedChart([]);
+  assert.match(elements.chart.children[0].textContent, /ありません/);
   assert.match(elements["balance-minimum"].textContent, /データなし/);
+});
+test("chart modes switch visible series, legend and scale without changing monthly data", () => {
+  const { c, elements } = screen();
+  const rows = [{ month: "2026-01", deposit: 150000, withdrawal: 100000, net: 50000, opening: 0, closing: 300000 },
+    { month: "2026-02", deposit: 0, withdrawal: 100000, net: -100000, opening: 300000, closing: 200000 }];
+  const groups = () => elements.chart.children[0].children.filter(child => child.tagName === "g");
+  c.renderMonthly(rows);
+  assert.equal(groups()[0].children.length, 4);
+  assert.equal(groups()[1].children.length, 1);
+  assert.equal(groups()[2].children.length, 2);
+  assert.equal(Number(groups()[0].children[0].height), 90);
+  elements["chart-mode"].value = "cashflow";
+  c.renderMonthly(rows);
+  assert.equal(groups()[0].children.length, 4);
+  assert.equal(groups()[1].children.length, 0);
+  assert.equal(groups()[2].children.length, 0);
+  assert.equal(Number(groups()[0].children[0].height), 180);
+  assert.doesNotMatch(elements["chart-legend"].textContent, /紫/);
+  assert.equal(elements["balance-minimum"].hidden, true);
+  assert.match(elements.chart["aria-label"], /入出金/);
+  groups()[0].children[0].onfocus();
+  assert.match(elements["chart-detail"].textContent, /150,000.*100,000.*300,000/);
+  elements["chart-mode"].value = "balance";
+  c.renderMonthly(rows);
+  assert.equal(groups()[0].children.length, 0);
+  assert.equal(groups()[1].children.length, 1);
+  assert.equal(groups()[2].children.length, 2);
+  assert.equal(Number(groups()[2].children[0].cy), 25);
+  assert.doesNotMatch(elements["chart-legend"].textContent, /棒/);
+  assert.equal(elements["balance-minimum"].hidden, false);
+  elements["chart-mode"].value = "combined";
+  c.renderMonthly(rows);
+  assert.equal(groups()[0].children.length, 4);
+  assert.equal(groups()[2].children.length, 2);
+  assert.equal(elements.monthly.children.length, 2);
+  elements["chart-mode"].value = "cashflow";
+  c.renderMonthly([{ ...rows[0], closing: -300000 }]);
+  assert.equal(Number(groups()[0].children[0].height), 180);
+  elements["chart-mode"].value = "balance";
+  c.renderMonthly([{ ...rows[0], closing: 10000 }]);
+  assert.equal(Number(groups()[2].children[0].cy), 25);
+  c.renderMonthly([]);
+  assert.match(elements.chart.children[0].textContent, /ありません/);
+  const html = read("bank/index.html");
+  assert.match(html, /id="chart-mode"[\s\S]*value="combined" selected[\s\S]*value="cashflow"[\s\S]*value="balance"/);
+  assert.match(read("bank/bank.js"), /el\("chart-mode"\)\.onchange = render/);
 });
 test("overview shows imported dates, missing months and unclassified amounts; card opens all-period unclassified list", () => {
   const { c, elements } = screen();
@@ -231,6 +279,12 @@ test("overview shows imported dates, missing months and unclassified amounts; ca
   assert.match(elements["coverage-gaps"].textContent, /2026-09/);
   assert.equal(elements["unclassified-summary"].children[0].children[0].textContent, "1件");
   assert.equal(elements["unclassified-summary"].children[1].children[0].textContent, "100円");
+  elements.query.value = "no match";
+  c.render();
+  const chartGroups = elements.chart.children[0].children.filter(child => child.tagName === "g");
+  assert.ok(chartGroups[0].children.every(bar => Number(bar.height) === 0));
+  assert.equal(chartGroups[2].children.length, 2);
+  assert.ok(chartGroups[2].children.every(point => point["aria-label"].includes("1,100円")));
   elements.from.value = "2026-11";
   elements.query.value = "no match";
   elements["review-only"].checked = true;
@@ -288,21 +342,27 @@ test("changing partial search resets extra choices, preserves primary choice, an
   c.renderEditRelated();
   assert.equal(elements["edit-related-items"].children.length, 2);
 });
-test("monthly chart shares finance scale, aligns bar heights, exposes hover and focus amounts and empty state", () => {
+test("monthly chart overlays bars and balance on one finance scale and exposes all monthly amounts", () => {
   const { c, elements } = screen();
   const rows = [{ month: "2026-01", deposit: 150000, withdrawal: 100000, net: 50000, opening: 0, closing: 50000 }];
   c.renderMonthly(rows);
-  const [axis, plot] = elements.chart.children;
-  assert.equal(axis.children.length, 4);
-  assert.equal(plot.children[0].children.length, 4);
-  const button = plot.children[1].children[0];
-  assert.equal(button.children[1].children[0].style.height, "100%");
-  assert.equal(button.children[1].children[1].style.height, `${100000 / 150000 * 100}%`);
-  assert.match(button.children[1].children[0].title, /150,000/);
-  button.onmouseenter();
-  assert.match(elements["chart-detail"].textContent, /150,000.*100,000/);
-  button.onfocus();
+  const svg = elements.chart.children[0];
+  assert.equal(svg.children.filter(child => child.class === "bank-balance-grid").length, 4);
+  const groups = svg.children.filter(child => child.tagName === "g");
+  const [incoming, outgoing] = groups[0].children;
+  assert.equal(Number(incoming.height), 180);
+  assert.equal(Number(outgoing.height), 120);
+  assert.equal(Number(groups[2].children[0].cy), 145);
+  assert.equal(Number(incoming.x) + 24, Number(groups[2].children[0].cx));
+  incoming.onmouseenter();
+  assert.match(elements["chart-detail"].textContent, /150,000.*100,000.*50,000/);
+  outgoing.onfocus();
   assert.match(elements["chart-detail"].textContent, /2026-01/);
+  c.renderMonthly(rows, [{ month: "2026-01", balance: 300000 }]);
+  const scaled = elements.chart.children[0].children.filter(child => child.tagName === "g");
+  assert.equal(Number(scaled[0].children[0].height), 90);
+  assert.equal(Number(scaled[2].children[0].cy), 25);
+  assert.equal(elements.monthly.children[0].children[5].textContent, "50,000円");
   c.renderMonthly([]);
   assert.match(elements.chart.children[0].textContent, /ありません/);
 });
@@ -443,11 +503,22 @@ test("upload timeout remains pending, not a success-shaped fallback", async () =
 });
 test("monthly graph explanations share one help source while hover amounts remain visible", () => {
   const html = read("bank/index.html");
-  assert.match(html, /<div data-help="入出金グラフの見方">[\s\S]*?残高は絞り込みに関係なく口座全体[\s\S]*?緑：入金 ／ 青：出金[\s\S]*?<\/div>/);
+  assert.match(html, /<div data-help="入出金グラフの見方">[\s\S]*?残高は絞り込みに関係なく口座全体[\s\S]*?共通の金額軸[\s\S]*?<\/div>/);
+  assert.match(html, /緑の棒：入金 ／ 青の棒：出金 ／ 紫の線：月末残高/);
+  assert.doesNotMatch(html, /id="balance-chart"|id="balance-detail"/);
   const between = html.split('<div id="summary"')[1].split('<div id="chart"')[0];
   assert.equal((between.match(/data-help=/g) || []).length, 1);
   assert.doesNotMatch(between, /class="finance-note"/);
   assert.match(html, /id="chart-detail" class="finance-note" aria-live="polite"/);
+});
+test("account overview help is a single source immediately after the heading, not below summary cards", () => {
+  const section = read("bank/index.html").split('<div id="data-area" hidden>')[1].split("</section>")[0];
+  assert.match(section, /<h2>口座の確認<\/h2>\s*<div data-help="口座の確認・集計について">/);
+  assert.equal((section.match(/data-help=/g) || []).length, 1);
+  const help = section.split('<div data-help=')[1].split("</div>")[0];
+  assert.match(help, /月初残高[\s\S]*JA請求書[\s\S]*未分類の件数・金額[\s\S]*未分類部分[\s\S]*元の取引全額/);
+  assert.doesNotMatch(help, /class="finance-note"|id="overview"|id="unclassified-summary"/);
+  assert.ok(section.indexOf('data-help=') < section.indexOf('id="account"'));
 });
 test("monthly table is collapsed by default without hiding the graph or changing its table body", () => {
   const html = read("bank/index.html");

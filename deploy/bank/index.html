@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261110-4">
+  <link rel="stylesheet" href="./bank.css?v=20261110-5">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -23,6 +23,12 @@
     <div id="data-area" hidden>
       <section class="card">
         <h2>口座の確認</h2>
+        <div data-help="口座の確認・集計について">
+          <h3>口座明細の集計</h3>
+          <p>月初残高は最初の入出金・取引後残高から逆算します。月末残高は最後の取引後残高です。借入・元本返済・現金移動・カード決済なども含むため、入金＝売上、出金＝経費とは限りません。JA請求書・販売精算との照合は未実装で、これらを合算しません。</p>
+          <h3>未分類の件数・金額</h3>
+          <p>選択口座の全取り込み期間が対象です。分類済みで確認待ちの明細は含めません。分割内訳は未分類部分の金額だけを集計し、件数は元の取引ごとに1件と数えます。押すと期間・検索条件を解除し、未分類金額の大きい順に明細を開きます。明細の入出金欄は元の取引全額です。</p>
+        </div>
         <div class="finance-toolbar">
           <label>口座<select id="account"></select></label>
           <button id="refresh" class="secondary-btn" type="button">最新データに更新</button>
@@ -31,11 +37,9 @@
         <p id="coverage" class="finance-note"></p><p id="coverage-gaps" class="finance-note"></p>
         <div id="overview" class="finance-summary"></div><p id="updated-at" class="finance-note"></p>
         <div id="unclassified-summary" class="finance-summary"></div>
-        <p data-help="未分類の金額について">選択口座の全取り込み期間が対象です。分類済みで確認待ちの明細は含めません。分割内訳は未分類部分の金額だけを集計し、件数は元の取引ごとに1件と数えます。押すと期間・検索条件を解除し、未分類金額の大きい順に明細を開きます。明細の入出金欄は元の取引全額です。</p>
-        <p data-help="口座明細の集計について">月初残高は最初の入出金・取引後残高から逆算します。月末残高は最後の取引後残高です。借入・元本返済・現金移動・カード決済なども含むため、入金＝売上、出金＝経費とは限りません。JA請求書・販売精算との照合は未実装で、これらを合算しません。</p>
       </section>
       <section class="card">
-        <h2>入出金の推移</h2>
+        <h2>入出金・残高の推移</h2>
         <div class="finance-toolbar" role="group" aria-label="期間の簡単選択">
           <button data-period="month" class="secondary-btn" type="button">今月</button>
           <button data-period="previous-month" class="secondary-btn" type="button">先月</button>
@@ -55,15 +59,17 @@
         <div id="summary" class="finance-summary"></div>
         <div data-help="入出金グラフの見方">
           <p>入出金と明細は上の条件内。内訳分割がある場合、条件内金額・グラフは一致した内訳の金額、取引明細は元の取引全額を表示します。残高は絞り込みに関係なく口座全体です。月を押すと明細を開きます。分類は資金の用途を見える化するためのもので、税務申告用の勘定科目・損益ではありません。</p>
-          <p>緑：入金 ／ 青：出金</p>
+          <p>表示を「重ねて表示／入出金のみ／残高のみ」から選べます。表示中のデータに合わせて金額軸を調整し、重ねて表示では棒と線は共通の金額軸です。開始月・終了月は残高にも適用しますが、用途・内訳・入出金・検索・確認状態の条件は残高に適用しません。未取り込み月は線をつながず、残高を推測しません。</p>
         </div>
-        <div id="chart" class="finance-chart" role="group" aria-label="月別入出金グラフ" aria-describedby="chart-detail"></div>
+        <div class="finance-toolbar"><label>グラフ表示<select id="chart-mode">
+          <option value="combined" selected>重ねて表示</option>
+          <option value="cashflow">入出金のみ</option>
+          <option value="balance">残高のみ</option>
+        </select></label></div>
+        <p id="chart-legend" class="bank-chart-legend">緑の棒：入金 ／ 青の棒：出金 ／ 紫の線：月末残高（口座全体）</p>
+        <div id="chart" class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金・月末残高グラフ" aria-describedby="chart-detail"></div>
         <p id="chart-detail" class="finance-note" aria-live="polite"></p>
-        <h3>月末残高の推移</h3>
-        <p class="finance-note" data-help-keep>上の開始月・終了月に対応した口座全体の残高です。用途・内訳・入出金・検索・確認状態による絞り込みには影響されません。未取り込み月は線をつながず、残高を推測しません。</p>
         <p id="balance-minimum" class="finance-note"></p>
-        <div id="balance-chart" class="finance-scroll" tabindex="0" role="region" aria-label="月末残高グラフ"></div>
-        <p id="balance-detail" class="finance-note" aria-live="polite"></p>
         <details id="monthly-details">
           <summary>月別の入出金・残高一覧</summary>
           <div class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金">
@@ -149,6 +155,6 @@
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-4"></script>
+  <script type="module" src="./bank.js?v=20261110-6"></script>
 </body>
 </html>

@@ -1,8 +1,7 @@
-.bank-bars { height: 200px; display: flex; gap: 5px; align-items: end; justify-content: center; }
-.bank-bar { display: block; width: 24px; }
-.bank-deposit { background: #398651; }
-.bank-withdrawal { background: #3279af; }
-.bank-month:focus-visible { outline: 2px solid #398651; }
+.bank-deposit { fill: #398651; }
+.bank-withdrawal { fill: #3279af; }
+.bank-combined-bar { cursor: pointer; }
+.bank-combined-bar:hover, .bank-combined-bar:focus { stroke: #1d3545; stroke-width: 2; outline: none; }
 .bank-donut { width: 190px; max-width: 100%; height: auto; }
 .bank-annual-part { flex: 1 1 300px; min-width: 0; }
 .bank-annual-part h3 { margin-bottom: 12px; }
@@ -22,6 +21,6 @@
 .bank-balance-svg { display: block; min-width: 100%; }
 .bank-balance-grid { stroke: #dce4e8; stroke-width: 1; }
 .bank-balance-label { fill: #465774; font-size: 12px; }
-.bank-balance-line { stroke: #9360b2; stroke-width: 3; }
+.bank-balance-line { stroke: #9360b2; stroke-width: 3; pointer-events: none; }
 .bank-balance-point { fill: #9360b2; stroke: white; stroke-width: 2; cursor: pointer; }
 .bank-balance-point:hover, .bank-balance-point:focus { fill: #58277b; stroke: #58277b; outline: none; }
