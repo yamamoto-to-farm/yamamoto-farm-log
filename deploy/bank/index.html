@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261110-5">
+  <link rel="stylesheet" href="./bank.css?v=20261110-8">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -118,7 +118,7 @@
     <dialog id="edit-dialog" aria-labelledby="edit-title"><form id="edit-form">
       <h2 id="edit-title">用途の分類修正</h2><p id="edit-item"></p>
       <label>用途<select id="edit-category" required></select></label>
-      <label>内訳（候補から選択・自由入力可）<input id="edit-subcategory" list="subcategory-suggestions" maxlength="80"></label>
+      <label>内訳（候補から選択・自由入力可）<input id="edit-subcategory" maxlength="80" autocomplete="off"></label>
       <label>確認用メモ<input id="edit-note" maxlength="300"></label>
       <section id="edit-related" hidden>
         <h3>まとめて変更する明細</h3>
@@ -139,11 +139,10 @@
       <label>摘要に含む文字<input id="rule-contains" required maxlength="100"></label>
       <label>入出金<select id="rule-direction"><option value="deposit">入金</option><option value="withdrawal">出金</option></select></label>
       <label>用途<select id="rule-category" required></select></label>
-      <label>内訳（候補から選択・自由入力可）<input id="rule-subcategory" list="subcategory-suggestions" maxlength="80"></label>
+      <label>内訳（候補から選択・自由入力可）<input id="rule-subcategory" maxlength="80" autocomplete="off"></label>
       <p id="rule-status" role="alert"></p>
       <div class="finance-toolbar"><button type="submit" class="primary-btn">保存</button><button id="cancel-rule" type="button" class="secondary-btn">キャンセル</button></div>
     </form></dialog>
-    <datalist id="subcategory-suggestions"></datalist>
     <dialog id="split-dialog" aria-labelledby="split-title"><form id="split-form">
       <h2 id="split-title">内訳・分割</h2><p id="split-item"></p>
       <div data-help="内訳・分割の使い方">
@@ -159,6 +158,6 @@
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-7"></script>
+  <script type="module" src="./bank.js?v=20261110-8"></script>
 </body>
 </html>

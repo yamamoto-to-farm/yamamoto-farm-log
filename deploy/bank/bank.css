@@ -24,3 +24,10 @@
 .bank-balance-line { stroke: #9360b2; stroke-width: 3; pointer-events: none; }
 .bank-balance-point { fill: #9360b2; stroke: white; stroke-width: 2; cursor: pointer; }
 .bank-balance-point:hover, .bank-balance-point:focus { fill: #58277b; stroke: #58277b; outline: none; }
+.bank-subcategory-field input { width: 100%; }
+.bank-subcategory-choices { width: 100%; margin: 8px 0 16px; }
+.bank-subcategory-choices summary { cursor: pointer; font-size: 16px; padding: 8px 0; }
+.bank-subcategory-list { max-height: 340px; overflow-y: auto; border: 1px solid #aebac4; border-radius: 8px; padding: 8px; background: #f7faf6; }
+.bank-subcategory-list h4 { margin: 8px 4px; color: #536574; font-size: 14px; }
+.bank-subcategory-list button { display: block; width: 100%; text-align: left; padding: 10px 12px; min-height: 44px; font-size: 16px; line-height: 1.5; border: 0; border-radius: 4px; background: transparent; color: inherit; overflow-wrap: anywhere; cursor: pointer; }
+.bank-subcategory-list button:hover, .bank-subcategory-list button:focus-visible { background: #dceee6; outline: 2px solid #398651; outline-offset: -2px; }

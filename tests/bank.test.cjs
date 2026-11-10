@@ -166,6 +166,7 @@ function screen(deps = {}) {
   const element = () => ({ value: "", checked: false, textContent: "", children: [], style: {},
     querySelectorAll: () => [], classList: { toggle() {}, add() {} }, setAttribute(key, value) { this[key] = value; },
     closest() { return this; }, scrollIntoView() { this.scrolled = true; },
+    focus() { this.focused = true; },
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
     close() { this.closed = true; }, showModal() { this.closed = false; } });
@@ -342,6 +343,38 @@ test("detail search syncs both directions, resets paging and clears only search 
   assert.match(html, /id="clear-details-query"/);
   assert.match(read("bank/bank.js"), /el\("details-query"\)\.oninput = .*setDetailsQuery/);
   assert.match(read("bank/bank.js"), /el\("clear-details-query"\)\.onclick = .*setDetailsQuery\(""\)/);
+});
+test("subcategory candidates use a shared large panel and preserve editable values and disabled guards", () => {
+  const { c, elements } = screen();
+  const input = elements["edit-subcategory"];
+  const panel = c.subcategoryChoices(input);
+  assert.equal(panel.tagName, "details");
+  assert.equal(panel.className, "bank-subcategory-choices");
+  const list = panel.children[1];
+  assert.equal(list.className, "bank-subcategory-list");
+  const candidate = list.children.find(child => child.tagName === "button" && child.textContent === "保険・共済掛金");
+  assert.equal(candidate.type, "button");
+  panel.open = true;
+  candidate.onclick();
+  assert.equal(input.value, "保険・共済掛金");
+  assert.equal(panel.open, false);
+  assert.equal(input.focused, true);
+  input.value = "自由入力";
+  input.disabled = true;
+  candidate.onclick();
+  assert.equal(input.value, "自由入力");
+  input.disabled = false;
+  vm.runInContext("busy = true", c);
+  candidate.onclick();
+  assert.equal(input.value, "自由入力");
+  const html = read("bank/index.html");
+  assert.doesNotMatch(html, /subcategory-suggestions|<datalist/);
+  const js = read("bank/bank.js");
+  assert.match(js, /input\.parentElement\.after\(subcategoryChoices\(input\)\)/);
+  assert.match(js, /detailField\.append\(detail, subcategoryChoices\(detail\)\)/);
+  const css = read("bank/bank.css");
+  assert.match(css, /\.bank-subcategory-list \{[^}]*max-height: 340px;[^}]*overflow-y: auto/);
+  assert.match(css, /\.bank-subcategory-list button \{[^}]*width: 100%;[^}]*min-height: 44px;[^}]*font-size: 16px/);
 });
 test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
   const { c, elements } = screen();

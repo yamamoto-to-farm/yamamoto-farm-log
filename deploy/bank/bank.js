@@ -628,6 +628,30 @@ function renderEditRelated() {
   }
 }
 
+function subcategoryChoices(input) {
+  const panel = node("details", undefined, "bank-subcategory-choices");
+  panel.append(node("summary", "内訳の候補から選ぶ"));
+  const list = node("div", undefined, "bank-subcategory-list");
+  list.setAttribute("role", "group");
+  list.setAttribute("aria-label", "内訳の候補");
+  for (const [category, values] of Object.entries(subcategories)) {
+    list.append(node("h4", category));
+    for (const value of values) {
+      const button = node("button", value);
+      button.type = "button";
+      button.onclick = () => {
+        if (busy || input.disabled) return;
+        input.value = value;
+        panel.open = false;
+        input.focus();
+      };
+      list.append(button);
+    }
+  }
+  panel.append(list);
+  return panel;
+}
+
 function addSplitRow(part) {
   const row = node("div", undefined, "bank-split-row"), category = node("select"), detail = node("input"), amount = node("input");
   category.setAttribute("aria-label", "内訳の用途");
@@ -639,9 +663,10 @@ function addSplitRow(part) {
   category.value = part.category;
   detail.value = part.subcategory;
   detail.maxLength = 80;
-  detail.setAttribute("list", "subcategory-suggestions");
   detail.setAttribute("aria-label", "内訳名");
   detail.placeholder = "例：収入保険積立金";
+  const detailField = node("div", undefined, "bank-subcategory-field");
+  detailField.append(detail, subcategoryChoices(detail));
   amount.value = String(part.amount);
   amount.inputMode = "numeric";
   amount.setAttribute("aria-label", "内訳金額（円）");
@@ -656,7 +681,7 @@ function addSplitRow(part) {
     updateSplitTotal();
   };
   amount.oninput = updateSplitTotal;
-  row.append(category, detail, amount, remove);
+  row.append(category, detailField, amount, remove);
   splitRows.push(entry);
   el("split-rows").append(row);
 }
@@ -867,11 +892,9 @@ async function initialize() {
   el("previous").onclick = () => { page--; renderItems(); };
   el("next").onclick = () => { page++; renderItems(); };
   el("edit-form").onsubmit = saveEdit;
-  const suggestions = [...new Set(Object.values(subcategories).flat())];
-  for (const value of suggestions) {
-    const option = node("option", value);
-    option.value = value;
-    el("subcategory-suggestions").append(option);
+  for (const id of ["edit-subcategory", "rule-subcategory"]) {
+    const input = el(id);
+    input.parentElement.after(subcategoryChoices(input));
   }
   el("split-form").onsubmit = saveSplit;
   el("add-split").onclick = () => {
