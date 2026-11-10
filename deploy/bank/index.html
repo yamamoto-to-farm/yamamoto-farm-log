@@ -56,9 +56,12 @@
         </div>
         <div id="chart" class="finance-chart" role="group" aria-label="月別入出金グラフ" aria-describedby="chart-detail"></div>
         <p id="chart-detail" class="finance-note" aria-live="polite"></p>
-        <div class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金">
-          <table><thead><tr><th>月</th><th>入金</th><th>出金</th><th>差引（利益ではない）</th><th>月初残高（逆算）</th><th>月末残高</th></tr></thead><tbody id="monthly"></tbody></table>
-        </div>
+        <details id="monthly-details">
+          <summary>月別の入出金・残高一覧</summary>
+          <div class="finance-scroll" tabindex="0" role="region" aria-label="月別入出金">
+            <table><thead><tr><th>月</th><th>入金</th><th>出金</th><th>差引（利益ではない）</th><th>月初残高（逆算）</th><th>月末残高</th></tr></thead><tbody id="monthly"></tbody></table>
+          </div>
+        </details>
       </section>
       <section class="card">
         <h2>年間の用途割合・前年比較</h2>
@@ -138,6 +141,6 @@
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-2"></script>
+  <script type="module" src="./bank.js?v=20261110-3"></script>
 </body>
 </html>

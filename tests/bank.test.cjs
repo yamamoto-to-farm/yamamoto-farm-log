@@ -137,16 +137,33 @@ function screen(deps = {}) {
     "edit-item", "edit-related", "edit-related-items", "edit-match", "edit-match-count", "chart", "chart-detail", "monthly",
     "edit-save-rule", "rule-form", "rules-list", "rule-status", "rule-contains", "rule-category", "rule-direction", "rule-dialog",
     "edit-subcategory", "rule-subcategory", "subcategory", "split-form", "save-split", "split-status", "split-rows",
-    "split-item", "split-confirm", "split-total", "split-dialog"]) {
+    "split-item", "split-confirm", "split-total", "split-dialog", "annual", "annual-year", "annual-period",
+    "annual-coverage", "annual-comparison"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
-  const c = logic({ document: { getElementById: id => elements[id], createElement: element }, config: { api: "https://api.example.test" },
+  const c = logic({ document: { getElementById: id => elements[id], createElement: tag => ({ ...element(), tagName: tag }),
+    createTextNode: text => ({ textContent: text }) }, config: { api: "https://api.example.test" },
+    todayLocalYmd: () => "2026-11-10",
     ensureToken: async () => "test", clearSession() { c.cleared = true; }, console: { error() {} }, showSaveResult: async () => {},
     ...deps });
   vm.runInContext(strip(read("bank/bank.js")).replace(/initialize\(\)\.catch[\s\S]*$/, ""), c);
   return { c, elements };
 }
+test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
+  const { c, elements } = screen();
+  c.renderAnnual();
+  const parts = elements.annual.children.slice(0, 2);
+  assert.equal(parts.length, 2);
+  for (const part of parts) {
+    const details = part.children.find(child => child.className === "bank-category-details");
+    assert.equal(details.tagName, "details");
+    assert.notEqual(details.open, true);
+    assert.equal(details.children[0].tagName, "summary");
+    assert.equal(details.children[0].textContent, "用途別の金額・割合");
+    assert.equal(details.children[1].children[0].tagName, "table");
+  }
+});
 test("partial memo search only suggests automatic unclassified in the same account and direction", () => {
   const c = logic();
   const base = { ...item({ memo: "10-5 ﾃｽﾄ", category: "未分類" }), account_id: "account-a", statement_id: "a" };
@@ -335,6 +352,12 @@ test("monthly graph explanations share one help source while hover amounts remai
   assert.equal((between.match(/data-help=/g) || []).length, 1);
   assert.doesNotMatch(between, /class="finance-note"/);
   assert.match(html, /id="chart-detail" class="finance-note" aria-live="polite"/);
+});
+test("monthly table is collapsed by default without hiding the graph or changing its table body", () => {
+  const html = read("bank/index.html");
+  assert.match(html, /<details id="monthly-details">\s*<summary>月別の入出金・残高一覧<\/summary>[\s\S]*?<tbody id="monthly"><\/tbody>[\s\S]*?<\/details>/);
+  assert.doesNotMatch(html, /<details[^>]*id="monthly-details"[^>]*\bopen\b/);
+  assert.ok(html.indexOf('id="chart"') < html.indexOf('<details id="monthly-details">'));
 });
 test("related classification help is grouped beside the heading without hiding search or candidate count", () => {
   const section = read("bank/index.html").split('<section id="edit-related" hidden>')[1].split("</section>")[0];

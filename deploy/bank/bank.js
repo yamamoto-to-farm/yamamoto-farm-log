@@ -430,7 +430,9 @@ function renderAnnual() {
     }
     table.append(thead, tbody);
     scroll.append(table);
-    part.append(scroll);
+    const categoryDetails = node("details", undefined, "bank-category-details");
+    categoryDetails.append(node("summary", "用途別の金額・割合"), scroll);
+    part.append(categoryDetails);
     el("annual").append(part);
   }
   const breakdown = node("details"), heading = node("summary", "用途別の内訳金額");
