@@ -7,7 +7,7 @@ import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
   unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
-  statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, jaInvoiceUrl } from "./bank-logic.js?v=20261110-ja-links-1";
+  statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, jaInvoiceUrl, invoiceAnalysisItems } from "./bank-logic.js?v=20261110-invoice-analysis-1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -587,7 +587,26 @@ function renderItems() {
 
 function renderAnnual() {
   const year = Number(el("annual-year").value || todayLocalYmd().slice(0, 4));
-  const analysis = annualAnalysis(items, statements, el("account").value, year, todayLocalYmd());
+  const useInvoices = el("annual-source").value === "invoice";
+  const projection = useInvoices ? invoiceAnalysisItems(items, invoiceLinks.links, invoiceLinks.invoices) : { items, notices: [] };
+  const analysis = annualAnalysis(projection.items, statements, el("account").value, year, todayLocalYmd());
+  const notices = projection.notices.filter(entry => entry.item.account_id === el("account").value
+    && entry.item.trade_date >= analysis.period.start && entry.item.trade_date <= analysis.period.end);
+  el("annual-source-status").textContent = useInvoices
+    ? `請求書内訳を反映：${notices.filter(entry => entry.reflected).length}件 ／ 口座分類を維持：${notices.filter(entry => !entry.reflected).length}件（紐づけ対象）。口座の分類・確認状態・出金額は変更しません。`
+    : "口座に保存した用途・手動分割で集計しています。請求書の内訳は反映しません。";
+  el("annual-source-notices").replaceChildren();
+  for (const entry of notices) {
+    const text = entry.reflected
+      ? `反映済み ／ 請求書側の確認待ち・用途確認 ${entry.reviewCount}明細${entry.unresolvedCount ? `（機械関連などの用途未判断 ${entry.unresolvedCount}明細）` : ""}`
+      : `未反映：${entry.reason} ／ 口座分類で集計`;
+    const row = node("li", `${entry.item.trade_date} ／ JA ${entry.invoice_no} ／ ${text} `);
+    const link = node("a", "請求書を確認");
+    link.href = jaInvoiceUrl(entry.invoice_no, entry.item);
+    row.append(link);
+    el("annual-source-notices").append(row);
+  }
+  el("annual-source-details").hidden = !useInvoices || !notices.length;
   el("annual-period").textContent = `${analysis.period.start}〜${analysis.period.end}`;
   el("annual-coverage").textContent = `取り込み済み月：${analysis.months.join("、") || "なし"} ／ 前年同期間：${analysis.priorMonths.join("、") || "なし"}（未取り込み分がある場合は参考値）`;
   el("annual-comparison").textContent = !analysis.months.length || !analysis.priorMonths.length
@@ -597,8 +616,9 @@ function renderAnnual() {
   for (const direction of ["deposit", "withdrawal"]) {
     const part = node("div", undefined, "bank-annual-part");
     const total = analysis.current[direction];
+    const drawable = total > 0 && analysis.categories.every(row => row[direction] >= 0);
     part.append(node("h3", `${direction === "deposit" ? "入金" : "出金"}：${formatYen(total)}`));
-    if (total > 0) {
+    if (drawable) {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("viewBox", "0 0 120 120");
       svg.setAttribute("class", "bank-donut");
@@ -615,7 +635,7 @@ function renderAnnual() {
         offset += percent;
       });
       part.append(svg);
-    } else part.append(node("p", "対象の入出金がありません。"));
+    } else part.append(node("p", total > 0 ? "返品・調整で負の用途金額があるため、割合グラフは表示しません。金額は下の表で確認してください。" : "対象の入出金がありません。"));
     const scroll = node("div", undefined, "finance-scroll"), table = node("table"), head = node("tr");
     scroll.tabIndex = 0;
     head.append(node("th", "用途"), node("th", "金額"), node("th", "割合"));
@@ -628,7 +648,7 @@ function renderAnnual() {
       key.style.background = colors[index];
       key.setAttribute("aria-hidden", "true");
       category.append(key, document.createTextNode(row.category));
-      tr.append(category, node("td", formatYen(row[direction])), node("td", total > 0 ? `${(row[direction] / total * 100).toFixed(1)}%` : "—"));
+      tr.append(category, node("td", formatYen(row[direction])), node("td", drawable ? `${(row[direction] / total * 100).toFixed(1)}%` : "—"));
       tbody.append(tr);
     }
     table.append(thead, tbody);
@@ -640,7 +660,7 @@ function renderAnnual() {
   }
   const breakdown = node("details"), heading = node("summary", "用途別の内訳金額");
   breakdown.append(heading);
-  const detailRows = filterItems(allocatedItems(items), { account: el("account").value,
+  const detailRows = filterItems(allocatedItems(projection.items), { account: el("account").value,
     from: analysis.period.start.slice(0, 7), to: analysis.period.end.slice(0, 7) })
     .filter(item => item.trade_date <= analysis.period.end);
   const groups = new Map();
@@ -998,6 +1018,7 @@ async function initialize() {
     };
   });
   el("annual-year").onchange = renderAnnual;
+  el("annual-source").onchange = renderAnnual;
   el("chart-mode").onchange = render;
   el("details-query").oninput = () => setDetailsQuery(el("details-query").value);
   el("clear-details-query").onclick = () => setDetailsQuery("");

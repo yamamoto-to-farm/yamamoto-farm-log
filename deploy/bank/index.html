@@ -80,7 +80,17 @@
       <section class="card">
         <h2>年間の用途割合・前年比較</h2>
         <p data-help="年間の口座集計">選択口座の取引日基準です。上の期間・検索条件とは独立します。今年は現在まで、過去年は年間を集計します。取り込み済み月のみ対象で、空月は取引なし・未取り込みの区別ができません。前年比較は参考値です。入金と出金の割合は別々に算出します。</p>
-        <label>対象年<select id="annual-year"></select></label><p id="annual-period" class="finance-note"></p>
+        <div class="finance-toolbar">
+          <label>対象年<select id="annual-year"></select></label>
+          <label>用途の集計元<select id="annual-source">
+            <option value="bank">口座分類で見る</option>
+            <option value="invoice">請求書内訳を反映して見る</option>
+          </select></label>
+        </div>
+        <p id="annual-source-status" class="finance-note" role="status" aria-live="polite"></p>
+        <p class="finance-note">請求書内訳は実際の口座引落日で集計します。肥料費・農薬費・資材は経費の内訳に反映し、機械関連など用途判断が必要な明細は「決済・内訳確認」に残します。口座の確認済みとは別に、請求書側の分類・確認状態を参照します。請求書を編集した後は「最新データに更新」で再取得してください。</p>
+        <details id="annual-source-details" hidden><summary>請求書内訳の反映状況・要確認</summary><ul id="annual-source-notices"></ul></details>
+        <p id="annual-period" class="finance-note"></p>
         <p id="annual-coverage" class="finance-note"></p><p id="annual-comparison" class="finance-note"></p>
         <div id="annual" class="finance-annual"></div>
       </section>
@@ -183,6 +193,6 @@
       </div>
     </dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-ja-links-2"></script>
+  <script type="module" src="./bank.js?v=20261110-invoice-analysis-1"></script>
 </body>
 </html>

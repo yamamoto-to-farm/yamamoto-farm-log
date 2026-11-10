@@ -754,7 +754,10 @@ def _bank_invoice_links(bucket):
 
 def _bank_link_catalog(bucket):
     return {**_bank_invoice_links(bucket), "invoices": [
-        _ja_link_invoice(invoice) for invoice in _list_records(bucket, "invoices/")
+        {**_ja_link_invoice(invoice), "breakdown": [
+            {key: item.get(key) for key in ("amount", "category", "subcategory", "needs_review", "review_confirmed")}
+            for item in invoice["items"]
+        ]} for invoice in _list_records(bucket, "invoices/")
     ]}
 
 

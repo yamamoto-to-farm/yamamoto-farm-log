@@ -169,6 +169,8 @@ class BankApiTests(unittest.TestCase):
         before = self.s3.objects[self.key]
         catalog = json.loads(self.call("GET /bank/invoice-links")["body"])
         self.assertEqual(catalog["links"], [])
+        self.assertEqual(catalog["invoices"][0]["breakdown"][0]["amount"], 50)
+        self.assertEqual(catalog["invoices"][0]["breakdown"][0]["category"], "肥料費")
         self.assertEqual(self.call("GET /bank/invoice-links", claims={})["statusCode"], 401)
         self.assertEqual(self.call("POST /bank/invoice-links", claims={})["statusCode"], 401)
         self.assertEqual(self.call("GET /bank/invoice-links", claims={**self.claims, "cognito:groups": "[worker]"})["statusCode"], 403)
@@ -188,6 +190,10 @@ class BankApiTests(unittest.TestCase):
         self.assertEqual(self.call("POST /bank/invoice-links", data)["statusCode"], 409)
         invoice["items"][0]["category"] = "農薬費"
         self.assertEqual(lambda_function._ja_link_invoice(invoice)["signature"], data["invoice_signature"])
+        lambda_function._write_json("finance-private", "invoices/123456.json", invoice)
+        updated_catalog = json.loads(self.call("GET /bank/invoice-links")["body"])
+        self.assertEqual(updated_catalog["invoices"][0]["breakdown"][0]["category"], "農薬費")
+        self.assertEqual(updated_catalog["invoices"][0]["signature"], data["invoice_signature"])
         invoice["total_amount"] = 60
         lambda_function._write_json("finance-private", "invoices/123456.json", invoice)
         self.assertEqual(self.call("POST /bank/invoice-links", {**data, "revision": result["revision"]})["statusCode"], 409)

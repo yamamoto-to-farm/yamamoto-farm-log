@@ -181,7 +181,8 @@ function screen(deps = {}) {
     "balance-minimum", "chart-mode", "chart-legend", "sort", "details-section", "filter-error", "filter-state",
     "summary", "groups", "groups-attention", "details-attention", "details-query", "details-result", "items", "page-number",
     "invoice-link-item", "invoice-link-status", "invoice-link-choice", "invoice-link-empty", "unlink-invoice",
-    "invoice-link-preview", "invoice-link-dialog", "save-invoice-link", "invoice-links-list"]) {
+    "invoice-link-preview", "invoice-link-dialog", "save-invoice-link", "invoice-links-list",
+    "annual-source", "annual-source-status", "annual-source-details", "annual-source-notices"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
@@ -482,6 +483,79 @@ test("all outgoing memos open a generic invoice dialog without extra action butt
   assert.ok(html.indexOf('id="details-section"') < html.indexOf('id="invoice-links-section"'));
   assert.ok(html.indexOf('id="invoice-links-section"') < html.indexOf("<h2>自動分類ルール</h2>"));
   assert.ok(html.indexOf("<h2>自動分類ルール</h2>") < html.indexOf("<h2>データ取り込み</h2>"));
+});
+test("invoice analysis replaces matched withdrawals once, at payment date, without mutating saved rows", () => {
+  const c = logic();
+  const row = { ...item({ deposit: 0, withdrawal: 100, category: "決済・内訳確認", subcategory: "JA請求引落", review_confirmed: true }),
+    account_id: "account-a", statement_id: "a".repeat(64) };
+  const link = { statement_id: row.statement_id, transaction_id: row.transaction_id, source: "ja", invoice_no: "123456", invoice_signature: "s1" };
+  const invoice = { invoice_no: "123456", signature: "s1", total_amount: 100, validation_status: "ok", breakdown: [
+    { amount: 60, category: "肥料費", subcategory: "肥料", needs_review: false },
+    { amount: 20, category: "農薬費", needs_review: true, review_confirmed: false },
+    { amount: 10, category: "機械部品・装備", needs_review: false },
+    { amount: 10, category: "未分類" },
+  ] };
+  const original = JSON.stringify([row, link, invoice]);
+  const result = c.invoiceAnalysisItems([row], [link], [invoice]);
+  assert.equal(result.items.length, 4);
+  assert.equal(c.totals(result.items).withdrawal, 100);
+  assert.ok(result.items.every(part => part.trade_date === row.trade_date));
+  assert.equal(result.items[0].category, "経費");
+  assert.equal(result.items[0].subcategory, "肥料費／肥料");
+  assert.equal(result.items[0].review_confirmed, true);
+  assert.equal(result.items[1].review_confirmed, false);
+  assert.equal(result.items[2].category, "決済・内訳確認");
+  assert.equal(result.items[3].category, "未分類");
+  assert.equal(result.notices[0].reviewCount, 3);
+  assert.equal(result.notices[0].unresolvedCount, 1);
+  assert.equal(JSON.stringify([row, link, invoice]), original);
+  const annual = c.annualAnalysis(result.items, [record()], "account-a", 2026, "2026-11-10");
+  assert.equal(annual.current.withdrawal, 100);
+  assert.equal(annual.categories.find(value => value.category === "経費").withdrawal, 80);
+  assert.equal(annual.categories.find(value => value.category === "未分類").withdrawal, 10);
+  const nextInvoice = { ...invoice, breakdown: invoice.breakdown.map(part => ({ ...part, category: "農薬費", needs_review: false })) };
+  assert.equal(c.invoiceAnalysisItems([row], [link], [nextInvoice]).items[0].subcategory, "農薬費／肥料");
+  for (const bad of [{ signature: "changed" }, { total_amount: 101 }, { validation_status: "failed" },
+    { breakdown: [] }, { breakdown: [{ amount: 99, category: "肥料費" }] },
+    { breakdown: [{ amount: "100", category: "肥料費" }] }]) {
+    const stopped = c.invoiceAnalysisItems([row], [link], [{ ...invoice, ...bad }]);
+    assert.equal(stopped.items.length, 1);
+    assert.equal(stopped.items[0], row);
+    assert.equal(stopped.notices[0].reflected, false);
+    assert.ok(stopped.notices[0].reason);
+  }
+  assert.equal(c.invoiceAnalysisItems([row], [link], []).notices[0].reflected, false);
+  assert.equal(c.invoiceAnalysisItems([row], [], [invoice]).items[0], row);
+  const split = { ...row, category: "内訳分割", allocations: [{ category: "経費", subcategory: "", amount: 50 }, { category: "未分類", subcategory: "", amount: 50 }] };
+  assert.equal(c.invoiceAnalysisItems([split], [link], [invoice]).items[0], split);
+  assert.match(c.invoiceAnalysisItems([split], [link], [invoice]).notices[0].reason, /手動分割/);
+});
+test("annual invoice mode changes only purpose analysis and breakdown, preserves cash totals and handles refunds", () => {
+  const { c, elements } = screen();
+  c.rows = [{ ...item({ deposit: 0, withdrawal: 100, category: "決済・内訳確認", review_confirmed: true }),
+    account_id: "account-a", statement_id: "a".repeat(64) }];
+  vm.runInContext(`items = rows; statements = [];
+    invoiceLinks = {links:[{statement_id: rows[0].statement_id,transaction_id:rows[0].transaction_id,source:"ja",invoice_no:"123456",invoice_signature:"s1"}],
+    invoices:[{invoice_no:"123456",signature:"s1",total_amount:100,validation_status:"ok",
+    breakdown:[{amount:120,category:"肥料費"},{amount:-20,category:"農薬費"}]}],revision:"r1"};`, c);
+  elements["annual-source"].value = "invoice";
+  c.renderAnnual();
+  assert.match(elements["annual-source-status"].textContent, /反映：1件/);
+  const outgoing = elements.annual.children[1];
+  assert.equal(outgoing.children[0].textContent, "出金：100円");
+  assert.equal(outgoing.children.find(child => child.className === "bank-category-details").children[1].children[0].children[1].children[1].children[1].textContent, "100円");
+  assert.equal(elements["annual-source-notices"].children.length, 1);
+  assert.equal(vm.runInContext("items[0].category", c), "決済・内訳確認");
+  // Signed returns in separate categories cannot produce misleading donut percentages.
+  vm.runInContext('invoiceLinks.invoices[0].breakdown = [{amount:120,category:"肥料費"},{amount:-20,category:"未分類"}]', c);
+  c.renderAnnual();
+  assert.match(elements.annual.children[1].children[1].textContent, /負の用途金額/);
+  elements["annual-source"].value = "bank";
+  c.renderAnnual();
+  assert.match(elements["annual-source-status"].textContent, /口座に保存した/);
+  assert.equal(elements["annual-source-details"].hidden, true);
+  assert.equal(elements.annual.children[1].children[0].textContent, "出金：100円");
+  assert.match(read("bank/bank.js"), /el\("annual-source"\)\.onchange = renderAnnual/);
 });
 test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
   const { c, elements } = screen();
