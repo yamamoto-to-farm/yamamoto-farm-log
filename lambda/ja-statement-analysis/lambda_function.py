@@ -734,7 +734,68 @@ def _bank_allocations(value, total):
     return parts
 
 
+def _ja_link_invoice(invoice):
+    financial = {key: invoice[key] for key in ("invoice_no", "settlement_date", "total_amount")}
+    financial.update({key: invoice.get(key) for key in ("issue_date", "closing_date")})
+    financial["items"] = [
+        {key: item.get(key) for key in ("line_seq", "trade_date", "trade_no", "item_name_raw", "spec_raw",
+                                      "item_name", "spec", "quantity", "unit_price", "amount", "tax_flag", "department")}
+        for item in invoice["items"]
+    ]
+    signature = hashlib.sha256(json.dumps(financial, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    return {**{key: invoice[key] for key in ("invoice_no", "settlement_date", "total_amount", "validation_status")},
+            "signature": signature}
+
+
+def _bank_invoice_links(bucket):
+    value, revision = _read_json(bucket, "bank/invoice-links.json", missing_ok=True, with_etag=True)
+    return {"links": (value or {}).get("links", []), "revision": revision or ""}
+
+
+def _bank_link_catalog(bucket):
+    return {**_bank_invoice_links(bucket), "invoices": [
+        _ja_link_invoice(invoice) for invoice in _list_records(bucket, "invoices/")
+    ]}
+
+
+def _bank_save_invoice_link(bucket, data):
+    if "invoice_no" not in data or set(data) - {"statement_id", "transaction_id", "revision", "statement_revision", "invoice_no", "invoice_signature"}:
+        raise RequestError(400, "請求書の紐づけ項目が不正です。")
+    statement_id, transaction_id = _bank_id(data), _bank_id(data, "transaction_id")
+    current = _bank_invoice_links(bucket)
+    if data.get("revision") != current["revision"]:
+        raise RequestError(409, "紐づけが更新されています。最新データを取得してください。")
+    record = _bank_record(bucket, statement_id)
+    if data.get("statement_revision") != record["revision"]:
+        raise RequestError(409, "口座明細が更新されています。最新データを取得してください。")
+    item = next((item for item in record["items"] if item["transaction_id"] == transaction_id), None)
+    if data.get("invoice_no") is not None and (not item or not item["withdrawal"] or item["deposit"]):
+        raise RequestError(400, "紐づけ対象の出金明細がありません。")
+    links = [link for link in current["links"]
+             if (link["statement_id"], link["transaction_id"]) != (statement_id, transaction_id)]
+    invoice_no = data.get("invoice_no")
+    if invoice_no is not None:
+        invoice_no = _invoice_no(data)
+        invoice = _ja_link_invoice(_read_json(bucket, f"invoices/{invoice_no}.json"))
+        if invoice["validation_status"] == "failed":
+            raise RequestError(400, "検証に失敗した請求書は紐づけできません。")
+        if data.get("invoice_signature") != invoice["signature"]:
+            raise RequestError(409, "請求書が更新されています。内容を再確認してください。")
+        if any(link["source"] == "ja" and link["invoice_no"] == invoice_no for link in links):
+            raise RequestError(409, "この請求書は別の口座明細に紐づけ済みです。「JA請求書の紐づけ一覧」で解除してから変更してください。")
+        links.append({"statement_id": statement_id, "transaction_id": transaction_id, "source": "ja",
+                      "invoice_no": invoice_no, "invoice_signature": invoice["signature"],
+                      "linked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
+    written = _write_json(bucket, "bank/invoice-links.json", {"links": links}, condition=current["revision"] or "*")
+    LOGGER.info("Bank invoice link updated")
+    return {"saved": True, "links": links, "revision": written["ETag"]}
+
+
 def _bank_route(bucket, route, data, parameters):
+    if route == "GET /bank/invoice-links":
+        return _bank_link_catalog(bucket)
+    if route == "POST /bank/invoice-links":
+        return _bank_save_invoice_link(bucket, data)
     if route == "GET /bank/rules":
         return _bank_rules(bucket)
     if route == "POST /bank/rules":

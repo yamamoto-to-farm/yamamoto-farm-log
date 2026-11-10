@@ -161,6 +161,68 @@ class BankApiTests(unittest.TestCase):
         self.assertTrue(self.s3.presigned["Key"].startswith("bank/uploads/"))
         self.assertIn(["content-length-range", 1, lambda_function.MAX_PDF_BYTES], self.s3.presigned["Conditions"])
 
+    def test_invoice_links_create_update_remove_conflicts_and_no_classification_changes(self):
+        self.import_pdf()
+        invoice = {"invoice_no": "123456", "settlement_date": "2026-10-02", "total_amount": 50,
+                   "validation_status": "ok", "items": [{"line_seq": 1, "amount": 50, "category": "肥料費"}]}
+        lambda_function._write_json("finance-private", "invoices/123456.json", invoice)
+        before = self.s3.objects[self.key]
+        catalog = json.loads(self.call("GET /bank/invoice-links")["body"])
+        self.assertEqual(catalog["links"], [])
+        self.assertEqual(self.call("GET /bank/invoice-links", claims={})["statusCode"], 401)
+        self.assertEqual(self.call("POST /bank/invoice-links", claims={})["statusCode"], 401)
+        self.assertEqual(self.call("GET /bank/invoice-links", claims={**self.claims, "cognito:groups": "[worker]"})["statusCode"], 403)
+        data = {"statement_id": self.value["statement_id"], "transaction_id": self.value["items"][1]["transaction_id"],
+                "statement_revision": self.record()["revision"], "revision": "", "invoice_no": "123456",
+                "invoice_signature": catalog["invoices"][0]["signature"]}
+        for extra in [{"transaction_id": self.value["items"][0]["transaction_id"]},
+                      {"transaction_id": "f" * 64}, {"invoice_no": "../bad"}, {"unexpected": True}]:
+            self.assertEqual(self.call("POST /bank/invoice-links", {**data, **extra})["statusCode"], 400)
+        self.assertEqual(self.call("POST /bank/invoice-links", {**data, "statement_revision": "stale"})["statusCode"], 409)
+        self.assertEqual(self.call("POST /bank/invoice-links", {**data, "invoice_signature": "stale"})["statusCode"], 409)
+        result = self.call("POST /bank/invoice-links", data)
+        self.assertEqual(result["statusCode"], 200)
+        result = json.loads(result["body"])
+        self.assertEqual(result["links"][0]["source"], "ja")
+        self.assertEqual(self.s3.objects[self.key], before)
+        self.assertEqual(self.call("POST /bank/invoice-links", data)["statusCode"], 409)
+        invoice["items"][0]["category"] = "農薬費"
+        self.assertEqual(lambda_function._ja_link_invoice(invoice)["signature"], data["invoice_signature"])
+        invoice["total_amount"] = 60
+        lambda_function._write_json("finance-private", "invoices/123456.json", invoice)
+        self.assertEqual(self.call("POST /bank/invoice-links", {**data, "revision": result["revision"]})["statusCode"], 409)
+        refreshed = {**data, "revision": result["revision"], "invoice_signature": lambda_function._ja_link_invoice(invoice)["signature"]}
+        result = json.loads(self.call("POST /bank/invoice-links", refreshed)["body"])
+        self.assertEqual(result["links"][0]["invoice_signature"], refreshed["invoice_signature"])
+        # A reimport can remove a transaction; its link must still be removable.
+        record = self.record()
+        record["items"] = record["items"][:1]
+        lambda_function._write_json("finance-private", self.key, record)
+        unlink = {**data, "revision": result["revision"], "statement_revision": self.record()["revision"], "invoice_no": None}
+        result = self.call("POST /bank/invoice-links", unlink)
+        self.assertEqual(result["statusCode"], 200)
+        self.assertEqual(json.loads(result["body"])["links"], [])
+
+    def test_invoice_link_duplicate_invoice_and_concurrent_write_are_rejected(self):
+        self.import_pdf()
+        invoice = {"invoice_no": "123456", "settlement_date": "2026-10-02", "total_amount": 50,
+                   "validation_status": "ok", "items": []}
+        lambda_function._write_json("finance-private", "invoices/123456.json", invoice)
+        state = lambda_function._ja_link_invoice(invoice)
+        data = {"statement_id": self.value["statement_id"], "transaction_id": self.value["items"][1]["transaction_id"],
+                "statement_revision": self.record()["revision"], "revision": "", "invoice_no": "123456",
+                "invoice_signature": state["signature"]}
+        with patch.object(lambda_function, "_write_json", side_effect=ClientError({"Error": {"Code": "PreconditionFailed"}}, "PutObject")):
+            self.assertEqual(self.call("POST /bank/invoice-links", data)["statusCode"], 409)
+        link = {"statement_id": "f" * 64, "transaction_id": "e" * 64, "source": "ja", "invoice_no": "123456",
+                "invoice_signature": state["signature"]}
+        lambda_function._write_json("finance-private", "bank/invoice-links.json", {"links": [link]})
+        data["revision"] = lambda_function._bank_invoice_links("finance-private")["revision"]
+        self.assertEqual(self.call("POST /bank/invoice-links", data)["statusCode"], 409)
+        invoice["validation_status"] = "failed"
+        lambda_function._write_json("finance-private", "invoices/123456.json", invoice)
+        self.assertEqual(self.call("POST /bank/invoice-links", data)["statusCode"], 400)
+
     def test_rules_create_update_delete_validation_and_conflict(self):
         self.import_pdf()
         state = lambda_function._bank_rules("finance-private")

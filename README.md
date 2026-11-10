@@ -660,6 +660,20 @@ CloudFrontで `/finance/*` と `/data/pages.json` を無効化する。
   検索結果件数はページ分割前の条件内件数。「検索解除」は検索文字だけを解除し、
   期間・用途・確認状態・並び順は維持する。検索変更では先頭ページへ戻る。
   説明の「？」は「取引明細」見出し内に配置する。
+- JA引落の摘要（全角・半角の「ノウキョウ／ノウキヨウ」）は、未紐づけなら請求書候補を開き、
+  紐づけ済みなら `/finance/index.html?source=ja&invoice=請求書番号` の対応請求書へ直接移動する。
+  その他の出金にも「JA請求書を紐づけ」を用意する。候補は金額一致・引落予定日の近い順で、
+  休日による日付のずれは許容するが自動確定はしない。金額差がある場合は確認して保存する。
+  請求書の専用明細表は通常の集計・検索条件と独立し、元の口座明細へ戻れる。
+  PDF未取込ならJA取り込み画面へ案内する。認証の再ログインでも移動先の指定を維持する。
+- 紐づけは非公開 `bank/invoice-links.json` に保存する。`source: "ja"` を持たせ、今回はJAのみ対応。
+  1出金対1請求書で、同じ請求書の重複紐づけは409。合算・分割支払いは未対応。
+  分類・確認状態・内訳分割・集計金額は変更せず、請求書額を口座出金へ加算しない。
+  紐づけJSONのETag、口座明細のrevision、請求書の財務内容署名で古い画面からの保存を拒否する。
+  請求額・日付・明細内容が変われば「請求書更新・要再確認」、出金と額が違えば「金額差あり」を表示する。
+  分類変更だけでは署名を変えない。変更後は請求書を再確認し、紐づけ保存で確認内容を更新する。
+  再取り込み後も同一取引なら紐づけを維持し、取引IDが変わった場合は新取引へ自動で移さない。
+  「JA請求書の紐づけ一覧」から元の取引がなくなった紐づけも解除できる。
 - 用途は従来の「売上・経費・借入・借入返済・口座振替・現金移動・その他入金・その他出金・未分類」に
   「その他事業収入・固定資産購入・積立・預け金・事業主入金・事業主支出・決済・内訳確認」を追加。
   既存データの用途は自動で変更しない。内訳名は候補選択または自由入力（80文字まで）。
@@ -751,7 +765,7 @@ python .\scripts\convert_bank_statement.py --reference "同じ口座のJAバン�
    ハンドラーは `lambda_function.lambda_handler`、Python 3.13 / x86_64、512MB、60秒、
    `FINANCE_BUCKET=yamamoto-farm-private-finance-01` を維持する。
    `bank_statement_parser.py`・pypdf・新しいboto3を含むZIP全体を使う。単独のPythonファイルだけでは不足する。
-4. **API Gateway → 既存HTTP API → ルートに下の9ルートを追加。**
+4. **API Gateway → 既存HTTP API → ルートに下の11ルートを追加。**
    すべて既存の経費Lambdaへ統合し、既存JWTオーソライザー `farm-photos-cognito`、
    必須スコープ `openid` を全ルートへ設定する。認証なしルートにしない。
    既存の `/finance/*` は変更しない。自動デプロイが無効なら既存ステージへデプロイする。
@@ -768,12 +782,19 @@ python .\scripts\convert_bank_statement.py --reference "同じ口座のJAバン�
    | POST | `/bank/reimport` |
    | GET | `/bank/rules` |
    | POST | `/bank/rules` |
+   | GET | `/bank/invoice-links` |
+   | POST | `/bank/invoice-links` |
 
-   既に口座明細を公開済みの場合は、Lambda ZIPを更新して最後の2ルートだけ追加する。
+   既に口座明細を公開済みの場合は、Lambda ZIPを更新して未設定のルートだけ追加する。
    同じ経費Lambda統合・JWT・openid・Lambda呼出許可を設定してデプロイ後、フロントを更新する。
    既存IAMの `bank/*` 権限がルールJSONにも適用されるため、IAM・S3通知・Cognito変更は不要。
    用途・内訳・分割対応の更新もLambda ZIPを先に更新し、次に `deploy/bank/` の4ファイルを公開する。
-   既に `/bank/rules` の2ルートを設定済みなら、新しいルート・権限の追加は不要。
+   JA請求書紐づけでは **GET /bank/invoice-links・POST /bank/invoice-links の2ルート**を追加する。
+   同じJWT・openid・Lambda統合を設定し、Lambda/APIを先に更新してから
+   `deploy/bank/` の4ファイルと `deploy/finance/index.html`・`finance.js` を公開する。
+   CloudFrontの `/bank/*` と `/finance/*` をキャッシュ削除する。
+   フロントは紐づけAPIを必須で呼ぶため、API公開前に新フロントを出すとデータ取得が失敗する。
+   JSON保存先は既存 `bank/*` 権限内なので、追加のIAM・Cognito・S3通知設定は不要。
 
 5. **S3 → 非公開経費バケット → プロパティ → イベント通知を追加。**
    名前は例 `bank-pdf-import`、イベントはオブジェクトのすべての作成、

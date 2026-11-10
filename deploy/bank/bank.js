@@ -7,7 +7,7 @@ import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
   unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
-  statementCoverage, balanceTrend, unclassifiedSummary } from "./bank-logic.js?v=20261110-9";
+  statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, jaInvoiceUrl } from "./bank-logic.js?v=20261110-ja-links-1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -19,6 +19,8 @@ let editStarted = false, editSelection = [];
 let editPrimary = null;
 let ruleState = { rules: [], revision: "" }, pendingRule = null, editingRuleId = null;
 let splitItem = null, splitRevision = "", splitRows = [], splitSaved = false;
+let invoiceLinks = { links: [], invoices: [], revision: "" }, linkItem = null, linkStatementRevision = "";
+let initialTransactionApplied = false;
 
 function node(tag, text, className) {
   const result = document.createElement(tag);
@@ -104,7 +106,8 @@ function filtered() {
 }
 
 async function loadData() {
-  const [list, history, rules] = await Promise.all([api("/statements"), api("/imports"), api("/rules")]);
+  const [list, history, rules, links] = await Promise.all([api("/statements"), api("/imports"), api("/rules"), api("/invoice-links")]);
+  if (!Array.isArray(links.links) || !Array.isArray(links.invoices) || typeof links.revision !== "string") throw new Error("請求書の紐づけデータが不正です。");
   if (!Array.isArray(rules.rules) || typeof rules.revision !== "string") throw new Error("分類ルールの取得結果が不正です。");
   ruleState = rules;
   if (!Array.isArray(list.statements) || !Array.isArray(history.imports)) throw new Error("口座APIの一覧形式が不正です。");
@@ -114,6 +117,7 @@ async function loadData() {
   statements = records;
   imports = history.imports;
   items = rows;
+  invoiceLinks = links;
   const selectedSubcategory = el("subcategory").value;
   el("subcategory").replaceChildren(node("option", "すべて"));
   el("subcategory").firstElementChild.value = "";
@@ -145,9 +149,113 @@ async function loadData() {
   el("data-area").hidden = false;
   el("login-area").hidden = true;
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}`;
+  if (!initialTransactionApplied) {
+    initialTransactionApplied = true;
+    const params = new URLSearchParams(location.search);
+    if (params.has("statement") || params.has("transaction")) {
+      const target = items.find(item => item.statement_id === params.get("statement") && item.transaction_id === params.get("transaction"));
+      if (!target) throw new Error("リンク先の口座明細が見つかりません。再取り込みで取引が変わった可能性があります。");
+      el("account").value = target.account_id;
+      el("from").value = el("to").value = target.trade_date.slice(0, 7);
+      el("sort").value = "date-desc";
+      page = Math.floor(sortItems(filtered(), "date-desc").findIndex(item => item.transaction_id === target.transaction_id && item.statement_id === target.statement_id) / pageSize);
+      el("details-section").open = true;
+    }
+  }
   render();
   renderRecords();
   renderRules();
+  renderInvoiceLinks();
+  if (location.hash === "#details-section") el("details-section").scrollIntoView({ block: "start" });
+}
+
+function renderInvoiceLinks() {
+  const list = el("invoice-links-list");
+  list.replaceChildren();
+  for (const link of invoiceLinks.links) {
+    const record = statements.find(record => record.statement_id === link.statement_id);
+    if (!record || record.account_id !== el("account").value) continue;
+    const item = items.find(item => item.statement_id === link.statement_id && item.transaction_id === link.transaction_id);
+    const row = node("div", undefined, "finance-record");
+    row.append(node("p", `JA ${link.invoice_no} ／ ${item ? `${item.trade_date} ${invoiceLinkStatus(item, link, invoiceLinks.invoices)}` : "元の取引なし・要再確認"}`));
+    const button = node("button", item ? "変更・解除" : "元の取引がない紐づけを解除", "secondary-btn");
+    button.type = "button";
+    button.disabled = busy;
+    button.onclick = () => openInvoiceLink(item || { ...link, memo: "元の取引なし", trade_date: record.period_end, withdrawal: 0 });
+    row.append(button);
+    list.append(row);
+  }
+  if (!list.children.length) list.append(node("p", "紐づけはありません。"));
+}
+
+function findInvoiceLink(item) {
+  return invoiceLinks.links.find(link => link.statement_id === item.statement_id && link.transaction_id === item.transaction_id);
+}
+
+function openInvoiceLink(item) {
+  if (busy) return;
+  linkItem = item;
+  linkStatementRevision = statements.find(record => record.statement_id === item.statement_id).revision;
+  const existing = findInvoiceLink(item);
+  el("invoice-link-item").textContent = `${item.trade_date} ／ ${item.memo} ／ 出金 ${formatYen(item.withdrawal)}${existing ? ` ／ ${invoiceLinkStatus(item, existing, invoiceLinks.invoices)}` : ""}`;
+  el("invoice-link-status").textContent = "";
+  const select = el("invoice-link-choice");
+  select.replaceChildren(node("option", "請求書を選択してください"));
+  select.firstElementChild.value = "";
+  const dateDistance = invoice => Math.abs(Date.parse(invoice.settlement_date) - Date.parse(item.trade_date));
+  const candidates = invoiceLinks.invoices.filter(invoice => invoice.validation_status !== "failed")
+    .sort((a, b) => Number(b.total_amount === item.withdrawal) - Number(a.total_amount === item.withdrawal)
+      || dateDistance(a) - dateDistance(b) || a.invoice_no.localeCompare(b.invoice_no));
+  for (const invoice of candidates) {
+    const option = node("option", `JA ${invoice.invoice_no} ／ 引落予定 ${invoice.settlement_date} ／ ${formatYen(invoice.total_amount)} ／ ${invoice.total_amount === item.withdrawal ? "金額一致" : `差額 ${formatYen(item.withdrawal - invoice.total_amount)}`}`);
+    option.value = invoice.invoice_no;
+    select.append(option);
+  }
+  select.value = existing && candidates.some(invoice => invoice.invoice_no === existing.invoice_no) ? existing.invoice_no : "";
+  el("invoice-link-empty").hidden = candidates.length > 0;
+  el("unlink-invoice").hidden = !existing;
+  el("save-invoice-link").hidden = !item.withdrawal;
+  updateInvoicePreview();
+  el("invoice-link-dialog").showModal();
+}
+
+function updateInvoicePreview() {
+  const invoice = invoiceLinks.invoices.find(invoice => invoice.invoice_no === el("invoice-link-choice").value);
+  const preview = el("invoice-link-preview");
+  preview.hidden = !invoice;
+  if (invoice) preview.href = jaInvoiceUrl(invoice.invoice_no, linkItem);
+}
+
+async function saveInvoiceLink(remove = false) {
+  if (busy || !linkItem) return;
+  const invoice = invoiceLinks.invoices.find(invoice => invoice.invoice_no === el("invoice-link-choice").value);
+  if (!remove && !invoice) {
+    el("invoice-link-status").textContent = "紐づける請求書を選択してください。";
+    return;
+  }
+  if (!remove && invoice.total_amount !== linkItem.withdrawal
+      && !confirm("口座出金額と請求額が異なります。金額差ありとして紐づけますか？")) return;
+  await run(async () => {
+    let saved = false;
+    try {
+      const result = await api("/invoice-links", {
+        statement_id: linkItem.statement_id, transaction_id: linkItem.transaction_id,
+        statement_revision: linkStatementRevision, revision: invoiceLinks.revision,
+        invoice_no: remove ? null : invoice.invoice_no, ...(!remove ? { invoice_signature: invoice.signature } : {}),
+      });
+      if (result.saved !== true || !Array.isArray(result.links) || typeof result.revision !== "string") throw new Error("紐づけの保存結果を確認できません。最新データを取得してください。");
+      saved = true;
+      invoiceLinks = { ...invoiceLinks, links: result.links, revision: result.revision };
+      el("invoice-link-dialog").close();
+      await loadData();
+      status(remove ? "紐づけを解除しました。分類・集計は変更していません。" : "JA請求書を紐づけました。分類・集計は変更していません。");
+    } catch (error) {
+      const message = saved ? `紐づけ操作は保存済みですが、表示更新に失敗しました。${error.message}`
+        : `${error.message} 競合の場合は閉じて最新データを取得してください。`;
+      el("invoice-link-status").textContent = message;
+      throw new Error(message);
+    }
+  });
 }
 
 function renderRules() {
@@ -432,7 +540,27 @@ function renderItems() {
   el("items").replaceChildren();
   for (const item of list.slice(page * pageSize, (page + 1) * pageSize)) {
     const row = node("tr", undefined, needsAttention(item) ? "finance-review" : "");
-    const memo = node("td", item.memo || "摘要なし");
+    const memo = node("td");
+    const linked = findInvoiceLink(item);
+    const jaMemo = item.withdrawal > 0 && /ノウキ[ョヨ]ウ/.test(item.memo.normalize("NFKC"));
+    if (linked) {
+      const anchor = node("a", item.memo || "摘要なし");
+      anchor.href = jaInvoiceUrl(linked.invoice_no, item);
+      memo.append(anchor, node("small", `JA請求書 ${linked.invoice_no} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
+    } else if (jaMemo) {
+      const button = node("button", item.memo || "摘要なし", "bank-memo-link");
+      button.type = "button";
+      button.disabled = busy;
+      button.onclick = () => openInvoiceLink(item);
+      memo.append(button, node("small", "JA請求書：未紐づけ"));
+    } else memo.textContent = item.memo || "摘要なし";
+    if (item.withdrawal > 0) {
+      const manage = node("button", linked ? "紐づけ変更・解除" : "JA請求書を紐づけ", "secondary-btn");
+      manage.type = "button";
+      manage.disabled = busy;
+      manage.onclick = () => openInvoiceLink(item);
+      memo.append(manage);
+    }
     memo.append(node("small", item.note));
     const cell = node("td", `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""} / ${item.classified_by === "manual" ? "手動確定" : "分類候補"}`);
     if (item.allocations?.length) {
@@ -862,12 +990,12 @@ async function initialize() {
     option.value = category;
     el(id).append(option);
   }
-  el("login").onclick = () => run(() => login("/bank/index.html"));
+  el("login").onclick = () => run(() => login(`/bank/index.html${location.search}${location.hash}`));
   el("refresh").onclick = () => run(async () => { status("最新データを取得しています…"); await loadData(); status("最新データを取得しました。"); });
   el("upload").onclick = () => run(uploadPdf);
   el("clear-filters").onclick = clearFilters;
   for (const id of ["account", "from", "to", "category", "subcategory", "direction", "query", "review-only", "sort"]) {
-    el(id).addEventListener("input", () => { page = 0; render(); if (id === "account") { renderRecords(); renderRules(); } });
+    el(id).addEventListener("input", () => { page = 0; render(); if (id === "account") { renderRecords(); renderRules(); renderInvoiceLinks(); } });
   }
   document.querySelectorAll("[data-period]").forEach(button => {
     button.onclick = () => {
@@ -893,6 +1021,11 @@ async function initialize() {
   el("previous").onclick = () => { page--; renderItems(); };
   el("next").onclick = () => { page++; renderItems(); };
   el("edit-form").onsubmit = saveEdit;
+  el("invoice-link-choice").onchange = updateInvoicePreview;
+  el("save-invoice-link").onclick = () => saveInvoiceLink();
+  el("unlink-invoice").onclick = () => saveInvoiceLink(true);
+  el("cancel-invoice-link").onclick = () => el("invoice-link-dialog").close();
+  el("invoice-link-dialog").addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   for (const id of ["edit-subcategory", "rule-subcategory"]) {
     const input = el(id);
     input.parentElement.after(subcategoryChoices(input));

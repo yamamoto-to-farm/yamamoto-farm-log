@@ -169,6 +169,7 @@ function screen(deps = {}) {
     focus() { this.focused = true; },
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
+    get firstElementChild() { return this.children[0]; },
     close() { this.closed = true; }, showModal() { this.closed = false; } });
   for (const id of ["login-area", "data-area", "page-area", "status", "account", "from", "to", "category", "direction",
     "query", "review-only", "previous", "next", "edit-category", "edit-note", "edit-confirm", "edit-form", "edit-dialog", "edit-status", "pdf",
@@ -178,7 +179,9 @@ function screen(deps = {}) {
     "split-item", "split-confirm", "split-total", "split-dialog", "annual", "annual-year", "annual-period",
     "annual-coverage", "annual-comparison", "coverage", "coverage-gaps", "overview", "unclassified-summary",
     "balance-minimum", "chart-mode", "chart-legend", "sort", "details-section", "filter-error", "filter-state",
-    "summary", "groups", "groups-attention", "details-attention", "details-query", "details-result", "items", "page-number"]) {
+    "summary", "groups", "groups-attention", "details-attention", "details-query", "details-result", "items", "page-number",
+    "invoice-link-item", "invoice-link-status", "invoice-link-choice", "invoice-link-empty", "unlink-invoice",
+    "invoice-link-preview", "invoice-link-dialog", "save-invoice-link", "invoice-links-list"]) {
     elements[id] = element();
   }
   elements.account.value = "account-a";
@@ -375,6 +378,80 @@ test("subcategory candidates use a shared large panel and preserve editable valu
   const css = read("bank/bank.css");
   assert.match(css, /\.bank-subcategory-list \{[^}]*max-height: 340px;[^}]*overflow-y: auto/);
   assert.match(css, /\.bank-subcategory-list button \{[^}]*width: 100%;[^}]*min-height: 44px;[^}]*font-size: 16px/);
+});
+test("JA link status detects invoice updates, differences and missing invoices without changing cash totals", () => {
+  const c = logic(), row = { ...item({ deposit: 0, withdrawal: 100 }), statement_id: "a".repeat(64) };
+  const invoice = { invoice_no: "123456", signature: "current", total_amount: 100, validation_status: "ok" };
+  const link = { invoice_no: "123456", invoice_signature: "current" };
+  assert.equal(c.invoiceLinkStatus(row, null, [invoice]), "未紐づけ");
+  assert.equal(c.invoiceLinkStatus(row, link, [invoice]), "一致");
+  assert.match(c.invoiceLinkStatus(row, link, []), /請求書なし/);
+  assert.match(c.invoiceLinkStatus(row, link, [{ ...invoice, signature: "new", total_amount: 200 }]), /更新.*金額差/);
+  assert.match(c.invoiceLinkStatus(row, link, [{ ...invoice, validation_status: "failed" }]), /検証失敗/);
+  assert.match(c.jaInvoiceUrl("123456", row), /^\/finance\/index.html\?source=ja&invoice=123456&statement=[a-f0-9]{64}&transaction=/);
+  assert.equal(c.totals([row]).withdrawal, 100);
+});
+test("JA memo opens candidates, explicit save/unlink uses revisions and failures never report success", async () => {
+  const { c, elements } = screen();
+  c.row = { ...item({ memo: "ﾉｳｷﾖｳ00000000", deposit: 0, withdrawal: 100 }), statement_id: "a".repeat(64), account_id: "account-a" };
+  c.catalog = [
+    { invoice_no: "123456", total_amount: 100, settlement_date: "2026-10-01", signature: "a", validation_status: "ok" },
+    { invoice_no: "234567", total_amount: 99, settlement_date: "2026-10-01", signature: "b", validation_status: "ok" }];
+  vm.runInContext('items = [row]; statements = [{ statement_id: row.statement_id, account_id: row.account_id, revision: "r1" }]; invoiceLinks = { links: [], invoices: catalog, revision: "links-r1" };', c);
+  c.renderItems();
+  const memo = elements.items.children[0].children[1];
+  assert.equal(memo.children[0].className, "bank-memo-link");
+  memo.children[0].onclick();
+  assert.equal(elements["invoice-link-choice"].children[1].value, "123456");
+  assert.equal(elements["invoice-link-choice"].value, "");
+  assert.equal(elements["invoice-link-dialog"].closed, false);
+  await c.saveInvoiceLink();
+  assert.match(elements["invoice-link-status"].textContent, /選択/);
+  elements["invoice-link-choice"].value = "123456";
+  c.updateInvoicePreview();
+  assert.match(elements["invoice-link-preview"].href, /invoice=123456/);
+  let request;
+  c.api = async (_path, body) => {
+    request = body;
+    return { saved: true, links: [{ statement_id: c.row.statement_id, transaction_id: c.row.transaction_id,
+      source: "ja", invoice_no: "123456", invoice_signature: "a" }], revision: "links-r2" };
+  };
+  c.loadData = async () => {};
+  await c.saveInvoiceLink();
+  assert.equal(request.invoice_signature, "a");
+  assert.equal(request.statement_revision, "r1");
+  assert.equal(request.revision, "links-r1");
+  c.renderItems();
+  const linkedMemo = elements.items.children[0].children[1];
+  assert.equal(linkedMemo.children[0].tagName, "a");
+  assert.match(linkedMemo.children[1].textContent, /一致/);
+  c.openInvoiceLink(c.row);
+  c.api = async () => { throw new Error("409 conflict"); };
+  await c.saveInvoiceLink(true);
+  assert.match(elements["invoice-link-status"].textContent, /409/);
+  assert.equal(elements["invoice-link-dialog"].closed, false);
+  c.api = async (_path, body) => { request = body; return { saved: true, links: [], revision: "links-r3" }; };
+  c.loadData = async () => { throw new Error("offline"); };
+  await c.saveInvoiceLink(true);
+  assert.equal(request.invoice_no, null);
+  assert.match(elements.status.textContent, /保存済み.*表示更新に失敗/);
+  assert.equal(vm.runInContext("invoiceLinks.links.length", c), 0);
+});
+test("invoice candidate mismatch requires confirmation, empty catalog offers upload, and orphan links can be managed", async () => {
+  const { c, elements } = screen({ confirm: () => false });
+  c.row = { ...item({ deposit: 0, withdrawal: 100 }), account_id: "account-a", statement_id: "a".repeat(64) };
+  vm.runInContext('statements = [{ statement_id: row.statement_id, account_id: row.account_id, revision: "r1", period_end: "2026-10-31" }];', c);
+  c.openInvoiceLink(c.row);
+  assert.equal(elements["invoice-link-empty"].hidden, false);
+  vm.runInContext('invoiceLinks = { links: [{statement_id: row.statement_id, transaction_id: row.transaction_id, source: "ja", invoice_no: "123456"}], invoices: [{ invoice_no: "123456", total_amount: 200, signature: "a", settlement_date: "2026-10-01", validation_status: "ok" }], revision: "r1" };', c);
+  c.renderInvoiceLinks();
+  assert.match(elements["invoice-links-list"].children[0].children[0].textContent, /元の取引なし/);
+  elements["invoice-links-list"].children[0].children[1].onclick();
+  assert.equal(elements["save-invoice-link"].hidden, true);
+  c.openInvoiceLink(c.row);
+  c.api = async () => { throw new Error("should not save without mismatch confirmation"); };
+  await c.saveInvoiceLink();
+  assert.equal(elements["invoice-link-status"].textContent, "");
 });
 test("annual category tables are collapsed by default independently for incoming and outgoing", () => {
   const { c, elements } = screen();

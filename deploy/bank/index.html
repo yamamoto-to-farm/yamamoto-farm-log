@@ -7,7 +7,7 @@
   <title>口座明細・資金繰り - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261107-dashboard-1">
-  <link rel="stylesheet" href="./bank.css?v=20261110-8">
+  <link rel="stylesheet" href="./bank.css?v=20261110-ja-links-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -89,6 +89,11 @@
         <p class="finance-note">選択口座の摘要部分一致ルールです。姓だけでも登録できますが、同じ文字を含む別の相手にも一致するため確認してください。変更・削除は保存済み明細を変更しません。次回の取り込み・再取り込みから適用され、手動修正済み・確認済み・分割内訳は維持します。用途または内訳が異なるルールの競合は未分類・要確認にします。金額の分割は自動化しません。</p>
         <div id="rules-list"></div>
       </details>
+      <details class="card finance-record-panel">
+        <summary><h2>JA請求書の紐づけ一覧</h2></summary>
+        <p>再取り込みで元の取引が変わった紐づけもここから解除できます。1請求書につき1出金の対応です。合算・分割支払いへの対応は含みません。</p>
+        <div id="invoice-links-list"></div>
+      </details>
       <details id="groups-section" class="card finance-record-panel">
         <summary><h2>未分類をまとめて整理</h2><span id="groups-attention" class="finance-attention" hidden></span></summary>
         <p class="finance-note">条件内の未分類を摘要の完全一致・入出金別でまとめます。手動確定済みは対象外です。</p>
@@ -158,7 +163,24 @@
       <div class="finance-toolbar"><button id="save-split" type="submit" class="primary-btn">保存</button><button id="cancel-split" type="button" class="secondary-btn">キャンセル</button></div>
     </form></dialog>
     <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">取り込み結果</h2><pre id="report-content"></pre><button id="close-report" class="secondary-btn" type="button">閉じる</button></dialog>
+    <dialog id="invoice-link-dialog" aria-labelledby="invoice-link-title">
+      <h2 id="invoice-link-title">JA請求書の紐づけ</h2>
+      <p id="invoice-link-item"></p>
+      <p>金額一致・引落予定日の近い順に候補を表示します。休日による日付のずれも含め、請求書を開いて確認してください。自動確定はしません。紐づけは分類・集計を変更しません。</p>
+      <label>対応するJA請求書<select id="invoice-link-choice"></select></label>
+      <p id="invoice-link-empty" hidden>取り込み済みの有効なJA請求書がありません。</p>
+      <div class="finance-toolbar">
+        <a id="invoice-link-preview" class="secondary-btn" target="_blank" rel="noopener" hidden>選択した請求書・内訳を確認</a>
+        <a class="secondary-btn" href="/finance/index.html#invoice-upload" target="_blank" rel="noopener">JA請求書PDFを取り込む</a>
+      </div>
+      <p id="invoice-link-status" role="alert"></p>
+      <div class="finance-toolbar">
+        <button id="save-invoice-link" class="primary-btn" type="button">確認して紐づけを保存</button>
+        <button id="unlink-invoice" class="secondary-btn" type="button" hidden>紐づけ解除</button>
+        <button id="cancel-invoice-link" class="secondary-btn" type="button">閉じる</button>
+      </div>
+    </dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-9"></script>
+  <script type="module" src="./bank.js?v=20261110-ja-links-1"></script>
 </body>
 </html>

@@ -552,5 +552,34 @@ test("page registration is family/admin only and frontend never persists financi
   assert.deepEqual(registration.roles, ["family", "admin"]);
   const source = readFileSync(join(root, "finance.js"), "utf8");
   assert.doesNotMatch(source, /localStorage|sessionStorage|innerHTML/);
-  assert.match(source, /login\("\/finance\/index.html"\)/);
+  assert.match(source, /login\(`\/finance\/index.html\$\{location.search\}\$\{location.hash\}`\)/);
+});
+
+test("JA invoice deep link displays the specified invoice independently of filters and validates return identifiers", () => {
+  const { context, element } = setup();
+  context.formatYen = amount => `${amount}円`;
+  const create = tag => ({ tagName: tag, children: [], append(...children) { this.children.push(...children); } });
+  context.document.createElement = create;
+  for (const id of ["linked-invoice-items"]) {
+    element(id).replaceChildren = function (...children) { this.children = children; };
+    element(id).append = function (...children) { this.children.push(...children); };
+  }
+  element("linked-invoice-panel").scrollIntoView = () => {};
+  vm.runInContext('invoices = [{invoice_no:"123456", settlement_date:"2026-11-02", total_amount:100, validation_status:"ok", items:[{trade_date:"2026-10-01",item_name:"TEST",spec:"A",department:"TEST",amount:100,category:"肥料費"}]}]', context);
+  context.params = new URLSearchParams(`source=ja&invoice=123456&statement=${"a".repeat(64)}&transaction=${"b".repeat(64)}`);
+  vm.runInContext("renderLinkedInvoice(params)", context);
+  assert.equal(element("linked-invoice-panel").hidden, false);
+  assert.match(element("linked-invoice-summary").textContent, /123456.*2026-11-02.*100円/);
+  assert.equal(element("linked-invoice-items").children.length, 1);
+  assert.match(element("linked-bank-return").href, /^\/bank\/index.html\?statement=a+&transaction=b+#details-section$/);
+  context.params = new URLSearchParams("invoice=999999&statement=invalid");
+  vm.runInContext("renderLinkedInvoice(params)", context);
+  assert.match(element("linked-invoice-status").textContent, /見つかりません/);
+  assert.equal(element("linked-bank-return").hidden, true);
+  context.params = new URLSearchParams("invoice=123456&source=card");
+  vm.runInContext("renderLinkedInvoice(params)", context);
+  assert.match(element("linked-invoice-status").textContent, /不正/);
+  context.params = new URLSearchParams();
+  vm.runInContext("renderLinkedInvoice(params)", context);
+  assert.equal(element("linked-invoice-panel").hidden, true);
 });

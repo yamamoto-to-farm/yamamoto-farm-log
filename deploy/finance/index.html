@@ -21,6 +21,16 @@
       <p data-help="経費分析のログイン">写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
     </div>
     <div id="data-area" hidden>
+      <section id="linked-invoice-panel" class="card" hidden>
+        <h2>口座明細から開いたJA請求書</h2>
+        <p id="linked-invoice-status" role="status"></p>
+        <p id="linked-invoice-summary"></p>
+        <a id="linked-bank-return" class="secondary-btn" hidden>元の口座明細へ戻る</a>
+        <p class="finance-note" data-help-keep>この表は指定した請求書の全明細です。下の期間・検索条件とは独立しています。口座の出金への加算や用途分類の変更は行いません。</p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="紐づけ対象のJA請求書明細">
+          <table><thead><tr><th>取引日</th><th>品名・規格</th><th>部署</th><th>金額</th><th>分類</th></tr></thead><tbody id="linked-invoice-items"></tbody></table>
+        </div>
+      </section>
       <section class="card" aria-labelledby="overview-title">
         <h2 id="overview-title">経費の確認</h2>
         <div class="finance-toolbar">
@@ -103,7 +113,7 @@
         </div>
       </details>
       <details class="card finance-record-panel">
-        <summary><h2>データ取り込み</h2></summary>
+        <summary id="invoice-upload"><h2>データ取り込み</h2></summary>
         <div class="finance-toolbar">
           <label>JA請求明細PDF（20MBまで）<input id="pdf" type="file" accept=".pdf,application/pdf"></label>
           <button id="upload" type="button" class="primary-btn">アップロード・取り込み</button>
@@ -140,6 +150,6 @@
       <button id="close-report" type="button" class="secondary-btn">閉じる</button>
     </dialog>
   </main>
-  <script type="module" src="./finance.js?v=20261107-dashboard-1"></script>
+  <script type="module" src="./finance.js?v=20261110-ja-links-1"></script>
 </body>
 </html>

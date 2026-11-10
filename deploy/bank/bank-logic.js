@@ -89,6 +89,21 @@ export function needsAttention(item) {
   return itemParts(item).some(part => part.category === "未分類") || !item.review_confirmed;
 }
 
+export function invoiceLinkStatus(item, link, invoices) {
+  if (!link) return "未紐づけ";
+  const invoice = invoices.find(value => value.invoice_no === link.invoice_no);
+  if (!invoice) return "請求書なし・要再確認";
+  const states = [];
+  if (invoice.validation_status === "failed") states.push("請求書検証失敗");
+  if (invoice.signature !== link.invoice_signature) states.push("請求書更新・要再確認");
+  if (invoice.total_amount !== item.withdrawal) states.push("金額差あり");
+  return states.join(" ／ ") || "一致";
+}
+
+export function jaInvoiceUrl(invoiceNo, item) {
+  return `/finance/index.html?source=ja&invoice=${encodeURIComponent(invoiceNo)}&statement=${encodeURIComponent(item.statement_id)}&transaction=${encodeURIComponent(item.transaction_id)}#linked-invoice-panel`;
+}
+
 export function filterItems(items, { account, from, to, category, subcategory, direction, query, reviewOnly }) {
   const words = (query || "").normalize("NFKC").toLocaleLowerCase("ja").trim().split(/\s+/).filter(Boolean);
   return items.filter(item => (!account || item.account_id === account)

@@ -116,6 +116,38 @@ async function loadData() {
   el("data-area").hidden = false;
   el("login-area").hidden = true;
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}（財務データは端末に保存しません）`;
+  renderLinkedInvoice(new URLSearchParams(location.search));
+  if (location.hash === "#invoice-upload") {
+    el("invoice-upload").closest("details").open = true;
+    el("invoice-upload").scrollIntoView({ block: "start" });
+  }
+}
+
+function renderLinkedInvoice(params) {
+  const panel = el("linked-invoice-panel");
+  panel.hidden = !params.has("invoice");
+  if (panel.hidden) return;
+  const invoiceNo = params.get("invoice");
+  const valid = /^\d{6,12}$/.test(invoiceNo) && (!params.has("source") || params.get("source") === "ja");
+  const invoice = valid ? invoices.find(value => value.invoice_no === invoiceNo) : null;
+  el("linked-invoice-items").replaceChildren();
+  el("linked-invoice-summary").textContent = "";
+  const back = el("linked-bank-return");
+  back.hidden = !/^[a-f0-9]{64}$/.test(params.get("statement") || "") || !/^[a-f0-9]{64}$/.test(params.get("transaction") || "");
+  if (!back.hidden) back.href = `/bank/index.html?statement=${encodeURIComponent(params.get("statement"))}&transaction=${encodeURIComponent(params.get("transaction"))}#details-section`;
+  el("linked-invoice-status").textContent = !valid ? "請求書リンクの指定が不正です。"
+    : !invoice ? "指定された請求書は見つかりません。取り込み状況を確認してください。"
+    : invoice.validation_status === "failed" ? "この請求書は検証失敗です。内容を確認してください。" : "指定されたJA請求書の最新の内容です。";
+  if (invoice) {
+    el("linked-invoice-summary").textContent = `JA請求書 ${invoice.invoice_no} ／ 引落予定日 ${invoice.settlement_date} ／ 請求額 ${formatYen(invoice.total_amount)}`;
+    for (const item of invoice.items) {
+      const row = node("tr");
+      row.append(...[item.trade_date, `${item.item_name} ${item.spec || ""}`, item.department,
+        formatYen(item.amount), `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""}`].map(value => node("td", value)));
+      el("linked-invoice-items").append(row);
+    }
+  }
+  panel.scrollIntoView({ block: "start" });
 }
 
 function filters() {
@@ -697,7 +729,7 @@ async function initialize() {
       el(id).append(option);
     }
   }
-  el("login").addEventListener("click", () => run(() => login("/finance/index.html")));
+  el("login").addEventListener("click", () => run(() => login(`/finance/index.html${location.search}${location.hash}`)));
   el("refresh").addEventListener("click", () => run(async () => {
     status("最新データを取得しています…");
     await loadData();

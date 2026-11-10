@@ -31,3 +31,7 @@
 .bank-subcategory-list h4 { margin: 8px 4px; color: #536574; font-size: 14px; }
 .bank-subcategory-list button { display: block; width: 100%; text-align: left; padding: 10px 12px; min-height: 44px; font-size: 16px; line-height: 1.5; border: 0; border-radius: 4px; background: transparent; color: inherit; overflow-wrap: anywhere; cursor: pointer; }
 .bank-subcategory-list button:hover, .bank-subcategory-list button:focus-visible { background: #dceee6; outline: 2px solid #398651; outline-offset: -2px; }
+.bank-memo-link { border: 0; background: transparent; padding: 0; color: #17649a; text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
+#invoice-link-dialog { width: min(680px, calc(100vw - 32px)); max-width: 100%; }
+#invoice-link-choice { width: 100%; min-width: 0; }
+#invoice-link-status { color: #a51f25; }
