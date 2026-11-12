@@ -232,12 +232,14 @@ async function saveShipping() {
     alert("重量を入力してください");
     return;
   }
+  const totalWeight = weightList.reduce((sum, weight) => sum + weight, 0);
 
   const confirmed = await confirmSaveBeforeSubmit({
     lines: [
       `出荷日: ${shippingDate}`,
       `対象件数: ${checkedOrder.length}件`,
       `重量入力数: ${weightList.length}件`,
+      `重量合計: ${totalWeight.toLocaleString("ja-JP", { maximumFractionDigits: 2 })}kg`,
       `機械: ${machine || "未設定"}`,
       `備考: ${String(notes || "").trim() || "なし"}`
     ]
