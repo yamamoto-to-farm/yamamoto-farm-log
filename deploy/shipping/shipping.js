@@ -25,6 +25,7 @@ const log = (...args) => { if (DEBUG) console.log("[shipping]", ...args); };
 // チェック順管理
 // ===============================
 let checkedOrder = [];
+let unshippedByKey = new Map();
 
 
 // ===============================
@@ -34,6 +35,7 @@ export function initShippingPage() {
   const today = todayLocalYmd();
   document.getElementById("shippingDate").value = today;
 
+  document.getElementById("weights").addEventListener("input", refreshShippingSummary);
   loadUnshipped();
 }
 
@@ -99,6 +101,8 @@ async function loadUnshipped() {
 
   const area = document.getElementById("unshippedArea");
   area.innerHTML = "";
+  unshippedByKey = new Map(unshipped.map(item => [item.key, item]));
+  checkedOrder = checkedOrder.filter(key => unshippedByKey.has(key));
 
   unshipped.forEach(u => {
     const div = document.createElement("div");
@@ -118,6 +122,7 @@ async function loadUnshipped() {
 
     area.appendChild(div);
   });
+  refreshShippingSummary();
 }
 
 
@@ -131,6 +136,7 @@ function onCheckChange(key, checked) {
     checkedOrder = checkedOrder.filter(k => k !== key);
   }
   updateOrderLabels();
+  refreshShippingSummary();
 }
 
 function updateOrderLabels() {
@@ -152,12 +158,113 @@ function updateOrderLabels() {
 // 重量パース
 // ===============================
 function parseWeights(raw) {
-  return raw
+  const entries = raw
     .split(/[\s,]+/)
     .map(v => v.trim())
-    .filter(v => v.length > 0)
-    .map(v => Number(v))
-    .filter(v => !isNaN(v));
+    .filter(Boolean);
+  const values = [];
+  const invalid = [];
+
+  entries.forEach(entry => {
+    const value = Number(entry);
+    if (!Number.isFinite(value) || value <= 0) {
+      invalid.push(entry);
+    } else {
+      values.push(value);
+    }
+  });
+
+  return { values, invalid };
+}
+
+function formatShippingNumber(value) {
+  return Number(value.toFixed(2)).toLocaleString("ja-JP", { maximumFractionDigits: 2 });
+}
+
+function getSelectedTargets() {
+  return checkedOrder
+    .map(key => unshippedByKey.get(key))
+    .filter(Boolean)
+    .map(item => ({
+      ...item,
+      originalRemain: item.remainBins,
+      remainBins: item.remainBins,
+      assignedBins: 0,
+      totalWeight: 0
+    }));
+}
+
+function getShippingInputSummary() {
+  const targets = getSelectedTargets();
+  const parsedWeights = parseWeights(document.getElementById("weights").value);
+  const selectedBins = targets.reduce((sum, target) => sum + target.originalRemain, 0);
+  const requiredWeights = Math.ceil(selectedBins / 2);
+  const totalWeight = parsedWeights.values.reduce((sum, weight) => sum + weight, 0);
+
+  allocateWeights(targets, parsedWeights.values);
+
+  return {
+    targets,
+    weights: parsedWeights.values,
+    invalidWeights: parsedWeights.invalid,
+    selectedBins,
+    requiredWeights,
+    totalWeight,
+    allocatedBins: targets.reduce((sum, target) => sum + target.assignedBins, 0),
+    allocatedWeight: targets.reduce((sum, target) => sum + target.totalWeight, 0),
+    unallocatedBins: targets.reduce((sum, target) => sum + target.remainBins, 0)
+  };
+}
+
+function refreshShippingSummary() {
+  const summary = document.getElementById("shippingSummary");
+  const preview = document.getElementById("allocationPreview");
+  const saveButton = document.getElementById("saveShippingButton");
+  if (!summary || !preview || !saveButton) return;
+
+  const input = getShippingInputSummary();
+  const tooManyWeights = input.weights.length > input.requiredWeights;
+  const canSave = input.targets.length > 0 &&
+    input.weights.length > 0 &&
+    input.invalidWeights.length === 0 &&
+    !tooManyWeights;
+
+  saveButton.disabled = !canSave;
+
+  if (input.targets.length === 0) {
+    summary.textContent = "対象を選択すると、基数と重量の割当内容を表示します。";
+  } else {
+    const message = [
+      `選択：${input.targets.length}件 / ${formatShippingNumber(input.selectedBins)}基`,
+      `重量：${input.weights.length}件 / ${formatShippingNumber(input.totalWeight)}kg`,
+      `必要な重量入力数：${input.requiredWeights}件（1件あたり最大2基分）`,
+      `今回の計量：${formatShippingNumber(input.allocatedBins)}基 / ${formatShippingNumber(input.allocatedWeight)}kg`
+    ];
+
+    if (input.invalidWeights.length) {
+      message.push(`入力エラー：${input.invalidWeights.join("、")} は0より大きい数値で入力してください。`);
+    } else if (tooManyWeights) {
+      message.push(`重量入力が${input.weights.length - input.requiredWeights}件多いため、入力を見直してください。`);
+    } else if (input.unallocatedBins > 0) {
+      message.push(`未計量：${formatShippingNumber(input.unallocatedBins)}基（今回は出荷記録に含まれません）`);
+    }
+    summary.textContent = message.join("\n");
+  }
+
+  preview.replaceChildren();
+  if (input.targets.length) {
+    const heading = document.createElement("strong");
+    heading.textContent = "重量の割当先（選択順）";
+    preview.appendChild(heading);
+
+    const list = document.createElement("ul");
+    input.targets.forEach(target => {
+      const item = document.createElement("li");
+      item.textContent = `${target.field} / ${target.plantingRef}：${formatShippingNumber(target.assignedBins)}基・${formatShippingNumber(target.totalWeight)}kg`;
+      list.appendChild(item);
+    });
+    preview.appendChild(list);
+  }
 }
 
 
@@ -176,6 +283,7 @@ function allocateWeights(targets, weights) {
       const weightForThis = W * (binsForThis / 2.0);
 
       t.totalWeight += weightForThis;
+      t.assignedBins += binsForThis;
       t.remainBins -= binsForThis;
 
       remainBinsInW -= binsForThis;
@@ -226,10 +334,18 @@ async function saveShipping() {
     return;
   }
 
-  const raw = document.getElementById("weights").value;
-  const weightList = parseWeights(raw);
+  const input = getShippingInputSummary();
+  if (input.invalidWeights.length > 0) {
+    alert(`重量に無効な入力があります: ${input.invalidWeights.join("、")}（0より大きい数値を入力してください）`);
+    return;
+  }
+  const weightList = input.weights;
   if (weightList.length === 0) {
     alert("重量を入力してください");
+    return;
+  }
+  if (weightList.length > input.requiredWeights) {
+    alert(`重量入力が多すぎます。選択した基数に必要な重量入力数は${input.requiredWeights}件です。`);
     return;
   }
   const totalWeight = weightList.reduce((sum, weight) => sum + weight, 0);
@@ -237,9 +353,17 @@ async function saveShipping() {
   const confirmed = await confirmSaveBeforeSubmit({
     lines: [
       `出荷日: ${shippingDate}`,
-      `対象件数: ${checkedOrder.length}件`,
+      `対象件数: ${input.targets.length}件`,
+      `選択基数: ${formatShippingNumber(input.selectedBins)}基`,
       `重量入力数: ${weightList.length}件`,
-      `重量合計: ${totalWeight.toLocaleString("ja-JP", { maximumFractionDigits: 2 })}kg`,
+      `重量合計: ${formatShippingNumber(totalWeight)}kg`,
+      `今回の計量: ${formatShippingNumber(input.allocatedBins)}基 / ${formatShippingNumber(input.allocatedWeight)}kg`,
+      ...input.targets.map(t =>
+        `割当 ${t.field} / ${t.plantingRef}: ${formatShippingNumber(t.assignedBins)}基 / ${formatShippingNumber(t.totalWeight)}kg`
+      ),
+      ...(input.unallocatedBins > 0
+        ? [`未計量: ${formatShippingNumber(input.unallocatedBins)}基（今回は出荷記録に含まれません）`]
+        : []),
       `機械: ${machine || "未設定"}`,
       `備考: ${String(notes || "").trim() || "なし"}`
     ]
@@ -280,6 +404,7 @@ async function saveShipping() {
       field: harvestMap[key].field,
       originalRemain: remain,
       remainBins: remain,
+      assignedBins: 0,
       totalWeight: 0
     };
   });
@@ -299,6 +424,8 @@ async function saveShipping() {
   if (weight.length > 0) rows = weight;
 
   targets.forEach(t => {
+    if (t.assignedBins <= 0) return;
+
     const shippedBins = t.originalRemain - t.remainBins;
 
     rows.push({
@@ -345,7 +472,9 @@ async function saveShipping() {
   });
 
   // ★ サマリー更新
-  targets.forEach(t => enqueueSummaryUpdate(t.plantingRef));
+  targets
+    .filter(t => t.assignedBins > 0)
+    .forEach(t => enqueueSummaryUpdate(t.plantingRef));
 
   // ★ モーダルを「サマリー更新中…」に
   updateSaveModal("サマリー更新中…");

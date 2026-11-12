@@ -38,9 +38,13 @@
     <!-- 未計量リスト -->
     <h2 class="section-title">未計量の出荷申込一覧</h2>
     <div class="card" id="unshippedArea"></div>
+    <div class="card" id="shippingSummary" role="status" aria-live="polite" style="white-space: pre-line;">
+      対象を選択すると、基数と重量の割当内容を表示します。
+    </div>
+    <div class="card" id="allocationPreview" aria-live="polite"></div>
 
     <!-- 重量入力 -->
-    <h2 class="section-title">重量入力（改行 or カンマ区切り）</h2>
+    <h2 class="section-title">重量入力（改行 or カンマ区切り、1件あたり最大2基分）</h2>
     <div class="card">
       <textarea id="weights" rows="5" class="form-textarea"
         placeholder="例：500 650 600 550 650"></textarea>
@@ -53,7 +57,7 @@
     </div>
 
     <!-- 保存 -->
-    <button type="button" class="primary-btn" onclick="saveShipping()">保存</button>
+    <button type="button" id="saveShippingButton" class="primary-btn" onclick="saveShipping()" disabled>保存</button>
 
     <!-- ★ 作業完了ボタンは utils.js が追加する -->
   </div><!-- /form-area -->
@@ -110,7 +114,5 @@
 </body>
 
 </html>
-
-
 
 
