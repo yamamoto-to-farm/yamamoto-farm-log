@@ -158,6 +158,8 @@
 .line-connection.line-fetch-failed :is(#line-refresh, #template-line-refresh) { border-color: #b91c1c; color: #991b1b; font-weight: 600; }
 .line-management { margin-top: 20px; }
 .line-member, .line-job { border-top: 1px solid #cbd5e1; padding: 12px 0; }
+.template-job-meta { display: block; margin: 4px 0 0 1em; }
+#template-history-more { margin-top: 8px; }
 .line-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
 #line-confirm { width: min(640px, 90vw); max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
 #line-confirm::backdrop { background: rgb(0 0 0 / 45%); }

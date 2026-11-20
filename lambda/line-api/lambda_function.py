@@ -11,6 +11,7 @@ import re
 import secrets
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -26,6 +27,7 @@ USER_ID = re.compile(r"U[0-9a-f]{32}")
 CONFLICTS = {"PreconditionFailed", "ConditionalRequestConflict", "409", "412"}
 LINK_PREFIX = "LINK "
 ACK_DATA = re.compile(r"ack=([0-9]{4}-[0-9]{2}-[0-9]{2})/([0-9a-f-]{36})")
+HISTORY_PAGE_SIZE = 10
 
 
 def fail(status, message):
@@ -265,6 +267,46 @@ class Service:
             })
         _, day, _ = self.day(date)
         return {"members": members, "jobs": [self.public_job(job) for job in day["jobs"].values()]}
+
+    def template_history(self, before):
+        cursor = None
+        if before is not None:
+            if not isinstance(before, dict) or type(before.get("at")) not in (int, float) or not 0 < before["at"] < 253402300800:
+                fail(400, "履歴の続きの指定が不正です。")
+            cursor = (before["at"], identifier(before.get("id")))
+
+        prefix = self.prefix + "line/deliveries/"
+        pages = core.S3.get_paginator("list_objects_v2").paginate(Bucket=self.bucket, Prefix=prefix)
+        files = sorted(
+            ((item["LastModified"].timestamp(), item["Key"][len(prefix):-5])
+             for page in pages for item in page.get("Contents", [])
+             if re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\.json", item["Key"][len(prefix):])),
+            reverse=True,
+        )
+        recent = []
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for start in range(0, len(files), 8):
+                # A job timestamp precedes its S3 write; allow for clock skew and S3's second precision.
+                if len(recent) > HISTORY_PAGE_SIZE and files[start][0] + 60 < recent[-1][0][0]:
+                    break
+                for _, day, _ in pool.map(self.day, (date for _, date in files[start:start + 8])):
+                    for job in day["jobs"].values():
+                        if job.get("kind") != "template":
+                            continue
+                        attempts = [result["first_attempt"] for result in job["results"].values()
+                                    if result.get("first_attempt") is not None]
+                        at = min(attempts) if attempts else datetime.fromisoformat(job["created_at"]).timestamp()
+                        key = (at, job["id"])
+                        if cursor is None or key < cursor:
+                            recent.append((key, job))
+                recent.sort(key=lambda entry: entry[0], reverse=True)
+                del recent[HISTORY_PAGE_SIZE + 1:]
+        jobs = [self.public_job(job) | {"history_at": key[0]} for key, job in recent[:HISTORY_PAGE_SIZE]]
+        next_cursor = None
+        if len(recent) > HISTORY_PAGE_SIZE:
+            at, job_id = recent[HISTORY_PAGE_SIZE - 1][0]
+            next_cursor = {"at": at, "id": job_id}
+        return {"jobs": jobs, "next_cursor": next_cursor}
 
     def registration(self, req, author):
         worker = next((worker for worker in workers() if worker["name"] == req.get("worker")), None)
@@ -566,6 +608,8 @@ def lambda_handler(event, context):
         author = claims.get("username") or claims["sub"]
         if action in ("issue", "approve", "unlink"):
             result = service.registration(req, author)
+        elif action == "template_history":
+            result = service.template_history(req.get("before"))
         elif action in ("prepare", "prepare_template"):
             result = service.prepare(req, author)
         elif action in ("send", "close"):

@@ -9,6 +9,12 @@ let loadedDate = "";
 let sequence = 0;
 let busy = false;
 let confirmedJob;
+let templateJobs = [];
+let historyCursor;
+let historyLoaded = false;
+let historySequence = 0;
+let historyLoading = false;
+let focusedTemplateJob;
 const el = id => document.getElementById(id);
 const labels = { ready: "未送信", accepted: "LINE受付済み（配達・既読は未確認）",
   failed: "失敗", unknown: "結果不明・同じ送信として再確認が必要" };
@@ -42,10 +48,12 @@ export function validLineState(value) {
   return value && Array.isArray(value.members) && Array.isArray(value.jobs)
     && value.members.every(member => member && typeof member.worker === "string"
       && typeof member.name === "string" && typeof member.linked === "boolean")
-    && value.jobs.every(job => job && typeof job.id === "string" && typeof job.message === "string"
-      && Array.isArray(job.names) && job.names.every(name => typeof name === "string")
-      && job.results && job.names.every(name => Object.hasOwn(labels, job.results[name]?.status)));
+    && value.jobs.every(validJob);
 }
+
+const validJob = job => job && typeof job.id === "string" && typeof job.message === "string"
+  && Array.isArray(job.names) && job.names.every(name => typeof name === "string")
+  && job.results && job.names.every(name => Object.hasOwn(labels, job.results[name]?.status));
 
 function renderState() {
   renderIssueOptions(state.members.filter(member => !member.linked));
@@ -74,7 +82,6 @@ function renderJobs() {
   const jobs = [...state.jobs].reverse();
   jobs.sort((a, b) => Number(isPending(b)) - Number(isPending(a)));
   el("line-jobs").innerHTML = jobHistory(jobs.filter(job => job.kind !== "template"));
-  el("template-line-jobs").innerHTML = jobHistory(jobs.filter(job => job.kind === "template"));
 }
 
 const isTemplate = job => job.kind === "template";
@@ -83,10 +90,23 @@ const ackSummary = job => job.ack_enabled
   : "確認ボタンなし";
 const ackTime = at => new Date(at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
-function jobHistory(jobs) {
-  return jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${isPending(job) ? " open" : ""}>
-    <summary>${isTemplate(job) ? `${escape(job.title)} ／ ` : ""}${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"} ／ ${ackSummary(job)}</summary>
-    <p>${escape(job.created_at)} ／ ${escape(job.date)}</p>
+function templateSummary(job) {
+  const statuses = job.names.map(name => job.results[name].status);
+  const accepted = statuses.filter(status => status === "accepted").length;
+  const failed = statuses.filter(status => status === "failed").length;
+  const unknown = statuses.filter(status => status === "unknown").length;
+  const time = ackTime(Number.isFinite(job.history_at) ? job.history_at * 1000 : job.created_at);
+  return `<span>${escape(time)}｜${escape(job.title)}</span>
+    <span class="template-job-meta msg-muted">宛先 ${job.names.length}名 · LINE受付 ${accepted}/${job.names.length}名 · ${ackSummary(job)}
+      ${failed ? ` · <strong class="msg-error">送信失敗 ${failed}名</strong>` : ""}
+      ${unknown ? ` · <strong class="msg-error">結果不明 ${unknown}名</strong>` : ""}
+      ${job.closed ? " · 終了" : isPending(job) ? ` · ${accepted === job.names.length ? "控え未保存" : "未完了"}` : ""}</span>`;
+}
+
+function jobHistory(jobs, templates = false) {
+  return jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${!templates && isPending(job) ? " open" : ""}>
+    <summary>${templates ? templateSummary(job) : `${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"} ／ ${ackSummary(job)}`}</summary>
+    <p>${templates ? `送信記録の日付：${escape(job.date)}` : `${escape(job.created_at)} ／ ${escape(job.date)}`}</p>
     <ul>${job.names.map(name => `<li>${escape(name)}：${escape(labels[job.results[name].status])}
       ${job.ack_enabled ? ` ／ ${job.results[name].confirmed_at ? `本人確認済み（${escape(ackTime(job.results[name].confirmed_at))}）`
         : job.results[name].status === "accepted" ? "確認待ち" : "本人確認なし"}` : ""}
@@ -95,6 +115,62 @@ function jobHistory(jobs) {
     ${!job.recorded && !job.closed ? `<button type="button" class="primary-btn" data-line-resume="${escape(job.id)}">内容を確認して送信・再試行</button>
       <button type="button" class="secondary-btn" data-line-close="${escape(job.id)}">未送信分の送信を終了</button>` : ""}
   </details>`).join("") || "<p>この日のLINE送信履歴はありません。</p>";
+}
+
+export async function loadTemplateHistory(mode = "initial") {
+  const append = mode === "more";
+  if ((mode === "initial" && historyLoaded) || (mode !== "refresh" && historyLoading)
+    || (append && !historyCursor)) return;
+  const current = ++historySequence;
+  const status = el("template-history-status");
+  const more = el("template-history-more");
+  historyLoading = true;
+  more.disabled = true;
+  status.classList.toggle("msg-error", false);
+  status.textContent = "定型文の送信履歴を取得中…";
+  try {
+    const result = await lineApi("template_history", append ? { before: historyCursor } : {});
+    if (current !== historySequence) return;
+    if (!Array.isArray(result?.jobs) || !result.jobs.every(job => validJob(job) && isTemplate(job)
+      && typeof job.date === "string" && Number.isFinite(job.history_at))
+      || !(result.next_cursor === null || typeof result.next_cursor?.id === "string"
+           && Number.isFinite(result.next_cursor.at))) throw new Error("LINE APIの応答形式が不正です。");
+    const list = el("template-line-jobs");
+    const added = append ? result.jobs.filter(job => !templateJobs.some(previous => previous.id === job.id)) : result.jobs;
+    templateJobs = append ? [...templateJobs, ...added] : added;
+    if (append) {
+      if (added.length) list.insertAdjacentHTML("beforeend", jobHistory(added, true));
+    } else {
+      list.innerHTML = added.length ? jobHistory(added, true) : "";
+    }
+    if (templateJobs.some(job => job.id === focusedTemplateJob?.id)) pinTemplateJob();
+    historyCursor = result.next_cursor;
+    historyLoaded = true;
+    status.textContent = templateJobs.length ? `${templateJobs.length}件表示中` : "定型文の送信履歴はありません。";
+  } catch (error) {
+    if (current !== historySequence) return;
+    console.error("[line] template history fetch failed", error);
+    status.classList.toggle("msg-error", true);
+    status.textContent = `定型文の送信履歴を取得できませんでした。${error.message}「送信履歴・本人確認を更新」で再試行できます。`;
+  } finally {
+    if (current === historySequence) {
+      historyLoading = false;
+      more.disabled = false;
+      more.hidden = !historyCursor;
+    }
+  }
+}
+
+function pinTemplateJob(job) {
+  focusedTemplateJob = job;
+  el("template-focused-job").innerHTML = job
+    ? `<p class="msg-muted">今回確認する送信</p>${jobHistory([job], true)}` : "";
+}
+
+async function refreshAfterTemplateAction(job) {
+  const wasVisible = templateJobs.some(entry => entry.id === job.id) || focusedTemplateJob?.id === job.id;
+  await loadTemplateHistory("refresh");
+  if (wasVisible && !templateJobs.some(entry => entry.id === job.id)) pinTemplateJob(job);
 }
 
 const isPending = job => !job.closed && !job.recorded;
@@ -113,7 +189,11 @@ function cardJobs(group, jobs) {
 }
 
 function focusJob(job) {
-  const details = el(`line-job-${job.id}`);
+  let details = el(`line-job-${job.id}`);
+  if (isTemplate(job) && !details) {
+    pinTemplateJob(job);
+    details = el(`line-job-${job.id}`);
+  }
   details.open = true;
   const summary = details.querySelector("summary");
   summary.focus({ preventScroll: true });
@@ -194,8 +274,7 @@ async function refresh() {
   el("line-updated").textContent = "";
   el("line-members").innerHTML = "";
   el("line-jobs").innerHTML = "";
-  el("template-line-jobs").innerHTML = "";
-  el("template-line-date").textContent = date ? `送信履歴：${date}分（「作業予定の連絡」の日付）` : "";
+  el("template-line-date").textContent = date ? `新規送信の記録日：${date}（「作業予定の連絡」の日付）` : "";
   for (const form of el("template-list").querySelectorAll("[data-template-send]")) {
     form.querySelector('button[type="submit"]').disabled = true;
   }
@@ -302,6 +381,7 @@ async function prepareTemplate(form) {
   const job = await lineApi("prepare_template", { date, names, title, message, confirm_resend: Boolean(duplicates.length) });
   await refresh();
   if (date !== context.date()) throw new Error(`${date}分の定型文の送信準備が履歴に残っています。`);
+  void loadTemplateHistory("refresh");
   showConfirmation(job);
 }
 
@@ -323,6 +403,7 @@ async function deliver() {
     confirmedJob = null;
     if (!isTemplate(job)) await context.reload();
     await refresh();
+    if (isTemplate(job)) await refreshAfterTemplateAction(updated);
     notice(updated.recorded ? "全員のLINE受付と控え保存が完了しました。配達・既読は未確認です。"
       : "未完了の宛先があります。下の送信履歴で人ごとの結果を確認してください。", !updated.recorded);
   } catch (error) {
@@ -362,6 +443,7 @@ async function guarded(task, report = notice) {
   el("line-management").inert = true;
   el("line-history").inert = true;
   el("template-line-jobs").inert = true;
+  el("template-focused-job").inert = true;
   el("template-line-refresh").disabled = true;
   el("line-refresh").disabled = true;
   decorateLineCards();
@@ -372,6 +454,7 @@ async function guarded(task, report = notice) {
     el("line-management").inert = false;
     el("line-history").inert = false;
     el("template-line-jobs").inert = false;
+    el("template-focused-job").inert = false;
     el("template-line-refresh").disabled = false;
     el("line-refresh").disabled = false;
     decorateLineCards();
@@ -381,7 +464,10 @@ async function guarded(task, report = notice) {
 export function initLineMessaging(options) {
   context = options;
   el("line-refresh").onclick = () => guarded(refreshLineState);
-  el("template-line-refresh").onclick = () => guarded(refreshLineState);
+  el("template-line-refresh").onclick = () => guarded(() => Promise.all([
+    refreshLineState(), loadTemplateHistory("refresh"),
+  ]));
+  el("template-history-more").onclick = () => loadTemplateHistory("more");
   el("template-list").onsubmit = async event => {
     event.preventDefault();
     const form = event.target;
@@ -415,19 +501,22 @@ export function initLineMessaging(options) {
   const handleHistory = event => {
     const resume = event.target.closest("[data-line-resume]");
     const close = event.target.closest("[data-line-close]");
-    if (resume) {
-      const job = state.jobs.find(job => job.id === resume.dataset.lineResume);
-      if (job) showConfirmation(job);
-    }
+    const id = resume?.dataset.lineResume ?? close?.dataset.lineClose;
+    const job = id && (state?.jobs.find(job => job.id === id) || templateJobs.find(job => job.id === id)
+      || (focusedTemplateJob?.id === id ? focusedTemplateJob : null));
+    if (!job) return;
+    if (resume) showConfirmation(job);
     if (close && window.confirm("この送信の未送信分を終了します。受付済み分の取り消しはできません。よろしいですか？")) {
-      guarded(async () => {
-        await lineApi("close", { date: loadedDate, job_id: close.dataset.lineClose, confirm: true });
+      return guarded(async () => {
+        const updated = await lineApi("close", { date: job.date, job_id: job.id, confirm: true });
         await refresh();
+        if (isTemplate(job)) await refreshAfterTemplateAction(updated);
       });
     }
   };
   el("line-jobs").onclick = handleHistory;
   el("template-line-jobs").onclick = handleHistory;
+  el("template-focused-job").onclick = handleHistory;
   el("line-confirm-send").onclick = () => guarded(deliver);
   el("line-confirm-cancel").onclick = () => { el("line-confirm").close(); confirmedJob = null; };
   el("line-confirm").addEventListener("cancel", event => { if (busy) event.preventDefault(); });

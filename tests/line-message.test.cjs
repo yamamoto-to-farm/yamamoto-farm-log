@@ -25,6 +25,7 @@ function harness() {
       const classes = new Set();
       elements.set(id, {
         hidden: false, disabled: false, textContent: "", innerHTML: "",
+        insertAdjacentHTML(where, html) { assert.equal(where, "beforeend"); this.innerHTML += html; },
         classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); }, contains: name => classes.has(name) },
         querySelectorAll: () => [], addEventListener() {},
         focus() {}, select() {}, showModal() { this.open = true; }, close() { this.open = false; },
@@ -379,6 +380,7 @@ test("monthly template confirmation prepares only the submitted card and does no
   const template = { ...clone(job), kind: "template", title: "Shift reminder", ack_enabled: true, names: [names[0]] };
   h.context.testApi = async (action, req) => {
     if (!action) return { ...initial, jobs: [template] };
+    if (action === "template_history") return { jobs: [{ ...template, history_at: 1793836800 }], next_cursor: null };
     h.calls.push([action, clone(req)]);
     return template;
   };
@@ -397,12 +399,12 @@ test("monthly template confirmation prepares only the submitted card and does no
   assert.equal(h.element("line-confirm-ack").hidden, false);
   assert.doesNotMatch(h.element("line-jobs").innerHTML, /Shift reminder/);
   template.results[names[0]] = { status: "accepted", confirmed_at: "2026-11-05T00:00:00Z" };
-  await h.context.refresh();
-  assert.match(h.element("template-line-jobs").innerHTML, /Shift reminder.*本人確認 1\/1名/);
+  await h.context.loadTemplateHistory("refresh");
+  assert.match(h.element("template-line-jobs").innerHTML, /Shift reminder[\s\S]*本人確認 1\/1名/);
   assert.match(h.element("template-line-jobs").innerHTML, /本人確認済み（/);
   assert.ok(!h.calls.some(item => Array.isArray(item) && item[0] === "send"));
 });
-test("template resend identifies the same dated history shown on the form and cancellation prevents preparation", async () => {
+test("template resend uses the displayed send record date and cancellation prevents preparation", async () => {
   const h = harness();
   const date = "2026-11-06";
   h.setDate(date);
@@ -411,13 +413,65 @@ test("template resend identifies the same dated history shown on the form and ca
   h.setState({ ...initial, jobs: [sent] });
   await h.context.refresh();
   const card = mountTemplate(h, "Shift reminder", sent.message, names);
-  assert.match(h.element("template-line-date").textContent, /2026-11-06分.*作業予定の連絡/);
+  assert.match(h.element("template-line-date").textContent, /新規送信の記録日：2026-11-06.*作業予定の連絡/);
   let prompt;
   h.context.window.confirm = text => { prompt = text; return false; };
   await card.submit();
   assert.match(prompt, /Part Aには 2026-11-06 分として同じ本文.*別の連絡/);
   assert.doesNotMatch(prompt, /Part B/);
   assert.ok(!h.calls.some(call => call.options?.method === "POST"));
+});
+test("recent templates append an older page independently of the plan date and close an old job using its own date", async () => {
+  const h = harness();
+  const recent = { ...clone(job), id: "recent", date: "2026-11-20", kind: "template", title: "Recent",
+    history_at: 1795136400, ack_enabled: true };
+  const old = { ...clone(recent), id: "old", date: "2026-10-20", title: "Older", history_at: 1792458000 };
+  old.results[names[0]].status = "failed";
+  const firstCursor = { at: recent.history_at, id: recent.id };
+  h.context.testApi = async (action, req, date) => {
+    h.calls.push([action, req && clone(req), date]);
+    if (action === "template_history") return req.before
+      ? { jobs: [old], next_cursor: null }
+      : { jobs: [recent], next_cursor: firstCursor };
+    if (action === "close") return { ...old, closed: true };
+    return initial;
+  };
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.context.loadTemplateHistory();
+  const history = h.element("template-line-jobs");
+  assert.match(history.innerHTML, /Recent/);
+  assert.equal(h.element("template-history-more").hidden, false);
+  h.setDate("2026-12-01");
+  await h.context.refresh();
+  assert.match(history.innerHTML, /Recent/);
+  await h.element("template-history-more").onclick();
+  assert.deepEqual(h.calls.filter(([action]) => action === "template_history"), [
+    ["template_history", {}, undefined], ["template_history", { before: firstCursor }, undefined],
+  ]);
+  assert.match(history.innerHTML, /Recent[\s\S]+Older[\s\S]+送信失敗 1名/);
+  assert.equal(h.element("template-history-more").hidden, true);
+  assert.equal(h.element("template-history-status").textContent, "2件表示中");
+  await history.onclick({ target: { closest: selector => selector === "[data-line-close]"
+    ? { dataset: { lineClose: old.id } } : null } });
+  assert.deepEqual(h.calls.find(([action]) => action === "close")[1], {
+    date: old.date, job_id: old.id, confirm: true,
+  });
+  assert.match(h.element("template-focused-job").innerHTML, /Older[\s\S]+終了/);
+});
+test("a history fetch failure is reported without clearing the loaded page", async () => {
+  const h = harness();
+  h.context.testApi = async () => ({
+    jobs: [{ ...clone(job), kind: "template", title: "Saved template", history_at: 1795136400 }],
+    next_cursor: { id: job.id, at: 1795136400 },
+  });
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.context.loadTemplateHistory();
+  h.context.testApi = async () => { throw new Error("History unavailable"); };
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.element("template-history-more").onclick();
+  assert.match(h.element("template-line-jobs").innerHTML, /Saved template/);
+  assert.match(h.element("template-history-status").textContent, /取得できませんでした.*History unavailable/);
+  assert.equal(h.element("template-history-more").disabled, false);
 });
 test("a different template body needs only ordinary confirmation even with an unfinished send", async () => {
   const h = harness();

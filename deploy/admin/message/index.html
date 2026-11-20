@@ -7,7 +7,7 @@
   <title>業務連絡 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261120-template-cards-1">
+  <link rel="stylesheet" href="./message.css?v=20261120-template-history-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
@@ -91,8 +91,11 @@
       </div>
       <div id="template-list" class="msg-cards"></div>
       <section class="line-management" aria-labelledby="template-history-title">
-        <h3 id="template-history-title">この日の定型文送信履歴</h3>
+        <h3 id="template-history-title">最近の定型文送信履歴</h3>
+        <p id="template-history-status" class="msg-muted" role="status"></p>
+        <div id="template-focused-job"></div>
         <div id="template-line-jobs"></div>
+        <button id="template-history-more" type="button" class="secondary-btn" hidden>もっと見る</button>
       </section>
       <details class="msg-edit-wrap">
         <summary>定型文の原本を編集</summary>
@@ -128,6 +131,6 @@
     <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
     <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
   </dialog>
-  <script type="module" src="./message.js?v=20261120-template-cards-1"></script>
+  <script type="module" src="./message.js?v=20261120-template-history-1"></script>
 </body>
 </html>

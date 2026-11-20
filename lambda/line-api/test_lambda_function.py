@@ -11,6 +11,8 @@ import os
 import sys
 import types
 import unittest
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
@@ -180,6 +182,50 @@ class LineApiTests(unittest.TestCase):
 
     def send(self, job, name=NAMES[0]):
         return self.call("send", {"date": DATE, "job_id": job["id"], "name": name})
+
+    def test_template_history_pages_by_attempt_time_even_when_record_dates_differ(self):
+        prefix = "shift/line/deliveries/"
+        days = ["2026-10-01", "2026-11-19"]
+        keys = [f"{prefix}{date}.json" for date in days]
+        base = 1795046400
+        saved = [{}, {}]
+        for i in range(13):
+            slot = i % 2
+            jid = str(uuid.UUID(int=i + 1))
+            saved[slot][jid] = {
+                "id": jid, "date": days[slot], "message": f"Message {i}", "names": [NAMES[0]],
+                "created_at": "2026-11-19T00:00:00+00:00", "kind": "template" if i < 12 else "plan",
+                "title": f"Title {i}", "targets": [], "closed": False, "recorded": True,
+                "ack_enabled": True, "results": {NAMES[0]: {
+                    "status": "accepted", "first_attempt": base + i // 2, "user_id": UID,
+                    "retry_key": str(uuid.UUID(int=100 + i)), "confirmed_at": "2026-11-20T08:00:00+00:00",
+                }},
+            }
+        for key, jobs in zip(keys, saved):
+            self.store("private", key, {"jobs": jobs})
+        mod = datetime.fromtimestamp(base + 60, timezone.utc)
+        s3.get_paginator.return_value.paginate.return_value = [
+            {"Contents": [{"Key": key, "LastModified": mod}]} for key in keys
+        ]
+        code, first = self.call("template_history")
+        self.assertEqual(code, 200)
+        self.assertEqual([job["title"] for job in first["jobs"]], [f"Title {i}" for i in range(11, 1, -1)])
+        self.assertEqual({job["date"] for job in first["jobs"]}, set(days))
+        result = first["jobs"][0]["results"][NAMES[0]]
+        self.assertIn("confirmed_at", result)
+        self.assertNotIn("user_id", result)
+        self.assertNotIn("retry_key", result)
+        code, second = self.call("template_history", {"before": first["next_cursor"]})
+        self.assertEqual(code, 200)
+        self.assertEqual([job["title"] for job in second["jobs"]], ["Title 1", "Title 0"])
+        self.assertIsNone(second["next_cursor"])
+        s3.get_paginator.return_value.paginate.assert_called_with(Bucket="private", Prefix=prefix)
+        self.line.assert_not_called()
+
+    def test_template_history_rejects_bad_cursor_and_unauthorized_access_before_listing(self):
+        self.assertEqual(self.call("template_history", {"before": {"at": True, "id": "bad"}})[0], 400)
+        self.assertEqual(self.call("template_history", claims={**self.claims, "cognito:groups": "[worker]"})[0], 403)
+        s3.get_paginator.assert_not_called()
 
     def test_ack_reply_is_sent_only_once_after_the_first_confirmation_is_saved(self):
         job = self.ready()
