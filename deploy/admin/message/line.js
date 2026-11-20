@@ -57,14 +57,15 @@ const validJob = job => job && typeof job.id === "string" && typeof job.message 
 
 function renderState() {
   renderIssueOptions(state.members.filter(member => !member.linked));
-  el("line-members").innerHTML = state.members.map(member => `<article class="line-member">
+  const members = [...state.members].sort((a, b) => Number(Boolean(b.pending)) - Number(Boolean(a.pending)));
+  el("line-members").innerHTML = members.map(member => `<article class="line-member">
     <strong>${escape(member.name)}</strong>
     <p>${member.linked ? `${member.blocked ? "ブロック検知・送信停止" : "登録済み"}：${escape(member.display_name)}`
       : member.pending ? `承認待ち：LINE表示名「${escape(member.pending.display_name)}」`
         : "未登録"}</p>
     ${member.pending ? `<button type="button" class="primary-btn" data-line-approve="${escape(member.worker)}">本人を確認して承認</button>` : ""}
     ${member.linked || member.pending ? `<button type="button" class="secondary-btn" data-line-unlink="${escape(member.worker)}">解除・取消</button>` : ""}
-  </article>`).join("");
+  </article>`).join("") || "<p>登録対象の作業者がいません。</p>";
   renderJobs();
   decorateLineCards();
 }
@@ -280,11 +281,12 @@ async function refresh() {
   }
   el("line-code-text").value = "";
   el("line-code").hidden = true;
-  registrationNotice("");
+  registrationNotice("登録状態を取得中…");
   renderIssueOptions([]);
   decorateLineCards();
   if (!date) {
     notice("日付を選択するとLINEの状態を取得します。");
+    registrationNotice("「作業予定の連絡」で日付を選択してください。");
     return;
   }
   notice("LINE登録・送信履歴を取得中…");
@@ -305,6 +307,7 @@ async function refresh() {
   renderTemplateRecipients();
   el("line-updated").textContent = `${date}分 ／ ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} 取得`;
   notice("LINE登録・送信履歴を取得しました。");
+  registrationNotice("登録状態を取得しました。");
 }
 
 export async function refreshLineState() {
@@ -313,6 +316,7 @@ export async function refreshLineState() {
   } catch (error) {
     console.error("[line] automatic refresh failed", error);
     notice(`${error.message}「LINEの状態を再取得」で再試行してください。コピーは使えます。`, true);
+    registrationNotice(`${error.message}「登録状態を更新」で再試行してください。`, true);
   }
 }
 
@@ -440,7 +444,8 @@ async function memberAction(action, worker) {
 async function guarded(task, report = notice) {
   if (busy) return;
   busy = true;
-  el("line-management").inert = true;
+  el("line-management-controls").inert = true;
+  el("line-management-open").disabled = true;
   el("line-history").inert = true;
   el("template-line-jobs").inert = true;
   el("template-focused-job").inert = true;
@@ -451,7 +456,8 @@ async function guarded(task, report = notice) {
   catch (error) { console.error("[line] operation failed", error); report(error.message, true); }
   finally {
     busy = false;
-    el("line-management").inert = false;
+    el("line-management-controls").inert = false;
+    el("line-management-open").disabled = false;
     el("line-history").inert = false;
     el("template-line-jobs").inert = false;
     el("template-focused-job").inert = false;
@@ -463,6 +469,20 @@ async function guarded(task, report = notice) {
 
 export function initLineMessaging(options) {
   context = options;
+  const management = el("line-management");
+  const refreshManagement = () => guarded(refreshLineState);
+  el("line-management-open").onclick = () => {
+    management.showModal();
+    return refreshManagement();
+  };
+  el("line-management-refresh").onclick = refreshManagement;
+  el("line-management-close").onclick = () => { if (!busy) management.close(); };
+  management.addEventListener("cancel", event => { if (busy) event.preventDefault(); });
+  management.addEventListener("close", () => {
+    el("line-code-text").value = "";
+    el("line-code").hidden = true;
+    el("line-management-open").focus();
+  });
   el("line-refresh").onclick = () => guarded(refreshLineState);
   el("template-line-refresh").onclick = () => guarded(() => Promise.all([
     refreshLineState(), loadTemplateHistory("refresh"),

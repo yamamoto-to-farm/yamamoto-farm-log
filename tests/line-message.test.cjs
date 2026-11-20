@@ -23,12 +23,14 @@ function harness() {
   const element = id => {
     if (!elements.has(id)) {
       const classes = new Set();
+      const listeners = new Map();
       elements.set(id, {
         hidden: false, disabled: false, textContent: "", innerHTML: "",
         insertAdjacentHTML(where, html) { assert.equal(where, "beforeend"); this.innerHTML += html; },
         classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); }, contains: name => classes.has(name) },
-        querySelectorAll: () => [], addEventListener() {},
-        focus() {}, select() {}, showModal() { this.open = true; }, close() { this.open = false; },
+        querySelectorAll: () => [], addEventListener(type, handler) { listeners.set(type, handler); },
+        focus() { this.focused = true; }, select() {}, showModal() { this.open = true; },
+        close() { this.open = false; listeners.get("close")?.(); },
       });
     }
     return elements.get(id);
@@ -498,8 +500,50 @@ test("HTML contains dedicated dialog, private code field and keeps copy workflow
   assert.match(html, /<dialog id="line-confirm"/);
   assert.match(html, /id="line-code-text"[^>]*readonly/);
   assert.match(html, /id="line-refresh"/);
-  assert.match(html, /<section id="line-history"[^>]*>[\s\S]*?id="line-jobs"[\s\S]*?<\/section>\s*<details id="line-management"/);
+  assert.match(html, /id="direct-plan-link"[^>]*>[^<]+<\/a>\s*<button id="line-management-open"[^>]*aria-controls="line-management"[^>]*>[^<]+<\/button>[\s\S]*<div class="msg-tabs">/);
+  assert.match(html, /<dialog id="line-management"[^>]*>[\s\S]*id="line-members"[\s\S]*<\/dialog>/);
+  assert.doesNotMatch(html, /<details id="line-management"/);
   assert.match(html, /コピーはLINE送信を意味しません/);
+});
+test("shared registration dialog refreshes pending approvals and closes without changing the open template draft", async () => {
+  const h = harness();
+  const draft = "今回だけの編集";
+  const card = mountTemplate(h, "Shift reminder", draft, [names[0]]);
+  const templateTab = h.element("tab-templates");
+  h.element("tab-daily").hidden = true;
+  const pending = { id: "p", display_name: "LINE B" };
+  h.setState({ ...initial, members: [
+    initial.members[0], { ...initial.members[1], linked: false, pending },
+  ] });
+
+  await h.element("line-management-open").onclick();
+  assert.equal(h.element("line-management").open, true);
+  assert.match(h.element("line-members").innerHTML, /Part B[\s\S]+承認待ち[\s\S]+Part A/);
+  assert.equal(h.calls[0].options.method, "GET");
+  h.setState(initial);
+  await h.element("line-management-refresh").onclick();
+  assert.doesNotMatch(h.element("line-members").innerHTML, /承認待ち/);
+  h.element("line-code-text").value = "LINK private-test";
+  h.element("line-management-close").onclick();
+  assert.equal(h.element("line-management").open, false);
+  assert.equal(h.element("line-code-text").value, "");
+  assert.equal(h.element("line-management-open").focused, true);
+  assert.equal(templateTab.hidden, false);
+  assert.equal(h.element("tab-daily").hidden, true);
+  assert.equal(card.form.querySelector("[data-template-text]").value, draft);
+  assert.match(card.fieldset.innerHTML, /value="Part A" checked/);
+});
+test("registration fetch errors are visible inside the dialog and can be retried", async () => {
+  const h = harness();
+  const fetchState = h.context.fetch;
+  h.context.fetch = async () => ({ ok: false, json: async () => ({ message: "Unavailable" }) });
+  await h.element("line-management-open").onclick();
+  assert.match(h.element("line-registration-status").textContent, /Unavailable.*登録状態を更新/);
+  assert.equal(h.element("line-registration-status").classList.contains("msg-error"), true);
+  h.context.fetch = fetchState;
+  await h.element("line-management-refresh").onclick();
+  assert.equal(h.element("line-registration-status").classList.contains("msg-error"), false);
+  assert.match(h.element("line-members").innerHTML, /Part A/);
 });
 test("issue shows full code only after success, approve pins the pending ID and requires confirmation", async () => {
   const h = harness();

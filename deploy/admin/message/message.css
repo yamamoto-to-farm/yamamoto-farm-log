@@ -161,5 +161,8 @@
 .template-job-meta { display: block; margin: 4px 0 0 1em; }
 #template-history-more { margin-top: 8px; }
 .line-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
-#line-confirm { width: min(640px, 90vw); max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
-#line-confirm::backdrop { background: rgb(0 0 0 / 45%); }
+:is(#line-confirm, #line-management) { width: min(640px, 90vw); max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
+:is(#line-confirm, #line-management)::backdrop { background: rgb(0 0 0 / 45%); }
+.line-management-header { justify-content: space-between; }
+.line-management-header :is(h2, h3) { margin: 0; }
+#line-issue-worker { width: auto; max-width: 100%; }
