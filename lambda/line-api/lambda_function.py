@@ -25,6 +25,7 @@ SSM = boto3.client("ssm")
 USER_ID = re.compile(r"U[0-9a-f]{32}")
 CONFLICTS = {"PreconditionFailed", "ConditionalRequestConflict", "409", "412"}
 LINK_PREFIX = "LINK "
+ACK_DATA = re.compile(r"ack=([0-9]{4}-[0-9]{2}-[0-9]{2})/([0-9a-f-]{36})")
 
 
 def fail(status, message):
@@ -42,6 +43,23 @@ def identifier(value):
     except ValueError:
         fail(400, "識別子が不正です。")
     return value
+
+
+def delivery_messages(job):
+    messages = [{"type": "text", "text": job["message"]}]
+    if job.get("ack_enabled"):
+        messages.append({
+            "type": "flex", "altText": "業務連絡の確認",
+            "contents": {"type": "bubble", "size": "kilo", "body": {
+                "type": "box", "layout": "vertical", "contents": [
+                    {"type": "button", "style": "primary", "action": {
+                        "type": "postback", "label": "確認しました",
+                        "data": f"ack={job['date']}/{job['id']}",
+                    }},
+                ],
+            }},
+        })
+    return messages
 
 
 def read_json(bucket, key, initial):
@@ -137,6 +155,9 @@ class Service:
             source, message = item.get("source", {}), item.get("message", {})
             if not isinstance(source, dict) or not isinstance(message, dict):
                 fail(400, "イベントの送信元・本文が不正です。")
+            if item.get("type") == "postback":
+                self.acknowledge(source, item.get("postback"))
+                continue
             if item.get("type") == "unfollow" and source.get("type") == "user":
                 state, revision = self.links()
                 for member in state["members"].values():
@@ -176,9 +197,37 @@ class Service:
             put_json(self.bucket, self.state_key, state, revision)
         return {"received": True}
 
+    def acknowledge(self, source, postback):
+        uid = source.get("userId")
+        data = postback.get("data") if isinstance(postback, dict) else None
+        match = ACK_DATA.fullmatch(data) if isinstance(data, str) else None
+        if source.get("type") != "user" or not isinstance(uid, str) or not USER_ID.fullmatch(uid) or not match:
+            return
+        date, jid = match.groups()
+        core.plan_date(date)
+        identifier(jid)
+        for _ in range(3):
+            key, day, revision = self.day(date)
+            job = day["jobs"].get(jid)
+            if not job or not job.get("ack_enabled"):
+                return
+            result = next((entry for entry in job["results"].values() if entry["user_id"] == uid), None)
+            if not result or result.get("confirmed_at") or result["status"] not in ("accepted", "unknown") or result["first_attempt"] is None:
+                return
+            result["confirmed_at"] = stamp()
+            try:
+                put_json(self.bucket, key, day, revision)
+                return
+            except core.RequestError as error:
+                if error.status != 409:
+                    raise
+        fail(503, "本人確認の保存が競合しました。")
+
     def public_job(self, job):
         return {key: copy.deepcopy(job[key]) for key in
                 ("id", "date", "message", "names", "targets", "created_at", "closed", "recorded")} | {
+                    "kind": job.get("kind", "plan"), "title": job.get("title", ""),
+                    "ack_enabled": job.get("ack_enabled", False),
                     "results": {name: {key: value for key, value in result.items()
                                      if key not in ("user_id", "retry_key")}
                                 for name, result in job["results"].items()}
@@ -278,14 +327,28 @@ class Service:
         return date, [core.plan_snapshot(plans[target["id"]]) for target in targets]
 
     def prepare(self, req, author):
-        date, snapshots = self.validate_group(req)
+        template = req["action"] == "prepare_template"
+        title = req.get("title")
+        names = req.get("names")
+        if template:
+            date, snapshots = core.plan_date(req.get("date")), []
+            if (not isinstance(title, str) or not title.strip() or len(title) > 160
+                    or not isinstance(names, list) or not 1 <= len(names) <= 30
+                    or any(not isinstance(name, str) or not name for name in names)
+                    or len(set(names)) != len(names)):
+                fail(400, "定型文のタイトル・宛先が不正です。")
+            targets = []
+        else:
+            date, snapshots = self.validate_group(req)
+            targets = req["targets"]
+        kind = "template" if template else "plan"
         text = req.get("message")
         if not isinstance(text, str) or not text.strip() or len(text.encode("utf-16-le")) // 2 > 5000:
             fail(400, "LINE送信文面は空欄不可・5000文字以内です。長文はコピーで送ってください。")
         state, _ = self.links()
         master = {worker["display"]: worker["name"] for worker in workers()}
         results = {}
-        for name in req["names"]:
+        for name in names:
             worker = master.get(name)
             member = state["members"].get(worker, {})
             if not worker or not member.get("user_id") or member.get("blocked"):
@@ -295,13 +358,15 @@ class Service:
                 "retry_key": str(uuid.uuid4()), "first_attempt": None, "error": "",
             }
         key, day, revision = self.day(date)
-        ids = sorted(target["id"] for target in req["targets"])
-        relevant = [job for job in day["jobs"].values() if set(job["names"]) & set(req["names"])]
+        ids = sorted(target["id"] for target in targets)
+        relevant = [job for job in day["jobs"].values()
+                    if job.get("kind", "plan") == kind and set(job["names"]) & set(names)]
         for job in relevant:
             if not job["closed"] and not job["recorded"]:
-                if (sorted(job["names"]) == sorted(req["names"])
+                if (sorted(job["names"]) == sorted(names)
                         and sorted(target["id"] for target in job["targets"]) == ids
-                        and job["message"] == text and job["targets"] == req["targets"]):
+                        and job["message"] == text and job["targets"] == targets
+                        and (not template or job.get("title") == title)):
                     return self.public_job(job)
                 fail(409, "この宛先には未完了の送信があります。下の送信履歴から確認・再試行または終了してください。")
         if relevant and req.get("confirm_resend") is not True:
@@ -310,7 +375,8 @@ class Service:
             fail(409, "この日の送信準備が上限に達しました。")
         job = {
             "id": str(uuid.uuid4()), "date": date, "message": text,
-            "names": req["names"], "targets": req["targets"], "snapshots": snapshots,
+            "names": names, "targets": targets, "snapshots": snapshots,
+            "kind": kind, "title": title if template else "", "ack_enabled": True,
             "created_at": stamp(), "author": author, "results": results,
             "closed": False, "recorded": False,
         }
@@ -384,7 +450,7 @@ class Service:
             if (member.get("user_id") != result["user_id"] or member.get("blocked")
                     or active.get(name) != result["worker"]):
                 fail(409, "宛先の登録状態が変わりました。未送信分は停止しました。")
-            if result["status"] != "unknown":
+            if result["status"] != "unknown" and job.get("kind", "plan") == "plan":
                 self.validate_group(job)
             result.update(status="unknown", first_attempt=result["first_attempt"] or time.time(),
                           error="送信結果を確認中。同じ送信として再試行してください。")
@@ -393,7 +459,7 @@ class Service:
             accepted = False
             try:
                 line_request("message/push", {
-                    "to": result["user_id"], "messages": [{"type": "text", "text": job["message"]}],
+                    "to": result["user_id"], "messages": delivery_messages(job),
                 }, result["retry_key"])
                 outcome, message, accepted = "accepted", "", True
             except HTTPError as error:
@@ -424,13 +490,21 @@ class Service:
                         raise
             else:
                 fail(409, "結果の保存が競合しました。送信履歴を再取得してください。")
-        key, day, revision = self.day(date)
-        job = day["jobs"][jid]
-        if all(result["status"] == "accepted" for result in job["results"].values()) and not job["recorded"]:
-            self.record_history(job)
+        for _ in range(3):
+            key, day, revision = self.day(date)
+            job = day["jobs"][jid]
+            if job["recorded"] or not all(result["status"] == "accepted" for result in job["results"].values()):
+                return self.public_job(job)
+            if job.get("kind", "plan") == "plan":
+                self.record_history(job)
             job["recorded"] = True
-            put_json(self.bucket, key, day, revision)
-        return self.public_job(job)
+            try:
+                put_json(self.bucket, key, day, revision)
+                return self.public_job(job)
+            except core.RequestError as error:
+                if error.status != 409:
+                    raise
+        fail(409, "結果の保存が競合しました。送信履歴を再取得してください。")
 
 
 def request_body(event):
@@ -471,7 +545,7 @@ def lambda_handler(event, context):
         author = claims.get("username") or claims["sub"]
         if action in ("issue", "approve", "unlink"):
             result = service.registration(req, author)
-        elif action == "prepare":
+        elif action in ("prepare", "prepare_template"):
             result = service.prepare(req, author)
         elif action in ("send", "close"):
             result = service.send(req, closing=action == "close")

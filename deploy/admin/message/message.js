@@ -6,7 +6,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261108-date-1";
-import { initLineMessaging, decorateLineCards, refreshLineState } from "./line.js?v=20261120-card-2";
+import { initLineMessaging, decorateLineCards, refreshLineState, openTemplateSend } from "./line.js?v=20261120-ack-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -325,7 +325,9 @@ function fillPlaceholders(text) {
 }
 function renderTemplates() {
   element("template-list").innerHTML = masters.templates.map((tpl, index) =>
-    `<div class="tpl"><h3>${escapeHtml(tpl.title)}</h3><pre>${escapeHtml(fillPlaceholders(tpl.body))}</pre><button type="button" class="primary-btn" data-tpl-copy="${index}">📋 コピー</button></div>`).join("");
+    `<div class="tpl"><h3>${escapeHtml(tpl.title)}</h3><pre>${escapeHtml(fillPlaceholders(tpl.body))}</pre><div class="msg-toolbar">
+      <button type="button" class="primary-btn" data-tpl-line="${index}">LINEの宛先を選ぶ</button>
+      <button type="button" class="secondary-btn" data-tpl-copy="${index}">📋 コピー</button></div></div>`).join("");
 }
 function renderTemplateEditor() {
   element("template-edit").innerHTML = tplDraft.map((tpl, index) =>
@@ -379,6 +381,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     lock: active => {
       copying = active;
       element("tab-daily").inert = active;
+      element("tab-templates").inert = active;
     },
     reload: async () => {
       record = await fetchWorkPlanRecord(loadedDate);
@@ -386,6 +389,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     },
   });
   element("template-list").onclick = async event => {
+    const send = event.target.closest("[data-tpl-line]");
+    if (send) {
+      const tpl = masters.templates[Number(send.dataset.tplLine)];
+      openTemplateSend(tpl.title, fillPlaceholders(tpl.body));
+      return;
+    }
     const button = event.target.closest("[data-tpl-copy]");
     if (!button) return;
     try {

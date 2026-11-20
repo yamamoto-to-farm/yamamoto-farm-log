@@ -350,6 +350,32 @@ test("result unknown routes an overlapping recipient to the same history without
   await assert.rejects(h.context.prepare(group), /同じ送信履歴/);
   assert.equal(h.calls.some(call => call.options?.method === "POST"), false);
 });
+test("monthly template confirmation prepares only selected recipients and does not send before confirmation", async () => {
+  const h = harness();
+  const template = { ...clone(job), kind: "template", title: "Shift reminder", ack_enabled: true, names: [names[0]] };
+  h.context.testApi = async (action, req) => {
+    if (!action) return { ...initial, jobs: [template] };
+    h.calls.push([action, clone(req)]);
+    return template;
+  };
+  await h.context.refresh();
+  h.context.openTemplateSend(template.title, "Test only");
+  assert.match(h.element("template-recipients").innerHTML, /Part A/);
+  h.element("template-recipients").querySelectorAll = () => [{ value: names[0] }];
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.element("template-send").onsubmit({ preventDefault() {} });
+  assert.deepEqual(h.calls.find(item => Array.isArray(item)), ["prepare_template", {
+    date, names: [names[0]], title: template.title, message: "Test only", confirm_resend: false,
+  }]);
+  assert.equal(h.element("line-confirm").open, true);
+  assert.equal(h.element("line-confirm-ack").hidden, false);
+  assert.doesNotMatch(h.element("line-jobs").innerHTML, /Shift reminder/);
+  template.results[names[0]] = { status: "accepted", confirmed_at: "2026-11-05T00:00:00Z" };
+  await h.context.refresh();
+  assert.match(h.element("template-line-jobs").innerHTML, /Shift reminder.*本人確認 1\/1名/);
+  assert.match(h.element("template-line-jobs").innerHTML, /本人確認済み（/);
+  assert.ok(!h.calls.some(item => Array.isArray(item) && item[0] === "send"));
+});
 test("HTML contains dedicated dialog, private code field and keeps copy workflow", () => {
   const html = readFileSync(join(__dirname, "..", "deploy", "admin", "message", "index.html"), "utf8");
   assert.match(html, /<dialog id="line-confirm"/);

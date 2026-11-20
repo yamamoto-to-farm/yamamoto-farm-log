@@ -9,6 +9,7 @@ let loadedDate = "";
 let sequence = 0;
 let busy = false;
 let confirmedJob;
+let templateTitle = "";
 const el = id => document.getElementById(id);
 const labels = { ready: "未送信", accepted: "LINE受付済み（配達・既読は未確認）",
   failed: "失敗", unknown: "結果不明・同じ送信として再確認が必要" };
@@ -29,6 +30,13 @@ export async function lineApi(action, body, date) {
 function notice(text, error = false) {
   el("line-status").textContent = text;
   el("line-status").classList.toggle("msg-error", error);
+  el("template-line-status").textContent = text;
+  el("template-line-status").classList.toggle("msg-error", error);
+}
+
+function templateNotice(text, error = false) {
+  el("template-send-status").textContent = text;
+  el("template-send-status").classList.toggle("msg-error", error);
 }
 
 function registrationNotice(text, error = false) {
@@ -71,10 +79,23 @@ function renderIssueOptions(members) {
 function renderJobs() {
   const jobs = [...state.jobs].reverse();
   jobs.sort((a, b) => Number(isPending(b)) - Number(isPending(a)));
-  el("line-jobs").innerHTML = jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${isPending(job) ? " open" : ""}>
-    <summary>${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"}</summary>
+  el("line-jobs").innerHTML = jobHistory(jobs.filter(job => job.kind !== "template"));
+  el("template-line-jobs").innerHTML = jobHistory(jobs.filter(job => job.kind === "template"));
+}
+
+const isTemplate = job => job.kind === "template";
+const ackSummary = job => job.ack_enabled
+  ? `本人確認 ${job.names.filter(name => job.results[name].confirmed_at).length}/${job.names.length}名`
+  : "確認ボタンなし";
+const ackTime = at => new Date(at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+
+function jobHistory(jobs) {
+  return jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${isPending(job) ? " open" : ""}>
+    <summary>${isTemplate(job) ? `${escape(job.title)} ／ ` : ""}${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"} ／ ${ackSummary(job)}</summary>
     <p>${escape(job.created_at)} ／ ${escape(job.date)}</p>
     <ul>${job.names.map(name => `<li>${escape(name)}：${escape(labels[job.results[name].status])}
+      ${job.ack_enabled ? ` ／ ${job.results[name].confirmed_at ? `本人確認済み（${escape(ackTime(job.results[name].confirmed_at))}）`
+        : job.results[name].status === "accepted" ? "確認待ち" : "本人確認なし"}` : ""}
       ${job.results[name].error ? `<p class="msg-error">${escape(job.results[name].error)}</p>` : ""}</li>`).join("")}</ul>
     <pre class="line-preview">${escape(job.message)}</pre>
     ${!job.recorded && !job.closed ? `<button type="button" class="primary-btn" data-line-resume="${escape(job.id)}">内容を確認して送信・再試行</button>
@@ -86,7 +107,7 @@ const isPending = job => !job.closed && !job.recorded;
 const jobOverlapsGroup = (job, group) => job.names.some(name => group.recipients.includes(name));
 
 function cardJobs(group, jobs) {
-  const newestFirst = [...jobs].reverse();
+  const newestFirst = jobs.filter(job => !isTemplate(job)).reverse();
   return {
     pending: newestFirst.find(job => isPending(job) && jobOverlapsGroup(job, group)),
     sent: newestFirst.find(job => job.recorded
@@ -126,7 +147,8 @@ export function decorateLineCards() {
     const badge = card.querySelector("[data-line-badge]");
     if (badge) {
       badge.textContent = pending ? (unknown ? "LINE送信の結果不明" : "未完了のLINE送信あり") : changed ? "連絡後に予定変更あり"
-        : accepted ? "LINE受付済み" : card.dataset.communication === "copied" ? "コピー済み（LINE未確認）" : "未連絡";
+        : accepted ? `LINE受付済み${sent?.ack_enabled ? ` ／ ${ackSummary(sent)}` : ""}`
+          : card.dataset.communication === "copied" ? "コピー済み（LINE未確認）" : "未連絡";
       badge.dataset.tone = pending || changed ? "warning" : accepted ? "accepted" : "";
     }
     const compact = accepted && !changed && !pending;
@@ -177,6 +199,10 @@ async function refresh() {
   el("line-updated").textContent = "";
   el("line-members").innerHTML = "";
   el("line-jobs").innerHTML = "";
+  el("template-line-jobs").innerHTML = "";
+  el("template-line-date").textContent = date ? `${date}分（「作業予定の連絡」で日付を変更できます）` : "";
+  el("template-prepare").disabled = true;
+  templateNotice("");
   el("line-code-text").value = "";
   el("line-code").hidden = true;
   registrationNotice("");
@@ -200,6 +226,7 @@ async function refresh() {
   state = result;
   loadedDate = date;
   renderState();
+  renderTemplateRecipients();
   el("line-updated").textContent = `${date}分 ／ ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} 取得`;
   notice("LINE登録・送信履歴を取得しました。");
 }
@@ -217,6 +244,7 @@ function showConfirmation(job) {
   confirmedJob = job;
   el("line-confirm-text").textContent = job.message;
   el("line-confirm-recipients").textContent = `${job.date} ／ 宛先：${job.names.join("・")}`;
+  el("line-confirm-ack").hidden = !job.ack_enabled;
   el("line-confirm-results").textContent = job.names.map(name =>
     `${name}：${labels[job.results[name].status]}`).join("\n");
   el("line-confirm-error").textContent = "";
@@ -229,11 +257,11 @@ async function prepare(group) {
   await context.check(group);
   if (date !== context.date()) throw new Error("日付が変わりました。LINE連携を再取得してください。");
   if (!state || loadedDate !== date) throw new Error("LINEの状態が変わりました。再取得して確認してください。");
-  const pending = state.jobs.find(job => isPending(job) && jobOverlapsGroup(job, group));
+  const pending = state.jobs.find(job => !isTemplate(job) && isPending(job) && jobOverlapsGroup(job, group));
   if (pending) throw new Error("この宛先には未完了の送信があります。同じ送信履歴から確認・再試行してください。");
   const message = context.message(group);
   if (!message.trim() || message.length > 5000) throw new Error("LINE文面は空欄不可・5000文字以内です。");
-  const previous = state.jobs.some(job => jobOverlapsGroup(job, group));
+  const previous = state.jobs.some(job => !isTemplate(job) && jobOverlapsGroup(job, group));
   if (previous && !window.confirm("この宛先には以前の送信履歴があります。新しい連絡を準備しますか？")) return;
   const job = await lineApi("prepare", {
     date, names: group.recipients, message,
@@ -242,6 +270,48 @@ async function prepare(group) {
   });
   await refresh();
   if (date !== context.date()) throw new Error(`${date}の送信準備が履歴に残っています。日付を戻して履歴から確認してください。`);
+  showConfirmation(job);
+}
+
+function renderTemplateRecipients(clear = false) {
+  const fieldset = el("template-recipients");
+  const selected = new Set(clear ? [] : [...fieldset.querySelectorAll("input:checked")].map(input => input.value));
+  const members = state?.members.filter(member => member.linked && !member.blocked) ?? [];
+  fieldset.innerHTML = `<legend>LINEの宛先</legend>${members.length ? members.map(member =>
+    `<label><input type="checkbox" value="${escape(member.name)}"${selected.has(member.name) ? " checked" : ""}> ${escape(member.name)}</label>`).join(" ")
+    : "<p>送信できるLINE登録済みの作業者がいません。</p>"}`;
+  el("template-prepare").disabled = !members.length;
+}
+
+export function openTemplateSend(title, text) {
+  if (busy) return;
+  templateTitle = title;
+  el("template-send-title").textContent = title;
+  el("template-send-text").value = text;
+  el("template-send").hidden = false;
+  templateNotice("");
+  renderTemplateRecipients(true);
+  el("template-send-text").focus();
+}
+
+async function prepareTemplate() {
+  const date = context.date();
+  if (!state || loadedDate !== date) throw new Error("LINEの状態を再取得してください。");
+  const title = templateTitle;
+  const names = [...el("template-recipients").querySelectorAll("input:checked")].map(input => input.value);
+  const message = el("template-send-text").value;
+  if (!names.length) throw new Error("送信する宛先を選んでください。");
+  if (!title.trim() || !message.trim() || message.length > 5000) throw new Error("タイトルと本文（5000文字以内）を確認してください。");
+  const relevant = state.jobs.filter(job => isTemplate(job) && jobOverlapsGroup(job, { recipients: names }));
+  const pending = relevant.find(isPending);
+  if (pending) {
+    notice("この宛先には未完了の定型文があります。同じ送信履歴から確認・再試行してください。", true);
+    return pending;
+  }
+  if (relevant.length && !window.confirm("この宛先には選択日の定型文送信履歴があります。新しい連絡を準備しますか？")) return;
+  const job = await lineApi("prepare_template", { date, names, title, message, confirm_resend: Boolean(relevant.length) });
+  await refresh();
+  if (date !== context.date()) throw new Error(`${date}分の定型文の送信準備が履歴に残っています。`);
   showConfirmation(job);
 }
 
@@ -261,8 +331,9 @@ async function deliver() {
     }
     el("line-confirm").close();
     confirmedJob = null;
-    await context.reload();
+    if (!isTemplate(job)) await context.reload();
     await refresh();
+    if (isTemplate(job) && updated.recorded) el("template-send").hidden = true;
     notice(updated.recorded ? "全員のLINE受付と控え保存が完了しました。配達・既読は未確認です。"
       : "未完了の宛先があります。下の送信履歴で人ごとの結果を確認してください。", !updated.recorded);
   } catch (error) {
@@ -301,6 +372,8 @@ async function guarded(task, report = notice) {
   busy = true;
   el("line-management").inert = true;
   el("line-history").inert = true;
+  el("template-line-jobs").inert = true;
+  el("template-line-refresh").disabled = true;
   el("line-refresh").disabled = true;
   decorateLineCards();
   try { return await task(); }
@@ -309,6 +382,8 @@ async function guarded(task, report = notice) {
     busy = false;
     el("line-management").inert = false;
     el("line-history").inert = false;
+    el("template-line-jobs").inert = false;
+    el("template-line-refresh").disabled = false;
     el("line-refresh").disabled = false;
     decorateLineCards();
   }
@@ -317,6 +392,12 @@ async function guarded(task, report = notice) {
 export function initLineMessaging(options) {
   context = options;
   el("line-refresh").onclick = () => guarded(refreshLineState);
+  el("template-line-refresh").onclick = () => guarded(refreshLineState);
+  el("template-send").onsubmit = async event => {
+    event.preventDefault();
+    const pending = await guarded(prepareTemplate, templateNotice);
+    if (pending) focusJob(pending);
+  };
   el("line-issue-worker").onchange = () => {
     el("line-issue").disabled = !el("line-issue-worker").value;
     el("line-code-text").value = "";
@@ -335,7 +416,7 @@ export function initLineMessaging(options) {
     if (button) return guarded(() => button.dataset.lineApprove
       ? memberAction("approve", button.dataset.lineApprove) : memberAction("unlink", button.dataset.lineUnlink), registrationNotice);
   };
-  el("line-jobs").onclick = event => {
+  const handleHistory = event => {
     const resume = event.target.closest("[data-line-resume]");
     const close = event.target.closest("[data-line-close]");
     if (resume) {
@@ -349,6 +430,8 @@ export function initLineMessaging(options) {
       });
     }
   };
+  el("line-jobs").onclick = handleHistory;
+  el("template-line-jobs").onclick = handleHistory;
   el("line-confirm-send").onclick = () => guarded(deliver);
   el("line-confirm-cancel").onclick = () => { el("line-confirm").close(); confirmedJob = null; };
   el("line-confirm").addEventListener("cancel", event => { if (busy) event.preventDefault(); });

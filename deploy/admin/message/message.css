@@ -126,6 +126,9 @@
 #template-list .tpl { border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px;
   margin-bottom: 10px; background: #fafafa; }
 #template-list .tpl h3 { margin: 0 0 6px; font-size: 0.95rem; }
+#template-recipients { margin-bottom: 10px; }
+#template-recipients label { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px 5px 0; }
+#template-recipients input { width: auto; margin: 0; }
 #template-list .tpl pre { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
   padding: 8px 10px; font-size: 0.82rem; white-space: pre-wrap; word-break: break-all;
   margin: 0 0 8px; font-family: inherit; text-align: left; }

@@ -131,10 +131,12 @@ class LineApiTests(unittest.TestCase):
         return result["statusCode"], json.loads(result["body"])
 
     def signed(self, text, uid=UID, source_type="user", event_type="message"):
-        raw = json.dumps({"events": [{
+        item = {
             "type": event_type, "source": {"type": source_type, "userId": uid},
-            "message": {"type": "text", "text": text},
-        }]}).encode()
+            **({"postback": {"data": text}} if event_type == "postback"
+               else {"message": {"type": "text", "text": text}}),
+        }
+        raw = json.dumps({"events": [item]}).encode()
         return {
             "version": "2.0", "routeKey": "POST /line/webhook", "rawPath": "/line/webhook",
             "requestContext": {"http": {"method": "POST"}},
@@ -176,6 +178,55 @@ class LineApiTests(unittest.TestCase):
 
     def send(self, job, name=NAMES[0]):
         return self.call("send", {"date": DATE, "job_id": job["id"], "name": name})
+
+    def test_template_family_delivery_confirms_only_the_sent_job_and_recipient(self):
+        self.approve("family", UID)
+        self.line.reset_mock()
+        request = {"date": DATE, "title": "Shift reminder", "message": "Test only", "names": ["Family"]}
+        status, first = self.call("prepare_template", request)
+        self.assertEqual(status, 200)
+        self.assertEqual(first["kind"], "template")
+        self.assertTrue(first["ack_enabled"])
+        self.line.assert_not_called()
+        data = f"ack={DATE}/{first['id']}"
+        self.assertEqual(self.receive(data, event_type="postback")[0], 200)
+        self.assertNotIn("confirmed_at", self.call()[1]["jobs"][0]["results"]["Family"])
+        status, sent = self.send(first, "Family")
+        self.assertEqual(status, 200)
+        self.assertTrue(sent["recorded"])
+        path, envelope, _ = self.line.call_args.args
+        self.assertEqual(path, "message/push")
+        self.assertEqual(envelope["to"], UID)
+        self.assertEqual(envelope["messages"][0], {"type": "text", "text": "Test only"})
+        self.assertEqual(envelope["messages"][1]["contents"]["body"]["contents"][0]["action"]["data"], data)
+        self.assertEqual(self.get("private", f"shift/work-plans/{DATE}.json")["communications"], [])
+        self.receive(data, uid=OTHER, event_type="postback")
+        self.assertNotIn("confirmed_at", self.call()[1]["jobs"][0]["results"]["Family"])
+        self.receive(data, event_type="postback")
+        at = self.call()[1]["jobs"][0]["results"]["Family"]["confirmed_at"]
+        second = self.call("prepare_template", {**request, "confirm_resend": True})[1]
+        self.send(second, "Family")
+        self.receive(data, event_type="postback")
+        first_result, second_result = [job["results"]["Family"] for job in self.call()[1]["jobs"]]
+        self.assertEqual(first_result["confirmed_at"], at)
+        self.assertNotIn("confirmed_at", second_result)
+        self.assertNotIn("user_id", first_result)
+
+    def test_plan_confirmation_during_pending_response_preserves_acceptance_and_snapshot(self):
+        job = self.ready()
+        def push(path, envelope, retry_key):
+            data = envelope["messages"][1]["contents"]["body"]["contents"][0]["action"]["data"]
+            self.assertEqual(self.receive(data, uid=envelope["to"], event_type="postback")[0], 200)
+            return {}
+        self.line.side_effect = push
+        self.assertEqual(self.send(job)[0], 200)
+        status, sent = self.send(job, NAMES[1])
+        self.assertEqual(status, 200)
+        self.assertTrue(sent["recorded"])
+        for result in sent["results"].values():
+            self.assertEqual(result["status"], "accepted")
+            self.assertIn("confirmed_at", result)
+        self.assertEqual(len(self.get("private", f"shift/work-plans/{DATE}.json")["communications"]), 1)
 
     def test_auth_is_checked_and_worker_is_rejected(self):
         for claims, expected in (({}, 401), ({**self.claims, "token_use": "id"}, 401),
