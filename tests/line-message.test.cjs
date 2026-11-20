@@ -189,6 +189,95 @@ test("stale refresh cannot enable send for another selected date", async () => {
   await pending;
   assert.equal(vm.runInContext("state", h.context), undefined);
 });
+test("automatic refresh displays success and last update and clears stale history while loading", async () => {
+  const h = harness();
+  await h.context.refreshLineState();
+  assert.match(h.element("line-status").textContent, /取得しました/);
+  assert.match(h.element("line-updated").textContent, /2026-11-05/);
+  assert.match(h.element("line-members").innerHTML, /Part A/);
+  let finish;
+  h.context.fetch = () => new Promise(resolve => { finish = resolve; });
+  h.setDate("2026-11-06");
+  const pending = h.context.refreshLineState();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.element("line-members").innerHTML, "");
+  assert.equal(h.element("line-jobs").innerHTML, "");
+  assert.equal(h.element("line-updated").textContent, "");
+  assert.match(h.element("line-status").textContent, /取得中/);
+  finish({ ok: true, json: async () => clone(initial) });
+  await pending;
+  assert.match(h.element("line-updated").textContent, /2026-11-06/);
+});
+test("automatic refresh reports failure and a manual retry recovers", async () => {
+  const h = harness();
+  h.context.fetch = async () => { throw new Error("offline"); };
+  await h.context.refreshLineState();
+  assert.match(h.element("line-status").textContent, /offline.*再取得.*コピー/);
+  assert.equal(vm.runInContext("state", h.context), undefined);
+  assert.equal(h.element("line-updated").textContent, "");
+  h.context.fetch = async () => ({ ok: true, json: async () => clone(initial) });
+  await h.element("line-refresh").onclick();
+  assert.match(h.element("line-status").textContent, /取得しました/);
+  assert.match(h.element("line-updated").textContent, /2026-11-05/);
+});
+test("out of order results and errors cannot overwrite the current date", async () => {
+  for (const fail of [false, true]) {
+    const h = harness();
+    const requests = [];
+    h.context.fetch = () => new Promise((resolve, reject) => requests.push({ resolve, reject }));
+    const old = h.context.refreshLineState();
+    await new Promise(resolve => setImmediate(resolve));
+    h.setDate("2026-11-06");
+    const current = h.context.refreshLineState();
+    await new Promise(resolve => setImmediate(resolve));
+    requests[1].resolve({ ok: true, json: async () => clone(initial) });
+    await current;
+    if (fail) requests[0].reject(new Error("old error"));
+    else requests[0].resolve({ ok: true, json: async () => clone(initial) });
+    await old;
+    assert.match(h.element("line-status").textContent, /取得しました/);
+    assert.match(h.element("line-updated").textContent, /2026-11-06/);
+    assert.equal(vm.runInContext("loadedDate", h.context), "2026-11-06");
+  }
+});
+test("clearing the date invalidates the state without requesting the API", async () => {
+  const h = harness();
+  await h.context.refreshLineState();
+  const calls = h.calls.length;
+  h.setDate("");
+  await h.context.refreshLineState();
+  assert.equal(h.calls.length, calls);
+  assert.equal(vm.runInContext("state", h.context), undefined);
+  assert.match(h.element("line-status").textContent, /日付を選択/);
+});
+test("send confirmation is enabled only after current state is loaded for registered recipients", async () => {
+  const h = harness();
+  const group = { id: "p1", recipients: names, entries: [] };
+  const card = {
+    dataset: { group: "p1" }, children: [],
+    querySelector() { return this.children[0] || null; },
+    append(control) { this.children.push(control); },
+  };
+  h.element("cards").querySelectorAll = () => [card];
+  h.options.groups = () => [group];
+  h.context.document.createElement = () => ({
+    dataset: {}, children: [],
+    append(...children) { this.children.push(...children); },
+    remove() { card.children = []; },
+  });
+  let finish;
+  h.context.fetch = () => new Promise(resolve => { finish = resolve; });
+  const pending = h.context.refreshLineState();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(card.children[0].children[0].disabled, true);
+  finish({ ok: true, json: async () => clone(initial) });
+  await pending;
+  assert.equal(card.children[0].children[0].disabled, false);
+  h.context.fetch = async () => ({ ok: true, json: async () => ({ ...clone(initial), members: [clone(initial.members[0])] }) });
+  await h.context.refreshLineState();
+  assert.equal(card.children[0].children[0].disabled, true);
+  assert.match(card.children[0].children[1].textContent, /Part B/);
+});
 test("HTML contains dedicated dialog, private code field and keeps copy workflow", () => {
   const html = readFileSync(join(__dirname, "..", "deploy", "admin", "message", "index.html"), "utf8");
   assert.match(html, /<dialog id="line-confirm"/);

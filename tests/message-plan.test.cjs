@@ -7,7 +7,7 @@ const read = file => readFileSync(join(__dirname, "..", "deploy", "admin", "mess
 const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
-    initLineMessaging() {}, decorateLineCards() {}, loadPlanWorkers: async () => [],
+    initLineMessaging() {}, decorateLineCards() {}, refreshLineState: async () => {}, loadPlanWorkers: async () => [],
     window: { addEventListener() {} }, URLSearchParams, ...deps });
   vm.runInContext(strip(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8")), context);
   vm.runInContext(strip(read(file)), context);
@@ -198,6 +198,25 @@ test("explicit dates, manual reloads and date changes never auto-advance", async
   await screen.elements["msg-date"].onchange({ type: "change" });
   await screen.elements["load-plans"].onclick({ type: "click" });
   assert.deepEqual(screen.calls, ["2026-11-04", "2026-11-05", "2026-11-04", "2026-11-04"]);
+});
+test("LINE state is refreshed on opening, automatic date selection, date changes and reload", async () => {
+  const screen = defaultDateScreen();
+  const dates = [];
+  screen.context.refreshLineState = async () => { dates.push(screen.elements["msg-date"].value); };
+  await screen.initialize();
+  screen.elements["msg-date"].value = "2026-11-06";
+  await screen.elements["msg-date"].onchange();
+  await screen.elements["load-plans"].onclick();
+  assert.deepEqual(dates, ["2026-11-04", "2026-11-05", "2026-11-06", "2026-11-06"]);
+});
+test("LINE state is refreshed even when plans fail to load or the date is cleared", async () => {
+  const screen = defaultDateScreen({ failDate: "2026-11-04" });
+  const dates = [];
+  screen.context.refreshLineState = async () => { dates.push(screen.elements["msg-date"].value); };
+  await screen.initialize();
+  screen.elements["msg-date"].value = "";
+  await screen.elements["msg-date"].onchange();
+  assert.deepEqual(dates, ["2026-11-04", ""]);
 });
 test("time-split recipients must each have a current communication before advancing", async () => {
   const shared = { ...plan, names: ["A", "B"], recipients: ["A", "B"],

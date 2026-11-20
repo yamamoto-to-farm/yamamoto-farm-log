@@ -86,7 +86,7 @@ export function decorateLineCards() {
     button.onclick = () => guarded(() => prepare(group));
     const hint = document.createElement("p");
     hint.className = "msg-muted";
-    hint.textContent = !available ? "LINE登録状態は「LINE連携を取得」で確認してください。コピーは従来どおり使えます。"
+    hint.textContent = !available ? "LINEの状態を確認してください。取得できない場合もコピーは使えます。"
       : missing.length ? `LINE未登録・送信停止：${missing.join("・")}。登録・承認するか、コピーで連絡してください。`
         : "個人宛てに同じ文面を送信します。送信前に確認画面を開きます。";
     controls.append(button, hint);
@@ -98,16 +98,40 @@ async function refresh() {
   const current = ++sequence;
   const date = context.date();
   state = undefined;
+  loadedDate = "";
+  el("line-updated").textContent = "";
+  el("line-members").innerHTML = "";
+  el("line-jobs").innerHTML = "";
+  el("line-code").hidden = true;
   decorateLineCards();
+  if (!date) {
+    notice("日付を選択するとLINEの状態を取得します。");
+    return;
+  }
   notice("LINE登録・送信履歴を取得中…");
-  const result = await lineApi(null, null, date);
+  let result;
+  try {
+    result = await lineApi(null, null, date);
+  } catch (error) {
+    if (current !== sequence || date !== context.date()) return;
+    throw error;
+  }
   if (current !== sequence || date !== context.date()) return;
   if (!validLineState(result)) throw new Error("LINE APIの応答形式が不正です。");
   state = result;
   loadedDate = date;
-  el("line-code").hidden = true;
   renderState();
+  el("line-updated").textContent = `${date}の状態を取得：${new Date().toLocaleString("ja-JP")}`;
   notice("LINE登録・送信履歴を取得しました。");
+}
+
+export async function refreshLineState() {
+  try {
+    await refresh();
+  } catch (error) {
+    console.error("[line] automatic refresh failed", error);
+    notice(`${error.message}「LINEの状態を再取得」で再試行してください。コピーは使えます。`, true);
+  }
 }
 
 function showConfirmation(job) {
@@ -124,7 +148,8 @@ async function prepare(group) {
   const date = context.date();
   if (!state || loadedDate !== date) throw new Error("LINE連携を再取得してください。");
   await context.check(group);
-  if (date !== context.date() || loadedDate !== date) throw new Error("日付が変わりました。LINE連携を再取得してください。");
+  if (date !== context.date()) throw new Error("日付が変わりました。LINE連携を再取得してください。");
+  if (!state || loadedDate !== date) throw new Error("LINEの状態が変わりました。再取得して確認してください。");
   const message = context.message(group);
   if (!message.trim() || message.length > 5000) throw new Error("LINE文面は空欄不可・5000文字以内です。");
   const previous = state.jobs.some(job => job.names.some(name => group.recipients.includes(name)));
@@ -135,6 +160,7 @@ async function prepare(group) {
     confirm_resend: previous,
   });
   await refresh();
+  if (date !== context.date()) throw new Error(`${date}の送信準備が履歴に残っています。日付を戻して履歴から確認してください。`);
   showConfirmation(job);
 }
 
@@ -160,7 +186,7 @@ async function deliver() {
       : "未完了の宛先があります。下の送信履歴で人ごとの結果を確認してください。", !updated.recorded);
   } catch (error) {
     console.error("[line] delivery failed", error);
-    el("line-confirm-error").textContent = `${error.message} 結果不明の可能性があるため、新しい送信を作らず、閉じて「LINE連携を取得」から履歴を確認してください。`;
+    el("line-confirm-error").textContent = `${error.message} 結果不明の可能性があるため、新しい送信を作らず、閉じて「LINEの状態を再取得」から履歴を確認してください。`;
     notice("送信を完了できませんでした。確認画面の説明に従い、履歴を再取得してください。", true);
   } finally {
     context.lock(false);
@@ -192,12 +218,14 @@ async function guarded(task) {
   if (busy) return;
   busy = true;
   el("line-management").inert = true;
+  el("line-refresh").disabled = true;
   decorateLineCards();
   try { await task(); }
   catch (error) { console.error("[line] operation failed", error); notice(error.message, true); }
   finally {
     busy = false;
     el("line-management").inert = false;
+    el("line-refresh").disabled = false;
     decorateLineCards();
   }
 }
