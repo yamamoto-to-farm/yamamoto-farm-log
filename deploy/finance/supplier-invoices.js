@@ -191,11 +191,14 @@ export function initSuppliers(api, onLoaded) {
         if (!response.ok) throw new Error(`原本PDFの保存に失敗しました（${response.status}）。`);
         uploaded = key;
       }
-      await api("/supplier-invoices", {
+      const saved = await api("/supplier-invoices", {
         source_file: uploaded, vendor_name: el("supplier-vendor").value.trim(),
         issue_date: el("supplier-issue").value,
-        settlement_date: el("supplier-settlement").value || null, total_amount: total, items,
+        settlement_date: el("supplier-settlement").value || null, total_amount: total, items, verified: true,
       });
+      if (saved.saved !== true || saved.source !== "paper" || !/^[a-f0-9]{32}$/.test(saved.invoice_no)) {
+        throw new Error("請求書の保存結果を確認できません。最新データを更新してください。");
+      }
       form.reset();
       clearDraft();
       result.textContent = "照合した請求書を保存しました。";

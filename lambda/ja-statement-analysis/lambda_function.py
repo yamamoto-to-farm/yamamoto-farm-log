@@ -45,9 +45,21 @@ ALLOWED_CATEGORIES = {
     "資材・消耗品",
     "未分類",
 }
+PAPER_INVOICE_CATEGORIES = {
+    "未分類",
+    "種苗費",
+    "農薬費",
+    "肥料費",
+    "資材・消耗品",
+    "機械部品・装備",
+    "機械整備工賃",
+}
 INVOICE_NO_RE = re.compile(r"^\d{6,12}$")
+PAPER_INVOICE_ID_RE = re.compile(r"^[a-f0-9]{32}$")
+SUPPLIER_UPLOAD_KEY_RE = re.compile(r"^supplier/uploads/[a-f0-9]{32}\.pdf$")
 MAX_PDF_BYTES = 20 * 1024 * 1024
 MAX_REQUEST_BYTES = 32768
+MAX_SUPPLIER_REQUEST_BYTES = 131072
 
 
 class RequestError(Exception):
@@ -409,7 +421,8 @@ def _request_data(event, route):
             raw = base64.b64decode(raw, validate=True).decode("utf-8")
         except (ValueError, UnicodeDecodeError) as error:
             raise RequestError(400, "JSONが不正です。") from error
-    if len(raw) > MAX_REQUEST_BYTES:
+    maximum = MAX_SUPPLIER_REQUEST_BYTES if route == "POST /finance/supplier-invoices" else MAX_REQUEST_BYTES
+    if len(raw) > maximum:
         raise RequestError(400, "リクエストが大きすぎます。")
     try:
         value = json.loads(raw)
@@ -425,6 +438,195 @@ def _invoice_no(value):
     if not INVOICE_NO_RE.fullmatch(invoice_no):
         raise RequestError(400, "請求書番号が不正です。")
     return invoice_no
+
+
+def _paper_date(value, name, optional=False):
+    if value is None and optional:
+        return None
+    if not isinstance(value, str) or len(value) != 10:
+        raise RequestError(400, f"{name} が不正です。")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError as error:
+        raise RequestError(400, f"{name} が不正です。") from error
+    if parsed.isoformat() != value:
+        raise RequestError(400, f"{name} が不正です。")
+    return value
+
+
+def _paper_invoice_signature(invoice):
+    financial = {
+        "source": "paper",
+        "vendor_name": invoice["vendor_name"],
+        "issue_date": invoice["issue_date"],
+        "settlement_date": invoice["settlement_date"],
+        "total_amount": invoice["total_amount"],
+        "items": [
+            {key: item[key] for key in ("item_name", "amount", "category", "subcategory")}
+            for item in invoice["items"]
+        ],
+    }
+    return hashlib.sha256(
+        json.dumps(financial, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _paper_invoice_pdf(bucket, source_file):
+    if not isinstance(source_file, str) or not SUPPLIER_UPLOAD_KEY_RE.fullmatch(source_file):
+        raise RequestError(400, "紙請求書PDFのアップロード情報が不正です。")
+    try:
+        result = S3.get_object(Bucket=bucket, Key=source_file)
+    except ClientError as error:
+        if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
+            raise RequestError(400, "アップロード済みの紙請求書PDFが見つかりません。") from error
+        raise
+    with result["Body"] as stream:
+        content = stream.read(MAX_PDF_BYTES + 1)
+    if result.get("ContentType") != "application/pdf" or b"%PDF-" not in content[:1024]:
+        raise RequestError(400, "PDF形式の紙請求書を指定してください。")
+    if not content or len(content) > MAX_PDF_BYTES:
+        raise RequestError(400, "PDFは1バイト以上20MB以下にしてください。")
+    return content
+
+
+def _paper_invoice_upload(bucket):
+    key = f"supplier/uploads/{uuid.uuid4().hex}.pdf"
+    upload = S3.generate_presigned_post(
+        Bucket=bucket,
+        Key=key,
+        Fields={"Content-Type": "application/pdf"},
+        Conditions=[
+            {"Content-Type": "application/pdf"},
+            ["content-length-range", 1, MAX_PDF_BYTES],
+        ],
+        ExpiresIn=300,
+    )
+    return {"key": key, "upload": upload, "expires_in": 300}
+
+
+def _paper_invoice_record(bucket, invoice_no):
+    if not isinstance(invoice_no, str) or not PAPER_INVOICE_ID_RE.fullmatch(invoice_no):
+        raise RequestError(400, "紙請求書IDが不正です。")
+    return _read_json(bucket, f"supplier/invoices/{invoice_no}.json")
+
+
+def _paper_invoice_public(invoice):
+    return {
+        key: invoice[key]
+        for key in ("source", "invoice_no", "vendor_name", "issue_date", "settlement_date",
+                    "total_amount", "items", "validation_status", "signature")
+    }
+
+
+def _paper_invoice_list(bucket):
+    records = _list_records(bucket, "supplier/invoices/")
+    records.sort(key=lambda item: (item["issue_date"], item["vendor_name"]), reverse=True)
+    return {"invoices": [_paper_invoice_public(record) for record in records]}
+
+
+def _paper_invoice_save(bucket, data):
+    allowed = {
+        "source_file", "vendor_name", "issue_date", "settlement_date",
+        "total_amount", "items", "verified",
+    }
+    if set(data) != allowed or data.get("verified") is not True:
+        raise RequestError(400, "原本との照合を確認してから保存してください。")
+
+    vendor_name = _text(data, "vendor_name", 120)
+    issue_date = _paper_date(data.get("issue_date"), "発行日")
+    settlement_date = _paper_date(data.get("settlement_date"), "支払予定日", optional=True)
+    total_amount = data.get("total_amount")
+    if type(total_amount) is not int or not 1 <= total_amount <= 9007199254740991:
+        raise RequestError(400, "請求額は正の整数円で指定してください。")
+
+    values = data.get("items")
+    if not isinstance(values, list) or not 1 <= len(values) <= 100:
+        raise RequestError(400, "明細は1〜100行で指定してください。")
+    items = []
+    for value in values:
+        if not isinstance(value, dict) or set(value) != {"item_name", "amount", "category", "subcategory"}:
+            raise RequestError(400, "紙請求書の明細形式が不正です。")
+        item_name = _text(value, "item_name", 200)
+        amount = value.get("amount")
+        if type(amount) is not int or abs(amount) > 9007199254740991:
+            raise RequestError(400, "明細金額は整数円で指定してください。")
+        category = _text(value, "category", 40)
+        if category not in PAPER_INVOICE_CATEGORIES:
+            raise RequestError(400, "紙請求書の分類が不正です。")
+        subcategory = _text(value, "subcategory", 80, required=False)
+        items.append({
+            "line_seq": len(items) + 1,
+            "trade_date": None,
+            "item_name": item_name,
+            "spec": "",
+            "department": "",
+            "amount": amount,
+            "category": category,
+            "subcategory": subcategory,
+            "needs_review": category == "未分類",
+            "review_confirmed": category != "未分類",
+        })
+    if sum(item["amount"] for item in items) != total_amount:
+        raise RequestError(400, "明細合計を請求額と一致させてください。")
+    if sum(abs(item["amount"]) for item in items) > 9007199254740991:
+        raise RequestError(400, "明細金額の合計が扱える範囲を超えています。")
+
+    source_file = data["source_file"]
+    content = _paper_invoice_pdf(bucket, source_file)
+    pdf_sha256 = hashlib.sha256(content).hexdigest()
+    invoice_no = pdf_sha256[:32]
+    record = {
+        "source": "paper",
+        "invoice_no": invoice_no,
+        "vendor_name": vendor_name,
+        "issue_date": issue_date,
+        "settlement_date": settlement_date,
+        "total_amount": total_amount,
+        "items": items,
+        "breakdown": [
+            {key: item[key] for key in ("amount", "category", "subcategory", "needs_review", "review_confirmed")}
+            for item in items
+        ],
+        "validation_status": "ok",
+        "verified": True,
+        "source_file": f"supplier/invoices/{invoice_no}.pdf",
+        "pdf_sha256": pdf_sha256,
+    }
+    record["signature"] = _paper_invoice_signature(record)
+
+    record_key = f"supplier/invoices/{invoice_no}.json"
+    existing = _read_json(bucket, record_key, missing_ok=True)
+    if existing:
+        if existing.get("pdf_sha256") != pdf_sha256:
+            raise RequestError(409, "請求書IDが重複しています。管理者にお問い合わせください。")
+        if existing.get("signature") != record["signature"]:
+            raise RequestError(409, "同じPDFの請求書は異なる内容です。既存の登録を確認してください。")
+        return {"saved": True, "source": "paper", "invoice_no": invoice_no, "signature": record["signature"]}
+
+    S3.copy_object(
+        Bucket=bucket,
+        Key=record["source_file"],
+        CopySource={"Bucket": bucket, "Key": source_file},
+        ContentType="application/pdf",
+        MetadataDirective="REPLACE",
+    )
+    _write_json(bucket, record_key, record)
+    LOGGER.info("Paper invoice saved (%d items)", len(items))
+    return {"saved": True, "source": "paper", "invoice_no": invoice_no, "signature": record["signature"]}
+
+
+def _paper_invoice_original(bucket, data):
+    invoice_no = _text(data, "invoice_no", 32)
+    invoice = _paper_invoice_record(bucket, invoice_no)
+    expected_key = f"supplier/invoices/{invoice_no}.pdf"
+    if invoice.get("source_file") != expected_key:
+        raise RequestError(409, "請求書の原本リンクを確認できません。")
+    url = S3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": bucket, "Key": expected_key},
+        ExpiresIn=300,
+    )
+    return {"url": url, "expires_in": 300}
 
 
 def _classify_request(bucket, data):
@@ -744,7 +946,19 @@ def _ja_link_invoice(invoice):
     ]
     signature = hashlib.sha256(json.dumps(financial, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
     return {**{key: invoice[key] for key in ("invoice_no", "settlement_date", "total_amount", "validation_status")},
+            "source": "ja",
             "signature": signature}
+
+
+def _paper_link_invoice(invoice):
+    return {
+        **_paper_invoice_public(invoice),
+        "signature": _paper_invoice_signature(invoice),
+        "breakdown": [
+            {key: item[key] for key in ("amount", "category", "subcategory", "needs_review", "review_confirmed")}
+            for item in invoice["items"]
+        ],
+    }
 
 
 def _bank_invoice_links(bucket):
@@ -758,11 +972,15 @@ def _bank_link_catalog(bucket):
             {key: item.get(key) for key in ("amount", "category", "subcategory", "needs_review", "review_confirmed")}
             for item in invoice["items"]
         ]} for invoice in _list_records(bucket, "invoices/")
+    ] + [
+        _paper_link_invoice(invoice)
+        for invoice in _list_records(bucket, "supplier/invoices/")
     ]}
 
 
 def _bank_save_invoice_link(bucket, data):
-    if "invoice_no" not in data or set(data) - {"statement_id", "transaction_id", "revision", "statement_revision", "invoice_no", "invoice_signature"}:
+    if "invoice_no" not in data or set(data) - {"statement_id", "transaction_id", "revision", "statement_revision",
+                                                "invoice_no", "invoice_signature", "source"}:
         raise RequestError(400, "請求書の紐づけ項目が不正です。")
     statement_id, transaction_id = _bank_id(data), _bank_id(data, "transaction_id")
     current = _bank_invoice_links(bucket)
@@ -778,15 +996,22 @@ def _bank_save_invoice_link(bucket, data):
              if (link["statement_id"], link["transaction_id"]) != (statement_id, transaction_id)]
     invoice_no = data.get("invoice_no")
     if invoice_no is not None:
-        invoice_no = _invoice_no(data)
-        invoice = _ja_link_invoice(_read_json(bucket, f"invoices/{invoice_no}.json"))
+        source = data.get("source", "ja")
+        if source == "ja":
+            invoice_no = _invoice_no(data)
+            invoice = _ja_link_invoice(_read_json(bucket, f"invoices/{invoice_no}.json"))
+        elif source == "paper":
+            invoice_no = _text(data, "invoice_no", 32)
+            invoice = _paper_link_invoice(_paper_invoice_record(bucket, invoice_no))
+        else:
+            raise RequestError(400, "請求書の種類が不正です。")
         if invoice["validation_status"] == "failed":
             raise RequestError(400, "検証に失敗した請求書は紐づけできません。")
         if data.get("invoice_signature") != invoice["signature"]:
             raise RequestError(409, "請求書が更新されています。内容を再確認してください。")
-        if any(link["source"] == "ja" and link["invoice_no"] == invoice_no for link in links):
-            raise RequestError(409, "この請求書は別の口座明細に紐づけ済みです。「JA請求書の紐づけ一覧」で解除してから変更してください。")
-        links.append({"statement_id": statement_id, "transaction_id": transaction_id, "source": "ja",
+        if any(link.get("source", "ja") == source and link["invoice_no"] == invoice_no for link in links):
+            raise RequestError(409, "この請求書は別の口座明細に紐づけ済みです。紐づけ一覧から解除してから変更してください。")
+        links.append({"statement_id": statement_id, "transaction_id": transaction_id, "source": source,
                       "invoice_no": invoice_no, "invoice_signature": invoice["signature"],
                       "linked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
     written = _write_json(bucket, "bank/invoice-links.json", {"links": links}, condition=current["revision"] or "*")
@@ -858,9 +1083,9 @@ def lambda_handler(event, context):
             or "openid" not in claims.get("scope", "").split()
             or not claims.get("sub")
         ):
-            raise RequestError(401, "JA明細分析のログインが必要です。")
+            raise RequestError(401, "経費・口座データの利用にはログインが必要です。")
         if not (user_groups(claims) & ALLOWED_GROUPS):
-            raise RequestError(403, "JA明細データを利用する権限がありません。")
+            raise RequestError(403, "経費・口座データを利用する権限がありません。")
 
         bucket = os.environ["FINANCE_BUCKET"]
         route = event.get("routeKey", "")
@@ -881,6 +1106,22 @@ def lambda_handler(event, context):
                 ExpiresIn=300,
             )
             return response(200, {"key": key, "upload": upload, "expires_in": 300})
+
+        if route == "POST /finance/supplier-uploads":
+            if data:
+                raise RequestError(400, "アップロード要求の形式が不正です。")
+            return response(200, _paper_invoice_upload(bucket))
+
+        if route == "GET /finance/supplier-invoices":
+            return response(200, _paper_invoice_list(bucket))
+
+        if route == "POST /finance/supplier-invoices":
+            return response(200, _paper_invoice_save(bucket, data))
+
+        if route == "POST /finance/supplier-original":
+            if set(data) != {"invoice_no"}:
+                raise RequestError(400, "原本PDFの要求形式が不正です。")
+            return response(200, _paper_invoice_original(bucket, data))
 
         if route == "GET /finance/invoices":
             return response(200, {"invoices": _invoice_summaries(bucket)})
@@ -935,5 +1176,5 @@ def lambda_handler(event, context):
     except ClientError as error:
         if error.response["Error"]["Code"] in ("PreconditionFailed", "ConditionalRequestConflict"):
             return response(409, {"message": "データが更新されています。最新データを取得してから再操作してください。"})
-        LOGGER.exception("JA statement S3 operation failed")
-        return response(500, {"message": "JA明細データの保存または読み込みに失敗しました。"})
+        LOGGER.exception("Finance S3 operation failed")
+        return response(500, {"message": "経費・口座データの保存または読み込みに失敗しました。"})

@@ -1,3 +1,4 @@
+import hashlib
 import io
 import json
 import os
@@ -23,10 +24,24 @@ class FakeS3:
     def get_object(self, Bucket, Key):
         if Key not in self.objects:
             raise ClientError({"Error": {"Code": "NoSuchKey"}}, "GetObject")
-        return {"Body": io.BytesIO(self.objects[Key])}
+        content = self.objects[Key]
+        content_type = "application/pdf" if Key.endswith(".pdf") else "application/json; charset=utf-8"
+        return {
+            "Body": io.BytesIO(content),
+            "ContentType": content_type,
+            "ETag": f'"{hashlib.sha256(content).hexdigest()}"',
+        }
 
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[Key] = Body
+        return {"ETag": f'"{hashlib.sha256(Body).hexdigest()}"'}
+
+    def copy_object(self, Bucket, Key, CopySource, **kwargs):
+        source_key = CopySource["Key"]
+        if source_key not in self.objects:
+            raise ClientError({"Error": {"Code": "NoSuchKey"}}, "CopyObject")
+        self.objects[Key] = self.objects[source_key]
+        return {}
 
     def list_objects_v2(self, Bucket, Prefix, **kwargs):
         return {"Contents": [{"Key": key} for key in sorted(self.objects) if key.startswith(Prefix)]}
@@ -38,6 +53,10 @@ class FakeS3:
     def generate_presigned_post(self, **kwargs):
         self.presigned = kwargs
         return {"url": "https://example.invalid", "fields": {"key": kwargs["Key"]}}
+
+    def generate_presigned_url(self, ClientMethod, Params, ExpiresIn):
+        self.presigned_url = (ClientMethod, Params, ExpiresIn)
+        return "https://example.invalid/original.pdf"
 
 
 def statement():
@@ -101,8 +120,10 @@ class FinanceApiTests(unittest.TestCase):
 
     def test_missing_auth_and_worker_are_rejected(self):
         self.assertEqual(self.call("GET /finance/invoices", claims={})["statusCode"], 401)
+        self.assertEqual(self.call("GET /finance/supplier-invoices", claims={})["statusCode"], 401)
         claims = {**self.claims, "cognito:groups": "[worker]"}
         self.assertEqual(self.call("GET /finance/invoices", claims=claims)["statusCode"], 403)
+        self.assertEqual(self.call("GET /finance/supplier-invoices", claims=claims)["statusCode"], 403)
 
     def test_family_upload_is_pdf_size_limited(self):
         result = self.call("POST /finance/uploads")
@@ -111,6 +132,125 @@ class FinanceApiTests(unittest.TestCase):
         self.assertIn(["content-length-range", 1, lambda_function.MAX_PDF_BYTES],
                       self.s3.presigned["Conditions"])
         self.assertTrue(json.loads(result["body"])["key"].startswith("uploads/"))
+
+    def paper_invoice_payload(self, source_file="supplier/uploads/" + "c" * 32 + ".pdf"):
+        self.s3.objects[source_file] = b"%PDF-1.7\nprivate test invoice"
+        return {
+            "source_file": source_file,
+            "vendor_name": "あさひ資材店",
+            "issue_date": "2026-10-12",
+            "settlement_date": None,
+            "total_amount": 100,
+            "items": [
+                {"item_name": "苗", "amount": 110, "category": "種苗費", "subcategory": ""},
+                {"item_name": "値引き", "amount": -10, "category": "未分類", "subcategory": ""},
+            ],
+            "verified": True,
+        }
+
+    def test_paper_invoice_upload_save_list_original_and_bank_link(self):
+        ticket = self.call("POST /finance/supplier-uploads")
+        self.assertEqual(ticket["statusCode"], 200)
+        ticket_body = json.loads(ticket["body"])
+        self.assertRegex(ticket_body["key"], r"^supplier/uploads/[a-f0-9]{32}\.pdf$")
+        self.assertEqual(self.s3.presigned["Bucket"], "finance-private")
+        self.assertIn(["content-length-range", 1, lambda_function.MAX_PDF_BYTES],
+                      self.s3.presigned["Conditions"])
+
+        payload = self.paper_invoice_payload()
+        result = self.call("POST /finance/supplier-invoices", payload)
+        self.assertEqual(result["statusCode"], 200)
+        saved = json.loads(result["body"])
+        invoice_no = saved["invoice_no"]
+        self.assertEqual(saved["source"], "paper")
+        self.assertRegex(invoice_no, r"^[a-f0-9]{32}$")
+        record_key = f"supplier/invoices/{invoice_no}.json"
+        original_key = f"supplier/invoices/{invoice_no}.pdf"
+        record = json.loads(self.s3.objects[record_key])
+        self.assertEqual(record["vendor_name"], "あさひ資材店")
+        self.assertEqual(record["source"], "paper")
+        self.assertEqual(record["source_file"], original_key)
+        self.assertIn(original_key, self.s3.objects)
+        self.assertEqual(record["breakdown"][0]["category"], "種苗費")
+        self.assertEqual(record["breakdown"][1]["amount"], -10)
+
+        listing = self.call("GET /finance/supplier-invoices")
+        listed_invoice = json.loads(listing["body"])["invoices"][0]
+        self.assertEqual(listed_invoice["vendor_name"], "あさひ資材店")
+        self.assertNotIn("pdf_sha256", listed_invoice)
+        self.assertNotIn("source_file", listed_invoice)
+        catalog = self.call("GET /bank/invoice-links")
+        linked_invoice = json.loads(catalog["body"])["invoices"][0]
+        self.assertEqual(linked_invoice["source"], "paper")
+        self.assertEqual(linked_invoice["signature"], saved["signature"])
+        self.assertEqual(sum(part["amount"] for part in linked_invoice["breakdown"]), 100)
+
+        original = self.call("POST /finance/supplier-original", {"invoice_no": invoice_no})
+        self.assertEqual(json.loads(original["body"])["url"], "https://example.invalid/original.pdf")
+        self.assertEqual(self.s3.presigned_url[1]["Key"], original_key)
+        self.assertEqual(self.s3.presigned_url[2], 300)
+
+        statement_id, transaction_id = "1" * 64, "2" * 64
+        self.save(f"bank/statements/{statement_id}.json", {
+            "statement_id": statement_id,
+            "items": [{"transaction_id": transaction_id, "deposit": 0, "withdrawal": 100}],
+        })
+        statement_revision = self.s3.get_object(
+            Bucket="finance-private", Key=f"bank/statements/{statement_id}.json",
+        )["ETag"]
+        link = self.call("POST /bank/invoice-links", {
+            "statement_id": statement_id,
+            "transaction_id": transaction_id,
+            "statement_revision": statement_revision,
+            "revision": "",
+            "invoice_no": invoice_no,
+            "source": "paper",
+            "invoice_signature": saved["signature"],
+        })
+        self.assertEqual(link["statusCode"], 200)
+        link_body = json.loads(link["body"])
+        self.assertEqual(link_body["links"][0]["source"], "paper")
+
+        other_statement_id, other_transaction_id = "3" * 64, "4" * 64
+        self.save(f"bank/statements/{other_statement_id}.json", {
+            "statement_id": other_statement_id,
+            "items": [{"transaction_id": other_transaction_id, "deposit": 0, "withdrawal": 100}],
+        })
+        other_revision = self.s3.get_object(
+            Bucket="finance-private", Key=f"bank/statements/{other_statement_id}.json",
+        )["ETag"]
+        duplicate_link = self.call("POST /bank/invoice-links", {
+            "statement_id": other_statement_id,
+            "transaction_id": other_transaction_id,
+            "statement_revision": other_revision,
+            "revision": link_body["revision"],
+            "invoice_no": invoice_no,
+            "source": "paper",
+            "invoice_signature": saved["signature"],
+        })
+        self.assertEqual(duplicate_link["statusCode"], 409)
+
+    def test_paper_invoice_rejects_unverified_invalid_and_duplicate_submissions(self):
+        payload = self.paper_invoice_payload()
+        for changes in [
+            {"verified": False},
+            {"vendor_name": " "},
+            {"issue_date": "2026-02-30"},
+            {"source_file": "../invoices/private.pdf"},
+            {"items": [{"item_name": "苗", "amount": 100, "category": "売上", "subcategory": ""}]},
+            {"total_amount": 101},
+        ]:
+            result = self.call("POST /finance/supplier-invoices", {**payload, **changes})
+            self.assertEqual(result["statusCode"], 400, changes)
+        self.assertFalse(any(key.startswith("supplier/invoices/") and key.endswith(".json")
+                             for key in self.s3.objects))
+
+        first = self.call("POST /finance/supplier-invoices", payload)
+        self.assertEqual(first["statusCode"], 200)
+        duplicate = self.call("POST /finance/supplier-invoices", payload)
+        self.assertEqual(duplicate["statusCode"], 200)
+        changed = self.call("POST /finance/supplier-invoices", {**payload, "vendor_name": "別の仕入先"})
+        self.assertEqual(changed["statusCode"], 409)
 
     def test_reimport_preserves_manual_classification_and_is_idempotent(self):
         self.save("invoices/04026970.json", {

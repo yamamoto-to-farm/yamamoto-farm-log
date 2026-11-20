@@ -842,11 +842,13 @@ python .\scripts\convert_bank_statement.py --reference "同じ口座のJAバン�
   保存した原本は経費の非公開バケットに置き、短時間有効なリンクから確認する。JA経費の集計や引落予定には加えない。
 - Lambdaの実行ロールに、非公開経費バケットの `supplier/uploads/*` と `supplier/invoices/*` の
   `s3:GetObject` / `s3:PutObject`、`supplier/invoices/` の一覧用 `s3:ListBucket` を許可する。
-  `supplier/uploads/` にS3イベント通知は不要。公開バケットには帳票を置かない。
+  保存時に検証済みPDFを `supplier/invoices/{invoice_id}.pdf` へコピーし、メタデータは同じIDの `.json` に保存する。
+  短期アップロード置き場 `supplier/uploads/` はS3イベント通知の対象にせず、期限切れオブジェクトを削除するLifecycleを設定する。
+  非公開バケットのCORSは公開サイトOriginからのPOSTと`Content-Type`を許可する。公開バケットには帳票を置かない。
 - 経費Lambdaを `ja-statement-analysis.zip` で更新し、既存の経費Lambda統合・JWT・`openid` で次のルートを追加する。
   既存の `/bank/invoice-links` も同じ更新済みLambdaを使う。APIとIAMを確認してからフロントを公開する。
   紙請求書のレコードは `source: "paper"` と仕入先名 `vendor_name` を持ち、請求元の名前をコードに固定しない。
-  `POST /finance/supplier-invoices` は `vendor_name` を含む確認済み情報を受け取る。
+  `POST /finance/supplier-invoices` は `vendor_name` と原本照合の `verified: true` を含む確認済み情報を受け取る。
 
   | メソッド | パス |
   |---|---|
