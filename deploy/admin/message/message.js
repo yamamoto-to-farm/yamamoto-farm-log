@@ -6,7 +6,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261108-date-1";
-import { initLineMessaging, decorateLineCards, refreshLineState } from "./line.js?v=20261120-line-registration-1";
+import { initLineMessaging, decorateLineCards, refreshLineState } from "./line.js?v=20261120-card-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -27,6 +27,7 @@ let sequence = 0;
 let copying = false;
 let loadedDate = "";
 const drafts = new Map();
+const openEditors = new Set();
 let commonMode = false;
 const commonSelection = new Set();
 function status(message, error = false) {
@@ -125,13 +126,13 @@ function applyCommonMessage() {
   element("common-text").value = "";
   setCommonMode(false);
   renderCards();
-  status(`${updates.length}件の文面に共通の連絡を追加しました。内容を確認してコピーしてください（予定は変更していません）。`);
+  status(`${updates.length}件の文面に共通の連絡を追加しました。コピーやLINE送信の前に文面を確認してください。`);
   element("common-open").focus();
 }
 function handleCardClick(event) {
   const select = event.target.closest("[data-select]");
   const card = event.target.closest("[data-group]");
-  if (commonMode && card && (select || !event.target.closest("button, a, textarea, input, select, label"))) {
+  if (commonMode && card && (select || !event.target.closest("button, a, textarea, input, select, label, details"))) {
     const id = card.dataset.group;
     if (commonSelection.has(id)) commonSelection.delete(id);
     else commonSelection.add(id);
@@ -153,21 +154,35 @@ function renderCards() {
     const issues = [...new Set([...group.issues, ...entries.flatMap(({ plan }) => communicationIssues(plan))])];
     const text = currentMessageText(group);
     const communication = groupCommunicationState(group, record.data.communications);
-    return `<article class="msg-card" data-group="${escapeHtml(id)}">
+    return `<article class="msg-card" data-group="${escapeHtml(id)}" data-communication="${communication?.status || ""}" data-changed="${communication?.changed ? "yes" : ""}" data-plan-issues="${issues.length ? "yes" : ""}">
       <button type="button" class="secondary-btn msg-select" data-select="${escapeHtml(id)}" aria-label="${escapeHtml(group.recipients.join("・"))} の連絡文を追加先に選択" aria-pressed="false" hidden>追加先に選択</button>
-      <h3>${escapeHtml(group.recipients.join("・"))} へ</h3>
-      <p class="msg-muted">${communication ? `${communication.status === "sent" ? "送信済み（LINE受付・配達未確認）" : "連絡用にコピー済み"}${communication.changed ? "・連絡後に変更あり" : ""}` : "この宛先・予定の組合せでは連絡前"}</p>
+      <div class="msg-card-heading"><h3>${escapeHtml(group.recipients.join("・"))} へ</h3>
+        <span class="msg-badge" data-line-badge>${communication?.changed ? "連絡後に予定変更あり" : communication?.status === "sent"
+          ? "LINE受付済み" : communication ? "コピー済み（LINE未確認）" : "未連絡"}</span></div>
       ${entries.map(({ id: planId, plan, displayPlan }) => `<p>${plan.off ? "中止の連絡：" : ""}${displayPlan.blocks.map(block =>
         `${escapeHtml(block.start)}〜${escapeHtml(block.end)} ${escapeHtml(block.task)}`).join("・")}
         <a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集</a></p>`).join("")}
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
-      <p class="msg-muted" data-help="連絡文の手修正について">文面の補足・言い換えは予定には反映されません。</p>
-      ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました（共通の連絡・手修正を含みます）。</p>' : ""}
       ${communication?.changed ? `<p class="msg-error">予定が変わったため、現在の予定から文面を作り直しました。以前の注意事項は<a href="/schedule/daily-plan/index.html?date=${loadedDate}">連絡時点の控え</a>で確認してください。</p>` : ""}
-      <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="10" aria-label="連絡文面">${escapeHtml(text)}</textarea>
-      <button type="button" class="secondary-btn" data-reset="${escapeHtml(id)}">保存済み予定から文面を戻す</button>
-      <button type="button" class="primary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>📋 コピー（送信はしません）</button>
-      <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
+      <div data-current-message data-draft="${drafts.has(id) && text !== communication?.message ? "yes" : ""}">
+        <p class="msg-excerpt" data-excerpt>${escapeHtml(text)}</p>
+        <details class="msg-disclosure">
+          <summary>全文を見る</summary>
+          <pre data-full-message>${escapeHtml(text)}</pre>
+        </details>
+      </div>
+      <div data-line-actions></div>
+      <details class="msg-disclosure" data-editor="${escapeHtml(id)}"${openEditors.has(id) ? " open" : ""}>
+        <summary>文面を編集</summary>
+        ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました。</p>' : ""}
+        <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
+        <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="8" aria-label="連絡文面">${escapeHtml(text)}</textarea>
+        <button type="button" class="secondary-btn" data-reset="${escapeHtml(id)}">保存済み予定から文面を戻す</button>
+      </details>
+      <div class="msg-copy-tools">
+        <button type="button" class="secondary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>コピー（送信なし）</button>
+        <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
+      </div>
     </article>`;
   }).join("") : "<p>この日の連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
   syncCommonSelection();
@@ -181,6 +196,7 @@ async function loadSavedPlans(autoSelectDate = false) {
   if (!date) { status("日付を選択してください。", true); return; }
   record = null;
   drafts.clear();
+  openEditors.clear();
   element("cards").replaceChildren();
   element("common-text").value = "";
   setCommonMode(false);
@@ -326,8 +342,20 @@ window.addEventListener("DOMContentLoaded", async () => {
   element("common-apply").onclick = applyCommonMessage;
   element("common-cancel").onclick = () => { setCommonMode(false); element("common-open").focus(); };
   element("cards").oninput = event => {
-    if (event.target.dataset.preview) drafts.set(event.target.dataset.preview, event.target.value);
+    if (!event.target.dataset.preview) return;
+    const text = event.target.value;
+    drafts.set(event.target.dataset.preview, text);
+    const card = event.target.closest("[data-group]");
+    card.querySelector("[data-current-message]").dataset.draft = "yes";
+    card.querySelector("[data-excerpt]").textContent = text;
+    card.querySelector("[data-full-message]").textContent = text;
   };
+  element("cards").addEventListener("toggle", event => {
+    const id = event.target.dataset?.editor;
+    if (!id || !element("cards").contains(event.target)) return;
+    if (event.target.open) openEditors.add(id);
+    else openEditors.delete(id);
+  }, true);
   element("cards").onclick = handleCardClick;
   initLineMessaging({
     date: () => element("msg-date").value,

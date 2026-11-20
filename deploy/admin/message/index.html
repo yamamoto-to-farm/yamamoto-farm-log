@@ -7,7 +7,7 @@
   <title>業務連絡 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261104-line-1">
+  <link rel="stylesheet" href="./message.css?v=20261120-card-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
@@ -49,7 +49,7 @@
         <p id="common-status" class="msg-error" role="status" aria-live="polite"></p>
         <p class="msg-muted" data-help="共通の連絡の保存について">追加は文面だけに反映します。コピーまたはLINE送信準備をするまでは保存されず、日付変更・再読み込みで消えます。送信準備した文面は下のLINE送信履歴に残ります。</p>
       </div>
-      <div class="line-connection">
+      <div id="line-connection" class="line-connection">
         <p id="line-status" role="status" aria-live="polite">登録状態は未取得です。</p>
         <p id="line-updated" class="msg-muted"></p>
         <button id="line-refresh" type="button" class="secondary-btn">LINEの状態を再取得</button>
@@ -118,6 +118,6 @@
     <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
     <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
   </dialog>
-  <script type="module" src="./message.js?v=20261120-line-registration-1"></script>
+  <script type="module" src="./message.js?v=20261120-card-1"></script>
 </body>
 </html>

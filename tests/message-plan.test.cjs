@@ -109,7 +109,7 @@ function copyScreen({ failCopy = false, failRecord = false, plans = { test: plan
   for (const id of ["cards", "msg-date", "direct-plan-link", "back-plan-link", "msg-login", "tab-daily", "status",
     "common-open", "common-panel", "common-apply", "common-text", "common-status", "page-area", "load-plans",
     "common-all", "common-clear", "common-cancel", "template-list", "template-edit", "add-template", "save-templates"]) {
-    elements[id] = { value: "", textContent: "", replaceChildren() {}, classList: { toggle() {} },
+    elements[id] = { value: "", textContent: "", replaceChildren() {}, addEventListener() {}, classList: { toggle() {} },
       setAttribute(name, value) { this[name] = value; }, querySelectorAll: () => [], focus() {} };
   }
   elements["msg-date"].value = "2026-11-04";
@@ -287,7 +287,7 @@ function clickCard(context, card, { interactive = false, select = false } = {}) 
   context.handleCardClick({ target: { closest(selector) {
     if (selector === "[data-group]") return card;
     if (selector === "[data-select]") return select ? card.select : null;
-    if (selector === "button, a, textarea, input, select, label") return interactive ? {} : null;
+    if (selector === "button, a, textarea, input, select, label, details") return interactive ? {} : null;
     return null;
   } } });
 }
@@ -508,6 +508,19 @@ test("changed plans show fresh text and a history warning instead of restoring o
   assert.doesNotMatch(elements.cards.innerHTML, /古い作業時間/);
   vm.runInContext('drafts.set("test","編集中の文面");renderCards();', context);
   assert.match(elements.cards.innerHTML, /編集中の文面/);
+});
+test("full text and editor are separate disclosures and editing updates both read-only views", async () => {
+  const { context, elements, initialize } = defaultDateScreen({ search: "?date=2026-11-04" });
+  await initialize();
+  assert.match(elements.cards.innerHTML, /<summary>全文を見る<\/summary>\s*<pre data-full-message>/);
+  assert.match(elements.cards.innerHTML, /<details[^>]+data-editor="test">\s*<summary>文面を編集<\/summary>[\s\S]*?<textarea/);
+  const views = { "[data-current-message]": { dataset: {} }, "[data-excerpt]": {}, "[data-full-message]": {} };
+  const value = "注意：\n雨具を持参してください。";
+  elements.cards.oninput({ target: { dataset: { preview: "test" }, value, closest: () => ({ querySelector: key => views[key] }) } });
+  assert.equal(views["[data-current-message]"].dataset.draft, "yes");
+  assert.equal(views["[data-excerpt]"].textContent, value);
+  assert.equal(views["[data-full-message]"].textContent, value);
+  assert.equal(vm.runInContext('drafts.get("test")', context), value);
 });
 test("copy refresh retains this and other pending message drafts", async () => {
   const { context, button, elements } = copyScreen();

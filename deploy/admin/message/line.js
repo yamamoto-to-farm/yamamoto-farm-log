@@ -69,7 +69,9 @@ function renderIssueOptions(members) {
 }
 
 function renderJobs() {
-  el("line-jobs").innerHTML = [...state.jobs].reverse().map(job => `<details class="line-job"${job.recorded || job.closed ? "" : " open"}>
+  const jobs = [...state.jobs].reverse();
+  jobs.sort((a, b) => Number(isPending(b)) - Number(isPending(a)));
+  el("line-jobs").innerHTML = jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${isPending(job) ? " open" : ""}>
     <summary>${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"}</summary>
     <p>${escape(job.created_at)} ／ ${escape(job.date)}</p>
     <pre class="line-preview">${escape(job.message)}</pre>
@@ -80,37 +82,105 @@ function renderJobs() {
   </details>`).join("") || "<p>この日のLINE送信履歴はありません。</p>";
 }
 
+const isPending = job => !job.closed && !job.recorded;
+const jobOverlapsGroup = (job, group) => job.names.some(name => group.recipients.includes(name));
+
+function cardJobs(group, jobs) {
+  const newestFirst = [...jobs].reverse();
+  return {
+    pending: newestFirst.find(job => isPending(job) && jobOverlapsGroup(job, group)),
+    sent: newestFirst.find(job => job.recorded
+      && job.names.length === group.recipients.length
+      && group.recipients.every(name => job.names.includes(name))
+      && job.targets?.length === group.entries.length
+      && group.entries.every(({ id }) => job.targets.some(target => target.id === id))),
+  };
+}
+
+function focusJob(job) {
+  const details = el(`line-job-${job.id}`);
+  details.open = true;
+  const summary = details.querySelector("summary");
+  summary.focus({ preventScroll: true });
+  summary.scrollIntoView({ block: "center" });
+}
+
 export function decorateLineCards() {
   if (!context) return;
   const date = context.date();
+  const available = state && loadedDate === date;
+  const groups = new Map(context.groups().map(group => [group.id, group]));
   for (const card of el("cards").querySelectorAll("[data-group]")) {
     card.querySelector("[data-line-card]")?.remove();
-    const group = context.groups().find(group => group.id === card.dataset.group);
+    const group = groups.get(card.dataset.group);
     if (!group) continue;
     const controls = document.createElement("div");
     controls.dataset.lineCard = "";
-    const available = state && loadedDate === date;
+    controls.className = "msg-line-actions";
+    const { pending, sent } = cardJobs(group, available ? state.jobs : []);
+    const changed = sent
+      ? group.entries.some(({ id, plan }) => sent.targets.find(target => target.id === id).plan_revision !== plan.updated_at)
+      : card.dataset.changed === "yes";
+    const accepted = Boolean(sent || card.dataset.communication === "sent");
+    const unknown = pending?.names.some(name => pending.results[name].status === "unknown");
+    const badge = card.querySelector("[data-line-badge]");
+    if (badge) {
+      badge.textContent = pending ? (unknown ? "LINE送信の結果不明" : "未完了のLINE送信あり") : changed ? "連絡後に予定変更あり"
+        : accepted ? "LINE受付済み" : card.dataset.communication === "copied" ? "コピー済み（LINE未確認）" : "未連絡";
+      badge.dataset.tone = pending || changed ? "warning" : accepted ? "accepted" : "";
+    }
+    const currentMessage = card.querySelector("[data-current-message]");
+    if (currentMessage) currentMessage.dataset.compact = String(Boolean(sent && !changed));
     const missing = available ? group.recipients.filter(name =>
       !state.members.some(member => member.name === name && member.linked && !member.blocked)) : [];
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "primary-btn";
-    button.textContent = "LINE送信内容を確認";
-    button.disabled = busy || !available || missing.length > 0;
-    button.onclick = () => guarded(() => prepare(group));
-    const hint = document.createElement("p");
-    hint.className = "msg-muted";
-    hint.textContent = !available ? "LINEの状態を確認してください。取得できない場合もコピーは使えます。"
-      : missing.length ? `LINE未登録・送信停止：${missing.join("・")}。登録・承認するか、コピーで連絡してください。`
-        : "個人宛てに同じ文面を送信します。送信前に確認画面を開きます。";
-    controls.append(button, hint);
-    card.append(controls);
+    button.className = accepted && !changed && !pending ? "secondary-btn" : "primary-btn";
+    button.textContent = pending ? "履歴から確認・再試行" : changed ? "変更後の文面を確認"
+      : accepted ? "再連絡の内容を確認" : "LINE送信内容を確認";
+    button.disabled = busy || (!pending && (!available || missing.length > 0 || card.dataset.planIssues === "yes"));
+    button.onclick = pending ? () => focusJob(pending) : () => guarded(() => prepare(group));
+    if (sent) {
+      const details = document.createElement("details");
+      details.className = "msg-disclosure msg-sent-message";
+      const summary = document.createElement("summary");
+      summary.textContent = "送った文面を見る";
+      const text = document.createElement("pre");
+      text.textContent = sent.message;
+      details.append(summary, text);
+      controls.append(details);
+    }
+    if (sent && !pending) {
+      const results = document.createElement("button");
+      results.type = "button";
+      results.className = "secondary-btn";
+      results.textContent = "送信結果を見る";
+      results.disabled = busy;
+      results.onclick = () => focusJob(sent);
+      controls.append(results);
+    }
+    if (accepted && !changed && !pending) {
+      const more = document.createElement("details");
+      more.className = "msg-disclosure msg-resend";
+      const summary = document.createElement("summary");
+      summary.textContent = "再連絡する";
+      more.append(summary, button);
+      controls.append(more);
+    } else controls.append(button);
+    if (!pending && missing.length) {
+      const hint = document.createElement("p");
+      hint.className = "msg-muted";
+      hint.textContent = `LINE未登録・送信停止：${missing.join("・")}。登録・承認するか、コピーで連絡してください。`;
+      controls.append(hint);
+    }
+    (card.querySelector("[data-line-actions]") || card).append(controls);
   }
 }
 
 async function refresh() {
   const current = ++sequence;
   const date = context.date();
+  el("line-connection").classList.toggle("line-fetch-failed", false);
   state = undefined;
   loadedDate = "";
   el("line-updated").textContent = "";
@@ -129,16 +199,17 @@ async function refresh() {
   let result;
   try {
     result = await lineApi(null, null, date);
+    if (!validLineState(result)) throw new Error("LINE APIの応答形式が不正です。");
   } catch (error) {
     if (current !== sequence || date !== context.date()) return;
+    el("line-connection").classList.toggle("line-fetch-failed", true);
     throw error;
   }
   if (current !== sequence || date !== context.date()) return;
-  if (!validLineState(result)) throw new Error("LINE APIの応答形式が不正です。");
   state = result;
   loadedDate = date;
   renderState();
-  el("line-updated").textContent = `${date}の状態を取得：${new Date().toLocaleString("ja-JP")}`;
+  el("line-updated").textContent = `${date}分 ／ ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} 取得`;
   notice("LINE登録・送信履歴を取得しました。");
 }
 
@@ -167,10 +238,12 @@ async function prepare(group) {
   await context.check(group);
   if (date !== context.date()) throw new Error("日付が変わりました。LINE連携を再取得してください。");
   if (!state || loadedDate !== date) throw new Error("LINEの状態が変わりました。再取得して確認してください。");
+  const pending = state.jobs.find(job => isPending(job) && jobOverlapsGroup(job, group));
+  if (pending) throw new Error("この宛先には未完了の送信があります。同じ送信履歴から確認・再試行してください。");
   const message = context.message(group);
   if (!message.trim() || message.length > 5000) throw new Error("LINE文面は空欄不可・5000文字以内です。");
-  const previous = state.jobs.some(job => job.names.some(name => group.recipients.includes(name)));
-  if (previous && !window.confirm("この日には以前の送信準備・履歴があります。未完了分は同じ送信として再開します。完了済みの場合は新しい連絡として再送します。続けますか？")) return;
+  const previous = state.jobs.some(job => jobOverlapsGroup(job, group));
+  if (previous && !window.confirm("この宛先には以前の送信履歴があります。新しい連絡を準備しますか？")) return;
   const job = await lineApi("prepare", {
     date, names: group.recipients, message,
     targets: group.entries.map(({ id, plan }) => ({ id, plan_revision: plan.updated_at })),
@@ -252,7 +325,7 @@ async function guarded(task, report = notice) {
 
 export function initLineMessaging(options) {
   context = options;
-  el("line-refresh").onclick = () => guarded(refresh);
+  el("line-refresh").onclick = () => guarded(refreshLineState);
   el("line-issue-worker").onchange = () => {
     el("line-issue").disabled = !el("line-issue-worker").value;
     el("line-code-text").value = "";

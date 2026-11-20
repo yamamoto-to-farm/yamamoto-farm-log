@@ -21,11 +21,15 @@ const initial = {
 function harness() {
   const elements = new Map();
   const element = id => {
-    if (!elements.has(id)) elements.set(id, {
-      hidden: false, disabled: false, textContent: "", innerHTML: "",
-      classList: { toggle() {} }, querySelectorAll: () => [], addEventListener() {},
-      focus() {}, select() {}, showModal() { this.open = true; }, close() { this.open = false; },
-    });
+    if (!elements.has(id)) {
+      const classes = new Set();
+      elements.set(id, {
+        hidden: false, disabled: false, textContent: "", innerHTML: "",
+        classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); }, contains: name => classes.has(name) },
+        querySelectorAll: () => [], addEventListener() {},
+        focus() {}, select() {}, showModal() { this.open = true; }, close() { this.open = false; },
+      });
+    }
     return elements.get(id);
   };
   const calls = [];
@@ -213,11 +217,13 @@ test("automatic refresh reports failure and a manual retry recovers", async () =
   h.context.fetch = async () => { throw new Error("offline"); };
   await h.context.refreshLineState();
   assert.match(h.element("line-status").textContent, /offline.*再取得.*コピー/);
+  assert.equal(h.element("line-connection").classList.contains("line-fetch-failed"), true);
   assert.equal(vm.runInContext("state", h.context), undefined);
   assert.equal(h.element("line-updated").textContent, "");
   h.context.fetch = async () => ({ ok: true, json: async () => clone(initial) });
   await h.element("line-refresh").onclick();
   assert.match(h.element("line-status").textContent, /取得しました/);
+  assert.equal(h.element("line-connection").classList.contains("line-fetch-failed"), false);
   assert.match(h.element("line-updated").textContent, /2026-11-05/);
 });
 test("out of order results and errors cannot overwrite the current date", async () => {
@@ -250,12 +256,17 @@ test("clearing the date invalidates the state without requesting the API", async
   assert.equal(vm.runInContext("state", h.context), undefined);
   assert.match(h.element("line-status").textContent, /日付を選択/);
 });
-test("send confirmation is enabled only after current state is loaded for registered recipients", async () => {
-  const h = harness();
-  const group = { id: "p1", recipients: names, entries: [] };
+function mountCard(h, group) {
+  const badge = { dataset: {} };
+  const message = { dataset: {} };
   const card = {
-    dataset: { group: "p1" }, children: [],
-    querySelector() { return this.children[0] || null; },
+    dataset: { group: group.id }, children: [],
+    querySelector(selector) {
+      if (selector === "[data-current-message]") return message;
+      if (selector === "[data-line-badge]") return badge;
+      if (selector === "[data-line-card]") return this.children[0] || null;
+      return null;
+    },
     append(control) { this.children.push(control); },
   };
   h.element("cards").querySelectorAll = () => [card];
@@ -265,6 +276,11 @@ test("send confirmation is enabled only after current state is loaded for regist
     append(...children) { this.children.push(...children); },
     remove() { card.children = []; },
   });
+  return { card, badge, message, actions: () => card.children[0].children };
+}
+test("send confirmation is enabled only after current state is loaded for registered recipients", async () => {
+  const h = harness();
+  const { card } = mountCard(h, { id: "p1", recipients: names, entries: [] });
   let finish;
   h.context.fetch = () => new Promise(resolve => { finish = resolve; });
   const pending = h.context.refreshLineState();
@@ -277,6 +293,47 @@ test("send confirmation is enabled only after current state is loaded for regist
   await h.context.refreshLineState();
   assert.equal(card.children[0].children[0].disabled, true);
   assert.match(card.children[0].children[1].textContent, /Part B/);
+});
+test("the accepted card shows the exact sent text and history, and promotes an update only after a revision change", async () => {
+  const h = harness();
+  const group = { id: "p1", recipients: names, entries: [{ id: "p1", plan: { updated_at: "v1" } }] };
+  const { badge, message, actions } = mountCard(h, group);
+  const sent = { ...clone(job), recorded: true };
+  const unrelated = { ...sent, id: "other", targets: [{ id: "other", plan_revision: "v1" }], message: "Other trip" };
+  h.setState({ ...initial, jobs: [sent, unrelated] });
+  let focused = false;
+  const history = h.element("line-job-job");
+  history.querySelector = () => ({ focus() { focused = true; }, scrollIntoView() {} });
+  await h.context.refreshLineState();
+  assert.equal(badge.textContent, "LINE受付済み");
+  assert.equal(message.dataset.compact, "true");
+  assert.equal(actions()[0].children[1].textContent, sent.message);
+  actions().find(action => action.textContent === "送信結果を見る").onclick();
+  assert.equal(history.open, true);
+  assert.equal(focused, true);
+  assert.equal(actions().some(action => action.className === "primary-btn"), false);
+  group.entries[0].plan.updated_at = "v2";
+  h.context.decorateLineCards();
+  assert.match(badge.textContent, /予定変更/);
+  assert.equal(message.dataset.compact, "false");
+  assert.equal(actions().find(action => action.className === "primary-btn").textContent, "変更後の文面を確認");
+});
+test("result unknown routes an overlapping recipient to the same history without preparing a new send", async () => {
+  const h = harness();
+  const group = { id: "new", recipients: [names[0]], entries: [] };
+  const { badge, actions } = mountCard(h, group);
+  const pending = clone(job);
+  pending.results[names[0]].status = "unknown";
+  h.setState({ ...initial, jobs: [pending] });
+  const history = h.element("line-job-job");
+  history.querySelector = () => ({ focus() {}, scrollIntoView() {} });
+  await h.context.refreshLineState();
+  assert.match(badge.textContent, /結果不明/);
+  assert.equal(actions()[0].textContent, "履歴から確認・再試行");
+  actions()[0].onclick();
+  assert.equal(history.open, true);
+  await assert.rejects(h.context.prepare(group), /同じ送信履歴/);
+  assert.equal(h.calls.some(call => call.options?.method === "POST"), false);
 });
 test("HTML contains dedicated dialog, private code field and keeps copy workflow", () => {
   const html = readFileSync(join(__dirname, "..", "deploy", "admin", "message", "index.html"), "utf8");
