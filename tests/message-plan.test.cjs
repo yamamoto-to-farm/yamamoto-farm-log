@@ -7,7 +7,7 @@ const read = file => readFileSync(join(__dirname, "..", "deploy", "admin", "mess
 const strip = source => source.replace(/^import[\s\S]*?;\r?\n/gm, "").replace(/^export /gm, "");
 function load(file, deps = {}) {
   const context = vm.createContext({ console: { error() {}, warn() {} }, structuredClone,
-    initLineMessaging() {}, decorateLineCards() {}, refreshLineState: async () => {}, loadPlanWorkers: async () => [],
+    initLineMessaging() {}, decorateLineCards() {}, renderTemplateRecipients() {}, refreshLineState: async () => {}, loadPlanWorkers: async () => [],
     window: { addEventListener() {} }, URLSearchParams, ...deps });
   vm.runInContext(strip(readFileSync(join(__dirname, "..", "deploy", "common", "work-plan-time.js"), "utf8")), context);
   vm.runInContext(strip(read(file)), context);
@@ -521,6 +521,23 @@ test("full text and editor are separate disclosures and editing updates both rea
   assert.equal(views["[data-excerpt]"].textContent, value);
   assert.equal(views["[data-full-message]"].textContent, value);
   assert.equal(vm.runInContext('drafts.get("test")', context), value);
+});
+test("template card shows the edited send text in the shared preview and copies that exact text", async () => {
+  const { context, elements, initialize, copiedTexts } = defaultDateScreen();
+  await initialize();
+  const list = elements["template-list"];
+  assert.match(list.innerHTML, /<article class="msg-card">[\s\S]*?全文を見る[\s\S]*?<form data-template-send[\s\S]*?LINEの宛先を選ぶ[\s\S]*?文面を編集/);
+  const views = { "[data-excerpt]": {}, "[data-full-message]": {} };
+  const value = "今回だけの変更\n雨具を持参してください。";
+  const text = { value, matches: selector => selector === "[data-template-text]", closest: () => ({ querySelector: key => views[key] }) };
+  list.oninput({ target: text });
+  assert.equal(views["[data-excerpt]"].textContent, value);
+  assert.equal(views["[data-full-message]"].textContent, value);
+  const status = { classList: { remove() {} } };
+  const form = { querySelector: key => key === "[data-template-text]" ? text : status };
+  await list.onclick({ target: { closest: () => ({ form }) } });
+  assert.deepEqual(copiedTexts, [value]);
+  assert.match(status.textContent, /コピーしました/);
 });
 test("copy refresh retains this and other pending message drafts", async () => {
   const { context, button, elements } = copyScreen();

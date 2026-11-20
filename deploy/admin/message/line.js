@@ -9,7 +9,6 @@ let loadedDate = "";
 let sequence = 0;
 let busy = false;
 let confirmedJob;
-let templateTitle = "";
 const el = id => document.getElementById(id);
 const labels = { ready: "未送信", accepted: "LINE受付済み（配達・既読は未確認）",
   failed: "失敗", unknown: "結果不明・同じ送信として再確認が必要" };
@@ -32,11 +31,6 @@ function notice(text, error = false) {
   el("line-status").classList.toggle("msg-error", error);
   el("template-line-status").textContent = text;
   el("template-line-status").classList.toggle("msg-error", error);
-}
-
-function templateNotice(text, error = false) {
-  el("template-send-status").textContent = text;
-  el("template-send-status").classList.toggle("msg-error", error);
 }
 
 function registrationNotice(text, error = false) {
@@ -194,16 +188,17 @@ async function refresh() {
   const current = ++sequence;
   const date = context.date();
   el("line-connection").classList.toggle("line-fetch-failed", false);
+  el("template-line-connection").classList.toggle("line-fetch-failed", false);
   state = undefined;
   loadedDate = "";
   el("line-updated").textContent = "";
   el("line-members").innerHTML = "";
   el("line-jobs").innerHTML = "";
   el("template-line-jobs").innerHTML = "";
-  el("template-line-date").textContent = date ? `${date}分（「作業予定の連絡」で日付を変更できます）` : "";
-  el("template-send-date").textContent = date ? `送信履歴の記録先：${date}分（「作業予定の連絡」の日付）` : "";
-  el("template-prepare").disabled = true;
-  templateNotice("");
+  el("template-line-date").textContent = date ? `送信履歴：${date}分（「作業予定の連絡」の日付）` : "";
+  for (const form of el("template-list").querySelectorAll("[data-template-send]")) {
+    form.querySelector('button[type="submit"]').disabled = true;
+  }
   el("line-code-text").value = "";
   el("line-code").hidden = true;
   registrationNotice("");
@@ -221,6 +216,7 @@ async function refresh() {
   } catch (error) {
     if (current !== sequence || date !== context.date()) return;
     el("line-connection").classList.toggle("line-fetch-failed", true);
+    el("template-line-connection").classList.toggle("line-fetch-failed", true);
     throw error;
   }
   if (current !== sequence || date !== context.date()) return;
@@ -274,33 +270,24 @@ async function prepare(group) {
   showConfirmation(job);
 }
 
-function renderTemplateRecipients(clear = false) {
-  const fieldset = el("template-recipients");
-  const selected = new Set(clear ? [] : [...fieldset.querySelectorAll("input:checked")].map(input => input.value));
+export function renderTemplateRecipients() {
   const members = state?.members.filter(member => member.linked && !member.blocked) ?? [];
-  fieldset.innerHTML = `<legend>LINEの宛先</legend>${members.length ? members.map(member =>
-    `<label><input type="checkbox" value="${escape(member.name)}"${selected.has(member.name) ? " checked" : ""}> ${escape(member.name)}</label>`).join(" ")
-    : "<p>送信できるLINE登録済みの作業者がいません。</p>"}`;
-  el("template-prepare").disabled = !members.length;
+  for (const form of el("template-list").querySelectorAll("[data-template-send]")) {
+    const fieldset = form.querySelector("[data-template-recipients]");
+    const selected = new Set([...fieldset.querySelectorAll("input:checked")].map(input => input.value));
+    fieldset.innerHTML = `<legend>LINEの宛先</legend>${members.length ? members.map(member =>
+      `<label><input type="checkbox" value="${escape(member.name)}"${selected.has(member.name) ? " checked" : ""}> ${escape(member.name)}</label>`).join(" ")
+      : `<p>${state ? "送信できるLINE登録済みの作業者がいません。" : "LINE登録状態の取得後に選択できます。"}</p>`}`;
+    form.querySelector('button[type="submit"]').disabled = !members.length;
+  }
 }
 
-export function openTemplateSend(title, text) {
-  if (busy) return;
-  templateTitle = title;
-  el("template-send-title").textContent = title;
-  el("template-send-text").value = text;
-  el("template-send").hidden = false;
-  templateNotice("");
-  renderTemplateRecipients(true);
-  el("template-send-text").focus();
-}
-
-async function prepareTemplate() {
+async function prepareTemplate(form) {
   const date = context.date();
   if (!state || loadedDate !== date) throw new Error("LINEの状態を再取得してください。");
-  const title = templateTitle;
-  const names = [...el("template-recipients").querySelectorAll("input:checked")].map(input => input.value);
-  const message = el("template-send-text").value;
+  const title = form.dataset.title;
+  const names = [...form.querySelectorAll("[data-template-recipients] input:checked")].map(input => input.value);
+  const message = form.querySelector("[data-template-text]").value;
   if (!names.length) throw new Error("送信する宛先を選んでください。");
   if (!title.trim() || !message.trim() || message.length > 5000) throw new Error("タイトルと本文（5000文字以内）を確認してください。");
   const relevant = state.jobs.filter(job => isTemplate(job) && job.message === message
@@ -336,7 +323,6 @@ async function deliver() {
     confirmedJob = null;
     if (!isTemplate(job)) await context.reload();
     await refresh();
-    if (isTemplate(job) && updated.recorded) el("template-send").hidden = true;
     notice(updated.recorded ? "全員のLINE受付と控え保存が完了しました。配達・既読は未確認です。"
       : "未完了の宛先があります。下の送信履歴で人ごとの結果を確認してください。", !updated.recorded);
   } catch (error) {
@@ -396,9 +382,16 @@ export function initLineMessaging(options) {
   context = options;
   el("line-refresh").onclick = () => guarded(refreshLineState);
   el("template-line-refresh").onclick = () => guarded(refreshLineState);
-  el("template-send").onsubmit = async event => {
+  el("template-list").onsubmit = async event => {
     event.preventDefault();
-    const pending = await guarded(prepareTemplate, templateNotice);
+    const form = event.target;
+    const status = form.querySelector("[data-template-status]");
+    status.textContent = "";
+    status.classList.remove("msg-error");
+    const pending = await guarded(() => prepareTemplate(form), text => {
+      status.textContent = text;
+      status.classList.add("msg-error");
+    });
     if (pending) focusJob(pending);
   };
   el("line-issue-worker").onchange = () => {

@@ -7,7 +7,7 @@
   <title>業務連絡 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
-  <link rel="stylesheet" href="./message.css?v=20261120-ack-1">
+  <link rel="stylesheet" href="./message.css?v=20261120-template-cards-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <link rel="stylesheet" href="/common/css/admin-pages.css?v=20261105-admin-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
@@ -84,25 +84,18 @@
     <section id="tab-templates" class="card" hidden>
       <p id="template-status" class="msg-error" role="status"></p>
       <p class="msg-muted" data-help="定型文の日付置換">{年}・{月}・{先月}・{来月}・{翌月5日}（曜日付き）は今日の日付から自動で置き換えます。コピー、または宛先を指定してLINE送信できます。</p>
-      <div id="template-list"></div>
-      <form id="template-send" class="msg-common-panel" hidden>
-        <h3 id="template-send-title"></h3>
-        <p id="template-send-date" class="msg-muted"></p>
-        <fieldset id="template-recipients"><legend>LINEの宛先</legend></fieldset>
-        <label for="template-send-text">今回送る本文（定型文の原本は変わりません）</label>
-        <textarea id="template-send-text" class="form-input" rows="6" maxlength="5000" required></textarea>
-        <button id="template-prepare" type="submit" class="primary-btn">LINE送信内容を確認</button>
-        <p id="template-send-status" role="status"></p>
-      </form>
-      <section class="line-management" aria-labelledby="template-history-title">
-        <h3 id="template-history-title">定型文のLINE送信履歴</h3>
+      <div id="template-line-connection" class="line-connection">
         <p id="template-line-date" class="msg-muted"></p>
+        <p id="template-line-status" role="status" aria-live="polite"></p>
         <button id="template-line-refresh" type="button" class="secondary-btn">送信履歴・本人確認を更新</button>
-        <p id="template-line-status" role="status"></p>
+      </div>
+      <div id="template-list" class="msg-cards"></div>
+      <section class="line-management" aria-labelledby="template-history-title">
+        <h3 id="template-history-title">この日の定型文送信履歴</h3>
         <div id="template-line-jobs"></div>
       </section>
       <details class="msg-edit-wrap">
-        <summary>✏ 定型文を編集</summary>
+        <summary>定型文の原本を編集</summary>
         <div id="template-edit"></div>
         <div class="msg-edit-actions">
           <button id="add-template" class="secondary-btn" type="button">＋定型文を追加</button>
@@ -135,6 +128,6 @@
     <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
     <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
   </dialog>
-  <script type="module" src="./message.js?v=20261120-template-resend-1"></script>
+  <script type="module" src="./message.js?v=20261120-template-cards-1"></script>
 </body>
 </html>

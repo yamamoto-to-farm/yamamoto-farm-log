@@ -123,15 +123,9 @@
 .msg-card .copy-btn { width: 100%; }
 .msg-card .copy-btn.copied { background: #1a7f37; border-color: #1a7f37; color: #fff; }
 
-#template-list .tpl { border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px;
-  margin-bottom: 10px; background: #fafafa; }
-#template-list .tpl h3 { margin: 0 0 6px; font-size: 0.95rem; }
-#template-recipients { margin-bottom: 10px; }
-#template-recipients label { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px 5px 0; }
-#template-recipients input { width: auto; margin: 0; }
-#template-list .tpl pre { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
-  padding: 8px 10px; font-size: 0.82rem; white-space: pre-wrap; word-break: break-all;
-  margin: 0 0 8px; font-family: inherit; text-align: left; }
+[data-template-recipients] { margin: 6px 0 10px; min-width: 0; }
+[data-template-recipients] label { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px 5px 0; }
+[data-template-recipients] input { width: auto; margin: 0; }
 
 .msg-edit-wrap { margin-top: 14px; font-size: 0.85rem; }
 .msg-edit-wrap summary { cursor: pointer; color: #555; }
@@ -154,14 +148,14 @@
 .line-connection { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 8px 0; color: #475569; font-size: .8rem; }
 .line-connection p { margin: 0; }
 .line-connection p:empty { display: none; }
-.line-connection:not(.line-fetch-failed) #line-refresh {
+.line-connection:not(.line-fetch-failed) :is(#line-refresh, #template-line-refresh) {
   background: transparent; border-color: transparent; color: #475569;
   font-size: .8rem; text-decoration: underline; padding: 4px 6px;
 }
 .line-connection.line-fetch-failed {
   padding: 8px; border: 1px solid #fecaca; border-radius: 6px; background: #fef2f2;
 }
-.line-connection.line-fetch-failed #line-refresh { border-color: #b91c1c; color: #991b1b; font-weight: 600; }
+.line-connection.line-fetch-failed :is(#line-refresh, #template-line-refresh) { border-color: #b91c1c; color: #991b1b; font-weight: 600; }
 .line-management { margin-top: 20px; }
 .line-member, .line-job { border-top: 1px solid #cbd5e1; padding: 12px 0; }
 .line-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }

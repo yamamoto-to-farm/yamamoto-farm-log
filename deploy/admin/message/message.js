@@ -6,7 +6,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261108-date-1";
-import { initLineMessaging, decorateLineCards, refreshLineState, openTemplateSend } from "./line.js?v=20261120-template-resend-1";
+import { initLineMessaging, decorateLineCards, refreshLineState, renderTemplateRecipients } from "./line.js?v=20261120-template-cards-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -147,6 +147,15 @@ function handleCardClick(event) {
     if (group) { drafts.set(group.id, buildGroupMessage(group, loadedDate)); renderCards(); }
   }
 }
+function messagePreview(text) {
+  const content = escapeHtml(text);
+  return `<p class="msg-excerpt" data-excerpt>${content}</p>
+    <details class="msg-disclosure"><summary>全文を見る</summary><pre data-full-message>${content}</pre></details>`;
+}
+function updateMessagePreview(card, text) {
+  card.querySelector("[data-excerpt]").textContent = text;
+  card.querySelector("[data-full-message]").textContent = text;
+}
 function renderCards() {
   const groups = messageGroups(record.data.plans, familyRecipientNames);
   element("cards").innerHTML = groups.length ? groups.map(group => {
@@ -165,11 +174,7 @@ function renderCards() {
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
       ${communication?.changed ? `<p class="msg-error">予定が変わったため、現在の予定から文面を作り直しました。以前の注意事項は<a href="/schedule/daily-plan/index.html?date=${loadedDate}">連絡時点の控え</a>で確認してください。</p>` : ""}
       <div data-current-message data-draft="${drafts.has(id) && text !== communication?.message ? "yes" : ""}">
-        <p class="msg-excerpt" data-excerpt>${escapeHtml(text)}</p>
-        <details class="msg-disclosure">
-          <summary>全文を見る</summary>
-          <pre data-full-message>${escapeHtml(text)}</pre>
-        </details>
+        ${messagePreview(text)}
       </div>
       <div class="msg-card-actions">
         <div data-line-actions></div>
@@ -324,10 +329,31 @@ function fillPlaceholders(text) {
     .replaceAll("{翌月5日}", payday(now));
 }
 function renderTemplates() {
-  element("template-list").innerHTML = masters.templates.map((tpl, index) =>
-    `<div class="tpl"><h3>${escapeHtml(tpl.title)}</h3><pre>${escapeHtml(fillPlaceholders(tpl.body))}</pre><div class="msg-toolbar">
-      <button type="button" class="primary-btn" data-tpl-line="${index}">LINEの宛先を選ぶ</button>
-      <button type="button" class="secondary-btn" data-tpl-copy="${index}">📋 コピー</button></div></div>`).join("");
+  element("template-list").innerHTML = masters.templates.map(tpl => {
+    const text = fillPlaceholders(tpl.body);
+    return `<article class="msg-card">
+      <div class="msg-card-heading"><h3>${escapeHtml(tpl.title)}</h3></div>
+      ${messagePreview(text)}
+      <form data-template-send data-title="${escapeHtml(tpl.title)}">
+        <details class="msg-disclosure msg-line-actions">
+          <summary>LINEの宛先を選ぶ</summary>
+          <fieldset data-template-recipients><legend>LINEの宛先</legend></fieldset>
+          <button type="submit" class="primary-btn" disabled>LINE送信内容を確認</button>
+        </details>
+        <details class="msg-disclosure">
+          <summary>文面を編集</summary>
+          <p class="msg-muted">今回の文面だけを変更します。定型文の原本は変わりません。</p>
+          <textarea class="preview-edit" data-template-text rows="8" aria-label="今回の連絡文面">
+${escapeHtml(text)}</textarea>
+        </details>
+        <div class="msg-copy-tools">
+          <button type="button" class="secondary-btn" data-tpl-copy>コピー（送信なし）</button>
+          <p data-template-status role="status"></p>
+        </div>
+      </form>
+    </article>`;
+  }).join("");
+  renderTemplateRecipients();
 }
 function renderTemplateEditor() {
   element("template-edit").innerHTML = tplDraft.map((tpl, index) =>
@@ -358,8 +384,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     drafts.set(event.target.dataset.preview, text);
     const card = event.target.closest("[data-group]");
     card.querySelector("[data-current-message]").dataset.draft = "yes";
-    card.querySelector("[data-excerpt]").textContent = text;
-    card.querySelector("[data-full-message]").textContent = text;
+    updateMessagePreview(card, text);
   };
   element("cards").addEventListener("toggle", event => {
     const id = event.target.dataset?.editor;
@@ -388,19 +413,23 @@ window.addEventListener("DOMContentLoaded", async () => {
       renderCards();
     },
   });
+  element("template-list").oninput = event => {
+    if (event.target.matches("[data-template-text]")) updateMessagePreview(event.target.closest(".msg-card"), event.target.value);
+  };
   element("template-list").onclick = async event => {
-    const send = event.target.closest("[data-tpl-line]");
-    if (send) {
-      const tpl = masters.templates[Number(send.dataset.tplLine)];
-      openTemplateSend(tpl.title, fillPlaceholders(tpl.body));
-      return;
-    }
     const button = event.target.closest("[data-tpl-copy]");
     if (!button) return;
+    const form = button.form;
+    const result = form.querySelector("[data-template-status]");
     try {
-      await copyText(fillPlaceholders(masters.templates[Number(button.dataset.tplCopy)].body));
-      status("定型文をコピーしました（予定のコピー記録は作成しません）。");
-    } catch (error) { console.error("[message] template copy failed", error); status(error.message, true); }
+      await copyText(form.querySelector("[data-template-text]").value);
+      result.classList.remove("msg-error");
+      result.textContent = "コピーしました（LINE送信なし）。";
+    } catch (error) {
+      console.error("[message] template copy failed", error);
+      result.classList.add("msg-error");
+      result.textContent = error.message;
+    }
   };
   element("template-edit").oninput = event => {
     const index = Number(event.target.dataset.tpl);

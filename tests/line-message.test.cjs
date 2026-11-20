@@ -350,7 +350,31 @@ test("result unknown routes an overlapping recipient to the same history without
   await assert.rejects(h.context.prepare(group), /同じ送信履歴/);
   assert.equal(h.calls.some(call => call.options?.method === "POST"), false);
 });
-test("monthly template confirmation prepares only selected recipients and does not send before confirmation", async () => {
+function mountTemplate(h, title, body, names) {
+  const fieldset = { querySelectorAll: () => names.map(value => ({ value })) };
+  const status = h.element("form-status");
+  status.classList.add = name => status.classList.toggle(name, true);
+  status.classList.remove = name => status.classList.toggle(name, false);
+  const fields = {
+    "[data-template-recipients]": fieldset,
+    "[data-template-recipients] input:checked": names.map(value => ({ value })),
+    "[data-template-text]": { value: body },
+    "[data-template-status]": status,
+    'button[type="submit"]': {},
+  };
+  const form = {
+    dataset: { title },
+    querySelector: selector => fields[selector],
+    querySelectorAll: selector => fields[selector],
+  };
+  h.element("template-list").querySelectorAll = () => [form];
+  h.context.renderTemplateRecipients();
+  return {
+    fieldset, form,
+    submit: () => h.element("template-list").onsubmit({ target: form, preventDefault() {} }),
+  };
+}
+test("monthly template confirmation prepares only the submitted card and does not send before confirmation", async () => {
   const h = harness();
   const template = { ...clone(job), kind: "template", title: "Shift reminder", ack_enabled: true, names: [names[0]] };
   h.context.testApi = async (action, req) => {
@@ -359,11 +383,13 @@ test("monthly template confirmation prepares only selected recipients and does n
     return template;
   };
   await h.context.refresh();
-  h.context.openTemplateSend(template.title, "Test only");
-  assert.match(h.element("template-recipients").innerHTML, /Part A/);
-  h.element("template-recipients").querySelectorAll = () => [{ value: names[0] }];
+  const other = mountTemplate(h, "Other template", "Other body", [names[1]]);
+  const card = mountTemplate(h, template.title, "Test only", [names[0]]);
+  h.element("template-list").querySelectorAll = () => [other.form, card.form];
+  assert.match(card.fieldset.innerHTML, /value="Part A" checked/);
+  assert.match(other.fieldset.innerHTML, /value="Part B" checked/);
   vm.runInContext("lineApi=testApi", h.context);
-  await h.element("template-send").onsubmit({ preventDefault() {} });
+  await card.submit();
   assert.deepEqual(h.calls.find(item => Array.isArray(item)), ["prepare_template", {
     date, names: [names[0]], title: template.title, message: "Test only", confirm_resend: false,
   }]);
@@ -384,12 +410,11 @@ test("template resend identifies the same dated history shown on the form and ca
   sent.results[names[0]].status = "accepted";
   h.setState({ ...initial, jobs: [sent] });
   await h.context.refresh();
-  h.context.openTemplateSend("Shift reminder", sent.message);
-  h.element("template-recipients").querySelectorAll = () => names.map(value => ({ value }));
-  assert.match(h.element("template-send-date").textContent, /2026-11-06分.*作業予定の連絡/);
+  const card = mountTemplate(h, "Shift reminder", sent.message, names);
+  assert.match(h.element("template-line-date").textContent, /2026-11-06分.*作業予定の連絡/);
   let prompt;
   h.context.window.confirm = text => { prompt = text; return false; };
-  await h.element("template-send").onsubmit({ preventDefault() {} });
+  await card.submit();
   assert.match(prompt, /Part Aには 2026-11-06 分として同じ本文.*別の連絡/);
   assert.doesNotMatch(prompt, /Part B/);
   assert.ok(!h.calls.some(call => call.options?.method === "POST"));
@@ -400,8 +425,7 @@ test("a different template body needs only ordinary confirmation even with an un
   prior.results[names[0]].status = "unknown";
   h.setState({ ...initial, jobs: [prior] });
   await h.context.refresh();
-  h.context.openTemplateSend(prior.title, "Updated shift reminder");
-  h.element("template-recipients").querySelectorAll = () => [{ value: names[0] }];
+  const card = mountTemplate(h, prior.title, "Updated shift reminder", [names[0]]);
   h.context.window.confirm = () => assert.fail("different body must not ask for resend confirmation");
   h.context.testApi = async (action, req) => {
     if (!action) return { ...initial, jobs: [prior] };
@@ -409,7 +433,7 @@ test("a different template body needs only ordinary confirmation even with an un
     return { ...prior, message: req.message };
   };
   vm.runInContext("lineApi=testApi", h.context);
-  await h.element("template-send").onsubmit({ preventDefault() {} });
+  await card.submit();
   assert.deepEqual(h.calls.find(item => Array.isArray(item)), ["prepare_template", {
     date, names: [names[0]], title: prior.title, message: "Updated shift reminder", confirm_resend: false,
   }]);
