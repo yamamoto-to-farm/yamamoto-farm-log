@@ -514,6 +514,7 @@ test("full text and editor are separate disclosures and editing updates both rea
   await initialize();
   assert.match(elements.cards.innerHTML, /<summary>全文を見る<\/summary>\s*<pre data-full-message>/);
   assert.match(elements.cards.innerHTML, /<details[^>]+data-editor="test">\s*<summary>文面を編集<\/summary>[\s\S]*?<textarea/);
+  assert.match(elements.cards.innerHTML, /<details[^>]+name="([^"]+)"><summary>全文を見る<\/summary>[\s\S]*?<details[^>]+name="\1" data-editor="test">/);
   const views = { "[data-current-message]": { dataset: {} }, "[data-excerpt]": {}, "[data-full-message]": {} };
   const value = "注意：\n雨具を持参してください。";
   elements.cards.oninput({ target: { dataset: { preview: "test" }, value, closest: () => ({ querySelector: key => views[key] }) } });

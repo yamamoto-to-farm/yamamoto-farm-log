@@ -297,6 +297,15 @@ export function decorateLineCards() {
     const resend = card.querySelector("[data-line-resend]");
     resend.replaceChildren();
     const missing = available ? group.recipients.filter(name => !eligible(name)) : [];
+    const copyOnly = !pending && missing.length > 0 && !audience.names.length;
+    const copyTools = card.querySelector("[data-copy-tools]");
+    const copySlot = card.querySelector(copyOnly ? "[data-copy-primary]" : "[data-copy-secondary]");
+    if (copyTools.parentElement !== copySlot) {
+      copySlot.append(copyTools);
+      const copyButton = copyTools.querySelector("[data-copy]");
+      copyButton.classList.toggle("primary-btn", copyOnly);
+      copyButton.classList.toggle("secondary-btn", !copyOnly);
+    }
     const button = document.createElement("button");
     button.type = "button";
     button.className = compact ? "secondary-btn" : "primary-btn";
@@ -307,8 +316,7 @@ export function decorateLineCards() {
       : accepted ? "再連絡する" : "LINE送信内容を確認";
     button.disabled = busy || (!pending && (!audience?.names.length || card.dataset.planIssues === "yes"));
     button.onclick = pending ? () => focusJob(pending) : () => guarded(() => prepare(group, audience?.names));
-    if (compact) resend.append(button);
-    else controls.append(button);
+    if (!copyOnly) (compact ? resend : controls).append(button);
     if ((partial || sent) && !pending) {
       const results = document.createElement("button");
       results.type = "button";
@@ -321,8 +329,10 @@ export function decorateLineCards() {
     if (!pending && missing.length) {
       const hint = document.createElement("p");
       hint.className = "msg-muted";
-      hint.textContent = `LINE未登録・送信停止：${missing.join("・")}。登録・承認するか、コピーで連絡してください。`;
-      (compact ? resend : controls).append(hint);
+      hint.textContent = copyOnly
+        ? `この画面からはLINE送信できません（未登録・承認待ち・送信停止：${missing.join("・")}）。`
+        : `LINE対象外：${missing.join("・")}。文面をコピーして個別に連絡できます。`;
+      (compact && !copyOnly ? resend : controls).append(hint);
     }
     card.querySelector("[data-line-actions]").append(controls);
   }

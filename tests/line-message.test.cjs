@@ -304,6 +304,13 @@ function mountCard(h, group) {
   const badge = { dataset: {} };
   const message = { dataset: {} };
   const other = { dataset: {}, open: true, querySelector() { return null; } };
+  const classes = new Set(["secondary-btn"]);
+  const copy = { classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); },
+    contains: name => classes.has(name) } };
+  const copyTools = { querySelector: () => copy };
+  const copyPrimary = { append(node) { node.parentElement = this; } };
+  const copySecondary = { append(node) { node.parentElement = this; } };
+  copySecondary.append(copyTools);
   const resend = {
     children: [],
     replaceChildren() { this.children = []; },
@@ -316,6 +323,9 @@ function mountCard(h, group) {
       if (selector === "[data-line-badge]") return badge;
       if (selector === "[data-other-actions]") return other;
       if (selector === "[data-line-resend]") return resend;
+      if (selector === "[data-copy-tools]") return copyTools;
+      if (selector === "[data-copy-primary]") return copyPrimary;
+      if (selector === "[data-copy-secondary]") return copySecondary;
       if (selector === "[data-line-actions]") return this;
       if (selector === "[data-line-card]") return this.children[0] || null;
       return null;
@@ -329,7 +339,8 @@ function mountCard(h, group) {
     append(...children) { this.children.push(...children); },
     remove() { card.children = []; },
   });
-  return { card, badge, message, other, resend, actions: () => card.children[0].children };
+  return { card, badge, message, other, resend, copy, copyTools, copyPrimary, copySecondary,
+    actions: () => card.children[0].children };
 }
 test("send confirmation is enabled only after current state is loaded for registered recipients", async () => {
   const h = harness();
@@ -346,6 +357,22 @@ test("send confirmation is enabled only after current state is loaded for regist
   await h.context.refreshLineState();
   assert.equal(card.children[0].children[0].disabled, false);
   assert.match(card.children[0].children[1].textContent, /Part B/);
+});
+test("no eligible LINE recipients promotes the existing copy action and hides the send button", async () => {
+  const h = harness();
+  const { actions, copy, copyTools, copyPrimary, copySecondary } = mountCard(h, { id: "p1", recipients: names, entries: [] });
+  h.setState({ ...initial, members: [] });
+  await h.context.refresh();
+  assert.equal(copyTools.parentElement, copyPrimary);
+  assert.equal(copy.classList.contains("primary-btn"), true);
+  assert.deepEqual(actions().map(action => action.textContent), [
+    "この画面からはLINE送信できません（未登録・承認待ち・送信停止：Part A・Part B）。",
+  ]);
+  h.setState({ ...initial, members: [initial.members[0]] });
+  await h.context.refresh();
+  assert.equal(copyTools.parentElement, copySecondary);
+  assert.equal(copy.classList.contains("secondary-btn"), true);
+  assert.equal(actions()[0].textContent, "承認済みの1名に送る");
 });
 test("partial plan confirmation records excluded recipients and follow-up only selects the remaining person", async () => {
   const h = harness();
@@ -373,7 +400,7 @@ test("partial plan confirmation records excluded recipients and follow-up only s
   await h.context.refresh();
   assert.match(card.badge.textContent, /一部LINE受付済み（1\/2名）/);
   assert.match(h.element("line-jobs").innerHTML, /LINE受付 1\/2名[\s\S]*Part B（承認待ち）/);
-  assert.equal(card.actions()[0].disabled, true);
+  assert.ok(card.actions().every(action => action.textContent !== "LINE送信内容を確認"));
   state = { ...state, members: initial.members };
   await h.context.refresh();
   assert.equal(card.actions()[0].textContent, "未送信の1名に送る");

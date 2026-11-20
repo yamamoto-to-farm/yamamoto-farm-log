@@ -118,6 +118,7 @@
 .msg-other-body > details { width: 100%; }
 .msg-other-body > a { overflow-wrap: anywhere; }
 .msg-other-body > [data-line-resend]:empty { display: none; }
+[data-copy-primary]:empty, [data-copy-secondary]:empty { display: none; }
 .msg-copy-tools p { margin: 0; }
 .msg-copy-tools p:empty { display: none; }
 .msg-card .copy-btn { width: 100%; }

@@ -6,7 +6,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261108-date-1";
-import { initLineMessaging, decorateLineCards, refreshLineState, renderTemplateRecipients, loadTemplateHistory } from "./line.js?v=20261120-line-history-help-1";
+import { initLineMessaging, decorateLineCards, refreshLineState, renderTemplateRecipients, loadTemplateHistory } from "./line.js?v=20261120-plan-card-copy-1";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -147,10 +147,10 @@ function handleCardClick(event) {
     if (group) { drafts.set(group.id, buildGroupMessage(group, loadedDate)); renderCards(); }
   }
 }
-function messagePreview(text) {
+function messagePreview(text, disclosureName = "") {
   const content = escapeHtml(text);
   return `<p class="msg-excerpt" data-excerpt>${content}</p>
-    <details class="msg-disclosure"><summary>全文を見る</summary><pre data-full-message>${content}</pre></details>`;
+    <details class="msg-disclosure"${disclosureName ? ` name="${escapeHtml(disclosureName)}"` : ""}><summary>全文を見る</summary><pre data-full-message>${content}</pre></details>`;
 }
 function updateMessagePreview(card, text) {
   card.querySelector("[data-excerpt]").textContent = text;
@@ -174,24 +174,27 @@ function renderCards() {
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
       ${communication?.changed ? `<p class="msg-error">予定が変わったため、現在の予定から文面を作り直しました。以前の注意事項は<a href="/schedule/daily-plan/index.html?date=${loadedDate}">連絡時点の控え</a>で確認してください。</p>` : ""}
       <div data-current-message data-draft="${drafts.has(id) && text !== communication?.message ? "yes" : ""}">
-        ${messagePreview(text)}
+        ${messagePreview(text, `plan-message-${id}`)}
       </div>
       <div class="msg-card-actions">
+        <div data-copy-primary></div>
         <div data-line-actions></div>
         <details class="msg-other-actions" data-other-actions open>
           <summary>その他</summary>
           <div class="msg-other-body">
             <div data-line-resend></div>
-            <details class="msg-disclosure" data-editor="${escapeHtml(id)}"${openEditors.has(id) ? " open" : ""}>
+            <details class="msg-disclosure" name="plan-message-${escapeHtml(id)}" data-editor="${escapeHtml(id)}"${openEditors.has(id) ? " open" : ""}>
               <summary>文面を編集</summary>
               ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました。</p>' : ""}
               <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
               <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="8" aria-label="連絡文面">${escapeHtml(text)}</textarea>
               <button type="button" class="secondary-btn" data-reset="${escapeHtml(id)}">保存済み予定から文面を戻す</button>
             </details>
-            <div class="msg-copy-tools">
-              <button type="button" class="secondary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>コピー（送信なし）</button>
-              <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
+            <div data-copy-secondary>
+              <div class="msg-copy-tools" data-copy-tools>
+                <button type="button" class="secondary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>コピー（送信なし）</button>
+                <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
+              </div>
             </div>
             ${entries.map(({ id: planId }, index) => `<a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集${entries.length > 1 ? `：${escapeHtml(planSummaries[index])}` : ""}</a>`).join("")}
           </div>
