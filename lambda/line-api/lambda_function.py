@@ -156,7 +156,8 @@ class Service:
             if not isinstance(source, dict) or not isinstance(message, dict):
                 fail(400, "イベントの送信元・本文が不正です。")
             if item.get("type") == "postback":
-                self.acknowledge(source, item.get("postback"))
+                if self.acknowledge(source, item.get("postback")):
+                    self.reply_to_acknowledgement(item.get("replyToken"))
                 continue
             if item.get("type") == "unfollow" and source.get("type") == "user":
                 state, revision = self.links()
@@ -197,12 +198,12 @@ class Service:
             put_json(self.bucket, self.state_key, state, revision)
         return {"received": True}
 
-    def acknowledge(self, source, postback):
+    def acknowledge(self, source, postback) -> bool:
         uid = source.get("userId")
         data = postback.get("data") if isinstance(postback, dict) else None
         match = ACK_DATA.fullmatch(data) if isinstance(data, str) else None
         if source.get("type") != "user" or not isinstance(uid, str) or not USER_ID.fullmatch(uid) or not match:
-            return
+            return False
         date, jid = match.groups()
         core.plan_date(date)
         identifier(jid)
@@ -210,18 +211,33 @@ class Service:
             key, day, revision = self.day(date)
             job = day["jobs"].get(jid)
             if not job or not job.get("ack_enabled"):
-                return
+                return False
             result = next((entry for entry in job["results"].values() if entry["user_id"] == uid), None)
             if not result or result.get("confirmed_at") or result["status"] not in ("accepted", "unknown") or result["first_attempt"] is None:
-                return
+                return False
             result["confirmed_at"] = stamp()
             try:
                 put_json(self.bucket, key, day, revision)
-                return
+                return True
             except core.RequestError as error:
                 if error.status != 409:
                     raise
         fail(503, "本人確認の保存が競合しました。")
+
+    def reply_to_acknowledgement(self, token):
+        if not isinstance(token, str) or not token:
+            LOGGER.warning("LINE acknowledgement saved without a reply token")
+            return
+        try:
+            line_request("message/reply", {
+                "replyToken": token,
+                "messages": [{"type": "text", "text": "確認を受け付けました。"}],
+            })
+        except HTTPError as error:
+            LOGGER.warning("LINE acknowledgement reply rejected: HTTP %s", error.code)
+            error.close()
+        except (URLError, TimeoutError, ValueError, ClientError):
+            LOGGER.warning("LINE acknowledgement reply could not be completed")
 
     def public_job(self, job):
         return {key: copy.deepcopy(job[key]) for key in

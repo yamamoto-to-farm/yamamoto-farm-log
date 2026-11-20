@@ -130,12 +130,14 @@ class LineApiTests(unittest.TestCase):
         result = api.lambda_handler(event, None)
         return result["statusCode"], json.loads(result["body"])
 
-    def signed(self, text, uid=UID, source_type="user", event_type="message"):
+    def signed(self, text, uid=UID, source_type="user", event_type="message", reply_token=None):
         item = {
             "type": event_type, "source": {"type": source_type, "userId": uid},
             **({"postback": {"data": text}} if event_type == "postback"
                else {"message": {"type": "text", "text": text}}),
         }
+        if reply_token is not None:
+            item["replyToken"] = reply_token
         raw = json.dumps({"events": [item]}).encode()
         return {
             "version": "2.0", "routeKey": "POST /line/webhook", "rawPath": "/line/webhook",
@@ -178,6 +180,41 @@ class LineApiTests(unittest.TestCase):
 
     def send(self, job, name=NAMES[0]):
         return self.call("send", {"date": DATE, "job_id": job["id"], "name": name})
+
+    def test_ack_reply_is_sent_only_once_after_the_first_confirmation_is_saved(self):
+        job = self.ready()
+        self.assertEqual(self.send(job)[0], 200)
+        data = f"ack={DATE}/{job['id']}"
+        self.line.reset_mock()
+        self.assertEqual(self.receive(data, uid=OTHER, event_type="postback", reply_token="not-yet-sent")[0], 200)
+        self.line.assert_not_called()
+
+        def verify_saved(path, body):
+            result = self.call()[1]["jobs"][0]["results"][NAMES[0]]
+            self.assertIn("confirmed_at", result)
+            return {}
+
+        self.line.side_effect = verify_saved
+        for token in ("first-token", "first-token", "another-tap-token"):
+            self.assertEqual(self.receive(data, event_type="postback", reply_token=token)[0], 200)
+        self.line.assert_called_once_with("message/reply", {
+            "replyToken": "first-token",
+            "messages": [{"type": "text", "text": "確認を受け付けました。"}],
+        })
+
+    def test_ack_reply_failure_is_logged_without_losing_or_repeating_confirmation(self):
+        job = self.ready()
+        self.assertEqual(self.send(job)[0], 200)
+        data = f"ack={DATE}/{job['id']}"
+        self.line.reset_mock()
+        self.line.side_effect = URLError("offline")
+        with self.assertLogs(api.LOGGER, level="WARNING") as logs:
+            self.assertEqual(self.receive(data, event_type="postback", reply_token="first-token")[0], 200)
+        self.assertIn("acknowledgement reply", logs.output[0])
+        first = self.call()[1]["jobs"][0]["results"][NAMES[0]]["confirmed_at"]
+        self.assertEqual(self.receive(data, event_type="postback", reply_token="another-token")[0], 200)
+        self.assertEqual(self.call()[1]["jobs"][0]["results"][NAMES[0]]["confirmed_at"], first)
+        self.assertEqual(self.line.call_count, 1)
 
     def test_template_family_delivery_confirms_only_the_sent_job_and_recipient(self):
         self.approve("family", UID)
