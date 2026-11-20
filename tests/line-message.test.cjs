@@ -101,6 +101,24 @@ test("daily and template history share receipt counts and a separate, safely esc
     assert.match(html, /送信記録の日付：2026-11-05[\s\S]*本人確認済み[\s\S]*<figure class="line-job-body">\s*<figcaption>本文<\/figcaption>\s*<pre class="line-preview">\n\nTest &lt;body&gt;<\/pre>/);
   }
 });
+test("history distinguishes recipient confirmations and shows retry guidance only for unknown results", async () => {
+  const h = harness();
+  const waiting = { ...clone(job), ack_enabled: true, results: {
+    "Part A": { status: "accepted" },
+    "Part B": { status: "accepted", confirmed_at: "2026-11-05T00:00:00Z" },
+  } };
+  h.setState({ ...initial, jobs: [waiting, { ...waiting, id: "legacy", ack_enabled: false }] });
+  await h.context.refresh();
+  const history = h.element("line-jobs");
+  assert.match(history.innerHTML, /Part A：LINE受付済み・確認待ち/);
+  assert.match(history.innerHTML, /Part B：本人確認済み（/);
+  assert.match(history.innerHTML, /Part A：LINE受付済み・確認ボタンなし/);
+  assert.doesNotMatch(history.innerHTML, /配達・既読|23時間/);
+  waiting.results["Part A"].status = "unknown";
+  h.setState({ ...initial, jobs: [waiting] });
+  await h.context.refresh();
+  assert.match(history.innerHTML, /新規送信せず、この履歴から再試行してください（初回試行から23時間以内）/);
+});
 test("prepare checks saved plans and preserves exact edited text before confirmation", async () => {
   const h = harness();
   h.context.testApi = async (action, req) => {

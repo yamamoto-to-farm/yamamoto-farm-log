@@ -16,7 +16,7 @@ let historySequence = 0;
 let historyLoading = false;
 let focusedTemplateJob;
 const el = id => document.getElementById(id);
-const labels = { ready: "未送信", accepted: "LINE受付済み（配達・既読は未確認）",
+const labels = { ready: "未送信", accepted: "LINE受付済み",
   failed: "失敗", unknown: "結果不明・同じ送信として再確認が必要" };
 const omissionLabels = { unlinked: "未登録", pending: "承認待ち", blocked: "送信停止", accepted: "同じ文面をLINE受付済み" };
 const omissions = job => job?.omitted ?? [];
@@ -107,6 +107,16 @@ const ackSummary = job => job.ack_enabled
   : "確認ボタンなし";
 const ackTime = at => new Date(at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
+function recipientStatus(job, name) {
+  const { status, confirmed_at: confirmedAt } = job.results[name];
+  if (job.ack_enabled && confirmedAt) {
+    const confirmed = `本人確認済み（${ackTime(confirmedAt)}）`;
+    return status === "accepted" ? confirmed : `${labels[status]}・${confirmed}`;
+  }
+  if (status === "accepted") return `${labels.accepted}・${job.ack_enabled ? "確認待ち" : "確認ボタンなし"}`;
+  return labels[status];
+}
+
 function historySummary(job) {
   const statuses = job.names.map(name => job.results[name].status);
   const accepted = statuses.filter(status => status === "accepted").length;
@@ -133,9 +143,7 @@ function jobHistory(jobs) {
   return jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${!isTemplate(job) && isPending(job) ? " open" : ""}>
     <summary>${historySummary(job)}</summary>
     <p>送信記録の日付：${escape(job.date)}</p>
-    <ul>${job.names.map(name => `<li>${escape(name)}：${escape(labels[job.results[name].status])}
-      ${job.ack_enabled ? ` ／ ${job.results[name].confirmed_at ? `本人確認済み（${escape(ackTime(job.results[name].confirmed_at))}）`
-        : job.results[name].status === "accepted" ? "確認待ち" : "本人確認なし"}` : ""}
+    <ul>${job.names.map(name => `<li>${escape(name)}：${escape(recipientStatus(job, name))}
       ${job.results[name].error ? `<p class="msg-error">${escape(job.results[name].error)}</p>` : ""}</li>`).join("")}
       ${omissions(job).map(item => `<li>${escape(item.name)}：${item.reason === "accepted" ? "別の履歴でLINE受付済み（今回は送信対象外）" : `送信対象外（${omissionLabels[item.reason]}）`}</li>`).join("")}</ul>
     <figure class="line-job-body">
@@ -143,6 +151,8 @@ function jobHistory(jobs) {
       <pre class="line-preview">
 ${escape(job.message)}</pre>
     </figure>
+    ${job.names.some(name => job.results[name].status === "unknown")
+      ? `<p class="msg-error">新規送信せず、この履歴から再試行してください（初回試行から23時間以内）。</p>` : ""}
     ${!job.recorded && !job.closed ? `<button type="button" class="primary-btn" data-line-resume="${escape(job.id)}">内容を確認して送信・再試行</button>
       <button type="button" class="secondary-btn" data-line-close="${escape(job.id)}">未送信分の送信を終了</button>` : ""}
   </details>`).join("") || "<p>この日のLINE送信履歴はありません。</p>";
@@ -382,7 +392,7 @@ function showConfirmation(job) {
   note.textContent = excluded.length ? `今回送信しない：${excluded.map(describeOmission).join("・")}。未登録・承認待ちの方などには、必要に応じて文面をコピーして個別に連絡してください。` : "";
   el("line-confirm-ack").hidden = !job.ack_enabled;
   el("line-confirm-results").textContent = job.names.map(name =>
-    `${name}：${labels[job.results[name].status]}`).join("\n");
+    `${name}：${recipientStatus(job, name)}`).join("\n");
   el("line-confirm-error").textContent = "";
   el("line-confirm").showModal();
 }
@@ -467,15 +477,15 @@ async function deliver() {
       if (updated.results[name].status === "accepted" && updated.recorded) continue;
       updated = await lineApi("send", { date: job.date, job_id: job.id, name });
       el("line-confirm-results").textContent = updated.names.map(person =>
-        `${person}：${labels[updated.results[person].status]}`).join("\n");
+        `${person}：${recipientStatus(updated, person)}`).join("\n");
     }
     el("line-confirm").close();
     confirmedJob = null;
     if (!isTemplate(job)) await context.reload();
     await refresh();
     if (isTemplate(job)) await refreshAfterTemplateAction(updated);
-    notice(updated.recorded ? (omissions(updated).length ? `今回の送信対象 ${updated.names.length}名のLINE受付と控え保存が完了しました。配達・既読は未確認です。`
-      : "全員のLINE受付と控え保存が完了しました。配達・既読は未確認です。")
+    notice(updated.recorded ? (omissions(updated).length ? `今回の送信対象 ${updated.names.length}名のLINE受付と控え保存が完了しました。`
+      : "全員のLINE受付と控え保存が完了しました。")
       : "未完了の宛先があります。下の送信履歴で人ごとの結果を確認してください。", !updated.recorded);
   } catch (error) {
     console.error("[line] delivery failed", error);

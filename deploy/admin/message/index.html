@@ -60,7 +60,7 @@
       <div id="cards" class="msg-cards"></div>
       <section id="line-history" class="line-management" aria-labelledby="line-history-title">
         <h3 id="line-history-title">この日の送信履歴</h3>
-        <p>受付済みは配達・既読の保証ではありません。結果不明時は新規送信を作らず、同じ履歴から再試行してください（最初の試行から23時間以内）。</p>
+        <p data-help="LINE送信履歴の見方">「LINE受付済み」はLINEが送信リクエストを受け付けた状態で、配達・既読の保証ではありません。「本人確認済み」は受信者が「確認しました」を押した状態です。「確認ボタンなし」の履歴では、本人確認を記録できません。</p>
         <div id="line-jobs"></div>
       </section>
     </section>
@@ -76,6 +76,7 @@
       <div id="template-list" class="msg-cards"></div>
       <section class="line-management" aria-labelledby="template-history-title">
         <h3 id="template-history-title">最近の定型文送信履歴</h3>
+        <p data-help="LINE送信履歴の見方">「LINE受付済み」はLINEが送信リクエストを受け付けた状態で、配達・既読の保証ではありません。「本人確認済み」は受信者が「確認しました」を押した状態です。「確認ボタンなし」の履歴では、本人確認を記録できません。</p>
         <p id="template-history-status" class="msg-muted" role="status"></p>
         <div id="template-focused-job"></div>
         <div id="template-line-jobs"></div>
@@ -153,6 +154,6 @@
     <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
     <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
   </dialog>
-  <script type="module" src="./message.js?v=20261120-line-partial-1"></script>
+  <script type="module" src="./message.js?v=20261120-line-history-help-1"></script>
 </body>
 </html>
