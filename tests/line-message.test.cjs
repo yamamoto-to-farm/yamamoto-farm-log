@@ -376,6 +376,45 @@ test("monthly template confirmation prepares only selected recipients and does n
   assert.match(h.element("template-line-jobs").innerHTML, /本人確認済み（/);
   assert.ok(!h.calls.some(item => Array.isArray(item) && item[0] === "send"));
 });
+test("template resend identifies the same dated history shown on the form and cancellation prevents preparation", async () => {
+  const h = harness();
+  const date = "2026-11-06";
+  h.setDate(date);
+  const sent = { ...clone(job), date, kind: "template", recorded: true };
+  sent.results[names[0]].status = "accepted";
+  h.setState({ ...initial, jobs: [sent] });
+  await h.context.refresh();
+  h.context.openTemplateSend("Shift reminder", sent.message);
+  h.element("template-recipients").querySelectorAll = () => names.map(value => ({ value }));
+  assert.match(h.element("template-send-date").textContent, /2026-11-06分.*作業予定の連絡/);
+  let prompt;
+  h.context.window.confirm = text => { prompt = text; return false; };
+  await h.element("template-send").onsubmit({ preventDefault() {} });
+  assert.match(prompt, /Part Aには 2026-11-06 分として同じ本文.*別の連絡/);
+  assert.doesNotMatch(prompt, /Part B/);
+  assert.ok(!h.calls.some(call => call.options?.method === "POST"));
+});
+test("a different template body needs only ordinary confirmation even with an unfinished send", async () => {
+  const h = harness();
+  const prior = { ...clone(job), kind: "template", title: "Shift reminder" };
+  prior.results[names[0]].status = "unknown";
+  h.setState({ ...initial, jobs: [prior] });
+  await h.context.refresh();
+  h.context.openTemplateSend(prior.title, "Updated shift reminder");
+  h.element("template-recipients").querySelectorAll = () => [{ value: names[0] }];
+  h.context.window.confirm = () => assert.fail("different body must not ask for resend confirmation");
+  h.context.testApi = async (action, req) => {
+    if (!action) return { ...initial, jobs: [prior] };
+    h.calls.push([action, clone(req)]);
+    return { ...prior, message: req.message };
+  };
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.element("template-send").onsubmit({ preventDefault() {} });
+  assert.deepEqual(h.calls.find(item => Array.isArray(item)), ["prepare_template", {
+    date, names: [names[0]], title: prior.title, message: "Updated shift reminder", confirm_resend: false,
+  }]);
+  assert.equal(h.element("line-confirm").open, true);
+});
 test("HTML contains dedicated dialog, private code field and keeps copy workflow", () => {
   const html = readFileSync(join(__dirname, "..", "deploy", "admin", "message", "index.html"), "utf8");
   assert.match(html, /<dialog id="line-confirm"/);

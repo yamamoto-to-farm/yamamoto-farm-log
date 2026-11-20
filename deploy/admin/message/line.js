@@ -201,6 +201,7 @@ async function refresh() {
   el("line-jobs").innerHTML = "";
   el("template-line-jobs").innerHTML = "";
   el("template-line-date").textContent = date ? `${date}分（「作業予定の連絡」で日付を変更できます）` : "";
+  el("template-send-date").textContent = date ? `送信履歴の記録先：${date}分（「作業予定の連絡」の日付）` : "";
   el("template-prepare").disabled = true;
   templateNotice("");
   el("line-code-text").value = "";
@@ -302,14 +303,16 @@ async function prepareTemplate() {
   const message = el("template-send-text").value;
   if (!names.length) throw new Error("送信する宛先を選んでください。");
   if (!title.trim() || !message.trim() || message.length > 5000) throw new Error("タイトルと本文（5000文字以内）を確認してください。");
-  const relevant = state.jobs.filter(job => isTemplate(job) && jobOverlapsGroup(job, { recipients: names }));
+  const relevant = state.jobs.filter(job => isTemplate(job) && job.message === message
+    && jobOverlapsGroup(job, { recipients: names }));
   const pending = relevant.find(isPending);
   if (pending) {
-    notice("この宛先には未完了の定型文があります。同じ送信履歴から確認・再試行してください。", true);
+    notice("この宛先には同じ本文の未完了の定型文があります。同じ送信履歴から確認・再試行してください。", true);
     return pending;
   }
-  if (relevant.length && !window.confirm("この宛先には選択日の定型文送信履歴があります。新しい連絡を準備しますか？")) return;
-  const job = await lineApi("prepare_template", { date, names, title, message, confirm_resend: Boolean(relevant.length) });
+  const duplicates = names.filter(name => relevant.some(job => job.results[name]?.status === "accepted"));
+  if (duplicates.length && !window.confirm(`${duplicates.join("・")}には ${date} 分として同じ本文の定型文がLINE受付済みです。別の連絡として送信準備を進めますか？`)) return;
+  const job = await lineApi("prepare_template", { date, names, title, message, confirm_resend: Boolean(duplicates.length) });
   await refresh();
   if (date !== context.date()) throw new Error(`${date}分の定型文の送信準備が履歴に残っています。`);
   showConfirmation(job);

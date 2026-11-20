@@ -249,6 +249,25 @@ class LineApiTests(unittest.TestCase):
         self.assertNotIn("confirmed_at", second_result)
         self.assertNotIn("user_id", first_result)
 
+    def test_template_resend_checks_exact_body_and_only_accepted_recipients(self):
+        self.approve("a", UID)
+        self.approve("b", OTHER)
+        request = {"date": DATE, "title": "Shift reminder", "message": "Original", "names": NAMES}
+        status, original = self.call("prepare_template", request)
+        self.assertEqual(status, 200)
+        different = self.call("prepare_template", {**request, "message": "Different"})
+        self.assertEqual(different[0], 200)
+        self.assertNotEqual(different[1]["id"], original["id"])
+        self.assertEqual(self.call("prepare_template", {**request, "title": "Renamed"})[1]["id"], original["id"])
+        self.assertEqual(self.call("prepare_template", {**request, "names": [NAMES[0]]})[0], 409)
+        self.assertEqual(self.send(original, NAMES[0])[0], 200)
+        self.assertEqual(self.call("close", {"date": DATE, "job_id": original["id"], "confirm": True})[0], 200)
+        status, error = self.call("prepare_template", request)
+        self.assertEqual(status, 409)
+        self.assertIn(NAMES[0], error["message"])
+        self.assertNotIn(NAMES[1], error["message"])
+        self.assertEqual(self.call("prepare_template", {**request, "names": [NAMES[1]]})[0], 200)
+
     def test_plan_confirmation_during_pending_response_preserves_acceptance_and_snapshot(self):
         job = self.ready()
         def push(path, envelope, retry_key):

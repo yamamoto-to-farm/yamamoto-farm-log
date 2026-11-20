@@ -87,6 +87,7 @@
       <div id="template-list"></div>
       <form id="template-send" class="msg-common-panel" hidden>
         <h3 id="template-send-title"></h3>
+        <p id="template-send-date" class="msg-muted"></p>
         <fieldset id="template-recipients"><legend>LINEの宛先</legend></fieldset>
         <label for="template-send-text">今回送る本文（定型文の原本は変わりません）</label>
         <textarea id="template-send-text" class="form-input" rows="6" maxlength="5000" required></textarea>
@@ -134,6 +135,6 @@
     <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
     <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
   </dialog>
-  <script type="module" src="./message.js?v=20261120-ack-1"></script>
+  <script type="module" src="./message.js?v=20261120-template-resend-1"></script>
 </body>
 </html>

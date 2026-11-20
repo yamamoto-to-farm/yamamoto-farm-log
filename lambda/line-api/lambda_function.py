@@ -376,16 +376,21 @@ class Service:
         key, day, revision = self.day(date)
         ids = sorted(target["id"] for target in targets)
         relevant = [job for job in day["jobs"].values()
-                    if job.get("kind", "plan") == kind and set(job["names"]) & set(names)]
+                    if job.get("kind", "plan") == kind and set(job["names"]) & set(names)
+                    and (not template or job["message"] == text)]
         for job in relevant:
             if not job["closed"] and not job["recorded"]:
                 if (sorted(job["names"]) == sorted(names)
                         and sorted(target["id"] for target in job["targets"]) == ids
-                        and job["message"] == text and job["targets"] == targets
-                        and (not template or job.get("title") == title)):
+                        and job["message"] == text and job["targets"] == targets):
                     return self.public_job(job)
                 fail(409, "この宛先には未完了の送信があります。下の送信履歴から確認・再試行または終了してください。")
-        if relevant and req.get("confirm_resend") is not True:
+        duplicate_names = [name for name in names if any(
+            job["results"].get(name, {}).get("status") == "accepted" for job in relevant
+        )] if template else []
+        if duplicate_names and req.get("confirm_resend") is not True:
+            fail(409, f"{'・'.join(duplicate_names)}には同じ本文の定型文がLINE受付済みです。履歴を更新して再送を確認してください。")
+        if not template and relevant and req.get("confirm_resend") is not True:
             fail(409, "過去の送信があります。再連絡の確認をしてから準備してください。")
         if len(day["jobs"]) >= 100:
             fail(409, "この日の送信準備が上限に達しました。")
