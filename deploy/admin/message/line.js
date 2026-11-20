@@ -74,9 +74,9 @@ function renderJobs() {
   el("line-jobs").innerHTML = jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${isPending(job) ? " open" : ""}>
     <summary>${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"}</summary>
     <p>${escape(job.created_at)} ／ ${escape(job.date)}</p>
-    <pre class="line-preview">${escape(job.message)}</pre>
     <ul>${job.names.map(name => `<li>${escape(name)}：${escape(labels[job.results[name].status])}
       ${job.results[name].error ? `<p class="msg-error">${escape(job.results[name].error)}</p>` : ""}</li>`).join("")}</ul>
+    <pre class="line-preview">${escape(job.message)}</pre>
     ${!job.recorded && !job.closed ? `<button type="button" class="primary-btn" data-line-resume="${escape(job.id)}">内容を確認して送信・再試行</button>
       <button type="button" class="secondary-btn" data-line-close="${escape(job.id)}">未送信分の送信を終了</button>` : ""}
   </details>`).join("") || "<p>この日のLINE送信履歴はありません。</p>";
@@ -129,51 +129,42 @@ export function decorateLineCards() {
         : accepted ? "LINE受付済み" : card.dataset.communication === "copied" ? "コピー済み（LINE未確認）" : "未連絡";
       badge.dataset.tone = pending || changed ? "warning" : accepted ? "accepted" : "";
     }
-    const currentMessage = card.querySelector("[data-current-message]");
-    if (currentMessage) currentMessage.dataset.compact = String(Boolean(sent && !changed));
+    const compact = accepted && !changed && !pending;
+    card.querySelector("[data-current-message]").dataset.compact = String(Boolean(sent && compact));
+    const other = card.querySelector("[data-other-actions]");
+    if (other.dataset.compact !== String(compact)) {
+      other.dataset.compact = String(compact);
+      other.open = !compact || Boolean(other.querySelector("[data-editor][open]"));
+    }
+    const resend = card.querySelector("[data-line-resend]");
+    resend.replaceChildren();
     const missing = available ? group.recipients.filter(name =>
       !state.members.some(member => member.name === name && member.linked && !member.blocked)) : [];
     const button = document.createElement("button");
     button.type = "button";
-    button.className = accepted && !changed && !pending ? "secondary-btn" : "primary-btn";
+    button.className = compact ? "secondary-btn" : "primary-btn";
     button.textContent = pending ? "履歴から確認・再試行" : changed ? "変更後の文面を確認"
-      : accepted ? "再連絡の内容を確認" : "LINE送信内容を確認";
+      : accepted ? "再連絡する" : "LINE送信内容を確認";
     button.disabled = busy || (!pending && (!available || missing.length > 0 || card.dataset.planIssues === "yes"));
     button.onclick = pending ? () => focusJob(pending) : () => guarded(() => prepare(group));
-    if (sent) {
-      const details = document.createElement("details");
-      details.className = "msg-disclosure msg-sent-message";
-      const summary = document.createElement("summary");
-      summary.textContent = "送った文面を見る";
-      const text = document.createElement("pre");
-      text.textContent = sent.message;
-      details.append(summary, text);
-      controls.append(details);
-    }
+    if (compact) resend.append(button);
+    else controls.append(button);
     if (sent && !pending) {
       const results = document.createElement("button");
       results.type = "button";
       results.className = "secondary-btn";
-      results.textContent = "送信結果を見る";
+      results.textContent = "送信内容・結果を見る";
       results.disabled = busy;
       results.onclick = () => focusJob(sent);
       controls.append(results);
     }
-    if (accepted && !changed && !pending) {
-      const more = document.createElement("details");
-      more.className = "msg-disclosure msg-resend";
-      const summary = document.createElement("summary");
-      summary.textContent = "再連絡する";
-      more.append(summary, button);
-      controls.append(more);
-    } else controls.append(button);
     if (!pending && missing.length) {
       const hint = document.createElement("p");
       hint.className = "msg-muted";
       hint.textContent = `LINE未登録・送信停止：${missing.join("・")}。登録・承認するか、コピーで連絡してください。`;
-      controls.append(hint);
+      (compact ? resend : controls).append(hint);
     }
-    (card.querySelector("[data-line-actions]") || card).append(controls);
+    card.querySelector("[data-line-actions]").append(controls);
   }
 }
 

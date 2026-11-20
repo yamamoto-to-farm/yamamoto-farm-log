@@ -102,7 +102,22 @@
 .msg-disclosure { margin: 6px 0; }
 .msg-disclosure summary { cursor: pointer; color: #334155; font-size: .875rem; }
 .msg-line-actions { margin: 8px 0; }
-.msg-line-actions .msg-sent-message[open], .msg-line-actions p { width: 100%; }
+.msg-line-actions p { width: 100%; }
+.msg-plan-summary { margin: 8px 0; overflow-wrap: anywhere; }
+.msg-card-actions:has(.msg-other-actions[data-compact="true"]) {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px;
+}
+.msg-other-actions { min-width: 0; }
+.msg-other-actions > summary { cursor: pointer; color: #334155; font-size: .875rem; padding: 8px 0; }
+.msg-other-actions:not([data-compact="true"]) > summary { display: none; }
+.msg-other-actions[data-compact="true"][open] { flex-basis: 100%; }
+.msg-other-actions[data-compact="true"] .msg-other-body {
+  border-top: 1px solid #e2e8f0; margin-top: 4px; padding-top: 8px;
+}
+.msg-other-body { display: grid; gap: 6px; justify-items: start; }
+.msg-other-body > details { width: 100%; }
+.msg-other-body > a { overflow-wrap: anywhere; }
+.msg-other-body > [data-line-resend]:empty { display: none; }
 .msg-copy-tools p { margin: 0; }
 .msg-copy-tools p:empty { display: none; }
 .msg-card .copy-btn { width: 100%; }

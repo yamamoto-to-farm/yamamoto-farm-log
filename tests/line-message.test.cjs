@@ -259,11 +259,20 @@ test("clearing the date invalidates the state without requesting the API", async
 function mountCard(h, group) {
   const badge = { dataset: {} };
   const message = { dataset: {} };
+  const other = { dataset: {}, open: true, querySelector() { return null; } };
+  const resend = {
+    children: [],
+    replaceChildren() { this.children = []; },
+    append(...children) { this.children.push(...children); },
+  };
   const card = {
     dataset: { group: group.id }, children: [],
     querySelector(selector) {
       if (selector === "[data-current-message]") return message;
       if (selector === "[data-line-badge]") return badge;
+      if (selector === "[data-other-actions]") return other;
+      if (selector === "[data-line-resend]") return resend;
+      if (selector === "[data-line-actions]") return this;
       if (selector === "[data-line-card]") return this.children[0] || null;
       return null;
     },
@@ -276,7 +285,7 @@ function mountCard(h, group) {
     append(...children) { this.children.push(...children); },
     remove() { card.children = []; },
   });
-  return { card, badge, message, actions: () => card.children[0].children };
+  return { card, badge, message, other, resend, actions: () => card.children[0].children };
 }
 test("send confirmation is enabled only after current state is loaded for registered recipients", async () => {
   const h = harness();
@@ -297,7 +306,7 @@ test("send confirmation is enabled only after current state is loaded for regist
 test("the accepted card shows the exact sent text and history, and promotes an update only after a revision change", async () => {
   const h = harness();
   const group = { id: "p1", recipients: names, entries: [{ id: "p1", plan: { updated_at: "v1" } }] };
-  const { badge, message, actions } = mountCard(h, group);
+  const { badge, message, other, resend, actions } = mountCard(h, group);
   const sent = { ...clone(job), recorded: true };
   const unrelated = { ...sent, id: "other", targets: [{ id: "other", plan_revision: "v1" }], message: "Other trip" };
   h.setState({ ...initial, jobs: [sent, unrelated] });
@@ -307,15 +316,21 @@ test("the accepted card shows the exact sent text and history, and promotes an u
   await h.context.refreshLineState();
   assert.equal(badge.textContent, "LINE受付済み");
   assert.equal(message.dataset.compact, "true");
-  assert.equal(actions()[0].children[1].textContent, sent.message);
-  actions().find(action => action.textContent === "送信結果を見る").onclick();
+  assert.equal(other.open, false);
+  assert.equal(resend.children[0].textContent, "再連絡する");
+  assert.deepEqual(actions().map(action => action.textContent), ["送信内容・結果を見る"]);
+  assert.match(h.element("line-jobs").innerHTML, /id="line-job-job"[\s\S]*?LINE受付済み[\s\S]*?Bring rain gear/);
+  actions()[0].onclick();
   assert.equal(history.open, true);
   assert.equal(focused, true);
-  assert.equal(actions().some(action => action.className === "primary-btn"), false);
+  other.open = true;
+  h.context.decorateLineCards();
+  assert.equal(other.open, true);
   group.entries[0].plan.updated_at = "v2";
   h.context.decorateLineCards();
   assert.match(badge.textContent, /予定変更/);
   assert.equal(message.dataset.compact, "false");
+  assert.equal(resend.children.length, 0);
   assert.equal(actions().find(action => action.className === "primary-btn").textContent, "変更後の文面を確認");
 });
 test("result unknown routes an overlapping recipient to the same history without preparing a new send", async () => {

@@ -6,7 +6,7 @@ import { formatLocalYmd, parseDateInputLocal } from "/common/date-utils.js?v=1";
 import { fetchWorkPlanRecord, writeWorkPlan } from "/diary/planned-work.js?v=20261104-time-1";
 import { loadPlanWorkers } from "/common/work-plan-form.js?v=20261104-modal-1";
 import { communicationIssues, messageGroups, buildGroupMessage, checkMessageGroup, groupCommunicationState, recordGroupCopy } from "./message-plan.js?v=20261108-date-1";
-import { initLineMessaging, decorateLineCards, refreshLineState } from "./line.js?v=20261120-card-1";
+import { initLineMessaging, decorateLineCards, refreshLineState } from "./line.js?v=20261120-card-2";
 
 const PRESIGN_URL = "https://7bx9hgk4d1.execute-api.ap-northeast-1.amazonaws.com/prod/presign";
 const MASTERS_KEY = "data/message/masters.json";
@@ -154,14 +154,14 @@ function renderCards() {
     const issues = [...new Set([...group.issues, ...entries.flatMap(({ plan }) => communicationIssues(plan))])];
     const text = currentMessageText(group);
     const communication = groupCommunicationState(group, record.data.communications);
+    const planSummaries = entries.map(({ plan, displayPlan }) => displayPlan.blocks.map(block =>
+      `${block.start && block.end ? `${block.start}〜${block.end} ` : ""}${block.task}`).join(" ／ ") || (plan.off ? "お休み" : "作業予定"));
     return `<article class="msg-card" data-group="${escapeHtml(id)}" data-communication="${communication?.status || ""}" data-changed="${communication?.changed ? "yes" : ""}" data-plan-issues="${issues.length ? "yes" : ""}">
       <button type="button" class="secondary-btn msg-select" data-select="${escapeHtml(id)}" aria-label="${escapeHtml(group.recipients.join("・"))} の連絡文を追加先に選択" aria-pressed="false" hidden>追加先に選択</button>
       <div class="msg-card-heading"><h3>${escapeHtml(group.recipients.join("・"))} へ</h3>
         <span class="msg-badge" data-line-badge>${communication?.changed ? "連絡後に予定変更あり" : communication?.status === "sent"
           ? "LINE受付済み" : communication ? "コピー済み（LINE未確認）" : "未連絡"}</span></div>
-      ${entries.map(({ id: planId, plan, displayPlan }) => `<p>${plan.off ? "中止の連絡：" : ""}${displayPlan.blocks.map(block =>
-        `${escapeHtml(block.start)}〜${escapeHtml(block.end)} ${escapeHtml(block.task)}`).join("・")}
-        <a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集</a></p>`).join("")}
+      ${entries.map(({ plan }, index) => `<p class="msg-plan-summary">${plan.off ? "中止の連絡：" : ""}${escapeHtml(planSummaries[index])}</p>`).join("")}
       ${issues.length ? `<p class="msg-error">${issues.map(escapeHtml).join("<br>")}</p>` : ""}
       ${communication?.changed ? `<p class="msg-error">予定が変わったため、現在の予定から文面を作り直しました。以前の注意事項は<a href="/schedule/daily-plan/index.html?date=${loadedDate}">連絡時点の控え</a>で確認してください。</p>` : ""}
       <div data-current-message data-draft="${drafts.has(id) && text !== communication?.message ? "yes" : ""}">
@@ -171,17 +171,26 @@ function renderCards() {
           <pre data-full-message>${escapeHtml(text)}</pre>
         </details>
       </div>
-      <div data-line-actions></div>
-      <details class="msg-disclosure" data-editor="${escapeHtml(id)}"${openEditors.has(id) ? " open" : ""}>
-        <summary>文面を編集</summary>
-        ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました。</p>' : ""}
-        <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
-        <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="8" aria-label="連絡文面">${escapeHtml(text)}</textarea>
-        <button type="button" class="secondary-btn" data-reset="${escapeHtml(id)}">保存済み予定から文面を戻す</button>
-      </details>
-      <div class="msg-copy-tools">
-        <button type="button" class="secondary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>コピー（送信なし）</button>
-        <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
+      <div class="msg-card-actions">
+        <div data-line-actions></div>
+        <details class="msg-other-actions" data-other-actions open>
+          <summary>その他</summary>
+          <div class="msg-other-body">
+            <div data-line-resend></div>
+            <details class="msg-disclosure" data-editor="${escapeHtml(id)}"${openEditors.has(id) ? " open" : ""}>
+              <summary>文面を編集</summary>
+              ${!drafts.has(id) && communication?.message != null ? '<p class="msg-muted">最新の控えから文面を復元しました。</p>' : ""}
+              <p class="msg-muted">文面の補足・言い換えは予定には反映されません。</p>
+              <textarea class="preview-edit" data-preview="${escapeHtml(id)}" rows="8" aria-label="連絡文面">${escapeHtml(text)}</textarea>
+              <button type="button" class="secondary-btn" data-reset="${escapeHtml(id)}">保存済み予定から文面を戻す</button>
+            </details>
+            <div class="msg-copy-tools">
+              <button type="button" class="secondary-btn" data-copy="${escapeHtml(id)}"${issues.length ? " disabled" : ""}>コピー（送信なし）</button>
+              <p data-copy-status="${escapeHtml(id)}" class="msg-muted" role="status"></p>
+            </div>
+            ${entries.map(({ id: planId }, index) => `<a href="/schedule/daily-plan/index.html?date=${loadedDate}&id=${encodeURIComponent(planId)}">この予定を編集${entries.length > 1 ? `：${escapeHtml(planSummaries[index])}` : ""}</a>`).join("")}
+          </div>
+        </details>
       </div>
     </article>`;
   }).join("") : "<p>この日の連絡予定はありません。予定の追加・編集で作業者と連絡先を指定してください。</p>";
