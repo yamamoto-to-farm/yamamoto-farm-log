@@ -89,9 +89,13 @@ export function needsAttention(item) {
   return itemParts(item).some(part => part.category === "未分類") || !item.review_confirmed;
 }
 
+export const invoiceSource = invoice => invoice.source || "ja";
+export const invoiceVendor = invoice => invoiceSource(invoice) === "nakagami" ? "中神種苗店" : "JA";
+export const invoiceKey = invoice => `${invoiceSource(invoice)}:${invoice.invoice_no}`;
+
 export function invoiceLinkStatus(item, link, invoices) {
   if (!link) return "未紐づけ";
-  const invoice = invoices.find(value => value.invoice_no === link.invoice_no);
+  const invoice = invoices.find(value => invoiceKey(value) === invoiceKey(link));
   if (!invoice) return "請求書なし・要再確認";
   const states = [];
   if (invoice.validation_status === "failed") states.push("請求書検証失敗");
@@ -100,8 +104,12 @@ export function invoiceLinkStatus(item, link, invoices) {
   return states.join(" ／ ") || "一致";
 }
 
+export function invoiceUrl(invoice, item) {
+  return `/finance/index.html?source=${encodeURIComponent(invoiceSource(invoice))}&invoice=${encodeURIComponent(invoice.invoice_no)}&statement=${encodeURIComponent(item.statement_id)}&transaction=${encodeURIComponent(item.transaction_id)}#linked-invoice-panel`;
+}
+
 export function jaInvoiceUrl(invoiceNo, item) {
-  return `/finance/index.html?source=ja&invoice=${encodeURIComponent(invoiceNo)}&statement=${encodeURIComponent(item.statement_id)}&transaction=${encodeURIComponent(item.transaction_id)}#linked-invoice-panel`;
+  return invoiceUrl({ invoice_no: invoiceNo }, item);
 }
 
 export function invoiceAnalysisItems(items, links, invoices) {
@@ -109,9 +117,9 @@ export function invoiceAnalysisItems(items, links, invoices) {
   const rows = items.flatMap(item => {
     const matches = links.filter(link => link.statement_id === item.statement_id && link.transaction_id === item.transaction_id);
     if (!matches.length) return [item];
-    const link = matches[0], invoice = invoices.find(value => value.invoice_no === link.invoice_no);
+    const link = matches[0], invoice = invoices.find(value => invoiceKey(value) === invoiceKey(link));
     let reason = "";
-    if (matches.length !== 1 || link.source !== "ja") reason = "紐づけが不正";
+    if (matches.length !== 1 || !["ja", "nakagami"].includes(invoiceSource(link))) reason = "紐づけが不正";
     else if (item.allocations?.length) reason = "手動分割を優先";
     else if (!item.withdrawal || item.deposit) reason = "出金明細ではない";
     else if (!invoice) reason = "請求書なし";
@@ -124,23 +132,24 @@ export function invoiceAnalysisItems(items, links, invoices) {
       || !Number.isSafeInteger(invoice.breakdown.reduce((sum, part) => sum + part.amount, 0))
       || invoice.breakdown.reduce((sum, part) => sum + part.amount, 0) !== item.withdrawal) reason = "請求書の内訳合計を確認できない";
     if (reason) {
-      notices.push({ item, invoice_no: link.invoice_no, reflected: false, reason });
+      notices.push({ item, invoice_no: link.invoice_no, source: invoiceSource(link), reflected: false, reason });
       return [item];
     }
     let reviewCount = 0, unresolvedCount = 0;
     const projected = invoice.breakdown.map(part => {
-      const expense = ["肥料費", "農薬費", "資材・消耗品"].includes(part.category);
+      const expense = ["種苗費", "肥料費", "農薬費", "資材・消耗品"].includes(part.category);
       const unknown = part.category === "未分類";
       const category = expense ? "経費" : unknown ? "未分類" : "決済・内訳確認";
       const detail = `${part.category}${part.subcategory ? `／${part.subcategory}` : ""}`;
-      const subcategory = expense ? detail : unknown ? "JA請求書：未分類" : `JA：${detail}（用途確認）`;
+      const vendor = invoiceVendor(link);
+      const subcategory = expense ? detail : unknown ? `${vendor}請求書：未分類` : `${vendor}：${detail}（用途確認）`;
       if (!expense && !unknown) unresolvedCount++;
       const review = unknown || (!expense && !unknown) || Boolean(part.needs_review && part.review_confirmed !== true);
       if (review) reviewCount++;
       return { ...item, category, subcategory, allocations: [], deposit: 0, withdrawal: part.amount,
         review_confirmed: !review };
     });
-    notices.push({ item, invoice_no: link.invoice_no, reflected: true, reviewCount, unresolvedCount });
+    notices.push({ item, invoice_no: link.invoice_no, source: invoiceSource(link), reflected: true, reviewCount, unresolvedCount });
     return projected;
   });
   return { items: rows, notices };

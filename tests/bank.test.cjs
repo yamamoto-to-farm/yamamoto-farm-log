@@ -403,12 +403,12 @@ test("JA memo opens candidates, explicit save/unlink uses revisions and failures
   const memo = elements.items.children[0].children[1];
   assert.equal(memo.children[0].className, "bank-memo-link");
   memo.children[0].onclick();
-  assert.equal(elements["invoice-link-choice"].children[1].value, "123456");
+  assert.equal(elements["invoice-link-choice"].children[1].value, "ja:123456");
   assert.equal(elements["invoice-link-choice"].value, "");
   assert.equal(elements["invoice-link-dialog"].closed, false);
   await c.saveInvoiceLink();
   assert.match(elements["invoice-link-status"].textContent, /選択/);
-  elements["invoice-link-choice"].value = "123456";
+  elements["invoice-link-choice"].value = "ja:123456";
   c.updateInvoicePreview();
   assert.match(elements["invoice-link-preview"].href, /invoice=123456/);
   let request;
@@ -428,7 +428,7 @@ test("JA memo opens candidates, explicit save/unlink uses revisions and failures
   assert.equal(linkedMemo.children[0]["aria-haspopup"], "dialog");
   assert.match(linkedMemo.children[1].textContent, /一致/);
   linkedMemo.children[0].onclick();
-  assert.equal(elements["invoice-link-choice"].value, "123456");
+  assert.equal(elements["invoice-link-choice"].value, "ja:123456");
   assert.match(elements["invoice-link-preview"].href, /invoice=123456/);
   c.api = async () => { throw new Error("409 conflict"); };
   await c.saveInvoiceLink(true);
@@ -440,6 +440,40 @@ test("JA memo opens candidates, explicit save/unlink uses revisions and failures
   assert.equal(request.invoice_no, null);
   assert.match(elements.status.textContent, /保存済み.*表示更新に失敗/);
   assert.equal(vm.runInContext("invoiceLinks.links.length", c), 0);
+});
+test("Nakagami candidate links and replaces a reconciled withdrawal with signed item amounts", async () => {
+  const { c, elements } = screen();
+  const row = { ...item({ deposit: 0, withdrawal: 100 }), statement_id: "a".repeat(64), account_id: "account-a" };
+  const invoice = { source: "nakagami", invoice_no: "b".repeat(32), issue_date: "2026-10-01", settlement_date: null,
+    total_amount: 100, signature: "signature", validation_status: "ok",
+    breakdown: [{ amount: 110, category: "種苗費" }, { amount: -10, category: "未分類" }] };
+  c.row = row;
+  c.catalog = [invoice];
+  vm.runInContext('items = [row]; statements = [{ statement_id: row.statement_id, account_id: row.account_id, revision: "r1" }]; invoiceLinks = { links: [], invoices: catalog, revision: "links-r1" };', c);
+  c.renderItems();
+  elements.items.children[0].children[1].children[0].onclick();
+  assert.match(elements["invoice-link-choice"].children[1].textContent, /中神種苗店.*記載なし.*金額一致/);
+  elements["invoice-link-choice"].value = `nakagami:${invoice.invoice_no}`;
+  c.updateInvoicePreview();
+  assert.match(elements["invoice-link-preview"].href, /source=nakagami/);
+  let link;
+  c.api = async (_path, body) => {
+    link = body;
+    return { saved: true, links: [body], revision: "links-r2" };
+  };
+  c.loadData = async () => {};
+  await c.saveInvoiceLink();
+  assert.equal(link.source, "nakagami");
+  assert.equal(link.invoice_signature, "signature");
+  const result = c.invoiceAnalysisItems([row], [link], [invoice]);
+  assert.deepEqual(Array.from(result.items, part => [part.category, part.withdrawal]), [["経費", 110], ["未分類", -10]]);
+  assert.equal(c.totals(result.items).withdrawal, 100);
+  for (const [withdrawal, sourceInvoice] of [[99, invoice], [100, { ...invoice, breakdown: invoice.breakdown.slice(0, 1) }]]) {
+    const changed = { ...row, withdrawal };
+    const result = c.invoiceAnalysisItems([changed], [link], [sourceInvoice]);
+    assert.equal(result.items[0], changed);
+    assert.equal(result.notices[0].reflected, false);
+  }
 });
 test("invoice candidate mismatch requires confirmation, empty catalog offers upload, and orphan links can be managed", async () => {
   const { c, elements } = screen({ confirm: () => false });
@@ -817,7 +851,7 @@ test("account overview help is a single source immediately after the heading, no
   assert.match(section, /<h2>口座の確認<\/h2>\s*<div data-help="口座の確認・集計について">/);
   assert.equal((section.match(/data-help=/g) || []).length, 1);
   const help = section.split('<div data-help=')[1].split("</div>")[0];
-  assert.match(help, /月初残高[\s\S]*JA請求書[\s\S]*未分類の件数・金額[\s\S]*未分類部分[\s\S]*元の取引全額/);
+  assert.match(help, /月初残高[\s\S]*請求額を加算しません[\s\S]*未分類の件数・金額[\s\S]*未分類部分[\s\S]*元の取引全額/);
   assert.doesNotMatch(help, /class="finance-note"|id="overview"|id="unclassified-summary"/);
   assert.ok(section.indexOf('data-help=') < section.indexOf('id="account"'));
 });

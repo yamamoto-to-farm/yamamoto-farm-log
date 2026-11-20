@@ -25,7 +25,7 @@
         <h2>口座の確認</h2>
         <div data-help="口座の確認・集計について">
           <h3>口座明細の集計</h3>
-          <p>月初残高は最初の入出金・取引後残高から逆算します。月末残高は最後の取引後残高です。借入・元本返済・現金移動・カード決済なども含むため、入金＝売上、出金＝経費とは限りません。JA請求書・販売精算との照合は未実装で、これらを合算しません。</p>
+          <p>月初残高は最初の入出金・取引後残高から逆算します。月末残高は最後の取引後残高です。借入・元本返済・現金移動・カード決済なども含むため、入金＝売上、出金＝経費とは限りません。請求書内訳を使っても、口座の出金額に請求額を加算しません。</p>
           <h3>未分類の件数・金額</h3>
           <p>選択口座の全取り込み期間が対象です。分類済みで確認待ちの明細は含めません。分割内訳は未分類部分の金額だけを集計し、件数は元の取引ごとに1件と数えます。押すと期間・検索条件を解除し、未分類金額の大きい順に明細を開きます。明細の入出金欄は元の取引全額です。</p>
         </div>
@@ -106,7 +106,7 @@
           <button id="clear-details-query" class="secondary-btn" type="button">検索解除</button>
         </div>
         <p id="details-result" class="finance-note" role="status" aria-live="polite"></p>
-        <p class="finance-note" data-help-keep>出金明細の摘要を押すと、請求書の確認・紐づけ・変更・解除ができます。現在はJA請求書に対応しています。</p>
+        <p class="finance-note" data-help-keep>出金明細の摘要を押すと、JA・中神種苗店の請求書を確認・紐づけ・変更・解除できます。</p>
         <div class="finance-toolbar"><label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label>並び順<select id="sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option></select></label>
         </div>
@@ -115,7 +115,7 @@
       </details>
       <details id="invoice-links-section" class="card finance-record-panel">
         <summary><h2>請求書の紐づけ管理</h2></summary>
-        <p>現在はJA請求書に対応しています。再取り込みで元の取引が変わった紐づけもここから解除できます。1請求書につき1出金の対応です。合算・分割支払いへの対応は含みません。</p>
+        <p>再取り込みで元の取引が変わった紐づけもここから解除できます。1請求書につき1出金の対応です。合算・分割支払いへの対応は含みません。</p>
         <div id="invoice-links-list"></div>
       </details>
       <details class="card finance-record-panel">
@@ -177,13 +177,14 @@
     <dialog id="invoice-link-dialog" aria-labelledby="invoice-link-title">
       <h2 id="invoice-link-title">請求書の紐づけ</h2>
       <p id="invoice-link-item"></p>
-      <p>対応中の請求元：JA（その他の請求元は今後対応予定です）</p>
+      <p>対応中の請求元：JA・中神種苗店</p>
       <p>金額一致・引落予定日の近い順に候補を表示します。休日による日付のずれも含め、請求書を開いて確認してください。自動確定はしません。紐づけは分類・集計を変更しません。</p>
       <label>紐づける請求書<select id="invoice-link-choice"></select></label>
-      <p id="invoice-link-empty" hidden>取り込み済みの有効なJA請求書がありません。</p>
+      <p id="invoice-link-empty" hidden>取り込み済みの有効な請求書がありません。</p>
       <div class="finance-toolbar">
         <a id="invoice-link-preview" class="secondary-btn" target="_blank" rel="noopener" hidden>選択した請求書・内訳を確認</a>
         <a class="secondary-btn" href="/finance/index.html#invoice-upload" target="_blank" rel="noopener">JA請求書PDFを取り込む</a>
+        <a class="secondary-btn" href="/finance/index.html#supplier-upload" target="_blank" rel="noopener">中神種苗店の請求書を取り込む</a>
       </div>
       <p id="invoice-link-status" role="alert"></p>
       <div class="finance-toolbar">
@@ -193,6 +194,6 @@
       </div>
     </dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261110-invoice-analysis-1"></script>
+  <script type="module" src="./bank.js?v=20261120-supplier-1"></script>
 </body>
 </html>

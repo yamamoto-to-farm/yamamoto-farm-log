@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "dependencies": {
+    "@tesseract.js-data/jpn": "1.0.0",
+    "pdfjs-dist": "5.4.624",
+    "tesseract.js": "6.0.1"
+  }
+}

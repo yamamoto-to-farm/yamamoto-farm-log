@@ -22,12 +22,13 @@
     </div>
     <div id="data-area" hidden>
       <section id="linked-invoice-panel" class="card" hidden>
-        <h2>口座明細から開いたJA請求書</h2>
+        <h2>口座明細から開いた請求書</h2>
         <p id="linked-invoice-status" role="status"></p>
         <p id="linked-invoice-summary"></p>
+        <div id="linked-supplier-original"></div>
         <a id="linked-bank-return" class="secondary-btn" hidden>元の口座明細へ戻る</a>
         <p class="finance-note" data-help-keep>この表は指定した請求書の全明細です。下の期間・検索条件とは独立しています。口座の出金への加算や用途分類の変更は行いません。</p>
-        <div class="finance-scroll" tabindex="0" role="region" aria-label="紐づけ対象のJA請求書明細">
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="紐づけ対象の請求書明細">
           <table><thead><tr><th>取引日</th><th>品名・規格</th><th>部署</th><th>金額</th><th>分類</th></tr></thead><tbody id="linked-invoice-items"></tbody></table>
         </div>
       </section>
@@ -113,7 +114,7 @@
         </div>
       </details>
       <details class="card finance-record-panel">
-        <summary id="invoice-upload"><h2>データ取り込み</h2></summary>
+        <summary id="invoice-upload"><h2>JAデータ取り込み</h2></summary>
         <div class="finance-toolbar">
           <label>JA請求明細PDF（20MBまで）<input id="pdf" type="file" accept=".pdf,application/pdf"></label>
           <button id="upload" type="button" class="primary-btn">アップロード・取り込み</button>
@@ -150,6 +151,40 @@
       <button id="close-report" type="button" class="secondary-btn">閉じる</button>
     </dialog>
   </main>
-  <script type="module" src="./finance.js?v=20261110-ja-links-1"></script>
+  <template id="supplier-panel-template">
+    <details class="card" id="supplier-upload">
+      <summary><h2>中神種苗店の請求書</h2></summary>
+      <p>スキャンPDFからブラウザー内で入力候補を作ります。候補は誤読・抜けがあるため、原本と照合してください。</p>
+      <form id="supplier-form">
+        <div class="finance-toolbar">
+          <label>原本PDF（20MBまで）<input id="supplier-pdf" type="file" accept=".pdf,application/pdf" required></label>
+          <button type="button" class="secondary-btn" id="supplier-ocr">OCRで読み取る</button>
+          <a id="supplier-local-pdf" class="secondary-btn" target="_blank" rel="noopener" hidden>選んだ原本を見る</a>
+        </div>
+        <div class="finance-toolbar">
+          <label>発行日<input id="supplier-issue" type="date" required></label>
+          <label>支払予定日<input id="supplier-settlement" type="date"></label>
+          <label>請求額（税込・円）<input id="supplier-total" type="number" step="1" min="1" required></label>
+        </div>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="中神種苗店の品目候補">
+          <table><thead><tr><th>品名</th><th>金額（円）</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-items"></tbody></table>
+        </div>
+        <div class="finance-toolbar">
+          <button type="button" class="secondary-btn" id="supplier-add">明細行を追加</button>
+          <span id="supplier-sum" aria-live="polite"></span>
+        </div>
+        <details id="supplier-text-panel" hidden><summary>OCRで読み取った原文</summary><pre id="supplier-text" style="white-space:pre-wrap"></pre></details>
+        <p class="finance-note">請求額と照合するため、消費税・繰越残高などは必要に応じて別行にし、請求額から差し引かれる入金・値引きはマイナスで入力してください。差額を埋めるための推測入力はしないでください。</p>
+        <p>税・送料・繰越額などが請求額に含まれる場合は、原本どおりの内訳を追加してください。</p>
+        <label><input id="supplier-verified" type="checkbox" required> 原本と発行日・請求額・全明細を照合しました</label>
+        <button type="submit" class="primary-btn">請求書を保存</button>
+      </form>
+      <p role="status" id="supplier-status"></p>
+      <h3>保存済み請求書</h3>
+      <button type="button" class="secondary-btn" id="supplier-refresh">保存済み請求書を更新</button>
+      <div id="supplier-invoices"></div>
+    </details>
+  </template>
+  <script type="module" src="./finance.js?v=20261120-supplier-1"></script>
 </body>
 </html>

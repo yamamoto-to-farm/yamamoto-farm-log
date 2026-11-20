@@ -7,7 +7,8 @@ import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v=20261107-dashboard-1";
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
   unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
-  statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, jaInvoiceUrl, invoiceAnalysisItems } from "./bank-logic.js?v=20261110-invoice-analysis-1";
+  statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, invoiceUrl, invoiceAnalysisItems,
+  invoiceKey, invoiceSource, invoiceVendor } from "./bank-logic.js?v=20261120-supplier-1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -177,7 +178,7 @@ function renderInvoiceLinks() {
     if (!record || record.account_id !== el("account").value) continue;
     const item = items.find(item => item.statement_id === link.statement_id && item.transaction_id === link.transaction_id);
     const row = node("div", undefined, "finance-record");
-    row.append(node("p", `JA ${link.invoice_no} ／ ${item ? `${item.trade_date} ${invoiceLinkStatus(item, link, invoiceLinks.invoices)}` : "元の取引なし・要再確認"}`));
+    row.append(node("p", `${invoiceVendor(link)} ${invoiceSource(link) === "ja" ? link.invoice_no : "請求書"} ／ ${item ? `${item.trade_date} ${invoiceLinkStatus(item, link, invoiceLinks.invoices)}` : "元の取引なし・要再確認"}`));
     const button = node("button", item ? "変更・解除" : "元の取引がない紐づけを解除", "secondary-btn");
     button.type = "button";
     button.disabled = busy;
@@ -202,16 +203,17 @@ function openInvoiceLink(item) {
   const select = el("invoice-link-choice");
   select.replaceChildren(node("option", "請求書を選択してください"));
   select.firstElementChild.value = "";
-  const dateDistance = invoice => Math.abs(Date.parse(invoice.settlement_date) - Date.parse(item.trade_date));
+  const dateDistance = invoice => invoice.settlement_date ? Math.abs(Date.parse(invoice.settlement_date) - Date.parse(item.trade_date)) : Number.MAX_SAFE_INTEGER;
   const candidates = invoiceLinks.invoices.filter(invoice => invoice.validation_status !== "failed")
     .sort((a, b) => Number(b.total_amount === item.withdrawal) - Number(a.total_amount === item.withdrawal)
       || dateDistance(a) - dateDistance(b) || a.invoice_no.localeCompare(b.invoice_no));
   for (const invoice of candidates) {
-    const option = node("option", `JA ${invoice.invoice_no} ／ 引落予定 ${invoice.settlement_date} ／ ${formatYen(invoice.total_amount)} ／ ${invoice.total_amount === item.withdrawal ? "金額一致" : `差額 ${formatYen(item.withdrawal - invoice.total_amount)}`}`);
-    option.value = invoice.invoice_no;
+    const reference = invoiceSource(invoice) === "ja" ? invoice.invoice_no : `${invoice.issue_date}発行`;
+    const option = node("option", `${invoiceVendor(invoice)} ${reference} ／ 支払予定 ${invoice.settlement_date || "記載なし"} ／ ${formatYen(invoice.total_amount)} ／ ${invoice.total_amount === item.withdrawal ? "金額一致" : `差額 ${formatYen(item.withdrawal - invoice.total_amount)}`}`);
+    option.value = invoiceKey(invoice);
     select.append(option);
   }
-  select.value = existing && candidates.some(invoice => invoice.invoice_no === existing.invoice_no) ? existing.invoice_no : "";
+  select.value = existing && candidates.some(invoice => invoiceKey(invoice) === invoiceKey(existing)) ? invoiceKey(existing) : "";
   el("invoice-link-empty").hidden = candidates.length > 0;
   el("unlink-invoice").hidden = !existing;
   el("save-invoice-link").hidden = !item.withdrawal;
@@ -220,15 +222,15 @@ function openInvoiceLink(item) {
 }
 
 function updateInvoicePreview() {
-  const invoice = invoiceLinks.invoices.find(invoice => invoice.invoice_no === el("invoice-link-choice").value);
+  const invoice = invoiceLinks.invoices.find(invoice => invoiceKey(invoice) === el("invoice-link-choice").value);
   const preview = el("invoice-link-preview");
   preview.hidden = !invoice;
-  if (invoice) preview.href = jaInvoiceUrl(invoice.invoice_no, linkItem);
+  if (invoice) preview.href = invoiceUrl(invoice, linkItem);
 }
 
 async function saveInvoiceLink(remove = false) {
   if (busy || !linkItem) return;
-  const invoice = invoiceLinks.invoices.find(invoice => invoice.invoice_no === el("invoice-link-choice").value);
+  const invoice = invoiceLinks.invoices.find(invoice => invoiceKey(invoice) === el("invoice-link-choice").value);
   if (!remove && !invoice) {
     el("invoice-link-status").textContent = "紐づける請求書を選択してください。";
     return;
@@ -241,14 +243,15 @@ async function saveInvoiceLink(remove = false) {
       const result = await api("/invoice-links", {
         statement_id: linkItem.statement_id, transaction_id: linkItem.transaction_id,
         statement_revision: linkStatementRevision, revision: invoiceLinks.revision,
-        invoice_no: remove ? null : invoice.invoice_no, ...(!remove ? { invoice_signature: invoice.signature } : {}),
+        invoice_no: remove ? null : invoice.invoice_no, ...(!remove ? { invoice_signature: invoice.signature,
+          ...(invoiceSource(invoice) !== "ja" ? { source: invoiceSource(invoice) } : {}) } : {}),
       });
       if (result.saved !== true || !Array.isArray(result.links) || typeof result.revision !== "string") throw new Error("紐づけの保存結果を確認できません。最新データを取得してください。");
       saved = true;
       invoiceLinks = { ...invoiceLinks, links: result.links, revision: result.revision };
       el("invoice-link-dialog").close();
       await loadData();
-      status(remove ? "紐づけを解除しました。分類・集計は変更していません。" : "JA請求書を紐づけました。分類・集計は変更していません。");
+      status(remove ? "紐づけを解除しました。口座の分類・金額は変更していません。" : "請求書を紐づけました。口座の分類・金額は変更していません。");
     } catch (error) {
       const message = saved ? `紐づけ操作は保存済みですが、表示更新に失敗しました。${error.message}`
         : `${error.message} 競合の場合は閉じて最新データを取得してください。`;
@@ -550,7 +553,7 @@ function renderItems() {
       button.setAttribute("aria-label", `${item.memo || "摘要なし"}：請求書の紐づけを開く`);
       button.onclick = () => openInvoiceLink(item);
       memo.append(button);
-      if (linked) memo.append(node("small", `JA請求書 ${linked.invoice_no} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
+      if (linked) memo.append(node("small", `${invoiceVendor(linked)}請求書${invoiceSource(linked) === "ja" ? ` ${linked.invoice_no}` : ""} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
     } else memo.textContent = item.memo || "摘要なし";
     memo.append(node("small", item.note));
     const cell = node("td", `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""} / ${item.classified_by === "manual" ? "手動確定" : "分類候補"}`);
@@ -600,9 +603,10 @@ function renderAnnual() {
     const text = entry.reflected
       ? `反映済み ／ 請求書側の確認待ち・用途確認 ${entry.reviewCount}明細${entry.unresolvedCount ? `（機械関連などの用途未判断 ${entry.unresolvedCount}明細）` : ""}`
       : `未反映：${entry.reason} ／ 口座分類で集計`;
-    const row = node("li", `${entry.item.trade_date} ／ JA ${entry.invoice_no} ／ ${text} `);
+    const reference = invoiceSource(entry) === "ja" ? `JA ${entry.invoice_no}` : invoiceVendor(entry);
+    const row = node("li", `${entry.item.trade_date} ／ ${reference} ／ ${text} `);
     const link = node("a", "請求書を確認");
-    link.href = jaInvoiceUrl(entry.invoice_no, entry.item);
+    link.href = invoiceUrl(entry, entry.item);
     row.append(link);
     el("annual-source-notices").append(row);
   }

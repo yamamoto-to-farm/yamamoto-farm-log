@@ -560,7 +560,7 @@ test("JA invoice deep link displays the specified invoice independently of filte
   context.formatYen = amount => `${amount}円`;
   const create = tag => ({ tagName: tag, children: [], append(...children) { this.children.push(...children); } });
   context.document.createElement = create;
-  for (const id of ["linked-invoice-items"]) {
+  for (const id of ["linked-invoice-items", "linked-supplier-original"]) {
     element(id).replaceChildren = function (...children) { this.children = children; };
     element(id).append = function (...children) { this.children.push(...children); };
   }
@@ -582,4 +582,21 @@ test("JA invoice deep link displays the specified invoice independently of filte
   context.params = new URLSearchParams();
   vm.runInContext("renderLinkedInvoice(params)", context);
   assert.equal(element("linked-invoice-panel").hidden, true);
+});
+
+test("supplier OCR only suggests an arithmetically consistent summary and unambiguous item amounts", async () => {
+  const { invoiceSuggestions } = await import("../deploy/finance/supplier-ocr.js");
+  const text = `発 行 日 令和8年10月12日
+前回御請求額 | 御入金 | 繰越額 | 当月御買上額 | 消費税額 | 当月御請求額
+300 | 200 | 100 | 2,000 | 200 | 2,300
+10/01 | 新しい種苗 | 2 | 本 | 1,000 | 2,000 | 200 | 2,300
+10/02 | 別の資材 | 700 | 3,000
+10/03 | 入金 | 200 | 2,300`;
+  const draft = invoiceSuggestions(text);
+  assert.equal(draft.issue_date, "2026-10-12");
+  assert.equal(draft.settlement_date, "");
+  assert.equal(draft.total_amount, 2300);
+  assert.deepEqual(draft.items.map(item => [item.item_name, item.amount, item.category]),
+    [["新しい種苗", 2000, "種苗費"], ["別の資材", "", "未分類"]]);
+  assert.equal(invoiceSuggestions(text.replace("| 2,300\n", "| 2,301\n")).total_amount, "");
 });

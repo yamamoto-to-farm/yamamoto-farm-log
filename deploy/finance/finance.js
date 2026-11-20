@@ -8,6 +8,7 @@ import {
   annualCategoryTotals, annualComparison, nextForecast, periodPreset, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
 } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
+import { initSuppliers, originalControl } from "./supplier-invoices.js?v=20261120-supplier-1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -19,6 +20,7 @@ let busy = false;
 let editItem = null;
 let editGroup = null;
 let savingEdit = false;
+let suppliers;
 
 function node(tag, text, className) {
   const result = document.createElement(tag);
@@ -89,7 +91,9 @@ async function run(action) {
 }
 
 function updateButtons() {
-  el("data-area").querySelectorAll("button").forEach(button => { button.disabled = busy; });
+  el("data-area").querySelectorAll("button").forEach(button => {
+    if (!button.closest?.("#supplier-upload, #linked-supplier-original")) button.disabled = busy;
+  });
   el("login").disabled = busy;
   el("pdf").disabled = busy;
   if (!busy) updatePagination();
@@ -116,7 +120,15 @@ async function loadData() {
   el("data-area").hidden = false;
   el("login-area").hidden = true;
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}（財務データは端末に保存しません）`;
-  renderLinkedInvoice(new URLSearchParams(location.search));
+  const params = new URLSearchParams(location.search);
+  if (params.get("source") === "nakagami" && /^[a-f0-9]{32}$/.test(params.get("invoice"))) {
+    try { await suppliers.loadLinked(); }
+    catch (error) {
+      renderLinkedInvoice(params);
+      el("linked-invoice-status").textContent = error.message;
+    }
+  } else renderLinkedInvoice(params);
+  if (location.hash === "#supplier-upload") suppliers.open();
   if (location.hash === "#invoice-upload") {
     el("invoice-upload").closest("details").open = true;
     el("invoice-upload").scrollIntoView({ block: "start" });
@@ -128,21 +140,25 @@ function renderLinkedInvoice(params) {
   panel.hidden = !params.has("invoice");
   if (panel.hidden) return;
   const invoiceNo = params.get("invoice");
-  const valid = /^\d{6,12}$/.test(invoiceNo) && (!params.has("source") || params.get("source") === "ja");
-  const invoice = valid ? invoices.find(value => value.invoice_no === invoiceNo) : null;
+  const supplier = params.get("source") === "nakagami";
+  const valid = supplier ? /^[a-f0-9]{32}$/.test(invoiceNo)
+    : /^\d{6,12}$/.test(invoiceNo) && (!params.has("source") || params.get("source") === "ja");
+  const invoice = valid ? (supplier ? suppliers.get(invoiceNo) : invoices.find(value => value.invoice_no === invoiceNo)) : null;
   el("linked-invoice-items").replaceChildren();
+  el("linked-supplier-original").replaceChildren();
   el("linked-invoice-summary").textContent = "";
   const back = el("linked-bank-return");
   back.hidden = !/^[a-f0-9]{64}$/.test(params.get("statement") || "") || !/^[a-f0-9]{64}$/.test(params.get("transaction") || "");
   if (!back.hidden) back.href = `/bank/index.html?statement=${encodeURIComponent(params.get("statement"))}&transaction=${encodeURIComponent(params.get("transaction"))}#details-section`;
   el("linked-invoice-status").textContent = !valid ? "請求書リンクの指定が不正です。"
     : !invoice ? "指定された請求書は見つかりません。取り込み状況を確認してください。"
-    : invoice.validation_status === "failed" ? "この請求書は検証失敗です。内容を確認してください。" : "指定されたJA請求書の最新の内容です。";
+    : invoice.validation_status === "failed" ? "この請求書は検証失敗です。内容を確認してください。" : "指定された請求書の内容です。";
   if (invoice) {
-    el("linked-invoice-summary").textContent = `JA請求書 ${invoice.invoice_no} ／ 引落予定日 ${invoice.settlement_date} ／ 請求額 ${formatYen(invoice.total_amount)}`;
+    el("linked-invoice-summary").textContent = `${supplier ? `中神種苗店 ／ ${invoice.issue_date}発行` : `JA請求書 ${invoice.invoice_no}`} ／ 支払予定日 ${invoice.settlement_date || "記載なし"} ／ 請求額 ${formatYen(invoice.total_amount)}`;
+    if (supplier) el("linked-supplier-original").append(originalControl(api, invoiceNo));
     for (const item of invoice.items) {
       const row = node("tr");
-      row.append(...[item.trade_date, `${item.item_name} ${item.spec || ""}`, item.department,
+      row.append(...[item.trade_date || "—", `${item.item_name} ${item.spec || ""}`, item.department || "—",
         formatYen(item.amount), `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""}`].map(value => node("td", value)));
       el("linked-invoice-items").append(row);
     }
@@ -736,6 +752,10 @@ async function initialize() {
     status("最新データを取得しました。");
   }));
   el("upload").addEventListener("click", () => run(uploadPdf));
+  suppliers = initSuppliers(api, () => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("source") === "nakagami" && params.has("invoice")) renderLinkedInvoice(params);
+  });
   el("clear-period").addEventListener("click", () => {
     el("from").value = el("to").value = "";
     page = 0;

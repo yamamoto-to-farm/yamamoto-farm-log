@@ -3,3 +3,5 @@ shift.zip
 shift-api.zip
 ja-statement-analysis.zip
 lambda/ja-statement-analysis/__pycache__/
+/scripts/finance-ocr/node_modules/
+/deploy/finance/ocr-assets/
