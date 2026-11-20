@@ -441,10 +441,10 @@ test("JA memo opens candidates, explicit save/unlink uses revisions and failures
   assert.match(elements.status.textContent, /保存済み.*表示更新に失敗/);
   assert.equal(vm.runInContext("invoiceLinks.links.length", c), 0);
 });
-test("Nakagami candidate links and replaces a reconciled withdrawal with signed item amounts", async () => {
+test("paper invoice candidates preserve the supplier name and replace a reconciled withdrawal", async () => {
   const { c, elements } = screen();
   const row = { ...item({ deposit: 0, withdrawal: 100 }), statement_id: "a".repeat(64), account_id: "account-a" };
-  const invoice = { source: "nakagami", invoice_no: "b".repeat(32), issue_date: "2026-10-01", settlement_date: null,
+  const invoice = { source: "paper", vendor_name: "あさひ資材店", invoice_no: "b".repeat(32), issue_date: "2026-10-01", settlement_date: null,
     total_amount: 100, signature: "signature", validation_status: "ok",
     breakdown: [{ amount: 110, category: "種苗費" }, { amount: -10, category: "未分類" }] };
   c.row = row;
@@ -452,10 +452,10 @@ test("Nakagami candidate links and replaces a reconciled withdrawal with signed 
   vm.runInContext('items = [row]; statements = [{ statement_id: row.statement_id, account_id: row.account_id, revision: "r1" }]; invoiceLinks = { links: [], invoices: catalog, revision: "links-r1" };', c);
   c.renderItems();
   elements.items.children[0].children[1].children[0].onclick();
-  assert.match(elements["invoice-link-choice"].children[1].textContent, /中神種苗店.*記載なし.*金額一致/);
-  elements["invoice-link-choice"].value = `nakagami:${invoice.invoice_no}`;
+  assert.match(elements["invoice-link-choice"].children[1].textContent, /あさひ資材店.*記載なし.*金額一致/);
+  elements["invoice-link-choice"].value = `paper:${invoice.invoice_no}`;
   c.updateInvoicePreview();
-  assert.match(elements["invoice-link-preview"].href, /source=nakagami/);
+  assert.match(elements["invoice-link-preview"].href, /source=paper/);
   let link;
   c.api = async (_path, body) => {
     link = body;
@@ -463,8 +463,10 @@ test("Nakagami candidate links and replaces a reconciled withdrawal with signed 
   };
   c.loadData = async () => {};
   await c.saveInvoiceLink();
-  assert.equal(link.source, "nakagami");
+  assert.equal(link.source, "paper");
   assert.equal(link.invoice_signature, "signature");
+  c.renderItems();
+  assert.match(elements.items.children[0].children[1].children[1].textContent, /あさひ資材店/);
   const result = c.invoiceAnalysisItems([row], [link], [invoice]);
   assert.deepEqual(Array.from(result.items, part => [part.category, part.withdrawal]), [["経費", 110], ["未分類", -10]]);
   assert.equal(c.totals(result.items).withdrawal, 100);
@@ -512,7 +514,8 @@ test("all outgoing memos open a generic invoice dialog without extra action butt
   assert.equal(elements.items.children[0].children[1].children[0].disabled, true);
   const html = read("bank/index.html");
   assert.match(html, /id="invoice-link-title">請求書の紐づけ<\/h2>/);
-  assert.match(html, /対応中の請求元：JA/);
+  assert.match(html, /対応中の請求書：JA請求データ・紙請求書/);
+  assert.match(html, /finance\/index\.html\?view=paper#paper-invoice-upload/);
   assert.doesNotMatch(html, /<details[^>]*id="invoice-links-section"[^>]*\bopen\b/);
   assert.ok(html.indexOf('id="details-section"') < html.indexOf('id="invoice-links-section"'));
   assert.ok(html.indexOf('id="invoice-links-section"') < html.indexOf("<h2>自動分類ルール</h2>"));

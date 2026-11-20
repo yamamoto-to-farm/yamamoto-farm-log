@@ -20,6 +20,26 @@ test("invoice reimport and import history panels are collapsed by default", () =
   assert.match(html, /<details class="card finance-record-panel" id="groups-section">/);
   assert.match(html, /<details id="details-section" class="card finance-record-panel">/);
 });
+test("finance page separates JA data from generic paper invoices and captures the supplier name", () => {
+  const html = readFileSync(join(root, "index.html"), "utf8");
+  assert.match(html, /<h1 class="page-title">経費分析・請求書管理<\/h1>/);
+  assert.match(html, /role="tab"[^>]*>JA請求データ<\/button>/);
+  assert.match(html, /role="tab"[^>]*>紙請求書（PDF保存）<\/button>/);
+  assert.match(html, /id="paper-invoice-upload"[\s\S]*?<h2>紙請求書（PDF保存）の取り込み<\/h2>/);
+  assert.match(html, /id="supplier-vendor"[^>]*required/);
+  assert.doesNotMatch(html, /中神種苗店/);
+});
+test("finance view selection switches tab and panel visibility together", () => {
+  const { context, element } = setup();
+  vm.runInContext('selectFinanceView("paper")', context);
+  assert.equal(element("ja-view").hidden, true);
+  assert.equal(element("paper-invoice-view").hidden, false);
+  assert.equal(element("finance-tab-ja").tabIndex, -1);
+  assert.equal(element("finance-tab-paper").tabIndex, 0);
+  vm.runInContext('selectFinanceView("ja")', context);
+  assert.equal(element("ja-view").hidden, false);
+  assert.equal(element("paper-invoice-view").hidden, true);
+});
 test("annual breakdown uses year-to-date trade dates and signed net amounts independently of filters", async () => {
   const { annualCategoryTotals } = await logic();
   const entry = (trade_date, amount, category = "農薬費") => ({ trade_date, amount, category });
@@ -375,6 +395,7 @@ function setup() {
   function element(id) {
     if (!nodes.has(id)) nodes.set(id, {
       hidden: true, value: "", disabled: false, textContent: "",
+      setAttribute(name, value) { this[name] = value; },
       classList: { toggle() {} }, querySelectorAll: () => [],
       close() { this.open = false; },
     });

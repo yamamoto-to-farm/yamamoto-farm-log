@@ -1,4 +1,4 @@
-import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261120-supplier-1";
+import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-1";
 
 const el = id => document.getElementById(id);
 let previewUrl;
@@ -92,8 +92,7 @@ function selectedFile() {
 }
 
 export function initSuppliers(api, onLoaded) {
-  const area = el("data-area");
-  area.insertBefore(el("supplier-panel-template").content.cloneNode(true), el("invoice-upload").closest("details"));
+  el("paper-invoice-content").append(el("supplier-panel-template").content.cloneNode(true));
   const result = el("supplier-status");
   const form = el("supplier-form");
   const act = async task => {
@@ -108,14 +107,15 @@ export function initSuppliers(api, onLoaded) {
   };
   const load = async () => {
     const data = await api("/supplier-invoices");
-    if (!Array.isArray(data.invoices)) throw new Error("中神種苗店の請求書一覧を取得できませんでした。");
+    if (!Array.isArray(data.invoices)) throw new Error("紙請求書の一覧を取得できませんでした。");
     records = data.invoices;
     const list = el("supplier-invoices");
     list.replaceChildren();
     for (const invoice of records) {
       const row = node("p");
-      const href = node("a", `${invoice.issue_date}発行 ／ ${invoice.total_amount.toLocaleString("ja-JP")}円`);
-      href.href = `?source=nakagami&invoice=${encodeURIComponent(invoice.invoice_no)}#linked-invoice-panel`;
+      const vendor = invoice.vendor_name || "仕入先未設定";
+      const href = node("a", `${vendor} ／ ${invoice.issue_date}発行 ／ ${invoice.total_amount.toLocaleString("ja-JP")}円`);
+      href.href = `?view=paper&source=paper&invoice=${encodeURIComponent(invoice.invoice_no)}#linked-invoice-panel`;
       row.append(href);
       list.append(row);
     }
@@ -130,7 +130,7 @@ export function initSuppliers(api, onLoaded) {
     link.removeAttribute("href");
     link.hidden = true;
     previewUrl = undefined;
-    for (const id of ["supplier-issue", "supplier-settlement", "supplier-total", "supplier-text"]) {
+    for (const id of ["supplier-vendor", "supplier-issue", "supplier-settlement", "supplier-total", "supplier-text"]) {
       el(id).value = "";
     }
     el("supplier-text").textContent = "";
@@ -192,7 +192,8 @@ export function initSuppliers(api, onLoaded) {
         uploaded = key;
       }
       await api("/supplier-invoices", {
-        source_file: uploaded, issue_date: el("supplier-issue").value,
+        source_file: uploaded, vendor_name: el("supplier-vendor").value.trim(),
+        issue_date: el("supplier-issue").value,
         settlement_date: el("supplier-settlement").value || null, total_amount: total, items,
       });
       form.reset();
@@ -203,7 +204,7 @@ export function initSuppliers(api, onLoaded) {
     });
   };
   addRow();
-  const details = el("supplier-upload");
+  const details = el("paper-invoice-upload");
   let started = false;
   details.addEventListener("toggle", () => {
     if (details.open && !started) { started = true; void act(load); }
@@ -211,6 +212,9 @@ export function initSuppliers(api, onLoaded) {
   return {
     get: number => records.find(invoice => invoice.invoice_no === number),
     loadLinked: () => { started = true; return load(); },
+    load: () => {
+      if (!started) { started = true; void act(load); }
+    },
     open: () => { details.open = true; details.scrollIntoView({ block: "start" }); },
   };
 }

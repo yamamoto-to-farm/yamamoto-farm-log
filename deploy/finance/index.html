@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>JA経費分析 - 山本農園</title>
+  <title>経費分析・請求書管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./finance.css?v=20261107-dashboard-1">
+  <link rel="stylesheet" href="./finance.css?v=20261121-paper-invoices-1">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
 <body class="recent-page recent-page--wide">
   <div id="header"></div>
   <main id="page-area" class="page-container" hidden>
-    <h1 class="page-title">JA経費分析</h1>
+    <h1 class="page-title">経費分析・請求書管理</h1>
     <p class="finance-note" data-help-keep>管理用の購入経費です。使用量・在庫・税務上の仕訳とは異なります。財務情報の共有にご注意ください。</p>
     <p id="status" role="status" aria-live="polite"></p>
     <div id="login-area" hidden>
@@ -21,6 +21,10 @@
       <p data-help="経費分析のログイン">写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
     </div>
     <div id="data-area" hidden>
+      <div class="finance-tabs" role="tablist" aria-label="請求書の種類">
+        <button id="finance-tab-ja" type="button" role="tab" aria-selected="true" aria-controls="ja-view" tabindex="0">JA請求データ</button>
+        <button id="finance-tab-paper" type="button" role="tab" aria-selected="false" aria-controls="paper-invoice-view" tabindex="-1">紙請求書（PDF保存）</button>
+      </div>
       <section id="linked-invoice-panel" class="card" hidden>
         <h2>口座明細から開いた請求書</h2>
         <p id="linked-invoice-status" role="status"></p>
@@ -32,6 +36,7 @@
           <table><thead><tr><th>取引日</th><th>品名・規格</th><th>部署</th><th>金額</th><th>分類</th></tr></thead><tbody id="linked-invoice-items"></tbody></table>
         </div>
       </section>
+      <section id="ja-view" role="tabpanel" aria-labelledby="finance-tab-ja" tabindex="0">
       <section class="card" aria-labelledby="overview-title">
         <h2 id="overview-title">経費の確認</h2>
         <div class="finance-toolbar">
@@ -128,6 +133,11 @@
         <summary><h2>取り込み履歴</h2></summary>
         <div id="imports" class="finance-records"></div>
       </details>
+      </section>
+      <section id="paper-invoice-view" role="tabpanel" aria-labelledby="finance-tab-paper" tabindex="0" hidden>
+        <p class="finance-note">スキャンした請求書PDFをブラウザー内でOCRし、原本と照合した内容を保存します。</p>
+        <div id="paper-invoice-content"></div>
+      </section>
     </div>
     <dialog id="edit-dialog">
       <form id="edit-form">
@@ -152,8 +162,8 @@
     </dialog>
   </main>
   <template id="supplier-panel-template">
-    <details class="card" id="supplier-upload">
-      <summary><h2>中神種苗店の請求書</h2></summary>
+    <details class="card" id="paper-invoice-upload">
+      <summary><h2>紙請求書（PDF保存）の取り込み</h2></summary>
       <p>スキャンPDFからブラウザー内で入力候補を作ります。候補は誤読・抜けがあるため、原本と照合してください。</p>
       <form id="supplier-form">
         <div class="finance-toolbar">
@@ -162,11 +172,12 @@
           <a id="supplier-local-pdf" class="secondary-btn" target="_blank" rel="noopener" hidden>選んだ原本を見る</a>
         </div>
         <div class="finance-toolbar">
+          <label>仕入先名<input id="supplier-vendor" type="text" maxlength="120" autocomplete="organization" required></label>
           <label>発行日<input id="supplier-issue" type="date" required></label>
           <label>支払予定日<input id="supplier-settlement" type="date"></label>
           <label>請求額（税込・円）<input id="supplier-total" type="number" step="1" min="1" required></label>
         </div>
-        <div class="finance-scroll" tabindex="0" role="region" aria-label="中神種苗店の品目候補">
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="紙請求書の品目候補">
           <table><thead><tr><th>品名</th><th>金額（円）</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-items"></tbody></table>
         </div>
         <div class="finance-toolbar">
@@ -175,7 +186,6 @@
         </div>
         <details id="supplier-text-panel" hidden><summary>OCRで読み取った原文</summary><pre id="supplier-text" style="white-space:pre-wrap"></pre></details>
         <p class="finance-note">請求額と照合するため、消費税・繰越残高などは必要に応じて別行にし、請求額から差し引かれる入金・値引きはマイナスで入力してください。差額を埋めるための推測入力はしないでください。</p>
-        <p>税・送料・繰越額などが請求額に含まれる場合は、原本どおりの内訳を追加してください。</p>
         <label><input id="supplier-verified" type="checkbox" required> 原本と発行日・請求額・全明細を照合しました</label>
         <button type="submit" class="primary-btn">請求書を保存</button>
       </form>
@@ -185,6 +195,6 @@
       <div id="supplier-invoices"></div>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261120-supplier-1"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-2"></script>
 </body>
 </html>

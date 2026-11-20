@@ -8,7 +8,7 @@ import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
   unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
   statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, invoiceUrl, invoiceAnalysisItems,
-  invoiceKey, invoiceSource, invoiceVendor } from "./bank-logic.js?v=20261120-supplier-1";
+  invoiceKey, invoiceSource, invoiceVendor } from "./bank-logic.js?v=20261121-paper-invoices-1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -177,8 +177,9 @@ function renderInvoiceLinks() {
     const record = statements.find(record => record.statement_id === link.statement_id);
     if (!record || record.account_id !== el("account").value) continue;
     const item = items.find(item => item.statement_id === link.statement_id && item.transaction_id === link.transaction_id);
+    const invoice = invoiceLinks.invoices.find(value => invoiceKey(value) === invoiceKey(link));
     const row = node("div", undefined, "finance-record");
-    row.append(node("p", `${invoiceVendor(link)} ${invoiceSource(link) === "ja" ? link.invoice_no : "請求書"} ／ ${item ? `${item.trade_date} ${invoiceLinkStatus(item, link, invoiceLinks.invoices)}` : "元の取引なし・要再確認"}`));
+    row.append(node("p", `${invoiceVendor(invoice || link)} ${invoiceSource(link) === "ja" ? link.invoice_no : "請求書"} ／ ${item ? `${item.trade_date} ${invoiceLinkStatus(item, link, invoiceLinks.invoices)}` : "元の取引なし・要再確認"}`));
     const button = node("button", item ? "変更・解除" : "元の取引がない紐づけを解除", "secondary-btn");
     button.type = "button";
     button.disabled = busy;
@@ -553,7 +554,10 @@ function renderItems() {
       button.setAttribute("aria-label", `${item.memo || "摘要なし"}：請求書の紐づけを開く`);
       button.onclick = () => openInvoiceLink(item);
       memo.append(button);
-      if (linked) memo.append(node("small", `${invoiceVendor(linked)}請求書${invoiceSource(linked) === "ja" ? ` ${linked.invoice_no}` : ""} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
+      if (linked) {
+        const linkedInvoice = invoiceLinks.invoices.find(invoice => invoiceKey(invoice) === invoiceKey(linked));
+        memo.append(node("small", `${invoiceVendor(linkedInvoice || linked)}請求書${invoiceSource(linked) === "ja" ? ` ${linked.invoice_no}` : ""} ／ ${invoiceLinkStatus(item, linked, invoiceLinks.invoices)}`));
+      }
     } else memo.textContent = item.memo || "摘要なし";
     memo.append(node("small", item.note));
     const cell = node("td", `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""} / ${item.classified_by === "manual" ? "手動確定" : "分類候補"}`);

@@ -8,7 +8,7 @@ import {
   annualCategoryTotals, annualComparison, nextForecast, periodPreset, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
 } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
-import { initSuppliers, originalControl } from "./supplier-invoices.js?v=20261120-supplier-1";
+import { initSuppliers, originalControl } from "./supplier-invoices.js?v=20261121-paper-invoices-1";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -59,7 +59,7 @@ async function api(path, body) {
   if (response.status === 403) {
     el("login-area").hidden = false;
     el("data-area").hidden = true;
-    throw new Error("JA経費分析はCognitoのadmin / familyのみ利用できます。");
+    throw new Error("経費分析・請求書管理はCognitoのadmin / familyのみ利用できます。");
   }
   if (!response.ok) {
     let message = `経費APIの処理に失敗しました（${response.status}）。`;
@@ -92,7 +92,7 @@ async function run(action) {
 
 function updateButtons() {
   el("data-area").querySelectorAll("button").forEach(button => {
-    if (!button.closest?.("#supplier-upload, #linked-supplier-original")) button.disabled = busy;
+    if (!button.closest?.("#paper-invoice-upload, #linked-supplier-original")) button.disabled = busy;
   });
   el("login").disabled = busy;
   el("pdf").disabled = busy;
@@ -121,18 +121,46 @@ async function loadData() {
   el("login-area").hidden = true;
   el("updated-at").textContent = `最終取得：${new Date().toLocaleString("ja-JP")}（財務データは端末に保存しません）`;
   const params = new URLSearchParams(location.search);
-  if (params.get("source") === "nakagami" && /^[a-f0-9]{32}$/.test(params.get("invoice"))) {
+  const paperInvoice = params.get("source") === "paper";
+  const requestedView = params.get("view");
+  const paperView = requestedView ? requestedView === "paper"
+    : paperInvoice || location.hash === "#paper-invoice-upload";
+  if (paperInvoice && /^[a-f0-9]{32}$/.test(params.get("invoice"))) {
     try { await suppliers.loadLinked(); }
     catch (error) {
       renderLinkedInvoice(params);
       el("linked-invoice-status").textContent = error.message;
     }
   } else renderLinkedInvoice(params);
-  if (location.hash === "#supplier-upload") suppliers.open();
+  selectFinanceView(paperView ? "paper" : "ja");
+  if (location.hash === "#paper-invoice-upload") suppliers.open();
   if (location.hash === "#invoice-upload") {
     el("invoice-upload").closest("details").open = true;
     el("invoice-upload").scrollIntoView({ block: "start" });
   }
+}
+
+function selectFinanceView(view, updateUrl = false) {
+  const paper = view === "paper";
+  const jaTab = el("finance-tab-ja");
+  const paperTab = el("finance-tab-paper");
+  jaTab.setAttribute("aria-selected", String(!paper));
+  jaTab.tabIndex = paper ? -1 : 0;
+  paperTab.setAttribute("aria-selected", String(paper));
+  paperTab.tabIndex = paper ? 0 : -1;
+  el("ja-view").hidden = paper;
+  el("paper-invoice-view").hidden = !paper;
+  if (paper) suppliers?.load();
+  if (updateUrl) {
+    const url = new URL(location.href);
+    url.searchParams.set("view", paper ? "paper" : "ja");
+    if (!paper && url.hash === "#paper-invoice-upload") url.hash = "";
+    history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+}
+
+function isPaperInvoiceSource(source) {
+  return source === "paper";
 }
 
 function renderLinkedInvoice(params) {
@@ -140,10 +168,10 @@ function renderLinkedInvoice(params) {
   panel.hidden = !params.has("invoice");
   if (panel.hidden) return;
   const invoiceNo = params.get("invoice");
-  const supplier = params.get("source") === "nakagami";
-  const valid = supplier ? /^[a-f0-9]{32}$/.test(invoiceNo)
+  const paperInvoice = isPaperInvoiceSource(params.get("source"));
+  const valid = paperInvoice ? /^[a-f0-9]{32}$/.test(invoiceNo)
     : /^\d{6,12}$/.test(invoiceNo) && (!params.has("source") || params.get("source") === "ja");
-  const invoice = valid ? (supplier ? suppliers.get(invoiceNo) : invoices.find(value => value.invoice_no === invoiceNo)) : null;
+  const invoice = valid ? (paperInvoice ? suppliers.get(invoiceNo) : invoices.find(value => value.invoice_no === invoiceNo)) : null;
   el("linked-invoice-items").replaceChildren();
   el("linked-supplier-original").replaceChildren();
   el("linked-invoice-summary").textContent = "";
@@ -154,8 +182,9 @@ function renderLinkedInvoice(params) {
     : !invoice ? "指定された請求書は見つかりません。取り込み状況を確認してください。"
     : invoice.validation_status === "failed" ? "この請求書は検証失敗です。内容を確認してください。" : "指定された請求書の内容です。";
   if (invoice) {
-    el("linked-invoice-summary").textContent = `${supplier ? `中神種苗店 ／ ${invoice.issue_date}発行` : `JA請求書 ${invoice.invoice_no}`} ／ 支払予定日 ${invoice.settlement_date || "記載なし"} ／ 請求額 ${formatYen(invoice.total_amount)}`;
-    if (supplier) el("linked-supplier-original").append(originalControl(api, invoiceNo));
+    const vendor = invoice.vendor_name || "仕入先未設定";
+    el("linked-invoice-summary").textContent = `${paperInvoice ? `${vendor} ／ ${invoice.issue_date}発行` : `JA請求書 ${invoice.invoice_no}`} ／ 支払予定日 ${invoice.settlement_date || "記載なし"} ／ 請求額 ${formatYen(invoice.total_amount)}`;
+    if (paperInvoice) el("linked-supplier-original").append(originalControl(api, invoiceNo));
     for (const item of invoice.items) {
       const row = node("tr");
       row.append(...[item.trade_date || "—", `${item.item_name} ${item.spec || ""}`, item.department || "—",
@@ -754,7 +783,19 @@ async function initialize() {
   el("upload").addEventListener("click", () => run(uploadPdf));
   suppliers = initSuppliers(api, () => {
     const params = new URLSearchParams(location.search);
-    if (params.get("source") === "nakagami" && params.has("invoice")) renderLinkedInvoice(params);
+    if (isPaperInvoiceSource(params.get("source")) && params.has("invoice")) renderLinkedInvoice(params);
+  });
+  const tabs = [el("finance-tab-ja"), el("finance-tab-paper")];
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectFinanceView(index ? "paper" : "ja", true));
+    tab.addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? 1
+        : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+      tabs[next].focus();
+      selectFinanceView(next ? "paper" : "ja", true);
+    });
   });
   el("clear-period").addEventListener("click", () => {
     el("from").value = el("to").value = "";

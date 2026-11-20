@@ -4,6 +4,10 @@
 .card h2 { font-size: 1.15rem; margin-top: 0; }
 .finance-note { color: #536574; font-size: .9rem; line-height: 1.6; }
 .finance-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 12px 0; }
+.finance-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; border-bottom: 1px solid #aebac4; }
+.finance-tabs [role="tab"] { border: 1px solid #aebac4; border-bottom: 0; border-radius: 8px 8px 0 0; padding: 9px 16px; background: #f0f4f6; color: inherit; }
+.finance-tabs [role="tab"][aria-selected="true"] { background: #edf5f2; border-color: #398651; font-weight: 700; }
+.finance-tabs [role="tab"]:focus-visible { outline: 2px solid #3279af; outline-offset: 2px; }
 .finance-toolbar label, #edit-form label { display: flex; flex-direction: column; gap: 6px; }
 .finance-toolbar label:has(input[type="checkbox"]), #edit-form label:has(input[type="checkbox"]) { flex-direction: row; align-items: center; }
 input, select, button { font: inherit; }

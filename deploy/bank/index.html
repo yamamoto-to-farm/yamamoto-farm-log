@@ -32,7 +32,7 @@
         <div class="finance-toolbar">
           <label>口座<select id="account"></select></label>
           <button id="refresh" class="secondary-btn" type="button">最新データに更新</button>
-          <a class="secondary-btn" href="/finance/index.html">JA経費分析へ</a>
+          <a class="secondary-btn" href="/finance/index.html">経費分析・請求書管理へ</a>
         </div>
         <p id="coverage" class="finance-note"></p><p id="coverage-gaps" class="finance-note"></p>
         <div id="overview" class="finance-summary"></div><p id="updated-at" class="finance-note"></p>
@@ -106,7 +106,7 @@
           <button id="clear-details-query" class="secondary-btn" type="button">検索解除</button>
         </div>
         <p id="details-result" class="finance-note" role="status" aria-live="polite"></p>
-        <p class="finance-note" data-help-keep>出金明細の摘要を押すと、JA・中神種苗店の請求書を確認・紐づけ・変更・解除できます。</p>
+        <p class="finance-note" data-help-keep>出金明細の摘要を押すと、JA・紙請求書の確認・紐づけ・変更・解除ができます。</p>
         <div class="finance-toolbar"><label><input id="review-only" type="checkbox">要確認・未分類のみ</label>
           <label>並び順<select id="sort"><option value="date-desc">取引日が新しい順</option><option value="amount-desc">金額が大きい順</option></select></label>
         </div>
@@ -177,14 +177,14 @@
     <dialog id="invoice-link-dialog" aria-labelledby="invoice-link-title">
       <h2 id="invoice-link-title">請求書の紐づけ</h2>
       <p id="invoice-link-item"></p>
-      <p>対応中の請求元：JA・中神種苗店</p>
+      <p>対応中の請求書：JA請求データ・紙請求書</p>
       <p>金額一致・引落予定日の近い順に候補を表示します。休日による日付のずれも含め、請求書を開いて確認してください。自動確定はしません。紐づけは分類・集計を変更しません。</p>
       <label>紐づける請求書<select id="invoice-link-choice"></select></label>
       <p id="invoice-link-empty" hidden>取り込み済みの有効な請求書がありません。</p>
       <div class="finance-toolbar">
         <a id="invoice-link-preview" class="secondary-btn" target="_blank" rel="noopener" hidden>選択した請求書・内訳を確認</a>
-        <a class="secondary-btn" href="/finance/index.html#invoice-upload" target="_blank" rel="noopener">JA請求書PDFを取り込む</a>
-        <a class="secondary-btn" href="/finance/index.html#supplier-upload" target="_blank" rel="noopener">中神種苗店の請求書を取り込む</a>
+        <a class="secondary-btn" href="/finance/index.html#invoice-upload" target="_blank" rel="noopener">JA請求データを取り込む</a>
+        <a class="secondary-btn" href="/finance/index.html?view=paper#paper-invoice-upload" target="_blank" rel="noopener">紙請求書PDFを取り込む</a>
       </div>
       <p id="invoice-link-status" role="alert"></p>
       <div class="finance-toolbar">
@@ -194,6 +194,6 @@
       </div>
     </dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261120-supplier-1"></script>
+  <script type="module" src="./bank.js?v=20261121-paper-invoices-1"></script>
 </body>
 </html>

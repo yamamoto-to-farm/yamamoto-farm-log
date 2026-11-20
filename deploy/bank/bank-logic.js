@@ -90,7 +90,12 @@ export function needsAttention(item) {
 }
 
 export const invoiceSource = invoice => invoice.source || "ja";
-export const invoiceVendor = invoice => invoiceSource(invoice) === "nakagami" ? "中神種苗店" : "JA";
+export const invoiceVendor = invoice => {
+  const source = invoiceSource(invoice);
+  if (source === "ja") return "JA";
+  if (typeof invoice.vendor_name === "string" && invoice.vendor_name.trim()) return invoice.vendor_name.trim();
+  return source === "paper" ? "紙請求書" : "請求書";
+};
 export const invoiceKey = invoice => `${invoiceSource(invoice)}:${invoice.invoice_no}`;
 
 export function invoiceLinkStatus(item, link, invoices) {
@@ -119,7 +124,7 @@ export function invoiceAnalysisItems(items, links, invoices) {
     if (!matches.length) return [item];
     const link = matches[0], invoice = invoices.find(value => invoiceKey(value) === invoiceKey(link));
     let reason = "";
-    if (matches.length !== 1 || !["ja", "nakagami"].includes(invoiceSource(link))) reason = "紐づけが不正";
+    if (matches.length !== 1 || !["ja", "paper"].includes(invoiceSource(link))) reason = "紐づけが不正";
     else if (item.allocations?.length) reason = "手動分割を優先";
     else if (!item.withdrawal || item.deposit) reason = "出金明細ではない";
     else if (!invoice) reason = "請求書なし";
@@ -141,7 +146,7 @@ export function invoiceAnalysisItems(items, links, invoices) {
       const unknown = part.category === "未分類";
       const category = expense ? "経費" : unknown ? "未分類" : "決済・内訳確認";
       const detail = `${part.category}${part.subcategory ? `／${part.subcategory}` : ""}`;
-      const vendor = invoiceVendor(link);
+      const vendor = invoiceVendor(invoice);
       const subcategory = expense ? detail : unknown ? `${vendor}請求書：未分類` : `${vendor}：${detail}（用途確認）`;
       if (!expense && !unknown) unresolvedCount++;
       const review = unknown || (!expense && !unknown) || Boolean(part.needs_review && part.review_confirmed !== true);
