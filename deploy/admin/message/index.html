@@ -112,7 +112,14 @@
     <p id="line-registration-status" role="status"></p>
     <div id="line-management-controls">
       <h3>登録コードを発行</h3>
-      <p>登録する作業者（パート・家族）を選んで、本人専用のコードを発行します。本人が公式アカウントへ送信した後、LINE表示名を本人に確認して承認してください。</p>
+      <div data-help="LINE登録コードの使い方">
+        <p>専用コードは<strong>発行から15分間</strong>有効です。期限切れの場合は再発行してください。再発行すると前のコードは使えなくなります。</p>
+        <ol>
+          <li>作業者（パート・家族）を選んでコードを発行し、<code>LINK</code> から始まる全文を本人だけに渡します。</li>
+          <li>本人が農園のLINE公式アカウントを友だち追加し、15分以内に個人LINEの1対1チャットで全文を送ります。</li>
+          <li>管理者は「登録状態を更新」を押し、承認待ちのLINE表示名を本人に確認してから承認します。</li>
+        </ol>
+      </div>
       <div class="msg-toolbar">
         <label for="line-issue-worker">発行対象</label>
         <select id="line-issue-worker" class="form-input" disabled>
