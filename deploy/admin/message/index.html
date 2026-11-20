@@ -55,20 +55,29 @@
         <button id="line-refresh" type="button" class="secondary-btn">LINEの状態を再取得</button>
       </div>
       <div id="cards" class="msg-cards"></div>
+      <section id="line-history" class="line-management" aria-labelledby="line-history-title">
+        <h3 id="line-history-title">この日の送信履歴</h3>
+        <p>受付済みは配達・既読の保証ではありません。結果不明時は新規送信を作らず、同じ履歴から再試行してください（最初の試行から23時間以内）。</p>
+        <div id="line-jobs"></div>
+      </section>
       <details id="line-management" class="line-management">
-        <summary>LINE登録・承認・この日の送信履歴</summary>
+        <summary>LINE登録・承認</summary>
         <p data-help="LINE連携について">LINEの登録状態と選択日の送信履歴は画面を開いたときや日付変更時に自動取得します。未設定・エラーでもコピーは使えます。返信は公式アカウント管理アプリで対応してください。</p>
-        <h3>作業者（パート・家族）の登録</h3>
-        <p data-help="作業者のLINE登録手順">登録コードを対象の本人へ個別に渡します。本人が公式アカウントへ送信した後、LINE表示名を本人に確認して承認してください。表示名だけでは自動で紐づけません。</p>
+        <p data-help="作業者のLINE登録手順">登録する作業者（パート・家族）を選んで、本人専用のコードを発行します。本人が公式アカウントへ送信した後、LINE表示名を本人に確認して承認してください。</p>
+        <div class="msg-toolbar">
+          <label for="line-issue-worker">発行対象</label>
+          <select id="line-issue-worker" class="form-input" disabled>
+            <option value="">対象者を選択</option>
+          </select>
+          <button id="line-issue" type="button" class="secondary-btn" disabled>登録コードを発行</button>
+        </div>
+        <p id="line-registration-status" role="status" aria-live="polite"></p>
         <div id="line-code" hidden>
-          <label for="line-code-text">本人へ渡す登録メッセージ（15分有効・全文を個人LINEから送信）</label>
+          <label id="line-code-label" for="line-code-text">本人へ渡す登録メッセージ（15分有効・全文を個人LINEから送信）</label>
           <textarea id="line-code-text" rows="2" readonly class="form-input"></textarea>
           <p>コードは秘密扱いです。本人以外への共有・画面画像の投稿はしないでください。発行し直すと旧コードは無効になります。</p>
         </div>
         <div id="line-members"></div>
-        <h3>選択日の送信履歴・未完了の送信</h3>
-        <p>受付済みは配達・既読の保証ではありません。結果不明時は新規送信を作らず、同じ履歴から再試行してください（最初の試行から23時間以内）。</p>
-        <div id="line-jobs"></div>
       </details>
     </section>
 
@@ -109,6 +118,6 @@
     <button id="line-confirm-send" type="button" class="primary-btn">確認した内容を送信・再試行</button>
     <button id="line-confirm-cancel" type="button" class="secondary-btn">閉じる（未送信の準備は履歴に残ります）</button>
   </dialog>
-  <script type="module" src="./message.js?v=20261120-line-refresh-1"></script>
+  <script type="module" src="./message.js?v=20261120-line-registration-1"></script>
 </body>
 </html>

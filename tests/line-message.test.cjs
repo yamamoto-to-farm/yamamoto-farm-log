@@ -283,6 +283,7 @@ test("HTML contains dedicated dialog, private code field and keeps copy workflow
   assert.match(html, /<dialog id="line-confirm"/);
   assert.match(html, /id="line-code-text"[^>]*readonly/);
   assert.match(html, /id="line-refresh"/);
+  assert.match(html, /<section id="line-history"[^>]*>[\s\S]*?id="line-jobs"[\s\S]*?<\/section>\s*<details id="line-management"/);
   assert.match(html, /コピーはLINE送信を意味しません/);
 });
 test("issue shows full code only after success, approve pins the pending ID and requires confirmation", async () => {
@@ -299,11 +300,46 @@ test("issue shows full code only after success, approve pins the pending ID and 
     return action === "issue" ? { registration_message: "LINK test-code" } : { saved: true };
   };
   vm.runInContext("lineApi=testApi", h.context);
-  await h.context.memberAction({ dataset: { lineApprove: "a" } });
+  await h.context.memberAction("approve", "a");
   assert.deepEqual(h.calls.find(item => Array.isArray(item) && item[0] === "approve")[1], {
     worker: "a", pending_id: "pending-1", confirm: true,
   });
-  await h.context.memberAction({ dataset: { lineIssue: "0" } });
+  assert.doesNotMatch(h.element("line-issue-worker").innerHTML, /Part A/);
+  h.context.testApi = async (action, req) => {
+    if (!action) return { jobs: [], members: [{ worker: "a", name: "Part A", linked: true }, { worker: "b", name: "Part B", linked: false }] };
+    h.calls.push([action, clone(req)]);
+    return { registration_message: "LINK test-code" };
+  };
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.context.refresh();
+  const select = h.element("line-issue-worker");
+  assert.doesNotMatch(select.innerHTML, /Part A/);
+  assert.match(select.innerHTML, /<option value="b">Part B/);
+  assert.doesNotMatch(h.element("line-members").innerHTML, /登録コードを発行/);
+  assert.equal(h.element("line-issue").disabled, true);
+  select.value = "b";
+  select.onchange();
+  assert.equal(h.element("line-issue").disabled, false);
+  await h.element("line-issue").onclick();
+  assert.equal(h.calls.find(item => Array.isArray(item) && item[0] === "issue")[1].worker, "b");
+  assert.match(h.element("line-code-label").textContent, /Part Bさん専用/);
   assert.equal(h.element("line-code-text").value, "LINK test-code");
   assert.equal(h.element("line-code").hidden, false);
+});
+test("reissuing for a pending member requires confirmation before invalidating the old code", async () => {
+  const h = harness();
+  h.setState({ jobs: [], members: [
+    { worker: "a", name: "Part A", linked: false, pending: { id: "p", display_name: "LINE A" } },
+  ] });
+  h.context.window.confirm = text => {
+    assert.match(text, /Part A.*承認待ちは無効/);
+    return false;
+  };
+  await h.context.refresh();
+  const select = h.element("line-issue-worker");
+  select.value = "a";
+  select.onchange();
+  await h.element("line-issue").onclick();
+  assert.equal(h.calls.filter(item => item.options?.method === "POST").length, 0);
+  assert.equal(h.element("line-code").hidden, true);
 });

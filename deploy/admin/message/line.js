@@ -31,6 +31,11 @@ function notice(text, error = false) {
   el("line-status").classList.toggle("msg-error", error);
 }
 
+function registrationNotice(text, error = false) {
+  el("line-registration-status").textContent = text;
+  el("line-registration-status").classList.toggle("msg-error", error);
+}
+
 export function validLineState(value) {
   return value && Array.isArray(value.members) && Array.isArray(value.jobs)
     && value.members.every(member => member && typeof member.worker === "string"
@@ -41,17 +46,26 @@ export function validLineState(value) {
 }
 
 function renderState() {
+  renderIssueOptions(state.members.filter(member => !member.linked));
   el("line-members").innerHTML = state.members.map(member => `<article class="line-member">
     <strong>${escape(member.name)}</strong>
     <p>${member.linked ? `${member.blocked ? "ブロック検知・送信停止" : "登録済み"}：${escape(member.display_name)}`
       : member.pending ? `承認待ち：LINE表示名「${escape(member.pending.display_name)}」`
         : "未登録"}</p>
-    ${!member.linked ? `<button type="button" class="secondary-btn" data-line-issue="${escape(member.worker)}">登録コードを発行${member.pending ? "し直す" : ""}</button>` : ""}
     ${member.pending ? `<button type="button" class="primary-btn" data-line-approve="${escape(member.worker)}">本人を確認して承認</button>` : ""}
     ${member.linked || member.pending ? `<button type="button" class="secondary-btn" data-line-unlink="${escape(member.worker)}">解除・取消</button>` : ""}
   </article>`).join("");
   renderJobs();
   decorateLineCards();
+}
+
+function renderIssueOptions(members) {
+  const select = el("line-issue-worker");
+  select.innerHTML = `<option value="">${members.length || !state ? "対象者を選択" : "発行対象者はいません"}</option>`
+    + members.map(member => `<option value="${escape(member.worker)}">${escape(member.name)}${member.pending ? "（承認待ち）" : ""}</option>`).join("");
+  select.value = "";
+  select.disabled = !members.length;
+  el("line-issue").disabled = true;
 }
 
 function renderJobs() {
@@ -102,7 +116,10 @@ async function refresh() {
   el("line-updated").textContent = "";
   el("line-members").innerHTML = "";
   el("line-jobs").innerHTML = "";
+  el("line-code-text").value = "";
   el("line-code").hidden = true;
+  registrationNotice("");
+  renderIssueOptions([]);
   decorateLineCards();
   if (!date) {
     notice("日付を選択するとLINEの状態を取得します。");
@@ -195,36 +212,39 @@ async function deliver() {
   }
 }
 
-async function memberAction(button) {
-  const action = button.dataset.lineIssue ? "issue" : button.dataset.lineApprove ? "approve" : "unlink";
-  const worker = button.dataset.lineIssue || button.dataset.lineApprove || button.dataset.lineUnlink;
+async function memberAction(action, worker) {
   const member = state?.members.find(member => member.worker === worker);
   if (!member) throw new Error("登録状態を再取得してください。");
-  if (action !== "issue" && !window.confirm(action === "approve"
+  if (action === "issue") {
+    if (member.linked) throw new Error("登録済みの作業者には発行できません。");
+    if ((member.pending || member.expires_at * 1000 > Date.now())
+      && !window.confirm(`${member.name}さんの登録コードを発行し直しますか？以前のコード・承認待ちは無効になります。`)) return;
+  } else if (!window.confirm(action === "approve"
     ? `${member.name}さんのLINE表示名が「${member.pending.display_name}」であることを、本人に確認しましたか？`
     : `${member.name}さんのLINE登録・承認待ちを解除します。未送信の連絡は停止されます。よろしいですか？`)) return;
   const result = await lineApi(action, { worker, pending_id: member.pending?.id, confirm: true });
   await refresh();
   if (action === "issue") {
+    el("line-code-label").textContent = `${member.name}さん専用の登録メッセージ（15分有効・全文を個人LINEから送信）`;
     el("line-code-text").value = result.registration_message;
     el("line-code").hidden = false;
-    el("line-code-text").focus();
-    el("line-code-text").select();
-    notice("登録コードは15分有効です。対象の本人にだけ渡し、LINE表示名と本人を確認してから承認してください。");
+    return true;
   }
 }
 
-async function guarded(task) {
+async function guarded(task, report = notice) {
   if (busy) return;
   busy = true;
   el("line-management").inert = true;
+  el("line-history").inert = true;
   el("line-refresh").disabled = true;
   decorateLineCards();
-  try { await task(); }
-  catch (error) { console.error("[line] operation failed", error); notice(error.message, true); }
+  try { return await task(); }
+  catch (error) { console.error("[line] operation failed", error); report(error.message, true); }
   finally {
     busy = false;
     el("line-management").inert = false;
+    el("line-history").inert = false;
     el("line-refresh").disabled = false;
     decorateLineCards();
   }
@@ -233,9 +253,23 @@ async function guarded(task) {
 export function initLineMessaging(options) {
   context = options;
   el("line-refresh").onclick = () => guarded(refresh);
+  el("line-issue-worker").onchange = () => {
+    el("line-issue").disabled = !el("line-issue-worker").value;
+    el("line-code-text").value = "";
+    el("line-code").hidden = true;
+    registrationNotice("");
+  };
+  el("line-issue").onclick = async () => {
+    const worker = el("line-issue-worker").value;
+    if (await guarded(() => memberAction("issue", worker), registrationNotice)) {
+      el("line-code-text").focus();
+      el("line-code-text").select();
+    }
+  };
   el("line-members").onclick = event => {
-    const button = event.target.closest("[data-line-issue], [data-line-approve], [data-line-unlink]");
-    if (button) guarded(() => memberAction(button));
+    const button = event.target.closest("[data-line-approve], [data-line-unlink]");
+    if (button) return guarded(() => button.dataset.lineApprove
+      ? memberAction("approve", button.dataset.lineApprove) : memberAction("unlink", button.dataset.lineUnlink), registrationNotice);
   };
   el("line-jobs").onclick = event => {
     const resume = event.target.closest("[data-line-resume]");
