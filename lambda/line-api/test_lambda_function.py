@@ -561,6 +561,31 @@ class LineApiTests(unittest.TestCase):
         })
         self.assertEqual(status, 200, job)
 
+    def test_partial_plan_send_records_only_sent_names_and_allows_later_follow_up(self):
+        self.approve("a", UID)
+        req = {"date": DATE, "message": "Test message",
+               "targets": [{"id": "p1", "plan_revision": self.current["updated_at"]}]}
+        status, first = self.call("prepare_partial", {**req, "names": [NAMES[0]], "omit_names": [NAMES[1]]})
+        self.assertEqual(status, 200, first)
+        self.assertEqual(first["omitted"], [{"name": NAMES[1], "reason": "unlinked"}])
+        self.assertEqual(self.send(first, NAMES[1])[0], 400)
+        self.assertEqual(self.send(first)[0], 200)
+        key = f"shift/work-plans/{DATE}.json"
+        self.assertEqual([item["recipients"] for item in self.get("private", key)["communications"]], [[NAMES[0]]])
+        self.approve("b", OTHER)
+        self.assertEqual(self.call("prepare_partial", {
+            **req, "names": [NAMES[0]], "omit_names": [NAMES[1]], "confirm_resend": True,
+        })[0], 409)
+        status, followup = self.call("prepare_partial", {**req, "names": [NAMES[1]], "omit_names": [NAMES[0]]})
+        self.assertEqual(status, 200, followup)
+        self.assertEqual(followup["omitted"], [{"name": NAMES[0], "reason": "accepted"}])
+        self.line.reset_mock()
+        self.assertEqual(self.send(followup, NAMES[1])[0], 200)
+        self.line.assert_called_once()
+        self.assertEqual(self.line.call_args.args[1]["to"], OTHER)
+        self.assertEqual({tuple(item["recipients"]) for item in self.get("private", key)["communications"]},
+                         {(NAMES[0],), (NAMES[1],)})
+
     def test_existing_job_blocks_changed_recipient_subset(self):
         self.ready()
         self.assertEqual(self.call("prepare", {

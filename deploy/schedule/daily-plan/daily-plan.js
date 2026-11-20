@@ -356,9 +356,15 @@ function renderSaved() {
   el("saved-plans").innerHTML = plans.length ? plans.map(([id, plan]) => {
     const participants = [...new Set([...plan.names, ...plan.blocks.flatMap(block => block.companions || [])])];
     const sent = hasSentCommunication(id, plan);
-    const hasRecipients = communicationRecipients(plan).length > 0;
+    const recipients = communicationRecipients(plan);
+    const hasRecipients = recipients.length > 0;
+    const accepted = new Set(record.data.communications.filter(item => item.plan_id === id
+      && item.status === "sent" && item.plan_revision === plan.updated_at).flatMap(item => item.recipients));
+    const acceptedCount = recipients.filter(name => accepted.has(name)).length;
+    const sentLabel = acceptedCount > 0 && acceptedCount < recipients.length
+      ? `一部LINE受付済み（${acceptedCount}/${recipients.length}名・配達未確認）` : "送信済み（LINE受付・配達未確認）";
     return `<article class="saved-plan"><h3>${escape(participants.join("・"))}</h3>
-      ${hasRecipients || plan.last_communication ? `<p class="plan-note">${plan.last_communication ? `${sent ? "送信済み（LINE受付・配達未確認）" : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>` : ""}
+      ${hasRecipients || plan.last_communication ? `<p class="plan-note">${plan.last_communication ? `${sent ? sentLabel : "連絡用にコピー済み"}${plan.communication_changed ? "・連絡後に変更あり" : ""}` : "連絡前"}</p>` : ""}
       ${plan.off ? `<p>中止${plan.off_reason ? `：${escape(plan.off_reason)}` : ""}</p>` : ""}
       ${plan.blocks.map(block => `<p>${block.start && block.end ? `${escape(block.start)}〜${escape(block.end)}　` : ""}${escape(block.task)}${block.fields?.length || block.field ? `｜${escape((block.fields || [block.field]).join("・"))}` : ""}</p>`).join("")}
       ${plan.memo ? `<p>${escape(plan.memo)}</p>` : ""}

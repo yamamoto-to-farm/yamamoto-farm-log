@@ -18,6 +18,9 @@ let focusedTemplateJob;
 const el = id => document.getElementById(id);
 const labels = { ready: "未送信", accepted: "LINE受付済み（配達・既読は未確認）",
   failed: "失敗", unknown: "結果不明・同じ送信として再確認が必要" };
+const omissionLabels = { unlinked: "未登録", pending: "承認待ち", blocked: "送信停止", accepted: "同じ文面をLINE受付済み" };
+const omissions = job => job?.omitted ?? [];
+const describeOmission = ({ name, reason }) => `${name}（${omissionLabels[reason]}）`;
 
 export async function lineApi(action, body, date) {
   const token = await ensureToken();
@@ -53,7 +56,9 @@ export function validLineState(value) {
 
 const validJob = job => job && typeof job.id === "string" && typeof job.message === "string"
   && Array.isArray(job.names) && job.names.every(name => typeof name === "string")
-  && job.results && job.names.every(name => Object.hasOwn(labels, job.results[name]?.status));
+  && job.results && job.names.every(name => Object.hasOwn(labels, job.results[name]?.status))
+  && (job.omitted === undefined || Array.isArray(job.omitted)
+    && job.omitted.every(item => item && typeof item.name === "string" && Object.hasOwn(omissionLabels, item.reason)));
 
 function renderState() {
   renderIssueOptions(state.members.filter(member => !member.linked));
@@ -110,9 +115,15 @@ function historySummary(job) {
   const attempts = job.names.map(name => job.results[name].first_attempt).filter(Number.isFinite);
   const at = Number.isFinite(job.history_at) ? job.history_at : attempts.length ? Math.min(...attempts) : null;
   const time = ackTime(at === null ? job.created_at : at * 1000);
-  const title = isTemplate(job) ? job.title : job.names.join("・");
+  const excluded = omissions(job);
+  const total = job.names.length + excluded.length;
+  const notSent = excluded.filter(item => item.reason !== "accepted");
+  const earlier = excluded.length - notSent.length;
+  const title = isTemplate(job) ? job.title : [...job.names, ...excluded.map(item => item.name)].join("・");
   return `<span>${escape(time)}｜${escape(title)}</span>
-    <span class="line-job-meta msg-muted">宛先 ${job.names.length}名 · LINE受付 ${accepted}/${job.names.length}名 · ${ackSummary(job)}
+    <span class="line-job-meta msg-muted">宛先 ${total}名 · LINE受付 ${accepted}/${total}名 · ${ackSummary(job)}
+      ${notSent.length ? ` · 送信対象外：${escape(notSent.map(describeOmission).join("・"))}` : ""}
+      ${earlier ? ` · 別の履歴でLINE受付済み ${earlier}名` : ""}
       ${failed ? ` · <strong class="msg-error">送信失敗 ${failed}名</strong>` : ""}
       ${unknown ? ` · <strong class="msg-error">結果不明 ${unknown}名</strong>` : ""}
       ${job.closed ? " · 終了" : isPending(job) ? ` · ${accepted === job.names.length ? "控え未保存" : "未完了"}` : ""}</span>`;
@@ -125,7 +136,8 @@ function jobHistory(jobs) {
     <ul>${job.names.map(name => `<li>${escape(name)}：${escape(labels[job.results[name].status])}
       ${job.ack_enabled ? ` ／ ${job.results[name].confirmed_at ? `本人確認済み（${escape(ackTime(job.results[name].confirmed_at))}）`
         : job.results[name].status === "accepted" ? "確認待ち" : "本人確認なし"}` : ""}
-      ${job.results[name].error ? `<p class="msg-error">${escape(job.results[name].error)}</p>` : ""}</li>`).join("")}</ul>
+      ${job.results[name].error ? `<p class="msg-error">${escape(job.results[name].error)}</p>` : ""}</li>`).join("")}
+      ${omissions(job).map(item => `<li>${escape(item.name)}：${item.reason === "accepted" ? "別の履歴でLINE受付済み（今回は送信対象外）" : `送信対象外（${omissionLabels[item.reason]}）`}</li>`).join("")}</ul>
     <figure class="line-job-body">
       <figcaption>本文</figcaption>
       <pre class="line-preview">
@@ -194,17 +206,34 @@ async function refreshAfterTemplateAction(job) {
 
 const isPending = job => !job.closed && !job.recorded;
 const jobOverlapsGroup = (job, group) => job.names.some(name => group.recipients.includes(name));
+const planTargets = group => group.entries.map(({ id, plan }) => ({ id, plan_revision: plan.updated_at }));
+const matchesTargets = (job, targets) => job.targets?.length === targets.length
+  && targets.every(target => job.targets.some(saved => saved.id === target.id && saved.plan_revision === target.plan_revision));
+const eligible = name => state.members.some(member => member.name === name && member.linked && !member.blocked);
 
 function cardJobs(group, jobs) {
   const newestFirst = jobs.filter(job => !isTemplate(job)).reverse();
+  const targets = planTargets(group);
+  const newest = newestFirst.find(job => job.recorded && matchesTargets(job, targets)
+    && job.names.length + omissions(job).length === group.recipients.length
+    && group.recipients.every(name => job.names.includes(name) || omissions(job).some(item => item.name === name)));
+  const partial = omissions(newest).length ? newest : null;
   return {
     pending: newestFirst.find(job => isPending(job) && jobOverlapsGroup(job, group)),
+    partial,
     sent: newestFirst.find(job => job.recorded
       && job.names.length === group.recipients.length
       && group.recipients.every(name => job.names.includes(name))
       && job.targets?.length === group.entries.length
       && group.entries.every(({ id }) => job.targets.some(target => target.id === id))),
   };
+}
+
+function planAudience(group, partial) {
+  const remaining = omissions(partial).filter(item => item.reason !== "accepted").map(item => item.name);
+  const names = (remaining.length ? remaining : group.recipients).filter(eligible);
+  return { names, followUp: remaining.length > 0,
+    omitted: group.recipients.filter(name => !names.includes(name)) };
 }
 
 function focusJob(job) {
@@ -231,20 +260,24 @@ export function decorateLineCards() {
     const controls = document.createElement("div");
     controls.dataset.lineCard = "";
     controls.className = "msg-line-actions";
-    const { pending, sent } = cardJobs(group, available ? state.jobs : []);
+    const { pending, sent, partial } = cardJobs(group, available ? state.jobs : []);
+    const audience = available ? planAudience(group, partial) : null;
+    const remaining = omissions(partial).filter(item => item.reason !== "accepted");
+    const partialComplete = partial && !remaining.length;
     const changed = sent
       ? group.entries.some(({ id, plan }) => sent.targets.find(target => target.id === id).plan_revision !== plan.updated_at)
       : card.dataset.changed === "yes";
-    const accepted = Boolean(sent || card.dataset.communication === "sent");
+    const accepted = Boolean(partialComplete || sent || card.dataset.communication === "sent");
     const unknown = pending?.names.some(name => pending.results[name].status === "unknown");
     const badge = card.querySelector("[data-line-badge]");
     if (badge) {
       badge.textContent = pending ? (unknown ? "LINE送信の結果不明" : "未完了のLINE送信あり") : changed ? "連絡後に予定変更あり"
-        : accepted ? `LINE受付済み${sent?.ack_enabled ? ` ／ ${ackSummary(sent)}` : ""}`
+        : remaining.length ? `一部LINE受付済み（${group.recipients.length - remaining.length}/${group.recipients.length}名）`
+        : accepted ? `LINE受付済み${!partialComplete && sent?.ack_enabled ? ` ／ ${ackSummary(sent)}` : ""}`
           : card.dataset.communication === "copied" ? "コピー済み（LINE未確認）" : "未連絡";
-      badge.dataset.tone = pending || changed ? "warning" : accepted ? "accepted" : "";
+      badge.dataset.tone = pending || changed || remaining.length ? "warning" : accepted ? "accepted" : "";
     }
-    const compact = accepted && !changed && !pending;
+    const compact = accepted && !changed && !pending && !remaining.length;
     card.querySelector("[data-current-message]").dataset.compact = String(Boolean(sent && compact));
     const other = card.querySelector("[data-other-actions]");
     if (other.dataset.compact !== String(compact)) {
@@ -253,24 +286,26 @@ export function decorateLineCards() {
     }
     const resend = card.querySelector("[data-line-resend]");
     resend.replaceChildren();
-    const missing = available ? group.recipients.filter(name =>
-      !state.members.some(member => member.name === name && member.linked && !member.blocked)) : [];
+    const missing = available ? group.recipients.filter(name => !eligible(name)) : [];
     const button = document.createElement("button");
     button.type = "button";
     button.className = compact ? "secondary-btn" : "primary-btn";
-    button.textContent = pending ? "履歴から確認・再試行" : changed ? "変更後の文面を確認"
+    button.textContent = pending ? "履歴から確認・再試行"
+      : audience?.followUp && audience.names.length ? `未送信の${audience.names.length}名に送る`
+      : !audience?.followUp && audience?.names.length && missing.length ? `承認済みの${audience.names.length}名に送る`
+      : changed ? "変更後の文面を確認"
       : accepted ? "再連絡する" : "LINE送信内容を確認";
-    button.disabled = busy || (!pending && (!available || missing.length > 0 || card.dataset.planIssues === "yes"));
-    button.onclick = pending ? () => focusJob(pending) : () => guarded(() => prepare(group));
+    button.disabled = busy || (!pending && (!audience?.names.length || card.dataset.planIssues === "yes"));
+    button.onclick = pending ? () => focusJob(pending) : () => guarded(() => prepare(group, audience?.names));
     if (compact) resend.append(button);
     else controls.append(button);
-    if (sent && !pending) {
+    if ((partial || sent) && !pending) {
       const results = document.createElement("button");
       results.type = "button";
       results.className = "secondary-btn";
       results.textContent = "送信内容・結果を見る";
       results.disabled = busy;
-      results.onclick = () => focusJob(sent);
+      results.onclick = () => focusJob(partial || sent);
       controls.append(results);
     }
     if (!pending && missing.length) {
@@ -341,6 +376,10 @@ function showConfirmation(job) {
   confirmedJob = job;
   el("line-confirm-text").textContent = job.message;
   el("line-confirm-recipients").textContent = `${job.date} ／ 宛先：${job.names.join("・")}`;
+  const excluded = omissions(job);
+  const note = el("line-confirm-omitted");
+  note.hidden = !excluded.length;
+  note.textContent = excluded.length ? `今回送信しない：${excluded.map(describeOmission).join("・")}。未登録・承認待ちの方などには、必要に応じて文面をコピーして個別に連絡してください。` : "";
   el("line-confirm-ack").hidden = !job.ack_enabled;
   el("line-confirm-results").textContent = job.names.map(name =>
     `${name}：${labels[job.results[name].status]}`).join("\n");
@@ -348,7 +387,7 @@ function showConfirmation(job) {
   el("line-confirm").showModal();
 }
 
-async function prepare(group) {
+async function prepare(group, displayedNames) {
   const date = context.date();
   if (!state || loadedDate !== date) throw new Error("LINE連携を再取得してください。");
   await context.check(group);
@@ -356,15 +395,25 @@ async function prepare(group) {
   if (!state || loadedDate !== date) throw new Error("LINEの状態が変わりました。再取得して確認してください。");
   const pending = state.jobs.find(job => !isTemplate(job) && isPending(job) && jobOverlapsGroup(job, group));
   if (pending) throw new Error("この宛先には未完了の送信があります。同じ送信履歴から確認・再試行してください。");
-  const message = context.message(group);
+  const { partial } = cardJobs(group, state.jobs);
+  const { names, followUp, omitted } = planAudience(group, partial);
+  if (!names.length || (displayedNames && JSON.stringify(displayedNames) !== JSON.stringify(names))) {
+    throw new Error("LINEの宛先が変わりました。送信できる人を確認してやり直してください。");
+  }
+  const message = followUp ? partial.message : context.message(group);
   if (!message.trim() || message.length > 5000) throw new Error("LINE文面は空欄不可・5000文字以内です。");
-  const previous = state.jobs.some(job => !isTemplate(job) && jobOverlapsGroup(job, group));
+  const previous = state.jobs.some(job => !isTemplate(job) && jobOverlapsGroup(job, { recipients: names }));
   if (previous && !window.confirm("この宛先には以前の送信履歴があります。新しい連絡を準備しますか？")) return;
-  const job = await lineApi("prepare", {
-    date, names: group.recipients, message,
-    targets: group.entries.map(({ id, plan }) => ({ id, plan_revision: plan.updated_at })),
+  const job = await lineApi(omitted.length ? "prepare_partial" : "prepare", {
+    date, names, message,
+    targets: planTargets(group),
     confirm_resend: previous,
+    ...(omitted.length ? { omit_names: omitted } : {}),
   });
+  if (omitted.length && (!validJob(job) || JSON.stringify(job.names) !== JSON.stringify(names)
+      || JSON.stringify(omissions(job).map(item => item.name)) !== JSON.stringify(omitted))) {
+    throw new Error("送信対象外の記録を確認できません。LINEの状態とLambdaの更新を確認してください。");
+  }
   await refresh();
   if (date !== context.date()) throw new Error(`${date}の送信準備が履歴に残っています。日付を戻して履歴から確認してください。`);
   showConfirmation(job);
@@ -425,7 +474,8 @@ async function deliver() {
     if (!isTemplate(job)) await context.reload();
     await refresh();
     if (isTemplate(job)) await refreshAfterTemplateAction(updated);
-    notice(updated.recorded ? "全員のLINE受付と控え保存が完了しました。配達・既読は未確認です。"
+    notice(updated.recorded ? (omissions(updated).length ? `今回の送信対象 ${updated.names.length}名のLINE受付と控え保存が完了しました。配達・既読は未確認です。`
+      : "全員のLINE受付と控え保存が完了しました。配達・既読は未確認です。")
       : "未完了の宛先があります。下の送信履歴で人ごとの結果を確認してください。", !updated.recorded);
   } catch (error) {
     console.error("[line] delivery failed", error);

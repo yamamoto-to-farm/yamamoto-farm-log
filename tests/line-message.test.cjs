@@ -326,8 +326,45 @@ test("send confirmation is enabled only after current state is loaded for regist
   assert.equal(card.children[0].children[0].disabled, false);
   h.context.fetch = async () => ({ ok: true, json: async () => ({ ...clone(initial), members: [clone(initial.members[0])] }) });
   await h.context.refreshLineState();
-  assert.equal(card.children[0].children[0].disabled, true);
+  assert.equal(card.children[0].children[0].disabled, false);
   assert.match(card.children[0].children[1].textContent, /Part B/);
+});
+test("partial plan confirmation records excluded recipients and follow-up only selects the remaining person", async () => {
+  const h = harness();
+  const group = { id: "p1", recipients: names, entries: [{ id: "p1", plan: { updated_at: "v1" } }] };
+  h.options.groups = () => [group];
+  const card = mountCard(h, group);
+  const onlyA = { ...initial.members[1], linked: false, pending: { id: "pending", display_name: "LINE B" } };
+  const first = { ...clone(job), names: [names[0]], omitted: [{ name: names[1], reason: "pending" }] };
+  const firstState = { members: [initial.members[0], onlyA], jobs: [] };
+  let state = firstState;
+  h.context.testApi = async (action, req) => {
+    if (!action) return clone(state);
+    h.calls.push([action, clone(req)]);
+    if (req.names[0] === names[0]) return clone(first);
+    return { ...first, id: "followup", names: [names[1]], omitted: [{ name: names[0], reason: "accepted" }] };
+  };
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.context.refresh();
+  assert.equal(card.actions()[0].textContent, "承認済みの1名に送る");
+  await h.context.prepare(group, [names[0]]);
+  assert.match(h.element("line-confirm-recipients").textContent, /宛先：Part A$/);
+  assert.match(h.element("line-confirm-omitted").textContent, /Part B（承認待ち）/);
+  const completed = { ...first, recorded: true, results: { [names[0]]: { status: "accepted" } } };
+  state = { ...firstState, jobs: [completed] };
+  await h.context.refresh();
+  assert.match(card.badge.textContent, /一部LINE受付済み（1\/2名）/);
+  assert.match(h.element("line-jobs").innerHTML, /LINE受付 1\/2名[\s\S]*Part B（承認待ち）/);
+  assert.equal(card.actions()[0].disabled, true);
+  state = { ...state, members: initial.members };
+  await h.context.refresh();
+  assert.equal(card.actions()[0].textContent, "未送信の1名に送る");
+  await h.context.prepare(group, [names[1]]);
+  assert.deepEqual(h.calls.filter(item => Array.isArray(item) && item[0] === "prepare_partial")
+    .map(([, req]) => [req.names, req.omit_names, req.confirm_resend]), [
+    [[names[0]], [names[1]], false], [[names[1]], [names[0]], false],
+  ]);
+  assert.ok(!h.calls.some(item => Array.isArray(item) && item[0] === "send"));
 });
 test("the accepted card shows the exact sent text and history, and promotes an update only after a revision change", async () => {
   const h = harness();

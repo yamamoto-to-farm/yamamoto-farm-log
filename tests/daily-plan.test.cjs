@@ -200,6 +200,16 @@ test("copied and sent status is displayed with sent deletion disabled and histor
       recipients:["家族A"],plan:testPlan,message:"控え"}]; renderSaved();`, context);
   assert.match(nodes["saved-plans"].innerHTML, /data-delete="test" disabled/);
 });
+test("saved plans distinguish partial LINE receipt from full receipt and keep deletion locked", () => {
+  const { context, nodes } = screen();
+  context.testPlan = { source: "direct", names: ["A", "B"], recipients: ["A", "B"], blocks: [block],
+    off: false, updated_at: "revision", last_communication: { status: "sent" } };
+  vm.runInContext(`record={data:{plans:{test:testPlan},communications:[
+    {plan_id:"test",status:"sent",plan_revision:"revision",recipients:["A"],plan:testPlan,at:"2026-11-04",message:"控え"}
+  ]}}; renderSaved();`, context);
+  assert.match(nodes["saved-plans"].innerHTML, /一部LINE受付済み（1\/2名・配達未確認）/);
+  assert.match(nodes["saved-plans"].innerHTML, /data-delete="test" disabled/);
+});
 test("family-only cards omit communication prompts while part and legacy message plans retain them", () => {
   const { context, nodes } = screen();
   context.testPlan = { source: "direct", names: ["家族A"], recipients: [], blocks: [block], off: false };

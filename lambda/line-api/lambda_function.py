@@ -245,6 +245,7 @@ class Service:
         return {key: copy.deepcopy(job[key]) for key in
                 ("id", "date", "message", "names", "targets", "created_at", "closed", "recorded")} | {
                     "kind": job.get("kind", "plan"), "title": job.get("title", ""),
+                    "omitted": copy.deepcopy(job.get("omitted", [])),
                     "ack_enabled": job.get("ack_enabled", False),
                     "results": {name: {key: value for key, value in result.items()
                                      if key not in ("user_id", "retry_key")}
@@ -388,6 +389,12 @@ class Service:
         template = req["action"] == "prepare_template"
         title = req.get("title")
         names = req.get("names")
+        omit_names = req.get("omit_names", [])
+        if (not isinstance(omit_names, list) or len(omit_names) > 30
+                or any(not isinstance(name, str) or not name for name in omit_names)
+                or len(set(omit_names)) != len(omit_names)
+                or bool(omit_names) != (req["action"] == "prepare_partial")):
+            fail(400, "送信対象外の指定が不正です。")
         if template:
             date, snapshots = core.plan_date(req.get("date")), []
             if (not isinstance(title, str) or not title.strip() or len(title) > 160
@@ -397,7 +404,9 @@ class Service:
                 fail(400, "定型文のタイトル・宛先が不正です。")
             targets = []
         else:
-            date, snapshots = self.validate_group(req)
+            if omit_names and (not isinstance(names, list) or not names):
+                fail(400, "送信する宛先を指定してください。")
+            date, snapshots = self.validate_group({**req, "names": names + omit_names} if omit_names else req)
             targets = req["targets"]
         kind = "template" if template else "plan"
         text = req.get("message")
@@ -417,6 +426,23 @@ class Service:
             }
         key, day, revision = self.day(date)
         ids = sorted(target["id"] for target in targets)
+        omitted = []
+        for name in omit_names:
+            member = state["members"].get(master.get(name), {})
+            if any(job.get("kind", "plan") == "plan" and job["recorded"]
+                   and job["message"] == text
+                   and {item["id"]: item["plan_revision"] for item in job["targets"]}
+                   == {item["id"]: item["plan_revision"] for item in targets}
+                   and job["results"].get(name, {}).get("status") == "accepted"
+                   for job in day["jobs"].values()):
+                reason = "accepted"
+            elif member.get("blocked"):
+                reason = "blocked"
+            elif member.get("user_id"):
+                fail(409, f"{name} のLINE登録状態が変わりました。状態を更新してやり直してください。")
+            else:
+                reason = "pending" if member.get("pending") else "unlinked"
+            omitted.append({"name": name, "reason": reason})
         relevant = [job for job in day["jobs"].values()
                     if job.get("kind", "plan") == kind and set(job["names"]) & set(names)
                     and (not template or job["message"] == text)]
@@ -424,7 +450,8 @@ class Service:
             if not job["closed"] and not job["recorded"]:
                 if (sorted(job["names"]) == sorted(names)
                         and sorted(target["id"] for target in job["targets"]) == ids
-                        and job["message"] == text and job["targets"] == targets):
+                        and job["message"] == text and job["targets"] == targets
+                        and job.get("omitted", []) == omitted):
                     return self.public_job(job)
                 fail(409, "この宛先には未完了の送信があります。下の送信履歴から確認・再試行または終了してください。")
         duplicate_names = [name for name in names if any(
@@ -440,6 +467,7 @@ class Service:
             "id": str(uuid.uuid4()), "date": date, "message": text,
             "names": names, "targets": targets, "snapshots": snapshots,
             "kind": kind, "title": title if template else "", "ack_enabled": True,
+            "omitted": omitted,
             "created_at": stamp(), "author": author, "results": results,
             "closed": False, "recorded": False,
         }
@@ -610,7 +638,7 @@ def lambda_handler(event, context):
             result = service.registration(req, author)
         elif action == "template_history":
             result = service.template_history(req.get("before"))
-        elif action in ("prepare", "prepare_template"):
+        elif action in ("prepare", "prepare_partial", "prepare_template"):
             result = service.prepare(req, author)
         elif action in ("send", "close"):
             result = service.send(req, closing=action == "close")
