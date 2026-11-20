@@ -79,6 +79,17 @@ function renderIssueOptions(members) {
   el("line-issue").disabled = true;
 }
 
+function clearRegistrationCode() {
+  el("line-code-text").value = "";
+  el("line-code").hidden = true;
+}
+
+function clearRegistrationView() {
+  el("line-members").innerHTML = "";
+  clearRegistrationCode();
+  renderIssueOptions([]);
+}
+
 function renderJobs() {
   const jobs = [...state.jobs].reverse();
   jobs.sort((a, b) => Number(isPending(b)) - Number(isPending(a)));
@@ -91,28 +102,35 @@ const ackSummary = job => job.ack_enabled
   : "確認ボタンなし";
 const ackTime = at => new Date(at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 
-function templateSummary(job) {
+function historySummary(job) {
   const statuses = job.names.map(name => job.results[name].status);
   const accepted = statuses.filter(status => status === "accepted").length;
   const failed = statuses.filter(status => status === "failed").length;
   const unknown = statuses.filter(status => status === "unknown").length;
-  const time = ackTime(Number.isFinite(job.history_at) ? job.history_at * 1000 : job.created_at);
-  return `<span>${escape(time)}｜${escape(job.title)}</span>
-    <span class="template-job-meta msg-muted">宛先 ${job.names.length}名 · LINE受付 ${accepted}/${job.names.length}名 · ${ackSummary(job)}
+  const attempts = job.names.map(name => job.results[name].first_attempt).filter(Number.isFinite);
+  const at = Number.isFinite(job.history_at) ? job.history_at : attempts.length ? Math.min(...attempts) : null;
+  const time = ackTime(at === null ? job.created_at : at * 1000);
+  const title = isTemplate(job) ? job.title : job.names.join("・");
+  return `<span>${escape(time)}｜${escape(title)}</span>
+    <span class="line-job-meta msg-muted">宛先 ${job.names.length}名 · LINE受付 ${accepted}/${job.names.length}名 · ${ackSummary(job)}
       ${failed ? ` · <strong class="msg-error">送信失敗 ${failed}名</strong>` : ""}
       ${unknown ? ` · <strong class="msg-error">結果不明 ${unknown}名</strong>` : ""}
       ${job.closed ? " · 終了" : isPending(job) ? ` · ${accepted === job.names.length ? "控え未保存" : "未完了"}` : ""}</span>`;
 }
 
-function jobHistory(jobs, templates = false) {
-  return jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${!templates && isPending(job) ? " open" : ""}>
-    <summary>${templates ? templateSummary(job) : `${escape(job.names.join("・"))}：${job.closed ? "終了" : job.recorded ? "全員LINE受付済み・控え保存済み" : "未完了の送信"} ／ ${ackSummary(job)}`}</summary>
-    <p>${templates ? `送信記録の日付：${escape(job.date)}` : `${escape(job.created_at)} ／ ${escape(job.date)}`}</p>
+function jobHistory(jobs) {
+  return jobs.map(job => `<details id="line-job-${escape(job.id)}" class="line-job"${!isTemplate(job) && isPending(job) ? " open" : ""}>
+    <summary>${historySummary(job)}</summary>
+    <p>送信記録の日付：${escape(job.date)}</p>
     <ul>${job.names.map(name => `<li>${escape(name)}：${escape(labels[job.results[name].status])}
       ${job.ack_enabled ? ` ／ ${job.results[name].confirmed_at ? `本人確認済み（${escape(ackTime(job.results[name].confirmed_at))}）`
         : job.results[name].status === "accepted" ? "確認待ち" : "本人確認なし"}` : ""}
       ${job.results[name].error ? `<p class="msg-error">${escape(job.results[name].error)}</p>` : ""}</li>`).join("")}</ul>
-    <pre class="line-preview">${escape(job.message)}</pre>
+    <figure class="line-job-body">
+      <figcaption>本文</figcaption>
+      <pre class="line-preview">
+${escape(job.message)}</pre>
+    </figure>
     ${!job.recorded && !job.closed ? `<button type="button" class="primary-btn" data-line-resume="${escape(job.id)}">内容を確認して送信・再試行</button>
       <button type="button" class="secondary-btn" data-line-close="${escape(job.id)}">未送信分の送信を終了</button>` : ""}
   </details>`).join("") || "<p>この日のLINE送信履歴はありません。</p>";
@@ -140,9 +158,9 @@ export async function loadTemplateHistory(mode = "initial") {
     const added = append ? result.jobs.filter(job => !templateJobs.some(previous => previous.id === job.id)) : result.jobs;
     templateJobs = append ? [...templateJobs, ...added] : added;
     if (append) {
-      if (added.length) list.insertAdjacentHTML("beforeend", jobHistory(added, true));
+      if (added.length) list.insertAdjacentHTML("beforeend", jobHistory(added));
     } else {
-      list.innerHTML = added.length ? jobHistory(added, true) : "";
+      list.innerHTML = added.length ? jobHistory(added) : "";
     }
     if (templateJobs.some(job => job.id === focusedTemplateJob?.id)) pinTemplateJob();
     historyCursor = result.next_cursor;
@@ -165,7 +183,7 @@ export async function loadTemplateHistory(mode = "initial") {
 function pinTemplateJob(job) {
   focusedTemplateJob = job;
   el("template-focused-job").innerHTML = job
-    ? `<p class="msg-muted">今回確認する送信</p>${jobHistory([job], true)}` : "";
+    ? `<p class="msg-muted">今回確認する送信</p>${jobHistory([job])}` : "";
 }
 
 async function refreshAfterTemplateAction(job) {
@@ -273,16 +291,13 @@ async function refresh() {
   state = undefined;
   loadedDate = "";
   el("line-updated").textContent = "";
-  el("line-members").innerHTML = "";
   el("line-jobs").innerHTML = "";
   el("template-line-date").textContent = date ? `新規送信の記録日：${date}（「作業予定の連絡」の日付）` : "";
   for (const form of el("template-list").querySelectorAll("[data-template-send]")) {
     form.querySelector('button[type="submit"]').disabled = true;
   }
-  el("line-code-text").value = "";
-  el("line-code").hidden = true;
+  if (!el("line-management").open || !date) clearRegistrationView();
   registrationNotice("登録状態を取得中…");
-  renderIssueOptions([]);
   decorateLineCards();
   if (!date) {
     notice("日付を選択するとLINEの状態を取得します。");
@@ -296,6 +311,7 @@ async function refresh() {
     if (!validLineState(result)) throw new Error("LINE APIの応答形式が不正です。");
   } catch (error) {
     if (current !== sequence || date !== context.date()) return;
+    clearRegistrationView();
     el("line-connection").classList.toggle("line-fetch-failed", true);
     el("template-line-connection").classList.toggle("line-fetch-failed", true);
     throw error;
@@ -303,6 +319,7 @@ async function refresh() {
   if (current !== sequence || date !== context.date()) return;
   state = result;
   loadedDate = date;
+  clearRegistrationCode();
   renderState();
   renderTemplateRecipients();
   el("line-updated").textContent = `${date}分 ／ ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} 取得`;
@@ -479,8 +496,7 @@ export function initLineMessaging(options) {
   el("line-management-close").onclick = () => { if (!busy) management.close(); };
   management.addEventListener("cancel", event => { if (busy) event.preventDefault(); });
   management.addEventListener("close", () => {
-    el("line-code-text").value = "";
-    el("line-code").hidden = true;
+    clearRegistrationCode();
     el("line-management-open").focus();
   });
   el("line-refresh").onclick = () => guarded(refreshLineState);
@@ -502,8 +518,7 @@ export function initLineMessaging(options) {
   };
   el("line-issue-worker").onchange = () => {
     el("line-issue").disabled = !el("line-issue-worker").value;
-    el("line-code-text").value = "";
-    el("line-code").hidden = true;
+    clearRegistrationCode();
     registrationNotice("");
   };
   el("line-issue").onclick = async () => {

@@ -78,6 +78,29 @@ test("state response validates individual result statuses", () => {
   assert.equal(h.context.validLineState({ ...initial, jobs: [{ ...job, results: {} }] }), false);
   assert.equal(h.context.validLineState({ ...initial, members: [{ name: "x", worker: "x" }] }), false);
 });
+test("daily and template history share receipt counts and a separate, safely escaped body", async () => {
+  const h = harness();
+  const daily = { ...clone(job), ack_enabled: true, created_at: "2026-11-04T00:00:00Z",
+    message: "\nTest <body>", results: {
+      "Part A": { status: "accepted", confirmed_at: "2026-11-05T00:00:00Z", first_attempt: 1793836800 },
+      "Part B": { status: "failed" },
+    } };
+  const template = { ...daily, id: "template", kind: "template", title: "Reminder", history_at: 1793836800 };
+  h.setState({ ...initial, jobs: [daily, template] });
+  await h.context.refresh();
+  const dailyMarkup = h.element("line-jobs").innerHTML;
+  assert.match(dailyMarkup, /class="line-job" open>\s*<summary><span>2026\/11\/5 0?9:00:00｜Part A・Part B<\/span>/);
+  assert.doesNotMatch(dailyMarkup, /Reminder/);
+  h.context.testApi = async () => ({ jobs: [template], next_cursor: null });
+  vm.runInContext("lineApi=testApi", h.context);
+  await h.context.loadTemplateHistory();
+  const templateMarkup = h.element("template-line-jobs").innerHTML;
+  assert.match(templateMarkup, /class="line-job">\s*<summary><span>2026\/11\/5 0?9:00:00｜Reminder<\/span>/);
+  for (const html of [dailyMarkup, templateMarkup]) {
+    assert.match(html, /line-job-meta[^>]*>宛先 2名 · LINE受付 1\/2名 · 本人確認 1\/2名[\s\S]*送信失敗 1名/);
+    assert.match(html, /送信記録の日付：2026-11-05[\s\S]*本人確認済み[\s\S]*<figure class="line-job-body">\s*<figcaption>本文<\/figcaption>\s*<pre class="line-preview">\n\nTest &lt;body&gt;<\/pre>/);
+  }
+});
 test("prepare checks saved plans and preserves exact edited text before confirmation", async () => {
   const h = harness();
   h.context.testApi = async (action, req) => {
@@ -310,7 +333,9 @@ test("the accepted card shows the exact sent text and history, and promotes an u
   const h = harness();
   const group = { id: "p1", recipients: names, entries: [{ id: "p1", plan: { updated_at: "v1" } }] };
   const { badge, message, other, resend, actions } = mountCard(h, group);
-  const sent = { ...clone(job), recorded: true };
+  const sent = { ...clone(job), recorded: true, results: Object.fromEntries(
+    names.map(name => [name, { status: "accepted" }]),
+  ) };
   const unrelated = { ...sent, id: "other", targets: [{ id: "other", plan_revision: "v1" }], message: "Other trip" };
   h.setState({ ...initial, jobs: [sent, unrelated] });
   let focused = false;
@@ -322,7 +347,7 @@ test("the accepted card shows the exact sent text and history, and promotes an u
   assert.equal(other.open, false);
   assert.equal(resend.children[0].textContent, "再連絡する");
   assert.deepEqual(actions().map(action => action.textContent), ["送信内容・結果を見る"]);
-  assert.match(h.element("line-jobs").innerHTML, /id="line-job-job"[\s\S]*?LINE受付済み[\s\S]*?Bring rain gear/);
+  assert.match(h.element("line-jobs").innerHTML, /id="line-job-job"[\s\S]*?LINE受付 2\/2名[\s\S]*?Bring rain gear/);
   actions()[0].onclick();
   assert.equal(history.open, true);
   assert.equal(focused, true);
@@ -521,7 +546,20 @@ test("shared registration dialog refreshes pending approvals and closes without 
   assert.match(h.element("line-members").innerHTML, /Part B[\s\S]+承認待ち[\s\S]+Part A/);
   assert.equal(h.calls[0].options.method, "GET");
   h.setState(initial);
-  await h.element("line-management-refresh").onclick();
+  const fetchState = h.context.fetch;
+  let releaseRefresh;
+  let markStarted;
+  const started = new Promise(resolve => { markStarted = resolve; });
+  h.context.fetch = (...args) => new Promise(resolve => {
+    releaseRefresh = () => resolve(fetchState(...args));
+    markStarted();
+  });
+  const updating = h.element("line-management-refresh").onclick();
+  await started;
+  assert.match(h.element("line-members").innerHTML, /承認待ち/);
+  assert.equal(h.element("line-management-controls").inert, true);
+  releaseRefresh();
+  await updating;
   assert.doesNotMatch(h.element("line-members").innerHTML, /承認待ち/);
   h.element("line-code-text").value = "LINK private-test";
   h.element("line-management-close").onclick();

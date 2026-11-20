@@ -158,11 +158,16 @@
 .line-connection.line-fetch-failed :is(#line-refresh, #template-line-refresh) { border-color: #b91c1c; color: #991b1b; font-weight: 600; }
 .line-management { margin-top: 20px; }
 .line-member, .line-job { border-top: 1px solid #cbd5e1; padding: 12px 0; }
-.template-job-meta { display: block; margin: 4px 0 0 1em; }
+.line-job-meta { display: block; margin: 4px 0 0 1em; }
+.line-job-body { margin: 12px 0; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f3f4f6; }
+.line-job-body figcaption { color: #475569; font-size: .85rem; font-weight: 600; }
+.line-job-body .line-preview { margin: 6px 0 0; }
 #template-history-more { margin-top: 8px; }
 .line-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
 :is(#line-confirm, #line-management) { width: min(640px, 90vw); max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
 :is(#line-confirm, #line-management)::backdrop { background: rgb(0 0 0 / 45%); }
+#line-management { height: min(740px, 85dvh); scrollbar-gutter: stable; }
+#line-management-controls > h3 > .help-trigger { margin-inline-start: 12px; }
 .line-management-header { justify-content: space-between; }
 .line-management-header :is(h2, h3) { margin: 0; }
 #line-issue-worker { width: auto; max-width: 100%; }
