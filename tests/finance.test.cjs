@@ -470,6 +470,33 @@ test("chart renders aligned grid positions, scaled bars and empty state", async 
   assert.equal(target.children[0].text, "対象の明細がありません。");
 });
 
+test("shared chart keeps JA colors for paper categories and selects a month", async () => {
+  const { context, element } = setup();
+  const { chartScale, categories } = await logic();
+  context.chartScale = chartScale;
+  context.categories = categories;
+  const target = element("supplier-chart");
+  target.append = (...children) => target.children.push(...children);
+  target.replaceChildren = () => { target.children = []; };
+  vm.runInContext(`
+    node = (tag, text, className) => ({
+      tag, text, className, children: [], style: {},
+      append(...children) { this.children.push(...children); },
+      setAttribute() {},
+      addEventListener(event, callback) { this[event] = callback; },
+    });
+    formatYen = value => String(value) + "円";
+    renderChart([{month: "2026-09", total: 700, categories: {"種苗費": 1000, "未分類": -300}}],
+      document.getElementById("supplier-chart"), ["種苗費", "未分類"], month => globalThis.selectedMonth = month);
+  `, context);
+  const column = target.children[1].children[1].children[0];
+  assert.equal(column.children[1].children[0].className, "finance-segment category-6");
+  assert.equal(column.children[1].children[1].className, "finance-segment category-5");
+  assert.equal(column.children[1].children[1].style.height, "0%");
+  column.click();
+  assert.equal(context.selectedMonth, "2026-09");
+});
+
 test("forecasts follow issuance, not import order, and do not mutate records", async () => {
   const { latestForecast } = await logic();
   const older = { ...invoices[0], issue_date: "2026-09-02" };

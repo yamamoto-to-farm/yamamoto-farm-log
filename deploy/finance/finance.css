@@ -53,6 +53,7 @@ td small { display: block; color: #536574; margin-top: 5px; white-space: pre-wra
 .category-3 { background: #be6d32; }
 .category-4 { background: #258d92; }
 .category-5 { background: #6b7280; }
+.category-6 { background: #a56d13; }
 .finance-record { border-bottom: 1px solid #dce4e8; padding: 12px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .finance-record p { flex: 1 1 230px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .finance-record-panel > summary { cursor: pointer; }
