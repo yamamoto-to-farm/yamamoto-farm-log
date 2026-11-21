@@ -63,17 +63,27 @@ export async function recognizeInvoice(file, progress) {
           if (!draft.issue_date) {
             const date = (await ocr.recognize(canvas, { rectangle: region(.66, .024, .17, .018) })).data.text;
             extra += `\n${date}`;
+            const dates = [...new Set(date.split(/\r?\n/).map(line => findDate([`発行日${line}`], /発行日/)).filter(Boolean))];
+            if (dates.length === 1) extra += `\n発行日：${dates[0]}`;
           }
           if (!draft.total_amount) {
             await ocr.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_LINE, tessedit_char_whitelist: "0123456789, " });
             try {
               const summary = (await ocr.recognize(canvas, { rectangle: region(.075, .201, .86, .025) })).data.text;
-              const details = summaryValues(summary);
+              let details = summaryValues(summary);
+              let cells = [];
+              if (!details) {
+                for (const [x, width] of [[.07, .14], [.21, .14], [.35, .14], [.49, .14], [.63, .14], [.77, .16]]) {
+                  const value = (await ocr.recognize(canvas, { rectangle: region(x, .201, width, .025) })).data.text;
+                  cells.push(/^[\d,\s]+$/.test(value) ? value.replace(/[,\s]/g, "") : "");
+                }
+                details = summaryValues(cells.join(" | "));
+              }
               if (details) {
                 extra += `\n請求内訳: ${details.join(" | ")}`;
               } else {
-                const cell = (await ocr.recognize(canvas, { rectangle: region(.77, .201, .16, .025) })).data.text.replace(/\s+/g, "");
-                if (/^(?:\d{1,3}(?:,\d{3})+|\d{1,9})$/.test(cell)) extra += `\n当月御請求額：${yen(cell)}`;
+                const cell = cells[5];
+                if (/^\d{1,9}$/.test(cell)) extra += `\n当月御請求額：${yen(cell)}`;
               }
             } finally {
               await ocr.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_BLOCK, tessedit_char_whitelist: "" });
@@ -109,36 +119,43 @@ function green(data, index) {
 export function ruledTableColumns(image, headerBottom) {
   const { width, height, data } = image;
   const top = Math.ceil(headerBottom + 2);
-  const bottom = Math.min(height, top + Math.floor(height * .22));
-  if (bottom - top < height * .15) return null;
-  const groups = [];
-  let start = -1;
-  for (let x = 0; x <= width; x++) {
-    let count = 0;
-    if (x < width) {
-      for (let y = top; y < bottom; y += 2) {
-        if (green(data, (y * width + x) * 4)) count++;
+  function detect(startY, length, minimum = length * .9) {
+    const bottom = Math.min(height, startY + Math.floor(height * length));
+    if (bottom - startY < height * minimum) return null;
+    const groups = [];
+    let start = -1;
+    for (let x = 0; x <= width; x++) {
+      let count = 0;
+      if (x < width) {
+        for (let y = startY; y < bottom; y += 2) {
+          if (green(data, (y * width + x) * 4)) count++;
+        }
+      }
+      const hit = count > (bottom - startY) / 2 * .4;
+      if (hit && start < 0) start = x;
+      if (!hit && start >= 0) {
+        groups.push(Math.round((start + x - 1) / 2));
+        start = -1;
       }
     }
-    const hit = count > (bottom - top) / 2 * .4;
-    if (hit && start < 0) start = x;
-    if (!hit && start >= 0) {
-      groups.push(Math.round((start + x - 1) / 2));
-      start = -1;
-    }
+    if (groups.length !== 10) return null;
+    const total = groups[9] - groups[0];
+    const sizes = groups.slice(1).map((value, i) => (value - groups[i]) / total);
+    if (total < width * .5 || sizes[2] < .25 || sizes[2] > .55
+        || sizes.some(size => size < .01 || size > .55)
+        || sizes.slice(5, 8).some(size => size < .04 || size > .15)) return null;
+    return groups;
   }
-  if (groups.length !== 10) return null;
-  const total = groups[9] - groups[0];
-  const sizes = groups.slice(1).map((value, i) => (value - groups[i]) / total);
-  if (total < width * .5 || sizes[2] < .25 || sizes[2] > .55
-      || sizes.some(size => size < .01 || size > .55)
-      || sizes.slice(5, 8).some(size => size < .04 || size > .15)) return null;
-  return groups;
+  const full = detect(top, .22, .15);
+  if (full) return full;
+  const first = detect(top, .04);
+  const second = detect(top + Math.floor(height * .08), .04);
+  return first && second && first.every((column, i) => Math.abs(column - second[i]) < width * .01) ? first : null;
 }
 
 function tableNumber(value) {
-  const text = value.normalize("NFKC").replace(/\s/g, "");
-  if (!/^(?:\d+|\d{1,3}(?:[,.]{1,2}\d{3})+)$/.test(text)) return null;
+  const text = value.normalize("NFKC").replace(/\s/g, "").replace(/^−/, "-");
+  if (!/^-?(?:\d+|\d{1,3}(?:[,.]{1,2}\d{3})+)$/.test(text)) return null;
   const number = Number(text.replace(/[,.]/g, ""));
   return Number.isSafeInteger(number) ? number : null;
 }
@@ -161,12 +178,16 @@ function ruledTableRows(blocks, columns, left) {
       const quantity = tableNumber(cells[3].join(""));
       const price = tableNumber(cells[5].join(""));
       const amount = tableNumber(cells[6].join(""));
-      const verifiedAmount = quantity > 0 && price > 0 && amount > 0 && quantity * price === amount ? amount : "";
+      const negative = /返品|返却/.test(cells[1].join(""))
+        || [cells[3], cells[6]].some(cell => /[-−]/.test(cell.join("").normalize("NFKC")));
+      const matches = (quantity, price, amount) => quantity !== null && quantity !== 0 && price > 0
+        && amount !== null && amount !== 0 && quantity * price === amount && (!negative || amount < 0);
+      const verifiedAmount = matches(quantity, price, amount) ? amount : "";
       const centers = (line.words || []).map(word => (word.bbox.y0 + word.bbox.y1) / 2).sort((a, b) => a - b);
       const heights = (line.words || []).map(word => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
       const numbers = [3, 5, 6].map(index => {
         const values = [tableNumber(cells[index].join(""))];
-        if (index === 3) {
+        if (index === 3 && !negative) {
           const digits = cells[index].filter(word => /^\d+$/.test(word.normalize("NFKC")));
           if (digits.length === 1) values.push(tableNumber(digits[0]));
         }
@@ -180,7 +201,7 @@ function ruledTableRows(blocks, columns, left) {
           quantity: String(quantity), unit_price: String(price),
           unit: cells[4].join("").trim().slice(0, 40),
         } : {}),
-      }, numbers, center: centers[Math.floor(centers.length / 2)], height: heights[Math.floor(heights.length / 2)] });
+      }, numbers, negative, center: centers[Math.floor(centers.length / 2)], height: heights[Math.floor(heights.length / 2)] });
     }
   }
   return rows;
@@ -214,7 +235,7 @@ export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
     const result = await worker.recognize(table, {}, { text: true, blocks: true });
     const rows = ruledTableRows(result.data.blocks, columns, left);
     if (!rows.length) return null;
-    await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_LINE, tessedit_char_whitelist: "0123456789,." });
+    await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_LINE, tessedit_char_whitelist: "0123456789,.-" });
     try {
       for (const row of rows) {
         if (row.item.amount !== "") continue;
@@ -230,14 +251,14 @@ export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
           if (value !== null) row.numbers[index].push(value);
         }
         const [quantities, prices, amounts] = row.numbers;
-        const matches = new Set(amounts.filter(amount => amount > 0
-          && quantities.some(quantity => quantity > 0
+        const matches = new Set(amounts.filter(amount => amount !== 0 && (!row.negative || amount < 0)
+          && quantities.some(quantity => quantity !== 0
             && prices.some(price => price > 0 && quantity * price === amount))));
         if (matches.size === 1) {
           row.item.amount = [...matches][0];
           const pairs = new Map();
           for (const quantity of quantities) for (const price of prices) {
-            if (quantity > 0 && price > 0 && quantity * price === row.item.amount) {
+            if (quantity !== 0 && price > 0 && quantity * price === row.item.amount) {
               pairs.set(`${quantity}:${price}`, [quantity, price]);
             }
           }
