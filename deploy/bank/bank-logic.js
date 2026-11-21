@@ -98,6 +98,11 @@ export const invoiceVendor = invoice => {
 };
 export const invoiceKey = invoice => `${invoiceSource(invoice)}:${invoice.invoice_no}`;
 
+export function unlinkedInvoices(invoices, links) {
+  const linked = new Set(links.map(invoiceKey));
+  return invoices.filter(invoice => !linked.has(invoiceKey(invoice)));
+}
+
 export function invoiceLinkStatus(item, link, invoices) {
   if (!link) return "未紐づけ";
   const invoice = invoices.find(value => invoiceKey(value) === invoiceKey(link));

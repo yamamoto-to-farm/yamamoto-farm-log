@@ -148,6 +148,44 @@ class FinanceApiTests(unittest.TestCase):
             "verified": True,
         }
 
+    def test_paper_classification_updates_existing_invoice_and_preserves_bank_link(self):
+        payload = self.paper_invoice_payload()
+        created = json.loads(self.call("POST /finance/supplier-invoices", payload)["body"])
+        invoice_no = created["invoice_no"]
+        request = {"source": "paper", "invoice_no": invoice_no, "signature": created["signature"],
+                   "items": [{"line_seq": 1, "category": "肥料費"}]}
+        key = f"supplier/invoices/{invoice_no}.json"
+        etag = self.s3.get_object(Bucket="finance-private", Key=key)["ETag"]
+        with patch.object(self.s3, "put_object", wraps=self.s3.put_object) as put:
+            response = self.call("POST /finance/classifications", request)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(put.call_args.kwargs["IfMatch"], etag)
+        updated = json.loads(response["body"])["invoice"]
+        self.assertEqual(updated["items"][0]["category"], "肥料費")
+        self.assertNotEqual(updated["signature"], created["signature"])
+        catalog = json.loads(self.call("GET /bank/invoice-links")["body"])
+        paper = next(item for item in catalog["invoices"] if item["source"] == "paper")
+        self.assertEqual(paper["signature"], created["signature"])
+        self.assertEqual(paper["breakdown"][0]["category"], "肥料費")
+        self.assertEqual(self.call("POST /finance/classifications", request)["statusCode"], 409)
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 409)
+        payload["items"][0]["category"] = "肥料費"
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 200)
+
+    def test_paper_classification_rejects_bad_rows_and_concurrent_writes(self):
+        created = json.loads(self.call("POST /finance/supplier-invoices", self.paper_invoice_payload())["body"])
+        request = {"source": "paper", "invoice_no": created["invoice_no"], "signature": created["signature"],
+                   "items": [{"line_seq": 1, "category": "農薬費"}]}
+        for changes in ([{"line_seq": True, "category": "農薬費"}],
+                        [{"line_seq": 1, "category": "無効"}],
+                        [{"line_seq": 1, "category": "農薬費"}, {"line_seq": 1, "category": "肥料費"}]):
+            self.assertEqual(self.call("POST /finance/classifications", {**request, "items": changes})["statusCode"], 400)
+        with patch.object(self.s3, "put_object", side_effect=ClientError(
+                {"Error": {"Code": "PreconditionFailed"}}, "PutObject")):
+            self.assertEqual(self.call("POST /finance/classifications", request)["statusCode"], 409)
+        invoice = json.loads(self.call("GET /finance/supplier-invoices")["body"])["invoices"][0]
+        self.assertEqual(invoice["items"][0]["category"], "種苗費")
+
     def test_paper_invoice_upload_save_list_original_and_bank_link(self):
         ticket = self.call("POST /finance/supplier-uploads")
         self.assertEqual(ticket["statusCode"], 200)

@@ -629,7 +629,49 @@ def _paper_invoice_original(bucket, data):
     return {"url": url, "expires_in": 300}
 
 
+def _paper_classify_request(bucket, data):
+    if set(data) != {"source", "invoice_no", "signature", "items"}:
+        raise RequestError(400, "紙請求書の分類リクエストが不正です。")
+    invoice_no = _text(data, "invoice_no", 32)
+    if not PAPER_INVOICE_ID_RE.fullmatch(invoice_no):
+        raise RequestError(400, "紙請求書IDが不正です。")
+    key = f"supplier/invoices/{invoice_no}.json"
+    record, revision = _read_json(bucket, key, with_etag=True)
+    if data["signature"] != _paper_invoice_signature(record):
+        raise RequestError(409, "請求書が更新されています。最新データを取得してください。")
+    changes = data["items"]
+    if not isinstance(changes, list) or not 1 <= len(changes) <= len(record["items"]):
+        raise RequestError(400, "分類する明細を指定してください。")
+    by_line = {item["line_seq"]: item for item in record["items"]}
+    selected = set()
+    for change in changes:
+        if not isinstance(change, dict) or set(change) != {"line_seq", "category"}:
+            raise RequestError(400, "明細の分類形式が不正です。")
+        line_seq, category = change["line_seq"], change["category"]
+        if type(line_seq) is not int or line_seq not in by_line or line_seq in selected:
+            raise RequestError(400, "分類する明細が不正です。")
+        if not isinstance(category, str) or category not in PAPER_INVOICE_CATEGORIES:
+            raise RequestError(400, "紙請求書の分類が不正です。")
+        selected.add(line_seq)
+        item = by_line[line_seq]
+        item.update(category=category, subcategory="", needs_review=category == "未分類",
+                    review_confirmed=category != "未分類")
+    # Classification-only edits preserve the signature already used by existing bank links.
+    record["link_signature"] = record.get("link_signature") or record["signature"]
+    record["signature"] = _paper_invoice_signature(record)
+    record["breakdown"] = [
+        {name: item[name] for name in ("amount", "category", "subcategory", "needs_review", "review_confirmed")}
+        for item in record["items"]
+    ]
+    _write_json(bucket, key, record, condition=revision)
+    return {"saved": True, "invoice": _paper_invoice_public(record)}
+
+
 def _classify_request(bucket, data):
+    if data.get("source") == "paper":
+        return _paper_classify_request(bucket, data)
+    if "source" in data:
+        raise RequestError(400, "請求書の種類が不正です。")
     if "review_confirmed" in data:
         return _review_request(bucket, data)
     invoice_no = _invoice_no(data)
@@ -953,7 +995,7 @@ def _ja_link_invoice(invoice):
 def _paper_link_invoice(invoice):
     return {
         **_paper_invoice_public(invoice),
-        "signature": _paper_invoice_signature(invoice),
+        "signature": invoice.get("link_signature") or _paper_invoice_signature(invoice),
         "breakdown": [
             {key: item[key] for key in ("amount", "category", "subcategory", "needs_review", "review_confirmed")}
             for item in invoice["items"]

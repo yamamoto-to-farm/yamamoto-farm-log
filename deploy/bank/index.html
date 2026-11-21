@@ -117,6 +117,9 @@
         <summary><h2>請求書の紐づけ管理</h2></summary>
         <p>再取り込みで元の取引が変わった紐づけもここから解除できます。1請求書につき1出金の対応です。合算・分割支払いへの対応は含みません。</p>
         <div id="invoice-links-list"></div>
+        <h3>未紐づけの請求書（全口座共通）</h3>
+        <p class="finance-note">銀行の入出金・残高・用途集計には加算しません。未紐づけは未払いを意味しません。</p>
+        <div id="unlinked-invoices-list"></div>
       </details>
       <details class="card finance-record-panel">
         <summary><h2>自動分類ルール</h2></summary>
@@ -194,6 +197,6 @@
       </div>
     </dialog>
   </main>
-  <script type="module" src="./bank.js?v=20261121-paper-invoices-1"></script>
+  <script type="module" src="./bank.js?v=20261121-paper-invoices-2"></script>
 </body>
 </html>

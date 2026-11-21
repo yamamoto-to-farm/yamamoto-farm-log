@@ -181,7 +181,7 @@ function screen(deps = {}) {
     "balance-minimum", "chart-mode", "chart-legend", "sort", "details-section", "filter-error", "filter-state",
     "summary", "groups", "groups-attention", "details-attention", "details-query", "details-result", "items", "page-number",
     "invoice-link-item", "invoice-link-status", "invoice-link-choice", "invoice-link-empty", "unlink-invoice",
-    "invoice-link-preview", "invoice-link-dialog", "save-invoice-link", "invoice-links-list",
+    "invoice-link-preview", "invoice-link-dialog", "save-invoice-link", "invoice-links-list", "unlinked-invoices-list",
     "annual-source", "annual-source-status", "annual-source-details", "annual-source-notices"]) {
     elements[id] = element();
   }
@@ -391,6 +391,15 @@ test("JA link status detects invoice updates, differences and missing invoices w
   assert.match(c.invoiceLinkStatus(row, link, [{ ...invoice, validation_status: "failed" }]), /検証失敗/);
   assert.match(c.jaInvoiceUrl("123456", row), /^\/finance\/index.html\?source=ja&invoice=123456&statement=[a-f0-9]{64}&transaction=/);
   assert.equal(c.totals([row]).withdrawal, 100);
+});
+test("unlinked invoice overview distinguishes sources and excludes all existing links", () => {
+  const c = logic();
+  const invoices = [{ source: "ja", invoice_no: "123456" }, { source: "paper", invoice_no: "123456" },
+    { source: "paper", invoice_no: "other" }];
+  const links = [{ invoice_no: "123456" }, { source: "paper", invoice_no: "other" }];
+  assert.deepEqual(Array.from(c.unlinkedInvoices(invoices, links), invoice => invoice.source), ["paper"]);
+  const html = read("bank/index.html");
+  assert.match(html, /未紐づけは未払いを意味しません/);
 });
 test("JA memo opens candidates, explicit save/unlink uses revisions and failures never report success", async () => {
   const { c, elements } = screen();

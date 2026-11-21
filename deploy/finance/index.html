@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>経費分析・請求書管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./finance.css?v=20261121-paper-invoices-1">
+  <link rel="stylesheet" href="./finance.css?v=20261121-paper-invoices-2">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -23,7 +23,7 @@
     <div id="data-area" hidden>
       <div class="finance-tabs" role="tablist" aria-label="請求書の種類">
         <button id="finance-tab-ja" type="button" role="tab" aria-selected="true" aria-controls="ja-view" tabindex="0">JA請求データ</button>
-        <button id="finance-tab-paper" type="button" role="tab" aria-selected="false" aria-controls="paper-invoice-view" tabindex="-1">紙請求書（PDF保存）</button>
+        <button id="finance-tab-paper" type="button" role="tab" aria-selected="false" aria-controls="paper-invoice-view" tabindex="-1">その他の請求書</button>
       </div>
       <section id="linked-invoice-panel" class="card" hidden>
         <h2>口座明細から開いた請求書</h2>
@@ -162,6 +162,57 @@
     </dialog>
   </main>
   <template id="supplier-panel-template">
+    <div id="supplier-dashboard">
+      <section class="card">
+        <h2>請求書の確認</h2>
+        <div class="finance-toolbar">
+          <button type="button" class="secondary-btn" id="supplier-refresh">最新データに更新</button>
+          <a class="secondary-btn" href="/bank/index.html">口座明細・資金繰りへ</a>
+        </div>
+        <p id="supplier-dashboard-status" role="status" aria-live="polite"></p>
+        <div id="supplier-overview" class="finance-summary"></div>
+        <p class="finance-note">請求書の発行日を基準とした金額です。消費税・繰越残高等を含むため、購入経費や銀行出金の合計とは一致しない場合があります。</p>
+      </section>
+      <section class="card">
+        <h2>請求額・分類の推移</h2>
+        <div class="finance-toolbar">
+          <label>開始月<input id="supplier-from" type="month"></label>
+          <label>終了月<input id="supplier-to" type="month"></label>
+          <label>仕入先<select id="supplier-filter-vendor"><option value="">すべて</option></select></label>
+          <label>分類<select id="supplier-filter-category"><option value="">すべて</option></select></label>
+          <label>品名<input id="supplier-query" type="search"></label>
+        </div>
+        <p id="supplier-filter-status" class="finance-note" role="status"></p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="月別請求明細集計">
+          <table><thead><tr><th>発行月</th><th>明細額</th><th>推移</th><th>分類別</th></tr></thead><tbody id="supplier-monthly"></tbody></table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>年間の分類割合・前年比較</h2>
+        <label>対象年<select id="supplier-year"></select></label>
+        <p id="supplier-annual-note" class="finance-note"></p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="年間請求明細集計">
+          <table><thead><tr><th>分類</th><th>金額</th><th>割合</th></tr></thead><tbody id="supplier-annual"></tbody></table>
+        </div>
+      </section>
+      <details class="card finance-record-panel">
+        <summary><h2>未分類をまとめて整理</h2></summary>
+        <p class="finance-note">絞り込み条件内の同じ仕入先・同じ品名をまとめます。保存済み明細を更新します。</p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="未分類の商品別一覧">
+          <table><thead><tr><th>仕入先・品名</th><th>件数・金額</th><th>分類</th></tr></thead><tbody id="supplier-groups"></tbody></table>
+        </div>
+      </details>
+      <details class="card finance-record-panel">
+        <summary><h2>請求明細・分類修正</h2></summary>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="保存済みの請求明細">
+          <table><thead><tr><th>発行日・仕入先</th><th>品名</th><th>金額</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-saved-items"></tbody></table>
+        </div>
+      </details>
+      <details class="card finance-record-panel">
+        <summary><h2>保存済み請求書</h2></summary>
+        <div id="supplier-invoices"></div>
+      </details>
+    </div>
     <details class="card" id="paper-invoice-upload">
       <summary><h2>紙請求書（PDF保存）の取り込み</h2></summary>
       <p>スキャンPDFからブラウザー内で入力候補を作ります。品名・金額の誤読や明細の抜け、消費税・繰越残高を原本と照合してください。</p>
@@ -171,12 +222,23 @@
           <button type="button" class="secondary-btn" id="supplier-ocr">OCRで読み取る</button>
           <a id="supplier-local-pdf" class="secondary-btn" target="_blank" rel="noopener" hidden>選んだ原本を見る</a>
         </div>
+        <details id="supplier-preview" hidden>
+          <summary>原本を見ながら確認</summary>
+          <iframe id="supplier-preview-frame" class="supplier-preview-frame" title="選択した請求書の原本"></iframe>
+          <p class="finance-note">表示できない場合は「選んだ原本を見る」をご利用ください。</p>
+        </details>
         <div class="finance-toolbar">
           <label>仕入先名<input id="supplier-vendor" type="text" maxlength="120" autocomplete="organization" required></label>
           <label>発行日<input id="supplier-issue" type="date" required></label>
           <label>支払予定日<input id="supplier-settlement" type="date"></label>
           <label>請求額（税込・円）<input id="supplier-total" type="number" step="1" min="1" required></label>
+          <span id="supplier-total-display" class="finance-note"></span>
         </div>
+        <div class="finance-toolbar">
+          <button type="button" class="secondary-btn" id="supplier-apply-suggestions">保存済み分類の候補を反映</button>
+          <span class="finance-note">同じ仕入先・同じ品名の履歴を使います。候補も原本と併せて確認してください。</span>
+        </div>
+        <div id="supplier-draft-groups"></div>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="紙請求書の品目候補">
           <table><thead><tr><th>品名</th><th>金額（円）</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-items"></tbody></table>
         </div>
@@ -190,11 +252,8 @@
         <button type="submit" class="primary-btn">請求書を保存</button>
       </form>
       <p role="status" id="supplier-status"></p>
-      <h3>保存済み請求書</h3>
-      <button type="button" class="secondary-btn" id="supplier-refresh">保存済み請求書を更新</button>
-      <div id="supplier-invoices"></div>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261121-paper-invoices-3"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-4"></script>
 </body>
 </html>

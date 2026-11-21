@@ -24,10 +24,33 @@ test("finance page separates JA data from generic paper invoices and captures th
   const html = readFileSync(join(root, "index.html"), "utf8");
   assert.match(html, /<h1 class="page-title">経費分析・請求書管理<\/h1>/);
   assert.match(html, /role="tab"[^>]*>JA請求データ<\/button>/);
-  assert.match(html, /role="tab"[^>]*>紙請求書（PDF保存）<\/button>/);
+  assert.match(html, /role="tab"[^>]*>その他の請求書<\/button>/);
   assert.match(html, /id="paper-invoice-upload"[\s\S]*?<h2>紙請求書（PDF保存）の取り込み<\/h2>/);
   assert.match(html, /id="supplier-vendor"[^>]*required/);
   assert.doesNotMatch(html, /中神種苗店/);
+});
+test("paper invoice classification suggestions respect supplier and conflicting history", () => {
+  const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
+    .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
+  const c = vm.createContext({});
+  vm.runInContext(source, c);
+  const invoice = (vendor_name, item_name, category, amount = 100) => ({
+    vendor_name, invoice_no: `${vendor_name}-${item_name}`, issue_date: "2026-10-01",
+    items: [{ item_name, category, amount, line_seq: 1 }],
+  });
+  const records = [invoice("Ａ店", "苗 128穴", "種苗費"), invoice("B店", "苗128穴", "肥料費")];
+  assert.equal(c.classificationSuggestion(records, "A店", "苗128穴"), "種苗費");
+  assert.equal(c.classificationSuggestion(records, "C店", "苗128穴"), null);
+  assert.equal(c.classificationSuggestion([...records, invoice("A店", "苗128穴", "農薬費")], "A店", "苗128穴"), null);
+  assert.equal(c.parseAmount("１２,３４５"), 12345);
+  assert.equal(c.parseAmount("-1,200"), -1200);
+  assert.ok(Number.isNaN(c.parseAmount("1,23")));
+  assert.ok(Number.isNaN(c.parseAmount("")));
+  const pending = c.supplierRows([invoice("A店", "苗", "未分類"), invoice("A店", "苗", "未分類", 200),
+    invoice("B店", "苗", "未分類", 300), invoice("A店", "苗", "種苗費")]);
+  const groups = c.supplierGroups(pending);
+  assert.deepEqual(Array.from(groups, group => [group.vendor_name, group.items.length, group.total]),
+    [["A店", 2, 300], ["B店", 1, 300]]);
 });
 test("finance view selection switches tab and panel visibility together", () => {
   const { context, element } = setup();

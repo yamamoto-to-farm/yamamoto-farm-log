@@ -8,7 +8,7 @@ import { formatYen, periodPreset, chartScale } from "/finance/finance-logic.js?v
 import { categories, flattenStatements, filterItems, totals, monthlyTotals, needsAttention, sortItems,
   unclassifiedGroups, annualAnalysis, relatedItems, subcategories, itemParts, allocatedItems, validateAllocations,
   statementCoverage, balanceTrend, unclassifiedSummary, invoiceLinkStatus, invoiceUrl, invoiceAnalysisItems,
-  invoiceKey, invoiceSource, invoiceVendor } from "./bank-logic.js?v=20261121-paper-invoices-1";
+  invoiceKey, invoiceSource, invoiceVendor, unlinkedInvoices } from "./bank-logic.js?v=20261121-paper-invoices-2";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -188,6 +188,18 @@ function renderInvoiceLinks() {
     list.append(row);
   }
   if (!list.children.length) list.append(node("p", "紐づけはありません。"));
+  const unlinked = el("unlinked-invoices-list");
+  unlinked.replaceChildren();
+  for (const invoice of unlinkedInvoices(invoiceLinks.invoices, invoiceLinks.links)) {
+    const row = node("div", undefined, "finance-record");
+    const date = invoice.issue_date ? `${invoice.issue_date}発行`
+      : invoice.settlement_date ? `${invoice.settlement_date}支払予定` : "日付不明";
+    const link = node("a", `${invoiceVendor(invoice)} ／ ${date} ／ ${formatYen(invoice.total_amount)}${invoice.validation_status === "failed" ? " ／ 検証失敗" : ""}`);
+    link.href = `/finance/index.html?source=${encodeURIComponent(invoiceSource(invoice))}&invoice=${encodeURIComponent(invoice.invoice_no)}#linked-invoice-panel`;
+    row.append(link);
+    unlinked.append(row);
+  }
+  if (!unlinked.children.length) unlinked.append(node("p", "未紐づけの請求書はありません。"));
 }
 
 function findInvoiceLink(item) {
