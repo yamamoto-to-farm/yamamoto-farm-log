@@ -1,4 +1,4 @@
-import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-2";
+import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-3";
 import { annualComparison, formatYen, monthlyTotals } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
@@ -17,9 +17,33 @@ function node(tag, text) {
 
 function rows() {
   return [...el("supplier-items").rows].map(row => {
-    const [name, amount, category] = row.querySelectorAll("input,select");
-    return { item_name: name.value.trim(), amount: parseAmount(amount.value), category: category.value, subcategory: "" };
+    const field = name => row.querySelector(`[data-field="${name}"]`).value;
+    return {
+      item_name: field("name").trim(), amount: parseAmount(field("amount")),
+      quantity: parseOptionalDecimal(field("quantity")), unit: field("unit").trim() || null,
+      unit_price: parseOptionalDecimal(field("unit_price")), category: field("category"), subcategory: "",
+    };
   });
+}
+
+export function parseOptionalDecimal(value) {
+  const text = value.normalize("NFKC").trim();
+  if (!text) return null;
+  if (!/^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,6})?$/.test(text)) return undefined;
+  const clean = text.replace(/,/g, "");
+  return clean.replace(/^-/, "").split(".")[0].length <= 12 ? clean : undefined;
+}
+
+export function decimalProductMatches(quantity, price, amount) {
+  const integer = value => BigInt(value.replace(".", ""));
+  const places = value => (value.split(".")[1] || "").length;
+  return integer(quantity) * integer(price) === BigInt(amount) * 10n ** BigInt(places(quantity) + places(price));
+}
+
+export function displayQuantity(item) {
+  const quantity = `${item.quantity ?? "—"}${item.unit ? ` ${item.unit}` : ""}`;
+  const price = item.unit_price == null ? "—" : `${item.unit_price}円`;
+  return `${quantity} ／ 単価 ${price}`;
 }
 
 export function parseAmount(value) {
@@ -47,6 +71,10 @@ function updateSum() {
   const items = rows();
   const complete = items.length && items.every(item => Number.isSafeInteger(item.amount));
   el("supplier-sum").textContent = complete ? `明細合計：${formatYen(items.reduce((sum, item) => sum + item.amount, 0))}` : "金額が未入力または不正な明細があります。";
+  const mismatches = items.filter(item => item.quantity != null && item.unit_price != null
+    && Number.isSafeInteger(item.amount) && !decimalProductMatches(item.quantity, item.unit_price, item.amount)).length;
+  el("supplier-arithmetic-status").textContent = mismatches
+    ? `${mismatches}件で数量×単価と金額が異なります。税や端数を含め原本をご確認ください。` : "";
   const total = el("supplier-total").valueAsNumber;
   el("supplier-total-display").textContent = Number.isSafeInteger(total) ? `請求額：${formatYen(total)}` : "";
 }
@@ -68,9 +96,27 @@ function addRow(item = {}) {
   name.required = true;
   name.maxLength = 200;
   name.value = item.item_name || "";
+  name.dataset.field = "name";
+  const optionalInput = (field, label, value, maxLength) => {
+    const input = node("input");
+    input.dataset.field = field;
+    input.setAttribute("aria-label", label);
+    input.maxLength = maxLength;
+    input.value = value ?? "";
+    return input;
+  };
+  const quantity = optionalInput("quantity", "数量", item.quantity, 24);
+  const unit = optionalInput("unit", "単位", item.unit, 40);
+  const unitPrice = optionalInput("unit_price", "単価", item.unit_price, 24);
+  quantity.size = 8;
+  unit.size = 5;
+  unitPrice.size = 10;
+  quantity.inputMode = unitPrice.inputMode = "decimal";
   const amount = node("input");
+  amount.dataset.field = "amount";
   amount.setAttribute("aria-label", "明細金額");
   amount.type = "text";
+  amount.size = 12;
   amount.inputMode = "numeric";
   amount.required = true;
   amount.value = Number.isSafeInteger(item.amount) ? item.amount.toLocaleString("ja-JP") : "";
@@ -79,13 +125,14 @@ function addRow(item = {}) {
     if (Number.isSafeInteger(value)) amount.value = value.toLocaleString("ja-JP");
   };
   const category = categorySelect(item.category);
+  category.dataset.field = "category";
   category.setAttribute("aria-label", "明細分類");
   const remove = node("button", "削除");
   remove.type = "button";
   remove.className = "secondary-btn";
   const row = node("tr");
   remove.onclick = () => { row.remove(); updateSum(); renderDraftGroups(); };
-  for (const control of [name, amount, category, remove]) {
+  for (const control of [name, quantity, unit, unitPrice, amount, category, remove]) {
     const cell = node("td");
     cell.append(control);
     row.append(cell);
@@ -327,7 +374,7 @@ export function initSuppliers(api, onLoaded) {
       save.className = "secondary-btn";
       save.onclick = () => act(() => saveClassifications([item], select.value), dashboardStatus);
       action.append(save);
-      row.append(node("td", `${item.trade_date} ／ ${item.vendor_name}`), node("td", item.item_name),
+      row.append(node("td", `${item.trade_date} ／ ${item.vendor_name}`), node("td", item.item_name), node("td", displayQuantity(item)),
         node("td", formatYen(item.amount)), category, action);
       savedItems.append(row);
     }
@@ -416,7 +463,8 @@ export function initSuppliers(api, onLoaded) {
     if (!loaded) await load();
     let count = 0;
     for (const row of el("supplier-items").rows) {
-      const [name, , category] = row.querySelectorAll("input,select");
+      const name = row.querySelector('[data-field="name"]');
+      const category = row.querySelector('[data-field="category"]');
       const suggestion = classificationSuggestion(records, vendor, name.value);
       if (category.value === "未分類" && suggestion) { category.value = suggestion; count++; }
     }
@@ -447,6 +495,9 @@ export function initSuppliers(api, onLoaded) {
       const file = selectedFile();
       const items = rows();
       const total = el("supplier-total").valueAsNumber;
+      if (items.some(item => item.quantity === undefined || item.unit_price === undefined)) {
+        throw new Error("数量・単価は整数部12桁・小数部6桁以内の数値で入力してください。");
+      }
       if (!el("supplier-verified").checked || !items.length || !Number.isSafeInteger(total) || total < 1
           || items.some(item => !item.item_name || !Number.isSafeInteger(item.amount))
           || items.reduce((sum, item) => sum + item.amount, 0) !== total) {

@@ -150,6 +150,7 @@ class FinanceApiTests(unittest.TestCase):
 
     def test_paper_classification_updates_existing_invoice_and_preserves_bank_link(self):
         payload = self.paper_invoice_payload()
+        payload["items"][0].update(quantity="2", unit="袋", unit_price="55")
         created = json.loads(self.call("POST /finance/supplier-invoices", payload)["body"])
         invoice_no = created["invoice_no"]
         request = {"source": "paper", "invoice_no": invoice_no, "signature": created["signature"],
@@ -162,6 +163,7 @@ class FinanceApiTests(unittest.TestCase):
         self.assertEqual(put.call_args.kwargs["IfMatch"], etag)
         updated = json.loads(response["body"])["invoice"]
         self.assertEqual(updated["items"][0]["category"], "肥料費")
+        self.assertEqual(updated["items"][0]["quantity"], "2")
         self.assertNotEqual(updated["signature"], created["signature"])
         catalog = json.loads(self.call("GET /bank/invoice-links")["body"])
         paper = next(item for item in catalog["invoices"] if item["source"] == "paper")
@@ -185,6 +187,33 @@ class FinanceApiTests(unittest.TestCase):
             self.assertEqual(self.call("POST /finance/classifications", request)["statusCode"], 409)
         invoice = json.loads(self.call("GET /finance/supplier-invoices")["body"])["invoices"][0]
         self.assertEqual(invoice["items"][0]["category"], "種苗費")
+
+    def test_paper_optional_quantity_price_and_legacy_reimport(self):
+        payload = self.paper_invoice_payload()
+        created = json.loads(self.call("POST /finance/supplier-invoices", payload)["body"])
+        key = f"supplier/invoices/{created['invoice_no']}.json"
+        legacy = json.loads(self.s3.objects[key])
+        for item in legacy["items"]:
+            for name in ("quantity", "unit", "unit_price"):
+                item.pop(name)
+        self.save(key, legacy)
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 200)
+
+        payload["items"][0].update(quantity="1.50", unit="袋", unit_price="73.333")
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 409)
+
+        self.s3.objects[payload["source_file"]] = b"%PDF-1.7\nanother private test invoice"
+        created = json.loads(self.call("POST /finance/supplier-invoices", payload)["body"])
+        record = json.loads(self.s3.objects[f"supplier/invoices/{created['invoice_no']}.json"])
+        self.assertEqual((record["items"][0]["quantity"], record["items"][0]["unit"],
+                          record["items"][0]["unit_price"]), ("1.5", "袋", "73.333"))
+        self.assertIsNone(record["items"][1]["quantity"])
+        payload["items"][0]["quantity"] = "1.5000"
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 200)
+        payload["items"][0]["quantity"] = "1.1234567"
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 400)
+        payload["items"][0]["quantity"] = True
+        self.assertEqual(self.call("POST /finance/supplier-invoices", payload)["statusCode"], 400)
 
     def test_paper_invoice_upload_save_list_original_and_bank_link(self):
         ticket = self.call("POST /finance/supplier-uploads")

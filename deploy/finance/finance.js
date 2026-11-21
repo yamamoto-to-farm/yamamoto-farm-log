@@ -8,7 +8,7 @@ import {
   annualCategoryTotals, annualComparison, nextForecast, periodPreset, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
 } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
-import { initSuppliers, originalControl } from "./supplier-invoices.js?v=20261121-paper-invoices-3";
+import { initSuppliers, originalControl, displayQuantity } from "./supplier-invoices.js?v=20261121-paper-invoices-4";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -187,7 +187,7 @@ function renderLinkedInvoice(params) {
     if (paperInvoice) el("linked-supplier-original").append(originalControl(api, invoiceNo));
     for (const item of invoice.items) {
       const row = node("tr");
-      row.append(...[item.trade_date || "—", `${item.item_name} ${item.spec || ""}`, item.department || "—",
+      row.append(...[item.trade_date || "—", `${item.item_name} ${item.spec || ""}`, item.department || "—", displayQuantity(item),
         formatYen(item.amount), `${item.category}${item.subcategory ? ` / ${item.subcategory}` : ""}`].map(value => node("td", value)));
       el("linked-invoice-items").append(row);
     }

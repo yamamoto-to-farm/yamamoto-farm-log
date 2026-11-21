@@ -38,6 +38,20 @@ test("paper invoice classification suggestions respect supplier and conflicting 
     vendor_name, invoice_no: `${vendor_name}-${item_name}`, issue_date: "2026-10-01",
     items: [{ item_name, category, amount, line_seq: 1 }],
   });
+  test("paper invoice optional decimals preserve blanks and detect exact product mismatches", () => {
+    const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
+      .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
+    const c = vm.createContext({});
+    vm.runInContext(source, c);
+    assert.equal(c.parseOptionalDecimal(""), null);
+    assert.equal(c.parseOptionalDecimal("１,２３４.５"), "1234.5");
+    assert.equal(c.parseOptionalDecimal("1,23"), undefined);
+    assert.equal(c.parseOptionalDecimal("1.1234567"), undefined);
+    assert.equal(c.decimalProductMatches("1.2", "2.5", 3), true);
+    assert.equal(c.decimalProductMatches("1.2", "2.5", 4), false);
+    assert.equal(c.displayQuantity({}), "— ／ 単価 —");
+    assert.equal(c.displayQuantity({quantity: "1.5", unit: "袋", unit_price: "10.5"}), "1.5 袋 ／ 単価 10.5円");
+  });
   const records = [invoice("Ａ店", "苗 128穴", "種苗費"), invoice("B店", "苗128穴", "肥料費")];
   assert.equal(c.classificationSuggestion(records, "A店", "苗128穴"), "種苗費");
   assert.equal(c.classificationSuggestion(records, "C店", "苗128穴"), null);
@@ -427,6 +441,7 @@ function setup() {
   const requests = [];
   const context = vm.createContext({
     needsReview: item => Boolean(item.needs_review && item.review_confirmed !== true),
+    displayQuantity: item => `${item.quantity ?? "—"} ／ 単価 ${item.unit_price ?? "—"}`,
     showSaveResult: async message => { context.lastSaveResult = message; },
     document: { getElementById: element },
     console: { error() {} },
@@ -640,6 +655,8 @@ test("supplier OCR only suggests an arithmetically consistent summary and unambi
   assert.equal(draft.issue_date, "2026-10-12");
   assert.equal(draft.settlement_date, "");
   assert.equal(draft.total_amount, 2300);
+  assert.deepEqual([draft.items[0].quantity, draft.items[0].unit, draft.items[0].unit_price], ["2", "本", "1000"]);
+  assert.equal(draft.items[1].quantity, undefined);
   assert.deepEqual(draft.items.map(item => [item.item_name, item.amount, item.category]),
     [["新しい種苗", 2000, "種苗費"], ["別の資材", "", "未分類"],
       ["繰越残高", 100, "未分類"], ["消費税", 200, "未分類"]]);
@@ -667,7 +684,7 @@ test("ruled invoice rows use table positions and leave inconsistent amounts blan
   const columns = [0, 20, 40, 140, 160, 170, 190, 210, 230, 250];
   const word = (text, x) => ({ text, bbox: { x0: x, x1: x + 2, y0: 10, y1: 20 } });
   const line = (date, name, qty, price, amount) => ({
-    words: [word(date, 5), word(name, 60), word(qty, 145), word(price, 175), word(amount, 195)],
+    words: [word(date, 5), word(name, 60), word(qty, 145), word("袋", 165), word(price, 175), word(amount, 195)],
   });
   const blocks = [{ paragraphs: [{ lines: [
     line("10/01", "種苗", "2", "1,000", "2,000"),
@@ -675,8 +692,11 @@ test("ruled invoice rows use table positions and leave inconsistent amounts blan
     line("10/03", "入金", "1", "200", "200"),
     line("10/04", "肥料", "0", "800", "0"),
   ] }] }];
-  assert.deepEqual(ruledTableItems(blocks, columns, 0).map(item => [item.item_name, item.amount]),
+  const items = ruledTableItems(blocks, columns, 0);
+  assert.deepEqual(items.map(item => [item.item_name, item.amount]),
     [["種苗", 2000], ["資材", ""], ["肥料", ""]]);
+  assert.deepEqual([items[0].quantity, items[0].unit, items[0].unit_price], ["2", "袋", "1000"]);
+  assert.equal(items[1].quantity, undefined);
 });
 
 test("ruled table detection requires a complete compatible grid", async () => {

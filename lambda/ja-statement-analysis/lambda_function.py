@@ -455,20 +455,31 @@ def _paper_date(value, name, optional=False):
 
 
 def _paper_invoice_signature(invoice):
+    def signed_item(item):
+        result = {key: item[key] for key in ("item_name", "amount", "category", "subcategory")}
+        result.update({key: item[key] for key in ("quantity", "unit", "unit_price") if item.get(key) is not None})
+        return result
+
     financial = {
         "source": "paper",
         "vendor_name": invoice["vendor_name"],
         "issue_date": invoice["issue_date"],
         "settlement_date": invoice["settlement_date"],
         "total_amount": invoice["total_amount"],
-        "items": [
-            {key: item[key] for key in ("item_name", "amount", "category", "subcategory")}
-            for item in invoice["items"]
-        ],
+        "items": [signed_item(item) for item in invoice["items"]],
     }
     return hashlib.sha256(
         json.dumps(financial, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+
+
+def _paper_optional_decimal(value, name):
+    if value is None:
+        return None
+    if not isinstance(value, str) or not re.fullmatch(r"-?\d{1,12}(?:\.\d{1,6})?", value, flags=re.ASCII):
+        raise RequestError(400, f"{name} は整数部12桁・小数部6桁以内の数値で指定してください。")
+    number = Decimal(value)
+    return "0" if number == 0 else format(number.normalize(), "f")
 
 
 def _paper_invoice_pdf(bucket, source_file):
@@ -544,7 +555,8 @@ def _paper_invoice_save(bucket, data):
         raise RequestError(400, "明細は1〜100行で指定してください。")
     items = []
     for value in values:
-        if not isinstance(value, dict) or set(value) != {"item_name", "amount", "category", "subcategory"}:
+        required = {"item_name", "amount", "category", "subcategory"}
+        if not isinstance(value, dict) or not required <= set(value) or set(value) - required - {"quantity", "unit", "unit_price"}:
             raise RequestError(400, "紙請求書の明細形式が不正です。")
         item_name = _text(value, "item_name", 200)
         amount = value.get("amount")
@@ -554,6 +566,11 @@ def _paper_invoice_save(bucket, data):
         if category not in PAPER_INVOICE_CATEGORIES:
             raise RequestError(400, "紙請求書の分類が不正です。")
         subcategory = _text(value, "subcategory", 80, required=False)
+        quantity = _paper_optional_decimal(value.get("quantity"), "数量")
+        unit_price = _paper_optional_decimal(value.get("unit_price"), "単価")
+        unit = value.get("unit")
+        if unit is not None:
+            unit = _text(value, "unit", 40, required=False) or None
         items.append({
             "line_seq": len(items) + 1,
             "trade_date": None,
@@ -563,6 +580,9 @@ def _paper_invoice_save(bucket, data):
             "amount": amount,
             "category": category,
             "subcategory": subcategory,
+            "quantity": quantity,
+            "unit": unit,
+            "unit_price": unit_price,
             "needs_review": category == "未分類",
             "review_confirmed": category != "未分類",
         })

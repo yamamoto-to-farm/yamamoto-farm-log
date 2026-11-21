@@ -33,7 +33,7 @@
         <a id="linked-bank-return" class="secondary-btn" hidden>元の口座明細へ戻る</a>
         <p class="finance-note" data-help-keep>この表は指定した請求書の全明細です。下の期間・検索条件とは独立しています。口座の出金への加算や用途分類の変更は行いません。</p>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="紐づけ対象の請求書明細">
-          <table><thead><tr><th>取引日</th><th>品名・規格</th><th>部署</th><th>金額</th><th>分類</th></tr></thead><tbody id="linked-invoice-items"></tbody></table>
+          <table><thead><tr><th>取引日</th><th>品名・規格</th><th>部署</th><th>数量 / 単価</th><th>金額</th><th>分類</th></tr></thead><tbody id="linked-invoice-items"></tbody></table>
         </div>
       </section>
       <section id="ja-view" role="tabpanel" aria-labelledby="finance-tab-ja" tabindex="0">
@@ -205,7 +205,7 @@
       <details class="card finance-record-panel">
         <summary><h2>請求明細・分類修正</h2></summary>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="保存済みの請求明細">
-          <table><thead><tr><th>発行日・仕入先</th><th>品名</th><th>金額</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-saved-items"></tbody></table>
+          <table><thead><tr><th>発行日・仕入先</th><th>品名</th><th>数量 / 単価</th><th>金額</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-saved-items"></tbody></table>
         </div>
       </details>
       <details class="card finance-record-panel">
@@ -240,13 +240,15 @@
         </div>
         <div id="supplier-draft-groups"></div>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="紙請求書の品目候補">
-          <table><thead><tr><th>品名</th><th>金額（円）</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-items"></tbody></table>
+          <table><thead><tr><th>品名</th><th>数量</th><th>単位</th><th>単価（円）</th><th>金額（円）</th><th>分類</th><th>操作</th></tr></thead><tbody id="supplier-items"></tbody></table>
         </div>
         <div class="finance-toolbar">
           <button type="button" class="secondary-btn" id="supplier-add">明細行を追加</button>
           <span id="supplier-sum" aria-live="polite"></span>
         </div>
+        <p id="supplier-arithmetic-status" class="finance-note" aria-live="polite"></p>
         <details id="supplier-text-panel" hidden><summary>OCRで読み取った原文</summary><pre id="supplier-text" style="white-space:pre-wrap"></pre></details>
+        <p class="finance-note">数量・単位・単価は任意です。記載がない場合は空欄のままにしてください。数量・単価は小数も入力できます。</p>
         <p class="finance-note">請求額と照合するため、消費税・繰越残高などは必要に応じて別行にし、請求額から差し引かれる入金・値引きはマイナスで入力してください。繰越残高に含まれる入金は二重に入力しないでください。差額を埋めるための推測入力はしないでください。</p>
         <label><input id="supplier-verified" type="checkbox" required> 原本と発行日・請求額・全明細を照合しました</label>
         <button type="submit" class="primary-btn">請求書を保存</button>
@@ -254,6 +256,6 @@
       <p role="status" id="supplier-status"></p>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261121-paper-invoices-4"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-5"></script>
 </body>
 </html>

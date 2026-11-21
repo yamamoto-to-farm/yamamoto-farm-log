@@ -174,6 +174,10 @@ function ruledTableRows(blocks, columns, left) {
         item_name,
         amount: verifiedAmount,
         category: /播種|種苗|プラグ苗|種子/.test(item_name) ? "種苗費" : "未分類",
+        ...(verifiedAmount !== "" ? {
+          quantity: String(quantity), unit_price: String(price),
+          unit: cells[4].join("").trim().slice(0, 40),
+        } : {}),
       }, numbers, center: centers[Math.floor(centers.length / 2)], height: heights[Math.floor(heights.length / 2)] });
     }
   }
@@ -227,7 +231,20 @@ export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
         const matches = new Set(amounts.filter(amount => amount > 0
           && quantities.some(quantity => quantity > 0
             && prices.some(price => price > 0 && quantity * price === amount))));
-        if (matches.size === 1) row.item.amount = [...matches][0];
+        if (matches.size === 1) {
+          row.item.amount = [...matches][0];
+          const pairs = new Map();
+          for (const quantity of quantities) for (const price of prices) {
+            if (quantity > 0 && price > 0 && quantity * price === row.item.amount) {
+              pairs.set(`${quantity}:${price}`, [quantity, price]);
+            }
+          }
+          if (pairs.size === 1) {
+            const [quantity, price] = [...pairs.values()][0];
+            row.item.quantity = String(quantity);
+            row.item.unit_price = String(price);
+          }
+        }
       }
     } finally {
       await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_BLOCK, tessedit_char_whitelist: "" });
@@ -296,7 +313,9 @@ export function invoiceSuggestions(text, layoutItems = null) {
       && yen(price) > 0 && yen(lineAmount) === Number(quantity) * yen(price)
       && (!tax || yen(tax) !== null) && yen(balance) !== null ? yen(lineAmount) : null;
     const category = /播種|種苗|プラグ苗|種子/.test(item_name) ? "種苗費" : "未分類";
-    items.push({ item_name, amount: amount ?? "", category, subcategory: "" });
+    items.push({ item_name, amount: amount ?? "", category, subcategory: "",
+      ...(amount !== null ? { quantity: String(Number(quantity)), unit: unit.slice(0, 40), unit_price: String(yen(price)) } : {}),
+    });
   }
   const candidates = [...(layoutItems ?? items)];
   if (summary) {
