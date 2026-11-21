@@ -29,6 +29,11 @@ test("finance page separates JA data from generic paper invoices and captures th
   assert.match(html, /id="supplier-vendor"[^>]*required/);
   assert.doesNotMatch(html, /中神種苗店/);
 });
+test("OCR status remains next to its controls and outside the inert form", () => {
+  const html = readFileSync(join(root, "index.html"), "utf8");
+  assert.match(html, /id="supplier-pdf" form="supplier-form"[^>]*required/);
+  assert.match(html, /id="supplier-ocr"[\s\S]*?<\/div>\s*<p role="status" aria-live="polite" id="supplier-ocr-status"><\/p>\s*<form id="supplier-form">/);
+});
 test("paper invoice classification suggestions respect supplier and conflicting history", () => {
   const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
     .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
@@ -661,6 +666,39 @@ test("supplier OCR only suggests an arithmetically consistent summary and unambi
     [["新しい種苗", 2000, "種苗費"], ["別の資材", "", "未分類"],
       ["繰越残高", 100, "未分類"], ["消費税", 200, "未分類"]]);
   assert.equal(invoiceSuggestions(text.replace("| 2,300\n", "| 2,301\n")).total_amount, "");
+});
+
+test("supplier OCR reports page reading and analysis rather than a misleading percentage", async () => {
+  const stages = [];
+  let terminated = false, destroyed = false;
+  const page = native => ({
+    getTextContent: async () => ({items: [{str: native ? "a".repeat(101) : ""}]}),
+    getViewport: () => ({width: 100, height: 100}),
+    render: () => ({promise: Promise.resolve()}), cleanup() {},
+  });
+  const pdf = {numPages: 2, getPage: async index => page(index === 1)};
+  const fakePdf = {GlobalWorkerOptions: {}, getDocument: () => ({
+    promise: Promise.resolve(pdf), destroy: async () => { destroyed = true; },
+  })};
+  const worker = {
+    recognize: async () => ({data: {text: "OCR結果", blocks: []}}),
+    terminate: async () => { terminated = true; },
+  };
+  const fakeTesseract = {createWorker: async () => worker};
+  const context = vm.createContext({
+    fakePdf, fakeTesseract,
+    document: {createElement: () => ({getContext: () => ({})})},
+  });
+  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8")
+    .replace(/^export /gm, "")
+    .replace("import(`${assets}/pdf.mjs`), loadTesseract()", "Promise.resolve(fakePdf), Promise.resolve(fakeTesseract)");
+  vm.runInContext(source + "\nrecognizeRuledTable = async () => null;", context);
+  const result = await context.recognizeInvoice({arrayBuffer: async () => new ArrayBuffer(0)}, value => stages.push(value));
+  assert.deepEqual(stages, ["OCRで読み取り中…（1/2ページ）", "OCRで読み取り中…（2/2ページ）",
+    "明細を解析中…（2/2ページ）", "明細を解析中…"]);
+  assert.match(result.text, /OCR結果/);
+  assert.equal(terminated, true);
+  assert.equal(destroyed, true);
 });
 
 test("supplier OCR uses only reconciled summary adjustments without duplicating payments", async () => {

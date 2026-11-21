@@ -28,13 +28,11 @@ export async function recognizeInvoice(file, progress) {
     if (pdf.numPages > 10) throw new Error("OCRできるPDFは10ページまでです。");
     const getWorker = async () => worker ??= await tesseract.createWorker("jpn", 1, {
       workerPath: `${assets}/worker.min.js`, corePath: assets, langPath: assets, cacheMethod: "none",
-      logger: ({ status, progress: value }) => {
-        if (status === "recognizing text") progress(Math.floor(value * 100));
-      },
     });
     const texts = [];
     const layouts = [];
     for (let i = 1; i <= pdf.numPages; i++) {
+      progress(`OCRで読み取り中…（${i}/${pdf.numPages}ページ）`);
       const page = await pdf.getPage(i);
       const native = (await page.getTextContent()).items.map(item => `${item.str ?? ""}${item.hasEOL ? "\n" : " "}`).join("");
       if (native.trim().length > 100) {
@@ -52,6 +50,7 @@ export async function recognizeInvoice(file, progress) {
         const ocr = await getWorker();
         const recognition = (await ocr.recognize(canvas, {}, { text: true, blocks: true })).data;
         const text = recognition.text;
+        progress(`明細を解析中…（${i}/${pdf.numPages}ページ）`);
         layouts.push(await recognizeRuledTable(canvas, ocr, tesseract, recognition.blocks));
         const draft = invoiceSuggestions(text);
         let extra = "";
@@ -87,6 +86,7 @@ export async function recognizeInvoice(file, progress) {
         page.cleanup();
       }
     }
+    progress("明細を解析中…");
     return {
       text: texts.join("\n"),
       items: layouts.every(items => items !== null) ? layouts.flat() : null,

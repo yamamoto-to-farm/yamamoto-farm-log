@@ -1,4 +1,4 @@
-import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-3";
+import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-4";
 import { annualComparison, formatYen, monthlyTotals } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
@@ -243,18 +243,20 @@ function selectedFile() {
 export function initSuppliers(api, onLoaded) {
   el("paper-invoice-content").append(el("supplier-panel-template").content.cloneNode(true));
   const result = el("supplier-status");
+  const ocrStatus = el("supplier-ocr-status");
   const form = el("supplier-form");
   const dashboardStatus = el("supplier-dashboard-status");
   const act = async (task, target = result) => {
     if (working) return;
     working = true;
     form.inert = true;
+    el("supplier-ocr-toolbar").inert = true;
     el("supplier-dashboard").inert = true;
     target.textContent = "";
     target.classList.remove("error");
     try { await task(); }
     catch (error) { target.textContent = error.message; target.classList.add("error"); }
-    finally { working = false; form.inert = false; el("supplier-dashboard").inert = false; }
+    finally { working = false; form.inert = false; el("supplier-ocr-toolbar").inert = false; el("supplier-dashboard").inert = false; }
   };
   const saveClassifications = async (items, category) => {
     if (!category || !supplierCategories.includes(category)) throw new Error("分類を選択してください。");
@@ -420,6 +422,8 @@ export function initSuppliers(api, onLoaded) {
   el("supplier-refresh").onclick = () => act(async () => { await load(); dashboardStatus.textContent = "最新データを取得しました。"; }, dashboardStatus);
   const clearDraft = () => {
     uploaded = undefined;
+    ocrStatus.textContent = "";
+    ocrStatus.classList.remove("error");
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     const link = el("supplier-local-pdf");
     link.removeAttribute("href");
@@ -476,8 +480,10 @@ export function initSuppliers(api, onLoaded) {
     const file = selectedFile();
     if ((el("supplier-issue").value || el("supplier-total").value || rows().some(item => item.item_name))
         && !confirm("入力済みの内容をOCR候補で置き換えますか？")) return;
-    result.textContent = "ブラウザー内でOCRを準備しています…";
-    const { text, items } = await recognizeInvoice(file, value => { result.textContent = `OCRで読み取り中… ${value}%`; });
+    result.textContent = "";
+    result.classList.remove("error");
+    ocrStatus.textContent = "ブラウザー内でOCRを準備しています…";
+    const { text, items } = await recognizeInvoice(file, value => { ocrStatus.textContent = value; });
     const draft = invoiceSuggestions(text, items);
     el("supplier-issue").value = draft.issue_date;
     el("supplier-settlement").value = draft.settlement_date;
@@ -487,8 +493,8 @@ export function initSuppliers(api, onLoaded) {
     el("supplier-items").replaceChildren();
     for (const item of draft.items.length ? draft.items : [{}]) addRow(item);
     renderDraftGroups();
-    result.textContent = "原本と見比べて、空欄・誤読・抜けを修正してください。";
-  });
+    ocrStatus.textContent = "読み取りが完了しました。原本と見比べて、空欄・誤読・抜けを修正してください。";
+  }, ocrStatus);
   form.onsubmit = event => {
     event.preventDefault();
     return act(async () => {

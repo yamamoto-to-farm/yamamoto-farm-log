@@ -216,12 +216,13 @@
     <details class="card" id="paper-invoice-upload">
       <summary><h2>紙請求書（PDF保存）の取り込み</h2></summary>
       <p>スキャンPDFからブラウザー内で入力候補を作ります。品名・金額の誤読や明細の抜け、消費税・繰越残高を原本と照合してください。</p>
+      <div class="finance-toolbar" id="supplier-ocr-toolbar">
+        <label>原本PDF（20MBまで）<input id="supplier-pdf" form="supplier-form" type="file" accept=".pdf,application/pdf" required></label>
+        <button type="button" class="secondary-btn" id="supplier-ocr">OCRで読み取る</button>
+        <a id="supplier-local-pdf" class="secondary-btn" target="_blank" rel="noopener" hidden>選んだ原本を見る</a>
+      </div>
+      <p role="status" aria-live="polite" id="supplier-ocr-status"></p>
       <form id="supplier-form">
-        <div class="finance-toolbar">
-          <label>原本PDF（20MBまで）<input id="supplier-pdf" type="file" accept=".pdf,application/pdf" required></label>
-          <button type="button" class="secondary-btn" id="supplier-ocr">OCRで読み取る</button>
-          <a id="supplier-local-pdf" class="secondary-btn" target="_blank" rel="noopener" hidden>選んだ原本を見る</a>
-        </div>
         <details id="supplier-preview" hidden>
           <summary>原本を見ながら確認</summary>
           <iframe id="supplier-preview-frame" class="supplier-preview-frame" title="選択した請求書の原本"></iframe>
@@ -256,6 +257,6 @@
       <p role="status" id="supplier-status"></p>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261121-paper-invoices-5"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-6"></script>
 </body>
 </html>
