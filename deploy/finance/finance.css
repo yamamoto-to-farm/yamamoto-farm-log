@@ -3,6 +3,8 @@
 .card { margin-bottom: 18px; padding: 18px; }
 .card h2 { font-size: 1.15rem; margin-top: 0; }
 .finance-note { color: #536574; font-size: .9rem; line-height: 1.6; }
+.finance-match { color: #23643d; font-weight: 700; }
+.finance-mismatch { color: #a51f25; font-weight: 700; }
 .finance-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 12px 0; }
 .finance-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; border-bottom: 1px solid #aebac4; }
 .finance-tabs [role="tab"] { border: 1px solid #aebac4; border-bottom: 0; border-radius: 8px 8px 0 0; padding: 9px 16px; background: #f0f4f6; color: inherit; }

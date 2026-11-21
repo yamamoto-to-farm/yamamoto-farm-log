@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>経費分析・請求書管理 - 山本農園</title>
   <link rel="stylesheet" href="/common/css/main.css?v=1">
-  <link rel="stylesheet" href="./finance.css?v=20261121-paper-invoices-2">
+  <link rel="stylesheet" href="./finance.css?v=20261121-paper-invoices-3">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
   <script type="module" src="/common/help.js?v=20261106-1"></script>
 </head>
@@ -248,6 +248,7 @@
         <div class="finance-toolbar">
           <button type="button" class="secondary-btn" id="supplier-add">明細行を追加</button>
           <span id="supplier-sum" aria-live="polite"></span>
+          <span id="supplier-match-status" aria-live="polite"></span>
         </div>
         <p id="supplier-arithmetic-status" class="finance-note" aria-live="polite"></p>
         <details id="supplier-text-panel" hidden><summary>OCRで読み取った原文</summary><pre id="supplier-text" style="white-space:pre-wrap"></pre></details>
@@ -259,6 +260,6 @@
       <p role="status" id="supplier-status"></p>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261121-paper-invoices-8"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-9"></script>
 </body>
 </html>

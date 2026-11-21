@@ -46,6 +46,47 @@ test("supplier name choices use saved supplier names without duplicates", () => 
   assert.match(html, /id="supplier-vendor-choice"/);
   assert.match(html, /id="supplier-vendor"[^>]*autocomplete="off"[^>]*required/);
 });
+test("paper invoice total comparison updates for matching, differences and incomplete inputs", async () => {
+  const { formatYen } = await logic();
+  const elements = {
+    "supplier-items": {rows: []},
+    "supplier-verified": {checked: true},
+    "supplier-sum": {},
+    "supplier-arithmetic-status": {},
+    "supplier-total": {valueAsNumber: 1000},
+    "supplier-total-display": {},
+    "supplier-match-status": {},
+  };
+  const row = amount => ({
+    querySelector: selector => ({value: ({
+      name: "資材", amount, quantity: "", unit: "", unit_price: "", category: "未分類",
+    })[selector.match(/"([^"]+)"/)[1]]}),
+  });
+  const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
+    .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
+  const context = vm.createContext({document: {getElementById: id => elements[id]}, formatYen});
+  vm.runInContext(source, context);
+  const update = amounts => {
+    elements["supplier-items"].rows = amounts.map(row);
+    context.updateSum();
+    return elements["supplier-match-status"].textContent;
+  };
+  assert.equal(update(["1,200", "-200"]), "✓ 請求額と一致");
+  assert.equal(elements["supplier-match-status"].className, "finance-match");
+  assert.equal(elements["supplier-verified"].checked, false);
+  assert.equal(update(["900"]), "請求額との差額：100円（明細合計が不足）");
+  assert.equal(elements["supplier-match-status"].className, "finance-mismatch");
+  assert.equal(update(["1,500"]), "請求額との差額：500円（明細合計が超過）");
+  assert.equal(update(["1,000", ""]), "請求額との照合ができません。");
+  assert.equal(elements["supplier-match-status"].className, "");
+  elements["supplier-total"].valueAsNumber = NaN;
+  assert.equal(update(["1,000"]), "請求額との照合ができません。");
+  elements["supplier-total"].valueAsNumber = 0;
+  assert.equal(update(["0"]), "請求額との照合ができません。");
+  elements["supplier-total"].valueAsNumber = 1000;
+  assert.equal(update([]), "請求額との照合ができません。");
+  assert.match(readFileSync(join(root, "index.html"), "utf8"), /id="supplier-match-status" aria-live="polite"/);
+});
 test("paper invoice classification suggestions respect supplier and conflicting history", () => {
   const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
     .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");

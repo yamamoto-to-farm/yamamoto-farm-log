@@ -75,13 +75,26 @@ function updateSum() {
   el("supplier-verified").checked = false;
   const items = rows();
   const complete = items.length && items.every(item => Number.isSafeInteger(item.amount));
-  el("supplier-sum").textContent = complete ? `明細合計：${formatYen(items.reduce((sum, item) => sum + item.amount, 0))}` : "金額が未入力または不正な明細があります。";
+  const sum = complete ? items.reduce((value, item) => value + item.amount, 0) : NaN;
+  el("supplier-sum").textContent = complete ? `明細合計：${formatYen(sum)}` : "金額が未入力または不正な明細があります。";
   const mismatches = items.filter(item => item.quantity != null && item.unit_price != null
     && Number.isSafeInteger(item.amount) && !decimalProductMatches(item.quantity, item.unit_price, item.amount)).length;
   el("supplier-arithmetic-status").textContent = mismatches
     ? `${mismatches}件で数量×単価と金額が異なります。税や端数を含め原本をご確認ください。` : "";
   const total = el("supplier-total").valueAsNumber;
   el("supplier-total-display").textContent = Number.isSafeInteger(total) ? `請求額：${formatYen(total)}` : "";
+  const status = el("supplier-match-status");
+  status.className = "";
+  if (!Number.isSafeInteger(sum) || !Number.isSafeInteger(total) || total < 1) {
+    status.textContent = "請求額との照合ができません。";
+  } else if (sum === total) {
+    status.textContent = "✓ 請求額と一致";
+    status.className = "finance-match";
+  } else {
+    const difference = BigInt(sum) - BigInt(total);
+    status.textContent = `請求額との差額：${formatYen(difference > 0n ? difference : -difference)}（明細合計が${difference > 0n ? "超過" : "不足"}）`;
+    status.className = "finance-mismatch";
+  }
 }
 
 function categorySelect(value = "未分類", includeUnclassified = true) {
