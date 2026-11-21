@@ -709,8 +709,98 @@ test("supplier OCR reports page reading and analysis rather than a misleading pe
   assert.deepEqual(stages, ["OCRで読み取り中…（1/2ページ）", "OCRで読み取り中…（2/2ページ）",
     "明細を解析中…（2/2ページ）", "明細を解析中…"]);
   assert.match(result.text, /OCR結果/);
+  assert.equal(result.items, null);
   assert.equal(terminated, true);
   assert.equal(destroyed, true);
+});
+
+test("supplier OCR keeps each page's table or text items and adds invoice adjustments only once", async () => {
+  const native = "10/02 | 種苗 | 2 | 本 | 1,000 | 2,000 | 200 | 2,300\n" + "a".repeat(101);
+  const texts = [
+    "10/01 | 表の重複候補\n請求内訳: 300 | 200 | 100 | 5,000 | 500 | 5,600",
+    "10/03 | 肥料 | 3 | 袋 | 1,000 | 3,000 | 300 | 3,300",
+    "10/04 | 入金 | 200 | 3,300",
+  ];
+  const layouts = [[{item_name: "表の明細", amount: 2000, category: "未分類"}], null, null];
+  const pdf = {numPages: 4, getPage: async index => ({
+    getTextContent: async () => ({items: [{str: index === 2 ? native : ""}]}),
+    getViewport: () => ({width: 100, height: 100}),
+    render: () => ({promise: Promise.resolve()}), cleanup() {},
+  })};
+  const fakePdf = {GlobalWorkerOptions: {}, getDocument: () => ({
+    promise: Promise.resolve(pdf), destroy: async () => {},
+  })};
+  const fakeTesseract = {createWorker: async () => ({
+    recognize: async () => ({data: {text: texts.shift(), blocks: []}}), terminate: async () => {},
+  })};
+  const context = vm.createContext({fakePdf, fakeTesseract, layouts,
+    document: {createElement: () => ({getContext: () => ({})})},
+  });
+  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8")
+    .replace(/^export /gm, "")
+    .replace("import(`${assets}/pdf.mjs`), loadTesseract()", "Promise.resolve(fakePdf), Promise.resolve(fakeTesseract)");
+  vm.runInContext(source + "\nrecognizeRuledTable = async () => layouts.shift();", context);
+  const result = await context.recognizeInvoice({arrayBuffer: async () => new ArrayBuffer(0)}, () => {});
+  const draft = context.invoiceSuggestions(result.text, result.items);
+  assert.equal(draft.total_amount, 5600);
+  assert.deepEqual(Array.from(draft.items, item => [item.item_name, item.amount]), [
+    ["表の明細", 2000], ["種苗", 2000], ["肥料", 3000], ["繰越残高", 100], ["消費税", 500],
+  ]);
+});
+
+test("supplier OCR reads the full total cell when the summary cannot be reconciled", async () => {
+  const rectangles = [];
+  const pdf = {numPages: 1, getPage: async () => ({
+    getTextContent: async () => ({items: []}), getViewport: () => ({width: 1000, height: 1000}),
+    render: () => ({promise: Promise.resolve()}), cleanup() {},
+  })};
+  const fakePdf = {GlobalWorkerOptions: {}, getDocument: () => ({
+    promise: Promise.resolve(pdf), destroy: async () => {},
+  })};
+  const worker = {
+    setParameters: async () => {}, terminate: async () => {},
+    recognize: async (_canvas, options) => {
+      if (!options.rectangle) return {data: {text: "発行日 2026年8月3日\n前回御請求 消費税 当月御請求", blocks: []}};
+      rectangles.push(options.rectangle);
+      return {data: {text: rectangles.length === 1 ? "判別不能" : "1 500 000"}};
+    },
+  };
+  const fakeTesseract = {createWorker: async () => worker, PSM: {SINGLE_LINE: 7, SINGLE_BLOCK: 6}};
+  const context = vm.createContext({fakePdf, fakeTesseract,
+    document: {createElement: () => ({getContext: () => ({})})},
+  });
+  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8")
+    .replace(/^export /gm, "")
+    .replace("import(`${assets}/pdf.mjs`), loadTesseract()", "Promise.resolve(fakePdf), Promise.resolve(fakeTesseract)");
+  vm.runInContext(source + "\nrecognizeRuledTable = async () => null;", context);
+  const result = await context.recognizeInvoice({arrayBuffer: async () => new ArrayBuffer(0)}, () => {});
+  assert.equal(context.invoiceSuggestions(result.text, result.items).total_amount, 1500000);
+  assert.equal(rectangles[1].left, 770);
+  assert.equal(rectangles[1].width, 160);
+});
+
+test("ruled table accepts a partially misread header only when the grid matches", async () => {
+  const context = vm.createContext({
+    document: {createElement: () => ({
+      getContext: () => ({drawImage() {}, getImageData: () => ({data: []}), putImageData() {}}),
+    })},
+  });
+  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8").replace(/^export /gm, "");
+  vm.runInContext(source + "\nruledTableColumns = () => globalThis.columns;", context);
+  const canvas = {width: 300, height: 300, getContext: () => ({getImageData: () => ({})})};
+  const blocks = [{paragraphs: [{lines: [{text: "月日 区分 誤読 単価", bbox: {y1: 30}}]}]}];
+  let recognized = 0;
+  const worker = {setParameters: async () => {}, recognize: async () => {
+    recognized++;
+    return {data: {blocks: []}};
+  }};
+  const tesseract = {PSM: {SINGLE_BLOCK: 6}};
+  context.columns = null;
+  await context.recognizeRuledTable(canvas, worker, tesseract, blocks);
+  assert.equal(recognized, 0);
+  context.columns = [10, 25, 40, 140, 160, 168, 188, 208, 228, 255];
+  await context.recognizeRuledTable(canvas, worker, tesseract, blocks);
+  assert.equal(recognized, 1);
 });
 
 test("supplier OCR uses only reconciled summary adjustments without duplicating payments", async () => {

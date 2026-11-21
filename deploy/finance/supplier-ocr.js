@@ -72,7 +72,7 @@ export async function recognizeInvoice(file, progress) {
               if (details) {
                 extra += `\n請求内訳: ${details.join(" | ")}`;
               } else {
-                const cell = (await ocr.recognize(canvas, { rectangle: region(.81, .204, .124, .019) })).data.text.replace(/\s+/g, "");
+                const cell = (await ocr.recognize(canvas, { rectangle: region(.77, .201, .16, .025) })).data.text.replace(/\s+/g, "");
                 if (/^(?:\d{1,3}(?:,\d{3})+|\d{1,9})$/.test(cell)) extra += `\n当月御請求額：${yen(cell)}`;
               }
             } finally {
@@ -89,7 +89,9 @@ export async function recognizeInvoice(file, progress) {
     progress("明細を解析中…");
     return {
       text: texts.join("\n"),
-      items: layouts.every(items => items !== null) ? layouts.flat() : null,
+      items: layouts.some(items => items !== null)
+        ? layouts.flatMap((items, i) => items ?? textItemSuggestions(texts[i].normalize("NFKC").split(/\r?\n/)))
+        : null,
     };
   } finally {
     try { if (worker) await worker.terminate(); }
@@ -190,7 +192,7 @@ export function ruledTableItems(blocks, columns, left) {
 
 export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
   const lines = (blocks || []).flatMap(block => (block.paragraphs || []).flatMap(paragraph => paragraph.lines || []));
-  const header = lines.find(line => /月日.*品名.*規.*単価/.test(line.text.replace(/\s+/g, "")));
+  const header = lines.find(line => /月日.*単価/.test(line.text.replace(/\s+/g, "")));
   if (!header) return null;
   const context = canvas.getContext("2d");
   const columns = ruledTableColumns(context.getImageData(0, 0, canvas.width, canvas.height), header.bbox.y1);
@@ -282,23 +284,10 @@ function findDate(lines, label) {
   return "";
 }
 
-export function invoiceSuggestions(text, layoutItems = null) {
-  const lines = text.normalize("NFKC").split(/\r?\n/);
-  const issue_date = findDate(lines, /発行日|請求日/);
-  const settlement_date = findDate(lines, /引落予定日|支払(?:期日|期限|予定日)|振込期限/);
-  let total_amount = "";
-  let summary;
+function textItemSuggestions(lines) {
   const items = [];
-  for (let i = 0; i < lines.length; i++) {
-    const normalized = lines[i].replace(/\s+/g, "");
-    const explicit = normalized.match(/(?:当月御請求額|今回御請求額|ご請求金額|請求金額|請求合計)[:：¥]?((?:\d{1,3}(?:,\d{3})+|\d+))(?:円|$)/);
-    if (explicit) total_amount = yen(explicit[1]);
-    if (!total_amount && /前回御請求額.*消費税額.*当月御請求/.test(normalized)) {
-      summary = summaryValues(lines[i + 1] || "") ?? summary;
-      total_amount = summary?.[5] ?? "";
-    }
-    if (/^請求内訳:/.test(normalized)) summary = summaryValues(normalized.slice("請求内訳:".length)) ?? summary;
-    const row = lines[i].match(/^\s*[|｜]?\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})[\s|｜」]+(.+)$/);
+  for (const line of lines) {
+    const row = line.match(/^\s*[|｜]?\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})[\s|｜」]+(.+)$/);
     if (!row || +row[1] < 1 || +row[1] > 12 || +row[2] < 1 || +row[2] > 31
         || /入\s*金|繰\s*越|小\s*計|合\s*計|値\s*引|メ\s*モ/.test(row[3])) continue;
     const cells = row[3].split(/[|｜]/).map(cell => cell.trim());
@@ -317,7 +306,26 @@ export function invoiceSuggestions(text, layoutItems = null) {
       ...(amount !== null ? { quantity: String(Number(quantity)), unit: unit.slice(0, 40), unit_price: String(yen(price)) } : {}),
     });
   }
-  const candidates = [...(layoutItems ?? items)];
+  return items;
+}
+
+export function invoiceSuggestions(text, layoutItems = null) {
+  const lines = text.normalize("NFKC").split(/\r?\n/);
+  const issue_date = findDate(lines, /発行日|請求日/);
+  const settlement_date = findDate(lines, /引落予定日|支払(?:期日|期限|予定日)|振込期限/);
+  let total_amount = "";
+  let summary;
+  for (let i = 0; i < lines.length; i++) {
+    const normalized = lines[i].replace(/\s+/g, "");
+    const explicit = normalized.match(/(?:当月御請求額|今回御請求額|ご請求金額|請求金額|請求合計)[:：¥]?((?:\d{1,3}(?:,\d{3})+|\d+))(?:円|$)/);
+    if (explicit) total_amount = yen(explicit[1]);
+    if (!total_amount && /前回御請求額.*消費税額.*当月御請求/.test(normalized)) {
+      summary = summaryValues(lines[i + 1] || "") ?? summary;
+      total_amount = summary?.[5] ?? "";
+    }
+    if (/^請求内訳:/.test(normalized)) summary = summaryValues(normalized.slice("請求内訳:".length)) ?? summary;
+  }
+  const candidates = [...(layoutItems ?? textItemSuggestions(lines))];
   if (summary) {
     total_amount = summary[5];
     if (summary[2]) candidates.push({ item_name: "繰越残高", amount: summary[2], category: "未分類" });
