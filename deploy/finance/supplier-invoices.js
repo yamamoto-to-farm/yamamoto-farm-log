@@ -57,6 +57,11 @@ export function supplierKey(value) {
   return value.normalize("NFKC").toLocaleLowerCase("ja").replace(/\s+/g, "");
 }
 
+export function supplierNames(invoices) {
+  return [...new Set(invoices.map(invoice => invoice.vendor_name).filter(name => typeof name === "string" && name.trim()))]
+    .sort((a, b) => a.localeCompare(b, "ja"));
+}
+
 export function classificationSuggestion(invoices, vendor, name) {
   const vendorKey = supplierKey(vendor), nameKey = supplierKey(name);
   if (!vendorKey || !nameKey) return null;
@@ -383,10 +388,14 @@ export function initSuppliers(api, onLoaded) {
   };
   const refreshFilters = () => {
     const vendor = el("supplier-filter-vendor").value;
-    const vendors = [...new Set(records.map(invoice => invoice.vendor_name))].sort();
+    const vendors = supplierNames(records);
     el("supplier-filter-vendor").replaceChildren(new Option("すべて", ""));
     for (const value of vendors) el("supplier-filter-vendor").add(new Option(value, value));
     el("supplier-filter-vendor").value = vendors.includes(vendor) ? vendor : "";
+    const choices = el("supplier-vendor-choice");
+    choices.replaceChildren(new Option(vendors.length ? "仕入先を選択（任意）" : "保存済みの仕入先はありません", ""));
+    for (const value of vendors) choices.add(new Option(value, value));
+    choices.value = vendors.includes(el("supplier-vendor").value) ? el("supplier-vendor").value : "";
     const selected = el("supplier-year").value;
     const todayYear = Number(todayLocalYmd().slice(0, 4));
     const years = [...new Set([todayYear, ...records.map(invoice => Number(invoice.issue_date.slice(0, 4)))])]
@@ -435,6 +444,7 @@ export function initSuppliers(api, onLoaded) {
     for (const id of ["supplier-vendor", "supplier-issue", "supplier-settlement", "supplier-total", "supplier-text"]) {
       el(id).value = "";
     }
+    el("supplier-vendor-choice").value = "";
     el("supplier-text").textContent = "";
     el("supplier-text-panel").hidden = true;
     el("supplier-items").replaceChildren();
@@ -454,8 +464,17 @@ export function initSuppliers(api, onLoaded) {
   };
   form.oninput = event => {
     if (event.target === el("supplier-verified") || el("supplier-draft-groups").contains(event.target)) return;
+    if (event.target === el("supplier-vendor") && el("supplier-vendor-choice").value !== event.target.value) {
+      el("supplier-vendor-choice").value = "";
+    }
     updateSum();
     if (event.target.matches('#supplier-items input[aria-label="品名"]')) renderDraftGroups();
+  };
+  el("supplier-vendor-choice").onchange = event => {
+    if (event.target.value) {
+      el("supplier-vendor").value = event.target.value;
+      updateSum();
+    }
   };
   el("supplier-add").onclick = () => {
     try { addRow(); renderDraftGroups(); }

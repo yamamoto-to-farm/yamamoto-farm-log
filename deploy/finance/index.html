@@ -229,12 +229,14 @@
           <p class="finance-note">表示できない場合は「選んだ原本を見る」をご利用ください。</p>
         </details>
         <div class="finance-toolbar">
-          <label>仕入先名<input id="supplier-vendor" type="text" maxlength="120" autocomplete="organization" required></label>
+          <label>保存済み仕入先<select id="supplier-vendor-choice"><option value="">仕入先を選択（任意）</option></select></label>
+          <label>仕入先名<input id="supplier-vendor" type="text" maxlength="120" autocomplete="off" required></label>
           <label>発行日<input id="supplier-issue" type="date" required></label>
           <label>支払予定日<input id="supplier-settlement" type="date"></label>
           <label>請求額（税込・円）<input id="supplier-total" type="number" step="1" min="1" required></label>
           <span id="supplier-total-display" class="finance-note"></span>
         </div>
+        <p class="finance-note">保存済み請求書の仕入先から選べます。新しい仕入先は直接入力してください。</p>
         <div class="finance-toolbar">
           <button type="button" class="secondary-btn" id="supplier-apply-suggestions">保存済み分類の候補を反映</button>
           <span class="finance-note">同じ仕入先・同じ品名の履歴を使います。候補も原本と併せて確認してください。</span>
@@ -257,6 +259,6 @@
       <p role="status" id="supplier-status"></p>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261121-paper-invoices-6"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-7"></script>
 </body>
 </html>

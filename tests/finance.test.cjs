@@ -34,6 +34,18 @@ test("OCR status remains next to its controls and outside the inert form", () =>
   assert.match(html, /id="supplier-pdf" form="supplier-form"[^>]*required/);
   assert.match(html, /id="supplier-ocr"[\s\S]*?<\/div>\s*<p role="status" aria-live="polite" id="supplier-ocr-status"><\/p>\s*<form id="supplier-form">/);
 });
+test("supplier name choices use saved supplier names without duplicates", () => {
+  const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
+    .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
+  const c = vm.createContext({});
+  vm.runInContext(source, c);
+  const names = c.supplierNames([{vendor_name:"B商店"}, {vendor_name:"A商店"},
+    {vendor_name:"B商店"}, {vendor_name:""}, {vendor_name:null}]);
+  assert.deepEqual(Array.from(names), ["A商店", "B商店"]);
+  const html = readFileSync(join(root, "index.html"), "utf8");
+  assert.match(html, /id="supplier-vendor-choice"/);
+  assert.match(html, /id="supplier-vendor"[^>]*autocomplete="off"[^>]*required/);
+});
 test("paper invoice classification suggestions respect supplier and conflicting history", () => {
   const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
     .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
