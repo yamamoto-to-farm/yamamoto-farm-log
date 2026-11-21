@@ -8,7 +8,7 @@ import {
   annualCategoryTotals, annualComparison, nextForecast, periodPreset, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
 } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
-import { initSuppliers, originalControl } from "./supplier-invoices.js?v=20261121-paper-invoices-1";
+import { initSuppliers, originalControl } from "./supplier-invoices.js?v=20261121-paper-invoices-2";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;

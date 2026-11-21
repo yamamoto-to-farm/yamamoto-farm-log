@@ -164,7 +164,7 @@
   <template id="supplier-panel-template">
     <details class="card" id="paper-invoice-upload">
       <summary><h2>紙請求書（PDF保存）の取り込み</h2></summary>
-      <p>スキャンPDFからブラウザー内で入力候補を作ります。候補は誤読・抜けがあるため、原本と照合してください。</p>
+      <p>スキャンPDFからブラウザー内で入力候補を作ります。品名・金額の誤読や明細の抜け、消費税・繰越残高を原本と照合してください。</p>
       <form id="supplier-form">
         <div class="finance-toolbar">
           <label>原本PDF（20MBまで）<input id="supplier-pdf" type="file" accept=".pdf,application/pdf" required></label>
@@ -185,7 +185,7 @@
           <span id="supplier-sum" aria-live="polite"></span>
         </div>
         <details id="supplier-text-panel" hidden><summary>OCRで読み取った原文</summary><pre id="supplier-text" style="white-space:pre-wrap"></pre></details>
-        <p class="finance-note">請求額と照合するため、消費税・繰越残高などは必要に応じて別行にし、請求額から差し引かれる入金・値引きはマイナスで入力してください。差額を埋めるための推測入力はしないでください。</p>
+        <p class="finance-note">請求額と照合するため、消費税・繰越残高などは必要に応じて別行にし、請求額から差し引かれる入金・値引きはマイナスで入力してください。繰越残高に含まれる入金は二重に入力しないでください。差額を埋めるための推測入力はしないでください。</p>
         <label><input id="supplier-verified" type="checkbox" required> 原本と発行日・請求額・全明細を照合しました</label>
         <button type="submit" class="primary-btn">請求書を保存</button>
       </form>
@@ -195,6 +195,6 @@
       <div id="supplier-invoices"></div>
     </details>
   </template>
-  <script type="module" src="./finance.js?v=20261121-paper-invoices-2"></script>
+  <script type="module" src="./finance.js?v=20261121-paper-invoices-3"></script>
 </body>
 </html>

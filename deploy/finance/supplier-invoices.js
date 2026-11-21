@@ -1,4 +1,4 @@
-import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-1";
+import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-2";
 
 const el = id => document.getElementById(id);
 let previewUrl;
@@ -159,8 +159,8 @@ export function initSuppliers(api, onLoaded) {
     if ((el("supplier-issue").value || el("supplier-total").value || rows().some(item => item.item_name))
         && !confirm("入力済みの内容をOCR候補で置き換えますか？")) return;
     result.textContent = "ブラウザー内でOCRを準備しています…";
-    const text = await recognizeInvoice(file, value => { result.textContent = `OCRで読み取り中… ${value}%`; });
-    const draft = invoiceSuggestions(text);
+    const { text, items } = await recognizeInvoice(file, value => { result.textContent = `OCRで読み取り中… ${value}%`; });
+    const draft = invoiceSuggestions(text, items);
     el("supplier-issue").value = draft.issue_date;
     el("supplier-settlement").value = draft.settlement_date;
     el("supplier-total").value = draft.total_amount;

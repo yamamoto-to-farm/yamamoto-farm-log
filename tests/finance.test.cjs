@@ -618,6 +618,62 @@ test("supplier OCR only suggests an arithmetically consistent summary and unambi
   assert.equal(draft.settlement_date, "");
   assert.equal(draft.total_amount, 2300);
   assert.deepEqual(draft.items.map(item => [item.item_name, item.amount, item.category]),
-    [["新しい種苗", 2000, "種苗費"], ["別の資材", "", "未分類"]]);
+    [["新しい種苗", 2000, "種苗費"], ["別の資材", "", "未分類"],
+      ["繰越残高", 100, "未分類"], ["消費税", 200, "未分類"]]);
   assert.equal(invoiceSuggestions(text.replace("| 2,300\n", "| 2,301\n")).total_amount, "");
+});
+
+test("supplier OCR uses only reconciled summary adjustments without duplicating payments", async () => {
+  const { invoiceSuggestions } = await import("../deploy/finance/supplier-ocr.js");
+  const layout = [{ item_name: "種苗", amount: 2000, category: "種苗費" }];
+  const text = "請求内訳: 300 | 200 | 100 | 2,000 | 200 | 2,300";
+  const draft = invoiceSuggestions(text, layout);
+  assert.equal(draft.total_amount, 2300);
+  assert.deepEqual(draft.items.map(item => [item.item_name, item.amount]),
+    [["種苗", 2000], ["繰越残高", 100], ["消費税", 200]]);
+  assert.equal(layout.length, 1);
+  const invalid = invoiceSuggestions(text.replace("2,300", "2,301"), layout);
+  assert.equal(invalid.total_amount, "");
+  assert.deepEqual(invalid.items, layout);
+  const noCarry = invoiceSuggestions("請求内訳: 200 | 200 | 0 | 2,000 | 200 | 2,200", layout);
+  assert.deepEqual(noCarry.items.map(item => item.item_name), ["種苗", "消費税"]);
+});
+
+test("ruled invoice rows use table positions and leave inconsistent amounts blank", async () => {
+  const { ruledTableItems } = await import("../deploy/finance/supplier-ocr.js");
+  const columns = [0, 20, 40, 140, 160, 170, 190, 210, 230, 250];
+  const word = (text, x) => ({ text, bbox: { x0: x, x1: x + 2, y0: 10, y1: 20 } });
+  const line = (date, name, qty, price, amount) => ({
+    words: [word(date, 5), word(name, 60), word(qty, 145), word(price, 175), word(amount, 195)],
+  });
+  const blocks = [{ paragraphs: [{ lines: [
+    line("10/01", "種苗", "2", "1,000", "2,000"),
+    line("10/02", "資材", "3", "700", "2,000"),
+    line("10/03", "入金", "1", "200", "200"),
+    line("10/04", "肥料", "0", "800", "0"),
+  ] }] }];
+  assert.deepEqual(ruledTableItems(blocks, columns, 0).map(item => [item.item_name, item.amount]),
+    [["種苗", 2000], ["資材", ""], ["肥料", ""]]);
+});
+
+test("ruled table detection requires a complete compatible grid", async () => {
+  const { ruledTableColumns } = await import("../deploy/finance/supplier-ocr.js");
+  const width = 300, height = 300;
+  const image = { width, height, data: new Uint8ClampedArray(width * height * 4).fill(255) };
+  assert.equal(ruledTableColumns(image, 30), null);
+  const columns = [10, 25, 40, 140, 160, 168, 188, 208, 228, 255];
+  for (const x of columns) {
+    for (let y = 33; y < 100; y++) {
+      const index = (y * width + x) * 4;
+      image.data[index] = 50;
+      image.data[index + 1] = 120;
+      image.data[index + 2] = 50;
+    }
+  }
+  assert.deepEqual(ruledTableColumns(image, 30), columns);
+  for (let y = 33; y < 100; y++) {
+    const index = (y * width + columns[5]) * 4;
+    image.data[index] = image.data[index + 1] = image.data[index + 2] = 255;
+  }
+  assert.equal(ruledTableColumns(image, 30), null);
 });
