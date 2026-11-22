@@ -4,6 +4,7 @@ import path from "node:path";
 import { chromium as playwright } from "playwright-core";
 import chromium from "@sparticuz/chromium";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { parseSales } from "./sales-parser.mjs";
 
 const require = createRequire(import.meta.url);
 const fontDirectory = path.dirname(require.resolve("@fontsource-variable/noto-sans-jp/package.json"));
@@ -14,8 +15,7 @@ export function compact(text) {
   return text.normalize("NFKC").replace(/\s/g, "");
 }
 
-export function latestReport(rows) {
-  if (!rows.length) throw new Error("通知書一覧に対象帳票がありません。");
+export function parseReports(rows) {
   const parsed = rows.map((row) => {
     const match = /^fOpenReport\('(\d{8})','(\d{6,12})'\);?$/.exec(row.trim());
     if (!match) throw new Error("通知書一覧の形式が変わりました。");
@@ -29,6 +29,15 @@ export function latestReport(rows) {
   if (parsed.some((row, i) => i > 0 && row.date > parsed[i - 1].date)) {
     throw new Error("通知書が日付の新しい順ではありません。");
   }
+  if (new Set(parsed.map(row => `${row.date}_${row.number}`)).size !== parsed.length) {
+    throw new Error("通知書一覧に重複があります。");
+  }
+  return parsed;
+}
+
+export function latestReport(rows) {
+  const parsed = parseReports(rows);
+  if (!parsed.length) throw new Error("通知書一覧に対象帳票がありません。");
   if (parsed.length > 1 && parsed[0].date === parsed[1].date) {
     throw new Error("最新日付の通知書が複数あるため、自動選択できません。");
   }
@@ -54,7 +63,7 @@ export async function validatePdf(pdf, number) {
   }
 }
 
-export async function capture(credentials, browserOverride) {
+async function withPage(credentials, browserOverride, action) {
   const browser = browserOverride || await playwright.launch({
     args: chromium.args,
     executablePath: await chromium.executablePath(),
@@ -95,40 +104,9 @@ export async function capture(credentials, browserOverride) {
       page.locator("form[name=frmLogin] input[type=submit]").click(),
     ]);
 
-    const listing = await page.goto(`${origin}/kumex/report?hid=contentlist&id=HSB102`, { waitUntil: "load" });
-    if (!listing?.ok()) throw new Error("通知書一覧を取得できません。");
-    const years = await page.locator("select[name=year] option").evaluateAll((options) =>
-      options.map((option) => option.value));
-    if (!years.length || years.some((year) => !/^\d{4}$/.test(year))) {
-      throw new Error("ログインまたは一覧の年を確認できません。");
-    }
-    const latestYear = years.toSorted().at(-1);
-    if (await page.locator("select[name=year]").inputValue() !== latestYear) {
-      await page.selectOption("select[name=year]", latestYear);
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: "load" }),
-        page.evaluate(() => fChangeYear()),
-      ]);
-    }
-    const rows = await page.locator("a[onclick*='fOpenReport']").evaluateAll((links) =>
-      links.map((link) => link.getAttribute("onclick")));
-    const report = latestReport(rows);
-    if (!report.date.startsWith(latestYear)) throw new Error("通知書の年が一致しません。");
-    const reportUrl = `${origin}/kumex/report?hid=form&mod=HSB102&date=${report.date}&reportif=${report.number}`;
-    const response = await page.goto(reportUrl, { waitUntil: "load" });
-    if (!response?.ok() || !compact(await page.locator("body").innerText()).includes(title)) {
-      throw new Error("通知書を取得できません。");
-    }
-
-    const css = (await readFile(path.join(fontDirectory, "index.css"), "utf8"))
-      .replaceAll("./files/", `${origin}/__capture_fonts__/`);
-    await page.addStyleTag({ content: `${css}\n* { font-family: 'Noto Sans JP Variable', sans-serif !important; }` });
-    await page.emulateMedia({ media: "print" });
-    await page.evaluate(() => document.fonts.ready);
-    const pdf = await page.pdf({ format: "A4", printBackground: true });
+    const result = await action(page);
     if (blocked) throw new Error("許可されていない外部リソースが要求されました。");
-    const pages = await validatePdf(pdf, report.number);
-    return { ...report, pages, pdf };
+    return result;
   } finally {
     try {
       if (context) await context.close();
@@ -136,4 +114,99 @@ export async function capture(credentials, browserOverride) {
       if (!browserOverride) await browser.close();
     }
   }
+}
+
+async function listingPage(page, year, pageNumber = 1) {
+    const listing = await page.goto(`${origin}/kumex/report?hid=contentlist&id=HSB102`, { waitUntil: "load" });
+    if (!listing?.ok()) throw new Error("通知書一覧を取得できません。");
+    const years = await page.locator("select[name=year] option").evaluateAll((options) =>
+      options.map((option) => option.value));
+    if (!years.length || years.some((year) => !/^\d{4}$/.test(year))) {
+      throw new Error("ログインまたは一覧の年を確認できません。");
+    }
+    const selectedYear = year || years.toSorted().at(-1);
+    if (!years.includes(selectedYear)) return { rows: [], hasNext: false, year: selectedYear };
+    if (await page.locator("select[name=year]").inputValue() !== selectedYear) {
+      await page.selectOption("select[name=year]", selectedYear);
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "load" }),
+        page.evaluate(() => fChangeYear()),
+      ]);
+    }
+    if (pageNumber > 1) {
+      const listingUrl = `${origin}/kumex/report?hid=contentlist&id=HSB102&year=${selectedYear}&page=${pageNumber}`;
+      const response = await page.goto(listingUrl, { waitUntil: "load" });
+      if (!response?.ok() || await page.locator("select[name=year]").inputValue() !== selectedYear) {
+        throw new Error("通知書一覧のページを取得できません。");
+      }
+    }
+    const rows = await page.locator("a[onclick*='fOpenReport']").evaluateAll((links) =>
+      links.map((link) => link.getAttribute("onclick")));
+    const parsed = parseReports(rows);
+    if (parsed.some(row => !row.date.startsWith(selectedYear))) throw new Error("通知書の年が一致しません。");
+    const hasNext = await page.locator("a[onclick*='pageControl']").evaluateAll(links =>
+      links.some(link => link.textContent.trim() === "次へ"));
+    if (hasNext && !rows.length) throw new Error("通知書一覧のページが空です。");
+    return { rows, hasNext, year: selectedYear };
+}
+
+export async function discover(credentials, year, pageNumber, browserOverride) {
+  return withPage(credentials, browserOverride, async page => {
+    const listing = await listingPage(page, year, pageNumber);
+    return { reports: parseReports(listing.rows), hasNext: listing.hasNext };
+  });
+}
+
+async function extractAnalysis(page) {
+  const extracted = await page.evaluate(() => {
+    const normalized = value => value.replace(/\s/g, "");
+    const products = [...document.querySelectorAll("td, th")]
+      .filter(cell => normalized(cell.textContent) === "品名")
+      .map(cell => cell.nextElementSibling?.textContent.trim());
+    const tables = [...document.querySelectorAll("table")].filter(table =>
+      [...table.querySelectorAll("th")].some(cell => normalized(cell.textContent) === "出荷日"));
+    const summaries = [...document.querySelectorAll("tr")].filter(row =>
+      row.cells.length > 2 && row.textContent.length < 200 &&
+      [...row.cells].some(cell => normalized(cell.textContent).includes("総合計")));
+    if (products.length !== 1 || tables.length !== 1 || summaries.length !== 1) {
+      throw new Error("通知書の品名・明細・合計欄の構造を確認できません。");
+    }
+    const rows = [...tables[0].rows].slice(1)
+      .map(row => [...row.cells].map(cell => cell.textContent.trim()))
+      .filter(row => row.some(value => value) && !row.some(value => normalized(value).includes("総合計")));
+    const summary = summaries[0];
+    const quantityCells = [...summary.cells[0].querySelectorAll("td")];
+    const amounts = [...summary.cells[1].childNodes]
+      .filter(node => node.nodeType === Node.TEXT_NODE)
+      .map(node => node.textContent.trim()).filter(Boolean);
+    if (quantityCells.length !== 2 || amounts.length !== 2) {
+      throw new Error("通知書の合計欄の構造を確認できません。");
+    }
+    return {
+      product: products[0], rows, totalQuantity: quantityCells[1].textContent.trim(),
+      totalAmount: amounts[0], tax: amounts[1],
+    };
+  });
+  return parseSales(extracted);
+}
+
+export async function capture(credentials, browserOverride, selectedReport) {
+  return withPage(credentials, browserOverride, async page => {
+    const report = selectedReport || latestReport((await listingPage(page)).rows);
+    const reportUrl = `${origin}/kumex/report?hid=form&mod=HSB102&date=${report.date}&reportif=${report.number}`;
+    const response = await page.goto(reportUrl, { waitUntil: "load" });
+    if (!response?.ok() || !compact(await page.locator("body").innerText()).includes(title)) {
+      throw new Error("通知書を取得できません。");
+    }
+
+    const analysis = selectedReport ? await extractAnalysis(page) : undefined;
+    const css = (await readFile(path.join(fontDirectory, "index.css"), "utf8"))
+      .replaceAll("./files/", `${origin}/__capture_fonts__/`);
+    await page.addStyleTag({ content: `${css}\n* { font-family: 'Noto Sans JP Variable', sans-serif !important; }` });
+    await page.emulateMedia({ media: "print" });
+    await page.evaluate(() => document.fonts.ready);
+    const pdf = await page.pdf({ format: "A4", printBackground: true });
+    const pages = await validatePdf(pdf, report.number);
+    return { ...report, pages, pdf, ...(analysis ? { analysis } : {}) };
+  });
 }

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>売上分析 - 山本農園</title>
+  <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/finance/finance.css?v=20261121-paper-invoices-4">
+  <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+</head>
+<body class="recent-page recent-page--wide">
+  <main id="page-area" class="page-container" hidden>
+    <h1 class="page-title">売上分析</h1>
+    <p class="finance-note">JA販売代金精算通知書の税抜販売額です。消費税・控除・支払額は売上に加算しません。会計上の利益ではありません。</p>
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="login-area" hidden>
+      <button id="login" type="button" class="primary-btn">ログインする</button>
+      <p>写真・シフトと同じCognitoアカウントを使用します（admin / family）。</p>
+    </div>
+    <div id="data-area" hidden>
+      <section class="card">
+        <h2>精算通知書の取得</h2>
+        <p>2026年11月以降の通知書をJAから取得します。未取得分を順番に処理するため、時間がかかります。途中で失敗しても、再実行時は保存済み分を再利用します。</p>
+        <p class="finance-note">対象は出荷日が2026年11月1日以降の通常の販売代金精算通知書です。減額など別の通知書は取得・集計されません。取り込み前の通知書は集計に含まれません。</p>
+        <div class="finance-toolbar">
+          <button id="sync" type="button" class="primary-btn">JA通知書を取得</button>
+          <button id="refresh" type="button" class="secondary-btn">保存済みデータを更新</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>売上の集計</h2>
+        <div class="finance-toolbar">
+          <label>出荷日（開始）<input id="from" type="date" min="2026-11-01"></label>
+          <label>出荷日（終了）<input id="to" type="date" min="2026-11-01"></label>
+        </div>
+        <p id="summary"></p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="月別売上">
+          <table><caption>出荷月・品名別（税抜）</caption><thead><tr><th>出荷月</th><th>品名</th><th>数量</th><th>販売額</th></tr></thead><tbody id="monthly"></tbody></table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>圃場・作付け別の売上概算</h2>
+        <p class="finance-note">鉄コンテナで、同じ出荷日の精算明細が1件だけ、かつ出荷記録の重量合計と一致する場合のみ自動照合します。出荷記録の重量按分を引き継ぐため概算です。条件が合わない明細は含みません。</p>
+        <p id="matching"></p>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="圃場・作付け別売上概算">
+          <table><thead><tr><th>圃場</th><th>作付け</th><th>重量</th><th>販売額（概算・税抜）</th></tr></thead><tbody id="allocations"></tbody></table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>精算明細</h2>
+        <div class="finance-scroll" tabindex="0" role="region" aria-label="精算明細">
+          <table><thead><tr><th>出荷日</th><th>品名</th><th>数量</th><th>単価</th><th>販売額（税抜）</th><th>出荷記録</th><th>通知書日・番号</th></tr></thead><tbody id="items"></tbody></table>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./sales.js?v=20261123-1"></script>
+  <script src="/common/sw-register.js?v=20260713-1"></script>
+</body>
+</html>

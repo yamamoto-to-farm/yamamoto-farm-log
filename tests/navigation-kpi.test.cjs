@@ -57,7 +57,7 @@ test("top menu separates cultivation, business and system management without cha
   }
   assert.deepEqual(category("edit-csv"), ["システム管理", "データ編集"]);
   assert.equal(pages.find(page => page.id === "ja-finance").topName, "経費分析");
-  assert.equal(pages.find(page => page.id === "sales-analysis").disabled, true);
+  assert.notEqual(pages.find(page => page.id === "sales-analysis").disabled, true);
   for (const id of ["bank-statements", "sales-analysis", "ja-finance"]) {
     assert.deepEqual(pages.find(page => page.id === id).roles, ["family", "admin"]);
   }

@@ -1,7 +1,7 @@
 {
   "pages": [
     { "id": "bank-statements", "name": "口座明細・資金繰り", "path": "bank/index.html", "category": "分析", "topCategory": "経営管理/財務・会計", "roles": ["family", "admin"], "icon": "assets/icons/analysis.png", "openLog": false },
-    { "id": "sales-analysis", "name": "売上分析", "path": "sales/index.html", "category": "経営管理/財務・会計", "roles": ["family", "admin"], "icon": "assets/icons/analysis.png", "openLog": false, "disabled": true },
+    { "id": "sales-analysis", "name": "売上分析", "path": "sales/index.html", "category": "経営管理/財務・会計", "roles": ["family", "admin"], "icon": "assets/icons/analysis.png", "openLog": false },
     { "id": "ja-finance", "name": "経費分析・請求書管理", "topName": "経費分析", "path": "finance/index.html", "category": "分析", "topCategory": "経営管理/財務・会計", "roles": ["family", "admin"], "icon": "assets/icons/analysis.png", "openLog": false },
     { "id": "field-photos", "name": "写真一覧", "path": "photos/index.html", "category": "作業日誌・記録一覧/記録一覧", "roles": ["worker", "family", "admin"] },
     { "id": "photo-callback-access", "path": "/photos/callback.html", "roles": ["worker", "family", "admin"], "accessOnly": true },
