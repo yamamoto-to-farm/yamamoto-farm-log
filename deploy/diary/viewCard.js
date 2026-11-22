@@ -3,7 +3,7 @@
 // =========================================================
 
 import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
-import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js?v=20261103-status-2";
+import { loadLogsByDate, extractWorkForEdit, mergeWorkEntries } from "./work-summary.js?v=20261122-csv-link-1";
 import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { getWorkToneClass } from "/common/work-tone.js";
 import { loadFertilizerDetails, combineSimultaneousWork } from "./actual-work.js?v=20261106-time-1";

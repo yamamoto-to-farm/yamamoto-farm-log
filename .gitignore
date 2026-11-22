@@ -4,4 +4,6 @@ shift-api.zip
 ja-statement-analysis.zip
 lambda/ja-statement-analysis/__pycache__/
 /scripts/finance-ocr/node_modules/
+/lambda/ja-settlement-fetch/node_modules/
+/.venv-settlement/
 /deploy/finance/ocr-assets/

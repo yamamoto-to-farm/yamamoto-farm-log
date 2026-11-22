@@ -4,9 +4,9 @@
 
 import { verifyLocalAuth } from "/common/ui.js";
 import { renderHeader } from "/common/header.js";
-import { showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js?v=20261103-status-2";
-import { initEditPage } from "./editCard.js?v=20261108-saved-fold-1";
-import { initViewPageWithOptions } from "./viewCard.js?v=20261108-saved-fold-1";
+import { showWorkSummary, searchLogsByKeyword, clearWorkSummaryCache } from "./work-summary.js?v=20261122-csv-link-1";
+import { initEditPage } from "./editCard.js?v=20261122-csv-link-1";
+import { initViewPageWithOptions } from "./viewCard.js?v=20261122-csv-link-1";
 import { saveDiary } from "./saveDiary.js?v=20261108-saved-fold-1";
 import { loadDiaryByDate } from "./loadDiary.js?v=20261103-status-2";
 import { renderWeatherBox } from "./weather-box.js";
@@ -17,7 +17,7 @@ import { loadTimestampRows } from "/common/timestamp.js?v=1";
 import { printCurrentPage } from "/common/utils.js?v=20260811-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
-import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./status.js?v=20261103-status-2";
+import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./status.js?v=20261122-csv-link-1";
 import { renderPlannedWork } from "./planned-work.js?v=20261108-saved-fold-1";
 
 const SEARCH_LIMIT = 80;

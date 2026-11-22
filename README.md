@@ -514,6 +514,8 @@ AWS設定（photos の HTTP API に追加）:
   記録なしを「作業なし」とは判断しない。
 - 作業ログの自動表示を基本とし、日誌の編集・保存は必要な日の補足に使う。
   保存していない日を未完了・警告扱いしない。トップの対象日は折りたたんで表示する。
+- 管理者には、作業ログ編集の対象外である定植・収穫・播種の各ログにCSV編集リンクを表示する。
+  対象の `all.csv` を日付検索して開くため、同日の候補から編集する行を確認する。
 - 日誌・作業CSVのHTTP 404だけを未登録と扱う。403・5xx・通信失敗・JSON解析失敗は
   「取得できません」と通知し、再試行できる。失敗結果はキャッシュしない。
 - 日誌の取得失敗中は編集・保存を止める。保存直前の既存日誌取得に失敗した場合も上書きしない。
@@ -769,6 +771,53 @@ python .\scripts\convert_bank_statement.py --reference "同じ口座のJAバン�
 
 日本語フォントはWindowsの `C:\Windows\Fonts\msgothic.ttc` を使用する。別環境では
 `--font` で日本語対応TrueTypeフォントを指定する。生成PDF・原本は公開サイトやGitへ保存しない。
+
+#### 販売代金精算通知書のローカルPDF化（試作）
+
+WindowsのMicrosoft EdgeとPythonを使用し、手動ログイン後に開いた通知書1件をブラウザー印刷のPDFとして保存する。
+JA提供のPDF原本をダウンロードするものではない。利用前にJAの利用条件を確認すること。
+独立した一時ブラウザーでログインするため、普段のEdgeのログイン状態は使わない。
+パスワードはブラウザーに直接入力し、チャットやスクリプトに入力しない。
+
+```powershell
+python -m venv .venv-settlement
+.\.venv-settlement\Scripts\python.exe -m pip install -r .\scripts\settlement_poc_requirements.txt
+.\.venv-settlement\Scripts\python.exe .\scripts\capture_settlement_poc.py --output "G:\非公開フォルダ\精算通知書.pdf"
+```
+
+起動後に表示されたEdgeでJAへログインし、販売代金精算通知書を1件開く。開いた帳票を自動検出して保存後、
+ブラウザーを閉じる。待ち時間は標準10分で、必要なら `--timeout 1200` のように秒数を指定できる。
+出力先のフォルダは事前に作成し、既存ファイルは上書きしない。PDF内の帳票名と番号のみ自動確認するため、
+出荷日・数量・単価・販売額・税・控除・支払額、ページ数とレイアウトは元の画面や手動印刷PDFと照合する。
+PDFは個人・財務情報を含むため非公開の場所に保存し、公開 `data/` やGitに追加しない。
+週次実行、パスワードの保存、S3保存、明細解析、出荷記録との紐づけは未対応。
+
+#### 販売代金精算通知書の取得API
+
+`lambda/ja-settlement-fetch/` はJAへ自動ログインし、一覧の最新年の先頭1件をPDF化する。
+一覧が日付降順でない場合、最新日付に複数の帳票がある場合、ログインやPDFの帳票名・番号を
+確認できない場合は保存しない。JAの画面構造や利用条件が変われば動作しないことがある。
+取得対象がない年から別の年への自動切替や過去分の一括取得は行わない。
+
+- IDとパスワードは東京リージョンのSecrets ManagerにJSONの `username` と `password` として保存する。
+  Lambda環境変数にはシークレットのARNのみを指定し、値・セッション・帳票本文をログやGitへ出力しない。
+  自動ローテーションは設定しない。JA側で変更した場合はシークレットを更新する。
+- 出力は既存の非公開財務バケット `settlements/raw/日付_帳票番号.pdf`。
+  同じキーが存在すれば条件付き書き込みで上書きしない。同じ番号の帳票が後日変更されても自動検知しない。
+  別番号の減額通知は別ファイルとして扱う。削除、明細解析、出荷記録との紐づけはしない。
+- 専用のHTTP API `POST /settlements/capture` はCognitoのアクセストークン、`openid` スコープ、
+  `admin` または `family` グループが必要。本文は空または `{}`。定期実行や画面の操作ボタンはない。
+  エンドポイントは `https://8ifv43nb7l.execute-api.ap-northeast-1.amazonaws.com/settlements/capture`。
+  APIのタイムアウト後もLambdaが処理中の場合があり、同じリクエストの再試行は上書きを防止する。
+  Lambdaの予約済み同時実行は設定せず共通枠を使う。APIにリクエスト頻度の制限はあるが、
+  同時ログインを完全には防げないため、実行中は繰り返し呼び出さない。
+- Linux上の日本語フォントを組み込むため、ブラウザーの手動印刷PDFとレイアウト・ページ数が異なる場合がある。
+  保存後は元画面と出荷日・数量・単価・販売額・税・控除・支払額を照合する。
+  Secrets Manager、Lambda、API Gateway、S3などには利用料金が発生する。
+- `template.yaml` は専用のLambda・最小権限の実行ロール・ロググループ・Cognito認証付きHTTP APIを作成する。
+  既存のAPI Gatewayや財務バケット設定を変更しない。コードZIPはS3からLambdaへ配置する。
+  ビルドはLambdaと同じLinux x86_64・Node.js 24環境で `npm ci`、`npm test` 後に
+  `index.mjs`・`browser.mjs`・`package.json`・`node_modules` をZIP化する。
 
 #### AWS側の設定・公開手順（既存経費環境へ追加）
 

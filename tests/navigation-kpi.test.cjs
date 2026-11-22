@@ -33,6 +33,37 @@ test("unimplemented menu entries are marked unavailable and active destinations 
   const active = vm.runInContext('createCard({name:"写真一覧",path:"photos/index.html"})', context);
   assert.equal(active.children[0].tag, "a");
   assert.equal(active.children[0].href, "photos/index.html");
+  const renamed = vm.runInContext('createCard({name:"経費分析・請求書管理",topName:"経費分析",path:"finance/index.html"})', context);
+  assert.equal(renamed.children[0].textContent, "経費分析");
+  assert.equal(renamed.children[0].href, "finance/index.html");
+});
+
+test("top menu separates cultivation, business and system management without changing admin groups", () => {
+  const pages = JSON.parse(read("data/pages.json")).pages;
+  const html = read("index.html");
+  const categorySource = html.match(/    function normalizeCategory\(page\) \{[\s\S]*?\n    \}/)[0];
+  const context = vm.createContext({});
+  vm.runInContext(categorySource, context);
+  const category = id => Array.from(context.normalizeCategory(pages.find(page => page.id === id)));
+
+  assert.deepEqual(category("lot-analysis"), ["栽培分析", "栽培分析"]);
+  assert.deepEqual(category("bank-statements"), ["経営管理", "財務・会計"]);
+  assert.deepEqual(category("sales-analysis"), ["経営管理", "財務・会計"]);
+  assert.deepEqual(category("ja-finance"), ["経営管理", "財務・会計"]);
+  for (const id of ["shift-plan", "labor-manual", "labor-dashboard", "line-message"]) {
+    assert.deepEqual(category(id), ["経営管理", "労務・シフト"]);
+    assert.equal(pages.find(page => page.id === id).category, "管理/労務・シフト");
+    assert.deepEqual(pages.find(page => page.id === id).roles, ["family", "admin"]);
+  }
+  assert.deepEqual(category("edit-csv"), ["システム管理", "データ編集"]);
+  assert.equal(pages.find(page => page.id === "ja-finance").topName, "経費分析");
+  assert.equal(pages.find(page => page.id === "sales-analysis").disabled, true);
+  for (const id of ["bank-statements", "sales-analysis", "ja-finance"]) {
+    assert.deepEqual(pages.find(page => page.id === id).roles, ["family", "admin"]);
+  }
+  const visibleForWorker = pages.filter(page => !page.accessOnly && page.roles.includes("worker"));
+  assert.ok(visibleForWorker.every(page => category(page.id)[0] !== "経営管理"));
+  assert.ok(html.includes('section.id = `category-${encodeURIComponent(top)}`'));
 });
 
 test("unimplemented fertilizer and pesticide plans have disabled buttons, not broken links", () => {

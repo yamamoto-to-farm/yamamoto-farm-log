@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private JA settlement PDF capture API
+Parameters:
+  CodeBucket:
+    Type: String
+  CodeKey:
+    Type: String
+  FinanceBucket:
+    Type: String
+  SecretArn:
+    Type: String
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/yamamoto-farm-ja-settlement-fetch
+      RetentionInDays: 14
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: settlement-capture
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt LogGroup.Arn
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref SecretArn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${FinanceBucket}/settlements/raw/*'
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: yamamoto-farm-ja-settlement-fetch
+      Runtime: nodejs24.x
+      Architectures: [x86_64]
+      Handler: index.handler
+      Role: !GetAtt ExecutionRole.Arn
+      MemorySize: 1024
+      Timeout: 90
+      Code:
+        S3Bucket: !Ref CodeBucket
+        S3Key: !Ref CodeKey
+      Environment:
+        Variables:
+          FINANCE_BUCKET: !Ref FinanceBucket
+          JA_SECRET_ID: !Ref SecretArn
+  Api:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: yamamoto-farm-ja-settlement-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins: ['https://d3sscxnlo0qnhe.cloudfront.net']
+        AllowHeaders: [authorization, content-type]
+        AllowMethods: [POST, OPTIONS]
+        MaxAge: 300
+  Authorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref Api
+      Name: farm-photos-cognito
+      AuthorizerType: JWT
+      IdentitySource: ['$request.header.Authorization']
+      JwtConfiguration:
+        Audience: [mg1q2dnn576jln28m5sja6eaf]
+        Issuer: https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_OFiPcQjkC
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref Api
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt Function.Arn
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 30000
+  Route:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: POST /settlements/capture
+      AuthorizationType: JWT
+      AuthorizerId: !Ref Authorizer
+      AuthorizationScopes: [openid]
+      Target: !Sub 'integrations/${Integration}'
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Function
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/POST/settlements/capture'
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    DependsOn: [Route, InvokePermission]
+    Properties:
+      ApiId: !Ref Api
+      StageName: '$default'
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 1
+        ThrottlingRateLimit: 0.1
+Outputs:
+  ApiEndpoint:
+    Value: !GetAtt Api.ApiEndpoint

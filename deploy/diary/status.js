@@ -1,5 +1,5 @@
 import { loadDiaryByDate, clearDiaryCache } from "./loadDiary.js?v=20261103-status-2";
-import { loadLogsByDate, clearWorkSummaryCache } from "./work-summary.js?v=20261103-status-2";
+import { loadLogsByDate, clearWorkSummaryCache } from "./work-summary.js?v=20261122-csv-link-1";
 
 export const diaryStateLabels = Object.freeze({
   saved: "日誌保存済み",

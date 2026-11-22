@@ -86,6 +86,27 @@ test("work logs skip only missing CSVs and retry failed CSVs without caching abs
   }
 });
 
+test("work summary links admins to the matching CSV and date, without exposing unsupported links", async () => {
+  const box = {};
+  const context = contextFor("diary/work-summary.js", {
+    URLSearchParams,
+    document: { getElementById: () => box },
+    window: { currentRole: "admin" },
+  });
+  context.logs = ["harvest", "planting", "seed", "fertilizer"].map(folder => ({
+    folder, headerName: ["date"], displayName: folder, data: { date: "2026-11-17" },
+  }));
+  await vm.runInContext('showWorkSummary("2026-11-17", logs)', context);
+  assert.match(box.innerHTML, /作業ログ編集へ/);
+  for (const type of ["harvest", "planting", "seed"]) {
+    assert.ok(box.innerHTML.includes(`type=${type}&amp;file=all.csv&amp;search=2026-11-17`));
+  }
+  assert.doesNotMatch(box.innerHTML, /type=fertilizer/);
+  context.window.currentRole = "worker";
+  await vm.runInContext('showWorkSummary("2026-11-17", logs)', context);
+  assert.doesNotMatch(box.innerHTML, /CSVで編集|作業ログ編集へ/);
+});
+
 test("work-list errors and invalid JSON do not become an empty successful status", async () => {
   for (const response of [
     { ok: false, status: 500 },
