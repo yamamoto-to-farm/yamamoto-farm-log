@@ -18,8 +18,10 @@ function status(message, error = false) {
 
 function addRow(id, values) {
   const row = document.createElement("tr");
-  for (const value of values) {
+  const headers = id === "items" ? el(id).closest("table").tHead.rows[0].cells : null;
+  for (const [index, value] of values.entries()) {
     const cell = document.createElement("td");
+    if (headers) cell.dataset.label = headers[index].textContent;
     if (value instanceof Node) cell.appendChild(value);
     else cell.textContent = value;
     row.appendChild(cell);

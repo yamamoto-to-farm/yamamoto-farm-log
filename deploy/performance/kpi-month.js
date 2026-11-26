@@ -13,6 +13,9 @@ let reports = null;
 let weights = [];
 let index = null;
 let salesMessage = "";
+let salesLoading = false;
+let renderQueue = Promise.resolve();
+const expandedLots = new Set();
 
 function validDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -60,6 +63,7 @@ function link(text, path) {
 }
 
 function salesText(rows) {
+  if (rows.some(row => row.matchStatus === "読込中")) return "読込中";
   const matched = rows.filter(row => row.amount !== null);
   if (!matched.length) return rows.some(row => row.matchStatus !== "対象外") ? "未確定" : "対象外";
   const amount = matched.reduce((sum, row) => sum + row.amount, 0);
@@ -81,7 +85,7 @@ function detailTable(entries) {
     td(row, entry.weight === null || !Number.isFinite(entry.weight) ? "未記録" : `${format(entry.weight)}kg`);
     td(row, entry.bins === null || !Number.isFinite(entry.bins) ? "未記録" : `${format(entry.bins)}基`);
     td(row, entry.unitPrice === null ? "—" : `${format(entry.unitPrice)}円/kg`);
-    td(row, entry.amount === null ? "未確定" : `${format(entry.amount)}円`);
+    td(row, entry.matchStatus === "読込中" ? "読込中" : entry.amount === null ? "未確定" : `${format(entry.amount)}円`);
     td(row, entry.matchReason ? `${entry.matchStatus}：${entry.matchReason}` : entry.matchStatus);
     if (entry.reportDate) {
       const wrapper = document.createElement("div");
@@ -100,9 +104,10 @@ function detailTable(entries) {
   return table;
 }
 
-async function renderPeriod() {
-  const from = el("period-from").value, to = el("period-to").value;
+async function renderPeriod(from, to) {
   if (!validDate(from) || !validDate(to) || from > to) throw new Error("出荷日の期間を正しく指定してください。");
+  const currentReports = reports;
+  const loading = salesLoading;
   el("sales-status").textContent = salesMessage;
   el("month-title").textContent = `${from}〜${to} ロット別収穫・出荷`;
   const filtered = weights.filter(row => row.shippingDate >= from && row.shippingDate <= to);
@@ -120,9 +125,9 @@ async function renderPeriod() {
 
   let daily = [];
   let salesError = "";
-  if (reports && to >= startDate) {
+  if (currentReports && to >= startDate) {
     try {
-      daily = analyzeSales(reports, weights, from < startDate ? startDate : from, to).daily;
+      daily = analyzeSales(currentReports, weights, from < startDate ? startDate : from, to).daily;
       validateLotRefs(daily, safeFileName);
     }
     catch (error) {
@@ -133,12 +138,14 @@ async function renderPeriod() {
   }
   if (salesError) el("sales-status").textContent = `売上照合に失敗しました：${salesError}`;
   const tbody = el("kpi-month-body");
-  tbody.replaceChildren();
+  const summaries = await Promise.all([...lots.keys()].map(ref => loadSummaryByRef(ref)));
+  const fragment = document.createDocumentFragment();
   let totalArea = 0, totalKg = 0, totalUnits = 0;
   let missingSummaries = 0;
   const allEntries = [];
+  let summaryIndex = 0;
   for (const [ref, lot] of lots) {
-    const summary = await loadSummaryByRef(ref);
+    const summary = summaries[summaryIndex++];
     if (!summary) {
       console.warn("[kpi] summary not found", ref);
       missingSummaries++;
@@ -155,7 +162,11 @@ async function renderPeriod() {
       const binValue = Number(row.bins);
       const bins = String(row.bins ?? "").trim() && Number.isFinite(binValue) && binValue >= 0 ? binValue : null;
       if (row.shippingDate < startDate) return { shippingDate: row.shippingDate, weight, bins, amount: null, unitPrice: null, matchStatus: "対象外", matchReason: "2026年11月より前" };
-      if (!reports || salesError) return { shippingDate: row.shippingDate, weight, bins, amount: null, unitPrice: null, matchStatus: "未取得", matchReason: "売上情報を確認できません" };
+      if (!currentReports || salesError) return {
+        shippingDate: row.shippingDate, weight, bins, amount: null, unitPrice: null,
+        matchStatus: loading ? "読込中" : "未取得",
+        matchReason: loading ? "売上情報を読み込み中" : "売上情報を確認できません",
+      };
       return null;
     }).filter(Boolean);
     entries.push(...daily.filter(row => safeFileName(row.plantingRef) === ref));
@@ -165,8 +176,9 @@ async function renderPeriod() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "secondary-btn";
-    button.textContent = `▶ ${ref}`;
-    button.setAttribute("aria-expanded", "false");
+    const expanded = expandedLots.has(ref);
+    button.textContent = `${expanded ? "▼" : "▶"} ${ref}`;
+    button.setAttribute("aria-expanded", String(expanded));
     td(row, button);
     td(row, link(planting.variety || "-", `/varieties/index.html?variety=${encodeURIComponent(planting.variety || "")}`));
     td(row, link(planting.field || "-", `/fields/index.html?field=${encodeURIComponent(planting.field || "")}`));
@@ -177,17 +189,20 @@ async function renderPeriod() {
     td(row, lot.dates[0] === lot.dates.at(-1) ? lot.dates[0] : `${lot.dates[0]}〜${lot.dates.at(-1)}`);
     td(row, salesText(entries));
     const detail = document.createElement("tr");
-    detail.hidden = true;
+    detail.hidden = !expanded;
     detail.className = "sales-detail";
     const detailCell = td(detail, detailTable(grouped));
     detailCell.colSpan = 8;
     button.addEventListener("click", () => {
       detail.hidden = !detail.hidden;
+      if (detail.hidden) expandedLots.delete(ref);
+      else expandedLots.add(ref);
       button.setAttribute("aria-expanded", String(!detail.hidden));
       button.textContent = `${detail.hidden ? "▶" : "▼"} ${ref}`;
     });
-    tbody.append(row, detail);
+    fragment.append(row, detail);
   }
+  tbody.replaceChildren(fragment);
   const total = el("kpi-month-total");
   total.replaceChildren();
   for (const value of ["合計", "", "", totalArea.toFixed(2), format(totalKg), format(totalUnits), "—",
@@ -198,34 +213,39 @@ async function renderPeriod() {
   if (missingRefs) el("sales-status").textContent += ` 作付け未記録の出荷が${missingRefs}件あり、表から除外しました。`;
 }
 
+function scheduleRender(from, to) {
+  const task = renderQueue.then(() => renderPeriod(from, to));
+  renderQueue = task.then(() => undefined, () => undefined);
+  return task;
+}
+
 async function init() {
   try {
     const [from, to] = initialPeriod();
+    let activeFrom = from, activeTo = to;
     el("period-from").value = from;
     el("period-to").value = to;
     [weights, index] = await Promise.all([loadCSV("/logs/weight/all.csv"), loadJSON("/data/summary-index.json")]);
     el("sales-login").hidden = hasSession();
     el("sales-login").onclick = () => login(location.pathname + location.search + location.hash)
       .catch(error => { console.error("[kpi] login failed", error); el("sales-status").textContent = error.message; });
-    if (hasSession()) {
-      try {
-        const data = await salesApi("/analyses");
+    salesLoading = hasSession();
+    salesMessage = salesLoading ? "売上情報を読み込み中です。" : "売上概算はCognitoにログインすると表示します。";
+    const salesRequest = salesLoading ? salesApi("/analyses").then(
+      data => {
         if (!Array.isArray(data.reports)) throw new Error("売上データの形式が不正です。");
-        reports = data.reports;
-        salesMessage = "売上情報を取得しました。";
-      } catch (error) {
-        console.error("[kpi] sales load failed", error);
-        salesMessage = `売上情報を取得できません：${error.message}`;
-        el("sales-login").hidden = hasSession();
-      }
-    } else {
-      salesMessage = "売上概算はCognitoにログインすると表示します。";
-    }
+        return { data };
+      },
+    ).catch(error => ({ error })) : null;
     el("apply-period").addEventListener("click", async () => {
       el("apply-period").disabled = true;
       try {
-        await renderPeriod();
-        const params = new URLSearchParams({ from: el("period-from").value, to: el("period-to").value });
+        const nextFrom = el("period-from").value, nextTo = el("period-to").value;
+        if (!validDate(nextFrom) || !validDate(nextTo) || nextFrom > nextTo) throw new Error("出荷日の期間を正しく指定してください。");
+        activeFrom = nextFrom;
+        activeTo = nextTo;
+        await scheduleRender(activeFrom, activeTo);
+        const params = new URLSearchParams({ from: activeFrom, to: activeTo });
         history.replaceState(null, "", `${location.pathname}?${params}`);
       } catch (error) {
         console.error("[kpi] period failed", error);
@@ -234,7 +254,21 @@ async function init() {
         el("apply-period").disabled = false;
       }
     });
-    await renderPeriod();
+    await scheduleRender(activeFrom, activeTo);
+    el("apply-period").disabled = false;
+    if (salesRequest) {
+      const result = await salesRequest;
+      salesLoading = false;
+      if (result.error) {
+        console.error("[kpi] sales load failed", result.error);
+        salesMessage = `売上情報を取得できません：${result.error.message}`;
+        el("sales-login").hidden = hasSession();
+      } else {
+        reports = result.data.reports;
+        salesMessage = "売上情報を取得しました。";
+      }
+      await scheduleRender(activeFrom, activeTo);
+    }
   } catch (error) {
     console.error("[kpi] load failed", error);
     el("month-title").textContent = "データを表示できません";

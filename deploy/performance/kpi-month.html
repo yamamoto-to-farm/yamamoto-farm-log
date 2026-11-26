@@ -20,7 +20,7 @@
     if (await verifyLocalAuth()) {
       renderNavbar();
       document.body.style.visibility = "visible";
-      await import("/performance/kpi-month.js?v=20261125-1");
+      await import("/performance/kpi-month.js?v=20261126-1");
     }
   </script>
 
@@ -28,7 +28,7 @@
   <div class="finance-toolbar">
     <label>出荷日（開始）<input type="date" id="period-from"></label>
     <label>出荷日（終了）<input type="date" id="period-to"></label>
-    <button id="apply-period" type="button" class="secondary-btn">期間を表示</button>
+    <button id="apply-period" type="button" class="secondary-btn" disabled>期間を表示</button>
   </div>
   <p id="sales-status" role="status"></p>
   <button id="sales-login" type="button" class="secondary-btn" hidden>売上情報にログイン</button>
