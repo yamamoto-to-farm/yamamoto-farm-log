@@ -61,6 +61,7 @@ test("analysis routes enforce permissions and keep source PDF and records privat
       return { Contents: [...objects.keys()].filter(key => key.startsWith(input.Prefix)).map(Key => ({ Key })) };
     }
     if (command.constructor.name === "GetObjectCommand") {
+      if (!objects.has(input.Key)) throw { name: "NoSuchKey", $metadata: { httpStatusCode: 404 } };
       return { Body: { transformToString: async () => String(objects.get(input.Key)) } };
     }
     throw new Error("unexpected S3 command");
@@ -68,6 +69,11 @@ test("analysis routes enforce permissions and keep source PDF and records privat
   const secrets = { send: async () => ({ SecretString: '{"username":"dummy","password":"dummy"}' }) };
   const fn = createHandler({
     s3, secrets, bucket: "private", secretId: "secret",
+    signUrl: async (_s3, command, options) => {
+      assert.match(command.input.Key, /^settlements\/analysis-sources\/[a-f0-9]{64}\.pdf$/);
+      assert.equal(options.expiresIn, 300);
+      return "https://example.invalid/signed";
+    },
     discoverReports: async () => ({ reports: [{ date: "20261120", number: "12345678" }], hasNext: false }),
     captureReport: async (_credentials, _browser, selected) => ({
       ...selected, pdf: Buffer.from("pdf"), analysis: { items: [], tax: 0 },
@@ -88,6 +94,17 @@ test("analysis routes enforce permissions and keep source PDF and records privat
   const records = JSON.parse((await call("GET /settlements/analyses")).body).reports;
   assert.equal(records.length, 1);
   assert.match(records[0].source, /^settlements\/analysis-sources\/[a-f0-9]{64}\.pdf$/);
+  const pdfEvent = {
+    routeKey: "GET /settlements/pdf", queryStringParameters: selection,
+    requestContext: { authorizer: { jwt: { claims } } },
+  };
+  assert.equal((await fn({ ...pdfEvent, requestContext: {} })).statusCode, 401);
+  assert.equal((await fn({ ...pdfEvent, requestContext: { authorizer: { jwt: { claims: { ...claims, "cognito:groups": "[worker]" } } } } })).statusCode, 403);
+  assert.equal((await fn({ ...pdfEvent, queryStringParameters: { ...selection, number: "../other" } })).statusCode, 400);
+  assert.equal((await fn({ ...pdfEvent, queryStringParameters: { ...selection, number: "99999999" } })).statusCode, 404);
+  assert.equal(JSON.parse((await fn(pdfEvent)).body).url, "https://example.invalid/signed");
+  objects.set(`settlements/analysis/${selection.date}_${selection.number}.json`, JSON.stringify({ ...selection, source: "other/private.pdf" }));
+  assert.equal((await fn(pdfEvent)).statusCode, 502);
   assert.equal(objects.size, 2);
 });
 

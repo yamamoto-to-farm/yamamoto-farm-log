@@ -608,7 +608,7 @@
     import { loadCSV } from "./common/csv.js?v=20261104-1";
     import { initTopWorkPlans } from "./common/top-work-plans.js?v=20261104-fold-1";
     import { loadWeatherYear, classifyWeather, weatherIcon } from "./common/weather/weather.js?v=1";
-    import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261122-csv-link-1";
+    import { loadDiaryStatus, diaryStateLabels, clearDiaryStatusCache } from "./diary/status.js?v=20261103-status-2";
 
     const TOP_CATEGORY_ORDER = [
       "作業ログ",
@@ -616,10 +616,9 @@
       "育苗",
       "圃場",
       "機械・設備",
-      "栽培分析",
+      "分析",
       "計画",
-      "経営管理",
-      "システム管理"
+      "管理"
     ];
 
     const SUB_CATEGORY_ORDER = {
@@ -633,10 +632,6 @@
       "作業日誌・記録一覧": [
         "作業日誌",
         "記録一覧"
-      ],
-      "経営管理": [
-        "労務・シフト",
-        "財務・会計"
       ]
     };
 
@@ -646,10 +641,9 @@
       "育苗": "苗の状態と作業を管理する",
       "圃場": "圃場情報と栽培状況を確認する",
       "機械・設備": "説明書・操作メモ・目盛りや調整の控えを確認する",
-      "栽培分析": "栽培・収穫データを分析する",
+      "分析": "栽培・収穫データを分析する",
       "計画": "作業予定と作付計画を確認する",
-      "経営管理": "労務・シフトと財務・会計を管理する",
-      "システム管理": "マスタやシステム設定を管理する"
+      "管理": "マスタやシステム設定を管理する"
     };
 
     const CATEGORY_ICONS = {
@@ -658,16 +652,13 @@
       "育苗": "🌱",
       "圃場": "▧",
       "機械・設備": "🔧",
-      "栽培分析": "📊",
+      "分析": "📊",
       "計画": "📅",
-      "経営管理": "💼",
-      "システム管理": "⚙"
+      "管理": "⚙"
     };
 
-    function normalizeCategory(page) {
-      const parts = (page.topCategory || page.category).split("/");
-      if (parts[0] === "分析") parts[0] = "栽培分析";
-      if (parts[0] === "管理") parts[0] = "システム管理";
+    function normalizeCategory(category) {
+      const parts = category.split("/");
       if (parts.length === 1) {
         return [parts[0], parts[0]];
       }
@@ -686,7 +677,7 @@
       const div = document.createElement("div");
       div.className = "menu-card";
       const label = document.createElement(page.disabled ? "span" : "a");
-      label.textContent = `${page.topName || page.name}${page.disabled ? "（準備中）" : ""}`;
+      label.textContent = `${page.name}${page.disabled ? "（準備中）" : ""}`;
       if (page.disabled) {
         label.className = "menu-card__unavailable";
         label.setAttribute("aria-disabled", "true");
@@ -708,7 +699,7 @@
 
         section = document.createElement("section");
         section.dataset.top = top;
-        section.id = `category-${encodeURIComponent(top)}`;
+        section.id = `category-${top.replace(/[^\w\u3040-\u30ff]/g, "-")}`;
         section.className = "category-section";
 
         const h2 = document.createElement("h2");
@@ -767,7 +758,7 @@
 
         const grid = document.createElement("div");
         grid.className = "menu-grid";
-        grid.id = `${topSection.id}-${encodeURIComponent(sub)}-links`;
+        grid.id = `${topSection.id}-${sub.replace(/[^\w\u3040-\u30ff]/g, "-")}-links`;
         grid.hidden = true;
         subButton.setAttribute("aria-controls", grid.id);
 
@@ -893,8 +884,8 @@
     function sortPages(pages) {
       dlog("sorting pages");
       return pages.sort((a, b) => {
-        const [aTop, aSub] = normalizeCategory(a);
-        const [bTop, bSub] = normalizeCategory(b);
+        const [aTop, aSub] = normalizeCategory(a.category);
+        const [bTop, bSub] = normalizeCategory(b.category);
 
         const topA = TOP_CATEGORY_ORDER.indexOf(aTop);
         const topB = TOP_CATEGORY_ORDER.indexOf(bTop);
@@ -1390,12 +1381,16 @@
         dlog("check page:", page.name, "roles:", page.roles);
 
         if (!page.roles.includes(role) || page.accessOnly) return;
+        // 管理/〜 のツールも「管理」カテゴリのモーダル内にサブ分類ごとに表示する
+        // （権限は roles で絞り込み済み。worker には出ない）
+
         if (isDiaryPage(page)) return;
-        const [rawTop, sub] = normalizeCategory(page);
+        const rawTop = page.category.split("/")[0];
         const top = rawTop === "作業日誌・記録一覧" ? "記録一覧" : rawTop;
         const section = ensureTopCategory(top);
 
-        if (sub !== rawTop) {
+        if (page.category.includes("/")) {
+          const [, sub] = page.category.split("/");
           const grid = ensureSubCategory(section, sub);
           grid.appendChild(createCard(page));
         } else {

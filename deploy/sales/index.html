@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261121-paper-invoices-4">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
+  <link rel="stylesheet" href="./sales.css?v=20261125-1">
 </head>
 <body class="recent-page recent-page--wide">
   <main id="page-area" class="page-container" hidden>
@@ -25,37 +26,38 @@
         <p class="finance-note">対象は出荷日が2026年11月1日以降の通常の販売代金精算通知書です。減額など別の通知書は取得・集計されません。取り込み前の通知書は集計に含まれません。</p>
         <div class="finance-toolbar">
           <button id="sync" type="button" class="primary-btn">JA通知書を取得</button>
-          <button id="refresh" type="button" class="secondary-btn">保存済みデータを更新</button>
+          <button id="refresh" type="button" class="secondary-btn">保存済みデータを再読込</button>
         </div>
+        <p id="last-sync" class="finance-note"></p>
       </section>
       <section class="card">
         <h2>売上の集計</h2>
         <div class="finance-toolbar">
+          <button type="button" class="secondary-btn" data-period="month">今月</button>
+          <button type="button" class="secondary-btn" data-period="previous">先月</button>
+          <button type="button" class="secondary-btn" data-period="year">今年</button>
           <label>出荷日（開始）<input id="from" type="date" min="2026-11-01"></label>
           <label>出荷日（終了）<input id="to" type="date" min="2026-11-01"></label>
         </div>
-        <p id="summary"></p>
+        <p class="finance-note">売上・数量は取得済みの通常通知書全体です。未取得分や減額通知は含まれません。</p>
+        <div class="finance-summary" id="summary"></div>
+        <div id="matching"></div>
+        <h3>月別推移（取得済み）</h3>
+        <div id="trends" class="sales-trends"></div>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="月別売上">
-          <table><caption>出荷月・品名別（税抜）</caption><thead><tr><th>出荷月</th><th>品名</th><th>数量</th><th>販売額</th></tr></thead><tbody id="monthly"></tbody></table>
+          <table><caption>出荷月・品名別（税抜）</caption><thead><tr><th>出荷月</th><th>品名</th><th>数量</th><th>販売額</th><th>平均単価</th></tr></thead><tbody id="monthly"></tbody></table>
         </div>
       </section>
-      <section class="card">
-        <h2>圃場・作付け別の売上概算</h2>
-        <p class="finance-note">鉄コンテナで、同じ出荷日の精算明細が1件だけ、かつ出荷記録の重量合計と一致する場合のみ自動照合します。出荷記録の重量按分を引き継ぐため概算です。条件が合わない明細は含みません。</p>
-        <p id="matching"></p>
-        <div class="finance-scroll" tabindex="0" role="region" aria-label="圃場・作付け別売上概算">
-          <table><thead><tr><th>圃場</th><th>作付け</th><th>重量</th><th>販売額（概算・税抜）</th></tr></thead><tbody id="allocations"></tbody></table>
-        </div>
-      </section>
+      <p><a id="kpi-link" href="/performance/harvest-kpi.html">圃場・作付け別の売上概算は収穫KPIで確認</a></p>
       <section class="card">
         <h2>精算明細</h2>
         <div class="finance-scroll" tabindex="0" role="region" aria-label="精算明細">
-          <table><thead><tr><th>出荷日</th><th>品名</th><th>数量</th><th>単価</th><th>販売額（税抜）</th><th>出荷記録</th><th>通知書日・番号</th></tr></thead><tbody id="items"></tbody></table>
+          <table><thead><tr><th>出荷日</th><th>品名</th><th>数量</th><th>単価</th><th>販売額（税抜）</th><th>出荷記録・確認理由</th><th>通知書日・番号</th></tr></thead><tbody id="items"></tbody></table>
         </div>
       </section>
     </div>
   </main>
-  <script type="module" src="./sales.js?v=20261123-1"></script>
+  <script type="module" src="./sales.js?v=20261125-1"></script>
   <script src="/common/sw-register.js?v=20260713-1"></script>
 </body>
 </html>

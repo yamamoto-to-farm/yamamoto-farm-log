@@ -1,7 +1,7 @@
 // kpi-render.js
 // KPI テーブル描画（HTML生成）
 
-export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targets, year, planSources = []) {
+export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targets, year, planSources = [], sales = null) {
   const hasAnnualPlan = Array.isArray(planSources) && planSources.includes("annual");
   let html = `
     ${hasAnnualPlan ? '<div class="kpi-note">目標面積・目標収量・出荷目標は annual の STEP1 計画です。定植面積は定植記録から集計しています。</div>' : ''}
@@ -18,6 +18,8 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
           ${renderKpiHeader("actual-kg", "収穫実績(kg)")}
           ${renderKpiHeader("target-units", "出荷目標(基)")}
           ${renderKpiHeader("actual-units", "出荷実績(基)")}
+          ${sales ? renderKpiHeader("sales", "売上概算（税抜）") : ""}
+          ${sales ? renderKpiHeader("sales-price", "平均単価") : ""}
         </tr>
       </thead>
       <tbody>
@@ -50,6 +52,9 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
       <td>${Math.round(actuals.kg[m]).toLocaleString()}</td>
       <td>${Math.round(targets.targetUnits[m]).toLocaleString()}</td>
       <td>${Math.round(actuals.units[m]).toLocaleString()}</td>
+      ${sales ? `<td>${year > 2026 || (year === 2026 && m >= 10)
+        ? `<a href="/sales/index.html?from=${year}-${String(m + 1).padStart(2, "0")}-01&to=${year}-${String(m + 1).padStart(2, "0")}-${new Date(year, m + 1, 0).getDate()}">${salesCell(sales[m])}</a>`
+        : "対象外"}</td><td>${salesPrice(sales[m])}</td>` : ""}
     </tr>
   `;
   }
@@ -71,6 +76,10 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
 
   const totalTargetUnits = targets.targetUnits.reduce((a, b) => a + b, 0);
   const totalActualUnits = actuals.units.reduce((a, b) => a + b, 0);
+  const salesTotal = sales && sales.reduce((total, entry) => ({
+    amount: total.amount + entry.amount, weight: total.weight + entry.weight,
+    matched: total.matched + entry.matched, pending: total.pending + entry.pending,
+  }), { amount: 0, weight: 0, matched: 0, pending: 0 });
 
   html += `
       <tr class="total-row">
@@ -83,6 +92,7 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
         <td><strong>${Math.round(totalActualKg).toLocaleString()}</strong></td>
         <td><strong>${Math.round(totalTargetUnits).toLocaleString()}</strong></td>
         <td><strong>${Math.round(totalActualUnits).toLocaleString()}</strong></td>
+        ${sales ? `<td><strong>${salesCell(salesTotal)}</strong></td><td><strong>${salesPrice(salesTotal)}</strong></td>` : ""}
       </tr>
   `;
 
@@ -97,6 +107,15 @@ export function renderKpiTable(goalArea, plantedArea, areaMonthly, actuals, targ
     });
   });
 
+}
+
+function salesCell(value) {
+  if (!value.matched) return value.pending ? "未確定" : "—";
+  return `${Math.round(value.amount).toLocaleString()}円${value.pending ? "（一部未確定）" : ""}`;
+}
+
+function salesPrice(value) {
+  return value.weight ? `${(value.amount / value.weight).toLocaleString("ja-JP", { maximumFractionDigits: 2 })}円/kg${value.pending ? "（一部未確定）" : ""}` : "—";
 }
 
 function renderKpiHeader(key, label) {

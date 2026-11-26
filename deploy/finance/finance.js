@@ -8,7 +8,7 @@ import {
   annualCategoryTotals, annualComparison, nextForecast, periodPreset, needsReview, sortItems, unclassifiedGroups, uploadOutcome,
 } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
-import { initSuppliers, originalControl, displayQuantity } from "./supplier-invoices.js?v=20261121-paper-invoices-10";
+import { initSuppliers, originalControl, displayQuantity } from "./supplier-invoices.js?v=20261121-paper-invoices-6";
 
 const el = id => document.getElementById(id);
 const pageSize = 30;
@@ -237,7 +237,13 @@ function render() {
     actionStatistic("要確認・未分類", `${filtered.filter(item => needsReview(item) || item.category === "未分類").length}件`, () => openAttention("details")),
   );
   const rows = monthlyTotals(filtered, values.basis);
-  renderLegend(el("legend"), categories);
+  const legend = el("legend");
+  legend.replaceChildren();
+  for (const [index, category] of categories.entries()) {
+    const label = node("span");
+    label.append(node("span", "", `finance-key category-${index}`), document.createTextNode(category));
+    legend.append(label);
+  }
   renderChart(rows);
   const head = node("tr");
   for (const label of ["月", ...categories, "合計"]) head.append(node("th", label));
@@ -254,20 +260,6 @@ function render() {
   const unclassifiedCount = unclassifiedGroups(filtered).reduce((sum, group) => sum + group.items.length, 0);
   updateAttention("groups", unclassifiedCount, "未分類");
   updateAttention("details", filtered.filter(item => needsReview(item) || item.category === "未分類").length, "要確認・未分類");
-}
-
-function categoryColor(category) {
-  const index = categories.indexOf(category);
-  return index < 0 ? categories.length : index;
-}
-
-function renderLegend(legend, chartCategories) {
-  legend.replaceChildren();
-  for (const category of chartCategories) {
-    const label = node("span");
-    label.append(node("span", "", `finance-key category-${categoryColor(category)}`), document.createTextNode(category));
-    legend.append(label);
-  }
 }
 
 function actionStatistic(label, value, action) {
@@ -420,7 +412,8 @@ function selectMonth(month) {
   el("details-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function renderChart(rows, chart = el("chart"), chartCategories = categories, onSelect = selectMonth) {
+function renderChart(rows) {
+  const chart = el("chart");
   chart.replaceChildren();
   if (!rows.length) {
     chart.append(node("p", "対象の明細がありません。"));
@@ -446,11 +439,11 @@ function renderChart(rows, chart = el("chart"), chartCategories = categories, on
     column.type = "button";
     column.disabled = busy;
     column.setAttribute("aria-label", `${row.month} ${formatYen(row.total)}：この月の明細を金額順で表示`);
-    column.addEventListener("click", () => onSelect(row.month));
+    column.addEventListener("click", () => selectMonth(row.month));
     const stack = node("div", undefined, "finance-stack");
-    for (const category of chartCategories) {
+    for (const [index, category] of categories.entries()) {
       const amount = row.categories[category] || 0;
-      const segment = node("div", "", `finance-segment category-${categoryColor(category)}`);
+      const segment = node("div", "", `finance-segment category-${index}`);
       segment.style.height = `${Math.max(0, amount) / maximum * 100}%`;
       segment.title = `${category}：${formatYen(amount)}`;
       stack.append(segment);
@@ -791,7 +784,7 @@ async function initialize() {
   suppliers = initSuppliers(api, () => {
     const params = new URLSearchParams(location.search);
     if (isPaperInvoiceSource(params.get("source")) && params.has("invoice")) renderLinkedInvoice(params);
-  }, { renderChart, renderLegend });
+  });
   const tabs = [el("finance-tab-ja"), el("finance-tab-paper")];
   tabs.forEach((tab, index) => {
     tab.addEventListener("click", () => selectFinanceView(index ? "paper" : "ja", true));

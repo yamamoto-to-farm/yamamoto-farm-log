@@ -8,7 +8,10 @@ import { loadJSON } from "/common/json.js";
 import { safeFileName, printInline } from "/common/utils.js?v=20260930-1";
 import { showPlantingDetailModal } from "/common/planting-detail.js?v=20260930-1";
 import { showInfoModal } from "/common/showInfoModal.js?v=1";
-import { renderYearBlock, renderKpiTable } from "./kpi-render.js?v=20261103-mobile-1";
+import { renderYearBlock, renderKpiTable } from "./kpi-render.js?v=20261125-1";
+import { salesApi } from "/sales/sales-api.js?v=20261125-1";
+import { analyzeSales, validateLotRefs } from "/sales/sales-logic.js?v=20261125-1";
+import { hasSession, login } from "/photos/auth.js?v=20261029-2";
 import {
   calcAreaTanFromPlantingRow,
   groupWeightByRef,
@@ -23,6 +26,7 @@ import {
 --------------------------------------------------------- */
 let _summaryIndexCache = null;
 let _summaryRefMap = null;
+let renderGeneration = 0;
 
 function buildAnnualStep1MonthlyData(calendarYear, annualAll) {
   const planArea = Array(12).fill(null);
@@ -122,11 +126,40 @@ async function findSummaryPath(ref) {
    - filters が null の場合は「今年のみ」をデフォルト適用
 --------------------------------------------------------- */
 export async function renderKpiPage(filters = null) {
+  const generation = ++renderGeneration;
+  if (filters?.forceRefreshSummaryIndex) {
+    _summaryIndexCache = null;
+    _summaryRefMap = null;
+  }
   const plantingRows = normalizeKeys(await loadCSV("/logs/planting/all.csv"));
   const seedRows = normalizeKeys(await loadCSV("/logs/seed/all.csv").catch(() => []));
   const weightRows = normalizeKeys(await loadCSV("/logs/weight/all.csv"));
   const harvestBase = await loadJSON("/data/harvestBase.json");
   const annualAll = await loadJSON("/logs/schedule/annual/annual.json").catch(() => ({}));
+  const salesStatus = document.getElementById("sales-status");
+  const salesLogin = document.getElementById("sales-login");
+  let reports = null;
+  salesLogin.hidden = hasSession();
+  salesLogin.onclick = () => login(location.pathname + location.search + location.hash).catch(error => {
+    console.error("[kpi] login failed", error);
+    salesStatus.textContent = error.message;
+  });
+  if (hasSession()) {
+    try {
+      const data = await salesApi("/analyses");
+      if (generation !== renderGeneration) return;
+      if (!Array.isArray(data.reports)) throw new Error("売上データの形式が不正です。");
+      reports = data.reports;
+      salesStatus.textContent = "売上は照合済み分の税抜概算です。未取得・要確認分は含まず、2026年11月以降のみ対象です。";
+    } catch (error) {
+      if (generation !== renderGeneration) return;
+      console.error("[kpi] sales load failed", error);
+      salesStatus.textContent = `売上情報を取得できません：${error.message}`;
+      salesLogin.hidden = hasSession();
+    }
+  } else {
+    salesStatus.textContent = "売上概算を表示するにはCognitoへのログインが必要です。収穫KPIはそのまま確認できます。";
+  }
 
   // 予定対象年と実績対象年の和集合を年フィルターに使う。
   let years = [...new Set(
@@ -159,7 +192,7 @@ export async function renderKpiPage(filters = null) {
   }
 
   const container = document.getElementById("kpi-container");
-  if (!container) return;
+  if (!container || generation !== renderGeneration) return;
 
   container.innerHTML = years.map(y => renderYearBlock(y)).join("");
 
@@ -198,7 +231,9 @@ export async function renderKpiPage(filters = null) {
       refList = refList.filter(r => f.varieties.includes(r.variety));
     }
 
-    yearContainer.innerHTML = await renderKpiForYear(year, refList, plantingRows, seedRows, weightRows, harvestBase, annualAll);
+    const html = await renderKpiForYear(year, refList, plantingRows, seedRows, weightRows, harvestBase, annualAll, reports);
+    if (generation !== renderGeneration) return;
+    yearContainer.innerHTML = html;
 
     yearContainer.querySelectorAll(".kpi-help-button").forEach(button => {
       button.addEventListener("click", () => showKpiColumnHelp(button.dataset.kpiHelp));
@@ -226,7 +261,9 @@ function showKpiColumnHelp(key) {
     "target-kg": ["目標収量(kg)", "annual STEP1計画の目標面積と月別基準収量から算出した目標収量です。annualの設定値を優先します。表示のみです。"],
     "actual-kg": ["収穫実績(kg)", "対象月に記録された出荷重量の合計です。出荷日を基準に集計します。表示のみです。"],
     "target-units": ["出荷目標(基)", "annual STEP1計画に登録された月別の出荷目標です。annualの設定値を優先します。表示のみです。"],
-    "actual-units": ["出荷実績(基)", "対象月に記録された出荷基数の合計です。出荷日を基準に集計します。"]
+    "actual-units": ["出荷実績(基)", "対象月に記録された出荷基数の合計です。出荷日を基準に集計します。"],
+    sales: ["売上概算（税抜）", "同一出荷日に一意に照合できた売上をロットの出荷重量で按分した概算です。未確定分は含みません。"],
+    "sales-price": ["平均単価", "照合済みの売上概算を照合済みの出荷重量で割った値です。未確定分は含みません。"]
   };
   const [title, description] = descriptions[key] || ["KPI列の説明", "説明がありません。"];
   showInfoModal(title, `<p>${description}</p>`);
@@ -235,7 +272,7 @@ function showKpiColumnHelp(key) {
 /* ---------------------------------------------------------
    年ごとの KPI 生成（shippingDate ベース）
 --------------------------------------------------------- */
-async function renderKpiForYear(year, refList, plantingRows, seedRows, weightRows, harvestBase, annualAll) {
+async function renderKpiForYear(year, refList, plantingRows, seedRows, weightRows, harvestBase, annualAll, reports = null) {
   const filteredWeightRows = weightRows.filter(row => {
     const rowYear = parseYearFromDate(row.shippingDate);
     return rowYear === year;
@@ -327,7 +364,34 @@ async function renderKpiForYear(year, refList, plantingRows, seedRows, weightRow
   /* ------------------------------
      KPI テーブル生成
   ------------------------------ */
-  return renderKpiTable(mergedPlan.goalArea, planArea, areaMonthly, actuals, mergedPlan.targets, year, mergedPlan.planSources);
+  let sales = null;
+  if (reports) {
+    sales = Array.from({ length: 12 }, () => ({ amount: 0, weight: 0, matched: 0, pending: 0 }));
+    if (year >= 2026) {
+      const from = year === 2026 ? "2026-11-01" : `${year}-01-01`;
+      const to = `${year}-12-31`;
+      try {
+        const result = analyzeSales(reports, weightRows, from, to);
+        validateLotRefs(result.daily, safeFileName);
+        const refs = new Set(refList.map(ref => ref.normalizedRef));
+        for (const entry of result.daily) {
+          if (!refs.has(safeFileName(entry.plantingRef))) continue;
+          const month = Number(entry.shippingDate.slice(5, 7)) - 1;
+          if (entry.amount === null) sales[month].pending++;
+          else {
+            sales[month].matched++;
+            sales[month].amount += entry.amount;
+            sales[month].weight += entry.weight;
+          }
+        }
+      } catch (error) {
+        console.error("[kpi] sales reconciliation failed", error);
+        document.getElementById("sales-status").textContent = `売上照合に失敗しました：${error.message}`;
+        sales = null;
+      }
+    }
+  }
+  return renderKpiTable(mergedPlan.goalArea, planArea, areaMonthly, actuals, mergedPlan.targets, year, mergedPlan.planSources, sales);
 }
 
 function openPlanRefModal(year, month, refList, plantingRows, seedRows) {
@@ -438,13 +502,3 @@ function closeModal() {
 /* ---------------------------------------------------------
    フィルタイベント
 --------------------------------------------------------- */
-window.addEventListener("kpi-filter:apply", (e) => {
-  // フィルタ適用時はキャッシュを再利用するが、必要なら強制再読み込みオプションを受け付ける
-  const detail = e.detail || {};
-  if (detail.forceRefreshSummaryIndex) {
-    // キャッシュをクリアして次回の検索で再読み込みさせる
-    _summaryIndexCache = null;
-    _summaryRefMap = null;
-  }
-  renderKpiPage(detail);
-});

@@ -135,6 +135,8 @@
 
     <!-- ▼ 適用中フィルタ表示 -->
     <div id="activeFilters"></div>
+    <p id="sales-status" role="status"></p>
+    <button id="sales-login" type="button" class="secondary-btn" hidden>売上情報にログイン</button>
 
     <!-- KPI 描画エリア -->
     <div id="kpi-container"></div>
@@ -155,7 +157,7 @@
   <script type="module">
     import { verifyLocalAuth } from "/common/ui.js";
     import { renderHeader } from "/common/header.js";
-    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20261103-mobile-1";
+    import { renderKpiPage } from "/performance/harvest-kpi.js?v=20261125-1";
     import { loadJSON } from "/common/json.js";
     import { loadCSV, normalizeKeys } from "/common/csv.js";
     import {

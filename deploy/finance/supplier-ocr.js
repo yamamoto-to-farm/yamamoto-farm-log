@@ -63,27 +63,17 @@ export async function recognizeInvoice(file, progress) {
           if (!draft.issue_date) {
             const date = (await ocr.recognize(canvas, { rectangle: region(.66, .024, .17, .018) })).data.text;
             extra += `\n${date}`;
-            const dates = [...new Set(date.split(/\r?\n/).map(line => findDate([`発行日${line}`], /発行日/)).filter(Boolean))];
-            if (dates.length === 1) extra += `\n発行日：${dates[0]}`;
           }
           if (!draft.total_amount) {
             await ocr.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_LINE, tessedit_char_whitelist: "0123456789, " });
             try {
               const summary = (await ocr.recognize(canvas, { rectangle: region(.075, .201, .86, .025) })).data.text;
-              let details = summaryValues(summary);
-              let cells = [];
-              if (!details) {
-                for (const [x, width] of [[.07, .14], [.21, .14], [.35, .14], [.49, .14], [.63, .14], [.77, .16]]) {
-                  const value = (await ocr.recognize(canvas, { rectangle: region(x, .201, width, .025) })).data.text;
-                  cells.push(/^[\d,\s]+$/.test(value) ? value.replace(/[,\s]/g, "") : "");
-                }
-                details = summaryValues(cells.join(" | "));
-              }
+              const details = summaryValues(summary);
               if (details) {
                 extra += `\n請求内訳: ${details.join(" | ")}`;
               } else {
-                const cell = cells[5];
-                if (/^\d{1,9}$/.test(cell)) extra += `\n当月御請求額：${yen(cell)}`;
+                const cell = (await ocr.recognize(canvas, { rectangle: region(.81, .204, .124, .019) })).data.text.replace(/\s+/g, "");
+                if (/^(?:\d{1,3}(?:,\d{3})+|\d{1,9})$/.test(cell)) extra += `\n当月御請求額：${yen(cell)}`;
               }
             } finally {
               await ocr.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_BLOCK, tessedit_char_whitelist: "" });
@@ -99,9 +89,7 @@ export async function recognizeInvoice(file, progress) {
     progress("明細を解析中…");
     return {
       text: texts.join("\n"),
-      items: layouts.some(items => items !== null)
-        ? layouts.flatMap((items, i) => items ?? textItemSuggestions(texts[i].normalize("NFKC").split(/\r?\n/)))
-        : null,
+      items: layouts.every(items => items !== null) ? layouts.flat() : null,
     };
   } finally {
     try { if (worker) await worker.terminate(); }
@@ -119,43 +107,36 @@ function green(data, index) {
 export function ruledTableColumns(image, headerBottom) {
   const { width, height, data } = image;
   const top = Math.ceil(headerBottom + 2);
-  function detect(startY, length, minimum = length * .9) {
-    const bottom = Math.min(height, startY + Math.floor(height * length));
-    if (bottom - startY < height * minimum) return null;
-    const groups = [];
-    let start = -1;
-    for (let x = 0; x <= width; x++) {
-      let count = 0;
-      if (x < width) {
-        for (let y = startY; y < bottom; y += 2) {
-          if (green(data, (y * width + x) * 4)) count++;
-        }
-      }
-      const hit = count > (bottom - startY) / 2 * .4;
-      if (hit && start < 0) start = x;
-      if (!hit && start >= 0) {
-        groups.push(Math.round((start + x - 1) / 2));
-        start = -1;
+  const bottom = Math.min(height, top + Math.floor(height * .22));
+  if (bottom - top < height * .15) return null;
+  const groups = [];
+  let start = -1;
+  for (let x = 0; x <= width; x++) {
+    let count = 0;
+    if (x < width) {
+      for (let y = top; y < bottom; y += 2) {
+        if (green(data, (y * width + x) * 4)) count++;
       }
     }
-    if (groups.length !== 10) return null;
-    const total = groups[9] - groups[0];
-    const sizes = groups.slice(1).map((value, i) => (value - groups[i]) / total);
-    if (total < width * .5 || sizes[2] < .25 || sizes[2] > .55
-        || sizes.some(size => size < .01 || size > .55)
-        || sizes.slice(5, 8).some(size => size < .04 || size > .15)) return null;
-    return groups;
+    const hit = count > (bottom - top) / 2 * .4;
+    if (hit && start < 0) start = x;
+    if (!hit && start >= 0) {
+      groups.push(Math.round((start + x - 1) / 2));
+      start = -1;
+    }
   }
-  const full = detect(top, .22, .15);
-  if (full) return full;
-  const first = detect(top, .04);
-  const second = detect(top + Math.floor(height * .08), .04);
-  return first && second && first.every((column, i) => Math.abs(column - second[i]) < width * .01) ? first : null;
+  if (groups.length !== 10) return null;
+  const total = groups[9] - groups[0];
+  const sizes = groups.slice(1).map((value, i) => (value - groups[i]) / total);
+  if (total < width * .5 || sizes[2] < .25 || sizes[2] > .55
+      || sizes.some(size => size < .01 || size > .55)
+      || sizes.slice(5, 8).some(size => size < .04 || size > .15)) return null;
+  return groups;
 }
 
 function tableNumber(value) {
-  const text = value.normalize("NFKC").replace(/\s/g, "").replace(/^−/, "-");
-  if (!/^-?(?:\d+|\d{1,3}(?:[,.]{1,2}\d{3})+)$/.test(text)) return null;
+  const text = value.normalize("NFKC").replace(/\s/g, "");
+  if (!/^(?:\d+|\d{1,3}(?:[,.]{1,2}\d{3})+)$/.test(text)) return null;
   const number = Number(text.replace(/[,.]/g, ""));
   return Number.isSafeInteger(number) ? number : null;
 }
@@ -178,16 +159,12 @@ function ruledTableRows(blocks, columns, left) {
       const quantity = tableNumber(cells[3].join(""));
       const price = tableNumber(cells[5].join(""));
       const amount = tableNumber(cells[6].join(""));
-      const negative = /返品|返却/.test(cells[1].join(""))
-        || [cells[3], cells[6]].some(cell => /[-−]/.test(cell.join("").normalize("NFKC")));
-      const matches = (quantity, price, amount) => quantity !== null && quantity !== 0 && price > 0
-        && amount !== null && amount !== 0 && quantity * price === amount && (!negative || amount < 0);
-      const verifiedAmount = matches(quantity, price, amount) ? amount : "";
+      const verifiedAmount = quantity > 0 && price > 0 && amount > 0 && quantity * price === amount ? amount : "";
       const centers = (line.words || []).map(word => (word.bbox.y0 + word.bbox.y1) / 2).sort((a, b) => a - b);
       const heights = (line.words || []).map(word => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
       const numbers = [3, 5, 6].map(index => {
         const values = [tableNumber(cells[index].join(""))];
-        if (index === 3 && !negative) {
+        if (index === 3) {
           const digits = cells[index].filter(word => /^\d+$/.test(word.normalize("NFKC")));
           if (digits.length === 1) values.push(tableNumber(digits[0]));
         }
@@ -201,7 +178,7 @@ function ruledTableRows(blocks, columns, left) {
           quantity: String(quantity), unit_price: String(price),
           unit: cells[4].join("").trim().slice(0, 40),
         } : {}),
-      }, numbers, negative, center: centers[Math.floor(centers.length / 2)], height: heights[Math.floor(heights.length / 2)] });
+      }, numbers, center: centers[Math.floor(centers.length / 2)], height: heights[Math.floor(heights.length / 2)] });
     }
   }
   return rows;
@@ -213,7 +190,7 @@ export function ruledTableItems(blocks, columns, left) {
 
 export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
   const lines = (blocks || []).flatMap(block => (block.paragraphs || []).flatMap(paragraph => paragraph.lines || []));
-  const header = lines.find(line => /月日.*単価/.test(line.text.replace(/\s+/g, "")));
+  const header = lines.find(line => /月日.*品名.*規.*単価/.test(line.text.replace(/\s+/g, "")));
   if (!header) return null;
   const context = canvas.getContext("2d");
   const columns = ruledTableColumns(context.getImageData(0, 0, canvas.width, canvas.height), header.bbox.y1);
@@ -235,7 +212,7 @@ export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
     const result = await worker.recognize(table, {}, { text: true, blocks: true });
     const rows = ruledTableRows(result.data.blocks, columns, left);
     if (!rows.length) return null;
-    await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_LINE, tessedit_char_whitelist: "0123456789,.-" });
+    await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_LINE, tessedit_char_whitelist: "0123456789,." });
     try {
       for (const row of rows) {
         if (row.item.amount !== "") continue;
@@ -251,14 +228,14 @@ export async function recognizeRuledTable(canvas, worker, tesseract, blocks) {
           if (value !== null) row.numbers[index].push(value);
         }
         const [quantities, prices, amounts] = row.numbers;
-        const matches = new Set(amounts.filter(amount => amount !== 0 && (!row.negative || amount < 0)
-          && quantities.some(quantity => quantity !== 0
+        const matches = new Set(amounts.filter(amount => amount > 0
+          && quantities.some(quantity => quantity > 0
             && prices.some(price => price > 0 && quantity * price === amount))));
         if (matches.size === 1) {
           row.item.amount = [...matches][0];
           const pairs = new Map();
           for (const quantity of quantities) for (const price of prices) {
-            if (quantity !== 0 && price > 0 && quantity * price === row.item.amount) {
+            if (quantity > 0 && price > 0 && quantity * price === row.item.amount) {
               pairs.set(`${quantity}:${price}`, [quantity, price]);
             }
           }
@@ -305,10 +282,23 @@ function findDate(lines, label) {
   return "";
 }
 
-function textItemSuggestions(lines) {
+export function invoiceSuggestions(text, layoutItems = null) {
+  const lines = text.normalize("NFKC").split(/\r?\n/);
+  const issue_date = findDate(lines, /発行日|請求日/);
+  const settlement_date = findDate(lines, /引落予定日|支払(?:期日|期限|予定日)|振込期限/);
+  let total_amount = "";
+  let summary;
   const items = [];
-  for (const line of lines) {
-    const row = line.match(/^\s*[|｜]?\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})[\s|｜」]+(.+)$/);
+  for (let i = 0; i < lines.length; i++) {
+    const normalized = lines[i].replace(/\s+/g, "");
+    const explicit = normalized.match(/(?:当月御請求額|今回御請求額|ご請求金額|請求金額|請求合計)[:：¥]?((?:\d{1,3}(?:,\d{3})+|\d+))(?:円|$)/);
+    if (explicit) total_amount = yen(explicit[1]);
+    if (!total_amount && /前回御請求額.*消費税額.*当月御請求/.test(normalized)) {
+      summary = summaryValues(lines[i + 1] || "") ?? summary;
+      total_amount = summary?.[5] ?? "";
+    }
+    if (/^請求内訳:/.test(normalized)) summary = summaryValues(normalized.slice("請求内訳:".length)) ?? summary;
+    const row = lines[i].match(/^\s*[|｜]?\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})[\s|｜」]+(.+)$/);
     if (!row || +row[1] < 1 || +row[1] > 12 || +row[2] < 1 || +row[2] > 31
         || /入\s*金|繰\s*越|小\s*計|合\s*計|値\s*引|メ\s*モ/.test(row[3])) continue;
     const cells = row[3].split(/[|｜]/).map(cell => cell.trim());
@@ -327,26 +317,7 @@ function textItemSuggestions(lines) {
       ...(amount !== null ? { quantity: String(Number(quantity)), unit: unit.slice(0, 40), unit_price: String(yen(price)) } : {}),
     });
   }
-  return items;
-}
-
-export function invoiceSuggestions(text, layoutItems = null) {
-  const lines = text.normalize("NFKC").split(/\r?\n/);
-  const issue_date = findDate(lines, /発行日|請求日/);
-  const settlement_date = findDate(lines, /引落予定日|支払(?:期日|期限|予定日)|振込期限/);
-  let total_amount = "";
-  let summary;
-  for (let i = 0; i < lines.length; i++) {
-    const normalized = lines[i].replace(/\s+/g, "");
-    const explicit = normalized.match(/(?:当月御請求額|今回御請求額|ご請求金額|請求金額|請求合計)[:：¥]?((?:\d{1,3}(?:,\d{3})+|\d+))(?:円|$)/);
-    if (explicit) total_amount = yen(explicit[1]);
-    if (!total_amount && /前回御請求額.*消費税額.*当月御請求/.test(normalized)) {
-      summary = summaryValues(lines[i + 1] || "") ?? summary;
-      total_amount = summary?.[5] ?? "";
-    }
-    if (/^請求内訳:/.test(normalized)) summary = summaryValues(normalized.slice("請求内訳:".length)) ?? summary;
-  }
-  const candidates = [...(layoutItems ?? textItemSuggestions(lines))];
+  const candidates = [...(layoutItems ?? items)];
   if (summary) {
     total_amount = summary[5];
     if (summary[2]) candidates.push({ item_name: "繰越残高", amount: summary[2], category: "未分類" });

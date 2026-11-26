@@ -7,6 +7,8 @@
 
   <!-- 共通 CSS -->
   <link rel="stylesheet" href="/common/css/main.css?v=1">
+  <link rel="stylesheet" href="/finance/finance.css?v=20261121-paper-invoices-4">
+  <link rel="stylesheet" href="/sales/sales.css?v=20261125-1">
 </head>
 
 <body style="visibility:hidden;">
@@ -18,12 +20,20 @@
     if (await verifyLocalAuth()) {
       renderNavbar();
       document.body.style.visibility = "visible";
-      await import("/performance/kpi-month.js?v=20261005-access-1");
+      await import("/performance/kpi-month.js?v=20261125-1");
     }
   </script>
 
   <h1 id="month-title">読み込み中...</h1>
-
+  <div class="finance-toolbar">
+    <label>出荷日（開始）<input type="date" id="period-from"></label>
+    <label>出荷日（終了）<input type="date" id="period-to"></label>
+    <button id="apply-period" type="button" class="secondary-btn">期間を表示</button>
+  </div>
+  <p id="sales-status" role="status"></p>
+  <button id="sales-login" type="button" class="secondary-btn" hidden>売上情報にログイン</button>
+  <p class="finance-note">売上は照合済み分の税抜概算です。未取得・要確認分は含みません。2026年11月以降の通常通知書が対象です。</p>
+  <div class="finance-scroll" tabindex="0" role="region" aria-label="ロット別収穫・売上">
   <table>
     <thead>
       <tr>
@@ -34,6 +44,7 @@
         <th>収穫量(kg)</th>
         <th>出荷量(基)</th>
         <th>収穫期間</th>
+        <th>売上概算（税抜）</th>
       </tr>
     </thead>
 
@@ -43,6 +54,7 @@
       <tr id="kpi-month-total"></tr>
     </tfoot>
   </table>
+  </div>
 
   <!-- JS 読み込み -->
 

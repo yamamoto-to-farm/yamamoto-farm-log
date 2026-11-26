@@ -168,21 +168,13 @@ export async function showWorkSummary(date, preloadedLogs = null) {
 
   box.innerHTML = `${editLogButton}${logs.map(log => {
     const cols = log.headerName.map(col => log.data[col] ?? "");
-    const csvEditUrl = window.currentRole === "admin" ? buildCsvEditUrl(log.folder, date) : "";
     return `
       <div class="work-item">
         <p><strong>${log.displayName}</strong></p>
         <p>${cols.join(" / ")}</p>
-        ${csvEditUrl ? `<p><a class="secondary-btn" href="${csvEditUrl}">CSVで編集（日付で検索）</a></p>` : ""}
       </div>
     `;
   }).join("")}`;
-}
-
-function buildCsvEditUrl(folder, date) {
-  if (!["planting", "harvest", "seed"].includes(folder) || !date) return "";
-  const params = new URLSearchParams({ type: folder, file: "all.csv", search: date });
-  return `/admin/edit-csv/index.html?${params.toString().replace(/&/g, "&amp;")}`;
 }
 
 function buildEditLogUrl(date) {

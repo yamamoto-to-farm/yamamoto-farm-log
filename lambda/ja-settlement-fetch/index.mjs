@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 import { capture, discover } from "./browser.mjs";
 
@@ -33,13 +34,13 @@ async function putOnce(s3, input) {
   }
 }
 
-export function createHandler({ s3, secrets, captureReport, discoverReports, bucket, secretId }) {
+export function createHandler({ s3, secrets, captureReport, discoverReports, bucket, secretId, signUrl = getSignedUrl }) {
   return async (event) => {
     const status = authorized(event?.requestContext?.authorizer?.jwt?.claims || {});
     if (status !== 200) return response(status, { message: "利用する権限がありません。" });
     const route = event.routeKey;
     if (!["POST /settlements/capture", "POST /settlements/discover", "POST /settlements/import",
-      "GET /settlements/analyses"].includes(route)) return response(404, { message: "不明なルートです。" });
+      "GET /settlements/analyses", "GET /settlements/pdf"].includes(route)) return response(404, { message: "不明なルートです。" });
     let body;
     try {
       body = event.body ? JSON.parse(event.body) : {};
@@ -60,10 +61,39 @@ export function createHandler({ s3, secrets, captureReport, discoverReports, buc
          typeof body.number !== "string" || !/^\d{6,12}$/.test(body.number))) {
       return response(400, { message: "通知書の日付または番号が不正です。" });
     }
+    const query = event.queryStringParameters || {};
+    if (route === "GET /settlements/pdf" &&
+        (Object.keys(query).sort().join(",") !== "date,number" || !validReportDate(query.date) ||
+         typeof query.number !== "string" || !/^\d{6,12}$/.test(query.number))) {
+      return response(400, { message: "通知書の日付または番号が不正です。" });
+    }
 
     let stage = "configuration";
     try {
-      if (!bucket || (route !== "GET /settlements/analyses" && !secretId)) throw new Error("Missing configuration");
+      if (!bucket || (route.startsWith("POST ") && !secretId)) throw new Error("Missing configuration");
+      if (route === "GET /settlements/pdf") {
+        stage = "storage";
+        const key = `settlements/analysis/${query.date}_${query.number}.json`;
+        let record;
+        try {
+          const result = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+          record = JSON.parse(await result.Body.transformToString());
+        } catch (error) {
+          if (error?.$metadata?.httpStatusCode === 404 || error?.name === "NoSuchKey") {
+            return response(404, { message: "通知書が見つかりません。" });
+          }
+          throw error;
+        }
+        if (record.date !== query.date || record.number !== query.number ||
+            typeof record.source !== "string" || !/^settlements\/analysis-sources\/[a-f0-9]{64}\.pdf$/.test(record.source)) {
+          throw new Error("Invalid source reference");
+        }
+        const url = await signUrl(s3, new GetObjectCommand({
+          Bucket: bucket, Key: record.source, ResponseContentType: "application/pdf",
+          ResponseContentDisposition: "inline", ResponseCacheControl: "private, no-store",
+        }), { expiresIn: 300 });
+        return response(200, { url });
+      }
       if (route === "GET /settlements/analyses") {
         stage = "storage";
         const reports = [];

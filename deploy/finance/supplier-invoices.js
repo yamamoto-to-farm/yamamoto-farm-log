@@ -1,5 +1,5 @@
-import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-6";
-import { annualComparison, categories, formatYen, monthlyTotals } from "./finance-logic.js?v=20261107-dashboard-1";
+import { invoiceSuggestions, recognizeInvoice, supplierCategories } from "./supplier-ocr.js?v=20261121-paper-invoices-4";
+import { annualComparison, formatYen, monthlyTotals } from "./finance-logic.js?v=20261107-dashboard-1";
 import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
 const el = id => document.getElementById(id);
@@ -75,26 +75,13 @@ function updateSum() {
   el("supplier-verified").checked = false;
   const items = rows();
   const complete = items.length && items.every(item => Number.isSafeInteger(item.amount));
-  const sum = complete ? items.reduce((value, item) => value + item.amount, 0) : NaN;
-  el("supplier-sum").textContent = complete ? `明細合計：${formatYen(sum)}` : "金額が未入力または不正な明細があります。";
+  el("supplier-sum").textContent = complete ? `明細合計：${formatYen(items.reduce((sum, item) => sum + item.amount, 0))}` : "金額が未入力または不正な明細があります。";
   const mismatches = items.filter(item => item.quantity != null && item.unit_price != null
     && Number.isSafeInteger(item.amount) && !decimalProductMatches(item.quantity, item.unit_price, item.amount)).length;
   el("supplier-arithmetic-status").textContent = mismatches
     ? `${mismatches}件で数量×単価と金額が異なります。税や端数を含め原本をご確認ください。` : "";
   const total = el("supplier-total").valueAsNumber;
   el("supplier-total-display").textContent = Number.isSafeInteger(total) ? `請求額：${formatYen(total)}` : "";
-  const status = el("supplier-match-status");
-  status.className = "";
-  if (!Number.isSafeInteger(sum) || !Number.isSafeInteger(total) || total < 1) {
-    status.textContent = "請求額との照合ができません。";
-  } else if (sum === total) {
-    status.textContent = "✓ 請求額と一致";
-    status.className = "finance-match";
-  } else {
-    const difference = BigInt(sum) - BigInt(total);
-    status.textContent = `請求額との差額：${formatYen(difference > 0n ? difference : -difference)}（明細合計が${difference > 0n ? "超過" : "不足"}）`;
-    status.className = "finance-mismatch";
-  }
 }
 
 function categorySelect(value = "未分類", includeUnclassified = true) {
@@ -258,7 +245,7 @@ function selectedFile() {
   return file;
 }
 
-export function initSuppliers(api, onLoaded, { renderChart, renderLegend }) {
+export function initSuppliers(api, onLoaded) {
   el("paper-invoice-content").append(el("supplier-panel-template").content.cloneNode(true));
   const result = el("supplier-status");
   const ocrStatus = el("supplier-ocr-status");
@@ -329,39 +316,22 @@ export function initSuppliers(api, onLoaded, { renderChart, renderLegend }) {
       card.append(node("span", label), node("strong", value));
       overview.append(card);
     }
-    const summary = el("supplier-filter-summary");
-    summary.replaceChildren();
-    for (const [label, value] of [
-      ["選択条件の明細合計", formatYen(filtered.reduce((sum, item) => sum + item.amount, 0))],
-      ["明細数", `${filtered.length}件`],
-      ["未分類", `${filtered.filter(item => item.category === "未分類").length}件`],
-    ]) {
-      const card = node("div");
-      card.className = "finance-stat";
-      card.append(node("span", label), node("strong", value));
-      summary.append(card);
-    }
-    const months = monthlyTotals(filtered, "trade");
-    const chartCategories = [...categories.filter(category => category !== "未分類"), "種苗費", "未分類"];
-    renderLegend(el("supplier-legend"), chartCategories);
-    renderChart(months, el("supplier-chart"), chartCategories, month => {
-      if (working) return;
-      el("supplier-from").value = el("supplier-to").value = month;
-      el("supplier-detail-sort").value = "amount-desc";
-      renderDashboard();
-      el("supplier-saved-panel").open = true;
-      el("supplier-saved-panel").scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    const head = node("tr");
-    for (const label of ["発行月", ...chartCategories, "合計"]) head.append(node("th", label));
-    el("supplier-monthly-head").replaceChildren(head);
     const monthly = el("supplier-monthly");
     monthly.replaceChildren();
+    const months = monthlyTotals(filtered, "trade");
+    const maximum = Math.max(1, ...months.map(month => month.total));
     for (const month of months) {
       const row = node("tr");
-      row.append(node("th", month.month));
-      for (const category of chartCategories) row.append(node("td", formatYen(month.categories[category] || 0)));
-      row.append(node("td", formatYen(month.total)));
+      const trend = node("td");
+      if (month.total >= 0) {
+        const bar = node("progress");
+        bar.max = maximum;
+        bar.value = month.total;
+        bar.setAttribute("aria-label", `${month.month}の明細額 ${formatYen(month.total)}`);
+        trend.append(bar);
+      } else trend.textContent = "マイナス";
+      row.append(node("td", month.month), node("td", formatYen(month.total)), trend,
+        node("td", Object.entries(month.categories).map(([category, amount]) => `${category} ${formatYen(amount)}`).join(" ／ ")));
       monthly.append(row);
     }
     const annual = el("supplier-annual");
@@ -399,9 +369,7 @@ export function initSuppliers(api, onLoaded, { renderChart, renderLegend }) {
     }
     const savedItems = el("supplier-saved-items");
     savedItems.replaceChildren();
-    const sortedItems = el("supplier-detail-sort").value === "amount-desc"
-      ? [...filtered].sort((a, b) => b.amount - a.amount) : filtered;
-    for (const item of sortedItems) {
+    for (const item of filtered) {
       const row = node("tr");
       const category = node("td");
       const select = categorySelect(item.category);
@@ -457,7 +425,7 @@ export function initSuppliers(api, onLoaded, { renderChart, renderLegend }) {
     onLoaded();
   };
   for (const category of supplierCategories) el("supplier-filter-category").add(new Option(category, category));
-  for (const id of ["supplier-from", "supplier-to", "supplier-filter-vendor", "supplier-filter-category", "supplier-query", "supplier-year", "supplier-detail-sort"]) {
+  for (const id of ["supplier-from", "supplier-to", "supplier-filter-vendor", "supplier-filter-category", "supplier-query", "supplier-year"]) {
     el(id).addEventListener("input", renderDashboard);
   }
   el("supplier-refresh").onclick = () => act(async () => { await load(); dashboardStatus.textContent = "最新データを取得しました。"; }, dashboardStatus);

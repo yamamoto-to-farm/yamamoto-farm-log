@@ -7,8 +7,9 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.922.0",
-    "@aws-sdk/client-secrets-manager": "3.922.0",
+    "@aws-sdk/client-s3": "3.1177.0",
+    "@aws-sdk/client-secrets-manager": "3.1177.0",
+    "@aws-sdk/s3-request-presigner": "3.1177.0",
     "@fontsource-variable/noto-sans-jp": "5.3.1",
     "@sparticuz/chromium": "153.0.0",
     "pdfjs-dist": "4.10.38",

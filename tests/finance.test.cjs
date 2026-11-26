@@ -46,47 +46,6 @@ test("supplier name choices use saved supplier names without duplicates", () => 
   assert.match(html, /id="supplier-vendor-choice"/);
   assert.match(html, /id="supplier-vendor"[^>]*autocomplete="off"[^>]*required/);
 });
-test("paper invoice total comparison updates for matching, differences and incomplete inputs", async () => {
-  const { formatYen } = await logic();
-  const elements = {
-    "supplier-items": {rows: []},
-    "supplier-verified": {checked: true},
-    "supplier-sum": {},
-    "supplier-arithmetic-status": {},
-    "supplier-total": {valueAsNumber: 1000},
-    "supplier-total-display": {},
-    "supplier-match-status": {},
-  };
-  const row = amount => ({
-    querySelector: selector => ({value: ({
-      name: "資材", amount, quantity: "", unit: "", unit_price: "", category: "未分類",
-    })[selector.match(/"([^"]+)"/)[1]]}),
-  });
-  const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
-    .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
-  const context = vm.createContext({document: {getElementById: id => elements[id]}, formatYen});
-  vm.runInContext(source, context);
-  const update = amounts => {
-    elements["supplier-items"].rows = amounts.map(row);
-    context.updateSum();
-    return elements["supplier-match-status"].textContent;
-  };
-  assert.equal(update(["1,200", "-200"]), "✓ 請求額と一致");
-  assert.equal(elements["supplier-match-status"].className, "finance-match");
-  assert.equal(elements["supplier-verified"].checked, false);
-  assert.equal(update(["900"]), "請求額との差額：100円（明細合計が不足）");
-  assert.equal(elements["supplier-match-status"].className, "finance-mismatch");
-  assert.equal(update(["1,500"]), "請求額との差額：500円（明細合計が超過）");
-  assert.equal(update(["1,000", ""]), "請求額との照合ができません。");
-  assert.equal(elements["supplier-match-status"].className, "");
-  elements["supplier-total"].valueAsNumber = NaN;
-  assert.equal(update(["1,000"]), "請求額との照合ができません。");
-  elements["supplier-total"].valueAsNumber = 0;
-  assert.equal(update(["0"]), "請求額との照合ができません。");
-  elements["supplier-total"].valueAsNumber = 1000;
-  assert.equal(update([]), "請求額との照合ができません。");
-  assert.match(readFileSync(join(root, "index.html"), "utf8"), /id="supplier-match-status" aria-live="polite"/);
-});
 test("paper invoice classification suggestions respect supplier and conflicting history", () => {
   const source = readFileSync(join(root, "supplier-invoices.js"), "utf8")
     .replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
@@ -470,33 +429,6 @@ test("chart renders aligned grid positions, scaled bars and empty state", async 
   assert.equal(target.children[0].text, "対象の明細がありません。");
 });
 
-test("shared chart keeps JA colors for paper categories and selects a month", async () => {
-  const { context, element } = setup();
-  const { chartScale, categories } = await logic();
-  context.chartScale = chartScale;
-  context.categories = categories;
-  const target = element("supplier-chart");
-  target.append = (...children) => target.children.push(...children);
-  target.replaceChildren = () => { target.children = []; };
-  vm.runInContext(`
-    node = (tag, text, className) => ({
-      tag, text, className, children: [], style: {},
-      append(...children) { this.children.push(...children); },
-      setAttribute() {},
-      addEventListener(event, callback) { this[event] = callback; },
-    });
-    formatYen = value => String(value) + "円";
-    renderChart([{month: "2026-09", total: 700, categories: {"種苗費": 1000, "未分類": -300}}],
-      document.getElementById("supplier-chart"), ["種苗費", "未分類"], month => globalThis.selectedMonth = month);
-  `, context);
-  const column = target.children[1].children[1].children[0];
-  assert.equal(column.children[1].children[0].className, "finance-segment category-6");
-  assert.equal(column.children[1].children[1].className, "finance-segment category-5");
-  assert.equal(column.children[1].children[1].style.height, "0%");
-  column.click();
-  assert.equal(context.selectedMonth, "2026-09");
-});
-
 test("forecasts follow issuance, not import order, and do not mutate records", async () => {
   const { latestForecast } = await logic();
   const older = { ...invoices[0], issue_date: "2026-09-02" };
@@ -777,108 +709,8 @@ test("supplier OCR reports page reading and analysis rather than a misleading pe
   assert.deepEqual(stages, ["OCRで読み取り中…（1/2ページ）", "OCRで読み取り中…（2/2ページ）",
     "明細を解析中…（2/2ページ）", "明細を解析中…"]);
   assert.match(result.text, /OCR結果/);
-  assert.equal(result.items, null);
   assert.equal(terminated, true);
   assert.equal(destroyed, true);
-});
-
-test("supplier OCR keeps each page's table or text items and adds invoice adjustments only once", async () => {
-  const native = "10/02 | 種苗 | 2 | 本 | 1,000 | 2,000 | 200 | 2,300\n" + "a".repeat(101);
-  const texts = [
-    "10/01 | 表の重複候補\n請求内訳: 300 | 200 | 100 | 5,000 | 500 | 5,600",
-    "10/03 | 肥料 | 3 | 袋 | 1,000 | 3,000 | 300 | 3,300",
-    "10/04 | 入金 | 200 | 3,300",
-  ];
-  const layouts = [[{item_name: "表の明細", amount: 2000, category: "未分類"}], null, null];
-  const pdf = {numPages: 4, getPage: async index => ({
-    getTextContent: async () => ({items: [{str: index === 2 ? native : ""}]}),
-    getViewport: () => ({width: 100, height: 100}),
-    render: () => ({promise: Promise.resolve()}), cleanup() {},
-  })};
-  const fakePdf = {GlobalWorkerOptions: {}, getDocument: () => ({
-    promise: Promise.resolve(pdf), destroy: async () => {},
-  })};
-  const fakeTesseract = {createWorker: async () => ({
-    recognize: async () => ({data: {text: texts.shift(), blocks: []}}), terminate: async () => {},
-  })};
-  const context = vm.createContext({fakePdf, fakeTesseract, layouts,
-    document: {createElement: () => ({getContext: () => ({})})},
-  });
-  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8")
-    .replace(/^export /gm, "")
-    .replace("import(`${assets}/pdf.mjs`), loadTesseract()", "Promise.resolve(fakePdf), Promise.resolve(fakeTesseract)");
-  vm.runInContext(source + "\nrecognizeRuledTable = async () => layouts.shift();", context);
-  const result = await context.recognizeInvoice({arrayBuffer: async () => new ArrayBuffer(0)}, () => {});
-  const draft = context.invoiceSuggestions(result.text, result.items);
-  assert.equal(draft.total_amount, 5600);
-  assert.deepEqual(Array.from(draft.items, item => [item.item_name, item.amount]), [
-    ["表の明細", 2000], ["種苗", 2000], ["肥料", 3000], ["繰越残高", 100], ["消費税", 500],
-  ]);
-});
-
-test("supplier OCR reads summary cells and only adds reconciled adjustments", async () => {
-  const rectangles = [];
-  let mode = "fallback";
-  const pdf = {numPages: 1, getPage: async () => ({
-    getTextContent: async () => ({items: []}), getViewport: () => ({width: 1000, height: 1000}),
-    render: () => ({promise: Promise.resolve()}), cleanup() {},
-  })};
-  const fakePdf = {GlobalWorkerOptions: {}, getDocument: () => ({
-    promise: Promise.resolve(pdf), destroy: async () => {},
-  })};
-  const worker = {
-    setParameters: async () => {}, terminate: async () => {},
-    recognize: async (_canvas, options) => {
-      if (!options.rectangle) return {data: {text: `${mode === "fallback" ? "発行日 2026年8月3日\n" : ""}前回御請求 消費税 当月御請求`, blocks: []}};
-      if (options.rectangle.left === 660) return {data: {text: "潜行日 2026 年 8 月 3 日"}};
-      rectangles.push(options.rectangle);
-      const cells = mode === "fallback" ? Array(6).fill("1 500,000") : ["3,00", "200", "100", "2 000", "200", "2,300"];
-      return {data: {text: rectangles.length === 1 ? "判別不能" : cells[rectangles.length - 2]}};
-    },
-  };
-  const fakeTesseract = {createWorker: async () => worker, PSM: {SINGLE_LINE: 7, SINGLE_BLOCK: 6}};
-  const context = vm.createContext({fakePdf, fakeTesseract,
-    document: {createElement: () => ({getContext: () => ({})})},
-  });
-  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8")
-    .replace(/^export /gm, "")
-    .replace("import(`${assets}/pdf.mjs`), loadTesseract()", "Promise.resolve(fakePdf), Promise.resolve(fakeTesseract)");
-  vm.runInContext(source + "\nrecognizeRuledTable = async () => null;", context);
-  const result = await context.recognizeInvoice({arrayBuffer: async () => new ArrayBuffer(0)}, () => {});
-  assert.equal(context.invoiceSuggestions(result.text, result.items).total_amount, 1500000);
-  assert.equal(rectangles[6].left, 770);
-  assert.equal(rectangles[6].width, 160);
-  mode = "summary";
-  rectangles.length = 0;
-  const second = await context.recognizeInvoice({arrayBuffer: async () => new ArrayBuffer(0)}, () => {});
-  const draft = context.invoiceSuggestions(second.text, second.items);
-  assert.equal(draft.issue_date, "2026-08-03");
-  assert.equal(draft.total_amount, 2300);
-  assert.deepEqual(Array.from(draft.items, item => [item.item_name, item.amount]), [["繰越残高", 100], ["消費税", 200]]);
-});
-
-test("ruled table accepts a partially misread header only when the grid matches", async () => {
-  const context = vm.createContext({
-    document: {createElement: () => ({
-      getContext: () => ({drawImage() {}, getImageData: () => ({data: []}), putImageData() {}}),
-    })},
-  });
-  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8").replace(/^export /gm, "");
-  vm.runInContext(source + "\nruledTableColumns = () => globalThis.columns;", context);
-  const canvas = {width: 300, height: 300, getContext: () => ({getImageData: () => ({})})};
-  const blocks = [{paragraphs: [{lines: [{text: "月日 区分 誤読 単価", bbox: {y1: 30}}]}]}];
-  let recognized = 0;
-  const worker = {setParameters: async () => {}, recognize: async () => {
-    recognized++;
-    return {data: {blocks: []}};
-  }};
-  const tesseract = {PSM: {SINGLE_BLOCK: 6}};
-  context.columns = null;
-  await context.recognizeRuledTable(canvas, worker, tesseract, blocks);
-  assert.equal(recognized, 0);
-  context.columns = [10, 25, 40, 140, 160, 168, 188, 208, 228, 255];
-  await context.recognizeRuledTable(canvas, worker, tesseract, blocks);
-  assert.equal(recognized, 1);
 });
 
 test("supplier OCR uses only reconciled summary adjustments without duplicating payments", async () => {
@@ -901,77 +733,20 @@ test("ruled invoice rows use table positions and leave inconsistent amounts blan
   const { ruledTableItems } = await import("../deploy/finance/supplier-ocr.js");
   const columns = [0, 20, 40, 140, 160, 170, 190, 210, 230, 250];
   const word = (text, x) => ({ text, bbox: { x0: x, x1: x + 2, y0: 10, y1: 20 } });
-  const line = (date, name, qty, price, amount, kind = "") => ({
-    words: [word(date, 5), word(kind, 25), word(name, 60), word(qty, 145), word("袋", 165), word(price, 175), word(amount, 195)],
+  const line = (date, name, qty, price, amount) => ({
+    words: [word(date, 5), word(name, 60), word(qty, 145), word("袋", 165), word(price, 175), word(amount, 195)],
   });
   const blocks = [{ paragraphs: [{ lines: [
     line("10/01", "種苗", "2", "1,000", "2,000"),
     line("10/02", "資材", "3", "700", "2,000"),
     line("10/03", "入金", "1", "200", "200"),
     line("10/04", "肥料", "0", "800", "0"),
-    line("10/05", "苗", "−1", "870", "−870", "返品"),
-    line("10/06", "苗", "1", "870", "870", "返品"),
-    line("10/07", "苗", "-1", "870", "870"),
   ] }] }];
   const items = ruledTableItems(blocks, columns, 0);
   assert.deepEqual(items.map(item => [item.item_name, item.amount]),
-    [["種苗", 2000], ["資材", ""], ["肥料", ""], ["苗", -870], ["苗", ""], ["苗", ""]]);
+    [["種苗", 2000], ["資材", ""], ["肥料", ""]]);
   assert.deepEqual([items[0].quantity, items[0].unit, items[0].unit_price], ["2", "袋", "1000"]);
-  assert.deepEqual([items[3].quantity, items[3].unit_price], ["-1", "870"]);
   assert.equal(items[1].quantity, undefined);
-});
-
-test("ruled table cell rereading does not turn a return into a positive charge", async () => {
-  const context = vm.createContext({
-    document: {createElement: () => ({
-      getContext: () => ({drawImage() {}, getImageData: () => ({data: []}), putImageData() {}}),
-    })},
-  });
-  const source = readFileSync(join(root, "supplier-ocr.js"), "utf8").replace(/^export /gm, "");
-  vm.runInContext(source + "\nruledTableColumns = () => [0,20,40,140,160,170,190,210,230,250];", context);
-  const word = (text, x) => ({text, bbox: {x0: x, x1: x + 2, y0: 10, y1: 20}});
-  const rows = [{paragraphs: [{lines: [{words: [
-    word("10/01", 5), word("返品", 25), word("種苗", 60), word("?", 145),
-    word("袋", 165), word("870", 175), word("-870", 195),
-  ]}]}]}];
-  const header = [{paragraphs: [{lines: [{text: "月日 単価", bbox: {y1: 30}}]}]}];
-  const canvas = {width: 300, height: 300, getContext: () => ({getImageData: () => ({})})};
-  const tesseract = {PSM: {SINGLE_BLOCK: 6, SINGLE_LINE: 7}};
-  let negative = false;
-  const worker = {
-    setParameters: async () => {},
-    recognize: async (_canvas, options) => {
-      if (!options.rectangle) return {data: {blocks: rows}};
-      const left = options.rectangle.left;
-      return {data: {text: left === 143 ? (negative ? "-1" : "1") : (negative && left === 193 ? "-870" : "870")}};
-    },
-  };
-  let result = await context.recognizeRuledTable(canvas, worker, tesseract, header);
-  assert.equal(result[0].amount, "");
-  negative = true;
-  result = await context.recognizeRuledTable(canvas, worker, tesseract, header);
-  assert.equal(result[0].amount, -870);
-});
-
-test("ruled table detects a skewed grid only when both short bands agree", async () => {
-  const { ruledTableColumns } = await import("../deploy/finance/supplier-ocr.js");
-  const width = 300, height = 800;
-  const columns = [10, 25, 40, 140, 160, 168, 188, 208, 228, 255];
-  const image = {width, height, data: new Uint8ClampedArray(width * height * 4).fill(255)};
-  for (const column of columns) for (let y = 33; y < 300; y++) {
-    const x = column + Math.floor((y - 33) / 30);
-    const index = (y * width + x) * 4;
-    image.data[index] = 50;
-    image.data[index + 1] = 120;
-    image.data[index + 2] = 50;
-  }
-  assert.ok(ruledTableColumns(image, 30));
-  for (let y = 96; y < 130; y++) {
-    const x = columns[5] + Math.floor((y - 33) / 30);
-    const index = (y * width + x) * 4;
-    image.data[index] = image.data[index + 1] = image.data[index + 2] = 255;
-  }
-  assert.equal(ruledTableColumns(image, 30), null);
 });
 
 test("ruled table detection requires a complete compatible grid", async () => {

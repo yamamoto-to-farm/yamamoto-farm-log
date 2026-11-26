@@ -1,0 +1,9 @@
+.sales-trends { display: grid; gap: 8px; }
+.sales-trend { display: grid; grid-template-columns: minmax(130px, 2fr) minmax(80px, 3fr) minmax(80px, 1fr); gap: 8px; align-items: center; }
+.sales-bar { height: 12px; background: #dce8e3; border-radius: 6px; overflow: hidden; }
+.sales-bar span { display: block; height: 100%; background: #398651; }
+.sales-unit-bar span { background: #3279af; }
+.sales-detail { background: #f7faf8; }
+.sales-detail table { width: 100%; }
+.sales-detail td { min-width: 90px; }
+.sales-error { color: #a51f25; }
