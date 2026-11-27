@@ -50,6 +50,8 @@
 .photo-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #eee; }
 .photo-card-meta { padding: 6px 8px; font-size: 13px; overflow-wrap: anywhere; }
 .photo-card-meta strong { display: block; }
+.photo-card-meta strong a { color: #17653a; text-decoration: underline; text-underline-offset: 2px; }
+.photo-card-meta strong a:focus-visible { outline: 2px solid #17653a; outline-offset: 2px; }
 .photo-card-note { color: #555; white-space: pre-wrap; }
 .photo-card-top { color: #b45309; }
 #viewer { max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 10px; }

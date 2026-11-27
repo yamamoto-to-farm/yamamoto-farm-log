@@ -11,20 +11,30 @@ const source = readFileSync(join(__dirname, "..", "deploy", "photos", "photos.js
 function setup(canEdit = true) {
   const nodes = new Map();
   const requests = [];
+  function createElement(tagName) {
+    return {
+      tagName, children: [], events: {},
+      classList: { toggle() {} },
+      setAttribute(name, value) { this[name] = value; },
+      append(...children) { this.children.push(...children); },
+      addEventListener(name, callback) { this.events[name] = callback; }
+    };
+  }
   function element(id) {
     if (!nodes.has(id)) nodes.set(id, {
       value: "", hidden: true, disabled: false, textContent: "",
       classList: { toggle() {} }, focus() {}, close() { this.open = false; },
       showModal() { this.open = true; }, querySelectorAll() { return []; },
+      append(...children) { this.children.push(...children); },
       replaceChildren(...children) { this.children = children; }
     });
     return nodes.get(id);
   }
   const context = vm.createContext({
-    document: { getElementById: element, querySelectorAll: () => [] },
+    document: { getElementById: element, createElement, querySelectorAll: () => [] },
     window: { currentRole: "admin" }, console: { error() {} },
     URLSearchParams, URL, Date, Set,
-    location: { search: "" }, hasSession: () => true,
+    location: { pathname: "/photos/index.html", search: "?from=2026-10-28&to=2026-11-27", hash: "" }, hasSession: () => true,
     config: { api: "https://api.test" }, ensureToken: async () => "test",
     clearSession() {},
     CATEGORY_LABEL: { growth: "栽培記録" },
@@ -42,6 +52,28 @@ function setup(canEdit = true) {
     url:"https://image.test",canEdit:${canEdit}}]; current = 0;`, context);
   return { context, element, requests };
 }
+
+test("photo field links to the field detail while the image still opens the viewer", () => {
+  const { context, element } = setup();
+  vm.runInContext(`photos[0].field = "事業所(西・2)&A"; openViewer = index => { globalThis.opened = index; }; render();`, context);
+  const card = element("gallery").children[0];
+  const imageButton = card.children[0];
+  const fieldLink = card.children[1].children[0].children[0];
+  const url = new URL(fieldLink.href, "https://example.test");
+  assert.equal(url.pathname, "/fields/index.html");
+  assert.equal(url.searchParams.get("field"), "事業所(西・2)&A");
+  assert.equal(url.searchParams.get("return"), "/photos/index.html?from=2026-10-28&to=2026-11-27");
+  assert.equal(fieldLink.textContent, "事業所(西・2)&A");
+  assert.equal(fieldLink.events.click, undefined);
+  imageButton.events.click();
+  assert.equal(context.opened, 0);
+});
+
+test("a photo without a field does not link to the field list", () => {
+  const { context, element } = setup();
+  vm.runInContext(`photos[0].field = ""; render();`, context);
+  assert.equal(element("gallery").children[0].children[1].children[0].children.length, 0);
+});
 
 test("editing visibility follows server permission even for local admin", () => {
   const { context, element } = setup(false);

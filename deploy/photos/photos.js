@@ -122,7 +122,12 @@ function render() {
     const meta = document.createElement("div");
     meta.className = "photo-card-meta";
     const title = document.createElement("strong");
-    title.textContent = photo.field;
+    if (photo.field) {
+      const fieldLink = document.createElement("a");
+      fieldLink.href = `/fields/index.html?field=${encodeURIComponent(photo.field)}&return=${encodeURIComponent(location.pathname + location.search + location.hash)}`;
+      fieldLink.textContent = photo.field;
+      title.append(fieldLink);
+    }
     const date = document.createElement("span");
     date.textContent = photo.takenOn.replaceAll("-", "/");
     meta.append(title, date);
