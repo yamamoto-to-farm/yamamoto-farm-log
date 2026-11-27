@@ -1,6 +1,7 @@
 // admin/edit-json/card-edit-pesticide-detail.js
 import { saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { mountMaterialEditor } from "/photos/materials.js";
 
 const PESTICIDE_CATEGORIES = ["殺菌剤", "殺虫剤", "茎葉除草剤", "選択制除草剤", "展着剤", "土壌消毒剤"];
 
@@ -349,6 +350,7 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     </div>
 
     <div id="pesticide-detail-editor"></div>
+    <div id="material-photo-editor" class="card material-photo-editor"></div>
 
     <button id="save-btn" class="primary-btn" style="margin-top:20px;">
       保存する
@@ -689,6 +691,8 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     updateBackButton();
 
     renderEditor();
+    mountMaterialEditor(document.getElementById("material-photo-editor"), "pesticide", selectedId,
+      [categoryEl, searchEl, targetEl]);
   }
 
   render();
@@ -858,6 +862,8 @@ export function renderEditCard({ dataName, json, container, finalPath }) {
     selectedId = nextId;
     updateBackButton();
     renderEditor();
+    mountMaterialEditor(document.getElementById("material-photo-editor"), "pesticide", selectedId,
+      [categoryEl, searchEl, targetEl]);
   };
 
   document.getElementById("save-btn").onclick = async () => {

@@ -8,6 +8,7 @@ import { setTopPhoto } from "./top.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
+import { mountMaterialGallery } from "./materials.js";
 
 const element = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -24,6 +25,7 @@ let selectedFields = [];
 let selectedCategory = "";
 let editingBusy = false;
 let editCandidates = [];
+let photoTab = "field";
 const tops = new Map();  // 圃場名 → トップ写真ID（null=未設定）
 
 function status(message, isError = false) {
@@ -462,6 +464,7 @@ function bind() {
     openFieldModal({ mode: "filter", includeExpired: true }).catch(report);
   });
   window.addEventListener("filter:apply", () => {
+    if (photoTab !== "field") return;
     setFields(filterState.fields);
     search();
   });
@@ -522,6 +525,21 @@ function bind() {
     if (event.key === "ArrowLeft") step(-1);
     if (event.key === "ArrowRight") step(1);
   });
+  for (const button of document.querySelectorAll("[data-photo-tab]")) {
+    button.addEventListener("click", () => {
+      photoTab = button.dataset.photoTab;
+      generation++;
+      for (const tab of document.querySelectorAll("[data-photo-tab]")) {
+        const active = tab === button;
+        tab.classList.toggle("on", active);
+        tab.setAttribute("aria-pressed", String(active));
+      }
+      element("field-photos").hidden = photoTab !== "field";
+      element("material-photos").hidden = photoTab === "field";
+      if (photoTab === "field") search();
+      else mountMaterialGallery(element("material-photos"), photoTab);
+    });
+  }
 }
 
 async function init() {

@@ -1,0 +1,6 @@
+.material-photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 160px)); gap: 12px; margin: 10px 0; }
+.material-photo { min-width: 0; display: flex; flex-direction: column; gap: 5px; overflow-wrap: anywhere; }
+.material-photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #eee; border-radius: 6px; }
+.material-photo button { font-size: 13px; }
+.material-photo-editor form label { display: block; }
+.material-photo-editor input { display: block; max-width: 100%; margin: 8px 0; }

@@ -22,6 +22,7 @@ URL_TTL = 900  # 署名付きURLの有効期間（秒）。ページ内キャッ
 PAGE_SIZE = 24
 MAX_SEARCH_KEYS = 2000
 PHOTO_ID = re.compile(r"^\d{8}T\d{12}Z_[0-9a-f]{32}$")
+MATERIAL_ID = re.compile(r"^[A-Z][A-Z0-9_-]{0,63}$")
 CATEGORIES = {"field", "growth", "work", "issue"}  # 圃場/栽培記録/作業/被害・異常
 CLIENT_ID = "mg1q2dnn576jln28m5sja6eaf"
 ISSUER = "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_OFiPcQjkC"
@@ -109,6 +110,195 @@ def public_photo(bucket, metadata):
 def user_groups(claims):
     # API Gateway検証済みの cognito:groups のみ信頼する。値は "[admin family]" 形式で届く。
     return set(str(claims.get("cognito:groups", "")).strip("[]").replace(",", " ").split())
+
+
+def material_identity(data, require_id=True):
+    kind = text(data, "materialType", 20)
+    if kind not in ("fertilizer", "pesticide"):
+        raise RequestError(400, "資材の種類が不正です。")
+    material_id = text(data, "materialId", 64, required=require_id)
+    if material_id and not MATERIAL_ID.fullmatch(material_id):
+        raise RequestError(400, "資材IDが不正です。")
+    return kind, material_id
+
+
+def material_manifest(bucket, key, kind, material_id):
+    try:
+        result = S3.get_object(Bucket=bucket, Key=key)
+    except ClientError as error:
+        if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
+            return {"materialType": kind, "materialId": material_id, "images": [], "representative": None}, None
+        raise
+    with result["Body"] as stream:
+        value = json.loads(stream.read())
+    if (not isinstance(value, dict) or value.get("materialType") != kind
+            or value.get("materialId") != material_id or not isinstance(value.get("images"), list)):
+        raise RuntimeError("Invalid material photo manifest")
+    return value, result["ETag"]
+
+
+def save_material_manifest(bucket, key, manifest, revision):
+    try:
+        S3.put_object(
+            Bucket=bucket, Key=key,
+            Body=json.dumps(manifest, ensure_ascii=False).encode("utf-8"),
+            ContentType="application/json", CacheControl="no-store",
+            **({"IfMatch": revision} if revision else {"IfNoneMatch": "*"}),
+        )
+    except ClientError as error:
+        if error.response["Error"]["Code"] in ("PreconditionFailed", "ConditionalRequestConflict", "409", "412"):
+            raise RequestError(409, "別の更新があります。再読み込みしてから操作してください。") from error
+        raise
+
+
+def material_photos(bucket, manifest):
+    result = []
+    for image in manifest["images"]:
+        public = public_photo(bucket, image)
+        public["materialType"] = manifest["materialType"]
+        public["materialId"] = manifest["materialId"]
+        public["representative"] = image["id"] == manifest.get("representative")
+        result.append(public)
+    return result
+
+
+def material_request(route, data, claims, bucket, prefix):
+    kind, material_id = material_identity(data, require_id=route != "GET /photos")
+    base = f"{prefix}materials/{kind}/"
+    if route == "GET /photos" and not material_id:
+        options = {"Bucket": bucket, "Prefix": base + "records/", "MaxKeys": 24}
+        cursor = text(data, "cursor", 4096, required=False)
+        if cursor:
+            options["ContinuationToken"] = cursor
+        try:
+            listing = S3.list_objects_v2(**options)
+        except ClientError as error:
+            if cursor and error.response["Error"]["Code"] in ("InvalidArgument", "InvalidToken"):
+                raise RequestError(400, "一覧の続きの取得に失敗しました。再読み込みしてください。") from error
+            raise
+        keys = [item["Key"] for item in listing.get("Contents", [])]
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            manifests = list(pool.map(lambda key: read_json(bucket, key), keys))
+        images = [photo for manifest in manifests for photo in material_photos(bucket, manifest)]
+        return {"photos": images, "cursor": listing.get("NextContinuationToken")}
+
+    record_key = base + f"records/{material_id}.json"
+    if route == "GET /photos":
+        manifest, _ = material_manifest(bucket, record_key, kind, material_id)
+        return {"photos": material_photos(bucket, manifest),
+                "pendingDeletions": manifest.get("pendingDeletions", [])}
+
+    if "admin" not in user_groups(claims):
+        raise RequestError(403, "資材画像の登録・変更は管理者のみ可能です。")
+
+    if route == "POST /photos/uploads":
+        photo_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_") + uuid.uuid4().hex
+        image_key = base + f"images/{material_id}/{photo_id}.jpg"
+        thumb_key = base + f"thumbs/{material_id}/{photo_id}.jpg"
+        pending_key = base + f"pending/{material_id}/{photo_id}.json"
+        write_json(bucket, pending_key, {"id": photo_id, "imageKey": image_key, "uploadedBy": claims["sub"]})
+
+        def ticket(key, max_bytes):
+            return S3.generate_presigned_post(
+                Bucket=bucket, Key=key,
+                Fields={"Content-Type": "image/jpeg", "Cache-Control": "no-store"},
+                Conditions=[{"Content-Type": "image/jpeg"}, {"Cache-Control": "no-store"},
+                            ["content-length-range", 1, max_bytes]],
+                ExpiresIn=300,
+            )
+        return {"id": photo_id, "upload": ticket(image_key, MAX_BYTES),
+                "thumbUpload": ticket(thumb_key, THUMB_MAX_BYTES)}
+
+    photo_id = text(data, "id", 80)
+    if not PHOTO_ID.fullmatch(photo_id):
+        raise RequestError(400, "写真IDが不正です。")
+    manifest, revision = material_manifest(bucket, record_key, kind, material_id)
+
+    if route == "POST /photos/delete":
+        image_key = base + f"images/{material_id}/{photo_id}.jpg"
+        thumb_key = base + f"thumbs/{material_id}/{photo_id}.jpg"
+        pending_key = base + f"pending/{material_id}/{photo_id}.json"
+        pending = read_json(bucket, pending_key)
+        if pending.get("id") != photo_id or pending.get("imageKey") != image_key:
+            raise RuntimeError("Invalid material upload metadata")
+        images = manifest["images"]
+        queued = manifest.get("pendingDeletions", [])
+        found = any(image["id"] == photo_id for image in images)
+        if not found and photo_id not in queued:
+            if pending.get("deleted") is True:
+                return {"id": photo_id}
+            raise RequestError(404, "資材画像が見つかりません。")
+        if not pending.get("deleted"):
+            pending["deleted"] = True
+            write_json(bucket, pending_key, pending)
+        if found:
+            manifest["images"] = [image for image in images if image["id"] != photo_id]
+            if manifest.get("representative") == photo_id:
+                manifest["representative"] = (manifest["images"][0]["id"]
+                                               if manifest["images"] else None)
+            manifest["pendingDeletions"] = list(dict.fromkeys([*queued, photo_id]))
+            save_material_manifest(bucket, record_key, manifest, revision)
+        try:
+            S3.delete_object(Bucket=bucket, Key=image_key)
+            S3.delete_object(Bucket=bucket, Key=thumb_key)
+        except ClientError as error:
+            LOGGER.exception("Material image cleanup failed")
+            raise RequestError(503, "画像は一覧から外れましたが、保存データの削除に失敗しました。削除を再試行してください。") from error
+        manifest, revision = material_manifest(bucket, record_key, kind, material_id)
+        manifest["pendingDeletions"] = [item for item in manifest.get("pendingDeletions", [])
+                                        if item != photo_id]
+        save_material_manifest(bucket, record_key, manifest, revision)
+        return {"id": photo_id}
+
+    if route == "POST /photos/edit":
+        if data.get("action") != "representative":
+            raise RequestError(400, "資材画像の操作が不正です。")
+        if not any(image["id"] == photo_id for image in manifest["images"]):
+            raise RequestError(404, "資材画像が見つかりません。")
+        manifest["representative"] = photo_id
+        save_material_manifest(bucket, record_key, manifest, revision)
+        return {"id": photo_id}
+
+    if route == "POST /photos/complete":
+        pending_key = base + f"pending/{material_id}/{photo_id}.json"
+        pending = read_json(bucket, pending_key)
+        if pending["uploadedBy"] != claims["sub"]:
+            raise RequestError(403, "このアップロードを確定する権限がありません。")
+        if pending.get("deleted") is True:
+            raise RequestError(409, "削除された画像は登録できません。")
+        if any(image["id"] == photo_id for image in manifest["images"]):
+            return {"id": photo_id}
+        image_key = base + f"images/{material_id}/{photo_id}.jpg"
+        if pending.get("id") != photo_id or pending.get("imageKey") != image_key:
+            raise RuntimeError("Invalid material upload metadata")
+        try:
+            head = S3.head_object(Bucket=bucket, Key=image_key)
+        except ClientError as error:
+            if error.response["Error"]["Code"] in ("NoSuchKey", "404"):
+                raise RequestError(409, "画像のアップロードが完了していません。") from error
+            raise
+        if head["ContentType"] != "image/jpeg" or not 0 < head["ContentLength"] <= MAX_BYTES:
+            raise RequestError(400, "JPEG画像（5MB以下）のみ保存できます。")
+        image = S3.get_object(Bucket=bucket, Key=image_key, Range="bytes=0-2")
+        with image["Body"] as stream:
+            if stream.read() != b"\xff\xd8\xff":
+                raise RequestError(400, "JPEG画像ではありません。")
+        metadata = {"id": photo_id, "imageKey": image_key}
+        thumb_key = base + f"thumbs/{material_id}/{photo_id}.jpg"
+        try:
+            thumb = S3.head_object(Bucket=bucket, Key=thumb_key)
+            if thumb["ContentType"] == "image/jpeg" and 0 < thumb["ContentLength"] <= THUMB_MAX_BYTES:
+                metadata["thumbKey"] = thumb_key
+        except ClientError as error:
+            if error.response["Error"]["Code"] not in ("NoSuchKey", "404"):
+                raise
+        manifest["images"].append(metadata)
+        if not manifest.get("representative"):
+            manifest["representative"] = photo_id
+        save_material_manifest(bucket, record_key, manifest, revision)
+        return {"id": photo_id}
+
+    raise RequestError(404, "APIルートが見つかりません。")
 
 
 def list_date_keys(bucket, prefix, start, end, field=None):
@@ -340,6 +530,11 @@ def lambda_handler(event, context):
                 raise RequestError(400, "JSONが不正です。") from error
             if not isinstance(data, dict):
                 raise RequestError(400, "JSONオブジェクトを指定してください。")
+
+        if "materialType" in data and route in ("GET /photos", "POST /photos/uploads",
+                                                 "POST /photos/complete", "POST /photos/edit",
+                                                 "POST /photos/delete"):
+            return response(200, material_request(route, data, claims, bucket, prefix))
 
         if route == "GET /photos/by-date":
             day = text(data, "date", 10)

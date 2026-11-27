@@ -1,6 +1,7 @@
 // admin/edit-json/card-edit-fertilizer-detail.js
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
+import { mountMaterialEditor } from "/photos/materials.js";
 
 const FERTILIZER_CATEGORIES = [
   "BB",
@@ -262,6 +263,7 @@ export function renderEditCard({ json, container, finalPath }) {
     </div>
 
     <div id="fertilizer-editor"></div>
+    <div id="material-photo-editor" class="card material-photo-editor"></div>
 
     <button id="save-btn" class="primary-btn" style="margin-top:20px;">保存する</button>
   `);
@@ -471,6 +473,8 @@ export function renderEditCard({ json, container, finalPath }) {
     refreshTargetOptions();
     updateBackButton();
     renderEditor();
+    mountMaterialEditor(document.getElementById("material-photo-editor"), "fertilizer", selectedId,
+      [categoryEl, searchEl, targetEl]);
   }
 
   function syncSelectedFromInputs() {
@@ -585,6 +589,8 @@ export function renderEditCard({ json, container, finalPath }) {
     selectedId = nextId;
     updateBackButton();
     renderEditor();
+    mountMaterialEditor(document.getElementById("material-photo-editor"), "fertilizer", selectedId,
+      [categoryEl, searchEl, targetEl]);
   };
 
   document.getElementById("save-btn").onclick = async () => {

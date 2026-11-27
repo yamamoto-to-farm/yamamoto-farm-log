@@ -5,9 +5,9 @@ function resolveEditorModulePath(dataName) {
   const explicitMap = {
     machines: "./card-edit-machines.js?v=20261002-5",
     "fertilizer-index": "./fertilizer/index-editor.js",
-    "fertilizer-detail": "./fertilizer/detail-editor.js",
+    "fertilizer-detail": "./fertilizer/detail-editor.js?v=20261127-materials-1",
     "pesticide-index": "./pesticide/index-editor.js",
-    "pesticide-detail": "./pesticide/detail-editor.js"
+    "pesticide-detail": "./pesticide/detail-editor.js?v=20261127-materials-1"
   };
 
   return explicitMap[dataName] || `./card-edit-${dataName}.js`;

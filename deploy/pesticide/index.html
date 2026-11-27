@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/common/filter.css?v=1">
   <link rel="stylesheet" href="/photos/upload.css?v=20261029-1">
+  <link rel="stylesheet" href="/photos/materials.css">
 </head>
 
 <body>
@@ -43,6 +44,8 @@
 
       <!-- 農薬のタグ表示 -->
       <div id="activePesticideFilters" style="margin-top:10px;"></div>
+      <div id="selected-material-photos"></div>
+      <p>使用条件は最新のラベル・登録情報を確認してください。</p>
     </div>
 
     <!-- ★ カード外にリンクを配置（標準UIとして最適） -->
@@ -111,7 +114,7 @@
   <script type="module">
     import { verifyLocalAuth, createWorkerCheckboxes } from "/common/ui.js?v=1";
     import { renderHeader } from "/common/header.js";
-    import { initpesticidePage } from "./pesticide.js?v=20261029-1";
+    import { initpesticidePage } from "./pesticide.js?v=20261127-materials-1";
     import { todayLocalYmd } from "/common/date-utils.js?v=1";
 
     window.addEventListener("DOMContentLoaded", async () => {

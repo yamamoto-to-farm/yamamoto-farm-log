@@ -33,10 +33,11 @@ CloudFront で `/data/auth-config.json` を無効化（invalidate）し、開い
   ACL無効、公開バケットポリシーなしを維持します。このバケットを公開サイトの
   CloudFront ディストリビューションに追加しないでください。
 - Lambda: `yamamoto-farm-photos-api`、Python 3.13、ハンドラ
-  `lambda_function.lambda_handler`。`lambda/photos/lambda_function.py` の内容を
-  コンソールの `lambda_function.py` にデプロイするか、このファイル1つを
-  アーカイブ直下に入れて zip 化します。ランタイム提供の boto3 を使うため、
-  追加パッケージは不要です。
+  `lambda_function.lambda_handler`。資材画像の同時更新を保護するため、条件付き
+  S3 PutObject 対応の boto3 を同梱します。
+  `powershell -ExecutionPolicy Bypass -File scripts\build_photos_api_zip.ps1`
+  で `photos-api.zip` を作成し、Lambda に配置します。コードをコンソールへ
+  貼り付けるだけでは、ランタイムの boto3 のバージョンによって資材画像を保存できません。
 - 環境変数: `PHOTO_BUCKET=yamamoto-farm-private-photos`、
   `PHOTO_PREFIX=photos/`
 - 実行ロール: 非公開バケットへの `s3:ListBucket`（`photos/` と `photos/*` に限定）、
@@ -53,6 +54,28 @@ CloudFront で `/data/auth-config.json` を無効化（invalidate）し、開い
   | POST | `/photos/uploads` | 5分有効・サイズ制限付きの S3 POST を発行 |
   | POST | `/photos/complete` | アップロードを検証しメタデータを公開 |
   | POST | `/photos/edit` | メモと撮影日の編集（admin/family のみ） |
+
+- 肥料・農薬の画像は詳細編集画面で登録し、最初の画像が代表になります。
+  代表画像は詳細編集画面で変更できます。施肥・防除ログには選択した資材の
+  代表画像を表示し、写真一覧の肥料・農薬タブでは登録済み画像を閲覧できます。
+  画像を見るには写真用 Cognito ログインが必要です。ログ入力は未ログインでも可能です。
+  画像は識別の補助であり、農薬の使用条件は最新ラベルと登録情報を確認してください。
+  登録・代表変更は API Gateway が検証した Cognito `admin` グループのみ可能です。
+  画像は詳細情報とは別に即時保存され、詳細情報の「保存する」ボタンとは連動しません。
+  画像を削除できるのは Cognito `admin` グループのみです。代表画像を削除すると
+  残りの画像の先頭が代表になり、残りがなければ代表は解除されます。削除が途中で
+  失敗した場合、詳細編集画面の「削除を再試行」から処理を完了できます。
+  バケットはバージョニング有効のため、削除後も過去バージョンは非公開で残ります。
+  アップロード途中で失敗した画像も非公開バケットに残る場合があります。
+- 資材画像は既存ルートの `materialType`（`fertilizer` / `pesticide`）と
+  `materialId` を使い、`photos/materials/` 以下に保存します。圃場写真の検索や
+  トップ写真には混ざりません。資材ごとのメタデータは条件付き書き込みで保護し、
+  同時更新が競合したときは 409 を返します。既存の API Gateway ルート・IAM・
+  S3 CORS の追加は不要です。新しい Lambda を先に配置し、その後フロントエンドを
+  公開してください。更新前に既存ルートの JWT 認証と `openid` スコープ、
+  `photos/*` に対する S3 権限が維持されていることを確認してください。
+  テスト: `python -B -m unittest discover -s lambda\photos -p "test_*.py"` と
+  `node --test tests\material-photos.test.cjs tests\photos-edit.test.cjs`。
 
 - 写真検索は `from`・`to`（YYYY-MM-DD）が必須です。任意の `fields` は圃場名の
   JSONエンコード配列で、省略または空なら全圃場が対象です。従来の単一 `field`

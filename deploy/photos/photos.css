@@ -1,5 +1,7 @@
 [hidden] { display: none !important; }
 .photos-note { color: #555; margin: 0 0 12px; }
+.photos-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.photos-tabs button.on { background: #2e7d32; color: #fff; }
 .photos-filter { padding: 14px 16px; }
 .filter-group { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0;
   border-bottom: 1px dashed #e6ece6; }

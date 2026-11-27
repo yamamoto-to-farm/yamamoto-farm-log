@@ -110,6 +110,185 @@ class PhotoApiTests(unittest.TestCase):
                 "imageKey": "photos/fields/hash/images/photo.jpg",
                 "uploadedBy": user, "takenOn": "2026-10-26", "note": "memo"}
 
+    def test_material_access_and_validation(self):
+        identity = {"materialType": "fertilizer", "materialId": "F001"}
+        self.assertEqual(self.call("POST /photos/uploads", identity)[0], 403)
+        self.assertEqual(self.call("GET /photos", identity, {})[0], 401)
+        for invalid in ("../F001", "F001/other", ""):
+            data = {**identity, "materialId": invalid}
+            status, _ = self.call("POST /photos/uploads", data, {**self.claims, "cognito:groups": "[admin]"})
+            self.assertEqual(status, 400)
+        fake_s3.generate_presigned_post.assert_not_called()
+
+    def test_material_upload_is_isolated_and_admin_only(self):
+        fake_s3.generate_presigned_post.return_value = {"url": "https://s3.invalid", "fields": {}}
+        status, body = self.call("POST /photos/uploads",
+            {"materialType": "pesticide", "materialId": "FG0001"},
+            {**self.claims, "cognito:groups": "[admin]"})
+        self.assertEqual(status, 200)
+        self.assertRegex(body["id"], api.PHOTO_ID)
+        self.assertIn("thumbUpload", body)
+        pending = fake_s3.put_object.call_args.kwargs
+        self.assertTrue(pending["Key"].startswith("photos/materials/pesticide/pending/FG0001/"))
+        upload = fake_s3.generate_presigned_post.call_args_list[0].kwargs
+        self.assertTrue(upload["Key"].startswith("photos/materials/pesticide/images/FG0001/"))
+        self.assertIn(["content-length-range", 1, api.MAX_BYTES], upload["Conditions"])
+
+    def test_material_complete_and_representative_use_conditional_writes(self):
+        photo_id = self.metadata()["id"]
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": photo_id}
+        image_key = f"photos/materials/fertilizer/images/F001/{photo_id}.jpg"
+        pending = {"id": photo_id, "imageKey": image_key, "uploadedBy": "user-1"}
+        fake_s3.get_object.side_effect = [
+            FakeClientError("NoSuchKey"),
+            {"Body": io.BytesIO(json.dumps(pending).encode())},
+            {"Body": io.BytesIO(b"\xff\xd8\xff")},
+        ]
+        fake_s3.head_object.side_effect = [
+            {"ContentType": "image/jpeg", "ContentLength": 100}, FakeClientError("404")
+        ]
+        claims = {**self.claims, "cognito:groups": "[admin]"}
+        status, _ = self.call("POST /photos/complete", identity, claims)
+        self.assertEqual(status, 200)
+        args = fake_s3.put_object.call_args.kwargs
+        self.assertEqual(args["IfNoneMatch"], "*")
+        manifest = json.loads(args["Body"])
+        self.assertEqual(manifest["representative"], photo_id)
+        self.assertEqual(manifest["images"], [{"id": photo_id, "imageKey": image_key}])
+
+        fake_s3.reset_mock(return_value=True, side_effect=True)
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(manifest).encode()), "ETag": '"revision"'}
+        status, _ = self.call("POST /photos/edit", {**identity, "action": "representative"}, claims)
+        self.assertEqual(status, 200)
+        self.assertEqual(fake_s3.put_object.call_args.kwargs["IfMatch"], '"revision"')
+
+    def test_material_conflict_is_reported_without_overwrite(self):
+        photo_id = self.metadata()["id"]
+        manifest = {"materialType": "fertilizer", "materialId": "F001", "representative": photo_id,
+                    "images": [{"id": photo_id, "imageKey": "image"}]}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(manifest).encode()), "ETag": '"old"'}
+        fake_s3.put_object.side_effect = FakeClientError("PreconditionFailed")
+        status, body = self.call("POST /photos/edit", {
+            "materialType": "fertilizer", "materialId": "F001", "id": photo_id, "action": "representative"
+        }, {**self.claims, "cognito:groups": "[admin]"})
+        self.assertEqual(status, 409)
+        self.assertIn("再読み込み", body["message"])
+
+    def test_material_complete_checks_owner_and_uploaded_image(self):
+        photo_id = self.metadata()["id"]
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": photo_id}
+        image_key = f"photos/materials/fertilizer/images/F001/{photo_id}.jpg"
+        claims = {**self.claims, "cognito:groups": "[admin]"}
+        pending = {"id": photo_id, "imageKey": image_key, "uploadedBy": "someone-else"}
+        fake_s3.get_object.side_effect = [
+            FakeClientError("NoSuchKey"),
+            {"Body": io.BytesIO(json.dumps(pending).encode())},
+        ]
+        self.assertEqual(self.call("POST /photos/complete", identity, claims)[0], 403)
+        fake_s3.put_object.assert_not_called()
+        fake_s3.reset_mock(return_value=True, side_effect=True)
+        pending["uploadedBy"] = "user-1"
+        fake_s3.get_object.side_effect = [
+            FakeClientError("NoSuchKey"),
+            {"Body": io.BytesIO(json.dumps(pending).encode())},
+            {"Body": io.BytesIO(b"bad")},
+        ]
+        fake_s3.head_object.return_value = {"ContentType": "image/jpeg", "ContentLength": 100}
+        self.assertEqual(self.call("POST /photos/complete", identity, claims)[0], 400)
+        fake_s3.put_object.assert_not_called()
+
+    def test_material_listing_and_missing_product(self):
+        identity = {"materialType": "pesticide", "materialId": "FG0001"}
+        fake_s3.get_object.side_effect = FakeClientError("NoSuchKey")
+        self.assertEqual(self.call("GET /photos", identity), (200, {"photos": [], "pendingDeletions": []}))
+        fake_s3.reset_mock(return_value=True, side_effect=True)
+        photo_id = self.metadata()["id"]
+        manifest = {**identity, "representative": photo_id, "images": [
+            {"id": photo_id, "imageKey": "private-image", "thumbKey": "private-thumb"}]}
+        fake_s3.list_objects_v2.return_value = {"Contents": [{"Key": "record"}], "NextContinuationToken": "next"}
+        fake_s3.get_object.return_value = {"Body": io.BytesIO(json.dumps(manifest).encode())}
+        fake_s3.generate_presigned_url.side_effect = ["full", "thumb"]
+        status, body = self.call("GET /photos", {"materialType": "pesticide"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["cursor"], "next")
+        self.assertEqual(body["photos"], [{"id": photo_id, "materialType": "pesticide",
+            "materialId": "FG0001", "representative": True, "url": "full", "thumbUrl": "thumb"}])
+        self.assertTrue(fake_s3.list_objects_v2.call_args.kwargs["Prefix"].startswith("photos/materials/"))
+
+    def material_delete_store(self):
+        first = self.metadata()["id"]
+        second = "20261026T090001123456Z_" + "b" * 32
+        base = "photos/materials/fertilizer/"
+        record = base + "records/F001.json"
+        def image(photo_id):
+            return base + f"images/F001/{photo_id}.jpg"
+        def pending(photo_id):
+            return base + f"pending/F001/{photo_id}.json"
+        store = {
+            record: {"materialType": "fertilizer", "materialId": "F001", "representative": first,
+                     "images": [{"id": first, "imageKey": image(first)}, {"id": second, "imageKey": image(second)}]},
+            pending(first): {"id": first, "imageKey": image(first), "uploadedBy": "user-1"},
+            pending(second): {"id": second, "imageKey": image(second), "uploadedBy": "user-1"},
+            image(first): "binary", image(second): "binary",
+            base + f"thumbs/F001/{first}.jpg": "binary",
+        }
+        revisions = {key: 1 for key in store}
+        def get(Bucket, Key, **kwargs):
+            if Key not in store:
+                raise FakeClientError("NoSuchKey")
+            return {"Body": io.BytesIO(json.dumps(store[Key]).encode()), "ETag": str(revisions[Key])}
+        def put(Bucket, Key, Body, **kwargs):
+            if kwargs.get("IfMatch") and kwargs["IfMatch"] != str(revisions.get(Key)):
+                raise FakeClientError("PreconditionFailed")
+            if kwargs.get("IfNoneMatch") and Key in store:
+                raise FakeClientError("PreconditionFailed")
+            store[Key] = json.loads(Body)
+            revisions[Key] = revisions.get(Key, 0) + 1
+        def delete(Bucket, Key):
+            store.pop(Key, None)
+            revisions.pop(Key, None)
+        fake_s3.get_object.side_effect = get
+        fake_s3.put_object.side_effect = put
+        fake_s3.delete_object.side_effect = delete
+        fake_s3.generate_presigned_url.return_value = "https://signed.invalid/image"
+        return store, record, first, second, image, pending, delete
+
+    def test_material_delete_requires_admin_and_reassigns_representative(self):
+        store, record, first, second, image, pending, _ = self.material_delete_store()
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": first}
+        self.assertEqual(self.call("POST /photos/delete", identity, self.claims)[0], 403)
+        self.assertEqual(self.call("POST /photos/delete", identity,
+                                   {**self.claims, "cognito:groups": "[family]"})[0], 403)
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        self.assertEqual(self.call("POST /photos/delete", identity, admin)[0], 200)
+        self.assertEqual(store[record]["representative"], second)
+        self.assertEqual([item["id"] for item in store[record]["images"]], [second])
+        self.assertNotIn(image(first), store)
+        self.assertTrue(store[pending(first)]["deleted"])
+        self.assertEqual(self.call("POST /photos/complete", identity, admin)[0], 409)
+        self.assertEqual(self.call("POST /photos/delete", identity, admin)[0], 200)
+        self.assertEqual(self.call("POST /photos/delete", {**identity, "id": second}, admin)[0], 200)
+        self.assertIsNone(store[record]["representative"])
+        self.assertEqual(store[record]["images"], [])
+
+    def test_material_delete_cleanup_failure_is_visible_and_retryable(self):
+        store, record, first, second, image, _, delete = self.material_delete_store()
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": first}
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        fake_s3.delete_object.side_effect = FakeClientError("AccessDenied")
+        status, _ = self.call("POST /photos/delete", identity, admin)
+        self.assertEqual(status, 503)
+        self.assertEqual(store[record]["pendingDeletions"], [first])
+        self.assertEqual(self.call("GET /photos", {
+            "materialType": "fertilizer", "materialId": "F001"
+        })[1]["pendingDeletions"], [first])
+        self.assertIn(image(first), store)
+        fake_s3.delete_object.side_effect = delete
+        self.assertEqual(self.call("POST /photos/delete", identity, admin)[0], 200)
+        self.assertNotIn(image(first), store)
+        self.assertEqual(store[record]["pendingDeletions"], [])
+        self.assertEqual(store[record]["representative"], second)
+
     def test_listing_issues_short_lived_url_without_storage_keys_or_user_id(self):
         metadata = self.metadata()
         fake_s3.list_objects_v2.return_value = {"Contents": [{"Key": "record.json"}]}

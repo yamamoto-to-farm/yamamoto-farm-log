@@ -11,6 +11,7 @@ function debugLog(...args) {
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { openFertilizerModal } from "/common/filter/filter-fertilizer.js?v=20260818-1";
 import { mountPhotoAttach } from "/photos/upload.js?v=20261101-5";
+import { mountSelectedMaterialPhotos } from "/photos/materials.js";
 import { setFilterData, getFilterData, filterState } from "/common/filter/filter-core.js?v=1";
 import { initActiveFilterUI } from "/common/filter/filter-active.js?v=1";
 
@@ -33,9 +34,11 @@ export async function initFertilizerPage() {
   debugLog("initFertilizerPage start");
 
   await initFieldFilterData();
-  await initFertilizerFilterData();
+  const materialDict = await initFertilizerFilterData();
 
   initActiveFilterUI();
+  mountSelectedMaterialPhotos(document.getElementById("selected-material-photos"),
+    () => filterState.fertilizers || [], materialDict);
 
   mountPhotoAttach(document.getElementById("field-area-total").parentElement, {
     getFields: () => filterState.fields || [],
@@ -206,4 +209,5 @@ async function initFertilizerFilterData() {
   });
 
   debugLog("fertilizer filter set");
+  return dict;
 }
