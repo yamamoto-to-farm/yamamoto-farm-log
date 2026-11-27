@@ -190,7 +190,8 @@ Resources:
       StageName: '$default'
       AutoDeploy: true
       DefaultRouteSettings:
-        ThrottlingBurstLimit: 1
+        # Allow CORS preflights and their requests while retaining the sustained rate limit.
+        ThrottlingBurstLimit: 5
         ThrottlingRateLimit: 0.1
 Outputs:
   ApiEndpoint:
