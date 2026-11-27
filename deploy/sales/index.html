@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/common/css/main.css?v=1">
   <link rel="stylesheet" href="/finance/finance.css?v=20261121-paper-invoices-4">
   <link rel="stylesheet" href="/common/css/recent-pages.css?v=20261105-layout-1">
-  <link rel="stylesheet" href="./sales.css?v=20261126-1">
+  <link rel="stylesheet" href="./sales.css?v=20261127-1">
 </head>
 <body class="recent-page recent-page--wide">
   <main id="page-area" class="page-container" hidden>
@@ -47,8 +47,14 @@
         <div class="finance-scroll" tabindex="0" role="region" aria-label="月別売上">
           <table><caption>出荷月・品名別（税抜）</caption><thead><tr><th>出荷月</th><th>品名</th><th>数量</th><th>販売額</th><th>平均単価</th></tr></thead><tbody id="monthly"></tbody></table>
         </div>
+        <div class="sales-kpi-link">
+          <div>
+            <strong>圃場・作付け別の売上概算</strong>
+            <p>選択中の期間の内訳を収穫KPIで確認できます。</p>
+          </div>
+          <a id="kpi-link" href="/performance/harvest-kpi.html">収穫KPIを見る <span aria-hidden="true">→</span></a>
+        </div>
       </section>
-      <p><a id="kpi-link" href="/performance/harvest-kpi.html">圃場・作付け別の売上概算は収穫KPIで確認</a></p>
       <section class="card">
         <h2>精算明細</h2>
         <div class="sales-items">

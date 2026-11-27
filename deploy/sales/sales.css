@@ -7,6 +7,35 @@
 .sales-detail table { width: 100%; }
 .sales-detail td { min-width: 90px; }
 .sales-error { color: #a51f25; }
+.sales-kpi-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #c9ded1;
+  border-radius: 8px;
+  background: #f2f8f4;
+}
+.sales-kpi-link strong { color: #234d34; }
+.sales-kpi-link p { margin: 4px 0 0; color: #536574; font-size: .9rem; }
+.sales-kpi-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #398651;
+  border-radius: 6px;
+  background: #fff;
+  color: #24633b;
+  font-weight: 700;
+  text-decoration: none;
+}
+.sales-kpi-link a:hover { background: #e2f1e7; }
+.sales-kpi-link a:focus-visible { outline: 2px solid #3279af; outline-offset: 2px; }
 .sales-items-table { width: 100%; min-width: 0; table-layout: fixed; }
 .sales-items-table th, .sales-items-table td {
   min-width: 0;
