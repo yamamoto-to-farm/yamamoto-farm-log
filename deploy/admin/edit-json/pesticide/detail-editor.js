@@ -1,7 +1,7 @@
 // admin/edit-json/card-edit-pesticide-detail.js
 import { saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
-import { mountMaterialEditor } from "/photos/materials.js";
+import { mountMaterialEditor } from "/photos/materials.js?v=20261127-associate-1";
 
 const PESTICIDE_CATEGORIES = ["殺菌剤", "殺虫剤", "茎葉除草剤", "選択制除草剤", "展着剤", "土壌消毒剤"];
 

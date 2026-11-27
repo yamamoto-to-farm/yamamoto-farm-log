@@ -1,7 +1,7 @@
 // admin/edit-json/card-edit-fertilizer-detail.js
 import { loadJSON, saveJSON } from "/common/json.js?v=1";
 import { showSaveModal, completeSaveModal } from "/common/save-modal.js?v=1";
-import { mountMaterialEditor } from "/photos/materials.js";
+import { mountMaterialEditor } from "/photos/materials.js?v=20261127-associate-1";
 
 const FERTILIZER_CATEGORIES = [
   "BB",

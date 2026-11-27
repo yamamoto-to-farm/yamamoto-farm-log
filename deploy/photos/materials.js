@@ -79,6 +79,68 @@ function imageCard(photo, label) {
   return card;
 }
 
+function uploadForm(identity, status, setBusy, refresh, isBusy = () => false) {
+  const form = document.createElement("form");
+  const label = document.createElement("label");
+  label.textContent = "画像を追加（JPEG・PNG・WebP、複数選択可）";
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/jpeg,image/png,image/webp";
+  input.multiple = true;
+  label.append(input);
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "secondary-btn";
+  submit.textContent = "画像を登録";
+  form.append(label, submit);
+  let busy = false;
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (busy || isBusy()) return;
+    const files = [...input.files];
+    if (!files.length) { message(status, "画像を選択してください。", true); return; }
+    busy = true;
+    setBusy(true);
+    submit.disabled = true;
+    let completed = 0;
+    let uploaded = false;
+    try {
+      for (const file of files) {
+        message(status, `登録中 ${completed + 1} / ${files.length}…`);
+        const blob = await convertToJpeg(file);
+        const upload = await request("/photos/uploads", identity, true);
+        const result = await postToS3(upload.upload, blob);
+        if (!result.ok) throw new Error(`画像保存に失敗しました（${result.status}）。`);
+        const thumb = await makeThumbnail(blob);
+        if (thumb) {
+          const result = await postToS3(upload.thumbUpload, thumb);
+          if (!result.ok) throw new Error(`サムネイル保存に失敗しました（${result.status}）。`);
+        }
+        await request("/photos/complete", { ...identity, id: upload.id }, true);
+        completed++;
+      }
+      uploaded = true;
+      await refresh();
+      message(status, `${completed}枚を登録しました。`);
+    } catch (error) {
+      console.error("[material-photos] upload", error);
+      input.value = "";
+      let detail = uploaded
+        ? `${completed}枚は登録されましたが、一覧を更新できません: ${error.message}`
+        : `${error.message} 登録済み: ${completed}枚。残りの画像を選び直してください。`;
+      if (completed && !uploaded) {
+        try { await refresh(); }
+        catch (reloadError) {
+          console.error("[material-photos] reload after upload", reloadError);
+          detail += ` 一覧更新にも失敗しました: ${reloadError.message}`;
+        }
+      }
+      message(status, detail, true);
+    } finally { busy = false; setBusy(false); submit.disabled = false; }
+  };
+  return form;
+}
+
 export function mountMaterialEditor(container, materialType, materialId, selectionControls = []) {
   container.replaceChildren();
   if (!materialId) return;
@@ -141,6 +203,13 @@ export function mountMaterialEditor(container, materialType, materialId, selecti
     }
     for (const photo of result.photos) {
       const card = imageCard(photo, materialId);
+      if (photo.transfer) {
+        const note = document.createElement("span");
+        note.textContent = "紐づけ変更が未完了です。写真一覧から再試行してください。";
+        card.append(note);
+        gallery.append(card);
+        continue;
+      }
       const button = document.createElement("button");
       button.type = "button";
       button.className = "secondary-btn";
@@ -176,59 +245,14 @@ export function mountMaterialEditor(container, materialType, materialId, selecti
       retry.onclick = () => removePhoto(photoId, retry);
       content.append(retry);
     }
-    const form = document.createElement("form");
-    const label = document.createElement("label");
-    label.textContent = "画像を追加（JPEG・PNG・WebP、複数選択可）";
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/jpeg,image/png,image/webp";
-    input.multiple = true;
-    label.append(input);
-    const submit = document.createElement("button");
-    submit.type = "submit";
-    submit.className = "secondary-btn";
-    submit.textContent = "画像を登録";
-    form.append(label, submit);
-    form.onsubmit = async event => {
-      event.preventDefault();
-      if (busy) return;
-      const files = [...input.files];
-      if (!files.length) { message(status, "画像を選択してください。", true); return; }
-      setBusy(true);
-      submit.disabled = true;
-      let completed = 0;
-      try {
-        for (const file of files) {
-          message(status, `登録中 ${completed + 1} / ${files.length}…`);
-          const blob = await convertToJpeg(file);
-          const upload = await request("/photos/uploads", identity, true);
-          const result = await postToS3(upload.upload, blob);
-          if (!result.ok) throw new Error(`画像保存に失敗しました（${result.status}）。`);
-          const thumb = await makeThumbnail(blob);
-          if (thumb) {
-            const result = await postToS3(upload.thumbUpload, thumb);
-            if (!result.ok) throw new Error(`サムネイル保存に失敗しました（${result.status}）。`);
-          }
-          await request("/photos/complete", { ...identity, id: upload.id }, true);
-          completed++;
-        }
-        await load();
-        message(status, `${completed}枚を登録しました。画像は詳細情報の保存とは別に保存されます。`);
-      } catch (error) {
-        console.error("[material-photos] upload", error);
-        input.value = "";
-        let detail = `${error.message} 登録済み: ${completed}枚。残りの画像を選び直してください。`;
-        if (completed) {
-          try { await load(); }
-          catch (reloadError) {
-            console.error("[material-photos] reload after upload", reloadError);
-            detail += ` 一覧更新にも失敗しました: ${reloadError.message}`;
-          }
-        }
-        message(status, detail, true);
-      } finally { setBusy(false); submit.disabled = false; }
+    content.append(uploadForm(identity, status, setBusy, load, () => busy));
+    const choose = document.createElement("a");
+    choose.href = `/photos/index.html?${new URLSearchParams({ tab: materialType, associate: materialId })}`;
+    choose.textContent = "写真一覧から画像を選ぶ";
+    choose.onclick = event => {
+      if (busy || !confirm("写真一覧へ移動します。入力中の未保存の内容は失われます。よろしいですか？")) event.preventDefault();
     };
-    content.append(form);
+    content.append(choose);
     message(status, result.pendingDeletions?.length
       ? "削除が未完了の画像があります。「削除を再試行」を押してください。"
       : result.photos.length
@@ -304,38 +328,179 @@ export function mountSelectedMaterialPhotos(container, selected, dictionary) {
   refresh();
 }
 
-export function mountMaterialGallery(container, materialType) {
+export function mountMaterialGallery(container, materialType, preferredId = "") {
   let cursor = "";
+  let busy = false;
+  let disabledStates = [];
   const status = document.createElement("p");
   status.setAttribute("role", "status");
   const gallery = document.createElement("div");
   gallery.className = "material-photos-grid";
+  const controls = document.createElement("div");
+  const retries = document.createElement("div");
   const more = document.createElement("button");
   more.type = "button";
   more.className = "secondary-btn";
   more.textContent = "続きを読み込む";
   more.hidden = true;
-  container.replaceChildren(status, gallery, more);
-  async function load() {
+  container.replaceChildren(status, controls, retries, gallery, more);
+  function warnBeforeLeaving(event) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+  function setBusy(value) {
+    busy = value;
+    const tabs = [...document.querySelectorAll("[data-photo-tab]")];
+    if (value) {
+      disabledStates = tabs.map(tab => tab.disabled);
+      tabs.forEach(tab => { tab.disabled = true; });
+      window.addEventListener("beforeunload", warnBeforeLeaving);
+    } else {
+      tabs.forEach((tab, index) => { tab.disabled = disabledStates[index]; });
+      window.removeEventListener("beforeunload", warnBeforeLeaving);
+    }
+  }
+  async function load(append = false) {
+    if (!append) {
+      cursor = "";
+      gallery.replaceChildren();
+      retries.replaceChildren();
+    }
     more.disabled = true;
     message(status, "資材画像を読み込み中…");
     try {
-      const [result, indexResponse] = await Promise.all([
+      const [result, indexResponse, unassigned] = await Promise.all([
         listMaterialPhotos(materialType, "", cursor),
-        fetch(`/data/${materialType}/${materialType}-index.json`, { cache: "no-store" })
+        fetch(`/data/${materialType}/${materialType}-index.json`, { cache: "no-store" }),
+        request("/photos", { materialType, unassigned: "1" })
       ]);
       if (!indexResponse.ok) throw new Error(`資材一覧を取得できません（${indexResponse.status}）。`);
       const index = await indexResponse.json();
+      if (!Array.isArray(index) || !Array.isArray(unassigned.photos)) {
+        throw new Error("資材一覧または未紐づけ画像の応答が不正です。");
+      }
       const names = new Map(index.map(item => [item.id, item.name]));
-      for (const photo of result.photos) {
-        const name = names.get(photo.materialId) || photo.materialId;
+      controls.replaceChildren();
+      if (result.canManage) {
+        const note = document.createElement("p");
+        note.textContent = preferredId && names.has(preferredId)
+          ? `「${names.get(preferredId)}」に紐づける画像を選べます。`
+          : "画像を先に登録し、後から資材に紐づけられます。";
+        controls.append(note, uploadForm(
+          { materialType, materialId: "", unassigned: true }, status, setBusy, () => load(), () => busy));
+        const pending = [
+          ...(append ? [] : (unassigned.pendingDeletions || []).map(id => ({ id, materialId: "" }))),
+          ...(result.pendingDeletions || []).filter(item => item.materialId)
+        ];
+        for (const item of pending) {
+          const retry = document.createElement("button");
+          retry.type = "button";
+          retry.textContent = `${names.get(item.materialId) || item.materialId || "未紐づけ"}の画像削除を再試行`;
+          retry.onclick = async () => {
+            if (busy || !confirm("未完了の画像削除を再試行します。よろしいですか？")) return;
+            setBusy(true);
+            try {
+              await request("/photos/delete", {
+                materialType, materialId: item.materialId, id: item.id,
+                ...(item.materialId ? {} : { unassigned: true })
+              }, true);
+              await load();
+              message(status, "画像を削除しました。");
+            } catch (error) {
+              console.error("[material-photos] retry delete", error);
+              message(status, `${error.message} 削除を再試行できます。`, true);
+            } finally { setBusy(false); }
+          };
+          retries.append(retry);
+        }
+      }
+      const reload = document.createElement("button");
+      reload.type = "button";
+      reload.className = "secondary-btn";
+      reload.textContent = "一覧を更新";
+      reload.onclick = () => {
+        if (!busy) load().catch(error => console.error("[material-photos] refresh", error));
+      };
+      controls.append(reload);
+      const visiblePhotos = [
+        ...(append ? [] : unassigned.photos),
+        ...result.photos.filter(photo => photo.materialId)
+      ];
+      for (const photo of visiblePhotos) {
+        const name = photo.materialId ? (names.get(photo.materialId) || photo.materialId) : "未紐づけ";
         const card = imageCard(photo, name);
         const label = document.createElement("strong");
         label.textContent = `${name}${photo.representative ? " ★代表" : ""}`;
-        const edit = document.createElement("a");
-        edit.href = `/admin/edit-json/index.html?${new URLSearchParams({ data: `${materialType}-detail`, pid: photo.materialId })}`;
-        edit.textContent = "詳細・画像を編集";
-        card.append(label, edit);
+        card.append(label);
+        if (photo.materialId) {
+          const edit = document.createElement("a");
+          edit.href = `/admin/edit-json/index.html?${new URLSearchParams({ data: `${materialType}-detail`, pid: photo.materialId })}`;
+          edit.textContent = "詳細・画像を編集";
+          card.append(edit);
+        }
+        if (result.canManage) {
+          const select = document.createElement("select");
+          select.setAttribute("aria-label", `${name}の紐づけ先`);
+          const empty = document.createElement("option");
+          empty.value = "";
+          empty.textContent = "未紐づけ";
+          select.append(empty);
+          for (const item of index) {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = `${item.name} (${item.id})`;
+            select.append(option);
+          }
+          select.value = preferredId && names.has(preferredId) ? preferredId : photo.materialId;
+          const save = document.createElement("button");
+          save.type = "button";
+          save.textContent = photo.transfer ? "紐づけ変更を再試行" : "紐づけを保存";
+          save.onclick = async () => {
+            if (busy) return;
+            const source = photo.transfer?.from ?? photo.materialId;
+            const target = photo.transfer?.to ?? select.value;
+            if (source === target) { message(status, "変更する紐づけ先を選択してください。", true); return; }
+            if (source && !photo.transfer && !confirm("この画像の紐づけ先を変更します。よろしいですか？")) return;
+            setBusy(true);
+            try {
+              await request("/photos/edit", {
+                materialType, materialId: source, ...(source ? {} : { unassigned: true }),
+                id: photo.id, action: "associate", targetMaterialId: target
+              }, true);
+              await load();
+              message(status, "画像の紐づけを更新しました。");
+            } catch (error) {
+              console.error("[material-photos] associate", error);
+              message(status, `${error.message} 一覧を更新し、未完了の場合は再試行してください。`, true);
+            } finally { setBusy(false); }
+          };
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.textContent = "画像を削除";
+          remove.disabled = !!photo.transfer;
+          remove.onclick = async () => {
+            if (busy || !confirm("この画像を一覧から削除します。過去のバージョンは非公開の保存先に残ります。よろしいですか？")) return;
+            setBusy(true);
+            try {
+              await request("/photos/delete", {
+                materialType, materialId: photo.materialId,
+                ...(photo.materialId ? {} : { unassigned: true }), id: photo.id
+              }, true);
+              await load();
+              message(status, "画像を削除しました。");
+            } catch (error) {
+              console.error("[material-photos] delete", error);
+              message(status, `${error.message} 一覧を更新し、削除を再試行してください。`, true);
+            } finally { setBusy(false); }
+          };
+          if (photo.transfer) {
+            const note = document.createElement("span");
+            note.textContent = "紐づけ変更が未完了です。再試行してください。";
+            select.disabled = true;
+            card.append(note);
+          }
+          card.append(select, save, remove);
+        }
         gallery.append(card);
       }
       cursor = result.cursor || "";
@@ -346,11 +511,14 @@ export function mountMaterialGallery(container, materialType) {
       message(status, error.message, true);
       more.hidden = false;
       more.textContent = "再読み込み";
+      throw error;
     } finally { more.disabled = false; }
   }
-  more.onclick = load;
+  more.onclick = () => {
+    if (!busy) load(!!cursor).catch(error => console.error("[material-photos] retry", error));
+  };
   if (!hasSession()) {
     message(status, "画像を見るには写真用ログインが必要です。");
     loginButton(container);
-  } else load();
+  } else load().catch(error => console.error("[material-photos] initial load", error));
 }

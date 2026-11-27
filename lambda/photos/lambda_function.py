@@ -162,10 +162,85 @@ def material_photos(bucket, manifest):
     return result
 
 
+def material_record_key(base, material_id):
+    return base + f"records/{material_id or '_unassigned'}.json"
+
+
+def material_storage_keys(base, image, photo_id):
+    image_key = image.get("imageKey", "")
+    match = re.fullmatch(re.escape(base) + r"images/([A-Z][A-Z0-9_-]{0,63}|_unassigned)/" +
+                         re.escape(photo_id) + r"\.jpg", image_key)
+    if not match:
+        raise RuntimeError("Invalid material image key")
+    storage_id = match.group(1)
+    return (image_key, base + f"thumbs/{storage_id}/{photo_id}.jpg",
+            base + f"pending/{storage_id}/{photo_id}.json")
+
+
+def transfer_material_photo(bucket, base, kind, source_id, target_id, photo_id):
+    if source_id == target_id:
+        raise RequestError(400, "異なる資材を選択してください。")
+    source_key = material_record_key(base, source_id)
+    target_key = material_record_key(base, target_id)
+    source, source_revision = material_manifest(bucket, source_key, kind, source_id)
+    target, target_revision = material_manifest(bucket, target_key, kind, target_id)
+    source_image = next((item for item in source["images"] if item["id"] == photo_id), None)
+    target_image = next((item for item in target["images"] if item["id"] == photo_id), None)
+    transfer = {"from": source_id, "to": target_id}
+
+    if source_image:
+        if source_image.get("transfer") not in (None, {**transfer, "role": "source"}):
+            raise RequestError(409, "画像の別の紐づけ変更が進行中です。")
+        if not source_image.get("transfer"):
+            source_image["transfer"] = {**transfer, "role": "source"}
+            save_material_manifest(bucket, source_key, source, source_revision)
+        image_key, _, pending_key = material_storage_keys(base, source_image, photo_id)
+        pending = read_json(bucket, pending_key)
+        if pending.get("id") != photo_id or pending.get("imageKey") != image_key or pending.get("deleted"):
+            raise RequestError(409, "画像の保存状態を確認できません。")
+        if not pending.get("moved"):
+            pending["moved"] = True
+            write_json(bucket, pending_key, pending)
+        if target_image and target_image.get("transfer") != {**transfer, "role": "target"}:
+            raise RequestError(409, "移動先に同じ画像が存在します。")
+        if not target_image:
+            target_image = {**source_image, "transfer": {**transfer, "role": "target"}}
+            target["images"].append(target_image)
+            save_material_manifest(bucket, target_key, target, target_revision)
+        source, source_revision = material_manifest(bucket, source_key, kind, source_id)
+        source_image = next((item for item in source["images"] if item["id"] == photo_id), None)
+        if source_image:
+            if source_image.get("transfer") != {**transfer, "role": "source"}:
+                raise RequestError(409, "画像の紐づけ変更が競合しました。")
+            source["images"] = [item for item in source["images"] if item["id"] != photo_id]
+            if source.get("representative") == photo_id:
+                source["representative"] = next(
+                    (item["id"] for item in source["images"] if not item.get("transfer")), None)
+            save_material_manifest(bucket, source_key, source, source_revision)
+    elif not target_image:
+        raise RequestError(404, "資材画像が見つかりません。")
+
+    target, target_revision = material_manifest(bucket, target_key, kind, target_id)
+    target_image = next((item for item in target["images"] if item["id"] == photo_id), None)
+    if not target_image:
+        raise RequestError(409, "移動先の画像を確認できません。再試行してください。")
+    if target_image.get("transfer") == {**transfer, "role": "target"}:
+        del target_image["transfer"]
+        if target_id and not target.get("representative"):
+            target["representative"] = photo_id
+        save_material_manifest(bucket, target_key, target, target_revision)
+    elif target_image.get("transfer"):
+        raise RequestError(409, "画像の別の紐づけ変更が進行中です。")
+    return {"id": photo_id}
+
+
 def material_request(route, data, claims, bucket, prefix):
-    kind, material_id = material_identity(data, require_id=route != "GET /photos")
+    unassigned = data.get("unassigned") in (True, "1")
+    kind, material_id = material_identity(data, require_id=route != "GET /photos" and not unassigned)
+    if unassigned and material_id:
+        raise RequestError(400, "未紐づけと資材IDは同時に指定できません。")
     base = f"{prefix}materials/{kind}/"
-    if route == "GET /photos" and not material_id:
+    if route == "GET /photos" and not material_id and not unassigned:
         options = {"Bucket": bucket, "Prefix": base + "records/", "MaxKeys": 24}
         cursor = text(data, "cursor", 4096, required=False)
         if cursor:
@@ -180,9 +255,15 @@ def material_request(route, data, claims, bucket, prefix):
         with ThreadPoolExecutor(max_workers=8) as pool:
             manifests = list(pool.map(lambda key: read_json(bucket, key), keys))
         images = [photo for manifest in manifests for photo in material_photos(bucket, manifest)]
-        return {"photos": images, "cursor": listing.get("NextContinuationToken")}
+        can_manage = "admin" in user_groups(claims)
+        return {"photos": images, "cursor": listing.get("NextContinuationToken"),
+                "canManage": can_manage,
+                "pendingDeletions": [
+                    {"materialId": manifest["materialId"], "id": photo_id}
+                    for manifest in manifests for photo_id in manifest.get("pendingDeletions", [])
+                ] if can_manage else []}
 
-    record_key = base + f"records/{material_id}.json"
+    record_key = material_record_key(base, material_id)
     if route == "GET /photos":
         manifest, _ = material_manifest(bucket, record_key, kind, material_id)
         return {"photos": material_photos(bucket, manifest),
@@ -193,9 +274,10 @@ def material_request(route, data, claims, bucket, prefix):
 
     if route == "POST /photos/uploads":
         photo_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_") + uuid.uuid4().hex
-        image_key = base + f"images/{material_id}/{photo_id}.jpg"
-        thumb_key = base + f"thumbs/{material_id}/{photo_id}.jpg"
-        pending_key = base + f"pending/{material_id}/{photo_id}.json"
+        storage_id = material_id or "_unassigned"
+        image_key = base + f"images/{storage_id}/{photo_id}.jpg"
+        thumb_key = base + f"thumbs/{storage_id}/{photo_id}.jpg"
+        pending_key = base + f"pending/{storage_id}/{photo_id}.json"
         write_json(bucket, pending_key, {"id": photo_id, "imageKey": image_key, "uploadedBy": claims["sub"]})
 
         def ticket(key, max_bytes):
@@ -212,12 +294,23 @@ def material_request(route, data, claims, bucket, prefix):
     photo_id = text(data, "id", 80)
     if not PHOTO_ID.fullmatch(photo_id):
         raise RequestError(400, "写真IDが不正です。")
+    if route == "POST /photos/edit" and data.get("action") == "associate":
+        target_id = text(data, "targetMaterialId", 64, required=False)
+        if target_id and not MATERIAL_ID.fullmatch(target_id):
+            raise RequestError(400, "紐づけ先の資材IDが不正です。")
+        return transfer_material_photo(bucket, base, kind, material_id, target_id, photo_id)
     manifest, revision = material_manifest(bucket, record_key, kind, material_id)
 
     if route == "POST /photos/delete":
-        image_key = base + f"images/{material_id}/{photo_id}.jpg"
-        thumb_key = base + f"thumbs/{material_id}/{photo_id}.jpg"
-        pending_key = base + f"pending/{material_id}/{photo_id}.json"
+        image = next((item for item in manifest["images"] if item["id"] == photo_id), None)
+        if image and image.get("transfer"):
+            raise RequestError(409, "紐づけ変更を完了してから削除してください。")
+        if image:
+            image_key, thumb_key, pending_key = material_storage_keys(base, image, photo_id)
+        else:
+            storage_id = manifest.get("pendingDeletionStorage", {}).get(photo_id) or material_id or "_unassigned"
+            image_key, thumb_key, pending_key = material_storage_keys(
+                base, {"imageKey": base + f"images/{storage_id}/{photo_id}.jpg"}, photo_id)
         pending = read_json(bucket, pending_key)
         if pending.get("id") != photo_id or pending.get("imageKey") != image_key:
             raise RuntimeError("Invalid material upload metadata")
@@ -228,16 +321,17 @@ def material_request(route, data, claims, bucket, prefix):
             if pending.get("deleted") is True:
                 return {"id": photo_id}
             raise RequestError(404, "資材画像が見つかりません。")
-        if not pending.get("deleted"):
-            pending["deleted"] = True
-            write_json(bucket, pending_key, pending)
         if found:
             manifest["images"] = [image for image in images if image["id"] != photo_id]
             if manifest.get("representative") == photo_id:
-                manifest["representative"] = (manifest["images"][0]["id"]
-                                               if manifest["images"] else None)
+                manifest["representative"] = next(
+                    (item["id"] for item in manifest["images"] if not item.get("transfer")), None)
             manifest["pendingDeletions"] = list(dict.fromkeys([*queued, photo_id]))
+            manifest.setdefault("pendingDeletionStorage", {})[photo_id] = image_key.split("/")[-2]
             save_material_manifest(bucket, record_key, manifest, revision)
+        if not pending.get("deleted"):
+            pending["deleted"] = True
+            write_json(bucket, pending_key, pending)
         try:
             S3.delete_object(Bucket=bucket, Key=image_key)
             S3.delete_object(Bucket=bucket, Key=thumb_key)
@@ -253,22 +347,26 @@ def material_request(route, data, claims, bucket, prefix):
     if route == "POST /photos/edit":
         if data.get("action") != "representative":
             raise RequestError(400, "資材画像の操作が不正です。")
-        if not any(image["id"] == photo_id for image in manifest["images"]):
+        image = next((item for item in manifest["images"] if item["id"] == photo_id), None)
+        if not image:
             raise RequestError(404, "資材画像が見つかりません。")
+        if image.get("transfer") or not material_id:
+            raise RequestError(409, "紐づけ変更を完了してから代表画像を選択してください。")
         manifest["representative"] = photo_id
         save_material_manifest(bucket, record_key, manifest, revision)
         return {"id": photo_id}
 
     if route == "POST /photos/complete":
-        pending_key = base + f"pending/{material_id}/{photo_id}.json"
+        storage_id = material_id or "_unassigned"
+        pending_key = base + f"pending/{storage_id}/{photo_id}.json"
         pending = read_json(bucket, pending_key)
         if pending["uploadedBy"] != claims["sub"]:
             raise RequestError(403, "このアップロードを確定する権限がありません。")
-        if pending.get("deleted") is True:
-            raise RequestError(409, "削除された画像は登録できません。")
+        if pending.get("deleted") is True or pending.get("moved") is True or photo_id in manifest.get("pendingDeletions", []):
+            raise RequestError(409, "削除または紐づけ変更された画像は登録できません。")
         if any(image["id"] == photo_id for image in manifest["images"]):
             return {"id": photo_id}
-        image_key = base + f"images/{material_id}/{photo_id}.jpg"
+        image_key = base + f"images/{storage_id}/{photo_id}.jpg"
         if pending.get("id") != photo_id or pending.get("imageKey") != image_key:
             raise RuntimeError("Invalid material upload metadata")
         try:
@@ -284,7 +382,7 @@ def material_request(route, data, claims, bucket, prefix):
             if stream.read() != b"\xff\xd8\xff":
                 raise RequestError(400, "JPEG画像ではありません。")
         metadata = {"id": photo_id, "imageKey": image_key}
-        thumb_key = base + f"thumbs/{material_id}/{photo_id}.jpg"
+        thumb_key = base + f"thumbs/{storage_id}/{photo_id}.jpg"
         try:
             thumb = S3.head_object(Bucket=bucket, Key=thumb_key)
             if thumb["ContentType"] == "image/jpeg" and 0 < thumb["ContentLength"] <= THUMB_MAX_BYTES:
@@ -293,7 +391,7 @@ def material_request(route, data, claims, bucket, prefix):
             if error.response["Error"]["Code"] not in ("NoSuchKey", "404"):
                 raise
         manifest["images"].append(metadata)
-        if not manifest.get("representative"):
+        if material_id and not manifest.get("representative"):
             manifest["representative"] = photo_id
         save_material_manifest(bucket, record_key, manifest, revision)
         return {"id": photo_id}

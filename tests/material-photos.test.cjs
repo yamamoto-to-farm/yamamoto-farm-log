@@ -21,7 +21,7 @@ function setup(session = true) {
   }
   const container = node();
   const context = vm.createContext({
-    document: { createElement: node },
+    document: { createElement: node, querySelectorAll: () => [] },
     window: {
       addEventListener(name, fn) { listeners[name] = fn; },
       removeEventListener(name) { delete listeners[name]; },
@@ -135,4 +135,75 @@ test("failed deletion remains retryable", async () => {
   await remove.onclick();
   assert.equal(remove.disabled, false);
   assert.match(container.children[1].textContent, /削除を再試行できます/);
+});
+
+test("gallery uploads unassigned photos and associates them with a selected material", async () => {
+  const { context, container } = setup();
+  const calls = [];
+  let photo = null;
+  context.confirm = () => true;
+  context.convertToJpeg = async () => "jpeg";
+  context.makeThumbnail = async () => null;
+  context.postToS3 = async () => ({ ok: true });
+  context.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, "https://site.test");
+    const body = options.body ? JSON.parse(options.body) : null;
+    calls.push({ path: parsed.pathname, body });
+    if (parsed.pathname.startsWith("/data/")) {
+      return { ok: true, json: async () => [{ id: "F001", name: "肥料A" }] };
+    }
+    if (parsed.pathname.endsWith("/uploads")) return { ok: true, json: async () => ({ id: "image", upload: {} }) };
+    if (parsed.pathname.endsWith("/complete")) {
+      photo = { id: "image", url: "image", materialId: "", representative: false };
+      return { ok: true, json: async () => ({ id: "image" }) };
+    }
+    if (parsed.pathname.endsWith("/edit")) {
+      photo.materialId = body.targetMaterialId;
+      return { ok: true, json: async () => ({ id: "image" }) };
+    }
+    return { ok: true, json: async () => ({
+      photos: photo && (!parsed.searchParams.has("unassigned") || !photo.materialId) ? [photo] : [],
+      canManage: true, pendingDeletions: []
+    }) };
+  };
+  vm.runInContext('mountMaterialGallery(container, "fertilizer", "F001")', context);
+  await new Promise(resolve => setImmediate(resolve));
+  const form = container.children[1].children[1];
+  form.children[0].children[0].files = [{}];
+  await form.onsubmit({ preventDefault() {} });
+  assert.deepEqual(calls.find(call => call.path.endsWith("/uploads")).body,
+    { materialType: "fertilizer", materialId: "", unassigned: true });
+  const card = container.children[3].children[0];
+  assert.equal(card.children[1].textContent, "未紐づけ");
+  await card.children[3].onclick();
+  assert.deepEqual(calls.find(call => call.path.endsWith("/edit")).body,
+    { materialType: "fertilizer", materialId: "", unassigned: true,
+      id: "image", action: "associate", targetMaterialId: "F001" });
+  assert.match(container.children[3].children[0].children[1].textContent, /肥料A/);
+});
+
+test("gallery shows retry action for interrupted association", async () => {
+  const { context, container } = setup();
+  let body;
+  context.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, "https://site.test");
+    if (parsed.pathname.startsWith("/data/")) return { ok: true, json: async () => [{ id: "F002", name: "肥料B" }] };
+    if (options.method === "POST") {
+      body = JSON.parse(options.body);
+      return { ok: true, json: async () => ({ id: "image" }) };
+    }
+    return { ok: true, json: async () => ({
+      photos: parsed.searchParams.has("unassigned") ? [] : [{
+        id: "image", url: "image", materialId: "F002",
+        transfer: { from: "F001", to: "F002", role: "target" }
+      }], canManage: true
+    }) };
+  };
+  vm.runInContext('mountMaterialGallery(container, "fertilizer")', context);
+  await new Promise(resolve => setImmediate(resolve));
+  const card = container.children[3].children[0];
+  assert.equal(card.children.at(-1).disabled, true);
+  await card.children.at(-2).onclick();
+  assert.equal(body.materialId, "F001");
+  assert.equal(body.targetMaterialId, "F002");
 });

@@ -289,6 +289,111 @@ class PhotoApiTests(unittest.TestCase):
         self.assertEqual(store[record]["pendingDeletions"], [])
         self.assertEqual(store[record]["representative"], second)
 
+    def test_material_transfer_preserves_image_and_supports_delete_and_retry(self):
+        store, record, first, second, image, pending, _ = self.material_delete_store()
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": first}
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        move = {**identity, "action": "associate", "targetMaterialId": "F002"}
+        self.assertEqual(self.call("POST /photos/edit", move, self.claims)[0], 403)
+        self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 200)
+        target = "photos/materials/fertilizer/records/F002.json"
+        self.assertEqual(store[record]["representative"], second)
+        self.assertEqual(store[target]["representative"], first)
+        self.assertEqual(store[target]["images"][0]["imageKey"], image(first))
+        self.assertTrue(store[pending(first)]["moved"])
+        self.assertEqual(self.call("POST /photos/complete", identity, admin)[0], 409)
+        self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 200)
+        target_identity = {**identity, "materialId": "F002"}
+        self.assertEqual(self.call("POST /photos/delete", target_identity, admin)[0], 200)
+        self.assertEqual(self.call("POST /photos/delete", target_identity, admin)[0], 200)
+        self.assertNotIn(image(first), store)
+
+    def test_material_transfer_recovers_from_each_partial_manifest_write(self):
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        for failing_write in (1, 2, 3, 4):
+            with self.subTest(failing_write=failing_write):
+                store, record, first, _, image, _, _ = self.material_delete_store()
+                put = fake_s3.put_object.side_effect
+                writes = 0
+                def fail_once(**kwargs):
+                    nonlocal writes
+                    if "IfMatch" in kwargs or "IfNoneMatch" in kwargs:
+                        writes += 1
+                        if writes == failing_write:
+                            raise FakeClientError("PreconditionFailed")
+                    return put(**kwargs)
+                fake_s3.put_object.side_effect = fail_once
+                move = {"materialType": "fertilizer", "materialId": "F001", "id": first,
+                        "action": "associate", "targetMaterialId": "F002"}
+                self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 409)
+                fake_s3.put_object.side_effect = put
+                self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 200)
+                target = "photos/materials/fertilizer/records/F002.json"
+                self.assertFalse(any(item["id"] == first for item in store[record]["images"]))
+                self.assertEqual(store[target]["images"][0]["imageKey"], image(first))
+                self.assertNotIn("transfer", store[target]["images"][0])
+
+    def test_unassigned_images_can_be_listed_and_attached(self):
+        store, record, first, _, image, pending, _ = self.material_delete_store()
+        base = "photos/materials/fertilizer/"
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": first}
+        move = {**identity, "action": "associate", "targetMaterialId": ""}
+        self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 200)
+        status, result = self.call("GET /photos", {"materialType": "fertilizer", "unassigned": "1"})
+        self.assertEqual(status, 200)
+        self.assertEqual(result["photos"][0]["materialId"], "")
+        self.assertFalse(result["photos"][0]["representative"])
+        move = {"materialType": "fertilizer", "materialId": "", "unassigned": True,
+                "id": first, "action": "associate", "targetMaterialId": "F002"}
+        self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 200)
+        self.assertEqual(store[base + "records/F002.json"]["images"][0]["imageKey"], image(first))
+        self.assertTrue(store[pending(first)]["moved"])
+
+    def test_unassigned_upload_uses_separate_storage_and_has_no_representative(self):
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        identity = {"materialType": "fertilizer", "materialId": "", "unassigned": True}
+        fake_s3.generate_presigned_post.return_value = {"url": "https://s3.invalid", "fields": {}}
+        status, body = self.call("POST /photos/uploads", identity, admin)
+        self.assertEqual(status, 200)
+        photo_id = body["id"]
+        pending = json.loads(fake_s3.put_object.call_args.kwargs["Body"])
+        self.assertIn("/images/_unassigned/", pending["imageKey"])
+        fake_s3.reset_mock(return_value=True, side_effect=True)
+        fake_s3.get_object.side_effect = [
+            FakeClientError("NoSuchKey"), {"Body": io.BytesIO(json.dumps(pending).encode())},
+            {"Body": io.BytesIO(b"\xff\xd8\xff")},
+        ]
+        fake_s3.head_object.side_effect = [
+            {"ContentType": "image/jpeg", "ContentLength": 100}, FakeClientError("404")]
+        self.assertEqual(self.call("POST /photos/complete", {**identity, "id": photo_id}, admin)[0], 200)
+        args = fake_s3.put_object.call_args.kwargs
+        self.assertTrue(args["Key"].endswith("records/_unassigned.json"))
+        self.assertIsNone(json.loads(args["Body"])["representative"])
+
+    def test_transfer_conflict_blocks_delete_without_marking_image_deleted(self):
+        store, record, first, _, _, pending, _ = self.material_delete_store()
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        store[record]["images"][0]["transfer"] = {"from": "F001", "to": "F002", "role": "source"}
+        identity = {"materialType": "fertilizer", "materialId": "F001", "id": first}
+        self.assertEqual(self.call("POST /photos/delete", identity, admin)[0], 409)
+        self.assertNotIn("deleted", store[pending(first)])
+
+    def test_moved_image_deletion_can_resume_after_storage_failure(self):
+        store, _, first, _, image, _, delete = self.material_delete_store()
+        admin = {**self.claims, "cognito:groups": "[admin]"}
+        move = {"materialType": "fertilizer", "materialId": "F001", "id": first,
+                "action": "associate", "targetMaterialId": "F002"}
+        self.assertEqual(self.call("POST /photos/edit", move, admin)[0], 200)
+        fake_s3.delete_object.side_effect = FakeClientError("AccessDenied")
+        identity = {**move, "materialId": "F002"}
+        self.assertEqual(self.call("POST /photos/delete", identity, admin)[0], 503)
+        target = "photos/materials/fertilizer/records/F002.json"
+        self.assertEqual(store[target]["pendingDeletionStorage"][first], "F001")
+        fake_s3.delete_object.side_effect = delete
+        self.assertEqual(self.call("POST /photos/delete", identity, admin)[0], 200)
+        self.assertNotIn(image(first), store)
+
     def test_listing_issues_short_lived_url_without_storage_keys_or_user_id(self):
         metadata = self.metadata()
         fake_s3.list_objects_v2.return_value = {"Contents": [{"Key": "record.json"}]}

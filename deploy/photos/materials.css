@@ -2,5 +2,8 @@
 .material-photo { min-width: 0; display: flex; flex-direction: column; gap: 5px; overflow-wrap: anywhere; }
 .material-photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #eee; border-radius: 6px; }
 .material-photo button { font-size: 13px; }
+.material-photo select { min-width: 0; max-width: 100%; }
 .material-photo-editor form label { display: block; }
 .material-photo-editor input { display: block; max-width: 100%; margin: 8px 0; }
+#material-photos form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin: 12px 0; }
+#material-photos input { display: block; max-width: 100%; margin-top: 6px; }

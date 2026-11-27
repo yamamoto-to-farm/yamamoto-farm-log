@@ -8,7 +8,7 @@ import { setTopPhoto } from "./top.js";
 import { setupSmartBackButton } from "/common/navigation-back.js?v=1";
 import { openFieldModal } from "/common/filter/filter-field.js?v=1";
 import { setFilterData, filterState } from "/common/filter/filter-core.js?v=1";
-import { mountMaterialGallery } from "./materials.js";
+import { mountMaterialGallery } from "./materials.js?v=20261127-associate-1";
 
 const element = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -537,7 +537,8 @@ function bind() {
       element("field-photos").hidden = photoTab !== "field";
       element("material-photos").hidden = photoTab === "field";
       if (photoTab === "field") search();
-      else mountMaterialGallery(element("material-photos"), photoTab);
+      else mountMaterialGallery(element("material-photos"), photoTab,
+        params.get("tab") === photoTab ? params.get("associate") || "" : "");
     });
   }
 }
@@ -568,6 +569,11 @@ async function init() {
   if (params.get("from")) element("from").value = params.get("from");
   if (params.get("to")) element("to").value = params.get("to");
   if (params.get("from") || params.get("to")) markRange(null);
+  const requestedTab = params.get("tab");
+  if (requestedTab === "fertilizer" || requestedTab === "pesticide") {
+    document.querySelector(`[data-photo-tab="${requestedTab}"]`).click();
+    return;
+  }
   if (!hasSession()) {
     status("写真を見るには写真用ログインが必要です。");
     element("login-area").hidden = false;
